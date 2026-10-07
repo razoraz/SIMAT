@@ -22,14 +22,14 @@
         <!-- MODAL DETAIL & STATUS KONSESI -->
         @include('pages.kemitraan.master_partials.modal_detail_kemitraan')
 
-        <!-- MODAL KONFIRMASI HAPUS / BATALKAN -->
+        <!-- MODAL PRATINJAU & DOWNLOAD QR CODE (TERMASUK UBAH KONDISI & RIWAYAT) -->
+        @include('pages.kemitraan.master_partials.modal_qr_kemitraan')
+
+        <!-- MODAL KONFIRMASI HAPUS / BATALKAN & DIALOG GLOBAL -->
         @include('pages.kemitraan.master_partials.modal_confirm')
 
         <!-- MODAL REKLASIFIKASI ASET TETAP (RSDK) — SAMA SEPERTI DI DATA ASTAP -->
         @include('pages.astap.index_partials.modal_reklas')
-
-        <!-- MODAL PRATINJAU & DOWNLOAD QR CODE -->
-        @include('pages.kemitraan.master_partials.modal_qr_kemitraan')
 
         <!-- MODAL PILIH TAHUN, TRIWULAN & SKEMA EKSPOR EXCEL KEMITRAAN -->
         @include('pages.kemitraan.master_partials.modal_export_excel')
