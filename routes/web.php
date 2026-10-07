@@ -2797,33 +2797,102 @@ Route::middleware('auth')->group(function () {
                     $isGedung = (isset($specJson['gedung_items']) && count($specJson['gedung_items']) > 0) || str_starts_with($astap->kode_108 ?? '', '1.5.2.03') || stripos($astap->nama_barang, 'gedung') !== false;
                     $isJaringan = (isset($specJson['jaringan_items']) && count($specJson['jaringan_items']) > 0) || str_starts_with($astap->kode_108 ?? '', '1.5.2.04') || stripos($astap->nama_barang, 'jaringan') !== false;
 
-                    $registers = \App\Models\AstapRegister::where('astap_id', $astap->id)->get();
-                    foreach ($registers as $reg) {
+                    $normalizeKondisi = function($raw) use ($kondisiItem) {
+                        $rawK = strtoupper(trim((string)($raw ?: $kondisiItem)));
+                        return ($rawK === 'KB' || $rawK === 'KURANG BAIK' || $rawK === 'RR' || $rawK === 'RUSAK RINGAN') 
+                            ? 'Kurang Baik' 
+                            : (($rawK === 'RB' || $rawK === 'RUSAK BERAT' || $rawK === 'RUSAK') ? 'Rusak Berat' : 'Baik');
+                    };
+
+                    $unitSpecs = [];
+                    if (isset($specJson['mesin_items']) && is_array($specJson['mesin_items']) && count($specJson['mesin_items']) > 0) {
+                        foreach ($specJson['mesin_items'] as $mItem) {
+                            $qty = max(1, (int)($mItem['mesin_jumlah_barang'] ?? 1));
+                            $kStr = $normalizeKondisi($mItem['mesin_kondisi'] ?? null);
+                            $rStr = $cleanRuang($mItem['mesin_ruang_pemegang'] ?? null);
+                            for ($q = 0; $q < $qty; $q++) {
+                                $unitSpecs[] = ['kondisi' => $kStr, 'ruang' => $rStr];
+                            }
+                        }
+                    } elseif (isset($specJson['lainnya_items']) && is_array($specJson['lainnya_items']) && count($specJson['lainnya_items']) > 0) {
+                        foreach ($specJson['lainnya_items'] as $lItem) {
+                            $qty = max(1, (int)($lItem['lainnya_jumlah'] ?? 1));
+                            $kStr = $normalizeKondisi($lItem['lainnya_kondisi'] ?? null);
+                            $rStr = $cleanRuang($lItem['ruang_pemegang'] ?? null);
+                            for ($q = 0; $q < $qty; $q++) {
+                                $unitSpecs[] = ['kondisi' => $kStr, 'ruang' => $rStr];
+                            }
+                        }
+                    } elseif (isset($specJson['tanah_items']) && is_array($specJson['tanah_items']) && count($specJson['tanah_items']) > 0) {
+                        foreach ($specJson['tanah_items'] as $tItem) {
+                            $qty = max(1, (int)($tItem['tanah_jumlah_barang'] ?? 1));
+                            $kStr = $normalizeKondisi($tItem['tanah_kondisi'] ?? null);
+                            for ($q = 0; $q < $qty; $q++) {
+                                $unitSpecs[] = ['kondisi' => $kStr, 'ruang' => null];
+                            }
+                        }
+                    } elseif (isset($specJson['gedung_items']) && is_array($specJson['gedung_items']) && count($specJson['gedung_items']) > 0) {
+                        foreach ($specJson['gedung_items'] as $gItem) {
+                            $qty = max(1, (int)($gItem['gedung_jumlah_bangunan'] ?? 1));
+                            $kStr = $normalizeKondisi($gItem['gedung_kondisi'] ?? null);
+                            for ($q = 0; $q < $qty; $q++) {
+                                $unitSpecs[] = ['kondisi' => $kStr, 'ruang' => null];
+                            }
+                        }
+                    } elseif (isset($specJson['jaringan_items']) && is_array($specJson['jaringan_items']) && count($specJson['jaringan_items']) > 0) {
+                        foreach ($specJson['jaringan_items'] as $jItem) {
+                            $qty = max(1, (int)($jItem['jaringan_jumlah'] ?? 1));
+                            $kStr = $normalizeKondisi($jItem['jaringan_kondisi'] ?? null);
+                            for ($q = 0; $q < $qty; $q++) {
+                                $unitSpecs[] = ['kondisi' => $kStr, 'ruang' => null];
+                            }
+                        }
+                    }
+
+                    // Tentukan kondisi agregat spesifikasi_json
+                    if (!empty($unitSpecs)) {
+                        $allConds = array_column($unitSpecs, 'kondisi');
+                        if (in_array('Rusak Berat', $allConds)) {
+                            $overallKondisi = 'Rusak Berat';
+                        } elseif (in_array('Kurang Baik', $allConds)) {
+                            $overallKondisi = 'Kurang Baik';
+                        } else {
+                            $overallKondisi = 'Baik';
+                        }
+                    } else {
+                        $overallKondisi = $normalizeKondisi($kondisiItem);
+                    }
+                    $specJson['kondisi'] = $overallKondisi;
+                    $astap->update(['spesifikasi_json' => $specJson]);
+
+                    $registers = \App\Models\AstapRegister::where('astap_id', $astap->id)->orderBy('id')->get();
+                    foreach ($registers as $regIdx => $reg) {
+                        $targetKondisi = isset($unitSpecs[$regIdx]) ? $unitSpecs[$regIdx]['kondisi'] : $overallKondisi;
+                        $targetRuang = (isset($unitSpecs[$regIdx]['ruang']) && !empty($unitSpecs[$regIdx]['ruang']))
+                            ? $unitSpecs[$regIdx]['ruang']
+                            : ($cleanRuang($data['ruang_pemegang'] ?? null) ?: $cleanRuang($reg->ruang_pemegang));
+
                         $isDistributed = \App\Models\DistribusiItemRegister::where('astap_register_id', $reg->id)->exists();
                         if ($isDistributed) {
-                            // Jika sudah didistribusikan melalui BAST Distribusi, pertahankan ruang penempatan distribusi
                             $reg->update([
                                 'tahun_perolehan' => $tahun,
-                                'kondisi'         => $kondisiItem,
+                                'kondisi'         => $targetKondisi,
                             ]);
                         } else {
                             if ($isTanah || $isGedung || $isJaringan) {
-                                // Tanah, Gedung, Jaringan awal belum didistribusikan (ruang = null, status = Tersedia)
                                 $reg->update([
                                     'unit_id'         => null,
                                     'ruang_pemegang'  => null,
                                     'tahun_perolehan' => $tahun,
-                                    'kondisi'         => $kondisiItem,
+                                    'kondisi'         => $targetKondisi,
                                     'status'          => 'Tersedia',
                                 ]);
                             } else {
-                                // Peralatan & Mesin atau Aset Lainnya
-                                $newRuang = $cleanRuang($data['ruang_pemegang'] ?? null) ?: $cleanRuang($reg->ruang_pemegang);
                                 $reg->update([
-                                    'unit_id'         => $newRuang ? ($data['unit_id'] ?? null) : null,
-                                    'ruang_pemegang'  => $newRuang,
+                                    'unit_id'         => $targetRuang ? ($data['unit_id'] ?? null) : null,
+                                    'ruang_pemegang'  => $targetRuang,
                                     'tahun_perolehan' => $tahun,
-                                    'kondisi'         => $kondisiItem,
+                                    'kondisi'         => $targetKondisi,
                                     'status'          => 'Tersedia',
                                 ]);
                             }

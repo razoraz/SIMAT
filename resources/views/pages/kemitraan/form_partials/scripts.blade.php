@@ -1241,13 +1241,30 @@
                 return list;
             },
 
+            // Setter Global Status Akuntansi (Aset Tetap Reguler vs Ekstrakomtabel)
+            setGlobalExtracom(val) {
+                const isExtra = Boolean(val);
+                this.formData.is_extracomtable = isExtra;
+                if (this.formData.mesin_items && Array.isArray(this.formData.mesin_items)) {
+                    this.formData.mesin_items.forEach(m => {
+                        m.is_extracom = isExtra;
+                    });
+                }
+                if (this.formData.lainnya_items && Array.isArray(this.formData.lainnya_items)) {
+                    this.formData.lainnya_items.forEach(l => {
+                        l.is_extracom = isExtra;
+                    });
+                }
+                this.syncTotalsFromItems();
+            },
+
             // --- MULTI-ITEM REPEATER PERALATAN & MESIN ---
             addMesinItem() {
                 if (!this.formData.mesin_items) {
                     this.formData.mesin_items = [];
                 }
                 this.formData.mesin_items.push({
-                    is_extracom: false,
+                    is_extracom: Boolean(this.formData.is_extracomtable),
                     mesin_kode_barang: '',
                     mesin_nama_barang: '',
                     isFilterOpen: false,
@@ -1470,7 +1487,7 @@
                     this.formData.lainnya_items = [];
                 }
                 this.formData.lainnya_items.push({
-                    is_extracom: false,
+                    is_extracom: Boolean(this.formData.is_extracomtable),
                     kib_e_type: 'buku',
                     lainnya_kode_barang: '',
                     lainnya_nama_barang: '',
@@ -1632,7 +1649,14 @@
                         this.formData.bahan = first.mesin_bahan || '';
                         this.formData.ukuran = first.mesin_ukuran || '';
                         this.formData.tahun_pembuatan = first.mesin_tahun_pembuatan || null;
-                        this.formData.kondisi = first.mesin_kondisi || 'Baik';
+                        const mConditions = (this.formData.mesin_items || []).map(m => m.mesin_kondisi || 'Baik');
+                        if (mConditions.includes('Rusak Berat')) {
+                            this.formData.kondisi = 'Rusak Berat';
+                        } else if (mConditions.includes('Kurang Baik')) {
+                            this.formData.kondisi = 'Kurang Baik';
+                        } else {
+                            this.formData.kondisi = first.mesin_kondisi || 'Baik';
+                        }
                         this.formData.no_rangka = first.mesin_no_rangka || '';
                         this.formData.no_mesin = first.mesin_no_mesin || '';
                         this.formData.no_bpkb = first.mesin_no_bpkb || '';
@@ -1750,8 +1774,15 @@
                         this.formData.lainnya_ukuran = first.lainnya_ukuran;
                         this.formData.lainnya_asal_daerah = first.lainnya_asal_daerah;
                         this.formData.lainnya_bahan = first.lainnya_bahan;
-                        this.formData.lainnya_kondisi = first.lainnya_kondisi;
-                        this.formData.kondisi = first.lainnya_kondisi;
+                        const lConditions = (this.formData.lainnya_items || []).map(l => l.lainnya_kondisi || 'Baik');
+                        if (lConditions.includes('Rusak Berat')) {
+                            this.formData.kondisi = 'Rusak Berat';
+                        } else if (lConditions.includes('Kurang Baik')) {
+                            this.formData.kondisi = 'Kurang Baik';
+                        } else {
+                            this.formData.kondisi = first.lainnya_kondisi || 'Baik';
+                        }
+                        this.formData.lainnya_kondisi = this.formData.kondisi;
                     }
                 }
             },
@@ -1906,6 +1937,12 @@
                     targetType = 'lainnya';
                 }
 
+                // Reset status extracom jika memilih objek yang tidak mengizinkan extracom (Tanah, Gedung, Jaringan)
+                if (targetType === 'tanah' || targetType === 'gedung' || targetType === 'jaringan') {
+                    this.formData.is_extracomtable = false;
+                    if (this.formData.mesin_items) this.formData.mesin_items.forEach(m => m.is_extracom = false);
+                    if (this.formData.lainnya_items) this.formData.lainnya_items.forEach(l => l.is_extracom = false);
+                }
 
                 this.search108 = '';
                 this.searchResults108 = [];
@@ -2446,7 +2483,7 @@
                         bahan: firstM.mesin_bahan || this.formData.bahan || '',
                         ukuran: firstM.mesin_ukuran || this.formData.ukuran || '',
                         tahun_pembuatan: firstM.mesin_tahun_pembuatan || this.formData.tahun_pembuatan || null,
-                        kondisi: firstM.mesin_kondisi || this.formData.kondisi || 'Baik',
+                        kondisi: this.formData.kondisi || firstM.mesin_kondisi || 'Baik',
                         no_rangka: firstM.mesin_no_rangka || this.formData.no_rangka || '',
                         no_mesin: firstM.mesin_no_mesin || this.formData.no_mesin || '',
                         no_bpkb: firstM.mesin_no_bpkb || this.formData.no_bpkb || '',
@@ -2509,6 +2546,7 @@
                         ukuran: firstL.lainnya_ukuran || this.formData.lainnya_ukuran || '',
                         bahan: firstL.lainnya_bahan || this.formData.lainnya_bahan || '',
                         asal_usul: firstL.lainnya_asal || this.formData.lainnya_asal || '',
+                        kondisi: this.formData.kondisi || firstL.lainnya_kondisi || 'Baik',
                         lainnya_items: this.formData.lainnya_items
                     };
                 }

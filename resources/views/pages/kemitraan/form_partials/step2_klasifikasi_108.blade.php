@@ -92,6 +92,63 @@
                 </button>
             </template>
         </div>
+
+        <!-- Pilihan Status Akuntansi: Aset Tetap Reguler vs Ekstrakomtabel (Extracom) -->
+        <!-- Khusus untuk Peralatan & Mesin (KIB B) dan Aset Tetap Lainnya (KIB E) -->
+        <div x-show="isMesin || isLainnya" 
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 -translate-y-2"
+             x-transition:enter-end="opacity-100 translate-y-0"
+             class="pt-3 border-t border-slate-800/80">
+            <div class="p-4 sm:p-5 rounded-2xl bg-slate-950/90 border border-slate-800 space-y-3 shadow-inner">
+                <div class="flex items-center justify-between">
+                    <label class="text-xs font-bold uppercase tracking-wider flex items-center space-x-2"
+                           :class="formData.is_extracomtable ? 'text-cyan-300' : 'text-purple-300'">
+                        <span x-text="formData.is_extracomtable ? '📦 STATUS AKUNTANSI: EKSTRAKOMTABEL (EXTRACOM)' : '⚙️ STATUS AKUNTANSI: ASET TETAP REGULER (INTRAKOMPTABEL)'"></span>
+                    </label>
+                    <span class="text-[9.5px] px-2.5 py-0.5 rounded-lg font-bold font-mono border"
+                          :class="formData.is_extracomtable ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' : 'bg-purple-500/20 text-purple-300 border-purple-500/40'"
+                          x-text="formData.is_extracomtable ? '≤ Rp 300.000' : '> Rp 300.000'">
+                    </span>
+                </div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <!-- 1. Aset Tetap Reguler -->
+                    <button type="button" 
+                            @click="setGlobalExtracom(false)"
+                            :class="!formData.is_extracomtable ? 'border-purple-500 bg-purple-950/40 ring-2 ring-purple-500 text-white font-extrabold shadow-md shadow-purple-500/20' : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:border-slate-700'"
+                            class="p-3 sm:p-3.5 rounded-2xl border transition-all flex items-center justify-between text-xs cursor-pointer">
+                        <div class="flex items-center space-x-2.5">
+                            <span class="text-lg">⚙️</span>
+                            <div class="text-left">
+                                <div class="text-xs font-bold text-white">Aset Tetap Reguler</div>
+                                <div class="text-[10px] text-slate-400 mt-0.5">Nilai wajar satuan &gt; Rp 300.000</div>
+                            </div>
+                        </div>
+                        <span x-show="!formData.is_extracomtable" class="text-purple-400 font-bold text-xs flex items-center gap-1">
+                            <span>✓</span><span>Terpilih</span>
+                        </span>
+                    </button>
+
+                    <!-- 2. Ekstrakomtabel -->
+                    <button type="button" 
+                            @click="setGlobalExtracom(true)"
+                            :class="formData.is_extracomtable ? 'border-cyan-500 bg-cyan-950/40 ring-2 ring-cyan-500 text-white font-extrabold shadow-md shadow-cyan-500/20' : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:border-slate-700'"
+                            class="p-3 sm:p-3.5 rounded-2xl border transition-all flex items-center justify-between text-xs cursor-pointer">
+                        <div class="flex items-center space-x-2.5">
+                            <span class="text-lg">📦</span>
+                            <div class="text-left">
+                                <div class="text-xs font-bold text-white">Ekstrakomtabel (Extracom)</div>
+                                <div class="text-[10px] text-slate-400 mt-0.5">Nilai wajar satuan ≤ Rp 300.000 (Non-Kendaraan)</div>
+                            </div>
+                        </div>
+                        <span x-show="formData.is_extracomtable" class="text-cyan-400 font-bold text-xs flex items-center gap-1">
+                            <span>✓</span><span>Terpilih</span>
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- ========================================================================= -->
