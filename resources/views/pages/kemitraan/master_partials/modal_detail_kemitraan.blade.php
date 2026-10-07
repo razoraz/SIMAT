@@ -104,7 +104,7 @@
                             <span>📜 Dokumen Perjanjian Kerja Sama (PKS) &amp; Masa Konsesi</span>
                         </div>
                         <div class="flex items-center gap-2 flex-wrap">
-                            <template x-if="selectedAstapDetail && selectedAstapDetail.is_dimanfaatkan">
+                            <template x-if="selectedAstapDetail && (selectedAstapDetail.kemitraan_id || selectedAstapDetail.id)">
                                 <a :href="'/astap/kemitraan/' + (selectedAstapDetail.kemitraan_id || selectedAstapDetail.id) + '/cetak-bast'" target="_blank"
                                    class="px-2.5 py-1 rounded-xl text-[10.5px] font-extrabold bg-gradient-to-r from-cyan-600/30 to-teal-600/30 hover:from-cyan-600/50 hover:to-teal-600/50 text-cyan-200 border border-cyan-500/40 flex items-center gap-1.5 transition-all active:scale-95 shadow-sm"
                                    title="Cetak Lembar Draf Resmi BAST Pemanfaatan Kemitraan (Format Kedinasan A4)">
@@ -204,29 +204,29 @@
                                     <div class="min-w-0 flex-1">
                                         <div class="flex items-center flex-wrap gap-2">
                                             <span class="text-[10px] font-black uppercase tracking-wider text-cyan-400">
-                                                Berkas Dokumen BAST / PKS Kerja Sama
+                                                Arsip Scan Dokumen Sah (BAST / PKS Bertanda Tangan)
                                             </span>
                                             <template x-if="selectedAstapDetail?.dokumen_path">
-                                                <span class="px-2 py-0.5 rounded text-[9.5px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
-                                                    <span>✓</span> Terlampir
+                                                <span class="px-2 py-0.5 rounded text-[9.5px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1 shadow-sm">
+                                                    <span>✓</span> Dokumen Sah Terlampir
                                                 </span>
                                             </template>
                                             <template x-if="!selectedAstapDetail?.dokumen_path">
-                                                <span class="px-2 py-0.5 rounded text-[9.5px] font-bold bg-slate-800 text-slate-400 border border-slate-700">
-                                                    Belum Ada Berkas
+                                                <span class="px-2 py-0.5 rounded text-[9.5px] font-semibold bg-slate-800 text-slate-400 border border-slate-700/80">
+                                                    Belum Ada Arsip Scan (Menyusul)
                                                 </span>
                                             </template>
                                         </div>
                                         <div class="text-xs font-bold text-white truncate mt-1"
                                              :title="selectedAstapDetail?.dokumen_path ? selectedAstapDetail.dokumen_path.split('/').pop() : ''"
-                                             x-text="selectedAstapDetail?.dokumen_path ? selectedAstapDetail.dokumen_path.split('/').pop() : 'Belum ada berkas BAST / PKS yang diunggah untuk aset kemitraan ini.'">
+                                             x-text="selectedAstapDetail?.dokumen_path ? selectedAstapDetail.dokumen_path.split('/').pop() : 'Unggah hasil scan berkas setelah selesai ditandatangani basah & distempel oleh Direktur RSUD dan Pihak Mitra.'">
                                         </div>
                                         <div class="text-[10.5px] text-slate-400 mt-0.5">
                                             <template x-if="selectedAstapDetail?.dokumen_path">
-                                                <span>Format: <strong class="font-mono text-cyan-300 uppercase" x-text="selectedAstapDetail.dokumen_path.split('.').pop()"></strong> · Maks. 10 MB (1 Berkas per Kemitraan)</span>
+                                                <span>Format: <strong class="font-mono text-cyan-300 uppercase" x-text="selectedAstapDetail.dokumen_path.split('.').pop()"></strong> · Maks. 10 MB (Arsip Legalitas Resmi)</span>
                                             </template>
                                             <template x-if="!selectedAstapDetail?.dokumen_path">
-                                                <span>Maksimal 1 berkas (Format: PDF, Gambar Scan JPG/PNG, atau Dokumen Word).</span>
+                                                <span class="text-slate-400">Format: PDF atau Gambar Scan JPG/PNG (Maks 10 MB). Sifatnya opsional dan dapat dilengkapi kapan saja.</span>
                                             </template>
                                         </div>
                                     </div>
@@ -287,7 +287,7 @@
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
                                             </svg>
-                                            <span>Unggah Berkas BAST</span>
+                                            <span>Unggah Scan Dokumen Sah</span>
                                         </button>
                                     </template>
                                 </div>
@@ -939,8 +939,8 @@
         <!-- Modal Footer -->
         <div class="pt-4 border-t border-slate-800 flex items-center justify-between flex-wrap gap-2.5">
             <div class="flex items-center gap-2 flex-wrap">
-                <!-- Tombol Cetak Dokumen Resmi BAST Pemanfaatan Kemitraan (Hanya Untuk Aset Hasil Reklas / Dimanfaatkan) -->
-                <template x-if="selectedAstapDetail && selectedAstapDetail.is_dimanfaatkan && (selectedAstapDetail.kemitraan_id || selectedAstapDetail.id)">
+                <!-- Tombol Cetak Dokumen Resmi BAST Pemanfaatan Kemitraan -->
+                <template x-if="selectedAstapDetail && (selectedAstapDetail.kemitraan_id || selectedAstapDetail.id)">
                     <a :href="'/astap/kemitraan/' + (selectedAstapDetail.kemitraan_id || selectedAstapDetail.id) + '/cetak-bast'" target="_blank"
                         class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs transition-all shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:-translate-y-0.5 active:scale-95 flex items-center gap-2 cursor-pointer"
                         title="Cetak Lembar Dokumen Resmi BAST Pemanfaatan BMD Kemitraan (Format Kedinasan A4)">

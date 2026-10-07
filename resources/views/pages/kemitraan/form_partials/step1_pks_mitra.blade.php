@@ -711,14 +711,19 @@
 
         <!-- Unggah Berkas Dokumen BAST / PKS Kerja Sama -->
         <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3">
-            <div class="flex items-center justify-between">
-                <label class="block text-xs font-bold text-slate-200">
-                    Unggah Berkas Dokumen BAST / PKS Kerja Sama
-                </label>
-                <span class="text-[10.5px] text-slate-400 font-mono">Format: PDF, JPG, PNG (Maks 10MB)</span>
+            <div class="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                    <label class="block text-xs font-bold text-slate-200">
+                        Arsip Scan Dokumen Sah BAST / PKS (Opsional / Menyusul)
+                    </label>
+                    <p class="text-[11px] text-slate-400 mt-0.5">
+                        Unggah scan berkas setelah ditandatangani basah &amp; distempel resmi oleh Direktur RSUD &amp; Pihak Mitra.
+                    </p>
+                </div>
+                <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 font-mono">Format: PDF, JPG, PNG (Maks 10MB)</span>
             </div>
 
-            <div class="flex flex-col sm:flex-row items-center gap-3">
+            <div class="flex flex-col sm:flex-row items-center gap-3 pt-1">
                 <input type="file" id="inputDokumenBastForm" name="dokumen_file" accept=".pdf,.jpg,.jpeg,.png" class="hidden"
                        @change="handleFormFileSelect($event)">
 
@@ -727,7 +732,7 @@
                     <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
                     </svg>
-                    <span>Pilih Berkas Dokumen</span>
+                    <span>Pilih Berkas Scan</span>
                 </button>
 
                 <div class="flex-1 min-w-0 w-full">
@@ -744,7 +749,7 @@
                         </div>
                     </template>
                     <template x-if="!selectedFile && !formData.dokumen_path">
-                        <span class="text-xs text-slate-500 italic block pl-1">Belum ada berkas dokumen yang dipilih (opsional).</span>
+                        <span class="text-xs text-slate-500 italic block pl-1">Belum ada berkas scan yang dipilih (dapat dikosongkan jika fisik belum selesai diteken).</span>
                     </template>
                 </div>
             </div>

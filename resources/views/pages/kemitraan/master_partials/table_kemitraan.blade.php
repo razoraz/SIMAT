@@ -6,8 +6,17 @@
 @php
     $isDimanfaatkan = function($row) {
         $astap = $row->astap;
-        
-        // 1. Aset RSUD yang Dimanfaatkan Mitra: HANYA jika secara eksplisit menautkan objek aset BMD milik RSUD
+
+        // 1. Aset yang berasal dari REKLASIFIKASI ke Kemitraan → selalu masuk Tabel Pemanfaatan
+        //    Cek flag is_reklas pada astap, atau relasi reklas yang tidak kosong
+        if ($astap && (
+            $astap->is_reklas ||
+            ($astap->reklas && $astap->reklas->isNotEmpty())
+        )) {
+            return true;
+        }
+
+        // 2. Aset RSUD Dimanfaatkan Mitra: ada tautan eksplisit ke objek BMD RSUD
         if (!empty($row->objek_nibar) || !empty($row->objek_register_id) || !empty($row->objek_astap_id)) {
             return true;
         }
@@ -16,7 +25,7 @@
             return true;
         }
 
-        // 2. ATAU jika secara eksplisit menautkan objek aset BMD
+        // 3. Bukan reklas dan tidak ada tautan objek BMD → masuk Tabel Ditambahkan Mitra
         return false;
     };
 
@@ -190,7 +199,8 @@
                     <tr>
                         <th class="py-3.5 px-4 w-12 text-center bg-slate-950 whitespace-nowrap">No</th>
                         <th class="py-3.5 px-4 min-w-[200px] bg-slate-950">Dokumen PKS &amp; Rekanan</th>
-                        <th class="py-3.5 px-4 min-w-[240px] bg-slate-950">Identitas Barang &amp; Spesifikasi (Akun 108)</th>
+                        <th class="py-3.5 px-4 min-w-[240px] bg-slate-950">Nama &amp; Spesifikasi Barang</th>
+                        <th class="py-3.5 px-4 min-w-[220px] bg-slate-950">Identitas 108 Kerja Sama Pemanfaatan</th>
                         <th class="py-3.5 px-4 min-w-[135px] text-center bg-slate-950 whitespace-nowrap">Kondisi</th>
                         <th class="py-3.5 px-4 min-w-[140px] text-right bg-slate-950 whitespace-nowrap">Nilai Pemanfaatan (Rp)</th>
                         <th class="py-3.5 px-4 min-w-[180px] bg-slate-950">Masa Pemanfaatan / Konsesi</th>
@@ -206,10 +216,35 @@
                             $sisaHari = $row->sisa_hari_konsesi;
                             $nibarObjek = $row->objek_nibar ?: ($spec['objek_nibar'] ?? null);
                             $objekAsetBmd = $row->objekRegister?->astap ?: $row->objekAstap;
-                            $namaObjekBmd = $objekAsetBmd?->nama_barang ?: ($astap?->nama_barang ?: 'Objek Aset BMD RSUD');
+                            
+                            // 1. Resolusi Nama Fisik Barang (Sebelum Reklasifikasi - Gambar 1)
+                            $reklasHistory = $astap?->reklas?->sortByDesc('id')->first() ?: ($objekAsetBmd?->reklas?->sortByDesc('id')->first());
+                            
+                            $namaFisikAsli = null;
+                            if (!empty($astap->nama_barang) && !str_starts_with(strtolower($astap->nama_barang), 'kerja sama pemanfaatan') && !str_starts_with(strtolower($astap->nama_barang), 'bangun guna serah')) {
+                                $namaFisikAsli = $astap->nama_barang;
+                            } elseif ($reklasHistory && !empty($reklasHistory->asal_nama)) {
+                                $namaFisikAsli = $reklasHistory->asal_nama;
+                            } elseif (!empty($objekAsetBmd?->nama_barang) && !str_starts_with(strtolower($objekAsetBmd->nama_barang), 'kerja sama pemanfaatan')) {
+                                $namaFisikAsli = $objekAsetBmd->nama_barang;
+                            } else {
+                                $namaFisikAsli = $spec['mesin_items'][0]['mesin_nama_barang'] ?? ($spec['tanah_items'][0]['tanah_nama_barang'] ?? ($astap?->nama_barang ?: 'Objek Aset BMD RSUD'));
+                            }
+
                             $luasObjek = $spec['luas_m2'] ?? ($spec['tanah_luas_m2'] ?? ($spec['gedung_luas_lantai'] ?? null));
                             $sertifikatObjek = $spec['sertifikat_no'] ?? ($spec['tanah_sertifikat_no'] ?? ($spec['gedung_dokumen_no'] ?? null));
                             $targetPrintId = $row->id ?: ($row->astap_id ?: ($astap?->id ?: null));
+
+                            // 2. Resolusi Identitas & Kode Akun 108 Kemitraan (Kerja Sama Pemanfaatan)
+                            $namaAkun108 = $reklasHistory?->tujuan_nama 
+                                ?: ($astap?->jenisAstap?->uraian_sub_sub_rincian 
+                                ?: ($astap?->jenisAstap?->uraian_sub_rincian 
+                                ?: ($astap?->jenisAstap?->nama_jenis ?: 'Kerja Sama Pemanfaatan Tanah')));
+
+                            $kodeAkun108 = $reklasHistory?->tujuan_kode 
+                                ?: ($astap?->kode_108 
+                                ?: ($objekAsetBmd?->kode_108 
+                                ?: ($astap?->jenisAstap?->sub_sub_rincian_objek ?: '1.5.2.01.01.02.001')));
                         @endphp
                         <tr class="hover:bg-cyan-950/20 transition-colors group">
                             <!-- 1. Nomor -->
@@ -264,23 +299,45 @@
                                 @endif
                             </td>
 
-                            <!-- 3. Identitas Barang & Spesifikasi (Akun 108) -->
+                            <!-- 3. Nama & Spesifikasi Barang -->
                             <td class="py-4 px-4">
                                 <div class="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors leading-snug">
-                                    {{ $namaObjekBmd }}
-                                </div>
-                                <div class="text-[11px] font-mono text-cyan-400 mt-0.5">
-                                    {{ $objekAsetBmd?->kode_108 ?: ($astap?->kode_108 ?: ($astap?->jenisAstap?->sub_sub_rincian_objek ?: '1.5.2.01.01.001')) }}
+                                    {{ $namaFisikAsli }}
                                 </div>
                                 <div class="flex items-center flex-wrap gap-2 mt-1 text-[10px] text-slate-400">
-                                    <span>Vol: <strong class="text-slate-200">{{ $row->jumlah_volume ?? ($astap?->jumlah_volume ?? 1) }} {{ $row->satuan ?? ($astap?->satuan ?? 'Bidang') }}</strong></span>
+                                    <span class="inline-flex items-center gap-1 font-medium bg-slate-800/80 px-1.5 py-0.5 rounded text-slate-300">
+                                        <span>📦</span>
+                                        <span>Vol: <strong class="text-white font-mono">{{ $row->jumlah_volume ?? ($astap?->jumlah_volume ?? 1) }} {{ $row->satuan ?? ($astap?->satuan ?? 'Bidang') }}</strong></span>
+                                    </span>
 
                                     @if($luasObjek)
-                                        <span>· 📐 {{ $luasObjek }} m²</span>
+                                        <span class="inline-flex items-center gap-1 bg-slate-800/80 px-1.5 py-0.5 rounded text-cyan-300">
+                                            <span>📐</span>
+                                            <span>{{ $luasObjek }} m²</span>
+                                        </span>
                                     @endif
                                     @if($sertifikatObjek)
-                                        <span>· 📜 {{ $sertifikatObjek }}</span>
+                                        <span class="inline-flex items-center gap-1 bg-slate-800/80 px-1.5 py-0.5 rounded text-slate-300 truncate max-w-[200px]" title="{{ $sertifikatObjek }}">
+                                            <span>📜</span>
+                                            <span>{{ $sertifikatObjek }}</span>
+                                        </span>
                                     @endif
+                                </div>
+                            </td>
+
+                            <!-- 4. Identitas 108 Kerja Sama Pemanfaatan -->
+                            <td class="py-4 px-4">
+                                <div class="text-xs font-bold text-cyan-300 leading-snug">
+                                    {{ $namaAkun108 }}
+                                </div>
+                                <div class="mt-1 flex items-center gap-1.5 flex-wrap">
+                                    <span class="font-mono text-[11px] font-bold text-cyan-400 bg-cyan-950/60 border border-cyan-500/40 px-2 py-0.5 rounded-lg shadow-sm">
+                                        {{ $kodeAkun108 }}
+                                    </span>
+                                </div>
+                                <div class="text-[9.5px] text-slate-400 mt-1 flex items-center gap-1">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                                    <span>Akun 1.5.2 Kemitraan</span>
                                 </div>
                             </td>
 
@@ -428,7 +485,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="py-12 text-center text-slate-400">
+                            <td colspan="8" class="py-12 text-center text-slate-400">
                                 <div class="text-3xl mb-2">🏛️</div>
                                 <p class="text-sm font-bold text-white">Belum Ada Aset BMD RSUD yang Dimanfaatkan</p>
                                 <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
@@ -481,7 +538,8 @@
                     <tr>
                         <th class="py-3.5 px-4 w-12 text-center bg-slate-950 whitespace-nowrap">No</th>
                         <th class="py-3.5 px-4 min-w-[200px] bg-slate-950">Dokumen PKS &amp; Rekanan</th>
-                        <th class="py-3.5 px-4 min-w-[240px] bg-slate-950">Identitas Barang &amp; Spesifikasi (Akun 108)</th>
+                        <th class="py-3.5 px-4 min-w-[240px] bg-slate-950">Nama &amp; Spesifikasi Barang</th>
+                        <th class="py-3.5 px-4 min-w-[220px] bg-slate-950">Identitas 108 Aset Kemitraan</th>
                         <th class="py-3.5 px-4 min-w-[135px] text-center bg-slate-950 whitespace-nowrap">Kondisi</th>
                         <th class="py-3.5 px-4 min-w-[140px] text-right bg-slate-950 whitespace-nowrap">Taksiran Nilai (Rp)</th>
                         <th class="py-3.5 px-4 min-w-[180px] bg-slate-950">Masa Konsesi Operasional</th>
@@ -538,16 +596,38 @@
                                 </div>
                             </td>
 
-                            <!-- 3. Identitas Barang KSO & Spesifikasi -->
+                            <!-- 3. Nama & Spesifikasi Barang -->
                             <td class="py-4 px-4">
                                 <div class="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors leading-snug">
                                     {{ $astap?->nama_barang ?: 'Barang KSO Rekanan' }}
                                 </div>
-                                <div class="text-[11px] font-mono text-emerald-400 mt-0.5">
-                                    {{ $astap?->kode_108 ?: ($astap?->jenisAstap?->sub_sub_rincian_objek ?: '1.5.2.01.01.002') }}
+                                <div class="flex items-center flex-wrap gap-2 mt-1 text-[10px] text-slate-400">
+                                    <span class="inline-flex items-center gap-1 font-medium bg-slate-800/80 px-1.5 py-0.5 rounded text-slate-300">
+                                        <span>📦</span>
+                                        <span>Vol: <strong class="text-white font-mono">{{ $row->jumlah_volume }} {{ $row->satuan }}</strong></span>
+                                    </span>
+                                    @if($merk || $type)
+                                        <span class="inline-flex items-center gap-1 bg-slate-800/80 px-1.5 py-0.5 rounded text-emerald-300 truncate max-w-[200px]" title="{{ trim(($merk ?? '') . ' ' . ($type ?? '')) }}">
+                                            <span>🏷️</span>
+                                            <span>{{ trim(($merk ?? '') . ' ' . ($type ?? '')) }}</span>
+                                        </span>
+                                    @endif
                                 </div>
-                                <div class="flex items-center gap-2 mt-1 text-[10px] text-slate-400">
-                                    <span>Vol: <strong class="text-slate-200">{{ $row->jumlah_volume }} {{ $row->satuan }}</strong></span>
+                            </td>
+
+                            <!-- 4. Identitas 108 Aset Kemitraan -->
+                            <td class="py-4 px-4">
+                                <div class="text-xs font-bold text-emerald-300 leading-snug">
+                                    {{ $astap?->jenisAstap?->uraian_sub_sub_rincian ?: ($astap?->jenisAstap?->uraian_sub_rincian ?: 'Aset Kemitraan Pihak Ketiga') }}
+                                </div>
+                                <div class="mt-1 flex items-center gap-1.5 flex-wrap">
+                                    <span class="font-mono text-[11px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-500/40 px-2 py-0.5 rounded-lg shadow-sm">
+                                        {{ $astap?->kode_108 ?: ($astap?->jenisAstap?->sub_sub_rincian_objek ?: '1.5.2.02.01.001') }}
+                                    </span>
+                                </div>
+                                <div class="text-[9.5px] text-slate-400 mt-1 flex items-center gap-1">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                    <span>Akun 1.5.2 Kemitraan</span>
                                 </div>
                             </td>
 
@@ -695,7 +775,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="py-12 text-center text-slate-400">
+                            <td colspan="8" class="py-12 text-center text-slate-400">
                                 <div class="text-3xl mb-2">📦</div>
                                 <p class="text-sm font-bold text-white">Belum Ada Aset yang Ditambahkan oleh Mitra</p>
                                 <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
@@ -741,7 +821,8 @@
                         <th class="py-3.5 px-4 w-12 text-center bg-slate-950 whitespace-nowrap">No</th>
                         <th class="py-3.5 px-4 min-w-[130px] bg-slate-950">Kategori Kemitraan</th>
                         <th class="py-3.5 px-4 min-w-[190px] bg-slate-950">Dokumen PKS &amp; Rekanan</th>
-                        <th class="py-3.5 px-4 min-w-[210px] bg-slate-950">Identitas Barang (Akun 108)</th>
+                        <th class="py-3.5 px-4 min-w-[220px] bg-slate-950">Nama &amp; Spesifikasi Barang</th>
+                        <th class="py-3.5 px-4 min-w-[210px] bg-slate-950">Identitas 108 Kemitraan</th>
                         <th class="py-3.5 px-4 min-w-[125px] text-center bg-slate-950 whitespace-nowrap">Kondisi</th>
                         <th class="py-3.5 px-4 min-w-[130px] text-right bg-slate-950 whitespace-nowrap">Total Nilai (Rp)</th>
                         <th class="py-3.5 px-4 min-w-[170px] bg-slate-950">Masa Konsesi</th>
@@ -797,16 +878,40 @@
                                 </div>
                             </td>
 
-                            <!-- 4. Identitas Barang (Akun 108) -->
+                            <!-- 4. Nama & Spesifikasi Barang -->
                             <td class="py-4 px-4">
+                                @php
+                                    $t3Reklas = $astap?->reklas?->sortByDesc('id')->first();
+                                    $t3NamaFisik = null;
+                                    if (!empty($astap->nama_barang) && !str_starts_with(strtolower($astap->nama_barang), 'kerja sama pemanfaatan') && !str_starts_with(strtolower($astap->nama_barang), 'bangun guna serah')) {
+                                        $t3NamaFisik = $astap->nama_barang;
+                                    } elseif ($t3Reklas && !empty($t3Reklas->asal_nama)) {
+                                        $t3NamaFisik = $t3Reklas->asal_nama;
+                                    } else {
+                                        $t3NamaFisik = $astap?->nama_barang ?: 'Barang Aset Kemitraan';
+                                    }
+                                @endphp
                                 <div class="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors leading-snug">
-                                    {{ $astap?->nama_barang ?: 'Barang Aset Kemitraan' }}
+                                    {{ $t3NamaFisik }}
                                 </div>
-                                <div class="text-[11px] font-mono text-cyan-400 mt-0.5">
-                                    {{ $astap?->kode_108 ?: ($astap?->jenisAstap?->sub_sub_rincian_objek ?: '1.5.2.x') }}
-                                </div>
-                                <div class="flex items-center gap-2 mt-0.5 text-[10px] text-slate-400">
+                                <div class="flex items-center gap-2 mt-1 text-[10px] text-slate-400">
                                     <span>Vol: <strong class="text-slate-200">{{ $row->jumlah_volume }} {{ $row->satuan }}</strong></span>
+                                </div>
+                            </td>
+
+                            <!-- 5. Identitas 108 Kemitraan -->
+                            <td class="py-4 px-4">
+                                <div class="text-xs font-bold text-cyan-300 leading-snug">
+                                    {{ $t3Reklas?->tujuan_nama ?: ($astap?->jenisAstap?->uraian_sub_sub_rincian ?: ($astap?->jenisAstap?->uraian_sub_rincian ?: ($astap?->jenisAstap?->nama_jenis ?: 'Aset Kemitraan (1.5.2)'))) }}
+                                </div>
+                                <div class="mt-1 flex items-center gap-1.5 flex-wrap">
+                                    <span class="font-mono text-[11px] font-bold text-cyan-400 bg-cyan-950/60 border border-cyan-500/40 px-2 py-0.5 rounded-lg shadow-sm">
+                                        {{ $t3Reklas?->tujuan_kode ?: ($astap?->kode_108 ?: ($astap?->jenisAstap?->sub_sub_rincian_objek ?: '1.5.2.x')) }}
+                                    </span>
+                                </div>
+                                <div class="text-[9.5px] text-slate-400 mt-1 flex items-center gap-1">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                                    <span>Akun 1.5.2 Kemitraan</span>
                                 </div>
                             </td>
 
@@ -922,7 +1027,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="py-12 text-center text-slate-400">
+                            <td colspan="9" class="py-12 text-center text-slate-400">
                                 <p class="text-sm font-bold text-white">Belum Ada Aset Kemitraan Tercatat</p>
                             </td>
                         </tr>

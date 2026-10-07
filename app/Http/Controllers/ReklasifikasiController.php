@@ -693,7 +693,10 @@ class ReklasifikasiController extends Controller
                         $tujuanNamaAset = $targetNama ?: ($matchingJenis->uraian_sub_sub_rincian ?: ($matchingJenis->uraian_sub_rincian ?: $matchingJenis->nama_jenis));
                     }
                     if ($targetNama && !empty($matchingJenis?->sub_sub_rincian_objek)) {
-                        $astap->nama_barang = $targetNama;
+                        // Untuk Kemitraan (Akun 1.5.2), pertahankan nama fisik aset (jangan ditimpa nama rekening generic 108)
+                        if ($targetKib !== 'KEMITRAAN') {
+                            $astap->nama_barang = $targetNama;
+                        }
                     }
                 } elseif ($targetKib) {
                     $kibPrefixMap = [
