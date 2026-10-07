@@ -44,7 +44,7 @@
                     'objek_register_id'   => $rReg?->id,
                     'objekRegister'       => $rReg,
                     'objek_nibar'         => $rReg?->nibar ?: null,
-                    'mitra_nama'          => 'Menunggu Input PKS Mitra',
+                    'mitra_nama'          => '-',
                     'nomor_pks'           => 'Belum Ada PKS',
                     'tanggal_pks'         => $reklasItem->tanggal_reklas,
                     'skema_kemitraan'     => 'Reklasifikasi',
@@ -224,9 +224,6 @@
                                         <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                                             Reklasifikasi
                                         </span>
-                                        <span class="text-xs font-bold text-amber-300">
-                                            Menunggu Input PKS
-                                        </span>
                                     </div>
                                     <div class="text-[11px] font-mono text-slate-400">
                                         Akun 1.5.2 Kemitraan
@@ -262,9 +259,7 @@
                                 </div>
                                 <div class="flex items-center flex-wrap gap-2 mt-1 text-[10px] text-slate-400">
                                     <span>Vol: <strong class="text-slate-200">{{ $row->jumlah_volume ?? ($astap?->jumlah_volume ?? 1) }} {{ $row->satuan ?? ($astap?->satuan ?? 'Bidang') }}</strong></span>
-                                    @if($nibarObjek)
-                                        <span class="px-1.5 py-0.5 rounded font-mono font-bold bg-cyan-950/60 text-cyan-300 border border-cyan-500/30">NIBAR: {{ $nibarObjek }}</span>
-                                    @endif
+
                                     @if($luasObjek)
                                         <span>· 📐 {{ $luasObjek }} m²</span>
                                     @endif

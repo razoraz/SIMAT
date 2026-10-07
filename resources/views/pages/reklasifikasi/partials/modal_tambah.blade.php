@@ -194,7 +194,7 @@
                     <div class="flex items-center justify-between">
                         <label class="block text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
                             <span>⚖️</span>
-                            <span>Sub-Kategori Koreksi Nilai (RMB PMDN 108):</span>
+                            <span>Sub-Kategori Koreksi Nilai:</span>
                             <span class="text-rose-400">*</span>
                         </label>
                         <span class="text-[9.5px] font-mono text-cyan-300">Format Lembar Kerja BPKAD</span>

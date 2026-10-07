@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id" class="h-full">
+<html lang="id" class="h-full dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -27,8 +27,39 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
+        :root {
+            color-scheme: dark;
+        }
+
         [x-cloak] { display: none !important; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        /* Styling Ikon Kalender Native (Date/Time Picker) Berwarna Putih Terang di Seluruh Aplikasi */
+        input[type="date"],
+        input[type="time"],
+        input[type="datetime-local"],
+        input[type="month"] {
+            color-scheme: dark !important;
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator,
+        input[type="time"]::-webkit-calendar-picker-indicator,
+        input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+        input[type="month"]::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            opacity: 0.9;
+            filter: brightness(1.2);
+            transition: opacity 0.15s ease, transform 0.15s ease, filter 0.15s ease;
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator:hover,
+        input[type="time"]::-webkit-calendar-picker-indicator:hover,
+        input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover,
+        input[type="month"]::-webkit-calendar-picker-indicator:hover {
+            opacity: 1;
+            filter: brightness(1.5);
+            transform: scale(1.08);
+        }
 
         /* Override Browser Autofill Style (Chrome/Edge/Safari Dark Theme) */
         input:-webkit-autofill,

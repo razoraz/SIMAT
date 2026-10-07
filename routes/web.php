@@ -689,41 +689,7 @@ Route::middleware('auth')->group(function () {
         return view('pages.astap.index', compact('astaps', 'deletedAstaps', 'dbMaster108', 'dbMitraKemitraans'));
     })->name('astap.index')->middleware('module:astap');
 
-    // API: Ambil riwayat mutasi spesifik unit register NIBAR
-    Route::get('/astap/register-mutasi/{id}', function ($id) {
-        $reg = \App\Models\AstapRegister::with(['mutasis' => function($q) {
-            $q->where('status', 'Disetujui Admin (Selesai)')->orderBy('tanggal_mutasi', 'desc')->orderBy('id', 'desc');
-        }])->find($id);
 
-        if (!$reg) {
-            return response()->json(['success' => false, 'mutasis' => []]);
-        }
-
-        $mutasis = $reg->mutasis->map(function($m) use ($reg) {
-            return [
-                'id'                      => $m->id,
-                'nomor_bamb'              => $m->nomor_bamb,
-                'tanggal_mutasi'          => $m->tanggal_mutasi ? $m->tanggal_mutasi->format('d M Y') : '-',
-                'tanggal_mutasi_raw'      => $m->tanggal_mutasi ? $m->tanggal_mutasi->format('Y-m-d') : '',
-                'ruangan_asal'            => $m->ruangan_asal,
-                'ruangan_tujuan'          => $m->ruangan_tujuan,
-                'jenis_mutasi'            => $m->jenis_mutasi ?? 'Mutasi',
-                'kondisi'                 => $m->pivot?->kondisi ?: ($reg->kondisi ?: 'Baik'),
-                'alasan_mutasi'           => $m->alasan_mutasi ?: '-',
-                'status'                  => $m->status,
-                'penanggung_jawab_asal'   => $m->penanggung_jawab_asal ?: '-',
-                'penanggung_jawab_tujuan' => $m->penanggung_jawab_tujuan ?: '-',
-                'catatan_penerima'        => $m->catatan_penerima,
-            ];
-        });
-
-        return response()->json([
-            'success' => true,
-            'kondisi' => $reg->kondisi,
-            'ruang'   => $reg->ruang_pemegang,
-            'mutasis' => $mutasis
-        ]);
-    });
 
     // 2. Distribusi Pages & Forms
     Route::middleware('module:distribusi')->group(function () {
@@ -750,15 +716,24 @@ Route::middleware('auth')->group(function () {
     // API: Ambil kondisi terkini satu astap_register dari DB (untuk refresh realtime)
     Route::get('/distribusi/register-kondisi/{id}', [DistribusiController::class, 'showRegisterKondisi'])->name('distribusi.register_kondisi.show');
 
-    // API: Ambil riwayat mutasi satu register NIBAR lengkap (tanggal, kondisi saat itu, alasan)
+    // API: Ambil riwayat komprehensif satu unit register NIBAR (Mutasi Internal, Mutasi Eksternal, Reklasifikasi)
     Route::get('/astap/register-mutasi/{id}', function ($id) {
-        $reg = \App\Models\AstapRegister::with(['mutasis' => function($q) {
-            $q->where('status', 'Disetujui Admin (Selesai)')->orderBy('tanggal_mutasi', 'desc')->orderBy('id', 'desc');
-        }])->find($id);
+        $reg = \App\Models\AstapRegister::with([
+            'astap.jenisAstap',
+            'astap.pelimpahanSkpd',
+            'mutasis' => function($q) {
+                $q->where('status', 'Disetujui Admin (Selesai)')
+                  ->orderBy('tanggal_mutasi', 'desc')
+                  ->orderBy('id', 'desc');
+            }
+        ])->find($id);
+
         if (!$reg) {
             return response()->json(['success' => false, 'message' => 'Register tidak ditemukan.'], 404);
         }
-        $mutasis = $reg->mutasis->map(function($m) {
+
+        // 1. Mutasi Internal (Ruangan RSUD Koesnandi)
+        $mutasisInternal = $reg->mutasis->map(function($m) use ($reg) {
             return [
                 'id'                      => $m->id,
                 'nomor_bamb'              => $m->nomor_bamb,
@@ -767,20 +742,113 @@ Route::middleware('auth')->group(function () {
                 'ruangan_asal'            => $m->ruangan_asal,
                 'ruangan_tujuan'          => $m->ruangan_tujuan,
                 'jenis_mutasi'            => $m->jenis_mutasi ?? 'Mutasi',
-                'kondisi'                 => $m->pivot?->kondisi ?: ($m->register?->kondisi ?: ($reg->kondisi ?: 'Baik')),
+                'kondisi'                 => $m->pivot?->kondisi ?: ($reg->kondisi ?: 'Baik'),
                 'alasan_mutasi'           => $m->alasan_mutasi ?: '-',
                 'status'                  => $m->status,
                 'penanggung_jawab_asal'   => $m->penanggung_jawab_asal ?: '-',
                 'penanggung_jawab_tujuan' => $m->penanggung_jawab_tujuan ?: '-',
                 'catatan_penerima'        => $m->catatan_penerima,
+                'tipe_histori'            => 'internal',
             ];
         })->values();
+
+        // 2. Mutasi Eksternal (Pelimpahan Antar-OPD Pemkab Bondowoso)
+        $rawEksternal = \App\Models\MutasiEksternal::where('astap_id', $reg->astap_id)
+            ->where('is_deleted', 0)
+            ->orderBy('tanggal_mutasi', 'desc')
+            ->get();
+
+        $mutasisEksternal = $rawEksternal->map(function($me) use ($reg) {
+            return [
+                'id'                 => $me->id,
+                'nomor_bast'         => $me->nomor_bast ?: 'BAST-EKSTERNAL',
+                'tanggal_mutasi'     => $me->tanggal_mutasi ? $me->tanggal_mutasi->format('d M Y') : '-',
+                'tanggal_mutasi_raw' => $me->tanggal_mutasi ? $me->tanggal_mutasi->format('Y-m-d') : '',
+                'tipe'               => $me->tipe ?: 'keluar',
+                'opd_asal'           => $me->opd_asal ?: 'RSUD Dr. H. Koesnandi',
+                'opd_tujuan'         => $me->opd_tujuan ?: 'SKPD Pemkab Bondowoso',
+                'nilai_perolehan'    => 'Rp ' . number_format((float) ($me->nilai_perolehan ?: ($reg->astap?->total_realisasi ?? 0)), 0, ',', '.'),
+                'alasan_mutasi'      => $me->alasan_mutasi ?: ($me->keterangan ?: 'Pelimpahan aset antar perangkat daerah (SKPD)'),
+                'status'             => $me->status ?: ($me->signed ? 'Telah Ditandatangani Elektronik (BSrE)' : 'Selesai Dilimpahkan'),
+                'pj_asal_nama'       => $me->pj_asal_nama ?: '-',
+                'pj_tujuan_nama'     => $me->pj_tujuan_nama ?: '-',
+                'dokumen_lampiran'   => $me->dokumen_lampiran ? asset('storage/' . $me->dokumen_lampiran) : null,
+                'tipe_histori'       => 'eksternal',
+            ];
+        })->values();
+
+        // Fallback jika ada data pelimpahan di tabel ekstensi tapi belum tercatat di MutasiEksternal
+        if ($mutasisEksternal->isEmpty() && $reg->astap && $reg->astap->isPelimpahanSkpd() && $reg->astap->pelimpahanSkpd) {
+            $ps = $reg->astap->pelimpahanSkpd;
+            $mutasisEksternal->push([
+                'id'                 => 0,
+                'nomor_bast'         => $ps->nomor_bamb ?: 'BAMB-PELIMPAHAN',
+                'tanggal_mutasi'     => $ps->tanggal_bamb ? \Carbon\Carbon::parse($ps->tanggal_bamb)->format('d M Y') : '-',
+                'tanggal_mutasi_raw' => $ps->tanggal_bamb ? \Carbon\Carbon::parse($ps->tanggal_bamb)->format('Y-m-d') : '',
+                'tipe'               => 'masuk',
+                'opd_asal'           => $ps->skpd_asal ?: 'SKPD Pemberi Pelimpahan',
+                'opd_tujuan'         => 'RSUD Dr. H. Koesnandi',
+                'nilai_perolehan'    => 'Rp ' . number_format((float) ($reg->astap->total_realisasi ?? 0), 0, ',', '.'),
+                'alasan_mutasi'      => $ps->keterangan ?: 'Pelimpahan aset masuk dari SKPD Pemkab Bondowoso',
+                'status'             => 'Tercatat di SIMAT',
+                'pj_asal_nama'       => '-',
+                'pj_tujuan_nama'     => 'Pengurus Barang RSUD',
+                'dokumen_lampiran'   => null,
+                'tipe_histori'       => 'eksternal',
+            ]);
+        }
+
+        // 3. Reklasifikasi Aset (Perubahan KIB, Akun 1.5.2 Kemitraan, Koreksi Nilai BPK/Manset)
+        $rawReklas = \App\Models\AstapReklas::with('user')
+            ->where('astap_id', $reg->astap_id)
+            ->orderBy('tanggal_reklas', 'desc')
+            ->orderBy('id', 'desc')
+            ->get();
+
+        $reklasifikasis = $rawReklas->map(function($rk) {
+            return [
+                'id'                => $rk->id,
+                'nomor_ba'          => $rk->nomor_ba_reklas ?: 'BA-REKLAS',
+                'tanggal_reklas'    => $rk->tanggal_reklas ? $rk->tanggal_reklas->format('d M Y') : '-',
+                'tanggal_reklas_raw'=> $rk->tanggal_reklas ? $rk->tanggal_reklas->format('Y-m-d') : '',
+                'jenis_reklas'      => $rk->jenis_reklas ?: 'REKLAS_KIB',
+                'sub_koreksi_label' => $rk->sub_koreksi_label ?: ($rk->jenis_reklas === 'KOREKSI_LAIN' ? 'Koreksi Nilai' : ($rk->jenis_reklas === 'KEMITRAAN' ? 'Reklas Kemitraan (1.5.2)' : 'Reklasifikasi Aset')),
+                'tipe_koreksi'      => $rk->tipe_koreksi ?: 'tambah',
+                'nilai_reklas'      => 'Rp ' . number_format((float)$rk->nilai_reklas, 0, ',', '.'),
+                'asal_kib'          => $rk->asal_kib ?: '-',
+                'tujuan_kib'        => $rk->tujuan_kib ?: '-',
+                'asal_kode'         => $rk->asal_kode ?: '-',
+                'tujuan_kode'       => $rk->tujuan_kode ?: '-',
+                'alasan_reklas'     => $rk->alasan_reklas ?: ($rk->keterangan ?: '-'),
+                'user_nama'         => $rk->user?->name ?: 'Administrator',
+                'tipe_histori'      => 'reklas',
+            ];
+        })->values();
+
+        // 4. Gabungan Timeline Terpadu (Diurutkan dari yang paling baru)
+        $timeline = collect([])
+            ->concat($mutasisInternal->map(fn($item) => array_merge($item, ['sort_date' => $item['tanggal_mutasi_raw'] ?: '1970-01-01', 'kategori' => 'Internal'])))
+            ->concat($mutasisEksternal->map(fn($item) => array_merge($item, ['sort_date' => $item['tanggal_mutasi_raw'] ?: '1970-01-01', 'kategori' => 'Eksternal'])))
+            ->concat($reklasifikasis->map(fn($item) => array_merge($item, ['sort_date' => $item['tanggal_reklas_raw'] ?: '1970-01-01', 'kategori' => 'Reklasifikasi'])))
+            ->sortByDesc('sort_date')
+            ->values();
+
         return response()->json([
-            'success' => true,
-            'nibar'   => $reg->nibar ?: $reg->no_register,
-            'kondisi' => $reg->kondisi,
-            'ruang'   => $reg->ruang_pemegang,
-            'mutasis' => $mutasis,
+            'success'            => true,
+            'nibar'              => $reg->nibar ?: $reg->no_register,
+            'kondisi'            => $reg->kondisi,
+            'ruang'              => $reg->ruang_pemegang,
+            'mutasis'            => $mutasisInternal, // backward-compatibility
+            'mutasis_internal'   => $mutasisInternal,
+            'mutasis_eksternal'  => $mutasisEksternal,
+            'reklasifikasis'     => $reklasifikasis,
+            'timeline'           => $timeline,
+            'counts'             => [
+                'internal'   => $mutasisInternal->count(),
+                'eksternal'  => $mutasisEksternal->count(),
+                'reklas'     => $reklasifikasis->count(),
+                'total'      => $timeline->count(),
+            ]
         ]);
     })->name('astap.register_mutasi');
 

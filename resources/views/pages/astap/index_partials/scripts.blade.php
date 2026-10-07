@@ -12009,16 +12009,28 @@
                     });
                 },
 
-                // Modal Cek Riwayat Mutasi State
+                // Modal Cek Riwayat Mutasi State (Internal, Eksternal & Reklasifikasi)
                 showRiwayatModal: false,
+                riwayatActiveTab: 'semua',
                 selectedRiwayatRegister: null,
                 selectedRiwayatMutasis: [],
+                selectedRiwayatMutasisInternal: [],
+                selectedRiwayatMutasisEksternal: [],
+                selectedRiwayatReklas: [],
+                selectedRiwayatTimeline: [],
+                selectedRiwayatCounts: { internal: 0, eksternal: 0, reklas: 0, total: 0 },
                 isLoadingRiwayat: false,
 
                 async openRiwayatModal(reg) {
                     if (!reg) return;
+                    this.riwayatActiveTab = 'semua';
                     this.selectedRiwayatRegister = reg;
                     this.selectedRiwayatMutasis = Array.isArray(reg.mutasis) ? reg.mutasis : [];
+                    this.selectedRiwayatMutasisInternal = Array.isArray(reg.mutasis) ? reg.mutasis : [];
+                    this.selectedRiwayatMutasisEksternal = [];
+                    this.selectedRiwayatReklas = [];
+                    this.selectedRiwayatTimeline = [];
+                    this.selectedRiwayatCounts = { internal: this.selectedRiwayatMutasisInternal.length, eksternal: 0, reklas: 0, total: this.selectedRiwayatMutasisInternal.length };
                     this.showRiwayatModal = true;
 
                     // Fetch data terbaru dari backend
@@ -12027,9 +12039,19 @@
                         const res = await fetch(`/astap/register-mutasi/${reg.id}`);
                         if (res.ok) {
                             const data = await res.json();
-                            if (data.success && Array.isArray(data.mutasis)) {
-                                this.selectedRiwayatMutasis = data.mutasis;
-                                reg.mutasis = data.mutasis;
+                            if (data.success) {
+                                this.selectedRiwayatMutasis = data.mutasis || [];
+                                this.selectedRiwayatMutasisInternal = data.mutasis_internal || data.mutasis || [];
+                                this.selectedRiwayatMutasisEksternal = data.mutasis_eksternal || [];
+                                this.selectedRiwayatReklas = data.reklasifikasis || [];
+                                this.selectedRiwayatTimeline = data.timeline || [];
+                                this.selectedRiwayatCounts = data.counts || {
+                                    internal: this.selectedRiwayatMutasisInternal.length,
+                                    eksternal: this.selectedRiwayatMutasisEksternal.length,
+                                    reklas: this.selectedRiwayatReklas.length,
+                                    total: (data.timeline || []).length
+                                };
+                                reg.mutasis = this.selectedRiwayatMutasisInternal;
                                 if (data.kondisi) reg.kondisi = data.kondisi;
                                 if (data.ruang) reg.ruang_pemegang = data.ruang;
                             }

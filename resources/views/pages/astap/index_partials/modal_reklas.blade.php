@@ -1081,7 +1081,7 @@
                                 <div class="flex items-center justify-between">
                                     <label class="block text-cyan-300 font-extrabold text-[11px] uppercase tracking-wider flex items-center gap-1.5">
                                         <span>⚖️</span>
-                                        <span>Sub-Kategori Koreksi Nilai (RMB PMDN 108):</span>
+                                        <span>Sub-Kategori Koreksi Nilai:</span>
                                         <span class="text-rose-400">*</span>
                                     </label>
                                     <span class="text-[9.5px] font-mono font-bold text-slate-400">Pilih klasifikasi audit / rekon</span>
@@ -1109,12 +1109,6 @@
                                         <div class="text-[9.5px] text-slate-400 leading-tight">
                                             Internal kas RSUD, pembulatan SP2D, koreksi salah catat belanja.
                                         </div>
-                                        <div class="mt-2 pt-1.5 border-t border-slate-800/80 flex items-center justify-between text-[9px] font-mono">
-                                            <span class="text-slate-500">RMB:</span>
-                                            <span class="font-bold" :class="reklasSubKoreksi === 'biasa' ? 'text-indigo-300' : 'text-slate-400'">
-                                                Kolom 15 (−) / 5 (+)
-                                            </span>
-                                        </div>
                                     </label>
 
                                     <!-- B. Koreksi LKD (BPK RI) -->
@@ -1138,12 +1132,6 @@
                                         <div class="text-[9.5px] text-slate-400 leading-tight">
                                             Temuan audit BPK RI, rekomendasi LHP LKPD, kelebihan bayar/TGR.
                                         </div>
-                                        <div class="mt-2 pt-1.5 border-t border-slate-800/80 flex items-center justify-between text-[9px] font-mono">
-                                            <span class="text-slate-500">RMB:</span>
-                                            <span class="font-bold" :class="reklasSubKoreksi === 'lkd' ? 'text-cyan-300' : 'text-slate-400'">
-                                                Kolom 16 (−) / 6 (+)
-                                            </span>
-                                        </div>
                                     </label>
 
                                     <!-- C. Koreksi Manset (BPKAD) -->
@@ -1166,12 +1154,6 @@
                                         </div>
                                         <div class="text-[9.5px] text-slate-400 leading-tight">
                                             Penyelarasan SIMDA BMD / E-Manset BPKAD Kab. Bondowoso.
-                                        </div>
-                                        <div class="mt-2 pt-1.5 border-t border-slate-800/80 flex items-center justify-between text-[9px] font-mono">
-                                            <span class="text-slate-500">RMB:</span>
-                                            <span class="font-bold" :class="reklasSubKoreksi === 'manset' ? 'text-emerald-300' : 'text-slate-400'">
-                                                Kolom 17 (−) / 7 (+)
-                                            </span>
                                         </div>
                                     </label>
                                 </div>
@@ -1240,9 +1222,6 @@
                                                 <span>🔒</span>
                                                 <span>Nilai Anggaran (DPA/RBA):</span>
                                             </label>
-                                            <span class="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-slate-900 border border-slate-700 text-slate-400">
-                                                Terkunci (Pagu Awal)
-                                            </span>
                                         </div>
                                         <div class="relative">
                                             <span class="absolute left-3 top-2 text-slate-500 text-xs font-mono font-bold">Rp</span>
@@ -1277,7 +1256,82 @@
                                 </div>
                             </div>
 
-                            <!-- 2. Ringkasan Perbandingan & Dampak Selisih Koreksi -->
+                            <!-- 2. Rincian Barang & Nilai Kapitalisasi (Barang 1, Barang 2, dst) -->
+                            <div class="space-y-3 pt-2">
+                                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 pb-2 border-b border-slate-800/80">
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <span class="text-xs font-black text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
+                                            <span>📦</span>
+                                            <span>Rincian Nilai Kapitalisasi Barang:</span>
+                                        </span>
+                                        <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-mono font-extrabold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 shadow-xs"
+                                              x-text="reklasExtracomItems.length + ' Item Terdaftar'"></span>
+                                    </div>
+                                    <span class="text-[10.5px] text-slate-400 font-medium">Ubah nilai per unit barang temuan</span>
+                                </div>
+
+                                <!-- Cards Container Barang 1 & 2 -->
+                                <div class="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
+                                    <template x-for="(item, idx) in reklasExtracomItems" :key="idx">
+                                        <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800/90 hover:border-cyan-500/40 transition-all space-y-3 shadow-lg group backdrop-blur-sm">
+                                            <!-- Baris Atas Item: Badge Nomor & Nama Barang & Volume -->
+                                            <div class="flex items-center justify-between gap-2.5">
+                                                <div class="flex items-center gap-2 min-w-0 flex-1">
+                                                    <span class="px-2.5 py-1 rounded-lg text-[10.5px] font-mono font-black bg-cyan-500/15 text-cyan-300 border border-cyan-500/35 shrink-0 shadow-xs"
+                                                          x-text="'Barang #' + (idx + 1)"></span>
+                                                    <span class="text-xs sm:text-sm font-extrabold text-white truncate" 
+                                                          :title="item.nama_barang || ('Barang #' + (idx + 1))"
+                                                          x-text="item.nama_barang || ('Barang #' + (idx + 1))"></span>
+                                                </div>
+                                                <div class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 text-[11px] font-mono font-semibold shrink-0 shadow-inner flex items-center gap-1.5">
+                                                    <span class="text-slate-500 text-[10px]">Qty:</span>
+                                                    <span class="text-cyan-300 font-bold" x-text="item.jumlah_volume || 1"></span>
+                                                    <span class="text-slate-400 text-[10px]" x-text="item.satuan || 'Unit'"></span>
+                                                </div>
+                                            </div>
+
+                                            <!-- Grid Input: Nilai Kapitalisasi Satuan & Subtotal (Symmetric & Responsive) -->
+                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start pt-3 border-t border-slate-800/80">
+                                                <!-- Nilai Satuan -->
+                                                <div class="space-y-1.5">
+                                                    <label class="flex items-center gap-1.5 text-slate-400 font-bold text-[10px] uppercase tracking-wider h-4">
+                                                        <span>🏷️</span>
+                                                        <span>Nilai Satuan (Rp):</span>
+                                                    </label>
+                                                    <div class="relative flex items-center h-10 rounded-xl bg-slate-900/90 border border-cyan-500/40 focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-500/20 shadow-inner transition-all overflow-hidden">
+                                                        <span class="h-full px-3 flex items-center justify-center bg-slate-950/80 border-r border-slate-800 text-cyan-400 font-mono font-bold text-xs select-none">
+                                                            Rp
+                                                        </span>
+                                                        <input type="text"
+                                                               inputmode="numeric"
+                                                               :value="formatRupiahInput(item.harga_satuan)"
+                                                               @input="updateItemHargaSatuan(item, $event.target.value)"
+                                                               @focus="$event.target.select()"
+                                                               placeholder="0"
+                                                               class="w-full h-full bg-transparent px-3 text-xs sm:text-sm font-mono font-extrabold text-cyan-200 focus:outline-none text-right placeholder-slate-600">
+                                                    </div>
+                                                </div>
+
+                                                <!-- Subtotal -->
+                                                <div class="space-y-1.5">
+                                                    <div class="flex items-center justify-between text-slate-400 font-bold text-[10px] uppercase tracking-wider h-4">
+                                                        <span>Subtotal Barang:</span>
+                                                        <span class="text-[9.5px] font-mono text-slate-500 font-normal lowercase" x-text="'(' + (item.jumlah_volume || 1) + ' ' + (item.satuan || 'unit') + ')'"></span>
+                                                    </div>
+                                                    <div class="flex items-center justify-between px-3.5 h-10 rounded-xl bg-emerald-950/30 border border-emerald-500/40 shadow-inner">
+                                                        <span class="text-[9.5px] font-mono font-bold text-emerald-400/80 uppercase tracking-wider">Subtotal</span>
+                                                        <div class="text-xs sm:text-sm font-mono font-black text-emerald-300"
+                                                             x-text="'Rp ' + Number((item.jumlah_volume || 1) * (parseFloat(item.harga_satuan) || 0)).toLocaleString('id-ID')">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <!-- 3. Ringkasan Perbandingan & Dampak Selisih Koreksi -->
                             <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800 flex flex-wrap items-center justify-between gap-2.5 text-[11px]">
                                 <div class="flex items-center space-x-2">
                                     <span class="text-slate-400">Realisasi Semula:</span>
@@ -1296,77 +1350,6 @@
                                     </template>
                                     <template x-if="reklasNominalKoreksi <= 0">
                                         <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">Tidak ada selisih nilai</span>
-                                    </template>
-                                </div>
-                            </div>
-
-                            <!-- 3. Rincian Barang & Nilai Kapitalisasi (Barang 1, Barang 2, dst) -->
-                            <div class="space-y-3 pt-2">
-                                <div class="flex items-center justify-between pb-1.5 border-b border-slate-800/80">
-                                    <div class="flex items-center space-x-2.5">
-                                        <span class="text-xs font-black text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
-                                            <span>📦</span>
-                                            <span>Rincian Nilai Kapitalisasi Barang:</span>
-                                        </span>
-                                        <span class="px-2.5 py-0.5 rounded-lg text-[10.5px] font-mono font-extrabold bg-gradient-to-r from-cyan-500/15 to-blue-500/15 text-cyan-300 border border-cyan-500/30 shadow-xs"
-                                              x-text="reklasExtracomItems.length + ' Item Terdaftar'"></span>
-                                    </div>
-                                    <span class="text-[11px] text-slate-400 font-medium">Ubah nilai per unit barang temuan</span>
-                                </div>
-
-                                <!-- Cards Container Barang 1 & 2 -->
-                                <div class="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
-                                    <template x-for="(item, idx) in reklasExtracomItems" :key="idx">
-                                        <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800/90 hover:border-cyan-500/40 transition-all space-y-3 shadow-lg group backdrop-blur-sm">
-                                            <!-- Baris Atas Item: Badge Nomor & Nama Barang & Volume -->
-                                            <div class="flex items-center justify-between gap-3">
-                                                <div class="flex items-center space-x-2.5 min-w-0">
-                                                    <span class="px-2.5 py-1 rounded-lg text-[11px] font-mono font-extrabold bg-cyan-500/15 text-cyan-300 border border-cyan-500/35 shrink-0 shadow-xs"
-                                                          x-text="'Barang #' + (idx + 1)"></span>
-                                                    <span class="text-xs sm:text-sm font-extrabold text-white truncate" 
-                                                          :title="item.nama_barang || ('Barang #' + (idx + 1))"
-                                                          x-text="item.nama_barang || ('Barang #' + (idx + 1))"></span>
-                                                </div>
-                                                <div class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 text-[11px] font-mono font-semibold shrink-0 shadow-inner flex items-center gap-1.5">
-                                                    <span class="text-slate-500 text-[10px]">Qty:</span>
-                                                    <span class="text-cyan-300 font-bold" x-text="item.jumlah_volume || 1"></span>
-                                                    <span class="text-slate-400 text-[10px]" x-text="item.satuan || 'Unit'"></span>
-                                                </div>
-                                            </div>
-
-                                            <!-- Grid Input: Nilai Kapitalisasi Satuan & Subtotal -->
-                                            <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center pt-2.5 border-t border-slate-800/80">
-                                                <div class="sm:col-span-7 space-y-1">
-                                                    <label class="block text-slate-400 font-bold text-[10px] uppercase tracking-wider flex items-center gap-1.5">
-                                                        <span>🏷️</span>
-                                                        <span>Nilai Kapitalisasi Satuan (Rp):</span>
-                                                    </label>
-                                                    <div class="relative flex items-center rounded-xl bg-slate-900/90 border border-cyan-500/40 focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-500/20 shadow-inner transition-all overflow-hidden">
-                                                        <span class="px-3 py-2 bg-slate-950/80 border-r border-slate-800 text-cyan-400 font-mono font-bold text-xs select-none">
-                                                            Rp
-                                                        </span>
-                                                        <input type="text"
-                                                               inputmode="numeric"
-                                                               :value="formatRupiahInput(item.harga_satuan)"
-                                                               @input="updateItemHargaSatuan(item, $event.target.value)"
-                                                               @focus="$event.target.select()"
-                                                               placeholder="0"
-                                                               class="w-full bg-transparent px-3.5 py-2 text-xs font-mono font-extrabold text-cyan-200 focus:outline-none text-right placeholder-slate-600">
-                                                    </div>
-                                                </div>
-                                                <div class="sm:col-span-5 space-y-1 sm:text-right">
-                                                    <label class="block text-slate-400 font-bold text-[10px] uppercase tracking-wider">
-                                                        Subtotal Barang:
-                                                    </label>
-                                                    <div class="p-2.5 rounded-xl bg-emerald-950/30 border border-emerald-500/30 flex flex-col items-end justify-center shadow-inner">
-                                                        <span class="text-[9.5px] font-extrabold text-emerald-400/80 uppercase tracking-wider hidden sm:block">Subtotal Item</span>
-                                                        <div class="text-xs sm:text-sm font-mono font-black text-emerald-400"
-                                                             x-text="'Rp ' + Number((item.jumlah_volume || 1) * (parseFloat(item.harga_satuan) || 0)).toLocaleString('id-ID')">
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
                                     </template>
                                 </div>
                             </div>

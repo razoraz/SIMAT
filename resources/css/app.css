@@ -69,3 +69,34 @@ input[type="number"] {
     -moz-appearance: textfield !important;
     appearance: textfield !important;
 }
+
+/* Global Native Date/Time Picker Dark Theme & White Indicator */
+:root {
+    color-scheme: dark;
+}
+
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+input[type="month"] {
+    color-scheme: dark !important;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+input[type="month"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.9;
+    filter: brightness(1.2);
+    transition: opacity 0.15s ease, transform 0.15s ease, filter 0.15s ease;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover,
+input[type="month"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+    filter: brightness(1.5);
+    transform: scale(1.08);
+}

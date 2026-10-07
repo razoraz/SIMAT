@@ -1,14 +1,16 @@
 <!-- ========================================================================= -->
 <!-- MODAL KONFIRMASI HAPUS / BATALKAN ASET KEMITRAAN (AKUN 1.5.2)             -->
 <!-- ========================================================================= -->
-<div x-show="showDeleteModal" x-cloak
-     class="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4"
-     x-transition:enter="transition ease-out duration-300"
-     x-transition:enter-start="opacity-0"
-     x-transition:enter-end="opacity-100"
-     x-transition:leave="transition ease-in duration-200"
-     x-transition:leave-start="opacity-100"
-     x-transition:leave-end="opacity-0">
+<template x-teleport="body">
+    <div x-show="showDeleteModal" x-cloak
+         class="fixed inset-0 overflow-y-auto flex items-center justify-center p-3 sm:p-4"
+         style="background-color: rgba(2, 6, 23, 0.88); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); z-index: 99999;"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
 
     <div @click.away="if (!isDeleting) showDeleteModal = false"
          class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4 text-center relative">
@@ -55,10 +57,20 @@
             </button>
         </div>
     </div>
-</div>
+    </div>
+</template>
 
 <!-- GLOBAL CUSTOM CONFIRMATION DIALOG MODAL (Sleek Dark Theme) -->
-<div x-show="showConfirmModal" x-cloak class="fixed inset-0 flex items-center justify-center p-4" style="background-color: rgba(2, 6, 23, 0.9); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 10000;">
+<template x-teleport="body">
+    <div x-show="showConfirmModal" x-cloak
+         class="fixed inset-0 flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+         style="background-color: rgba(2, 6, 23, 0.9); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); z-index: 99999;"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
     <div @click.away="showConfirmModal = false"
          x-show="showConfirmModal"
          x-transition:enter="transition ease-out duration-200 transform opacity-0 scale-95"
@@ -180,4 +192,4 @@
             </template>
         </div>
     </div>
-</div>
+</template>

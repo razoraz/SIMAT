@@ -1,19 +1,22 @@
 <!-- ========================================================================= -->
 <!-- MODAL DETAIL BELANJA BARANG & REGISTER NIBAR                               -->
 <!-- ========================================================================= -->
-<div x-show="detailModalOpen" x-cloak
-    class="fixed inset-0 z-50 overflow-y-auto"
-    aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    
-    <!-- Backdrop Blur Overlay -->
-    <div x-show="detailModalOpen"
-        x-transition:enter="ease-out duration-300"
-        x-transition:enter-start="opacity-0"
-        x-transition:enter-end="opacity-100"
-        x-transition:leave="ease-in duration-200"
-        x-transition:leave-start="opacity-100"
-        x-transition:leave-end="opacity-0"
-        class="fixed inset-0 bg-slate-950/80 backdrop-blur-md transition-opacity"></div>
+<template x-teleport="body">
+    <div x-show="detailModalOpen" x-cloak
+        class="fixed inset-0 overflow-y-auto"
+        style="z-index: 9000;"
+        aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        
+        <!-- Backdrop Blur Overlay Fullscreen -->
+        <div x-show="detailModalOpen"
+            x-transition:enter="ease-out duration-300"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="ease-in duration-200"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            class="fixed inset-0 transition-opacity"
+            style="background-color: rgba(2, 6, 23, 0.88); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);"></div>
 
     <div class="flex min-h-screen items-center justify-center p-4 text-center sm:p-0">
         <div x-show="detailModalOpen"
@@ -157,4 +160,4 @@
             </div>
         </div>
     </div>
-</div>
+</template>
