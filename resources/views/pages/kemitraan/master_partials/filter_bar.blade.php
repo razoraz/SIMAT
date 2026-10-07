@@ -80,10 +80,9 @@
                     class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
                     <option value="all" {{ ($filterStatus ?? 'all') === 'all' ? 'selected' : '' }}>-- Semua Status --</option>
                     <option value="Aktif" {{ ($filterStatus ?? '') === 'Aktif' ? 'selected' : '' }}>🟢 Aktif Berjalan</option>
-                    <option value="Akan Berakhir" {{ ($filterStatus ?? '') === 'Akan Berakhir' ? 'selected' : '' }}>🟡 Akan Berakhir</option>
-                    <option value="Konsesi Berakhir" {{ ($filterStatus ?? '') === 'Konsesi Berakhir' ? 'selected' : '' }}>🛑 Konsesi Berakhir</option>
-                    <option value="Selesai / Reklasifikasi" {{ ($filterStatus ?? '') === 'Selesai / Reklasifikasi' ? 'selected' : '' }}>🔵 Siap Reklasifikasi</option>
-                    <option value="Dihentikan" {{ ($filterStatus ?? '') === 'Dihentikan' ? 'selected' : '' }}>🔴 Dihentikan</option>
+                    <option value="Konsesi Berakhir" {{ ($filterStatus ?? '') === 'Konsesi Berakhir' ? 'selected' : '' }}>🟠 Konsesi Berakhir (Siap Reklas)</option>
+                    <option value="Selesai / Reklasifikasi" {{ ($filterStatus ?? '') === 'Selesai / Reklasifikasi' ? 'selected' : '' }}>🔵 Selesai Direklasifikasi</option>
+                    <option value="Dihentikan" {{ ($filterStatus ?? '') === 'Dihentikan' ? 'selected' : '' }}>🔴 Dihentikan / Dibatalkan</option>
                 </select>
             </div>
         </div>

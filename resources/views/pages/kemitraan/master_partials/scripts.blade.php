@@ -184,8 +184,7 @@
             // Status Update Form State
             statusForm: {
                 id: null,
-                status_konsesi: 'Aktif',
-                keterangan: ''
+                status_konsesi: 'Aktif'
             },
             isUpdatingStatus: false,
 
@@ -502,8 +501,7 @@
 
                 this.statusForm = {
                     id: kemitraan ? kemitraan.id : null,
-                    status_konsesi: kemitraan?.status_konsesi || 'Aktif',
-                    keterangan: ''
+                    status_konsesi: kemitraan?.status_konsesi || 'Aktif'
                 };
 
                 this.detailKondisiFilter = 'all';
@@ -1169,8 +1167,7 @@
                             'Accept': 'application/json'
                         },
                         body: JSON.stringify({
-                            status_konsesi: this.statusForm.status_konsesi,
-                            keterangan: this.statusForm.keterangan
+                            status_konsesi: this.statusForm.status_konsesi
                         })
                     });
 

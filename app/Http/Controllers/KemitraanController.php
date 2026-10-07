@@ -56,11 +56,21 @@ class KemitraanController extends Controller
 
         // Sinkronisasi status konsesi: Jika tanggal_selesai sudah lewat, ubah status 'Aktif' menjadi 'Konsesi Berakhir'
         $today = Carbon::today();
-        AstapKemitraan::where('is_deleted', 0)
+        $expiredKemitraans = AstapKemitraan::where('is_deleted', 0)
             ->where('status_konsesi', 'Aktif')
             ->whereNotNull('tanggal_selesai')
             ->where('tanggal_selesai', '<', $today)
-            ->update(['status_konsesi' => 'Konsesi Berakhir']);
+            ->get();
+
+        foreach ($expiredKemitraans as $exp) {
+            $exp->update(['status_konsesi' => 'Konsesi Berakhir']);
+            // Sinkronisasi dua arah: jika menautkan objek aset BMD RSUD yang memiliki kemitraan, sinkronkan juga
+            if ($exp->objek_astap_id) {
+                AstapKemitraan::where('astap_id', $exp->objek_astap_id)
+                    ->where('status_konsesi', 'Aktif')
+                    ->update(['status_konsesi' => 'Konsesi Berakhir']);
+            }
+        }
 
         $filterSkema  = $request->query('skema', 'all');   // 'all', 'KSO', 'BGS', 'BSG', 'KSP', 'Sewa'
         $filterTahun  = $request->query('tahun', 'all');
@@ -216,16 +226,22 @@ class KemitraanController extends Controller
         $kemitraan = AstapKemitraan::findOrFail($id);
 
         $request->validate([
-            'status_konsesi' => 'required|string|in:Aktif,Akan Berakhir,Konsesi Berakhir,Selesai / Reklasifikasi,Dihentikan',
-            'keterangan'     => 'nullable|string|max:1000'
+            'status_konsesi' => 'required|string|in:Aktif,Konsesi Berakhir,Selesai / Reklasifikasi,Dihentikan'
         ]);
 
-        $kemitraan->status_konsesi = $request->input('status_konsesi');
-        if ($request->filled('keterangan')) {
-            $kemitraan->keterangan = ($kemitraan->keterangan ? $kemitraan->keterangan . "\n" : '') .
-                '[' . date('d/m/Y') . '] Status: ' . $request->input('status_konsesi') . ' - ' . $request->input('keterangan');
-        }
+        $newStatus = $request->input('status_konsesi');
+        $kemitraan->status_konsesi = $newStatus;
         $kemitraan->save();
+
+        // Sinkronisasi status pada objek BMD RSUD terkait jika ada (2 arah)
+        if ($kemitraan->objek_astap_id) {
+            AstapKemitraan::where('astap_id', $kemitraan->objek_astap_id)
+                ->where('is_deleted', 0)
+                ->update(['status_konsesi' => $newStatus]);
+        }
+        AstapKemitraan::where('objek_astap_id', $kemitraan->astap_id)
+            ->where('is_deleted', 0)
+            ->update(['status_konsesi' => $newStatus]);
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([

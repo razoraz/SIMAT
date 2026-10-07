@@ -116,11 +116,11 @@
                             <span class="px-2.5 py-0.5 rounded-lg text-[10.5px] font-bold border"
                                   :class="{
                                       'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': selectedAstapDetail.status_konsesi === 'Aktif',
-                                      'bg-amber-500/20 text-amber-300 border-amber-500/30': selectedAstapDetail.status_konsesi === 'Akan Berakhir',
+                                      'bg-amber-500/20 text-amber-300 border-amber-500/30': selectedAstapDetail.status_konsesi === 'Konsesi Berakhir',
                                       'bg-blue-500/20 text-blue-300 border-blue-500/30': selectedAstapDetail.status_konsesi === 'Selesai / Reklasifikasi',
                                       'bg-rose-500/20 text-rose-300 border-rose-500/30': selectedAstapDetail.status_konsesi === 'Dihentikan'
                                   }"
-                                  x-text="'Status: ' + selectedAstapDetail.status_konsesi"></span>
+                                  x-text="'Status: ' + (selectedAstapDetail.status_konsesi === 'Konsesi Berakhir' ? 'Konsesi Berakhir (Siap Reklas)' : selectedAstapDetail.status_konsesi)"></span>
 
                             <template x-if="selectedAstapDetail.sisa_hari_konsesi !== null && selectedAstapDetail.sisa_hari_konsesi !== undefined">
                                 <span class="px-2 py-0.5 rounded-lg text-[10.5px] font-mono font-bold"
@@ -898,37 +898,32 @@
                         <span class="text-[10px] text-slate-400">Pilih status terkini untuk pembukuan neraca</span>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-400 mb-1">Status Konsesi Saat Ini:</label>
+                    <div class="flex flex-col sm:flex-row sm:items-end gap-3">
+                        <div class="flex-1">
+                            <label class="block text-[10px] font-bold text-slate-400 mb-1">Pilih Status Konsesi:</label>
                             <select x-model="statusForm.status_konsesi"
-                                class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-colors">
                                 <option value="Aktif">🟢 Aktif (Kerjasama Berjalan)</option>
-                                <option value="Akan Berakhir">🟡 Akan Berakhir (Sisa &lt; 30 Hari)</option>
-                                <option value="Konsesi Berakhir">🛑 Konsesi Berakhir (Masa Konsesi Lewat)</option>
-                                <option value="Selesai / Reklasifikasi">🔵 Selesai (Siap Reklasifikasi ke Aset Tetap)</option>
+                                <option value="Konsesi Berakhir">🟠 Konsesi Berakhir (Siap Reklasifikasi)</option>
+                                <option value="Selesai / Reklasifikasi">🔵 Selesai Direklasifikasi</option>
                                 <option value="Dihentikan">🔴 Dihentikan / Dibatalkan</option>
                             </select>
                         </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-400 mb-1">Catatan Tambahan Status:</label>
-                            <input type="text" x-model="statusForm.keterangan"
-                                placeholder="Contoh: Masa PKS telah berakhir dan alkes diserahkan ke RSUD..."
-                                class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+
+                        <div class="shrink-0 flex items-center">
+                            <button type="button" @click="saveStatusUpdate()" :disabled="isUpdatingStatus"
+                                class="w-full sm:w-auto px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-md shadow-cyan-500/20 disabled:opacity-50 cursor-pointer">
+                                <span x-show="!isUpdatingStatus">Simpan Status</span>
+                                <span x-show="isUpdatingStatus">Menyimpan...</span>
+                            </button>
                         </div>
                     </div>
 
-                    <div class="flex items-center justify-between pt-2">
+                    <div class="pt-1">
                         <a href="{{ route('master.reklasifikasi') }}"
-                            class="text-[11px] text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1">
+                            class="text-[11px] text-cyan-400 hover:text-cyan-300 transition-colors inline-flex items-center gap-1">
                             <span>Lihat Matriks Reklasifikasi Neraca &rarr;</span>
                         </a>
-
-                        <button type="button" @click="saveStatusUpdate()" :disabled="isUpdatingStatus"
-                            class="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition-all flex items-center gap-1.5 shadow-md shadow-cyan-500/20 disabled:opacity-50 cursor-pointer">
-                            <span x-show="!isUpdatingStatus">Simpan Status</span>
-                            <span x-show="isUpdatingStatus">Menyimpan...</span>
-                        </button>
                     </div>
                 </div>
 

@@ -1389,6 +1389,14 @@ class ReklasifikasiController extends Controller
                 $astap->kemitraan->update([
                     'status_konsesi' => 'Selesai / Reklasifikasi'
                 ]);
+
+                // Sinkronkan objek aset BMD terkait (2 arah)
+                if ($astap->kemitraan->objek_astap_id) {
+                    \App\Models\AstapKemitraan::where('astap_id', $astap->kemitraan->objek_astap_id)
+                        ->update(['status_konsesi' => 'Selesai / Reklasifikasi']);
+                }
+                \App\Models\AstapKemitraan::where('objek_astap_id', $astap->id)
+                    ->update(['status_konsesi' => 'Selesai / Reklasifikasi']);
             }
 
             DB::commit();
