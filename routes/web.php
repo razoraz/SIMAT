@@ -97,6 +97,27 @@ Route::get('/validasi-tte/{hash}', function ($hash) {
         $tgl = $ext->tgl_signed ?: ($ext->tanggal_mutasi ? date('d/m/Y', strtotime($ext->tanggal_mutasi)) . ' WIB' : date('d/m/Y H:i') . ' WIB');
     }
 
+    // 5. Cek tabel Kemitraan (Akun 1.5.2)
+    $kmt = \App\Models\AstapKemitraan::where(function($q) use ($hash) {
+        $q->where('nomor_pks', $hash)
+          ->orWhere('id', $hash);
+    })->where('is_deleted', 0)->first();
+    if ($kmt) {
+        $judul = 'Berita Acara Serah Terima (BAST) Pemanfaatan BMD Kemitraan';
+        $nomor = $kmt->nomor_pks ?: ('BAST-KMT-' . $kmt->id);
+        $nama = 'BUDI HARTONO, S.Sos';
+        $nip = '19760229 200801 1 010';
+        $jabatan = 'Pengurus Barang Pengguna RSUD Dr. H. Koesnandi';
+        $tgl = $kmt->tanggal_pks ? date('d/m/Y', strtotime($kmt->tanggal_pks)) . ' WIB' : date('d/m/Y H:i') . ' WIB';
+    } elseif (str_contains(strtoupper($hash), 'KMT') || str_contains(strtoupper($hash), 'KEMITRAAN')) {
+        $judul = 'Berita Acara Serah Terima (BAST) Pemanfaatan BMD Kemitraan';
+        $nomor = str_replace('-', '/', $hash);
+        $nama = 'BUDI HARTONO, S.Sos';
+        $nip = '19760229 200801 1 010';
+        $jabatan = 'Pengurus Barang Pengguna RSUD Dr. H. Koesnandi';
+        $tgl = date('d/m/Y H:i') . ' WIB';
+    }
+
     // Fallback parser jika hash mengandung kata kunci PPK
     if (str_contains($hash, 'PPK')) {
         $nama = 'dr. YUS PRIYATNA ADRYANTO, Sp.P, FISR';

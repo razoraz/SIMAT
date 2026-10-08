@@ -335,9 +335,63 @@ class ReklasifikasiController extends Controller
             }
         }
 
+        $astap = Astap::findOrFail($validated['astap_id']);
+
+        // Proteksi Validasi Aturan Bisnis: Kemitraan Aktif (Akun 1.5.2)
+        $kemitraan = $astap->kemitraan ?? \App\Models\AstapKemitraan::where(function ($q) use ($astap) {
+            $q->where('astap_id', $astap->id)->orWhere('objek_astap_id', $astap->id);
+        })->where('is_deleted', 0)->first();
+
+        $rawStatusKonsesi = $kemitraan ? strtolower(trim((string) $kemitraan->status_konsesi)) : '';
+        $endedStatuses = [
+            'konsesi berakhir',
+            'selesai / reklasifikasi',
+            'selesai',
+            'dihentikan',
+            'berakhir',
+            'putus kontrak',
+        ];
+
+        $isKemitraanAktif = false;
+        if ($kemitraan) {
+            $isKemitraanAktif = empty($rawStatusKonsesi) || !in_array($rawStatusKonsesi, $endedStatuses, true);
+        } else {
+            $kodeAsetNow = $astap->jenisAstap?->sub_sub_rincian_objek ?: ($astap->jenisAstap?->sub_rincian_objek ?: $astap->jenisAstap?->jenis);
+            if ($astap->category === 'KEMITRAAN' || str_starts_with((string) $kodeAsetNow, '1.5.2') || $astap->sumber_dana === 'kemitraan') {
+                $isKemitraanAktif = true;
+            }
+        }
+
+        if ($isKemitraanAktif) {
+            // 1. Dilarang reklasifikasi keluar ke Ekstrakomptabel, KDP, Hibah, atau Mutasi Eksternal
+            if ($validated['jenis_reklas'] !== 'KOREKSI_REKENING') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Aset masih terikat perjanjian kerja sama kemitraan yang aktif (Akun 1.5.2). Reklasifikasi ke Ekstrakomptabel, KDP, Hibah, atau Mutasi Eksternal tidak diperbolehkan selama masa konsesi PKS masih aktif.',
+                ], 422);
+            }
+
+            // 2. Untuk KOREKSI_REKENING, hanya boleh seputar Akun 1.5.2 Kemitraan (tujuan_kib = KEMITRAAN dan kode_108 berawalan 1.5.2)
+            $targetKibCheck = $validated['tujuan_kib'] ?? null;
+            $targetKodeCheck = $request->input('tujuan_kode') ?: ($request->input('kode_108') ?: null);
+
+            if ($targetKibCheck !== 'KEMITRAAN') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Status kemitraan masih aktif! Reklasifikasi pindah rekening hanya diperbolehkan seputar sub-rekening Kemitraan Pihak Ketiga (Akun 1.5.2). Aset tidak dapat dipindahkan ke KIB A–F atau Aset Lain-Lain (1.5.4) sebelum masa konsesi PKS resmi berakhir / diselesaikan.',
+                ], 422);
+            }
+
+            if (!empty($targetKodeCheck) && !str_starts_with((string) $targetKodeCheck, '1.5.2')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Kode rekening tujuan harus merupakan sub-rekening di bawah Akun 1.5.2 (Kemitraan dengan Pihak Ketiga).',
+                ], 422);
+            }
+        }
+
         DB::beginTransaction();
         try {
-            $astap = Astap::findOrFail($validated['astap_id']);
             $specLama = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?? []);
 
             // Catat identitas rekening & KIB asal sebelum aset dimodifikasi
@@ -1362,16 +1416,17 @@ class ReklasifikasiController extends Controller
                 $astap->save();
 
                 $spec = $astap->spesifikasi_json ?? [];
+                $existingKemitraan = $astap->kemitraan ?? $kemitraan;
                 $kemitraanData = [
                     'astap_id'         => $astap->id,
-                    'mitra_nama'       => $spec['mitra_nama'] ?? ($validated['spesifikasi_baru']['kemitraan_mitra'] ?? 'Mitra Pihak Ketiga'),
-                    'mitra_pimpinan'   => $spec['mitra_pimpinan'] ?? ($validated['spesifikasi_baru']['kemitraan_pimpinan'] ?? null),
-                    'mitra_alamat'     => $spec['mitra_alamat'] ?? ($validated['spesifikasi_baru']['kemitraan_alamat'] ?? null),
-                    'nomor_pks'        => $spec['perjanjian_nomor'] ?? ($validated['spesifikasi_baru']['kemitraan_perjanjian_no'] ?? ($validated['nomor_ba_reklas'] ?? '-')),
-                    'tanggal_pks'      => $spec['tanggal_pks'] ?? ($validated['spesifikasi_baru']['kemitraan_tanggal_pks'] ?? ($validated['tanggal_reklas'] ?? now())),
-                    'skema_kemitraan'  => $spec['skema_kemitraan'] ?? ($validated['spesifikasi_baru']['kemitraan_skema'] ?? 'Sewa'),
-                    'tanggal_mulai'    => $spec['tanggal_mulai'] ?? ($validated['spesifikasi_baru']['kemitraan_tanggal_mulai'] ?? null),
-                    'tanggal_selesai'  => $spec['tanggal_selesai'] ?? ($validated['spesifikasi_baru']['kemitraan_tanggal_selesai'] ?? null),
+                    'mitra_nama'       => $spec['mitra_nama'] ?? ($validated['spesifikasi_baru']['kemitraan_mitra'] ?? ($existingKemitraan?->mitra_nama ?? 'Mitra Pihak Ketiga')),
+                    'mitra_pimpinan'   => $spec['mitra_pimpinan'] ?? ($validated['spesifikasi_baru']['kemitraan_pimpinan'] ?? ($existingKemitraan?->mitra_pimpinan ?? null)),
+                    'mitra_alamat'     => $spec['mitra_alamat'] ?? ($validated['spesifikasi_baru']['kemitraan_alamat'] ?? ($existingKemitraan?->mitra_alamat ?? null)),
+                    'nomor_pks'        => $spec['perjanjian_nomor'] ?? ($validated['spesifikasi_baru']['kemitraan_perjanjian_no'] ?? ($existingKemitraan?->nomor_pks ?? ($validated['nomor_ba_reklas'] ?? '-'))),
+                    'tanggal_pks'      => $spec['tanggal_pks'] ?? ($validated['spesifikasi_baru']['kemitraan_tanggal_pks'] ?? ($existingKemitraan?->tanggal_pks ?? ($validated['tanggal_reklas'] ?? now()))),
+                    'skema_kemitraan'  => $spec['skema_kemitraan'] ?? ($validated['spesifikasi_baru']['kemitraan_skema'] ?? ($existingKemitraan?->skema_kemitraan ?? 'Sewa')),
+                    'tanggal_mulai'    => $spec['tanggal_mulai'] ?? ($validated['spesifikasi_baru']['kemitraan_tanggal_mulai'] ?? ($existingKemitraan?->tanggal_mulai ?? null)),
+                    'tanggal_selesai'  => $spec['tanggal_selesai'] ?? ($validated['spesifikasi_baru']['kemitraan_tanggal_selesai'] ?? ($existingKemitraan?->tanggal_selesai ?? null)),
                     'status_konsesi'   => 'Aktif',
                     'jumlah_volume'    => max(1, (int) $astap->jumlah_volume),
                     'satuan'           => $astap->satuan ?: 'Bidang / Titik',
@@ -1384,6 +1439,8 @@ class ReklasifikasiController extends Controller
 
                 if ($astap->kemitraan) {
                     $astap->kemitraan->update($kemitraanData);
+                } elseif ($kemitraan) {
+                    $kemitraan->update($kemitraanData);
                 } else {
                     \App\Models\AstapKemitraan::create($kemitraanData);
                 }

@@ -72,6 +72,7 @@ class KemitraanController extends Controller
             }
         }
 
+        $filterKib    = $request->query('kib', 'all');
         $filterSkema  = $request->query('skema', 'all');   // 'all', 'KSO', 'BGS', 'BSG', 'KSP', 'Sewa'
         $filterTahun  = $request->query('tahun', 'all');
         $filterTw     = $request->query('triwulan', 'all');
@@ -79,6 +80,7 @@ class KemitraanController extends Controller
         $search       = trim($request->query('search', ''));
 
         // Query utama data kemitraan (hanya yang aktif / belum dihapus)
+        // Pengambilan dataset lengkap untuk pemfilteran instan reaktif di client-side (tanpa page reload seperti Data ASTAP)
         $query = AstapKemitraan::with([
             'astap.jenisAstap', 
             'astap.registers.unit', 
@@ -94,59 +96,6 @@ class KemitraanController extends Controller
             })
             ->orderBy('tanggal_pks', 'desc')
             ->orderBy('id', 'desc');
-
-        if ($filterSkema !== 'all') {
-            // BUG-05 FIX: support nilai 'BGS/BSG' dari form (yang difilter sebagai BGS atau BSG)
-            if ($filterSkema === 'BGS' || $filterSkema === 'BSG') {
-                $query->where(function ($q) use ($filterSkema) {
-                    $q->where('skema_kemitraan', $filterSkema)
-                      ->orWhere('skema_kemitraan', 'BGS/BSG');
-                });
-            } else {
-                $query->where('skema_kemitraan', $filterSkema);
-            }
-        }
-
-        if ($filterTahun !== 'all') {
-            $query->where('tahun', $filterTahun);
-        }
-
-        if ($filterTw !== 'all') {
-            $query->where('triwulan', $filterTw);
-        }
-
-        if ($filterStatus !== 'all') {
-            if ($filterStatus === 'Aktif') {
-                $query->where('status_konsesi', 'Aktif')
-                      ->where(function ($q) use ($today) {
-                          $q->whereNull('tanggal_selesai')->orWhere('tanggal_selesai', '>=', $today);
-                      });
-            } elseif ($filterStatus === 'Konsesi Berakhir') {
-                $query->where(function ($q) use ($today) {
-                    $q->where('status_konsesi', 'Konsesi Berakhir')
-                      ->orWhere(function ($sq) use ($today) {
-                          $sq->where('status_konsesi', 'Aktif')
-                             ->whereNotNull('tanggal_selesai')
-                             ->where('tanggal_selesai', '<', $today);
-                      });
-                });
-            } else {
-                $query->where('status_konsesi', $filterStatus);
-            }
-        }
-
-        if ($search !== '') {
-            $query->where(function ($q) use ($search) {
-                $q->where('mitra_nama', 'like', "%{$search}%")
-                  ->orWhere('nomor_pks', 'like', "%{$search}%")
-                  ->orWhere('skema_kemitraan', 'like', "%{$search}%")
-                  ->orWhere('keterangan', 'like', "%{$search}%")
-                  ->orWhereHas('astap', function ($sq) use ($search) {
-                      $sq->where('nama_barang', 'like', "%{$search}%")
-                        ->orWhere('kode_108', 'like', "%{$search}%");
-                  });
-            });
-        }
 
         $kemitraanRecords = $query->get();
 
@@ -187,16 +136,26 @@ class KemitraanController extends Controller
 
         $dbMitraKemitraans = AstapKemitraan::getDistinctMitras();
 
-        // Ambil riwayat reklasifikasi aset BMD RSUD ke Kemitraan (1.5.2) - ambil riwayat terbaru per aset
-        $reklasKemitraanRecords = AstapReklas::where(function ($rq) {
+        // Ambil ID Astap yang SUDAH terdaftar di master kemitraan (agar tidak duplikat dan tidak lolos dari filter)
+        $registeredKemitraanAstapIds = AstapKemitraan::where('is_deleted', 0)
+            ->pluck('astap_id')
+            ->merge(AstapKemitraan::where('is_deleted', 0)->whereNotNull('objek_astap_id')->pluck('objek_astap_id'))
+            ->filter()
+            ->unique()
+            ->values()
+            ->toArray();
+
+        // Ambil riwayat reklasifikasi aset BMD RSUD ke Kemitraan (1.5.2) HANYA untuk aset yang BELUM dibuatkan PKS Kemitraan
+        $reklasQuery = AstapReklas::where(function ($rq) {
             $rq->where('tujuan_kib', 'KEMITRAAN')
                ->orWhere('tujuan_kode', 'like', '1.5.2%');
         })
+        ->whereNotIn('astap_id', $registeredKemitraanAstapIds)
         ->with(['astap.registers.unit', 'astap.jenisAstap', 'astap.unit'])
         ->orderBy('tanggal_reklas', 'desc')
-        ->orderBy('id', 'desc')
-        ->get()
-        ->unique('astap_id');
+        ->orderBy('id', 'desc');
+
+        $reklasKemitraanRecords = $reklasQuery->get()->unique('astap_id');
 
         return view('pages.kemitraan.index', compact(
             'kemitraanRecords',
@@ -209,6 +168,7 @@ class KemitraanController extends Controller
             'totalMitraUnik',
             'dbUnits',
             'dbMaster108',
+            'filterKib',
             'filterSkema',
             'filterTahun',
             'filterTw',
@@ -226,7 +186,7 @@ class KemitraanController extends Controller
         $kemitraan = AstapKemitraan::findOrFail($id);
 
         $request->validate([
-            'status_konsesi' => 'required|string|in:Aktif,Konsesi Berakhir,Selesai / Reklasifikasi,Dihentikan'
+            'status_konsesi' => 'required|string|in:Aktif,Konsesi Berakhir,Selesai,Selesai / Reklasifikasi,Dihentikan'
         ]);
 
         $newStatus = $request->input('status_konsesi');

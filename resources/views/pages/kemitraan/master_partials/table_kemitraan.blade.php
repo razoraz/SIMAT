@@ -8,7 +8,6 @@
         $astap = $row->astap;
 
         // 1. Aset yang berasal dari REKLASIFIKASI ke Kemitraan → selalu masuk Tabel Pemanfaatan
-        //    Cek flag is_reklas pada astap, atau relasi reklas yang tidak kosong
         if ($astap && (
             $astap->is_reklas ||
             ($astap->reklas && $astap->reklas->isNotEmpty())
@@ -29,19 +28,52 @@
         return false;
     };
 
+    $resolveKemitraanKib = function($row) {
+        if (!empty($row->asal_kib)) {
+            return strtoupper($row->asal_kib);
+        }
+        $astap = $row->astap ?? null;
+        $objekAstap = $row->objekAstap ?? null;
+        $cat = $objekAstap?->category ?: ($astap?->category ?: null);
+        if ($cat && in_array(strtoupper($cat), ['KIB A', 'KIB B', 'KIB C', 'KIB D', 'KIB E', 'KIB F', 'ATB', 'EXTRACOM', 'ASET LAIN'])) {
+            return strtoupper($cat);
+        }
+        $kode = $astap?->kode_108 ?: ($objekAstap?->kode_108 ?: ($astap?->kode_barang ?: ''));
+        if (str_contains($kode, '.01.01.001') || str_ends_with($kode, '.001') || str_starts_with($kode, '1.3.1')) return 'KIB A';
+        if (str_contains($kode, '.01.01.002') || str_ends_with($kode, '.002') || str_starts_with($kode, '1.3.2')) return 'KIB B';
+        if (str_contains($kode, '.01.01.003') || str_ends_with($kode, '.003') || str_starts_with($kode, '1.3.3')) return 'KIB C';
+        if (str_contains($kode, '.01.01.004') || str_ends_with($kode, '.004') || str_starts_with($kode, '1.3.4')) return 'KIB D';
+        if (str_contains($kode, '.01.01.005') || str_ends_with($kode, '.005') || str_starts_with($kode, '1.3.5')) return 'KIB E';
+        
+        $spec = is_array($astap?->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap?->spesifikasi_json ?? '[]', true) ?: []);
+        if (!empty($spec['tanah_nama_barang']) || !empty($spec['tanah_luas_m2']) || !empty($spec['luas_m2'])) return 'KIB A';
+        if (!empty($spec['gedung_nama_bangunan']) || !empty($spec['gedung_luas_lantai'])) return 'KIB C';
+
+        $rowKeterangan = isset($row->keterangan) ? $row->keterangan : '';
+        $nama = strtolower(($astap?->nama_barang ?? '') . ' ' . ($objekAstap?->nama_barang ?? '') . ' ' . $rowKeterangan);
+        if (str_contains($nama, 'tanah') || str_contains($nama, 'lahan') || str_contains($nama, 'kavling')) return 'KIB A';
+        if (str_contains($nama, 'gedung') || str_contains($nama, 'bangunan') || str_contains($nama, 'ruang') || str_contains($nama, 'paviliun')) return 'KIB C';
+        if (str_contains($nama, 'jalan') || str_contains($nama, 'irigasi') || str_contains($nama, 'jaringan') || str_contains($nama, 'instalasi')) return 'KIB D';
+        if (str_contains($nama, 'mesin') || str_contains($nama, 'alat') || str_contains($nama, 'alkes') || str_contains($nama, 'kendaraan') || str_contains($nama, 'laboratorium')) return 'KIB B';
+        return 'KIB B';
+    };
+
     $recordsDimanfaatkan = collect($kemitraanRecords ?? [])->filter(fn($r) => $isDimanfaatkan($r))->values();
     $recordsDitambahkan  = collect($kemitraanRecords ?? [])->filter(fn($r) => !$isDimanfaatkan($r))->values();
 
-    // Integrasikan Aset BMD RSUD yang merupakan hasil reklasifikasi ke Kemitraan (1.5.2) ke Tabel Atas
-    $seenReklasAstapIds = [];
+    // Kumpulkan seluruh ID astap yang sudah terdaftar resmi di tabel kemitraan agar tidak terduplikasi
+    $existingKemitraanAstapIds = collect($kemitraanRecords ?? [])->flatMap(function($r) {
+        return array_filter([$r->astap_id, $r->objek_astap_id]);
+    })->unique()->values()->toArray();
+
+    // Integrasikan Aset BMD RSUD yang merupakan hasil reklasifikasi ke Kemitraan (1.5.2) HANYA jika belum memiliki PKS
+    $seenReklasAstapIds = $existingKemitraanAstapIds;
     foreach ($reklasKemitraanRecords ?? [] as $reklasItem) {
         if (!in_array($reklasItem->astap_id, $seenReklasAstapIds)) {
             $seenReklasAstapIds[] = $reklasItem->astap_id; // Kunci agar unik dan tidak dobel/kembar
             $rAstap = $reklasItem->astap;
             if ($rAstap) {
                 $rReg = $rAstap->registers->first();
-                $rSpec = is_array($rAstap->spesifikasi_json) ? $rAstap->spesifikasi_json : (json_decode($rAstap->spesifikasi_json ?? '[]', true) ?: []);
-                
                 $recordsDimanfaatkan->push((object) [
                     'id'                  => null,
                     'is_reklas_pending'   => true,
@@ -65,13 +97,89 @@
                     'tanggal_mulai'       => $reklasItem->tanggal_reklas,
                     'tanggal_selesai'     => null,
                     'asal_kib'            => $reklasItem->asal_kib ?: ($rAstap->category ?: 'KIB A'),
+                    'keterangan'          => $reklasItem->keterangan ?? ($reklasItem->alasan_reklas ?? null),
                 ]);
             }
         }
     }
+
+    $buildRowMeta = function($row, $isDimanfaatkanVal) use ($resolveKemitraanKib) {
+        $astap = $row->astap ?? null;
+        $objekAstap = $row->objekAstap ?? null;
+        $reklasHistory = $astap?->reklas?->sortByDesc('id')->first();
+        $objekAsetBmd = $objekAstap ?: ($row->objekRegister?->astap ?? null);
+        $spec = is_array($astap?->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap?->spesifikasi_json ?? '[]', true) ?: []);
+
+        $namaFisik = $spec['tanah_nama_barang'] ?? ($spec['gedung_nama_bangunan'] ?? null);
+        if (!$namaFisik && $reklasHistory && !empty($reklasHistory->asal_nama)) {
+            $namaFisik = $reklasHistory->asal_nama;
+        }
+        if (!$namaFisik && !empty($objekAsetBmd?->nama_barang) && !str_starts_with(strtolower($objekAsetBmd->nama_barang), 'kerja sama pemanfaatan')) {
+            $namaFisik = $objekAsetBmd->nama_barang;
+        }
+        if (!$namaFisik) {
+            $namaFisik = $spec['mesin_items'][0]['mesin_nama_barang'] ?? ($spec['tanah_items'][0]['tanah_nama_barang'] ?? ($astap?->nama_barang ?: 'Objek Aset'));
+        }
+
+        $kib = $resolveKemitraanKib($row);
+        $skema = $row->skema_kemitraan ?: ($spec['skema_kemitraan'] ?? 'Sewa');
+        $tahun = (int) ($row->tahun ?: ($astap?->tahun_perolehan ?: date('Y')));
+        $tw = $row->triwulan ?: ($astap?->triwulan ?: 'TW I');
+        $status = $row->status_konsesi ?: 'Aktif';
+
+        $searchParts = [
+            $namaFisik,
+            $astap?->nama_barang,
+            $row->mitra_nama,
+            $row->nomor_pks,
+            $row->objek_nibar,
+            $row->objekRegister?->nibar,
+            $row->objekRegister?->no_register,
+            $astap?->kode_108,
+            $astap?->kode_barang,
+            $reklasHistory?->asal_nama,
+            $reklasHistory?->tujuan_nama,
+            isset($row->keterangan) ? $row->keterangan : '',
+            $spec['merk'] ?? '',
+            $spec['type'] ?? '',
+        ];
+        $searchText = strtolower(implode(' ', array_filter($searchParts)));
+
+        return [
+            'id'              => $row->id ?? null,
+            'category'        => $kib,
+            'skema'           => $skema,
+            'tahun'           => $tahun,
+            'triwulan'        => $tw,
+            'status'          => $status,
+            'is_dimanfaatkan' => $isDimanfaatkanVal,
+            'search_text'     => $searchText,
+        ];
+    };
+
+    $dimanfaatkanMetaList = [];
+    foreach ($recordsDimanfaatkan as $r) {
+        $dimanfaatkanMetaList[] = $buildRowMeta($r, true);
+    }
+
+    $ditambahkanMetaList = [];
+    foreach ($recordsDitambahkan as $r) {
+        $ditambahkanMetaList[] = $buildRowMeta($r, false);
+    }
+
+    $allMetaList = [];
+    foreach ($kemitraanRecords as $r) {
+        $allMetaList[] = $buildRowMeta($r, $isDimanfaatkan($r));
+    }
 @endphp
 
-<div class="space-y-6">
+<script>
+    window.__dimanfaatkanMetaList = @json($dimanfaatkanMetaList);
+    window.__ditambahkanMetaList  = @json($ditambahkanMetaList);
+    window.__allMetaList          = @json($allMetaList);
+</script>
+
+<div class="space-y-6" x-init="initMetaLists(@js($dimanfaatkanMetaList), @js($ditambahkanMetaList), @js($allMetaList))">
 
     <!-- ========================================================================= -->
     <!-- SWITCHER TAB & MODE PEMISAH TABEL KEMITRAAN                              -->
@@ -104,7 +212,8 @@
                     <span>🏛️</span>
                     <span>Aset RSUD Dimanfaatkan</span>
                     <span class="px-1.5 py-0.2 rounded-md text-[10px] font-mono font-bold"
-                        :class="kemitraanTableTab === 'dimanfaatkan' ? 'bg-cyan-400 text-slate-950' : 'bg-slate-800 text-slate-300'">
+                        :class="kemitraanTableTab === 'dimanfaatkan' ? 'bg-cyan-400 text-slate-950' : 'bg-slate-800 text-slate-300'"
+                        x-text="countVisibleDimanfaatkan">
                         {{ count($recordsDimanfaatkan) }}
                     </span>
                 </button>
@@ -116,7 +225,8 @@
                     <span>📦</span>
                     <span>Aset Ditambahkan Mitra</span>
                     <span class="px-1.5 py-0.2 rounded-md text-[10px] font-mono font-bold"
-                        :class="kemitraanTableTab === 'ditambahkan' ? 'bg-emerald-400 text-slate-950' : 'bg-slate-800 text-slate-300'">
+                        :class="kemitraanTableTab === 'ditambahkan' ? 'bg-emerald-400 text-slate-950' : 'bg-slate-800 text-slate-300'"
+                        x-text="countVisibleDitambahkan">
                         {{ count($recordsDitambahkan) }}
                     </span>
                 </button>
@@ -126,7 +236,7 @@
                     :class="kemitraanTableTab === 'all' ? 'bg-slate-800 text-white border-slate-700 font-extrabold' : 'text-slate-500 hover:text-slate-300 border-transparent'"
                     class="px-2.5 py-1.5 rounded-xl text-xs border transition-all flex items-center gap-1 shrink-0 cursor-pointer">
                     <span>📋</span>
-                    <span>Semua ({{ count($kemitraanRecords ?? []) }})</span>
+                    <span>Semua (<span x-text="countVisibleAll">{{ count($recordsDimanfaatkan) + count($recordsDitambahkan) }}</span>)</span>
                 </button>
             </div>
         </div>
@@ -156,7 +266,7 @@
                     <span>Menampilkan tabel gabungan seluruh arsip aset kemitraan Akun 1.5.2.</span>
                 </span>
             </template>
-            <span class="font-mono text-cyan-400/80 text-[10px] hidden sm:inline-block">Total {{ count($kemitraanRecords ?? []) }} Data Kemitraan</span>
+            <span class="font-mono text-cyan-400/80 text-[10px] hidden sm:inline-block">Total <span x-text="countVisibleAll">{{ count($recordsDimanfaatkan) + count($recordsDitambahkan) }}</span> Data Kemitraan</span>
         </div>
     </div>
 
@@ -188,7 +298,7 @@
 
             <div class="flex items-center gap-2 shrink-0">
                 <span class="text-[11px] font-mono font-bold text-cyan-300 bg-cyan-500/10 px-3 py-1 rounded-xl border border-cyan-500/30">
-                    {{ count($recordsDimanfaatkan) }} Aset BMD Dimanfaatkan
+                    <span x-text="countVisibleDimanfaatkan">{{ count($recordsDimanfaatkan) }}</span> Aset BMD Dimanfaatkan
                 </span>
             </div>
         </div>
@@ -246,7 +356,7 @@
                                 ?: ($objekAsetBmd?->kode_108 
                                 ?: ($astap?->jenisAstap?->sub_sub_rincian_objek ?: '1.5.2.01.01.02.001')));
                         @endphp
-                        <tr class="hover:bg-cyan-950/20 transition-colors group">
+                        <tr x-show="matchKemitraan({{ json_encode($dimanfaatkanMetaList[$idx] ?? []) }})" class="hover:bg-cyan-950/20 transition-colors group">
                             <!-- 1. Nomor -->
                             <td class="py-4 px-4 text-center font-mono text-cyan-400 font-bold text-xs">
                                 {{ $idx + 1 }}
@@ -408,10 +518,11 @@
                                     <span class="px-2 py-0.5 rounded text-[10px] font-bold
                                         {{ $row->status_konsesi === 'Aktif' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : '' }}
                                         {{ $row->status_konsesi === 'Konsesi Berakhir' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : '' }}
-                                        {{ $row->status_konsesi === 'Selesai / Reklasifikasi' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : '' }}
+                                        {{ in_array($row->status_konsesi, ['Selesai', 'Selesai / Reklasifikasi']) ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : '' }}
                                         {{ $row->status_konsesi === 'Dihentikan' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : '' }}
+                                        {{ $row->status_konsesi === 'Siap Dikerjasamakan' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : '' }}
                                     ">
-                                        {{ $row->status_konsesi === 'Konsesi Berakhir' ? 'Konsesi Berakhir (Siap Reklas)' : $row->status_konsesi }}
+                                        {{ in_array($row->status_konsesi, ['Selesai', 'Selesai / Reklasifikasi']) ? 'Selesai' : ($row->status_konsesi === 'Konsesi Berakhir' ? 'Konsesi Berakhir' : $row->status_konsesi) }}
                                     </span>
                                     @if($sisaHari !== null && $row->status_konsesi === 'Aktif')
                                         <span class="text-[10px] font-mono {{ $sisaHari <= 30 ? 'text-amber-400 font-bold' : 'text-slate-400' }}">
@@ -494,6 +605,20 @@
                             </td>
                         </tr>
                     @endforelse
+                    @if(count($recordsDimanfaatkan) > 0)
+                        <tr x-show="countVisibleDimanfaatkan === 0" x-cloak>
+                            <td colspan="8" class="py-12 text-center text-slate-400">
+                                <div class="text-3xl mb-2">🔍</div>
+                                <p class="text-sm font-bold text-white">Tidak Ada Aset BMD RSUD yang Sesuai Filter</p>
+                                <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                                    Tidak ditemukan aset yang cocok dengan klasifikasi KIB atau kriteria filter saat ini.
+                                </p>
+                                <button type="button" @click="resetAllFilters()" class="mt-3 px-3.5 py-1.5 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-xs font-bold hover:bg-cyan-500 hover:text-slate-950 transition-all cursor-pointer">
+                                    🔄 Reset Filter
+                                </button>
+                            </td>
+                        </tr>
+                    @endif
                 </tbody>
             </table>
         </div>
@@ -527,7 +652,7 @@
 
             <div class="flex items-center gap-2 shrink-0">
                 <span class="text-[11px] font-mono font-bold text-emerald-300 bg-emerald-500/10 px-3 py-1 rounded-xl border border-emerald-500/30">
-                    {{ count($recordsDitambahkan) }} Aset Ditambahkan Mitra
+                    <span x-text="countVisibleDitambahkan">{{ count($recordsDitambahkan) }}</span> Aset Ditambahkan Mitra
                 </span>
             </div>
         </div>
@@ -557,7 +682,7 @@
                             $type = $spec['type'] ?? ($spec['mesin_type'] ?? null);
                             $targetPrintId = $row->id ?: ($row->astap_id ?: ($astap?->id ?: null));
                         @endphp
-                        <tr class="hover:bg-emerald-950/20 transition-colors group">
+                        <tr x-show="matchKemitraan({{ json_encode($ditambahkanMetaList[$idx] ?? []) }})" class="hover:bg-emerald-950/20 transition-colors group">
                             <!-- 1. Nomor -->
                             <td class="py-4 px-4 text-center font-mono text-emerald-400 font-bold text-xs">
                                 {{ $idx + 1 }}
@@ -698,10 +823,10 @@
                                     <span class="px-2 py-0.5 rounded text-[10px] font-bold
                                         {{ $row->status_konsesi === 'Aktif' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : '' }}
                                         {{ $row->status_konsesi === 'Konsesi Berakhir' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : '' }}
-                                        {{ $row->status_konsesi === 'Selesai / Reklasifikasi' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : '' }}
+                                        {{ in_array($row->status_konsesi, ['Selesai', 'Selesai / Reklasifikasi']) ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : '' }}
                                         {{ $row->status_konsesi === 'Dihentikan' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : '' }}
                                     ">
-                                        {{ $row->status_konsesi === 'Konsesi Berakhir' ? 'Konsesi Berakhir (Siap Reklas)' : $row->status_konsesi }}
+                                        {{ in_array($row->status_konsesi, ['Selesai', 'Selesai / Reklasifikasi']) ? 'Selesai' : ($row->status_konsesi === 'Konsesi Berakhir' ? 'Konsesi Berakhir' : $row->status_konsesi) }}
                                     </span>
                                     @if($sisaHari !== null && $row->status_konsesi === 'Aktif')
                                         <span class="text-[10px] font-mono {{ $sisaHari <= 30 ? 'text-amber-400 font-bold' : 'text-slate-400' }}">
@@ -784,6 +909,20 @@
                             </td>
                         </tr>
                     @endforelse
+                    @if(count($recordsDitambahkan) > 0)
+                        <tr x-show="countVisibleDitambahkan === 0" x-cloak>
+                            <td colspan="8" class="py-12 text-center text-slate-400">
+                                <div class="text-3xl mb-2">🔍</div>
+                                <p class="text-sm font-bold text-white">Tidak Ada Aset Ditambahkan Mitra yang Sesuai Filter</p>
+                                <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                                    Tidak ditemukan aset yang cocok dengan klasifikasi KIB atau kriteria filter saat ini.
+                                </p>
+                                <button type="button" @click="resetAllFilters()" class="mt-3 px-3.5 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold hover:bg-emerald-500 hover:text-slate-950 transition-all cursor-pointer">
+                                    🔄 Reset Filter
+                                </button>
+                            </td>
+                        </tr>
+                    @endif
                 </tbody>
             </table>
         </div>
@@ -805,7 +944,7 @@
                     <span>📋 Seluruh Daftar Aset Kemitraan (Gabungan Akun 1.5.2)</span>
                 </h2>
                 <p class="text-xs text-slate-400 mt-0.5">
-                    Menampilkan total {{ count($kemitraanRecords ?? []) }} data aset kerja sama baik pemanfaatan BMD RSUD maupun pengadaan KSO mitra.
+                    Menampilkan total <span x-text="countVisibleAll">{{ count($kemitraanRecords ?? []) }}</span> data aset kerja sama baik pemanfaatan BMD RSUD maupun pengadaan KSO mitra.
                 </p>
             </div>
 
@@ -837,7 +976,7 @@
                             $sisaHari = $row->sisa_hari_konsesi;
                             $isRowDimanfaatkan = $isDimanfaatkan($row);
                         @endphp
-                        <tr class="hover:bg-slate-800/40 transition-colors group">
+                        <tr x-show="matchKemitraan({{ json_encode($allMetaList[$idx] ?? []) }})" class="hover:bg-slate-800/40 transition-colors group">
                             <!-- 1. Nomor -->
                             <td class="py-4 px-4 text-center font-mono text-slate-500 text-xs">
                                 {{ $idx + 1 }}
@@ -982,10 +1121,10 @@
                                     <span class="px-1.5 py-0.2 rounded text-[10px] font-bold
                                         {{ $row->status_konsesi === 'Aktif' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : '' }}
                                         {{ $row->status_konsesi === 'Konsesi Berakhir' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : '' }}
-                                        {{ $row->status_konsesi === 'Selesai / Reklasifikasi' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : '' }}
+                                        {{ in_array($row->status_konsesi, ['Selesai', 'Selesai / Reklasifikasi']) ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : '' }}
                                         {{ $row->status_konsesi === 'Dihentikan' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : '' }}
                                     ">
-                                        {{ $row->status_konsesi === 'Konsesi Berakhir' ? 'Konsesi Berakhir (Siap Reklas)' : $row->status_konsesi }}
+                                        {{ in_array($row->status_konsesi, ['Selesai', 'Selesai / Reklasifikasi']) ? 'Selesai' : ($row->status_konsesi === 'Konsesi Berakhir' ? 'Konsesi Berakhir' : $row->status_konsesi) }}
                                     </span>
                                 </div>
                                 <div class="text-[10px] font-mono text-slate-400">
@@ -1032,6 +1171,20 @@
                             </td>
                         </tr>
                     @endforelse
+                    @if(count($kemitraanRecords ?? []) > 0)
+                        <tr x-show="countVisibleAll === 0" x-cloak>
+                            <td colspan="9" class="py-12 text-center text-slate-400">
+                                <div class="text-3xl mb-2">🔍</div>
+                                <p class="text-sm font-bold text-white">Tidak Ada Data Kemitraan yang Sesuai Filter</p>
+                                <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                                    Tidak ditemukan aset yang cocok dengan klasifikasi KIB atau kriteria filter saat ini.
+                                </p>
+                                <button type="button" @click="resetAllFilters()" class="mt-3 px-3.5 py-1.5 rounded-xl bg-slate-800 text-slate-300 border border-slate-700 text-xs font-bold hover:bg-slate-700 hover:text-white transition-all cursor-pointer">
+                                    🔄 Reset Filter
+                                </button>
+                            </td>
+                        </tr>
+                    @endif
                 </tbody>
             </table>
         </div>

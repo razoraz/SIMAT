@@ -2,6 +2,7 @@
     @section('page-title', 'Kelola Data Aset Kemitraan Pihak Ketiga (Sewa, KSP, BGS/BSG, KSPI)')
     @section('breadcrumb', 'Master Aset / Kelola Kemitraan Aset')
 
+    <script src="{{ asset('js/qrcode.min.js') }}"></script>
     <script>
         window.dbMitraKemitraans = @json($dbMitraKemitraans ?? []);
     </script>
