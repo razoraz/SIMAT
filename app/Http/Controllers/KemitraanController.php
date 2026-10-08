@@ -72,6 +72,7 @@ class KemitraanController extends Controller
             }
         }
 
+        $filterKib    = $request->query('kib', 'all');
         $filterSkema  = $request->query('skema', 'all');   // 'all', 'KSO', 'BGS', 'BSG', 'KSP', 'Sewa'
         $filterTahun  = $request->query('tahun', 'all');
         $filterTw     = $request->query('triwulan', 'all');
@@ -79,6 +80,7 @@ class KemitraanController extends Controller
         $search       = trim($request->query('search', ''));
 
         // Query utama data kemitraan (hanya yang aktif / belum dihapus)
+        // Pengambilan dataset lengkap untuk pemfilteran instan reaktif di client-side (tanpa page reload seperti Data ASTAP)
         $query = AstapKemitraan::with([
             'astap.jenisAstap', 
             'astap.registers.unit', 
@@ -94,102 +96,6 @@ class KemitraanController extends Controller
             })
             ->orderBy('tanggal_pks', 'desc')
             ->orderBy('id', 'desc');
-
-        if ($filterSkema !== 'all') {
-            if ($filterSkema === 'BGS' || $filterSkema === 'BSG' || $filterSkema === 'BGS/BSG') {
-                $query->where(function ($q) {
-                    $q->where('skema_kemitraan', 'BGS')
-                      ->orWhere('skema_kemitraan', 'BSG')
-                      ->orWhere('skema_kemitraan', 'BGS/BSG');
-                });
-            } elseif ($filterSkema === 'KSP' || $filterSkema === 'KSO') {
-                $query->where(function ($q) {
-                    $q->where('skema_kemitraan', 'KSP')
-                      ->orWhere('skema_kemitraan', 'KSO')
-                      ->orWhere('skema_kemitraan', 'KSO/KSP');
-                });
-            } else {
-                $query->where('skema_kemitraan', $filterSkema);
-            }
-        }
-
-        if ($filterTahun !== 'all') {
-            $query->where(function ($q) use ($filterTahun) {
-                $q->where('tahun', $filterTahun)
-                  ->orWhere(function ($sq) use ($filterTahun) {
-                      $sq->whereNull('tahun')->orWhere('tahun', 0);
-                      $sq->whereHas('astap', fn($asq) => $asq->where('tahun_perolehan', $filterTahun));
-                  });
-            });
-        }
-
-        if ($filterTw !== 'all') {
-            $twValues = match ($filterTw) {
-                'TW I', '1' => ['TW I', 'TW 1', '1', 1],
-                'TW II', '2' => ['TW II', 'TW 2', '2', 2],
-                'TW III', '3' => ['TW III', 'TW 3', '3', 3],
-                'TW IV', '4' => ['TW IV', 'TW 4', '4', 4],
-                default => [$filterTw]
-            };
-            $query->whereIn('triwulan', $twValues);
-        }
-
-        if ($filterStatus !== 'all') {
-            if ($filterStatus === 'Aktif') {
-                $query->where('status_konsesi', 'Aktif')
-                      ->where(function ($q) use ($today) {
-                          $q->whereNull('tanggal_selesai')->orWhere('tanggal_selesai', '>=', $today);
-                      });
-            } elseif ($filterStatus === 'Konsesi Berakhir') {
-                $query->where(function ($q) use ($today) {
-                    $q->where('status_konsesi', 'Konsesi Berakhir')
-                      ->orWhere(function ($sq) use ($today) {
-                          $sq->where('status_konsesi', 'Aktif')
-                             ->whereNotNull('tanggal_selesai')
-                             ->where('tanggal_selesai', '<', $today);
-                      });
-                });
-            } elseif ($filterStatus === 'Selesai' || $filterStatus === 'Selesai / Reklasifikasi') {
-                $query->whereIn('status_konsesi', ['Selesai', 'Selesai / Reklasifikasi']);
-            } elseif ($filterStatus === 'Dihentikan') {
-                $query->where('status_konsesi', 'Dihentikan');
-            } else {
-                $query->where('status_konsesi', $filterStatus);
-            }
-        }
-
-        if ($search !== '') {
-            $query->where(function ($q) use ($search) {
-                $q->where('mitra_nama', 'like', "%{$search}%")
-                  ->orWhere('nomor_pks', 'like', "%{$search}%")
-                  ->orWhere('skema_kemitraan', 'like', "%{$search}%")
-                  ->orWhere('keterangan', 'like', "%{$search}%")
-                  ->orWhere('objek_nibar', 'like', "%{$search}%")
-                  ->orWhereHas('astap', function ($sq) use ($search) {
-                      $sq->where('nama_barang', 'like', "%{$search}%")
-                        ->orWhere('kode_108', 'like', "%{$search}%")
-                        ->orWhereHas('reklas', function ($rsq) use ($search) {
-                            $rsq->where('asal_nama', 'like', "%{$search}%")
-                                ->orWhere('tujuan_nama', 'like', "%{$search}%")
-                                ->orWhere('asal_kode', 'like', "%{$search}%")
-                                ->orWhere('tujuan_kode', 'like', "%{$search}%");
-                        });
-                  })
-                  ->orWhereHas('objekAstap', function ($sq) use ($search) {
-                      $sq->where('nama_barang', 'like', "%{$search}%")
-                        ->orWhere('kode_108', 'like', "%{$search}%")
-                        ->orWhereHas('reklas', function ($rsq) use ($search) {
-                            $rsq->where('asal_nama', 'like', "%{$search}%")
-                                ->orWhere('tujuan_nama', 'like', "%{$search}%");
-                        });
-                  })
-                  ->orWhereHas('objekRegister', function ($rq) use ($search) {
-                      $rq->where('nibar', 'like', "%{$search}%")
-                        ->orWhere('no_register', 'like', "%{$search}%")
-                        ->orWhereHas('astap', fn($asq) => $asq->where('nama_barang', 'like', "%{$search}%"));
-                  });
-            });
-        }
 
         $kemitraanRecords = $query->get();
 
@@ -249,61 +155,6 @@ class KemitraanController extends Controller
         ->orderBy('tanggal_reklas', 'desc')
         ->orderBy('id', 'desc');
 
-        // Terapkan filter yang sinkron pada aset reklasifikasi pending (belum ber-PKS)
-        if ($filterStatus !== 'all') {
-            // Karena aset pending belum memiliki status konsesi resmi (Aktif, Konsesi Berakhir, Selesai, Dihentikan),
-            // aset ini tidak boleh muncul ketika pengguna memfilter salah satu status konsesi resmi.
-            $reklasQuery->whereRaw('1 = 0');
-        }
-
-        if ($filterSkema !== 'all') {
-            // Karena aset reklasifikasi pending belum terikat skema PKS fisik definitif,
-            // jangan tampilkan jika pengguna memfilter skema tertentu
-            $reklasQuery->whereRaw('1 = 0');
-        }
-
-        if ($filterTahun !== 'all') {
-            $reklasQuery->where(function ($rq) use ($filterTahun) {
-                $rq->where('tahun', $filterTahun)
-                   ->orWhereHas('astap', fn($asq) => $asq->where('tahun_perolehan', $filterTahun));
-            });
-        }
-
-        if ($filterTw !== 'all') {
-            $twInt = match ($filterTw) {
-                'TW I', '1' => 1,
-                'TW II', '2' => 2,
-                'TW III', '3' => 3,
-                'TW IV', '4' => 4,
-                default => null,
-            };
-            $reklasQuery->where(function ($rq) use ($filterTw, $twInt) {
-                if ($twInt) {
-                    $rq->whereIn('triwulan', [$twInt, (string) $twInt, $filterTw]);
-                } else {
-                    $rq->where('triwulan', $filterTw);
-                }
-            });
-        }
-
-        if ($search !== '') {
-            $reklasQuery->where(function ($rq) use ($search) {
-                $rq->where('asal_nama', 'like', "%{$search}%")
-                   ->orWhere('tujuan_nama', 'like', "%{$search}%")
-                   ->orWhere('asal_kode', 'like', "%{$search}%")
-                   ->orWhere('tujuan_kode', 'like', "%{$search}%")
-                   ->orWhere('keterangan', 'like', "%{$search}%")
-                   ->orWhereHas('astap', function ($asq) use ($search) {
-                       $asq->where('nama_barang', 'like', "%{$search}%")
-                           ->orWhere('kode_108', 'like', "%{$search}%")
-                           ->orWhereHas('registers', function ($rgq) use ($search) {
-                               $rgq->where('nibar', 'like', "%{$search}%")
-                                   ->orWhere('no_register', 'like', "%{$search}%");
-                           });
-                   });
-            });
-        }
-
         $reklasKemitraanRecords = $reklasQuery->get()->unique('astap_id');
 
         return view('pages.kemitraan.index', compact(
@@ -317,6 +168,7 @@ class KemitraanController extends Controller
             'totalMitraUnik',
             'dbUnits',
             'dbMaster108',
+            'filterKib',
             'filterSkema',
             'filterTahun',
             'filterTw',

@@ -27,6 +27,148 @@
             // Mode Tampilan Pemisah Tabel Kemitraan: 'both' | 'dimanfaatkan' | 'ditambahkan' | 'all'
             kemitraanTableTab: 'both',
 
+            // State Filter Client-Side Instan Kemitraan (0ms Tanpa Reload persis seperti Data ASTAP)
+            filterSearch: '{{ $search ?? '' }}',
+            filterKib: '{{ $filterKib ?? 'all' }}',
+            filterSkema: '{{ $filterSkema ?? 'all' }}',
+            filterTahun: '{{ $filterTahun ?? 'all' }}',
+            filterTriwulan: '{{ $filterTw ?? 'all' }}',
+            filterStatus: '{{ $filterStatus ?? 'all' }}',
+
+            dimanfaatkanMetaList: window.__dimanfaatkanMetaList || [],
+            ditambahkanMetaList: window.__ditambahkanMetaList || [],
+            allMetaList: window.__allMetaList || [],
+
+            initMetaLists(dim, dit, all) {
+                if (dim && Array.isArray(dim)) this.dimanfaatkanMetaList = dim;
+                if (dit && Array.isArray(dit)) this.ditambahkanMetaList = dit;
+                if (all && Array.isArray(all)) this.allMetaList = all;
+            },
+
+            get countVisibleDimanfaatkan() {
+                return (this.dimanfaatkanMetaList || []).filter(row => this.matchKemitraan(row)).length;
+            },
+
+            get countVisibleDitambahkan() {
+                return (this.ditambahkanMetaList || []).filter(row => this.matchKemitraan(row)).length;
+            },
+
+            get countVisibleAll() {
+                return (this.allMetaList || []).filter(row => this.matchKemitraan(row)).length;
+            },
+
+            resetAllFilters() {
+                this.filterSearch = '';
+                this.filterKib = 'all';
+                this.filterSkema = 'all';
+                this.filterTahun = 'all';
+                this.filterTriwulan = 'all';
+                this.filterStatus = 'all';
+            },
+
+            matchKemitraan(row) {
+                if (!row) return false;
+
+                // 1. Live Text Search (real-time 0ms)
+                if (this.filterSearch && this.filterSearch.trim() !== '') {
+                    const q = this.filterSearch.toLowerCase().trim();
+                    if (!row.search_text || !row.search_text.includes(q)) {
+                        return false;
+                    }
+                }
+
+                // 2. Klasifikasi KIB (seperti Data ASTAP: milih KIB Tanah langsung disuguhkan!)
+                if (this.filterKib && this.filterKib !== 'all') {
+                    const rowCat = (row.category || '').toUpperCase().trim();
+                    const targetCat = this.filterKib.toUpperCase().trim();
+                    if (targetCat === 'KIB A' || targetCat.includes('TANAH')) {
+                        if (!rowCat.includes('KIB A') && !rowCat.includes('TANAH')) return false;
+                    } else if (targetCat === 'KIB B' || targetCat.includes('MESIN') || targetCat.includes('ALAT')) {
+                        if (!rowCat.includes('KIB B') && !rowCat.includes('MESIN') && !rowCat.includes('ALAT')) return false;
+                    } else if (targetCat === 'KIB C' || targetCat.includes('GEDUNG') || targetCat.includes('BANGUNAN')) {
+                        if (!rowCat.includes('KIB C') && !rowCat.includes('GEDUNG') && !rowCat.includes('BANGUNAN')) return false;
+                    } else if (targetCat === 'KIB D' || targetCat.includes('JARINGAN') || targetCat.includes('JALAN')) {
+                        if (!rowCat.includes('KIB D') && !rowCat.includes('JARINGAN') && !rowCat.includes('JALAN')) return false;
+                    } else if (targetCat === 'KIB E' || targetCat.includes('LAIN')) {
+                        if (!rowCat.includes('KIB E') && !rowCat.includes('LAIN')) return false;
+                    } else if (rowCat !== targetCat) {
+                        return false;
+                    }
+                }
+
+                // 3. Skema Kemitraan
+                if (this.filterSkema && this.filterSkema !== 'all') {
+                    const rowSkema = (row.skema || '').toUpperCase().trim();
+                    const targetSkema = this.filterSkema.toUpperCase().trim();
+                    if (targetSkema === 'KSP' || targetSkema === 'KSO') {
+                        if (!rowSkema.includes('KSP') && !rowSkema.includes('KSO')) return false;
+                    } else if (targetSkema === 'BGS' || targetSkema === 'BSG' || targetSkema.includes('BGS/BSG')) {
+                        if (!rowSkema.includes('BGS') && !rowSkema.includes('BSG')) return false;
+                    } else if (targetSkema === 'SEWA') {
+                        if (!rowSkema.includes('SEWA')) return false;
+                    } else if (targetSkema === 'KSPI') {
+                        if (!rowSkema.includes('KSPI')) return false;
+                    } else if (rowSkema !== targetSkema) {
+                        return false;
+                    }
+                }
+
+                // 4. Tahun Perolehan
+                if (this.filterTahun && this.filterTahun !== 'all') {
+                    if (String(row.tahun) !== String(this.filterTahun)) {
+                        return false;
+                    }
+                }
+
+                // 5. Periode Triwulan
+                if (this.filterTriwulan && this.filterTriwulan !== 'all') {
+                    const rowTw = String(row.triwulan || '').replace(/[\s_]/g, '').toUpperCase();
+                    const targetTw = String(this.filterTriwulan).replace(/[\s_]/g, '').toUpperCase();
+                    const isMatch = (rowTw === targetTw) ||
+                        (targetTw === 'TWI' && (rowTw === 'TW1' || rowTw === '1')) ||
+                        (targetTw === 'TWII' && (rowTw === 'TW2' || rowTw === '2')) ||
+                        (targetTw === 'TWIII' && (rowTw === 'TW3' || rowTw === '3')) ||
+                        (targetTw === 'TWIV' && (rowTw === 'TW4' || rowTw === '4'));
+                    if (!isMatch) return false;
+                }
+
+                // 6. Status Konsesi
+                if (this.filterStatus && this.filterStatus !== 'all') {
+                    const rowStatus = (row.status || '').toLowerCase().trim();
+                    const targetStatus = this.filterStatus.toLowerCase().trim();
+                    if (targetStatus === 'aktif') {
+                        if (!rowStatus.includes('aktif') || rowStatus.includes('berakhir')) return false;
+                    } else if (targetStatus.includes('berakhir')) {
+                        if (!rowStatus.includes('berakhir')) return false;
+                    } else if (targetStatus.includes('selesai')) {
+                        if (!rowStatus.includes('selesai')) return false;
+                    } else if (targetStatus.includes('dihentikan')) {
+                        if (!rowStatus.includes('dihentikan')) return false;
+                    } else if (rowStatus !== targetStatus) {
+                        return false;
+                    }
+                }
+
+                return true;
+            },
+
+            // Generator QR Code Offline (SVG Data URI) untuk TTD Elektronik BSrE Pengurus Barang (Pak Budi)
+            getQrCodeSvg(text) {
+                if (typeof window.getQrCodeSvg === 'function') {
+                    return window.getQrCodeSvg(text);
+                }
+                if (window.QRCode && typeof window.QRCode.toString === 'function') {
+                    let svgStr = '';
+                    window.QRCode.toString(String(text || ''), { type: 'svg', margin: 1 }, (err, svg) => {
+                        if (!err && svg) svgStr = svg;
+                    });
+                    if (svgStr) {
+                        return 'data:image/svg+xml;utf8,' + encodeURIComponent(svgStr);
+                    }
+                }
+                return '';
+            },
+
             // State Modal Cetak BAST Kemitraan (Modal Standar SIMAT)
             showModalPrintBast: false,
             showEditBastForm: false,
@@ -269,10 +411,14 @@
 
             get availableYears() {
                 const yearsSet = new Set();
+                (this.allMetaList || []).forEach(row => {
+                    const yr = parseInt(row.tahun);
+                    if (!isNaN(yr) && yr > 1900) yearsSet.add(yr);
+                });
                 const rawList = window.__simatAstaps || [];
                 rawList.forEach(item => {
                     const yr = parseInt(item.tahun_perolehan || (item.kemitraan && item.kemitraan.tahun));
-                    if (!isNaN(yr)) yearsSet.add(yr);
+                    if (!isNaN(yr) && yr > 1900) yearsSet.add(yr);
                 });
                 yearsSet.add(new Date().getFullYear());
                 return Array.from(yearsSet).sort((a, b) => b - a);
@@ -658,9 +804,10 @@
                         aset_keterangan: masaKonsesi,
                         aset_nilai: nilaiFormatted,
                         
-                        // Pengurus Barang
+                        // Pengurus Barang & TTE BSrE
                         pb_nama: 'BUDI HARTONO, S.Sos',
-                        pb_nip: '19760229 200801 1 010'
+                        pb_nip: '19760229 200801 1 010',
+                        qr_hash: noBastDefault ? noBastDefault.replace(/[^a-zA-Z0-9]/g, '-') : 'BSRE-KEMITRAAN-PENGURUS'
                     };
 
                     // Muat data dari localStorage jika pernah diedit
@@ -669,6 +816,9 @@
                         let saved = localStorage.getItem(this.currentBastStorageKey);
                         if (saved) {
                             this.bastDoc = Object.assign({}, defaultDoc, JSON.parse(saved));
+                            if (!this.bastDoc.qr_hash) {
+                                this.bastDoc.qr_hash = defaultDoc.qr_hash;
+                            }
                             this.isBastModified = true;
                         } else {
                             this.bastDoc = Object.assign({}, defaultDoc);
@@ -715,7 +865,7 @@
     <style>
         @page {
             size: A4 portrait;
-            margin: 15mm 15mm 15mm 15mm;
+            margin: 12mm 15mm 12mm 15mm;
         }
         body {
             background: #ffffff !important;
@@ -723,12 +873,13 @@
             padding: 0 !important;
             margin: 0 !important;
             font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif;
-            font-size: 10pt;
-            line-height: 1.5;
+            font-size: 9.5pt;
+            line-height: 1.4;
         }
         table {
             border-collapse: collapse;
             width: 100%;
+            table-layout: fixed;
         }
         .no-print { display: none !important; }
     </style>

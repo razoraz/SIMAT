@@ -199,7 +199,12 @@
 
                 <!-- Section 4: Pengurus Barang Pengguna -->
                 <div class="space-y-1.5 pt-2 border-t border-slate-800">
-                    <span class="text-[10px] font-bold text-amber-400 uppercase tracking-wider block">✍️ Pengurus Barang Pengguna (Mengetahui / Mengesahkan)</span>
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-bold text-amber-400 uppercase tracking-wider block">✍️ Pengurus Barang Pengguna (Mengetahui / Mengesahkan)</span>
+                        <span class="text-[9.5px] text-teal-400 bg-teal-500/10 border border-teal-500/30 px-2 py-0.5 rounded-md font-mono">
+                            🔒 QR Code BSrE Offline Aktif
+                        </span>
+                    </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block text-slate-400 text-[10px] mb-1">Nama Pengurus Barang</label>
@@ -322,42 +327,43 @@
                     </p>
 
                     <!-- TABEL RINCIAN OBJEK BARANG MILIK DAERAH (STANDAR KEDINASAN RESMI) -->
-                    <div class="my-2.5 overflow-x-auto">
-                        <table class="w-full text-black border-collapse border border-black text-[9pt] sm:text-[9.5pt]" style="border-collapse: collapse; width: 100%; border: 1px solid black;">
+                    <div class="my-2.5 w-full">
+                        <table class="w-full text-black border-collapse border border-black text-[9pt] sm:text-[9.5pt]" style="border-collapse: collapse; width: 100%; border: 1.5px solid black; table-layout: fixed;">
                             <thead>
-                                <tr style="font-weight:700; color:#000000; border:1px solid black; background-color:#ffffff;">
-                                    <th style="border:1px solid black; padding:6px 6px; text-align:center; width:6%; background-color:#ffffff; font-weight:700;">NO</th>
-                                    <th style="border:1px solid black; padding:6px 10px; text-align:left; background-color:#ffffff; font-weight:700;">NAMA BARANG / SPESIFIKASI</th>
-                                    <th style="border:1px solid black; padding:6px 8px; text-align:center; width:17%; background-color:#ffffff; font-weight:700;">KODE 108</th>
-                                    <th style="border:1px solid black; padding:6px 8px; text-align:center; width:13%; background-color:#ffffff; font-weight:700;">NIBAR</th>
-                                    <th style="border:1px solid black; padding:6px 8px; text-align:center; width:12%; background-color:#ffffff; font-weight:700;">VOL</th>
-                                    <th style="border:1px solid black; padding:6px 8px; text-align:center; width:10%; background-color:#ffffff; font-weight:700;">KONDISI</th>
-                                    <th style="border:1px solid black; padding:6px 10px; text-align:right; width:18%; background-color:#ffffff; font-weight:700;">NILAI (Rp)</th>
+                                <tr style="font-weight: 700; color: #000000; border: 1.5px solid black; background-color: #f8fafc;">
+                                    <th style="border: 1px solid black; padding: 6px 4px; text-align: center; width: 5%; font-weight: 700; font-size: 8.5pt;">NO</th>
+                                    <th style="border: 1px solid black; padding: 6px 8px; text-align: left; width: 30%; font-weight: 700; font-size: 8.5pt;">NAMA BARANG / SPESIFIKASI</th>
+                                    <th style="border: 1px solid black; padding: 6px 4px; text-align: center; width: 15%; font-weight: 700; font-size: 8.5pt;">KODE 108</th>
+                                    <th style="border: 1px solid black; padding: 6px 4px; text-align: center; width: 19%; font-weight: 700; font-size: 8.5pt;">NIBAR</th>
+                                    <th style="border: 1px solid black; padding: 6px 4px; text-align: center; width: 9%; font-weight: 700; font-size: 8.5pt;">VOL</th>
+                                    <th style="border: 1px solid black; padding: 6px 4px; text-align: center; width: 9%; font-weight: 700; font-size: 8.5pt;">KONDISI</th>
+                                    <th style="border: 1px solid black; padding: 6px 8px; text-align: right; width: 13%; font-weight: 700; font-size: 8.5pt;">NILAI (Rp)</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr style="border:1px solid black; background-color:#ffffff; color:#000000;">
-                                    <td style="border:1px solid black; padding:6px 6px; text-align:center; font-weight:700; vertical-align:top;">1</td>
-                                    <td style="border:1px solid black; padding:6px 10px; text-align:left; vertical-align:top;">
-                                        <strong class="block" x-text="bastDoc.aset_nama"></strong>
-                                        <span class="text-[8pt] text-slate-700 block mt-0.5">
-                                            Lokasi: Kompleks RSUD Dr. H. Koesnandi Bondowoso
+                                <tr style="border: 1px solid black; background-color: #ffffff; color: #000000;">
+                                    <td style="border: 1px solid black; padding: 6px 4px; text-align: center; font-weight: 700; vertical-align: top; font-size: 8.5pt;">1</td>
+                                    <td style="border: 1px solid black; padding: 6px 8px; text-align: left; vertical-align: top; font-size: 8.5pt; word-break: break-word;">
+                                        <strong class="block leading-snug" x-text="bastDoc.aset_nama"></strong>
+                                        <span class="text-[8pt] text-slate-700 block mt-0.5 leading-tight">
+                                            Lokasi: <span x-text="bastDoc.aset_lokasi || 'Kompleks RSUD Dr. H. Koesnandi Bondowoso'"></span>
                                         </span>
-                                        <span class="text-[8pt] text-slate-700 block italic mt-0.5" x-text="'Masa Konsesi: ' + bastDoc.aset_keterangan"></span>
+                                        <span class="text-[8pt] text-slate-700 block italic mt-0.5 leading-tight" x-show="bastDoc.aset_keterangan" x-text="'Masa Konsesi: ' + bastDoc.aset_keterangan"></span>
                                     </td>
-                                    <td style="border:1px solid black; padding:6px 8px; text-align:center; font-family:monospace; font-size:8.5pt; vertical-align:top;" x-text="bastDoc.aset_kode108"></td>
-                                    <td style="border:1px solid black; padding:6px 8px; text-align:center; font-family:monospace; font-size:8.5pt; vertical-align:top;" x-text="bastDoc.aset_nibar"></td>
-                                    <td style="border:1px solid black; padding:6px 8px; text-align:center; vertical-align:top;" x-text="bastDoc.aset_volume"></td>
-                                    <td style="border:1px solid black; padding:6px 8px; text-align:center; vertical-align:top;" x-text="bastDoc.aset_kondisi"></td>
-                                    <td style="border:1px solid black; padding:6px 10px; text-align:right; font-weight:700; font-family:monospace; vertical-align:top;" x-text="bastDoc.aset_nilai"></td>
+                                    <td style="border: 1px solid black; padding: 6px 4px; text-align: center; font-family: monospace; font-size: 8pt; vertical-align: top; word-break: break-all;" x-text="bastDoc.aset_kode108"></td>
+                                    <td style="border: 1px solid black; padding: 6px 4px; text-align: center; font-family: monospace; font-size: 7.5pt; vertical-align: top; word-break: break-all; line-height: 1.3;" x-text="bastDoc.aset_nibar"></td>
+                                    <td style="border: 1px solid black; padding: 6px 4px; text-align: center; vertical-align: top; font-size: 8.5pt;" x-text="bastDoc.aset_volume"></td>
+                                    <td style="border: 1px solid black; padding: 6px 4px; text-align: center; vertical-align: top; font-size: 8.5pt;" x-text="bastDoc.aset_kondisi"></td>
+                                    <td style="border: 1px solid black; padding: 6px 8px; text-align: right; font-weight: 700; font-family: monospace; vertical-align: top; font-size: 8.5pt; white-space: nowrap;" x-text="bastDoc.aset_nilai"></td>
                                 </tr>
-                                <!-- BARIS TOTAL JUMLAH -->
-                                <tr style="border:1px solid black; font-weight:700; background-color:#ffffff; color:#000000;">
-                                    <td colspan="4" style="border:1px solid black; padding:6px 10px; text-align:center; font-weight:700;">
+                                <!-- BARIS TOTAL JUMLAH (7 KOLOM RAPI PRESISI) -->
+                                <tr style="border: 1.5px solid black; font-weight: 700; background-color: #f8fafc; color: #000000;">
+                                    <td colspan="4" style="border: 1px solid black; padding: 6px 8px; text-align: center; font-weight: 700; font-size: 8.5pt; letter-spacing: 0.2px;">
                                         TOTAL TAKSIRAN NILAI PEMANFAATAN BMD
                                     </td>
-                                    <td colspan="2" style="border:1px solid black; padding:6px 8px; text-align:center; font-weight:700;" x-text="bastDoc.aset_volume"></td>
-                                    <td style="border:1px solid black; padding:6px 10px; text-align:right; font-weight:700; font-family:monospace;" x-text="'Rp ' + bastDoc.aset_nilai"></td>
+                                    <td style="border: 1px solid black; padding: 6px 4px; text-align: center; font-weight: 700; font-size: 8.5pt;" x-text="bastDoc.aset_volume"></td>
+                                    <td style="border: 1px solid black; padding: 6px 4px; text-align: center; font-size: 8.5pt; color: #64748b;">-</td>
+                                    <td style="border: 1px solid black; padding: 6px 8px; text-align: right; font-weight: 700; font-family: monospace; font-size: 8.5pt; white-space: nowrap;" x-text="'Rp ' + (bastDoc.aset_nilai ? (bastDoc.aset_nilai.startsWith('Rp') ? bastDoc.aset_nilai.replace('Rp', '').trim() : bastDoc.aset_nilai) : '0')"></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -404,15 +410,28 @@
                         </div>
                     </div>
 
-                    <!-- MENGETAHUI / MENGESAHKAN: PENGURUS BARANG PENGGUNA RSUD -->
-                    <div class="mt-5 text-center text-black text-[9.5pt] sm:text-[10pt]">
-                        <p class="m-0 font-bold uppercase">MENGETAHUI / MENGESAHKAN:</p>
+                    <!-- MENGETAHUI / MENGESAHKAN: PENGURUS BARANG PENGGUNA RSUD (PAK BUDI HARTONO - TTD ELEKTRONIK BSRE DENGAN SCAN QR CODE OFFLINE) -->
+                    <div class="mt-4 text-center text-black text-[9.5pt] sm:text-[10pt]" style="text-align: center;">
+                        <p class="m-0 font-bold uppercase text-[9.5pt]">MENGETAHUI / MENGESAHKAN:</p>
                         <p class="font-bold text-[9pt] text-slate-800 uppercase m-0">PENGURUS BARANG PENGGUNA RSUD DR. H. KOESNANDI</p>
-                        <div class="h-16 my-1" style="height:65px; margin:4px 0;">
-                            <!-- Ruang Bersih TTD Pengurus Barang Pengguna -->
+                        
+                        <!-- TTD Elektronik BSrE Pengurus Barang (Pak Budi Hartono) dengan QR Code Offline -->
+                        <div class="my-1.5 flex items-center justify-center" style="display: flex; justify-content: center; align-items: center; margin: 6px 0; min-height: 55px;">
+                            <div style="padding: 4px 8px; border: 1.5px solid #0d9488; background: #f0fdfa; border-radius: 6px; display: inline-flex; align-items: center; gap: 8px; text-align: left;">
+                                <img :src="getQrCodeSvg(window.location.origin + '/validasi-tte/' + (bastDoc.qr_hash || bastDoc.nomor_bast || 'BSRE-KEMITRAAN-PENGURUS'))" 
+                                     alt="QR TTE BSrE" 
+                                     style="width: 42px; height: 42px; flex-shrink: 0; display: block; border-radius: 2px;">
+                                <div style="font-size: 7.5px; line-height: 1.35; color: #1e293b;">
+                                    <div style="font-weight: 800; color: #134e4a; font-size: 8px; letter-spacing: 0.3px;">DITANDATANGANI ELEKTRONIK</div>
+                                    <div style="color: #374151; font-weight: 600;">Pengurus Barang Pengguna</div>
+                                    <div style="font-size: 6.5px; color: #6b7280; font-family: monospace;">Sertifikat BSrE - BSSN</div>
+                                    <div style="font-size: 6.5px; color: #0f766e; font-family: monospace; font-weight: 700;" x-text="'Tgl: ' + (bastDoc.hari_tanggal ? bastDoc.hari_tanggal.split('tanggal').pop().trim() : '{{ date('d/m/Y') }}')"></div>
+                                </div>
+                            </div>
                         </div>
-                        <p class="font-bold underline uppercase m-0" x-text="bastDoc.pb_nama"></p>
-                        <p class="m-0 font-mono text-[9pt]" x-text="'NIP. ' + bastDoc.pb_nip"></p>
+
+                        <p class="font-bold underline uppercase m-0" style="color: #000000 !important;" x-text="bastDoc.pb_nama || 'BUDI HARTONO, S.Sos'"></p>
+                        <p class="m-0 font-mono text-[9pt]" style="color: #000000 !important;" x-text="'NIP. ' + (bastDoc.pb_nip || '19760229 200801 1 010')"></p>
                     </div>
 
                 </div>
