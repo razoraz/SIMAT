@@ -16,16 +16,22 @@
 
         <!-- Next Step Button -->
         <button type="button" x-show="currentStep < 3" @click="nextStep()"
-                class="flex-1 sm:flex-initial px-5 sm:px-6 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-lg shadow-cyan-500/20 transition-all flex items-center justify-center space-x-2 cursor-pointer">
+                class="flex-1 sm:flex-initial px-5 sm:px-6 py-2.5 rounded-xl font-bold text-xs shadow-lg transition-all flex items-center justify-center space-x-2 cursor-pointer"
+                :class="tipeKemitraan === 'dimanfaatkan' 
+                    ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-cyan-500/20' 
+                    : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-emerald-500/20'">
             <span>Lanjut Langkah <span x-text="currentStep + 1"></span> &rarr;</span>
         </button>
 
         <!-- Submit Button -->
         <button type="button" x-show="currentStep === 3" @click="submitForm()" :disabled="isSubmitting"
-                class="flex-1 sm:flex-initial px-6 sm:px-8 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-cyan-500/25 transition-all flex items-center justify-center space-x-2 active:scale-95 disabled:opacity-50 cursor-pointer">
+                class="flex-1 sm:flex-initial px-6 sm:px-8 py-2.5 rounded-xl font-extrabold text-xs shadow-lg transition-all flex items-center justify-center space-x-2 active:scale-95 disabled:opacity-50 cursor-pointer"
+                :class="tipeKemitraan === 'dimanfaatkan' 
+                    ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-cyan-500/25' 
+                    : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-emerald-500/25'">
             <svg x-show="!isSubmitting" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
             <svg x-show="isSubmitting" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-            <span x-text="isSubmitting ? (isEditMode ? 'Menyimpan Perubahan...' : 'Menyimpan...') : (isEditMode ? 'Simpan Perubahan Aset' : 'Simpan Aset Kemitraan')"></span>
+            <span x-text="isSubmitting ? (isEditMode ? 'Menyimpan Perubahan...' : 'Menyimpan...') : (isEditMode ? 'Simpan Perubahan Aset' : (tipeKemitraan === 'dimanfaatkan' ? 'Simpan Pemanfaatan BMD' : 'Simpan Penambahan Aset Mitra'))"></span>
         </button>
     </div>
 </div>

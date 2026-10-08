@@ -4,15 +4,21 @@
 <div x-show="currentStep === 2" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-6">
     
     <div>
-        <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-cyan-400/10 text-cyan-300 border border-cyan-400/20 text-xs font-bold mb-2">
-            <span>🔍 LANGKAH 2 DARI 3: KLASIFIKASI 108 &amp; SPESIFIKASI FISIK ASET</span>
+        <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-bold mb-2 border transition-all"
+             :class="tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-400/10 text-cyan-300 border-cyan-400/20' : 'bg-emerald-400/10 text-emerald-300 border-emerald-400/20'">
+            <span x-show="tipeKemitraan === 'dimanfaatkan'">🏛️ LANGKAH 2 DARI 3: KLASIFIKASI 108 PEMANFAATAN BMD</span>
+            <span x-show="tipeKemitraan === 'ditambahkan'">📦 LANGKAH 2 DARI 3: KLASIFIKASI 108 &amp; SPESIFIKASI ALAT BARU MITRA</span>
         </div>
         <h2 class="text-lg font-bold text-white flex items-center space-x-2">
-            <span class="p-2 rounded-xl bg-cyan-400/10 text-cyan-400 text-sm">📊</span>
-            <span>Langkah 2: Klasifikasi 108 &amp; Spesifikasi Fisik Aset</span>
+            <span class="p-2 rounded-xl text-sm"
+                  :class="tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-400/10 text-cyan-400' : 'bg-emerald-400/10 text-emerald-400'"
+                  x-text="tipeKemitraan === 'dimanfaatkan' ? '🏛️' : '📦'"></span>
+            <span x-show="tipeKemitraan === 'dimanfaatkan'">Langkah 2: Klasifikasi 108 Pemanfaatan BMD &amp; Nilai Sewa</span>
+            <span x-show="tipeKemitraan === 'ditambahkan'">Langkah 2: Spesifikasi Teknis &amp; Taksiran Nilai Aset Baru Mitra</span>
         </h2>
         <p class="text-xs text-slate-400 mt-1">
-            Pilih klasifikasi kode barang Permendagri No. 108/2016 (sub-akun <strong>1.5.2 Kemitraan Pihak Ketiga</strong>), formulir spesifikasi teknis barang sesuai KIB, serta rincian taksiran nilai wajar aset kemitraan.
+            <span x-show="tipeKemitraan === 'dimanfaatkan'">Pilih sub-akun 1.5.2 Pemanfaatan BMD RSUD (Sewa Tanah/Gedung/Peralatan atau KSP) serta total tarif/nilai kontrak pemanfaatan.</span>
+            <span x-show="tipeKemitraan === 'ditambahkan'">Pilih klasifikasi akun 1.5.2 kemitraan, formulir rincian spesifikasi barang baru rekanan (alat medis, laboratorium, fasilitas KSO), serta taksiran nilai wajar perolehan aset.</span>
         </p>
     </div>
 
@@ -29,24 +35,34 @@
     </template>
 
     <!-- Quick Action / Shortcut Akun 1.5.2 (Rekomendasi Sub-Sub Rincian Kemitraan) -->
-    <div class="p-5 rounded-3xl bg-slate-900/80 border border-cyan-500/30 backdrop-blur-md shadow-xl space-y-4 relative overflow-hidden">
+    <div class="p-5 rounded-3xl bg-slate-900/80 border backdrop-blur-md shadow-xl space-y-4 relative overflow-hidden transition-all"
+         :class="tipeKemitraan === 'dimanfaatkan' ? 'border-cyan-500/30' : 'border-emerald-500/30'">
         <!-- Subtle Glow Effect -->
-        <div class="absolute -right-10 -bottom-10 w-44 h-44 bg-cyan-500/5 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="absolute -right-10 -bottom-10 w-44 h-44 rounded-full blur-2xl pointer-events-none"
+             :class="tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-500/5' : 'bg-emerald-500/5'"></div>
 
         <!-- Header Card: Info Skema Aktif -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800/80">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-400/20 to-cyan-600/10 text-cyan-400 flex items-center justify-center text-lg font-bold shrink-0 border border-cyan-500/30 shadow-inner">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-br flex items-center justify-center text-lg font-bold shrink-0 border shadow-inner"
+                     :class="tipeKemitraan === 'dimanfaatkan' ? 'from-cyan-400/20 to-cyan-600/10 text-cyan-400 border-cyan-500/30' : 'from-emerald-400/20 to-emerald-600/10 text-emerald-400 border-emerald-500/30'">
                     ⚡
                 </div>
                 <div>
                     <div class="flex items-center gap-2 flex-wrap">
-                        <h3 class="text-xs font-extrabold text-white tracking-wide">Pilih Objek Akun 1.5.2 Kemitraan</h3>
-                        <span class="px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 text-[10px] font-bold border border-cyan-500/20">Permendagri 108</span>
-                        <span class="px-2 py-0.5 rounded-full bg-slate-800 text-cyan-400 text-[10px] font-bold border border-slate-700 font-mono" x-text="activeSkemaKode"></span>
+                        <h3 class="text-xs font-extrabold text-white tracking-wide">
+                            <span x-show="tipeKemitraan === 'dimanfaatkan'">Pilih Objek Akun 1.5.2 Pemanfaatan BMD</span>
+                            <span x-show="tipeKemitraan === 'ditambahkan'">Pilih Objek Akun 1.5.2 Aset Baru Mitra</span>
+                        </h3>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border font-mono"
+                              :class="tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-500/10 text-cyan-300 border-cyan-500/20' : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'">Permendagri 108</span>
+                        <span class="px-2 py-0.5 rounded-full bg-slate-800 text-[10px] font-bold border border-slate-700 font-mono"
+                              :class="tipeKemitraan === 'dimanfaatkan' ? 'text-cyan-400' : 'text-emerald-400'"
+                              x-text="activeSkemaKode"></span>
                     </div>
                     <p class="text-[11px] text-slate-400 mt-0.5">
-                        Skema Aktif: <span class="font-bold text-cyan-300" x-text="activeSkemaLabel"></span> &mdash; Klik salah satu kartu objek di bawah:
+                        <span x-show="tipeKemitraan === 'dimanfaatkan'">Skema Pemanfaatan: <span class="font-bold text-cyan-300" x-text="activeSkemaLabel"></span> &mdash; Klik salah satu kartu objek di bawah:</span>
+                        <span x-show="tipeKemitraan === 'ditambahkan'">Skema Kemitraan: <span class="font-bold text-emerald-300" x-text="activeSkemaLabel"></span> &mdash; Klik salah satu kartu objek aset baru di bawah:</span>
                     </p>
                 </div>
             </div>
@@ -220,13 +236,17 @@
             </div>
 
             <!-- 2. Total Taksiran Nilai Wajar Aset (Rp) -->
-            <div class="p-5 rounded-2xl bg-slate-900/90 border border-cyan-500/30 space-y-2.5 shadow-md">
+            <div class="p-5 rounded-2xl bg-slate-900/90 border space-y-2.5 shadow-md"
+                 :class="tipeKemitraan === 'dimanfaatkan' ? 'border-cyan-500/30' : 'border-emerald-500/30'">
                 <div class="flex items-center justify-between">
                     <label class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                        <span>Total Taksiran Nilai Wajar Aset (Rp) <span class="text-rose-400">*</span></span>
+                        <span x-show="tipeKemitraan === 'dimanfaatkan'">Total Nilai Kontrak Sewa / Pemanfaatan (Rp) <span class="text-rose-400">*</span></span>
+                        <span x-show="tipeKemitraan === 'ditambahkan'">Total Taksiran Nilai Investasi / Aset Baru Mitra (Rp) <span class="text-rose-400">*</span></span>
                         <span class="text-[10px] text-emerald-400 font-bold font-mono" x-show="isMultiItemActive && formData.total_realisasi > 0">🔒 Akumulasi Otomatis</span>
                     </label>
-                    <span class="text-xs font-mono text-cyan-300 font-extrabold" x-text="'Rp ' + formatRupiah(formData.total_realisasi)"></span>
+                    <span class="text-xs font-mono font-extrabold"
+                          :class="tipeKemitraan === 'dimanfaatkan' ? 'text-cyan-300' : 'text-emerald-300'"
+                          x-text="'Rp ' + formatRupiah(formData.total_realisasi)"></span>
                 </div>
 
                 <div class="relative">

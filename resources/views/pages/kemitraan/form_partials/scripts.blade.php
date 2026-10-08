@@ -16,6 +16,41 @@
             isSubmitting: false,
             isDataVerified: false,
 
+            // Tipe Kemitraan: 'dimanfaatkan' (BMD RSUD disewakan/dimanfaatkan) vs 'ditambahkan' (Aset Baru Rekanan)
+            tipeKemitraan: (function() {
+                if (window.initialTipeKemitraan && ['dimanfaatkan', 'ditambahkan'].includes(window.initialTipeKemitraan)) {
+                    return window.initialTipeKemitraan;
+                }
+                const urlParam = new URLSearchParams(window.location.search).get('tipe');
+                if (urlParam === 'ditambahkan') return 'ditambahkan';
+                if (urlParam === 'dimanfaatkan') return 'dimanfaatkan';
+                if (window.editAstapData) {
+                    const k = window.editAstapData.kemitraan || {};
+                    const spec = window.editAstapData.spesifikasi_json || {};
+                    const hasObj = k.objek_astap_id || spec.objek_astap_id || k.objek_nibar || spec.objek_nibar || window.editAstapData.is_reklas;
+                    return hasObj ? 'dimanfaatkan' : 'ditambahkan';
+                }
+                return 'dimanfaatkan';
+            })(),
+
+            setTipeKemitraan(t) {
+                if (this.tipeKemitraan === t) return;
+                this.tipeKemitraan = t;
+                if (t === 'ditambahkan') {
+                    this.clearObjekAset();
+                    if (this.formData.skema_kemitraan === 'Sewa') {
+                        this.formData.skema_kemitraan = 'KSO';
+                    }
+                    this.showToast('Mode Penambahan Aset Mitra', 'Beralih ke template pencatatan aset baru yang didatangkan/ditambahkan oleh pihak ketiga (Mitra KSO).', 'success');
+                } else {
+                    if (this.formData.skema_kemitraan === 'KSO') {
+                        this.formData.skema_kemitraan = 'Sewa';
+                    }
+                    this.showToast('Mode Pemanfaatan BMD', 'Beralih ke template pemanfaatan aset milik RSUD yang disewakan / dikerjasamakan.', 'info');
+                }
+                this.syncCascadingToActiveSkema();
+            },
+
             // Error state per langkah — ditampilkan sebagai banner inline di tiap step
             stepErrors: { 1: '', 2: '', 3: '' },
 
@@ -947,6 +982,13 @@
                 const spec = (typeof d.spesifikasi_json === 'object' && d.spesifikasi_json !== null) 
                     ? d.spesifikasi_json 
                     : (typeof d.spesifikasi_json === 'string' ? (JSON.parse(d.spesifikasi_json) || {}) : {});
+
+                // Tentukan tipe kemitraan berdasarkan data eksisting
+                if (kemitraan.objek_astap_id || kemitraan.objek_register_id || kemitraan.objek_nibar || spec.objek_nibar || spec.objek_astap_id || d.is_reklas) {
+                    this.tipeKemitraan = 'dimanfaatkan';
+                } else {
+                    this.tipeKemitraan = 'ditambahkan';
+                }
 
                 // Step 1: Legalitas PKS & Mitra
                 this.formData.mitra_nama = kemitraan.mitra_nama || spec.mitra_nama || '';
@@ -2114,6 +2156,22 @@
                 this.clearStepError(s);
 
                 if (s === 1) {
+                    // Validasi khusus mode Pemanfaatan BMD RSUD vs Penambahan Aset Mitra
+                    if (this.tipeKemitraan === 'dimanfaatkan') {
+                        if (!this.formData.objek_astap_id && !this.formData.objek_register_id && !this.formData.objek_nibar) {
+                            const msg = 'Pada mode Pemanfaatan BMD, Anda wajib memilih objek aset milik RSUD yang disewakan / dikerjasamakan ke mitra.';
+                            this.showToast('Objek BMD Wajib Dipilih', msg, 'error');
+                            this.setStepError(1, msg);
+                            return false;
+                        }
+                    } else if (this.tipeKemitraan === 'ditambahkan') {
+                        // Pastikan objek BMD eksisting dinetralkan untuk aset baru mitra
+                        this.formData.objek_astap_id = null;
+                        this.formData.objek_register_id = null;
+                        this.formData.objek_nibar = '';
+                        this.formData.objek_aset_terpilih = null;
+                    }
+
                     if (!this.formData.mitra_nama || !this.formData.mitra_nama.trim()) {
                         const msg = 'Mohon isi nama perusahaan mitra / rekanan pihak ketiga.';
                         this.showToast('Validasi Langkah 1 Gagal', msg, 'error');
@@ -2598,7 +2656,12 @@
                     const json = await res.json();
 
                     if (res.ok && json.success) {
-                        this.showToast('Berhasil Disimpan!', json.message || (this.isEditMode ? 'Perubahan Aset Kemitraan berhasil disimpan.' : 'Data Aset Kemitraan berhasil dicatat ke SIMAT-RK.'), 'success');
+                        const successMsg = json.message || (this.isEditMode 
+                            ? 'Perubahan Aset Kemitraan berhasil disimpan.' 
+                            : (this.tipeKemitraan === 'dimanfaatkan' 
+                                ? 'Pencatatan Pemanfaatan BMD RSUD berhasil disimpan ke SIMAT-RK.' 
+                                : 'Pencatatan Aset Baru Ditambahkan Mitra berhasil disimpan ke SIMAT-RK.'));
+                        this.showToast('Berhasil Disimpan!', successMsg, 'success');
                         setTimeout(() => {
                             // BUG-02 FIX: fallback redirect seharusnya ke master kemitraan, bukan astap.index
                             window.location.href = json.redirect || '{{ route('master.kemitraan') }}';

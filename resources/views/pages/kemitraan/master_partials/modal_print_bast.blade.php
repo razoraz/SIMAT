@@ -31,7 +31,14 @@
                             💾 Tersimpan
                         </span>
                     </h3>
-                    <p class="text-[11px] text-slate-400">Dokumen Resmi Pengesahan Pemanfaatan BMD RSUD Dr. H. Koesnandi</p>
+                    <p class="text-[11px] text-slate-400">
+                        <template x-if="bastDoc && bastDoc.format_tipe === 'ditambahkan'">
+                            <span class="text-emerald-400 font-semibold">Dokumen Resmi Penerimaan Pengadaan &amp; Penambahan Aset Mitra ke RSUD (Akun 1.5.2)</span>
+                        </template>
+                        <template x-if="!bastDoc || bastDoc.format_tipe !== 'ditambahkan'">
+                            <span class="text-cyan-400 font-semibold">Dokumen Resmi Pengesahan Pemanfaatan BMD RSUD Dr. H. Koesnandi kepada Mitra</span>
+                        </template>
+                    </p>
                 </div>
             </div>
 
@@ -73,13 +80,35 @@
                     <div class="flex items-center space-x-2">
                         <span class="p-1.5 rounded-lg bg-purple-500/20 text-purple-300">✏️</span>
                         <div class="font-bold text-purple-300 text-xs uppercase tracking-wider">
-                            Live Edit Surat BAST Pemanfaatan BMD (Otomatis Berubah Pada Lembar Cetak):
+                            Live Edit Surat BAST Kemitraan (Otomatis Berubah Pada Lembar Cetak):
                         </div>
                     </div>
                     <button type="button" @click="saveBastData()"
                         class="px-4 py-1.5 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 font-extrabold text-xs shadow-md transition-all active:scale-95 flex items-center space-x-1.5 cursor-pointer">
                         <span>💾 Simpan Perubahan</span>
                     </button>
+                </div>
+
+                <!-- Pemilih Format / Template BAST (Pemanfaatan BMD vs Penambahan Aset Mitra) -->
+                <div class="p-3 bg-slate-900/90 rounded-2xl border border-purple-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                    <div>
+                        <span class="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider block">Pilihan Template / Format BAST:</span>
+                        <p class="text-[11px] text-slate-400">Pilih alur serah terima sesuai klasifikasi objek barang kemitraan.</p>
+                    </div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <button type="button" @click="switchBastFormat('dimanfaatkan')"
+                            :class="bastDoc.format_tipe === 'dimanfaatkan' ? 'bg-cyan-500/25 text-cyan-300 border-cyan-400 font-extrabold shadow-md shadow-cyan-500/20 ring-1 ring-cyan-400/50' : 'bg-slate-950 text-slate-400 border-slate-700 hover:text-white'"
+                            class="px-3 py-1.5 rounded-xl border text-xs transition-all flex items-center gap-1.5 cursor-pointer">
+                            <span>🏛️</span>
+                            <span>1. Pemanfaatan BMD (RSUD ➔ Mitra)</span>
+                        </button>
+                        <button type="button" @click="switchBastFormat('ditambahkan')"
+                            :class="bastDoc.format_tipe === 'ditambahkan' ? 'bg-emerald-500/25 text-emerald-300 border-emerald-400 font-extrabold shadow-md shadow-emerald-500/20 ring-1 ring-emerald-400/50' : 'bg-slate-950 text-slate-400 border-slate-700 hover:text-white'"
+                            class="px-3 py-1.5 rounded-xl border text-xs transition-all flex items-center gap-1.5 cursor-pointer">
+                            <span>📦</span>
+                            <span>2. Penambahan Aset Mitra (Mitra ➔ RSUD)</span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Section 1: Informasi Dokumen & Waktu -->
@@ -117,7 +146,9 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-800">
                     <!-- Pihak I -->
                     <div class="p-3.5 bg-slate-900/90 rounded-2xl border border-purple-500/20 space-y-2.5">
-                        <span class="text-[10px] font-bold text-purple-300 uppercase tracking-wider block">🏛️ PIHAK I (RSUD / KUASA PENGGUNA BARANG)</span>
+                        <span class="text-[10px] font-bold text-purple-300 uppercase tracking-wider block"
+                              x-text="bastDoc.format_tipe === 'ditambahkan' ? '🏛️ PIHAK I (RSUD - Pihak Yang Menerima)' : '🏛️ PIHAK I (RSUD - Pihak Yang Menyerahkan)'">
+                        </span>
                         <div>
                             <label class="block text-slate-400 text-[10px] mb-0.5">Nama Lengkap &amp; Gelar</label>
                             <input type="text" x-model="bastDoc.p1_nama" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-bold text-xs focus:border-purple-400 focus:outline-none">
@@ -140,7 +171,9 @@
 
                     <!-- Pihak II -->
                     <div class="p-3.5 bg-slate-900/90 rounded-2xl border border-emerald-500/20 space-y-2.5">
-                        <span class="text-[10px] font-bold text-emerald-300 uppercase tracking-wider block">🏢 PIHAK II (MITRA KERJA SAMA)</span>
+                        <span class="text-[10px] font-bold text-emerald-300 uppercase tracking-wider block"
+                              x-text="bastDoc.format_tipe === 'ditambahkan' ? '🏢 PIHAK II (MITRA - Pihak Yang Menyerahkan)' : '🏢 PIHAK II (MITRA - Pihak Yang Menerima)'">
+                        </span>
                         <div>
                             <label class="block text-slate-400 text-[10px] mb-0.5">Nama Perusahaan / Mitra</label>
                             <input type="text" x-model="bastDoc.p2_perusahaan" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-emerald-300 font-bold text-xs focus:border-emerald-400 focus:outline-none">
@@ -164,22 +197,36 @@
 
                 <!-- Section 3: Objek Barang & Nilai -->
                 <div class="space-y-1.5 pt-2 border-t border-slate-800">
-                    <span class="text-[10px] font-bold text-purple-300 uppercase tracking-wider block">📦 Rincian Objek Barang Milik Daerah (BMD)</span>
+                    <span class="text-[10px] font-bold text-purple-300 uppercase tracking-wider block"
+                          x-text="bastDoc.format_tipe === 'ditambahkan' ? '📦 Rincian Pengadaan & Penambahan Aset Mitra (Akun 1.5.2)' : '📦 Rincian Objek Barang Milik Daerah (BMD)'">
+                    </span>
                     <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
                         <div class="sm:col-span-2">
                             <label class="block text-slate-400 text-[10px] mb-1">Nama Barang / Spesifikasi Objek</label>
                             <input type="text" x-model="bastDoc.aset_nama" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-bold text-xs focus:border-purple-400 focus:outline-none">
                         </div>
+                        <template x-if="bastDoc.format_tipe === 'ditambahkan'">
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1">Merk / Type</label>
+                                <input type="text" x-model="bastDoc.aset_merk" placeholder="Contoh: Siemens / GE" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white text-xs focus:border-purple-400 focus:outline-none">
+                            </div>
+                        </template>
+                        <template x-if="bastDoc.format_tipe === 'ditambahkan'">
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1">No. Seri / Pabrik</label>
+                                <input type="text" x-model="bastDoc.aset_no_pabrik" placeholder="No pabrik jika ada" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white text-xs focus:border-purple-400 focus:outline-none">
+                            </div>
+                        </template>
                         <div>
-                            <label class="block text-slate-400 text-[10px] mb-1">Kode 108</label>
+                            <label class="block text-slate-400 text-[10px] mb-1" x-text="bastDoc.format_tipe === 'ditambahkan' ? 'Kode 108 Kemitraan' : 'Kode 108'"></label>
                             <input type="text" x-model="bastDoc.aset_kode108" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 font-mono text-xs focus:border-purple-400 focus:outline-none">
                         </div>
                         <div>
-                            <label class="block text-slate-400 text-[10px] mb-1">NIBAR</label>
+                            <label class="block text-slate-400 text-[10px] mb-1" x-text="bastDoc.format_tipe === 'ditambahkan' ? 'NIBAR / Identitas Aset' : 'NIBAR'"></label>
                             <input type="text" x-model="bastDoc.aset_nibar" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 font-mono text-xs focus:border-purple-400 focus:outline-none">
                         </div>
                         <div>
-                            <label class="block text-slate-400 text-[10px] mb-1">Jumlah / Volume / Luas</label>
+                            <label class="block text-slate-400 text-[10px] mb-1">Jumlah / Volume</label>
                             <input type="text" x-model="bastDoc.aset_volume" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white text-xs focus:border-purple-400 focus:outline-none">
                         </div>
                         <div>
@@ -191,7 +238,7 @@
                             <input type="text" x-model="bastDoc.aset_keterangan" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white text-xs focus:border-purple-400 focus:outline-none">
                         </div>
                         <div>
-                            <label class="block text-slate-400 text-[10px] mb-1">Taksiran Nilai (Rp)</label>
+                            <label class="block text-slate-400 text-[10px] mb-1" x-text="bastDoc.format_tipe === 'ditambahkan' ? 'Nilai Pengadaan / Perolehan (Rp)' : 'Taksiran Nilai (Rp)'"></label>
                             <input type="text" x-model="bastDoc.aset_nilai" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-emerald-400 font-mono font-bold text-xs focus:border-purple-400 focus:outline-none">
                         </div>
                     </div>
@@ -248,9 +295,11 @@
                         </div>
                     </div>
 
-                    <!-- JUDUL SURAT & NOMOR (PERSIS STANDAR BAST UTAMA) -->
+                    <!-- JUDUL SURAT & NOMOR (DINAMIS SESUAI TIPE BAST) -->
                     <div class="text-center text-black mb-3">
-                        <h3 class="font-bold text-[11pt] sm:text-[11.5pt] uppercase underline tracking-normal text-black m-0">BERITA ACARA SERAH TERIMA BARANG</h3>
+                        <h3 class="font-bold text-[11pt] sm:text-[11.5pt] uppercase underline tracking-normal text-black m-0"
+                            x-text="bastDoc.format_tipe === 'ditambahkan' ? 'BERITA ACARA SERAH TERIMA PENGADAAN & PENAMBAHAN ASET KEMITRAAN' : 'BERITA ACARA SERAH TERIMA PEMANFAATAN BARANG MILIK DAERAH (BMD)'">
+                        </h3>
                         <p class="text-[9.5pt] sm:text-[10pt] font-semibold text-black mt-1 m-0">
                             Nomor: <span class="font-mono font-bold" x-text="bastDoc.nomor_bast"></span>
                         </p>
@@ -285,7 +334,12 @@
                             <tr style="border: none !important;">
                                 <td style="border: none !important; padding: 1.5px 0;"></td>
                                 <td colspan="3" style="border: none !important; padding: 2px 0;" class="italic">
-                                    Dalam hal ini bertindak untuk dan atas nama RSUD Dr. H. Koesnandi selaku <strong class="not-italic">PIHAK KESATU</strong>.
+                                    <template x-if="bastDoc.format_tipe === 'ditambahkan'">
+                                        <span>Dalam hal ini bertindak untuk dan atas nama RSUD Dr. H. Koesnandi selaku <strong class="not-italic">PIHAK KESATU</strong> (Pihak Yang Menerima Aset Kemitraan).</span>
+                                    </template>
+                                    <template x-if="bastDoc.format_tipe !== 'ditambahkan'">
+                                        <span>Dalam hal ini bertindak untuk dan atas nama RSUD Dr. H. Koesnandi selaku <strong class="not-italic">PIHAK KESATU</strong> (Pihak Yang Menyerahkan Hak Pemanfaatan BMD).</span>
+                                    </template>
                                 </td>
                             </tr>
                         </table>
@@ -315,29 +369,45 @@
                             <tr style="border: none !important;">
                                 <td style="border: none !important; padding: 1.5px 0;"></td>
                                 <td colspan="3" style="border: none !important; padding: 2px 0;" class="italic">
-                                    Dalam hal ini bertindak untuk dan atas nama <span class="font-semibold not-italic" x-text="bastDoc.p2_perusahaan"></span> selaku <strong class="not-italic">PIHAK KEDUA</strong>.
+                                    <template x-if="bastDoc.format_tipe === 'ditambahkan'">
+                                        <span>Dalam hal ini bertindak untuk dan atas nama <span class="font-semibold not-italic" x-text="bastDoc.p2_perusahaan"></span> selaku <strong class="not-italic">PIHAK KEDUA</strong> (Pihak Penyedia / Yang Menyerahkan Aset Pengadaan Baru).</span>
+                                    </template>
+                                    <template x-if="bastDoc.format_tipe !== 'ditambahkan'">
+                                        <span>Dalam hal ini bertindak untuk dan atas nama <span class="font-semibold not-italic" x-text="bastDoc.p2_perusahaan"></span> selaku <strong class="not-italic">PIHAK KEDUA</strong> (Pihak Yang Menerima Hak Pemanfaatan BMD).</span>
+                                    </template>
                                 </td>
                             </tr>
                         </table>
                     </div>
 
                     <!-- PERNYATAAN PENYERAHAN & DASAR PKS -->
-                    <p class="text-justify mb-2 text-[9.5pt] sm:text-[10pt] leading-[1.5] text-black">
-                        Berdasarkan Surat Perjanjian Kerja Sama (PKS) Nomor: <strong class="font-mono" x-text="bastDoc.nomor_pks"></strong> Tanggal <strong x-text="bastDoc.tanggal_pks"></strong> perihal Kerja Sama Pemanfaatan Barang Milik Daerah skema <strong x-text="bastDoc.skema_kemitraan"></strong>, <strong>PIHAK KESATU</strong> menyerahkan kepada <strong>PIHAK KEDUA</strong>, dan <strong>PIHAK KEDUA</strong> menerima penyerahan objek Barang Milik Daerah (BMD) milik Pemerintah Kabupaten Bondowoso yang tercatat pada RSUD Dr. H. Koesnandi dalam keadaan baik dan lengkap untuk dimanfaatkan sesuai ketentuan kerja sama, dengan rincian sebagai berikut:
-                    </p>
+                    <template x-if="bastDoc.format_tipe === 'ditambahkan'">
+                        <p class="text-justify mb-2 text-[9.5pt] sm:text-[10pt] leading-[1.5] text-black">
+                            Berdasarkan Surat Perjanjian Kerja Sama (PKS) Nomor: <strong class="font-mono" x-text="bastDoc.nomor_pks"></strong> Tanggal <strong x-text="bastDoc.tanggal_pks"></strong> perihal Kerja Sama Operasional skema <strong x-text="bastDoc.skema_kemitraan"></strong>, <strong>PIHAK KEDUA</strong> telah menyelesaikan pengadaan, penyediaan, instalasi, dan uji fungsi (<em>commissioning</em>) barang baru, serta <strong>menyerahkan kepada PIHAK KESATU</strong>, dan <strong>PIHAK KESATU menerima penyerahan objek aset tersebut</strong> dalam keadaan baru (100%), lengkap, dan berfungsi normal untuk operasional pelayanan pasien di RSUD Dr. H. Koesnandi serta dicatat pada Aset Kemitraan Pihak Ketiga (Akun 1.5.2), dengan rincian sebagai berikut:
+                        </p>
+                    </template>
+                    <template x-if="bastDoc.format_tipe !== 'ditambahkan'">
+                        <p class="text-justify mb-2 text-[9.5pt] sm:text-[10pt] leading-[1.5] text-black">
+                            Berdasarkan Surat Perjanjian Kerja Sama (PKS) Nomor: <strong class="font-mono" x-text="bastDoc.nomor_pks"></strong> Tanggal <strong x-text="bastDoc.tanggal_pks"></strong> perihal Kerja Sama Pemanfaatan Barang Milik Daerah skema <strong x-text="bastDoc.skema_kemitraan"></strong>, <strong>PIHAK KESATU menyerahkan kepada PIHAK KEDUA</strong>, dan <strong>PIHAK KEDUA menerima penyerahan objek Barang Milik Daerah (BMD)</strong> milik Pemerintah Kabupaten Bondowoso yang tercatat pada RSUD Dr. H. Koesnandi dalam keadaan baik dan lengkap untuk dimanfaatkan sesuai ketentuan kerja sama, dengan rincian sebagai berikut:
+                        </p>
+                    </template>
 
-                    <!-- TABEL RINCIAN OBJEK BARANG MILIK DAERAH (STANDAR KEDINASAN RESMI) -->
+                    <!-- TABEL RINCIAN OBJEK BARANG KEMITRAAN (STANDAR KEDINASAN RESMI) -->
                     <div class="my-2.5 w-full">
                         <table class="w-full text-black border-collapse border border-black text-[9pt] sm:text-[9.5pt]" style="border-collapse: collapse; width: 100%; border: 1.5px solid black; table-layout: fixed;">
                             <thead>
                                 <tr style="font-weight: 700; color: #000000; border: 1.5px solid black; background-color: #f8fafc;">
                                     <th style="border: 1px solid black; padding: 6px 4px; text-align: center; width: 5%; font-weight: 700; font-size: 8.5pt;">NO</th>
-                                    <th style="border: 1px solid black; padding: 6px 8px; text-align: left; width: 30%; font-weight: 700; font-size: 8.5pt;">NAMA BARANG / SPESIFIKASI</th>
-                                    <th style="border: 1px solid black; padding: 6px 4px; text-align: center; width: 15%; font-weight: 700; font-size: 8.5pt;">KODE 108</th>
-                                    <th style="border: 1px solid black; padding: 6px 4px; text-align: center; width: 19%; font-weight: 700; font-size: 8.5pt;">NIBAR</th>
+                                    <th style="border: 1px solid black; padding: 6px 8px; text-align: left; width: 30%; font-weight: 700; font-size: 8.5pt;"
+                                        x-text="bastDoc.format_tipe === 'ditambahkan' ? 'NAMA BARANG / MERK & SPESIFIKASI' : 'NAMA BARANG / SPESIFIKASI'"></th>
+                                    <th style="border: 1px solid black; padding: 6px 4px; text-align: center; width: 15%; font-weight: 700; font-size: 8.5pt;"
+                                        x-text="bastDoc.format_tipe === 'ditambahkan' ? 'KODE 108 KEMITRAAN' : 'KODE 108'"></th>
+                                    <th style="border: 1px solid black; padding: 6px 4px; text-align: center; width: 19%; font-weight: 700; font-size: 8.5pt;"
+                                        x-text="bastDoc.format_tipe === 'ditambahkan' ? 'NO. PABRIK / SERI / NIBAR' : 'NIBAR'"></th>
                                     <th style="border: 1px solid black; padding: 6px 4px; text-align: center; width: 9%; font-weight: 700; font-size: 8.5pt;">VOL</th>
                                     <th style="border: 1px solid black; padding: 6px 4px; text-align: center; width: 9%; font-weight: 700; font-size: 8.5pt;">KONDISI</th>
-                                    <th style="border: 1px solid black; padding: 6px 8px; text-align: right; width: 13%; font-weight: 700; font-size: 8.5pt;">NILAI (Rp)</th>
+                                    <th style="border: 1px solid black; padding: 6px 8px; text-align: right; width: 13%; font-weight: 700; font-size: 8.5pt;"
+                                        x-text="bastDoc.format_tipe === 'ditambahkan' ? 'NILAI PENGADAAN (Rp)' : 'NILAI (Rp)'"></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -345,6 +415,12 @@
                                     <td style="border: 1px solid black; padding: 6px 4px; text-align: center; font-weight: 700; vertical-align: top; font-size: 8.5pt;">1</td>
                                     <td style="border: 1px solid black; padding: 6px 8px; text-align: left; vertical-align: top; font-size: 8.5pt; word-break: break-word;">
                                         <strong class="block leading-snug" x-text="bastDoc.aset_nama"></strong>
+                                        <template x-if="bastDoc.format_tipe === 'ditambahkan' && (bastDoc.aset_merk || bastDoc.aset_type)">
+                                            <span class="text-[8pt] text-slate-700 block mt-0.5 leading-tight font-semibold" x-text="'Merk / Type: ' + [bastDoc.aset_merk, bastDoc.aset_type].filter(Boolean).join(' / ')"></span>
+                                        </template>
+                                        <template x-if="bastDoc.format_tipe === 'ditambahkan' && bastDoc.aset_no_pabrik">
+                                            <span class="text-[8pt] text-slate-700 block mt-0.5 leading-tight font-mono" x-text="'No. Seri/Pabrik: ' + bastDoc.aset_no_pabrik"></span>
+                                        </template>
                                         <span class="text-[8pt] text-slate-700 block mt-0.5 leading-tight">
                                             Lokasi: <span x-text="bastDoc.aset_lokasi || 'Kompleks RSUD Dr. H. Koesnandi Bondowoso'"></span>
                                         </span>
@@ -358,8 +434,8 @@
                                 </tr>
                                 <!-- BARIS TOTAL JUMLAH (7 KOLOM RAPI PRESISI) -->
                                 <tr style="border: 1.5px solid black; font-weight: 700; background-color: #f8fafc; color: #000000;">
-                                    <td colspan="4" style="border: 1px solid black; padding: 6px 8px; text-align: center; font-weight: 700; font-size: 8.5pt; letter-spacing: 0.2px;">
-                                        TOTAL TAKSIRAN NILAI PEMANFAATAN BMD
+                                    <td colspan="4" style="border: 1px solid black; padding: 6px 8px; text-align: center; font-weight: 700; font-size: 8.5pt; letter-spacing: 0.2px;"
+                                        x-text="bastDoc.format_tipe === 'ditambahkan' ? 'TOTAL NILAI PENGADAAN / PENAMBAHAN ASET MITRA' : 'TOTAL TAKSIRAN NILAI PEMANFAATAN BMD'">
                                     </td>
                                     <td style="border: 1px solid black; padding: 6px 4px; text-align: center; font-weight: 700; font-size: 8.5pt;" x-text="bastDoc.aset_volume"></td>
                                     <td style="border: 1px solid black; padding: 6px 4px; text-align: center; font-size: 8.5pt; color: #64748b;">-</td>
@@ -369,46 +445,85 @@
                         </table>
                     </div>
 
-                    <!-- KETENTUAN UMUM PEMANFAATAN (NETRAL, TANPA PASAL KAKU / TANPA ASUMSI BANGUN GEDUNG) -->
-                    <p class="text-justify my-2 text-[9.5pt] sm:text-[10pt] leading-[1.5] text-black">
-                        Objek Barang Milik Daerah tersebut dipergunakan oleh PIHAK KEDUA semata-mata untuk penyelenggaraan operasional kegiatan kemitraan sesuai hak dan kewajiban yang telah disepakati dalam Surat Perjanjian Kerja Sama (PKS). Selama masa kerja sama berlangsung, PIHAK KEDUA berkewajiban memelihara, merawat, dan menjaga keamanan serta kebersihan barang tersebut dengan sebaik-baiknya.
-                    </p>
+                    <!-- KETENTUAN OPERASIONAL & KONSESI PASCA SERAH TERIMA -->
+                    <template x-if="bastDoc.format_tipe === 'ditambahkan'">
+                        <p class="text-justify my-2 text-[9.5pt] sm:text-[10pt] leading-[1.5] text-black">
+                            Objek peralatan/barang kemitraan yang diserahterimakan tersebut dipergunakan untuk menunjang kelancaran pelayanan kesehatan di RSUD Dr. H. Koesnandi. Selama masa konsesi berlangsung, PIHAK KEDUA bertanggung jawab penuh terhadap jaminan garansi purna jual (<em>warranty</em>), kalibrasi berkala, ketersediaan suku cadang/reagen operasional, serta pemeliharaan teknis tanpa membebankan anggaran RSUD. Pada saat berakhirnya masa konsesi/perjanjian kerja sama, hak kepemilikan yuridis dan fisik atas aset tersebut beralih sepenuhnya menjadi Barang Milik Daerah (Aset Tetap Milik RSUD Dr. H. Koesnandi) melalui mekanisme Reklasifikasi Aset sesuai ketentuan peraturan perundang-undangan.
+                        </p>
+                    </template>
+                    <template x-if="bastDoc.format_tipe !== 'ditambahkan'">
+                        <p class="text-justify my-2 text-[9.5pt] sm:text-[10pt] leading-[1.5] text-black">
+                            Objek Barang Milik Daerah tersebut dipergunakan oleh PIHAK KEDUA semata-mata untuk penyelenggaraan operasional kegiatan kemitraan sesuai hak dan kewajiban yang telah disepakati dalam Surat Perjanjian Kerja Sama (PKS). Selama masa kerja sama berlangsung, PIHAK KEDUA berkewajiban memelihara, merawat, dan menjaga keamanan serta kebersihan barang tersebut dengan sebaik-baiknya, dan wajib menyerahkan kembali kepada PIHAK KESATU dalam kondisi baik saat masa perjanjian kerja sama berakhir.
+                        </p>
+                    </template>
 
                     <!-- PENUTUP -->
                     <p class="text-justify my-2.5 text-[9.5pt] sm:text-[10pt] leading-[1.5] text-black">
                         Demikian Berita Acara Serah Terima (BAST) ini dibuat dan ditandatangani oleh PARA PIHAK pada hari dan tanggal tersebut di atas dalam rangkap 2 (dua) bermeterai cukup, serta memiliki kekuatan hukum yang sama bagi masing-masing pihak untuk dipergunakan sebagaimana mestinya.
                     </p>
 
-                    <!-- TANDA TANGAN 2 PIHAK KANAN KIRI -->
-                    <div class="grid grid-cols-2 gap-8 text-center text-black text-[9.5pt] sm:text-[10pt] mt-5 pt-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
-                        <div>
-                            <p class="m-0 font-bold uppercase">PIHAK KESATU</p>
-                            <p class="text-[8.5pt] text-slate-700 m-0">RSUD Dr. H. Koesnandi Bondowoso</p>
-                            <p class="text-[8pt] text-slate-600 font-semibold m-0">Kuasa Pengguna Barang</p>
-                            
-                            <!-- Ruang Bersih TTD Direktur & Cap Dinas -->
-                            <div class="h-20 my-1" style="height:75px; margin:4px 0;"></div>
+                    <!-- TANDA TANGAN DUA PIHAK KANAN KIRI -->
+                    <!-- KONDISI 1: PEMANFAATAN BMD (RSUD Menyerahkan di Kiri, MITRA Menerima di Kanan) -->
+                    <template x-if="bastDoc.format_tipe !== 'ditambahkan'">
+                        <div class="grid grid-cols-2 gap-8 text-center text-black text-[9.5pt] sm:text-[10pt] mt-5 pt-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                            <div>
+                                <p class="m-0 font-bold uppercase">PIHAK KESATU</p>
+                                <p class="text-[8.5pt] text-slate-700 m-0">RSUD Dr. H. Koesnandi Bondowoso</p>
+                                <p class="text-[8pt] text-slate-600 font-semibold m-0">Kuasa Pengguna Barang (Menyerahkan)</p>
+                                
+                                <div class="h-20 my-1" style="height:75px; margin:4px 0;"></div>
 
-                            <p class="font-bold underline uppercase m-0" x-text="bastDoc.p1_nama"></p>
-                            <p class="m-0 font-mono text-[9pt]" x-text="'NIP. ' + bastDoc.p1_nip"></p>
-                        </div>
-
-                        <div>
-                            <p class="m-0 font-bold uppercase">PIHAK KEDUA</p>
-                            <p class="text-[8.5pt] text-slate-700 font-bold uppercase m-0" x-text="bastDoc.p2_perusahaan"></p>
-                            <p class="text-[8pt] text-slate-600 font-semibold m-0">Mitra Kerja Sama</p>
-                            
-                            <!-- Ruang Meterai Pihak II -->
-                            <div class="h-20 flex items-center justify-center my-1" style="height:75px; margin:4px 0;">
-                                <span style="font-size:7.5pt; border:1px dashed #94a3b8; padding:3px 8px; border-radius:4px; color:#64748b;">
-                                    Meterai Rp 10.000,- &amp; Cap Basah
-                                </span>
+                                <p class="font-bold underline uppercase m-0" x-text="bastDoc.p1_nama"></p>
+                                <p class="m-0 font-mono text-[9pt]" x-text="'NIP. ' + bastDoc.p1_nip"></p>
                             </div>
 
-                            <p class="font-bold underline uppercase m-0" x-text="bastDoc.p2_pimpinan"></p>
-                            <p class="text-[8.5pt] text-slate-700 m-0" x-text="bastDoc.p2_jabatan"></p>
+                            <div>
+                                <p class="m-0 font-bold uppercase">PIHAK KEDUA</p>
+                                <p class="text-[8.5pt] text-slate-700 font-bold uppercase m-0" x-text="bastDoc.p2_perusahaan"></p>
+                                <p class="text-[8pt] text-slate-600 font-semibold m-0">Mitra Kerja Sama (Menerima)</p>
+                                
+                                <div class="h-20 flex items-center justify-center my-1" style="height:75px; margin:4px 0;">
+                                    <span style="font-size:7.5pt; border:1px dashed #94a3b8; padding:3px 8px; border-radius:4px; color:#64748b;">
+                                        Meterai Rp 10.000,- &amp; Cap Basah
+                                    </span>
+                                </div>
+
+                                <p class="font-bold underline uppercase m-0" x-text="bastDoc.p2_pimpinan"></p>
+                                <p class="text-[8.5pt] text-slate-700 m-0" x-text="bastDoc.p2_jabatan"></p>
+                            </div>
                         </div>
-                    </div>
+                    </template>
+
+                    <!-- KONDISI 2: PENAMBAHAN ASET MITRA (MITRA Menyerahkan di Kiri, RSUD Menerima di Kanan) -->
+                    <template x-if="bastDoc.format_tipe === 'ditambahkan'">
+                        <div class="grid grid-cols-2 gap-8 text-center text-black text-[9.5pt] sm:text-[10pt] mt-5 pt-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                            <div>
+                                <p class="m-0 font-bold uppercase">PIHAK KEDUA</p>
+                                <p class="text-[8.5pt] text-slate-700 font-bold uppercase m-0" x-text="bastDoc.p2_perusahaan"></p>
+                                <p class="text-[8pt] text-slate-600 font-semibold m-0">Mitra Penyedia (Menyerahkan Aset)</p>
+                                
+                                <div class="h-20 flex items-center justify-center my-1" style="height:75px; margin:4px 0;">
+                                    <span style="font-size:7.5pt; border:1px dashed #94a3b8; padding:3px 8px; border-radius:4px; color:#64748b;">
+                                        Meterai Rp 10.000,- &amp; Cap Basah
+                                    </span>
+                                </div>
+
+                                <p class="font-bold underline uppercase m-0" x-text="bastDoc.p2_pimpinan"></p>
+                                <p class="text-[8.5pt] text-slate-700 m-0" x-text="bastDoc.p2_jabatan"></p>
+                            </div>
+
+                            <div>
+                                <p class="m-0 font-bold uppercase">PIHAK KESATU</p>
+                                <p class="text-[8.5pt] text-slate-700 m-0">RSUD Dr. H. Koesnandi Bondowoso</p>
+                                <p class="text-[8pt] text-slate-600 font-semibold m-0">Kuasa Pengguna Barang (Menerima)</p>
+                                
+                                <div class="h-20 my-1" style="height:75px; margin:4px 0;"></div>
+
+                                <p class="font-bold underline uppercase m-0" x-text="bastDoc.p1_nama"></p>
+                                <p class="m-0 font-mono text-[9pt]" x-text="'NIP. ' + bastDoc.p1_nip"></p>
+                            </div>
+                        </div>
+                    </template>
 
                     <!-- MENGETAHUI / MENGESAHKAN: PENGURUS BARANG PENGGUNA RSUD (PAK BUDI HARTONO - TTD ELEKTRONIK BSRE DENGAN SCAN QR CODE OFFLINE) -->
                     <div class="mt-4 text-center text-black text-[9.5pt] sm:text-[10pt]" style="text-align: center;">

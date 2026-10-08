@@ -6,15 +6,19 @@
     <!-- 1. Header Banner Langkah 3 -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-            <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-cyan-400/10 text-cyan-300 border border-cyan-400/20 text-xs font-bold mb-2">
-                <span>🛡️ LANGKAH 3 DARI 3: VERIFIKASI &amp; KONFIRMASI DATA</span>
+            <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-bold mb-2 transition-all"
+                :class="tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-400/10 text-cyan-300 border border-cyan-400/20' : 'bg-emerald-400/10 text-emerald-300 border border-emerald-400/20'">
+                <span x-text="tipeKemitraan === 'dimanfaatkan' ? '🛡️ LANGKAH 3 DARI 3: VERIFIKASI PEMANFAATAN BMD RSUD' : '🛡️ LANGKAH 3 DARI 3: VERIFIKASI ASET DITAMBAHKAN MITRA'"></span>
             </div>
             <h2 class="text-lg sm:text-xl font-extrabold text-white flex items-center space-x-2">
-                <span class="p-2 rounded-xl bg-cyan-400/10 text-cyan-400 text-sm">📋</span>
-                <span>Langkah 3: Lembar Verifikasi Data Aset Kemitraan</span>
+                <span class="p-2 rounded-xl text-sm transition-all"
+                    :class="tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-400/10 text-cyan-400' : 'bg-emerald-400/10 text-emerald-400'">📋</span>
+                <span x-text="tipeKemitraan === 'dimanfaatkan' ? 'Langkah 3: Lembar Verifikasi Pemanfaatan BMD RSUD' : 'Langkah 3: Lembar Verifikasi Penambahan Aset Mitra'"></span>
             </h2>
-            <p class="text-xs text-slate-400 mt-1">
-                Tinjau kembali seluruh data legalitas PKS, klasifikasi akun 1.5.2, rincian fisik aset, serta estimasi nilai wajar sebelum disimpan resmi ke database SIMAT-RK.
+            <p class="text-xs text-slate-400 mt-1"
+               x-text="tipeKemitraan === 'dimanfaatkan' 
+                    ? 'Tinjau kembali legalitas pemanfaatan BMD RSUD, riwayat penautan aset eksisting, rincian fisik, serta nilai taksiran sewa/wajar sebelum disimpan resmi.' 
+                    : 'Tinjau kembali legalitas kerja sama KSO/BGS, rincian pengadaan fisik baru dari mitra rekanan, serta estimasi nilai wajar sebelum disimpan resmi.'">
             </p>
         </div>
 
@@ -41,13 +45,20 @@
     <!-- 2. Quick Health Check Status (Grid 3 Kolom Indikator Utama) -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
         <!-- Status 1: Mitra & Dokumen PKS -->
-        <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 shadow-lg space-y-1 relative overflow-hidden group">
+        <div class="p-4 rounded-2xl bg-slate-950/80 border shadow-lg space-y-1 relative overflow-hidden group transition-all"
+             :class="tipeKemitraan === 'dimanfaatkan' ? 'border-cyan-500/30' : 'border-emerald-500/30'">
             <div class="flex items-center justify-between">
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">1. PKS &amp; MITRA REKANAN</span>
-                <span class="text-[9px] font-extrabold px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/20" x-text="formData.skema_kemitraan || 'Sewa'">
+                <span class="text-[10px] font-bold uppercase tracking-wider"
+                      :class="tipeKemitraan === 'dimanfaatkan' ? 'text-cyan-400' : 'text-emerald-400'"
+                      x-text="tipeKemitraan === 'dimanfaatkan' ? '1. PEMANFAATAN & MITRA' : '1. PKS & MITRA PENYEDIA'"></span>
+                <span class="text-[9px] font-extrabold px-2.5 py-0.5 rounded-full border transition-all"
+                      :class="tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-500/10 text-cyan-300 border-cyan-500/20' : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'"
+                      x-text="formData.skema_kemitraan || (tipeKemitraan === 'dimanfaatkan' ? 'Sewa' : 'KSO')">
                 </span>
             </div>
-            <div class="text-xs font-black font-mono text-cyan-300 truncate" x-text="formData.nomor_pks || '-'"></div>
+            <div class="text-xs font-black font-mono truncate"
+                 :class="tipeKemitraan === 'dimanfaatkan' ? 'text-cyan-300' : 'text-emerald-300'"
+                 x-text="formData.nomor_pks || '-'"></div>
             <div class="text-[11px] text-white truncate font-bold" x-text="formData.mitra_nama || 'Mitra belum diisi'"></div>
         </div>
 
@@ -66,7 +77,8 @@
         <!-- Status 3: Nilai Taksiran Wajar & Volume Fisik -->
         <div class="p-4 rounded-2xl bg-slate-950/80 border border-emerald-500/30 shadow-lg space-y-1 relative overflow-hidden group">
             <div class="flex items-center justify-between">
-                <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">3. NILAI &amp; VOLUME TOTAL</span>
+                <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider"
+                      x-text="tipeKemitraan === 'dimanfaatkan' ? '3. ESTIMASI SEWA / WAJAR' : '3. NILAI PENGADAAN MITRA'"></span>
                 <span class="text-[9px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-mono">
                     <span x-text="formData.jumlah_volume"></span> <span x-text="formData.satuan"></span>
                 </span>
@@ -84,15 +96,18 @@
         <!-- ===================================================================== -->
         <!-- KARTU 1: LEGALITAS PERJANJIAN KERJA SAMA (PKS) & MITRA REKANAN        -->
         <!-- ===================================================================== -->
-        <div class="p-5 sm:p-6 rounded-3xl bg-slate-950/90 border border-slate-800 shadow-xl space-y-4 relative">
+        <div class="p-5 sm:p-6 rounded-3xl bg-slate-950/90 border shadow-xl space-y-4 relative transition-all"
+             :class="tipeKemitraan === 'dimanfaatkan' ? 'border-cyan-500/30' : 'border-emerald-500/30'">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
                 <div class="flex items-center space-x-2">
-                    <span class="w-7 h-7 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xs font-bold border border-cyan-500/30">1</span>
-                    <h3 class="text-xs sm:text-sm font-extrabold text-white uppercase tracking-wider">
-                        Legalitas PKS &amp; Rekanan Mitra
+                    <span class="w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold border"
+                          :class="tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30' : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'">1</span>
+                    <h3 class="text-xs sm:text-sm font-extrabold text-white uppercase tracking-wider"
+                        x-text="tipeKemitraan === 'dimanfaatkan' ? 'Legalitas Pemanfaatan & Rekanan PKS' : 'Legalitas PKS & Pengadaan Mitra'">
                     </h3>
                 </div>
-                <button type="button" @click="goToStep(1)" class="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 flex items-center gap-1 cursor-pointer">
+                <button type="button" @click="goToStep(1)" class="text-[11px] font-bold flex items-center gap-1 cursor-pointer"
+                        :class="tipeKemitraan === 'dimanfaatkan' ? 'text-cyan-400 hover:text-cyan-300' : 'text-emerald-400 hover:text-emerald-300'">
                     <span>Ubah</span> &rarr;
                 </button>
             </div>
@@ -118,9 +133,10 @@
                     <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Alamat Domisili Mitra:</span>
                     <span class="text-slate-200 block truncate" x-text="formData.mitra_alamat || '-'"></span>
                 </div>
-                <!-- Objek Aset BMD RSUD yang Dikerjasamakan -->
-                <div class="col-span-2 p-3 rounded-2xl bg-slate-900/90 border border-cyan-500/20">
-                    <span class="text-[10px] font-semibold text-cyan-400 block mb-1">🏛️ Objek Aset BMD RSUD yang Dikerjasamakan:</span>
+
+                <!-- Objek Aset BMD RSUD (Hanya Muncul di Mode Dimanfaatkan) -->
+                <div x-show="tipeKemitraan === 'dimanfaatkan'" class="col-span-2 p-3 rounded-2xl bg-slate-900/90 border border-cyan-500/20">
+                    <span class="text-[10px] font-semibold text-cyan-400 block mb-1">🏛️ Objek Aset BMD RSUD yang Dimanfaatkan:</span>
                     <template x-if="formData.objek_nibar">
                         <div class="flex items-center justify-between text-xs gap-2">
                             <div>
@@ -131,9 +147,24 @@
                         </div>
                     </template>
                     <template x-if="!formData.objek_nibar">
-                        <span class="text-slate-500 text-xs italic">Tanpa penautan objek aset BMD spesifik (Penerimaan/Pengadaan Barang KSO Baru).</span>
+                        <div class="flex items-center gap-1.5 text-rose-400 text-xs">
+                            <span>⚠️</span>
+                            <span class="font-semibold">Belum ada objek BMD RSUD yang ditautkan. Silakan kembali ke Langkah 1.</span>
+                        </div>
                     </template>
                 </div>
+
+                <!-- Banner Info Aset Baru Mitra (Hanya Muncul di Mode Ditambahkan) -->
+                <div x-show="tipeKemitraan === 'ditambahkan'" class="col-span-2 p-3 rounded-2xl bg-emerald-950/20 border border-emerald-500/30">
+                    <div class="flex items-center gap-2">
+                        <span class="text-emerald-400 text-sm">📦</span>
+                        <div>
+                            <span class="text-[10px] font-bold text-emerald-300 uppercase tracking-wider block">Pengadaan Aset Baru Rekanan (KSO/BGS)</span>
+                            <span class="text-[11px] text-slate-300">Barang didatangkan baru oleh mitra rekanan, tidak menautkan NIBAR aset RSUD eksisting.</span>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="col-span-2">
                     <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Berkas Dokumen BAST Kerja Sama:</span>
                     <template x-if="selectedFile">
@@ -156,7 +187,9 @@
                 </div>
                 <div>
                     <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Bentuk / Skema Kemitraan:</span>
-                    <span class="px-2.5 py-0.5 rounded-lg bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-bold inline-block text-[11px]" x-text="formData.skema_kemitraan || 'Sewa'"></span>
+                    <span class="px-2.5 py-0.5 rounded-lg border font-bold inline-block text-[11px]"
+                          :class="tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30' : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'"
+                          x-text="formData.skema_kemitraan || (tipeKemitraan === 'dimanfaatkan' ? 'Sewa' : 'KSO')"></span>
                 </div>
                 <div>
                     <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Status Pengelolaan Konsesi:</span>
@@ -187,15 +220,18 @@
         <!-- ===================================================================== -->
         <!-- KARTU 2: KLASIFIKASI KODE BARANG 108 & PENILAIAN ASET                 -->
         <!-- ===================================================================== -->
-        <div class="p-5 sm:p-6 rounded-3xl bg-slate-950/90 border border-slate-800 shadow-xl space-y-4 relative">
+        <div class="p-5 sm:p-6 rounded-3xl bg-slate-950/90 border shadow-xl space-y-4 relative transition-all"
+             :class="tipeKemitraan === 'dimanfaatkan' ? 'border-cyan-500/30' : 'border-emerald-500/30'">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
                 <div class="flex items-center space-x-2">
-                    <span class="w-7 h-7 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xs font-bold border border-cyan-500/30">2</span>
-                    <h3 class="text-xs sm:text-sm font-extrabold text-white uppercase tracking-wider">
-                        Klasifikasi 108 &amp; Nilai Taksiran Wajar
+                    <span class="w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold border"
+                          :class="tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30' : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'">2</span>
+                    <h3 class="text-xs sm:text-sm font-extrabold text-white uppercase tracking-wider"
+                        x-text="tipeKemitraan === 'dimanfaatkan' ? 'Klasifikasi 108 & Taksiran Nilai Sewa/Wajar' : 'Klasifikasi 108 & Nilai Pengadaan Mitra'">
                     </h3>
                 </div>
-                <button type="button" @click="goToStep(2)" class="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 flex items-center gap-1 cursor-pointer">
+                <button type="button" @click="goToStep(2)" class="text-[11px] font-bold flex items-center gap-1 cursor-pointer"
+                        :class="tipeKemitraan === 'dimanfaatkan' ? 'text-cyan-400 hover:text-cyan-300' : 'text-emerald-400 hover:text-emerald-300'">
                     <span>Ubah</span> &rarr;
                 </button>
             </div>
@@ -217,10 +253,15 @@
                     <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Satuan Barang:</span>
                     <span class="font-semibold text-slate-200 block" x-text="formData.satuan || 'Unit'"></span>
                 </div>
-                <div class="col-span-2 p-3 rounded-2xl bg-cyan-950/20 border border-cyan-500/30 flex items-center justify-between">
+                <div class="col-span-2 p-3 rounded-2xl border flex items-center justify-between"
+                     :class="tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-950/20 border-cyan-500/30' : 'bg-emerald-950/20 border-emerald-500/30'">
                     <div>
-                        <span class="text-[10px] font-bold text-cyan-400 block uppercase">Total Taksiran Nilai Wajar Aset:</span>
-                        <div class="text-base font-black font-mono text-cyan-300" x-text="'Rp ' + formatRupiah(formData.total_realisasi)"></div>
+                        <span class="text-[10px] font-bold block uppercase"
+                              :class="tipeKemitraan === 'dimanfaatkan' ? 'text-cyan-400' : 'text-emerald-400'"
+                              x-text="tipeKemitraan === 'dimanfaatkan' ? 'Total Taksiran Nilai Sewa / Pemanfaatan BMD:' : 'Total Nilai Aset Baru Pengadaan Mitra:'"></span>
+                        <div class="text-base font-black font-mono"
+                             :class="tipeKemitraan === 'dimanfaatkan' ? 'text-cyan-300' : 'text-emerald-300'"
+                             x-text="'Rp ' + formatRupiah(formData.total_realisasi)"></div>
                     </div>
                     <div>
                         <span x-show="(isMesin || isLainnya) && (formData.jumlah_volume || 1) > 1" class="text-[11px] font-mono text-slate-400 font-semibold" x-text="'@ Rp ' + formatRupiah(Math.round(formData.total_realisasi / (formData.jumlah_volume || 1)))"></span>
@@ -753,13 +794,18 @@
     </div>
 
     <!-- 5. Checklist Verifikasi Keabsahan Data & Tombol Finalisasi -->
-    <div class="p-5 sm:p-6 rounded-3xl bg-slate-950/80 border border-slate-800 space-y-4 shadow-xl">
+    <div class="p-5 sm:p-6 rounded-3xl bg-slate-950/80 border space-y-4 shadow-xl transition-all"
+         :class="tipeKemitraan === 'dimanfaatkan' ? 'border-cyan-500/30' : 'border-emerald-500/30'">
         <label class="flex items-start space-x-3 cursor-pointer select-none">
             <input type="checkbox" x-model="isDataVerified"
-                class="mt-1 w-4 h-4 rounded text-cyan-500 bg-slate-900 border-slate-700 focus:ring-cyan-400 focus:ring-offset-slate-950 cursor-pointer">
+                class="mt-1 w-4 h-4 rounded bg-slate-900 border-slate-700 focus:ring-offset-slate-950 cursor-pointer"
+                :class="tipeKemitraan === 'dimanfaatkan' ? 'text-cyan-500 focus:ring-cyan-400' : 'text-emerald-500 focus:ring-emerald-400'">
             <div class="text-xs text-slate-300 leading-relaxed">
-                <strong class="text-white block font-bold mb-0.5">Konfirmasi &amp; Validasi Data Aset Kemitraan:</strong>
-                Saya menyatakan bahwa seluruh rincian perjanjian kerja sama (PKS), kodefikasi akun 1.5.2 Permendagri 108, taksiran nilai wajar, spesifikasi teknis fisik, serta unit penempatan KIR di atas telah diperiksa dengan cermat dan sesuai dengan dokumen aslinya.
+                <strong class="text-white block font-bold mb-0.5"
+                        x-text="tipeKemitraan === 'dimanfaatkan' ? 'Konfirmasi & Validasi Pencatatan Pemanfaatan BMD RSUD:' : 'Konfirmasi & Validasi Pencatatan Aset Ditambahkan Mitra:'"></strong>
+                <span x-text="tipeKemitraan === 'dimanfaatkan' 
+                    ? 'Saya menyatakan bahwa seluruh rincian perjanjian pemanfaatan BMD RSUD, penautan objek aset eksisting, taksiran nilai sewa/wajar, spesifikasi teknis fisik, serta pejabat penanggung jawab di atas telah diperiksa dengan cermat dan sesuai dokumen legalitas aslinya.' 
+                    : 'Saya menyatakan bahwa seluruh rincian kerja sama pengadaan aset baru dari rekanan mitra (KSO/BGS), rincian spesifikasi fisik, taksiran nilai wajar pengadaan, serta pejabat penanggung jawab di atas telah diperiksa dengan cermat dan sesuai dokumen legalitas aslinya.'"></span>
             </div>
         </label>
     </div>

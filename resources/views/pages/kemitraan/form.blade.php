@@ -11,6 +11,7 @@
     <script>
         window.editAstapData = @json($astap ?? null);
         window.dbObjekAsetKemitraan = @json($dbObjekAsetKemitraan ?? []);
+        window.initialTipeKemitraan = @json($tipe ?? request()->query('tipe', 'dimanfaatkan'));
     </script>
 
     <!-- 1. Script Logika Form (Alpine.js & State Management) -->

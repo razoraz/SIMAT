@@ -549,6 +549,7 @@
                                         <span>Detail</span>
                                     </button>
 
+
                                     @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
                                     <!-- 2. Tombol Reklas -->
                                     @if($row->status_konsesi === 'Konsesi Berakhir')
@@ -1135,10 +1136,17 @@
                             <!-- 8. Aksi (Sticky Right) -->
                             <td class="py-4 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 sticky right-0 z-10 bg-slate-900/95 group-hover:bg-slate-800 transition-colors">
                                 <div class="flex items-center justify-center space-x-1.5">
+                                    <!-- 1. Tombol Detail -->
                                     <button type="button" @click="openDetail({{ json_encode($row) }}, {{ json_encode($astap) }}, {{ json_encode($firstReg) }}, false)"
-                                        class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 font-bold text-xs transition-all">
-                                        Detail
+                                        title="Lihat Detail Lengkap PKS & Objek Aset"
+                                        class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-cyan-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
+                                        <svg class="w-3.5 h-3.5 text-cyan-400 group-hover/btn:text-white group-hover/btn:scale-110 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                        </svg>
+                                        <span>Detail</span>
                                     </button>
+
                                     @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
                                     @if($row->status_konsesi === 'Konsesi Berakhir')
                                     <button type="button" @click="openReklas({{ json_encode($astap) }}, {{ json_encode($row) }})"

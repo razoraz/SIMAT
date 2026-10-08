@@ -1664,13 +1664,14 @@ Route::middleware('auth')->group(function () {
                     ->values();
             };
 
-            Route::get('/astap/create-kemitraan', function () use ($getDistinctPenyedias, $getDistinctPejabats, $getDistinctMitras, $getObjekAsetKemitraans) {
+            Route::get('/astap/create-kemitraan', function (\Illuminate\Http\Request $request) use ($getDistinctPenyedias, $getDistinctPejabats, $getDistinctMitras, $getObjekAsetKemitraans) {
                 $dbMaster108 = \App\Models\JenisAstap::getNested108();
                 $dbUnits = \App\Models\Unit::orderBy('nama')->get();
                 $dbPenyedias = $getDistinctPenyedias();
                 $dbPejabats = $getDistinctPejabats();
                 $dbMitraKemitraans = $getDistinctMitras();
                 $dbObjekAsetKemitraan = $getObjekAsetKemitraans();
+                $tipe = $request->query('tipe', 'dimanfaatkan');
 
                 // PPK: khusus riwayat Pejabat Pembuat Komitmen kemitraan untuk autofill NIP
                 $dbPpkKemitraans = \App\Models\Astap::where('sumber_dana', 'kemitraan')
@@ -1705,7 +1706,7 @@ Route::middleware('auth')->group(function () {
 
                 return view('pages.kemitraan.form', compact(
                     'dbMaster108', 'dbUnits', 'dbPenyedias', 'dbPejabats',
-                    'dbMitraKemitraans', 'dbPpkKemitraans', 'dbObjekAsetKemitraan'
+                    'dbMitraKemitraans', 'dbPpkKemitraans', 'dbObjekAsetKemitraan', 'tipe'
                 ));
             })->name('astap.create_kemitraan');
 
@@ -2446,9 +2447,11 @@ Route::middleware('auth')->group(function () {
                     ]);
                 }
 
+                $tipe = ($astap?->kemitraan?->objek_astap_id || $astap?->kemitraan?->objek_nibar || $astap?->is_reklas) ? 'dimanfaatkan' : 'ditambahkan';
+
                 return view('pages.kemitraan.form', compact(
                     'astap', 'dbMaster108', 'dbUnits', 'dbPenyedias', 'dbPejabats',
-                    'dbMitraKemitraans', 'dbPpkKemitraans', 'dbObjekAsetKemitraan'
+                    'dbMitraKemitraans', 'dbPpkKemitraans', 'dbObjekAsetKemitraan', 'tipe'
                 ));
             })->name('astap.edit_kemitraan');
 

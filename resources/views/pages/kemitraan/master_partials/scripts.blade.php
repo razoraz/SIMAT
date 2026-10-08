@@ -174,6 +174,10 @@
             showEditBastForm: false,
             isBastModified: false,
             currentBastStorageKey: '',
+            currentBastTargetId: null,
+            currentBastItem: null,
+            currentBastIsDim: true,
+            defaultBastDoc: null,
             bastDoc: null,
             toast: {
                 show: false,
@@ -707,8 +711,8 @@
                 this.showDetailModal = true;
             },
 
-            // ─── Fitur Modal Cetak BAST Pemanfaatan Kemitraan (Format Modal SIMAT) ───
-            openPrintBast(item) {
+            // ─── Fitur Modal Cetak BAST Pemanfaatan / Penambahan Aset Kemitraan (Format Modal SIMAT) ───
+            openPrintBast(item, isDim = null) {
                 if (!item) return;
 
                 // Tutup modal detail jika sedang terbuka agar pratinjau BAST tampil bersih & mulus
@@ -722,20 +726,46 @@
                         try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
                     }
 
+                    // Tentukan apakah tipe 'dimanfaatkan' atau 'ditambahkan'
+                    let isDimanfaatkan = isDim;
+                    if (isDimanfaatkan === null || isDimanfaatkan === undefined) {
+                        if (item.is_dimanfaatkan !== undefined) {
+                            isDimanfaatkan = !!item.is_dimanfaatkan;
+                        } else if (astap && (astap.is_reklas || (astap.reklas && astap.reklas.length > 0))) {
+                            isDimanfaatkan = true;
+                        } else if (item.objek_nibar || item.objek_register_id || item.objek_astap_id || spec.objek_nibar || spec.objek_register_id || spec.objek_astap_id || item.is_reklas_pending) {
+                            isDimanfaatkan = true;
+                        } else {
+                            isDimanfaatkan = false;
+                        }
+                    }
+
+                    let formatTipe = isDimanfaatkan ? 'dimanfaatkan' : 'ditambahkan';
                     let targetId = kemitraan?.id || item.kemitraan_id || astap?.id || item.id || 'draft';
-                    this.currentBastStorageKey = 'bast_kemitraan_modal_' + targetId;
+                    this.currentBastTargetId = targetId;
+                    this.currentBastItem = item;
+                    this.currentBastIsDim = isDimanfaatkan;
+                    this.currentBastStorageKey = `bast_kemitraan_modal_${formatTipe}_${targetId}`;
 
                     // Resolusi Nama Fisik Asli
-                    let namaFisik = astap?.nama_barang || item.nama_barang || 'Objek Aset BMD RSUD';
-                    if (astap?.reklas && Array.isArray(astap.reklas) && astap.reklas.length > 0) {
-                        let lastReklas = astap.reklas[astap.reklas.length - 1];
-                        if (lastReklas?.asal_nama) namaFisik = lastReklas.asal_nama;
-                    } else if (item.objekAstap?.nama_barang) {
-                        namaFisik = item.objekAstap.nama_barang;
-                    } else if (spec?.mesin_items?.[0]?.mesin_nama_barang) {
-                        namaFisik = spec.mesin_items[0].mesin_nama_barang;
-                    } else if (spec?.tanah_items?.[0]?.tanah_nama_barang) {
-                        namaFisik = spec.tanah_items[0].tanah_nama_barang;
+                    let namaFisik = astap?.nama_barang || item.nama_barang || (isDimanfaatkan ? 'Objek Aset BMD RSUD' : 'Peralatan / Objek Aset Mitra');
+                    if (isDimanfaatkan) {
+                        if (astap?.reklas && Array.isArray(astap.reklas) && astap.reklas.length > 0) {
+                            let lastReklas = astap.reklas[astap.reklas.length - 1];
+                            if (lastReklas?.asal_nama) namaFisik = lastReklas.asal_nama;
+                        } else if (item.objekAstap?.nama_barang) {
+                            namaFisik = item.objekAstap.nama_barang;
+                        } else if (spec?.mesin_items?.[0]?.mesin_nama_barang) {
+                            namaFisik = spec.mesin_items[0].mesin_nama_barang;
+                        } else if (spec?.tanah_items?.[0]?.tanah_nama_barang) {
+                            namaFisik = spec.tanah_items[0].tanah_nama_barang;
+                        }
+                    } else {
+                        if (item.nama_barang) {
+                            namaFisik = item.nama_barang;
+                        } else if (astap?.nama_barang) {
+                            namaFisik = astap.nama_barang;
+                        }
                     }
 
                     // Tanggal PKS & Tanggal BAST
@@ -749,7 +779,8 @@
                     let hariTglStr = `${namaHari} tanggal ${tglPksStr}`;
 
                     let thnPks = dPks.getFullYear();
-                    let noBastDefault = `000.2.3.2/BAST-KMT/${targetId}/430.10.7/${thnPks}`;
+                    let prefixNoBast = isDimanfaatkan ? 'BAST-KMT-MANFAAT' : 'BAST-KMT-PENGADAAN';
+                    let noBastDefault = `000.2.3.2/${prefixNoBast}/${targetId}/430.10.7/${thnPks}`;
                     let noPksDefault = kemitraan?.nomor_pks || item.nomor_pks || spec?.nomor_pks || astap?.bast_dokumen_nomor || `000.2.3.2/PKS-KMT/${targetId}/${thnPks}`;
 
                     // Masa Konsesi
@@ -766,20 +797,26 @@
                     let nilaiNum = parseFloat(kemitraan?.nilai_aset || item.nilai_aset || astap?.total_realisasi || item.total_realisasi || 0);
                     let nilaiFormatted = (nilaiNum || 0).toLocaleString('id-ID');
 
-                    // NIBAR & Volume
-                    let nibar = item.objek_nibar || item.nibar || astap?.registers?.[0]?.nibar || spec?.objek_nibar || spec?.nibar || '-';
+                    // NIBAR & Identitas Barang
+                    let nibar = item.objek_nibar || item.nibar || astap?.registers?.[0]?.nibar || spec?.objek_nibar || spec?.nibar || (isDimanfaatkan ? '-' : 'BARU-KMT-' + targetId);
                     let volStr = `${kemitraan?.jumlah_volume || item.jumlah_volume || astap?.jumlah_volume || 1} ${kemitraan?.satuan || item.satuan || astap?.satuan || 'Unit'}`;
                     if (spec?.luas_m2 || spec?.tanah_luas_m2) {
                         volStr = `${spec.luas_m2 || spec.tanah_luas_m2} m²`;
                     }
 
+                    // Merk & Spesifikasi untuk Aset Ditambahkan Mitra
+                    let merkSpec = spec?.merk || spec?.mesin_merk || '';
+                    let typeSpec = spec?.type || spec?.mesin_type || '';
+                    let noPabrikSpec = spec?.no_pabrik || spec?.mesin_no_pabrik || '';
+
                     let defaultDoc = {
+                        format_tipe: formatTipe, // 'dimanfaatkan' | 'ditambahkan'
                         nomor_bast: noBastDefault,
                         hari_tanggal: hariTglStr,
                         lokasi: 'RSUD Dr. H. Koesnandi Kabupaten Bondowoso',
                         nomor_pks: noPksDefault,
                         tanggal_pks: tglPksStr,
-                        skema_kemitraan: kemitraan?.skema_kemitraan || item.skema_kemitraan || spec?.skema_kemitraan || 'Kerja Sama Operasional (KSO)',
+                        skema_kemitraan: kemitraan?.skema_kemitraan || item.skema_kemitraan || spec?.skema_kemitraan || (isDimanfaatkan ? 'Sewa Barang Milik Daerah' : 'Kerja Sama Operasional (KSO)'),
                         
                         // Pihak Kesatu (RSUD)
                         p1_nama: 'dr. YUS PRIYATNA ADRYANTO, Sp.P, FISR',
@@ -796,11 +833,14 @@
                         
                         // Objek Barang
                         aset_nama: namaFisik,
+                        aset_merk: merkSpec,
+                        aset_type: typeSpec,
+                        aset_no_pabrik: noPabrikSpec,
                         aset_lokasi: astap?.alamat_barang || item.alamat_barang || 'Kompleks RSUD Dr. H. Koesnandi Bondowoso',
-                        aset_kode108: astap?.kode_108 || item.kode_108 || '1.5.2.01.01.02.001',
+                        aset_kode108: astap?.kode_108 || item.kode_108 || (isDimanfaatkan ? '1.5.2.01.01.02.001' : '1.5.2.01.01.02.002'),
                         aset_nibar: nibar,
                         aset_volume: volStr,
-                        aset_kondisi: item.kondisi || astap?.kondisi_barang || 'Baik',
+                        aset_kondisi: item.kondisi || astap?.kondisi_barang || (isDimanfaatkan ? 'Baik' : 'Baik (100% Baru)'),
                         aset_keterangan: masaKonsesi,
                         aset_nilai: nilaiFormatted,
                         
@@ -810,12 +850,18 @@
                         qr_hash: noBastDefault ? noBastDefault.replace(/[^a-zA-Z0-9]/g, '-') : 'BSRE-KEMITRAAN-PENGURUS'
                     };
 
+                    this.defaultBastDoc = Object.assign({}, defaultDoc);
+
                     // Muat data dari localStorage jika pernah diedit
                     this.isBastModified = false;
                     try {
                         let saved = localStorage.getItem(this.currentBastStorageKey);
                         if (saved) {
-                            this.bastDoc = Object.assign({}, defaultDoc, JSON.parse(saved));
+                            let parsed = JSON.parse(saved);
+                            this.bastDoc = Object.assign({}, defaultDoc, parsed);
+                            if (!this.bastDoc.format_tipe) {
+                                this.bastDoc.format_tipe = formatTipe;
+                            }
                             if (!this.bastDoc.qr_hash) {
                                 this.bastDoc.qr_hash = defaultDoc.qr_hash;
                             }
@@ -832,6 +878,38 @@
 
                 this.showEditBastForm = false;
                 this.showModalPrintBast = true;
+            },
+
+            // Beralih Template Format BAST secara Live di Modal
+            switchBastFormat(newType) {
+                if (!this.bastDoc || this.bastDoc.format_tipe === newType) return;
+                this.bastDoc.format_tipe = newType;
+                
+                // Update storage key
+                let targetId = this.currentBastTargetId || 'draft';
+                this.currentBastStorageKey = `bast_kemitraan_modal_${newType}_${targetId}`;
+
+                // Update nomor surat jika masih memakai format standar
+                if (this.bastDoc.nomor_bast) {
+                    if (newType === 'ditambahkan' && this.bastDoc.nomor_bast.includes('BAST-KMT-MANFAAT')) {
+                        this.bastDoc.nomor_bast = this.bastDoc.nomor_bast.replace('BAST-KMT-MANFAAT', 'BAST-KMT-PENGADAAN');
+                    } else if (newType === 'dimanfaatkan' && this.bastDoc.nomor_bast.includes('BAST-KMT-PENGADAAN')) {
+                        this.bastDoc.nomor_bast = this.bastDoc.nomor_bast.replace('BAST-KMT-PENGADAAN', 'BAST-KMT-MANFAAT');
+                    } else if (this.bastDoc.nomor_bast.includes('/BAST-KMT/')) {
+                        let prefixNoBast = newType === 'dimanfaatkan' ? 'BAST-KMT-MANFAAT' : 'BAST-KMT-PENGADAAN';
+                        this.bastDoc.nomor_bast = this.bastDoc.nomor_bast.replace('/BAST-KMT/', `/${prefixNoBast}/`);
+                    }
+                }
+
+                // Cek apakah ada saved draft untuk tipe yang dipilih
+                try {
+                    let saved = localStorage.getItem(this.currentBastStorageKey);
+                    if (saved) {
+                        let parsed = JSON.parse(saved);
+                        this.bastDoc = Object.assign({}, this.bastDoc, parsed, { format_tipe: newType });
+                        this.isBastModified = true;
+                    }
+                } catch(e) {}
             },
 
             // Cetak Dokumen BAST Langsung via iFrame Tanpa Ganti Halaman
@@ -919,7 +997,9 @@
                         localStorage.removeItem(this.currentBastStorageKey);
                     } catch(e) {}
                     this.isBastModified = false;
-                    this.showModalPrintBast = false;
+                    if (this.defaultBastDoc) {
+                        this.bastDoc = Object.assign({}, this.defaultBastDoc);
+                    }
                     this.showToast('Data BAST berhasil dikembalikan ke standar awal.');
                 }
             },

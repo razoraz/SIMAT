@@ -33,12 +33,20 @@
                 <span>Ekspor Excel Kemitraan</span>
             </button>
 
-            <a href="{{ route('astap.create_kemitraan') }}"
-                class="px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold shadow-lg shadow-cyan-500/20 transition-all flex items-center gap-1.5 active:scale-95">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
-                </svg>
-                <span>Catat Aset Kemitraan</span>
+            <!-- 1. Tombol Catat Pemanfaatan BMD Milik RSUD -->
+            <a href="{{ route('astap.create_kemitraan', ['tipe' => 'dimanfaatkan']) }}"
+                class="px-3.5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-black shadow-lg shadow-cyan-500/25 transition-all flex items-center gap-1.5 active:scale-95"
+                title="Catat Pemanfaatan Barang Milik Daerah RSUD ke Mitra (Sewa / KSP / BGS)">
+                <span>🏛️</span>
+                <span>Catat Pemanfaatan BMD</span>
+            </a>
+
+            <!-- 2. Tombol Catat Aset Ditambahkan Mitra -->
+            <a href="{{ route('astap.create_kemitraan', ['tipe' => 'ditambahkan']) }}"
+                class="px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 text-xs font-black shadow-lg shadow-emerald-500/25 transition-all flex items-center gap-1.5 active:scale-95"
+                title="Catat Aset / Peralatan Baru yang Ditambahkan Rekanan Mitra ke RSUD (KSO / BGS)">
+                <span>📦</span>
+                <span>Catat Aset Ditambahkan Mitra</span>
             </a>
         </div>
     </div>
