@@ -9,9 +9,18 @@
             :class="activeDirection === 'keluar' ? 'bg-cyan-500/10' : 'bg-indigo-500/10'"></div>
 
         <div class="flex items-center space-x-3.5 sm:space-x-4 relative z-10">
-            <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0 shadow-lg transition-all duration-300"
+            <div class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-lg transition-all duration-300"
                 :class="activeDirection === 'keluar' ? 'bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 shadow-cyan-500/10' : 'bg-indigo-500/15 border border-indigo-500/30 text-indigo-400 shadow-indigo-500/10'">
-                <span x-text="activeDirection === 'keluar' ? '📤' : '🏛️'"></span>
+                <template x-if="activeDirection === 'masuk'">
+                    <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                </template>
+                <template x-if="activeDirection === 'keluar'">
+                    <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                    </svg>
+                </template>
             </div>
             <div>
                 <div class="flex flex-wrap items-center gap-2">
