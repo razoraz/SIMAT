@@ -113,7 +113,9 @@
                         <span class="text-emerald-400 font-extrabold font-mono text-xs sm:text-sm block truncate"
                               x-text="(selectedAstapDetail || selectedMutasi).jumlah_realisasi || (selectedAstapDetail || selectedMutasi).nilai_perolehan_formatted || formatRupiah((selectedAstapDetail || selectedMutasi).nilai_perolehan)"></span>
                     </div>
-                 <!-- 3. DOKUMEN BAMB / BAST -->
+                </div>
+
+                <!-- 3. DOKUMEN BAMB / BAST -->
                 <div class="p-4 rounded-2xl border space-y-2.5 shadow-sm"
                     :class="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? 'bg-cyan-500/10 border-cyan-500/30' : 'bg-purple-500/10 border-purple-500/30'">
                     <div class="flex items-center justify-between font-extrabold text-xs uppercase tracking-wider border-b pb-2"
@@ -698,4 +700,5 @@
         </div>
 
     </div>
+</div>
 </template>
