@@ -32,11 +32,25 @@
     $recordsDimanfaatkan = collect($kemitraanRecords ?? [])->filter(fn($r) => $isDimanfaatkan($r))->values();
     $recordsDitambahkan  = collect($kemitraanRecords ?? [])->filter(fn($r) => !$isDimanfaatkan($r))->values();
 
-    // Integrasikan Aset BMD RSUD yang merupakan hasil reklasifikasi ke Kemitraan (1.5.2) ke Tabel Atas
-    $seenReklasAstapIds = [];
+    // Kumpulkan seluruh ID astap yang sudah terdaftar resmi di tabel kemitraan agar tidak terduplikasi
+    $existingKemitraanAstapIds = collect($kemitraanRecords ?? [])->flatMap(function($r) {
+        return array_filter([$r->astap_id, $r->objek_astap_id]);
+    })->unique()->values()->toArray();
+
+    // Integrasikan Aset BMD RSUD yang merupakan hasil reklasifikasi ke Kemitraan (1.5.2) HANYA jika belum memiliki PKS
+    $seenReklasAstapIds = $existingKemitraanAstapIds;
     foreach ($reklasKemitraanRecords ?? [] as $reklasItem) {
         if (!in_array($reklasItem->astap_id, $seenReklasAstapIds)) {
             $seenReklasAstapIds[] = $reklasItem->astap_id; // Kunci agar unik dan tidak dobel/kembar
+
+            // Pertahanan filter tambahan di Blade (defensive filtering)
+            if (($filterStatus ?? 'all') !== 'all') {
+                continue;
+            }
+            if (($filterSkema ?? 'all') !== 'all') {
+                continue;
+            }
+
             $rAstap = $reklasItem->astap;
             if ($rAstap) {
                 $rReg = $rAstap->registers->first();
@@ -126,7 +140,7 @@
                     :class="kemitraanTableTab === 'all' ? 'bg-slate-800 text-white border-slate-700 font-extrabold' : 'text-slate-500 hover:text-slate-300 border-transparent'"
                     class="px-2.5 py-1.5 rounded-xl text-xs border transition-all flex items-center gap-1 shrink-0 cursor-pointer">
                     <span>📋</span>
-                    <span>Semua ({{ count($kemitraanRecords ?? []) }})</span>
+                    <span>Semua ({{ count($recordsDimanfaatkan) + count($recordsDitambahkan) }})</span>
                 </button>
             </div>
         </div>
@@ -156,7 +170,7 @@
                     <span>Menampilkan tabel gabungan seluruh arsip aset kemitraan Akun 1.5.2.</span>
                 </span>
             </template>
-            <span class="font-mono text-cyan-400/80 text-[10px] hidden sm:inline-block">Total {{ count($kemitraanRecords ?? []) }} Data Kemitraan</span>
+            <span class="font-mono text-cyan-400/80 text-[10px] hidden sm:inline-block">Total {{ count($recordsDimanfaatkan) + count($recordsDitambahkan) }} Data Kemitraan</span>
         </div>
     </div>
 
@@ -408,10 +422,11 @@
                                     <span class="px-2 py-0.5 rounded text-[10px] font-bold
                                         {{ $row->status_konsesi === 'Aktif' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : '' }}
                                         {{ $row->status_konsesi === 'Konsesi Berakhir' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : '' }}
-                                        {{ $row->status_konsesi === 'Selesai / Reklasifikasi' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : '' }}
+                                        {{ in_array($row->status_konsesi, ['Selesai', 'Selesai / Reklasifikasi']) ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : '' }}
                                         {{ $row->status_konsesi === 'Dihentikan' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : '' }}
+                                        {{ $row->status_konsesi === 'Siap Dikerjasamakan' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : '' }}
                                     ">
-                                        {{ $row->status_konsesi === 'Konsesi Berakhir' ? 'Konsesi Berakhir (Siap Reklas)' : $row->status_konsesi }}
+                                        {{ in_array($row->status_konsesi, ['Selesai', 'Selesai / Reklasifikasi']) ? 'Selesai' : ($row->status_konsesi === 'Konsesi Berakhir' ? 'Konsesi Berakhir' : $row->status_konsesi) }}
                                     </span>
                                     @if($sisaHari !== null && $row->status_konsesi === 'Aktif')
                                         <span class="text-[10px] font-mono {{ $sisaHari <= 30 ? 'text-amber-400 font-bold' : 'text-slate-400' }}">
@@ -698,10 +713,10 @@
                                     <span class="px-2 py-0.5 rounded text-[10px] font-bold
                                         {{ $row->status_konsesi === 'Aktif' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : '' }}
                                         {{ $row->status_konsesi === 'Konsesi Berakhir' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : '' }}
-                                        {{ $row->status_konsesi === 'Selesai / Reklasifikasi' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : '' }}
+                                        {{ in_array($row->status_konsesi, ['Selesai', 'Selesai / Reklasifikasi']) ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : '' }}
                                         {{ $row->status_konsesi === 'Dihentikan' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : '' }}
                                     ">
-                                        {{ $row->status_konsesi === 'Konsesi Berakhir' ? 'Konsesi Berakhir (Siap Reklas)' : $row->status_konsesi }}
+                                        {{ in_array($row->status_konsesi, ['Selesai', 'Selesai / Reklasifikasi']) ? 'Selesai' : ($row->status_konsesi === 'Konsesi Berakhir' ? 'Konsesi Berakhir' : $row->status_konsesi) }}
                                     </span>
                                     @if($sisaHari !== null && $row->status_konsesi === 'Aktif')
                                         <span class="text-[10px] font-mono {{ $sisaHari <= 30 ? 'text-amber-400 font-bold' : 'text-slate-400' }}">
@@ -982,10 +997,10 @@
                                     <span class="px-1.5 py-0.2 rounded text-[10px] font-bold
                                         {{ $row->status_konsesi === 'Aktif' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : '' }}
                                         {{ $row->status_konsesi === 'Konsesi Berakhir' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : '' }}
-                                        {{ $row->status_konsesi === 'Selesai / Reklasifikasi' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : '' }}
+                                        {{ in_array($row->status_konsesi, ['Selesai', 'Selesai / Reklasifikasi']) ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : '' }}
                                         {{ $row->status_konsesi === 'Dihentikan' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : '' }}
                                     ">
-                                        {{ $row->status_konsesi === 'Konsesi Berakhir' ? 'Konsesi Berakhir (Siap Reklas)' : $row->status_konsesi }}
+                                        {{ in_array($row->status_konsesi, ['Selesai', 'Selesai / Reklasifikasi']) ? 'Selesai' : ($row->status_konsesi === 'Konsesi Berakhir' ? 'Konsesi Berakhir' : $row->status_konsesi) }}
                                     </span>
                                 </div>
                                 <div class="text-[10px] font-mono text-slate-400">

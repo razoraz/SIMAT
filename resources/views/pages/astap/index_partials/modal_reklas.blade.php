@@ -112,44 +112,48 @@
                             <label class="relative flex items-center p-3.5 rounded-2xl border transition-all select-none"
                                    style="gap: 12px;"
                                    :class="{
-                                       'opacity-40 cursor-not-allowed bg-slate-950/30 border-slate-800': isReklasExtracomDisabled(),
-                                       'cursor-pointer bg-amber-500/10 border-amber-500/50 shadow-sm shadow-amber-500/10': !isReklasExtracomDisabled() && reklasJenis === 'extracom',
-                                       'cursor-pointer bg-emerald-500/10 border-emerald-500/50 shadow-sm shadow-emerald-500/10': !isReklasExtracomDisabled() && reklasJenis === 'intracom',
-                                       'cursor-pointer bg-slate-950/60 border-slate-800 hover:border-slate-700': !isReklasExtracomDisabled() && reklasJenis !== 'extracom' && reklasJenis !== 'intracom'
+                                       'opacity-40 cursor-not-allowed bg-slate-950/30 border-slate-800': isReklasExtracomDisabled() || isKemitraanAktif(),
+                                       'cursor-pointer bg-amber-500/10 border-amber-500/50 shadow-sm shadow-amber-500/10': !(isReklasExtracomDisabled() || isKemitraanAktif()) && reklasJenis === 'extracom',
+                                       'cursor-pointer bg-emerald-500/10 border-emerald-500/50 shadow-sm shadow-emerald-500/10': !(isReklasExtracomDisabled() || isKemitraanAktif()) && reklasJenis === 'intracom',
+                                       'cursor-pointer bg-slate-950/60 border-slate-800 hover:border-slate-700': !(isReklasExtracomDisabled() || isKemitraanAktif()) && reklasJenis !== 'extracom' && reklasJenis !== 'intracom'
                                    }">
-                                <input type="radio" name="reklas_jenis" :value="isCurrentAstapExtracom() ? 'intracom' : 'extracom'" x-model="reklasJenis" :disabled="isReklasExtracomDisabled()" class="hidden" style="display: none;">
+                                <input type="radio" name="reklas_jenis" :value="isCurrentAstapExtracom() ? 'intracom' : 'extracom'" x-model="reklasJenis" :disabled="isReklasExtracomDisabled() || isKemitraanAktif()" class="hidden" style="display: none;">
                                 <div class="flex items-center justify-center rounded-full border shrink-0 transition-all"
                                      style="width: 18px; height: 18px; min-width: 18px; margin-right: 6px;"
                                      :class="{
-                                         'border-amber-400 bg-amber-500/20': reklasJenis === 'extracom' && !isReklasExtracomDisabled(),
-                                         'border-emerald-400 bg-emerald-500/20': reklasJenis === 'intracom' && !isReklasExtracomDisabled(),
-                                         'border-slate-700 bg-slate-900': reklasJenis !== 'extracom' && reklasJenis !== 'intracom'
+                                         'border-amber-400 bg-amber-500/20': reklasJenis === 'extracom' && !(isReklasExtracomDisabled() || isKemitraanAktif()),
+                                         'border-emerald-400 bg-emerald-500/20': reklasJenis === 'intracom' && !(isReklasExtracomDisabled() || isKemitraanAktif()),
+                                         'border-slate-700 bg-slate-900': (isReklasExtracomDisabled() || isKemitraanAktif()) || (reklasJenis !== 'extracom' && reklasJenis !== 'intracom')
                                      }">
-                                    <div x-show="(reklasJenis === 'extracom' || reklasJenis === 'intracom') && !isReklasExtracomDisabled()" 
+                                    <div x-show="(reklasJenis === 'extracom' || reklasJenis === 'intracom') && !(isReklasExtracomDisabled() || isKemitraanAktif())" 
                                          class="rounded-full" :class="reklasJenis === 'intracom' ? 'bg-emerald-400' : 'bg-amber-400'" style="width: 8px; height: 8px;"></div>
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-center space-x-2">
                                         <span class="font-bold text-xs" 
                                               :class="{
-                                                  'text-amber-300': reklasJenis === 'extracom' && !isReklasExtracomDisabled(),
-                                                  'text-emerald-300': reklasJenis === 'intracom' && !isReklasExtracomDisabled(),
-                                                  'text-white': reklasJenis !== 'extracom' && reklasJenis !== 'intracom'
+                                                  'text-amber-300': reklasJenis === 'extracom' && !(isReklasExtracomDisabled() || isKemitraanAktif()),
+                                                  'text-emerald-300': reklasJenis === 'intracom' && !(isReklasExtracomDisabled() || isKemitraanAktif()),
+                                                  'text-white': !(isReklasExtracomDisabled() || isKemitraanAktif()) && reklasJenis !== 'extracom' && reklasJenis !== 'intracom',
+                                                  'text-slate-500': isReklasExtracomDisabled() || isKemitraanAktif()
                                               }"
                                               x-text="isCurrentAstapExtracom() ? 'Intrakomtable' : 'Ekstrakomtable'"></span>
-                                        <template x-if="isReklasExtracomDisabled()">
+                                        <template x-if="isKemitraanAktif()">
+                                            <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">PKS Aktif</span>
+                                        </template>
+                                        <template x-if="!isKemitraanAktif() && isReklasExtracomDisabled()">
                                             <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">Terkunci (SAP)</span>
                                         </template>
                                     </div>
                                     <div class="text-[10px] text-slate-400 mt-0.5" 
-                                         x-text="isReklasExtracomDisabled() ? 'Tidak berlaku untuk kelompok aset ini (Wajib Intrakomtable)' : (isCurrentAstapExtracom() ? 'Pengalihan aset ke kelompok Intrakomtable' : 'Batas nilai satuan ≤ Rp 300.000 per unit')"></div>
+                                         x-text="isKemitraanAktif() ? 'Terkunci: Aset sedang dalam kemitraan aktif' : (isReklasExtracomDisabled() ? 'Tidak berlaku untuk kelompok aset ini (Wajib Intrakomtable)' : (isCurrentAstapExtracom() ? 'Pengalihan aset ke kelompok Intrakomtable' : 'Batas nilai satuan ≤ Rp 300.000 per unit'))"></div>
                                 </div>
                             </label>
 
                             <!-- 2. Pindah KIB / Koreksi Rekening (Salah Kamar / Salah Akun 108) -->
                             <label class="relative flex items-center p-3.5 rounded-2xl border cursor-pointer transition-all select-none"
                                    style="gap: 12px;"
-                                   :class="reklasJenis === 'pindah_kib' ? 'bg-indigo-500/10 border-indigo-500/50 shadow-sm shadow-indigo-500/10' : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'">
+                                   :class="reklasJenis === 'pindah_kib' ? 'bg-indigo-500/10 border-indigo-500/50 shadow-sm shadow-indigo-500/10 ring-1 ring-indigo-500/20' : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'">
                                 <input type="radio" name="reklas_jenis" value="pindah_kib" x-model="reklasJenis" class="hidden" style="display: none;">
                                 <div class="flex items-center justify-center rounded-full border shrink-0 transition-all"
                                      style="width: 18px; height: 18px; min-width: 18px; margin-right: 6px;"
@@ -157,8 +161,15 @@
                                     <div x-show="reklasJenis === 'pindah_kib'" class="rounded-full bg-indigo-400" style="width: 8px; height: 8px;"></div>
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <div class="font-bold text-xs" :class="reklasJenis === 'pindah_kib' ? 'text-indigo-300' : 'text-white'">Pindah KIB / Koreksi Rekening</div>
-                                    <div class="text-[10px] text-slate-400 mt-0.5">Salah kamar KIB atau perbaikan sub-rincian Simda 108</div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="font-bold text-xs" :class="reklasJenis === 'pindah_kib' ? 'text-indigo-300' : 'text-white'"
+                                              x-text="isKemitraanAktif() ? 'Pindah Sub-Rekening 108 Kemitraan' : 'Pindah KIB / Koreksi Rekening'"></span>
+                                        <template x-if="isKemitraanAktif()">
+                                            <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">1.5.2 Kemitraan</span>
+                                        </template>
+                                    </div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5" 
+                                         x-text="isKemitraanAktif() ? 'Perbaikan sub-rincian 108 seputar Akun 1.5.2 Kemitraan (Sewa, KSP, BGS/BSG)' : 'Salah kamar KIB atau perbaikan sub-rincian Simda 108'"></div>
                                 </div>
                             </label>
 
@@ -166,38 +177,39 @@
                             <label class="relative flex items-center p-3.5 rounded-2xl border transition-all select-none"
                                    style="gap: 12px;"
                                    :class="{
-                                       'opacity-40 cursor-not-allowed bg-slate-950/30 border-slate-800': isReklasKdpDisabled(),
-                                       'cursor-pointer bg-rose-500/10 border-rose-500/50 shadow-sm shadow-rose-500/10': !isReklasKdpDisabled() && reklasJenis === 'kdp',
-                                       'cursor-pointer bg-slate-950/60 border-slate-800 hover:border-slate-700': !isReklasKdpDisabled() && reklasJenis !== 'kdp'
+                                       'opacity-40 cursor-not-allowed bg-slate-950/30 border-slate-800': isReklasKdpDisabled() || isKemitraanAktif(),
+                                       'cursor-pointer bg-rose-500/10 border-rose-500/50 shadow-sm shadow-rose-500/10': !(isReklasKdpDisabled() || isKemitraanAktif()) && reklasJenis === 'kdp',
+                                       'cursor-pointer bg-slate-950/60 border-slate-800 hover:border-slate-700': !(isReklasKdpDisabled() || isKemitraanAktif()) && reklasJenis !== 'kdp'
                                    }">
-                                <input type="radio" name="reklas_jenis" value="kdp" x-model="reklasJenis" :disabled="isReklasKdpDisabled()" class="hidden" style="display: none;">
+                                <input type="radio" name="reklas_jenis" value="kdp" x-model="reklasJenis" :disabled="isReklasKdpDisabled() || isKemitraanAktif()" class="hidden" style="display: none;">
                                 <div class="flex items-center justify-center rounded-full border shrink-0 transition-all"
                                      style="width: 18px; height: 18px; min-width: 18px; margin-right: 6px;"
                                      :class="{
-                                         'border-rose-400 bg-rose-500/20': reklasJenis === 'kdp' && !isReklasKdpDisabled(),
-                                         'border-slate-700 bg-slate-900': reklasJenis !== 'kdp' || isReklasKdpDisabled()
+                                         'border-rose-400 bg-rose-500/20': reklasJenis === 'kdp' && !(isReklasKdpDisabled() || isKemitraanAktif()),
+                                         'border-slate-700 bg-slate-900': (isReklasKdpDisabled() || isKemitraanAktif()) || reklasJenis !== 'kdp'
                                      }">
-                                    <div x-show="reklasJenis === 'kdp' && !isReklasKdpDisabled()" class="rounded-full bg-rose-400" style="width: 8px; height: 8px;"></div>
+                                    <div x-show="reklasJenis === 'kdp' && !(isReklasKdpDisabled() || isKemitraanAktif())" class="rounded-full bg-rose-400" style="width: 8px; height: 8px;"></div>
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-center space-x-2">
                                         <span class="font-bold text-xs" 
                                               :class="{
-                                                  'text-rose-300': reklasJenis === 'kdp' && !isReklasKdpDisabled(),
-                                                  'text-white': reklasJenis !== 'kdp' && !isReklasKdpDisabled(),
-                                                  'text-slate-500': isReklasKdpDisabled()
+                                                  'text-rose-300': reklasJenis === 'kdp' && !(isReklasKdpDisabled() || isKemitraanAktif()),
+                                                  'text-white': !(isReklasKdpDisabled() || isKemitraanAktif()) && reklasJenis !== 'kdp',
+                                                  'text-slate-500': isReklasKdpDisabled() || isKemitraanAktif()
                                               }">Kapitalisasi KDP Selesai</span>
-                                        <template x-if="isReklasKdpDisabled()">
+                                        <template x-if="isKemitraanAktif()">
+                                            <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">PKS Aktif</span>
+                                        </template>
+                                        <template x-if="!isKemitraanAktif() && isReklasKdpDisabled()">
                                             <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 border border-slate-700">Khusus KDP (KIB F)</span>
                                         </template>
-                                        <template x-if="!isReklasKdpDisabled()">
+                                        <template x-if="!isKemitraanAktif() && !isReklasKdpDisabled()">
                                             <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">KDP Selesai</span>
                                         </template>
                                     </div>
                                     <div class="text-[10px] text-slate-400 mt-0.5" 
-                                         x-text="isReklasKdpDisabled() 
-                                            ? 'Hanya untuk kapitalisasi aset KDP (KIB F) yang telah selesai 100%' 
-                                            : 'Pekerjaan fisik 100% selesai, dialihkan ke KIB C/D Definitif'"></div>
+                                         x-text="isKemitraanAktif() ? 'Terkunci: Tidak berlaku untuk aset kemitraan aktif' : (isReklasKdpDisabled() ? 'Hanya untuk kapitalisasi aset KDP (KIB F) yang telah selesai 100%' : 'Pekerjaan fisik 100% selesai, dialihkan ke KIB C/D Definitif')"></div>
                                 </div>
                             </label>
 
@@ -213,39 +225,63 @@
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <div class="font-bold text-xs" :class="reklasJenis === 'koreksi_nilai' ? 'text-cyan-300' : 'text-white'">Koreksi Nilai Realisasi / BPK</div>
-                                    <div class="text-[10px] text-slate-400 mt-0.5">Penyesuaian nilai realisasi hasil pemeriksaan BPK / rekonsiliasi LKD</div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">Penyesuaian nilai wajar / taksiran konsesi hasil rekonsiliasi atau audit BPK</div>
                                 </div>
                             </label>
 
                             <!-- 5. Hibah (Bantuan Pemerintah) -->
-                            <label class="relative flex items-center p-3.5 rounded-2xl border cursor-pointer transition-all select-none"
+                            <label class="relative flex items-center p-3.5 rounded-2xl border transition-all select-none"
                                    style="gap: 12px;"
-                                   :class="reklasJenis === 'hibah' ? 'bg-purple-500/10 border-purple-500/50 shadow-sm shadow-purple-500/10' : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'">
-                                <input type="radio" name="reklas_jenis" value="hibah" x-model="reklasJenis" class="hidden" style="display: none;">
+                                   :class="{
+                                       'opacity-40 cursor-not-allowed bg-slate-950/30 border-slate-800': isKemitraanAktif(),
+                                       'cursor-pointer bg-purple-500/10 border-purple-500/50 shadow-sm shadow-purple-500/10': !isKemitraanAktif() && reklasJenis === 'hibah',
+                                       'cursor-pointer bg-slate-950/60 border-slate-800 hover:border-slate-700': !isKemitraanAktif() && reklasJenis !== 'hibah'
+                                   }">
+                                <input type="radio" name="reklas_jenis" value="hibah" x-model="reklasJenis" :disabled="isKemitraanAktif()" class="hidden" style="display: none;">
                                 <div class="flex items-center justify-center rounded-full border shrink-0 transition-all"
                                      style="width: 18px; height: 18px; min-width: 18px; margin-right: 6px;"
-                                     :class="reklasJenis === 'hibah' ? 'border-purple-400 bg-purple-500/20' : 'border-slate-700 bg-slate-900'">
-                                    <div x-show="reklasJenis === 'hibah'" class="rounded-full bg-purple-400" style="width: 8px; height: 8px;"></div>
+                                     :class="{
+                                         'border-purple-400 bg-purple-500/20': !isKemitraanAktif() && reklasJenis === 'hibah',
+                                         'border-slate-700 bg-slate-900': isKemitraanAktif() || reklasJenis !== 'hibah'
+                                     }">
+                                    <div x-show="!isKemitraanAktif() && reklasJenis === 'hibah'" class="rounded-full bg-purple-400" style="width: 8px; height: 8px;"></div>
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <div class="font-bold text-xs" :class="reklasJenis === 'hibah' ? 'text-purple-300' : 'text-white'">Hibah (Bantuan Pemerintah)</div>
-                                    <div class="text-[10px] text-slate-400 mt-0.5">Penyerahan hibah keluar (BAST) atau penerimaan hibah masuk tanpa kas</div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="font-bold text-xs" :class="(!isKemitraanAktif() && reklasJenis === 'hibah') ? 'text-purple-300' : (isKemitraanAktif() ? 'text-slate-500' : 'text-white')">Hibah (Bantuan Pemerintah)</span>
+                                        <template x-if="isKemitraanAktif()">
+                                            <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">PKS Aktif</span>
+                                        </template>
+                                    </div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5" x-text="isKemitraanAktif() ? 'Terkunci: Aset sedang dalam kemitraan aktif' : 'Penyerahan hibah keluar (BAST) atau penerimaan hibah masuk tanpa kas'"></div>
                                 </div>
                             </label>
 
                             <!-- 6. Mutasi Eksternal (Antar-OPD) -->
-                            <label class="relative flex items-center p-3.5 rounded-2xl border cursor-pointer transition-all select-none"
+                            <label class="relative flex items-center p-3.5 rounded-2xl border transition-all select-none"
                                    style="gap: 12px;"
-                                   :class="reklasJenis === 'mutasi_eksternal' ? 'bg-teal-500/10 border-teal-500/50 shadow-sm shadow-teal-500/10' : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'">
-                                <input type="radio" name="reklas_jenis" value="mutasi_eksternal" x-model="reklasJenis" class="hidden" style="display: none;">
+                                   :class="{
+                                       'opacity-40 cursor-not-allowed bg-slate-950/30 border-slate-800': isKemitraanAktif(),
+                                       'cursor-pointer bg-teal-500/10 border-teal-500/50 shadow-sm shadow-teal-500/10': !isKemitraanAktif() && reklasJenis === 'mutasi_eksternal',
+                                       'cursor-pointer bg-slate-950/60 border-slate-800 hover:border-slate-700': !isKemitraanAktif() && reklasJenis !== 'mutasi_eksternal'
+                                   }">
+                                <input type="radio" name="reklas_jenis" value="mutasi_eksternal" x-model="reklasJenis" :disabled="isKemitraanAktif()" class="hidden" style="display: none;">
                                 <div class="flex items-center justify-center rounded-full border shrink-0 transition-all"
                                      style="width: 18px; height: 18px; min-width: 18px; margin-right: 6px;"
-                                     :class="reklasJenis === 'mutasi_eksternal' ? 'border-teal-400 bg-teal-500/20' : 'border-slate-700 bg-slate-900'">
-                                    <div x-show="reklasJenis === 'mutasi_eksternal'" class="rounded-full bg-teal-400" style="width: 8px; height: 8px;"></div>
+                                     :class="{
+                                         'border-teal-400 bg-teal-500/20': !isKemitraanAktif() && reklasJenis === 'mutasi_eksternal',
+                                         'border-slate-700 bg-slate-900': isKemitraanAktif() || reklasJenis !== 'mutasi_eksternal'
+                                     }">
+                                    <div x-show="!isKemitraanAktif() && reklasJenis === 'mutasi_eksternal'" class="rounded-full bg-teal-400" style="width: 8px; height: 8px;"></div>
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <div class="font-bold text-xs" :class="reklasJenis === 'mutasi_eksternal' ? 'text-teal-300' : 'text-white'">Mutasi Eksternal Antar-OPD</div>
-                                    <div class="text-[10px] text-slate-400 mt-0.5">Pengalihan barang RSUD ke dinas/SKPD lain di lingkungan Pemkab</div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="font-bold text-xs" :class="(!isKemitraanAktif() && reklasJenis === 'mutasi_eksternal') ? 'text-teal-300' : (isKemitraanAktif() ? 'text-slate-500' : 'text-white')">Mutasi Eksternal Antar-OPD</span>
+                                        <template x-if="isKemitraanAktif()">
+                                            <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">PKS Aktif</span>
+                                        </template>
+                                    </div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5" x-text="isKemitraanAktif() ? 'Terkunci: Aset sedang dalam kemitraan aktif' : 'Pengalihan barang RSUD ke dinas/SKPD lain di lingkungan Pemkab'"></div>
                                 </div>
                             </label>
                         </div>
@@ -263,24 +299,48 @@
                                         <span class="w-4 h-4 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/40 text-[9px] font-black flex items-center justify-center shrink-0">1</span>
                                         <span class="truncate">📦 Klasifikasi / KIB Tujuan:</span>
                                     </label>
-                                    <template x-if="reklasTujuanKib">
+                                    <template x-if="isKemitraanAktif()">
+                                        <span class="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-md bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 flex items-center gap-1">
+                                            <span>🔒</span>
+                                            <span>Terkunci: PKS Aktif (1.5.2)</span>
+                                        </span>
+                                    </template>
+                                    <template x-if="!isKemitraanAktif() && reklasTujuanKib">
                                         <span class="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-500/15 text-blue-300 border border-blue-500/30 whitespace-nowrap">
                                             KIB Terpilih
                                         </span>
                                     </template>
                                 </div>
                                 <select x-model="reklasTujuanKib" @change="onReklasTujuanKibChange()"
-                                        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/40 cursor-pointer shadow-inner transition-all">
+                                        :disabled="isKemitraanAktif()"
+                                        class="w-full bg-slate-900 border rounded-xl px-3.5 py-2.5 text-xs font-bold text-white focus:outline-none transition-all shadow-inner"
+                                        :class="isKemitraanAktif() ? 'border-cyan-500/50 bg-slate-950/90 text-cyan-200 cursor-not-allowed ring-1 ring-cyan-500/20' : 'border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/40 cursor-pointer'">
                                     <option value="">-- Pilih KIB / Kelompok Tujuan --</option>
-                                    <option value="KIB A">KIB A - Tanah (1.3.1)</option>
-                                    <option value="KIB B">KIB B - Peralatan &amp; Mesin (1.3.2)</option>
-                                    <option value="KIB C">KIB C - Gedung &amp; Bangunan (1.3.3)</option>
-                                    <option value="KIB D">KIB D - Jalan, Jaringan &amp; Irigasi (1.3.4)</option>
-                                    <option value="KIB E">KIB E - Aset Tetap Lainnya (1.3.5)</option>
-                                    <option value="ATB">ATB - Aset Tidak Berwujud (1.5.3)</option>
+                                    <option value="KIB A" :disabled="isKemitraanAktif()">KIB A - Tanah (1.3.1)</option>
+                                    <option value="KIB B" :disabled="isKemitraanAktif()">KIB B - Peralatan &amp; Mesin (1.3.2)</option>
+                                    <option value="KIB C" :disabled="isKemitraanAktif()">KIB C - Gedung &amp; Bangunan (1.3.3)</option>
+                                    <option value="KIB D" :disabled="isKemitraanAktif()">KIB D - Jalan, Jaringan &amp; Irigasi (1.3.4)</option>
+                                    <option value="KIB E" :disabled="isKemitraanAktif()">KIB E - Aset Tetap Lainnya (1.3.5)</option>
+                                    <option value="ATB" :disabled="isKemitraanAktif()">ATB - Aset Tidak Berwujud (1.5.3)</option>
                                     <option value="KEMITRAAN">Kemitraan Pihak Ketiga (1.5.2)</option>
-                                    <option value="ASET LAIN">Aset Lain-Lain (1.5.4)</option>
+                                    <option value="ASET LAIN" :disabled="isKemitraanAktif()">Aset Lain-Lain (1.5.4)</option>
                                 </select>
+
+                                <!-- Banner Penjelasan Interaktif Khusus Kemitraan Aktif -->
+                                <template x-if="isKemitraanAktif()">
+                                    <div class="mt-2.5 p-3 rounded-2xl bg-cyan-950/60 border border-cyan-500/35 text-cyan-200 text-xs flex items-start gap-2.5 shadow-md">
+                                        <span class="text-base shrink-0 mt-0.5">🔒</span>
+                                        <div class="space-y-1">
+                                            <div class="flex items-center gap-2">
+                                                <span class="font-extrabold text-cyan-300">Status Kemitraan Masih Aktif</span>
+                                                <span class="px-2 py-0.2 rounded text-[9.5px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">Hanya Antar-Akun 1.5.2</span>
+                                            </div>
+                                            <p class="text-[11px] text-cyan-200/90 leading-relaxed">
+                                                Aset sedang terikat perjanjian kerja sama pemanfaatan yang masih berjalan. Reklasifikasi hanya diperbolehkan antar sub-rekening di dalam <strong>Akun 1.5.2 (Kemitraan Pihak Ketiga)</strong> seperti koreksi jenis sewa, KSP, atau BGS/BSG. Pemindahan balik ke KIB A–F atau Aset Lain-Lain (1.5.4) hanya dapat dilakukan apabila masa konsesi PKS telah berakhir / selesai.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </template>
                             </div>
 
                             <!-- Tingkat 2: Sub-Rincian Objek PMDN 108 -->

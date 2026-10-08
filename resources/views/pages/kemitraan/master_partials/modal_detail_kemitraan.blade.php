@@ -117,10 +117,10 @@
                                   :class="{
                                       'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': selectedAstapDetail.status_konsesi === 'Aktif',
                                       'bg-amber-500/20 text-amber-300 border-amber-500/30': selectedAstapDetail.status_konsesi === 'Konsesi Berakhir',
-                                      'bg-blue-500/20 text-blue-300 border-blue-500/30': selectedAstapDetail.status_konsesi === 'Selesai / Reklasifikasi',
+                                      'bg-blue-500/20 text-blue-300 border-blue-500/30': selectedAstapDetail.status_konsesi === 'Selesai' || selectedAstapDetail.status_konsesi === 'Selesai / Reklasifikasi',
                                       'bg-rose-500/20 text-rose-300 border-rose-500/30': selectedAstapDetail.status_konsesi === 'Dihentikan'
                                   }"
-                                  x-text="'Status: ' + (selectedAstapDetail.status_konsesi === 'Konsesi Berakhir' ? 'Konsesi Berakhir (Siap Reklas)' : selectedAstapDetail.status_konsesi)"></span>
+                                  x-text="'Status: ' + ((selectedAstapDetail.status_konsesi === 'Selesai' || selectedAstapDetail.status_konsesi === 'Selesai / Reklasifikasi') ? 'Selesai' : selectedAstapDetail.status_konsesi)"></span>
 
                             <template x-if="selectedAstapDetail.sisa_hari_konsesi !== null && selectedAstapDetail.sisa_hari_konsesi !== undefined">
                                 <span class="px-2 py-0.5 rounded-lg text-[10.5px] font-mono font-bold"
@@ -903,10 +903,10 @@
                             <label class="block text-[10px] font-bold text-slate-400 mb-1">Pilih Status Konsesi:</label>
                             <select x-model="statusForm.status_konsesi"
                                 class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-colors">
-                                <option value="Aktif">🟢 Aktif (Kerjasama Berjalan)</option>
-                                <option value="Konsesi Berakhir">🟠 Konsesi Berakhir (Siap Reklasifikasi)</option>
-                                <option value="Selesai / Reklasifikasi">🔵 Selesai Direklasifikasi</option>
-                                <option value="Dihentikan">🔴 Dihentikan / Dibatalkan</option>
+                                <option value="Aktif">🟢 Aktif</option>
+                                <option value="Konsesi Berakhir">🟠 Konsesi Berakhir</option>
+                                <option value="Selesai">🔵 Selesai</option>
+                                <option value="Dihentikan">🔴 Dihentikan</option>
                             </select>
                         </div>
 

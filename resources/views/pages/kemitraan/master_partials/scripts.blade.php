@@ -1803,8 +1803,31 @@
                 return cat === 'EXTRACOM';
             },
 
+            isKemitraanAktif() {
+                const it = this.selectedAstapReklas;
+                if (!it) return false;
+                const cat = (it.category || '').toString().trim().toUpperCase();
+                const kode = (it.kode_barang || it.kode_108 || it.jenis_aset_kode || '').toString().trim();
+                const isKemitraan = cat === 'KEMITRAAN' || kode.startsWith('1.5.2') || !!it.kemitraan;
+                if (!isKemitraan) return false;
+
+                const rawStatus = (it.status_konsesi || it.kemitraan?.status_konsesi || '').toString().trim();
+                if (!rawStatus) return true;
+
+                const endedStatuses = [
+                    'konsesi berakhir',
+                    'selesai / reklasifikasi',
+                    'selesai',
+                    'dihentikan',
+                    'berakhir',
+                    'putus kontrak'
+                ];
+                return !endedStatuses.includes(rawStatus.toLowerCase());
+            },
+
             isReklasExtracomDisabled() {
                 if (!this.selectedAstapReklas) return false;
+                if (this.isKemitraanAktif()) return true;
                 if (this.isCurrentAstapExtracom()) return false;
                 const it = this.selectedAstapReklas;
                 const cat = it.category || '';
@@ -1829,6 +1852,7 @@
 
             isReklasKdpDisabled() {
                 if (!this.selectedAstapReklas) return true;
+                if (this.isKemitraanAktif()) return true;
                 return !this.isCurrentAstapKdp();
             },
 
@@ -2164,6 +2188,12 @@
             },
 
             onReklasTujuanKibChange() {
+                if (this.isKemitraanAktif() && this.reklasTujuanKib !== 'KEMITRAAN') {
+                    this.reklasTujuanKib = 'KEMITRAAN';
+                    if (typeof this.showToast === 'function') {
+                        this.showToast('Status kemitraan masih aktif: tujuan reklasifikasi terkunci pada Akun 1.5.2 (Kemitraan).', 'warning');
+                    }
+                }
                 const prefix = this.reklasTargetJenisKode;
                 if (prefix) {
                     if (this.reklasSubRincianKode && !this.reklasSubRincianKode.startsWith(prefix)) {
@@ -2435,6 +2465,7 @@
                 item.kode_barang = item.kode_108 || kemitraanRow?.kode_108 || (astapItem?.jenis_astap?.sub_sub_rincian_objek || '1.5.2');
                 item.category = 'KEMITRAAN';
                 item.jenis_aset_nama = 'Akun 1.5.2 - Kemitraan dengan Pihak Ketiga';
+                item.status_konsesi = kemitraanRow?.status_konsesi || item.kemitraan?.status_konsesi || item.status_konsesi || 'Aktif';
                 item.total_realisasi_num = parseFloat(kemitraanRow?.nilai_aset || item.total_realisasi || 0);
                 item.jumlah_realisasi = 'Rp ' + Number(item.total_realisasi_num).toLocaleString('id-ID');
                 item.jumlah_volume = parseInt(kemitraanRow?.jumlah_volume || item.jumlah_volume) || 1;
@@ -2444,8 +2475,9 @@
                 item.tahun_perolehan = kemitraanRow?.tahun || item.tahun_perolehan || new Date().getFullYear();
 
                 this.selectedAstapReklas = item;
+                const isActive = this.isKemitraanAktif();
                 this.reklasJenis = 'pindah_kib';
-                this.reklasTujuanKib = 'KEMITRAAN';
+                this.reklasTujuanKib = isActive ? 'KEMITRAAN' : (item.asal_kib || kemitraanRow?.asal_kib || 'KIB B');
                 this.reklasKemitraanTipeFisik = this.detectKemitraanPhysicalType(item);
 
                 this.reklasTipeKoreksiNilai = 'kurang';
@@ -2496,7 +2528,9 @@
                 this.searchReklasSubSubRincian = '';
                 this.isReklasSubSubRincianOpen = false;
                 this.reklasTanggal = new Date().toLocaleDateString('en-CA');
-                this.reklasAlasan = 'Masa konsesi kemitraan berakhir, dialihkan ke Aset Tetap definitif';
+                this.reklasAlasan = isActive 
+                    ? 'Penyesuaian / koreksi sub-rincian rekening 108 pemanfaatan kemitraan (Akun 1.5.2)' 
+                    : 'Masa konsesi kemitraan berakhir, dialihkan ke Aset Tetap definitif';
 
                 this.initReklasSpekBaru();
                 this.showReklasModal = true;
@@ -2533,6 +2567,20 @@
 
                     const targetKode = (this.reklasSubSubRincianKode || this.reklasSubRincianKode || this.reklasTujuanKode || '').trim() || null;
                     const targetNama = (this.reklasSubSubRincianNama || this.reklasSubRincianNama || this.reklasTujuanNama || '').trim() || null;
+
+                    // Proteksi Kemitraan Aktif: Hanya boleh antar-rekening 1.5.2 Kemitraan
+                    if (this.isKemitraanAktif()) {
+                        if (targetKib !== 'KEMITRAAN') {
+                            this.showToast('Status kemitraan masih aktif: reklasifikasi hanya diperbolehkan ke kelompok KEMITRAAN (Akun 1.5.2).', 'error');
+                            this.isSubmittingReklas = false;
+                            return;
+                        }
+                        if (targetKode && !targetKode.startsWith('1.5.2')) {
+                            this.showToast('Kode rekening tujuan harus berada dalam kelompok Akun 1.5.2 Kemitraan Pihak Ketiga.', 'error');
+                            this.isSubmittingReklas = false;
+                            return;
+                        }
+                    }
 
                     const payload = {
                         astap_id: it.id,

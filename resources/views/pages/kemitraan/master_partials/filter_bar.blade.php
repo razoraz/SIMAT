@@ -38,12 +38,12 @@
             <!-- Filter Skema Kemitraan -->
             <div>
                 <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Skema Kemitraan</label>
-                <select name="skema" onchange="this.form.submit()"
+                <select name="skema"
                     class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
                     <option value="all" {{ ($filterSkema ?? 'all') === 'all' ? 'selected' : '' }}>-- Semua Skema --</option>
                     <option value="Sewa" {{ ($filterSkema ?? '') === 'Sewa' ? 'selected' : '' }}>Sewa (1.5.2.01.01.01)</option>
-                    <option value="KSP" {{ ($filterSkema ?? '') === 'KSP' ? 'selected' : '' }}>KSP - Kerja Sama Pemanfaatan (1.5.2.01.01.02)</option>
-                    <option value="BGS/BSG" {{ ($filterSkema ?? '') === 'BGS/BSG' || ($filterSkema ?? '') === 'BSG' ? 'selected' : '' }}>BGS / BSG (1.5.2.01.01.03)</option>
+                    <option value="KSP" {{ in_array(($filterSkema ?? ''), ['KSP', 'KSO']) ? 'selected' : '' }}>KSP / KSO - Kerja Sama Pemanfaatan (1.5.2.01.01.02)</option>
+                    <option value="BGS/BSG" {{ in_array(($filterSkema ?? ''), ['BGS/BSG', 'BGS', 'BSG']) ? 'selected' : '' }}>BGS / BSG (1.5.2.01.01.03)</option>
                     <option value="KSPI" {{ ($filterSkema ?? '') === 'KSPI' ? 'selected' : '' }}>KSPI - Infrastruktur (1.5.2.01.01.04)</option>
                 </select>
             </div>
@@ -51,7 +51,7 @@
             <!-- Filter Tahun -->
             <div>
                 <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Tahun Perolehan</label>
-                <select name="tahun" onchange="this.form.submit()"
+                <select name="tahun"
                     class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
                     <option value="all" {{ ($filterTahun ?? 'all') === 'all' ? 'selected' : '' }}>-- Semua Tahun --</option>
                     @for ($y = date('Y') + 1; $y >= 2020; $y--)
@@ -63,7 +63,7 @@
             <!-- Filter Triwulan -->
             <div>
                 <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Periode Triwulan</label>
-                <select name="triwulan" onchange="this.form.submit()"
+                <select name="triwulan"
                     class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
                     <option value="all" {{ ($filterTw ?? 'all') === 'all' ? 'selected' : '' }}>-- Semua Triwulan --</option>
                     <option value="TW I" {{ ($filterTw ?? '') === 'TW I' ? 'selected' : '' }}>TW I (Januari - Maret)</option>
@@ -76,13 +76,13 @@
             <!-- Filter Status Konsesi -->
             <div>
                 <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Status Konsesi</label>
-                <select name="status" onchange="this.form.submit()"
+                <select name="status"
                     class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
                     <option value="all" {{ ($filterStatus ?? 'all') === 'all' ? 'selected' : '' }}>-- Semua Status --</option>
-                    <option value="Aktif" {{ ($filterStatus ?? '') === 'Aktif' ? 'selected' : '' }}>🟢 Aktif Berjalan</option>
-                    <option value="Konsesi Berakhir" {{ ($filterStatus ?? '') === 'Konsesi Berakhir' ? 'selected' : '' }}>🟠 Konsesi Berakhir (Siap Reklas)</option>
-                    <option value="Selesai / Reklasifikasi" {{ ($filterStatus ?? '') === 'Selesai / Reklasifikasi' ? 'selected' : '' }}>🔵 Selesai Direklasifikasi</option>
-                    <option value="Dihentikan" {{ ($filterStatus ?? '') === 'Dihentikan' ? 'selected' : '' }}>🔴 Dihentikan / Dibatalkan</option>
+                    <option value="Aktif" {{ ($filterStatus ?? '') === 'Aktif' ? 'selected' : '' }}>🟢 Aktif</option>
+                    <option value="Konsesi Berakhir" {{ ($filterStatus ?? '') === 'Konsesi Berakhir' ? 'selected' : '' }}>🟠 Konsesi Berakhir</option>
+                    <option value="Selesai" {{ in_array(($filterStatus ?? ''), ['Selesai', 'Selesai / Reklasifikasi']) ? 'selected' : '' }}>🔵 Selesai</option>
+                    <option value="Dihentikan" {{ ($filterStatus ?? '') === 'Dihentikan' ? 'selected' : '' }}>🔴 Dihentikan</option>
                 </select>
             </div>
         </div>

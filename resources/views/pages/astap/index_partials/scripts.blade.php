@@ -9989,8 +9989,31 @@
                     return false;
                 },
 
+                isKemitraanAktif() {
+                    const it = this.selectedAstapReklas;
+                    if (!it) return false;
+                    const cat = (it.category || '').toString().trim().toUpperCase();
+                    const kode = (it.kode_barang || it.kode_108 || it.jenis_aset_kode || '').toString().trim();
+                    const isKemitraan = cat === 'KEMITRAAN' || kode.startsWith('1.5.2') || !!it.kemitraan;
+                    if (!isKemitraan) return false;
+
+                    const rawStatus = (it.status_konsesi || it.kemitraan?.status_konsesi || '').toString().trim();
+                    if (!rawStatus) return true;
+
+                    const endedStatuses = [
+                        'konsesi berakhir',
+                        'selesai / reklasifikasi',
+                        'selesai',
+                        'dihentikan',
+                        'berakhir',
+                        'putus kontrak'
+                    ];
+                    return !endedStatuses.includes(rawStatus.toLowerCase());
+                },
+
                 isReklasExtracomDisabled() {
                     if (!this.selectedAstapReklas) return false;
+                    if (this.isKemitraanAktif()) return true;
                     if (this.isCurrentAstapExtracom()) return false; // Selalu aktif untuk direklas balik ke Intrakom
                     const it = this.selectedAstapReklas;
                     const cat = typeof resolveItemCategory === 'function' ? resolveItemCategory(it) : (it.category || '');
@@ -10015,6 +10038,7 @@
 
                 isReklasKdpDisabled() {
                     if (!this.selectedAstapReklas) return true;
+                    if (this.isKemitraanAktif()) return true;
                     return !this.isCurrentAstapKdp();
                 },
 
@@ -10124,7 +10148,11 @@
                     const isKemitraanOrSewa = (cat === 'KEMITRAAN' || kode.startsWith('1.5.2') || kode.startsWith('1.4') || namaBarang.includes('kemitraan') || namaBarang.startsWith('sewa '));
                     const isNonExtracom = (kode.startsWith('1.3.1') || kode.startsWith('1.3.3') || kode.startsWith('1.3.4') || kode.startsWith('1.3.6') || kode.startsWith('1.5.3') || isKemitraanOrSewa || cat === 'KIB A' || cat === 'KIB C' || cat === 'KIB D' || cat === 'KIB F' || cat === 'ATB' || cat === 'KEMITRAAN');
 
-                    if (isExtracomNow) {
+                    if (this.isKemitraanAktif()) {
+                        this.reklasJenis = 'pindah_kib';
+                        this.reklasTujuanKib = 'KEMITRAAN';
+                        this.reklasKemitraanTipeFisik = this.detectKemitraanPhysicalType(item);
+                    } else if (isExtracomNow) {
                         // Kebalikan: dari Ekstrakomptabel dikapitalisasi ke Intrakomptabel
                         this.reklasJenis = 'intracom';
                         this.reklasTujuanKib = (kode.startsWith('1.3.5') || cat === 'KIB E') ? 'KIB E' : 'KIB B';
@@ -10317,7 +10345,11 @@
                         else if (isValidDoc(item.sp2d_nomor)) docs.push('SP2D: ' + item.sp2d_nomor.trim());
                     }
                     this.reklasNomorBa = docs.length > 0 ? docs.join(' | ') : '';
-                    if (this.reklasJenis === 'pindah_kib') {
+                    if (this.isKemitraanAktif()) {
+                        this.reklasJenis = 'pindah_kib';
+                        this.reklasTujuanKib = 'KEMITRAAN';
+                        this.reklasKemitraanTipeFisik = this.detectKemitraanPhysicalType(item);
+                    } else if (this.reklasJenis === 'pindah_kib') {
                         if (isKemitraanOrSewa) {
                             this.reklasTujuanKib = 'KEMITRAAN';
                             this.reklasKemitraanTipeFisik = this.detectKemitraanPhysicalType(item);
@@ -10342,7 +10374,9 @@
                     this.searchReklasSubSubRincian = '';
                     this.isReklasSubSubRincianOpen = false;
                     this.reklasTanggal = new Date().toLocaleDateString('en-CA');
-                    this.reklasAlasan = '';
+                    this.reklasAlasan = this.isKemitraanAktif()
+                        ? 'Penyesuaian / koreksi sub-rincian rekening 108 pemanfaatan kemitraan (Akun 1.5.2)'
+                        : '';
                     this.reklasSubKoreksi = 'biasa';
                     this.reklasNoDokumenKoreksi = '';
                     this.reklasDokumenTglKoreksi = new Date().toLocaleDateString('en-CA');
@@ -10360,6 +10394,14 @@
                 onReklasJenisChange() {
                     const it = this.selectedAstapReklas;
                     if (!it) return;
+                    if (this.isKemitraanAktif()) {
+                        this.reklasJenis = 'pindah_kib';
+                        this.reklasTujuanKib = 'KEMITRAAN';
+                        this.reklasKemitraanTipeFisik = this.detectKemitraanPhysicalType(it);
+                        this.showToast('Status kemitraan masih aktif: reklasifikasi hanya diperbolehkan Pindah Sub-Rekening Kemitraan (1.5.2).', 'warning');
+                        this.initReklasSpekBaru();
+                        return;
+                    }
                     const cat = (typeof this.getEffectiveKibCategory === 'function')
                         ? this.getEffectiveKibCategory(it)
                         : (typeof resolveItemCategory === 'function' ? resolveItemCategory(it) : (it.category || 'KIB B'));
@@ -10586,6 +10628,11 @@
                 },
 
                 onReklasTujuanKibChange() {
+                    if (this.isKemitraanAktif() && this.reklasTujuanKib !== 'KEMITRAAN') {
+                        this.reklasTujuanKib = 'KEMITRAAN';
+                        this.showToast('Status kemitraan masih aktif: kelompok tujuan terkunci pada Kemitraan Pihak Ketiga (Akun 1.5.2).', 'warning');
+                        return;
+                    }
                     const prefix = this.reklasTargetJenisKode;
                     if (prefix) {
                         if (this.reklasSubRincianKode && !this.reklasSubRincianKode.startsWith(prefix)) {
@@ -11097,6 +11144,23 @@
                     if (!alasanClean) {
                         this.showToast('Alasan kenapa melakukan reklasifikasi wajib diisi untuk semua jenis reklasifikasi!', 'error');
                         return;
+                    }
+
+                    // Proteksi Kemitraan Aktif: Hanya boleh antar-rekening 1.5.2 Kemitraan
+                    if (this.isKemitraanAktif()) {
+                        if (this.reklasJenis !== 'pindah_kib') {
+                            this.showToast('Aset dalam status kemitraan aktif hanya diperbolehkan reklasifikasi Pindah Sub-Rekening 108 Kemitraan!', 'error');
+                            return;
+                        }
+                        if (this.reklasTujuanKib !== 'KEMITRAAN') {
+                            this.showToast('Status kemitraan masih aktif: kelompok tujuan wajib KEMITRAAN (Akun 1.5.2).', 'error');
+                            return;
+                        }
+                        const targetKodeCheck = (this.reklasSubSubRincianKode || this.reklasSubRincianKode || this.reklasTujuanKode || '').trim();
+                        if (targetKodeCheck && !targetKodeCheck.startsWith('1.5.2')) {
+                            this.showToast('Kode rekening tujuan harus berada dalam kelompok Akun 1.5.2 Kemitraan Pihak Ketiga.', 'error');
+                            return;
+                        }
                     }
 
                     // Validasi Ekstrakomptabel vs Intrakomptabel

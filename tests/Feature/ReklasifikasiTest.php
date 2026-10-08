@@ -87,6 +87,7 @@ class ReklasifikasiTest extends TestCase
 
         $this->assertDatabaseMissing('astap_reklasis', [
             'id' => $reklas->id,
+            'is_deleted' => 0,
         ]);
     }
 
@@ -1504,6 +1505,208 @@ class ReklasifikasiTest extends TestCase
         $this->assertNotNull($reklas);
         $this->assertEquals('manset', $reklas->sub_koreksi);
         $this->assertEquals('Koreksi Manset (BPKAD)', $reklas->sub_koreksi_label);
+    }
+
+    public function test_active_kemitraan_cannot_reklas_outside_152()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        $astap = Astap::create([
+            'nama_barang' => 'Alat Laboratorium KSO Kimia Farma',
+            'tahun_perolehan' => 2026,
+            'category' => 'KEMITRAAN',
+            'jumlah_volume' => 1,
+            'harga_satuan' => 150000000,
+            'total_realisasi' => 150000000,
+            'jumlah_anggaran' => 0,
+            'sumber_dana' => 'kemitraan',
+            'user_id' => $admin->id,
+        ]);
+
+        \App\Models\AstapKemitraan::create([
+            'astap_id' => $astap->id,
+            'mitra_nama' => 'PT Kimia Farma Diagnostika',
+            'nomor_pks' => 'PKS/LAB/2026/001',
+            'tanggal_pks' => '2026-01-10',
+            'skema_kemitraan' => 'KSO',
+            'status_konsesi' => 'Aktif',
+            'nilai_aset' => 150000000,
+            'jumlah_volume' => 1,
+            'user_id' => $admin->id,
+        ]);
+
+        // Coba reklas ke Ekstrakomptabel (Wajib ditolak)
+        $respExtracom = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'EKSTRAKOMPTABEL',
+            'asal_kib' => 'KEMITRAAN',
+            'tujuan_kib' => 'EKSTRAKOMPTABEL',
+            'nilai_reklas' => 150000000,
+            'tanggal_reklas' => '2026-03-20',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'alasan_reklas' => 'Uji coba reklas ke extracom',
+        ]);
+        $respExtracom->assertStatus(422);
+        $respExtracom->assertJson(['success' => false]);
+
+        // Coba reklas pindah ke KIB B (Wajib ditolak karena status masih aktif)
+        $respKibB = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'KOREKSI_REKENING',
+            'asal_kib' => 'KEMITRAAN',
+            'tujuan_kib' => 'KIB B',
+            'tujuan_kode' => '1.3.2.01.01.01.001',
+            'nilai_reklas' => 150000000,
+            'tanggal_reklas' => '2026-03-20',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'alasan_reklas' => 'Uji coba pindah ke KIB B saat konsesi aktif',
+        ]);
+        $respKibB->assertStatus(422);
+        $respKibB->assertJson(['success' => false]);
+
+        // Coba reklas pindah ke Aset Lain-Lain (Wajib ditolak)
+        $respAsetLain = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'KOREKSI_REKENING',
+            'asal_kib' => 'KEMITRAAN',
+            'tujuan_kib' => 'ASET LAIN',
+            'tujuan_kode' => '1.5.4.01.01.01.001',
+            'nilai_reklas' => 150000000,
+            'tanggal_reklas' => '2026-03-20',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'alasan_reklas' => 'Uji coba pindah ke Aset Lain saat konsesi aktif',
+        ]);
+        $respAsetLain->assertStatus(422);
+        $respAsetLain->assertJson(['success' => false]);
+    }
+
+    public function test_active_kemitraan_can_reklas_within_152()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        JenisAstap::firstOrCreate(
+            ['sub_sub_rincian_objek' => '1.5.2.01.01.02.002'],
+            [
+                'jenis' => '1.5.2',
+                'sub_rincian_objek' => '1.5.2.01.01',
+                'uraian_sub_rincian' => 'Kemitraan Pihak Ketiga',
+                'uraian_sub_sub_rincian' => 'KSP Peralatan dan Mesin',
+                'nama_jenis' => 'Kemitraan Pihak Ketiga',
+            ]
+        );
+
+        $astap = Astap::create([
+            'nama_barang' => 'Mesin Hemodialisa KSO',
+            'tahun_perolehan' => 2026,
+            'category' => 'KEMITRAAN',
+            'jumlah_volume' => 1,
+            'harga_satuan' => 200000000,
+            'total_realisasi' => 200000000,
+            'jumlah_anggaran' => 0,
+            'sumber_dana' => 'kemitraan',
+            'user_id' => $admin->id,
+        ]);
+
+        \App\Models\AstapKemitraan::create([
+            'astap_id' => $astap->id,
+            'mitra_nama' => 'PT Fresenius Medical Care',
+            'nomor_pks' => 'PKS/HD/2026/002',
+            'tanggal_pks' => '2026-01-15',
+            'skema_kemitraan' => 'KSO',
+            'status_konsesi' => 'Aktif',
+            'nilai_aset' => 200000000,
+            'jumlah_volume' => 1,
+            'user_id' => $admin->id,
+        ]);
+
+        // Reklasifikasi koreksi sub-rekening di dalam Akun 1.5.2 Kemitraan (Wajib berhasil)
+        $respOk = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'KOREKSI_REKENING',
+            'asal_kib' => 'KEMITRAAN',
+            'tujuan_kib' => 'KEMITRAAN',
+            'tujuan_kode' => '1.5.2.01.01.02.002',
+            'tujuan_nama' => 'Kerja Sama Pemanfaatan (KSP) Peralatan dan Mesin',
+            'nilai_reklas' => 200000000,
+            'tanggal_reklas' => '2026-03-20',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'alasan_reklas' => 'Koreksi penataan sub-rekening 108 Kemitraan ke KSP',
+        ]);
+
+        $respOk->assertStatus(200);
+        $respOk->assertJson(['success' => true]);
+
+        $astap->refresh();
+        $this->assertTrue($astap->isKemitraan());
+        $this->assertNotNull($astap->kemitraan);
+        $this->assertEquals('Aktif', $astap->kemitraan->status_konsesi);
+    }
+
+    public function test_ended_kemitraan_can_reklas_to_kib_definitif()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        JenisAstap::firstOrCreate(
+            ['sub_sub_rincian_objek' => '1.3.3.01.01.01.001'],
+            [
+                'jenis' => '1.3.3',
+                'sub_rincian_objek' => '1.3.3.01.01',
+                'uraian_sub_rincian' => 'Gedung dan Bangunan',
+                'uraian_sub_sub_rincian' => 'Bangunan Gedung Kantor RSUD',
+                'nama_jenis' => 'Gedung dan Bangunan',
+            ]
+        );
+
+        $astap = Astap::create([
+            'nama_barang' => 'Gedung Kemitraan BGS',
+            'tahun_perolehan' => 2026,
+            'category' => 'KEMITRAAN',
+            'jumlah_volume' => 1,
+            'harga_satuan' => 500000000,
+            'total_realisasi' => 500000000,
+            'jumlah_anggaran' => 0,
+            'sumber_dana' => 'kemitraan',
+            'user_id' => $admin->id,
+        ]);
+
+        $kemitraan = \App\Models\AstapKemitraan::create([
+            'astap_id' => $astap->id,
+            'mitra_nama' => 'PT Bangun Sejahtera',
+            'nomor_pks' => 'PKS/BGS/2026/003',
+            'tanggal_pks' => '2021-01-10',
+            'skema_kemitraan' => 'BGS',
+            'status_konsesi' => 'Konsesi Berakhir',
+            'nilai_aset' => 500000000,
+            'jumlah_volume' => 1,
+            'user_id' => $admin->id,
+        ]);
+
+        // Reklasifikasi pengalihan ke KIB C Definitif setelah konsesi berakhir (Wajib berhasil)
+        $respDefinitif = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'KOREKSI_REKENING',
+            'asal_kib' => 'KEMITRAAN',
+            'tujuan_kib' => 'KIB C',
+            'tujuan_kode' => '1.3.3.01.01.01.001',
+            'tujuan_nama' => 'Bangunan Gedung Kantor RSUD',
+            'nilai_reklas' => 500000000,
+            'tanggal_reklas' => '2026-03-20',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'alasan_reklas' => 'Masa konsesi berakhir, aset diserahkan menjadi aset tetap definitif RSUD',
+        ]);
+
+        $respDefinitif->assertStatus(200);
+        $respDefinitif->assertJson(['success' => true]);
+
+        $astap->refresh();
+        $this->assertEquals('KIB C', $astap->category);
+        $kemitraan->refresh();
+        $this->assertEquals('Selesai / Reklasifikasi', $kemitraan->status_konsesi);
     }
 }
 
