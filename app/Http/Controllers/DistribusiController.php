@@ -143,7 +143,14 @@ class DistribusiController extends Controller
             ->pluck('id')
             ->toArray();
 
-        return array_values(array_unique(array_merge($distribusiLockedIds, $mutasiLockedIds, $occupiedIds, $damagedIds)));
+        // 5. Register Aset Kemitraan (Akun 1.5.2 / sumber_dana = kemitraan)
+        // Tidak boleh didistribusikan ke ruangan RSUD karena berstatus konsesi/pemanfaatan pihak ketiga
+        $kemitraanIds = AstapRegister::whereHas('astap', function ($q) {
+            $q->where('sumber_dana', 'kemitraan')
+              ->orWhere('kode_108', 'like', '1.5.2%');
+        })->pluck('id')->toArray();
+
+        return array_values(array_unique(array_merge($distribusiLockedIds, $mutasiLockedIds, $occupiedIds, $damagedIds, $kemitraanIds)));
     }
 
     /**
@@ -324,6 +331,8 @@ class DistribusiController extends Controller
             ->values();
 
         $astapList = Astap::with('jenisAstap')
+            ->where('sumber_dana', '!=', 'kemitraan')
+            ->where('kode_108', 'not like', '1.5.2%')
             ->orderBy('nama_barang', 'asc')
             ->get()
             ->map(function($a) {
@@ -430,6 +439,8 @@ class DistribusiController extends Controller
             ->values();
 
         $astapList = Astap::with('jenisAstap')
+            ->where('sumber_dana', '!=', 'kemitraan')
+            ->where('kode_108', 'not like', '1.5.2%')
             ->orderBy('nama_barang', 'asc')
             ->get()
             ->map(function($a) {
@@ -652,7 +663,36 @@ class DistribusiController extends Controller
                 }
             }
 
+            // Proteksi Barang Kemitraan (Akun 1.5.2): Tidak boleh diajukan dalam distribusi internal
+            foreach ($validated['items'] as $it) {
+                if (!empty($it['astap_id'])) {
+                    $astapItem = Astap::find($it['astap_id']);
+                    if ($astapItem && ($astapItem->sumber_dana === 'kemitraan' || str_starts_with($astapItem->kode_108 ?? '', '1.5.2'))) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Barang aset kemitraan "' . $astapItem->nama_barang . '" tidak dapat didistribusikan ke ruangan karena masih dalam masa konsesi / pemanfaatan pihak ketiga.'
+                        ], 422);
+                    }
+                }
+            }
+
             if ($finalStatus !== 'Ditolak' && !empty($allSubmittedRegisterIds)) {
+                // Proteksi Register Kemitraan: Tolak jika ada NIBAR aset kemitraan
+                $kemitraanReg = AstapRegister::whereIn('id', $allSubmittedRegisterIds)
+                    ->whereHas('astap', function ($q) {
+                        $q->where('sumber_dana', 'kemitraan')
+                          ->orWhere('kode_108', 'like', '1.5.2%');
+                    })
+                    ->with('astap')
+                    ->first();
+                if ($kemitraanReg) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Aset Kemitraan (' . ($kemitraanReg->astap?->nama_barang ?? 'Akun 1.5.2') . ' - NIBAR: ' . ($kemitraanReg->nibar ?: $kemitraanReg->id) . ') tidak dapat didistribusikan ke ruangan karena berstatus pemanfaatan / konsesi pihak ketiga.',
+                        'conflicted_register_ids' => [$kemitraanReg->id],
+                    ], 422);
+                }
+
                 // 1. Pessimistic Lock: Kunci baris aset di DB agar transaksi paralel menunggu secara atomik
                 $lockedRegisters = AstapRegister::whereIn('id', $allSubmittedRegisterIds)
                     ->lockForUpdate()

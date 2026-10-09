@@ -1091,7 +1091,7 @@
                                             <template x-if="!reg.ruang_pemegang">
                                                 <span class="inline-flex items-center space-x-1.5 text-cyan-400 font-bold bg-cyan-500/10 px-2.5 py-1 rounded-lg border border-cyan-500/30 text-[10px] justify-center">
                                                     <span>🤝</span>
-                                                    <span x-text="selectedAstapDetail.kemitraan?.mitra_nama ? ('Mitra: ' + selectedAstapDetail.kemitraan.mitra_nama) : 'Konsesi Kemitraan (Mitra)'"></span>
+                                                    <span x-text="selectedAstapDetail?.kemitraan?.mitra_nama ? ('Mitra: ' + selectedAstapDetail.kemitraan.mitra_nama) : 'Konsesi Kemitraan (Mitra)'"></span>
                                                 </span>
                                             </template>
                                         </td>

@@ -64,12 +64,6 @@ class KemitraanController extends Controller
 
         foreach ($expiredKemitraans as $exp) {
             $exp->update(['status_konsesi' => 'Konsesi Berakhir']);
-            // Sinkronisasi dua arah: jika menautkan objek aset BMD RSUD yang memiliki kemitraan, sinkronkan juga
-            if ($exp->objek_astap_id) {
-                AstapKemitraan::where('astap_id', $exp->objek_astap_id)
-                    ->where('status_konsesi', 'Aktif')
-                    ->update(['status_konsesi' => 'Konsesi Berakhir']);
-            }
         }
 
         $filterKib    = $request->query('kib', 'all');
@@ -197,15 +191,13 @@ class KemitraanController extends Controller
         $kemitraan->status_konsesi = $newStatus;
         $kemitraan->save();
 
-        // Sinkronisasi status pada objek BMD RSUD terkait jika ada (2 arah)
-        if ($kemitraan->objek_astap_id) {
-            AstapKemitraan::where('astap_id', $kemitraan->objek_astap_id)
+        // Sinkronisasi status dari Objek Pemanfaatan BMD RSUD (Induk) ke aset mitra terkait
+        if ($kemitraan->tipe_kemitraan === 'dimanfaatkan') {
+            AstapKemitraan::where('objek_astap_id', $kemitraan->astap_id)
                 ->where('is_deleted', 0)
+                ->where('nomor_pks', $kemitraan->nomor_pks)
                 ->update(['status_konsesi' => $newStatus]);
         }
-        AstapKemitraan::where('objek_astap_id', $kemitraan->astap_id)
-            ->where('is_deleted', 0)
-            ->update(['status_konsesi' => $newStatus]);
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([

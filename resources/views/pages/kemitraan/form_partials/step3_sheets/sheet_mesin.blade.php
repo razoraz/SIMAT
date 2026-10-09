@@ -117,13 +117,14 @@
                                        style="padding-left: 38px; padding-right: 36px;"
                                        class="w-full bg-slate-950 border border-slate-700 hover:border-amber-500 focus:border-amber-500 rounded-xl py-2.5 text-xs text-white font-bold focus:outline-none transition-all shadow-inner">
                                 <button type="button" 
-                                        x-show="item.mesin_nama_barang" 
-                                        @click="item.mesin_nama_barang = ''; item.mesin_kode_barang = ''; item.isFilterOpen = true; syncTotalsFromItems();" 
-                                        style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); z-index: 10;"
-                                        class="flex items-center justify-center text-slate-400 hover:text-white transition-colors cursor-pointer">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
-                                    </svg>
+                                        x-show="Boolean(item.mesin_nama_barang)" 
+                                        @click.stop.prevent="clearItem108(item, 'mesin'); item.mesin_nama_barang = ''; item.mesin_kode_barang = ''; item.searchFilter = ''; formData.nama_barang = ''; item.isFilterOpen = true;" 
+                                        @mousedown.stop.prevent="clearItem108(item, 'mesin'); item.mesin_nama_barang = ''; item.mesin_kode_barang = ''; item.searchFilter = ''; formData.nama_barang = ''; item.isFilterOpen = true;" 
+                                        class="absolute inset-y-0 right-0 w-11 flex items-center justify-center text-slate-400 hover:text-white transition-colors cursor-pointer z-30"
+                                        title="Hapus / Kosongkan Pilihan">
+                                    <span class="w-6 h-6 rounded-full bg-slate-800/90 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 flex items-center justify-center transition-all border border-slate-700 hover:border-rose-500/50 shadow-sm">
+                                        <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </span>
                                 </button>
                             </div>
 

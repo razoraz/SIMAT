@@ -1662,7 +1662,6 @@ Route::middleware('auth')->group(function () {
                 // Ambil aset register dari BMD RSUD:
                 // 1. Yang memiliki riwayat reklasifikasi ke Kemitraan (Akun 1.5.2)
                 // 2. Atau berakun Kemitraan 1.5.2 (Sewa Tanah, Sewa Gedung, Sewa Mesin, dll)
-                // 3. Atau Aset Tanah RSUD (1.3.1 / KIB A) & Bangunan Gedung (1.3.3 / KIB C) yang dapat disewakan/dimanfaatkan
                 return \App\Models\AstapRegister::where('is_deleted', 0)
                     ->whereHas('astap', function($q) use ($reklasKemitraanAstapIds) {
                         $q->where('is_deleted', 0)
@@ -1670,11 +1669,11 @@ Route::middleware('auth')->group(function () {
                               if (!empty($reklasKemitraanAstapIds)) {
                                   $sq->whereIn('id', $reklasKemitraanAstapIds);
                               }
-                              $sq->orWhereHas('jenisAstap', function($j) {
-                                  $j->where('jenis', 'like', '1.5.2%')
-                                    ->orWhere('jenis', 'like', '1.3.1%')
-                                    ->orWhere('jenis', 'like', '1.3.3%');
-                              });
+                              $sq->orWhere('sumber_dana', 'kemitraan')
+                                ->orWhere('kode_108', 'like', '1.5.2%')
+                                ->orWhereHas('jenisAstap', function($j) {
+                                    $j->where('jenis', 'like', '1.5.2%');
+                                });
                           });
                     })
                     ->with(['astap.jenisAstap', 'astap.unit', 'unit'])
@@ -1944,6 +1943,7 @@ Route::middleware('auth')->group(function () {
                     $activeOverlap = \App\Models\AstapKemitraan::where('objek_register_id', $data['objek_register_id'])
                         ->where('status_konsesi', 'Aktif')
                         ->where('is_deleted', 0)
+                        ->where('nomor_pks', '!=', trim($data['nomor_pks']))
                         ->first();
 
                     if ($activeOverlap) {
@@ -2662,26 +2662,10 @@ Route::middleware('auth')->group(function () {
                     ], 422);
                 }
 
+                // Validasi Tanggal Mulai & Selesai Kerjasama
+                // Fleksibel untuk kontrak di masa depan maupun berlaku surut administratif
                 if (!empty($data['tanggal_mulai'])) {
                     $tMulai = $parseDateHelper($data['tanggal_mulai']);
-                    if ($tMulai && $tMulai > $todayTimestamp) {
-                        return response()->json([
-                            'success' => false,
-                            'message' => 'Tanggal mulai berlaku kerjasama tidak boleh melebihi tanggal hari ini.',
-                            'errors'  => [
-                                'tanggal_mulai' => ['Tanggal mulai berlaku kerjasama tidak boleh melebihi tanggal hari ini.']
-                            ]
-                        ], 422);
-                    }
-                    if ($tMulai && $tPks && $tMulai < $tPks) {
-                        return response()->json([
-                            'success' => false,
-                            'message' => 'Tanggal mulai berlaku kerjasama harus di atas atau sama dengan tanggal penandatanganan PKS.',
-                            'errors'  => [
-                                'tanggal_mulai' => ['Tanggal mulai berlaku kerjasama harus di atas atau sama dengan tanggal penandatanganan PKS.']
-                            ]
-                        ], 422);
-                    }
                 }
 
                 if (!empty($data['tanggal_mulai']) && !empty($data['tanggal_selesai'])) {
@@ -2707,6 +2691,7 @@ Route::middleware('auth')->group(function () {
                         ->where('status_konsesi', 'Aktif')
                         ->where('is_deleted', 0)
                         ->where('astap_id', '!=', $astap->id)
+                        ->where('nomor_pks', '!=', trim($data['nomor_pks']))
                         ->first();
 
                     if ($activeOverlap) {
@@ -3011,18 +2996,16 @@ Route::middleware('auth')->group(function () {
                         foreach ($specJson['mesin_items'] as $mItem) {
                             $qty = max(1, (int)($mItem['mesin_jumlah_barang'] ?? 1));
                             $kStr = $normalizeKondisi($mItem['mesin_kondisi'] ?? null);
-                            $rStr = $cleanRuang($mItem['mesin_ruang_pemegang'] ?? null);
                             for ($q = 0; $q < $qty; $q++) {
-                                $unitSpecs[] = ['kondisi' => $kStr, 'ruang' => $rStr];
+                                $unitSpecs[] = ['kondisi' => $kStr, 'ruang' => null];
                             }
                         }
                     } elseif (isset($specJson['lainnya_items']) && is_array($specJson['lainnya_items']) && count($specJson['lainnya_items']) > 0) {
                         foreach ($specJson['lainnya_items'] as $lItem) {
                             $qty = max(1, (int)($lItem['lainnya_jumlah'] ?? 1));
                             $kStr = $normalizeKondisi($lItem['lainnya_kondisi'] ?? null);
-                            $rStr = $cleanRuang($lItem['ruang_pemegang'] ?? null);
                             for ($q = 0; $q < $qty; $q++) {
-                                $unitSpecs[] = ['kondisi' => $kStr, 'ruang' => $rStr];
+                                $unitSpecs[] = ['kondisi' => $kStr, 'ruang' => null];
                             }
                         }
                     } elseif (isset($specJson['tanah_items']) && is_array($specJson['tanah_items']) && count($specJson['tanah_items']) > 0) {
@@ -3070,9 +3053,6 @@ Route::middleware('auth')->group(function () {
                     $registers = \App\Models\AstapRegister::where('astap_id', $astap->id)->orderBy('id')->get();
                     foreach ($registers as $regIdx => $reg) {
                         $targetKondisi = isset($unitSpecs[$regIdx]) ? $unitSpecs[$regIdx]['kondisi'] : $overallKondisi;
-                        $targetRuang = (isset($unitSpecs[$regIdx]['ruang']) && !empty($unitSpecs[$regIdx]['ruang']))
-                            ? $unitSpecs[$regIdx]['ruang']
-                            : ($cleanRuang($data['ruang_pemegang'] ?? null) ?: $cleanRuang($reg->ruang_pemegang));
 
                         $isDistributed = \App\Models\DistribusiItemRegister::where('astap_register_id', $reg->id)->exists();
                         if ($isDistributed) {
@@ -3081,22 +3061,89 @@ Route::middleware('auth')->group(function () {
                                 'kondisi'         => $targetKondisi,
                             ]);
                         } else {
-                            if ($isTanah || $isGedung || $isJaringan) {
-                                $reg->update([
-                                    'unit_id'         => null,
-                                    'ruang_pemegang'  => null,
-                                    'tahun_perolehan' => $tahun,
-                                    'kondisi'         => $targetKondisi,
-                                    'status'          => 'Tersedia',
-                                ]);
-                            } else {
-                                $reg->update([
-                                    'unit_id'         => $targetRuang ? ($data['unit_id'] ?? null) : null,
-                                    'ruang_pemegang'  => $targetRuang,
-                                    'tahun_perolehan' => $tahun,
-                                    'kondisi'         => $targetKondisi,
-                                    'status'          => 'Tersedia',
-                                ]);
+                            $reg->update([
+                                'unit_id'         => null,
+                                'ruang_pemegang'  => null,
+                                'tahun_perolehan' => $tahun,
+                                'kondisi'         => $targetKondisi,
+                                'status'          => 'Tersedia',
+                            ]);
+                        }
+                    }
+
+                    // Sinkronisasi Penambahan / Pengurangan Register jika Volume Berubah saat Edit
+                    $targetVolume = max(1, (int) $data['jumlah_volume']);
+                    $currentRegCount = $registers->count();
+
+                    if ($targetVolume > $currentRegCount) {
+                        $ja = \App\Models\JenisAstap::find($astap->jenis_astap_id);
+                        $kode108Raw = $ja ? ($ja->sub_sub_rincian_objek ?: ($ja->sub_rincian_objek ?: $ja->jenis)) : '1.5.2.00.00.00';
+                        $kode108Clean = str_replace('.', '', $kode108Raw);
+
+                        $runningRegNum = (int) (\App\Models\AstapRegister::where('tahun_perolehan', $tahun)
+                            ->whereHas('astap', function ($sq) use ($astap) {
+                                $sq->where('jenis_astap_id', $astap->jenis_astap_id);
+                                if (!empty($astap->triwulan)) {
+                                    $sq->where('triwulan', $astap->triwulan);
+                                }
+                            })
+                            ->max('no_register_int') ?? 0);
+
+                        $nibarPrefix = "1201351102000000280000{$tahun}{$kode108Clean}";
+                        $latestNibar = \App\Models\AstapRegister::where('nibar', 'like', "{$nibarPrefix}%")
+                            ->whereHas('astap', function ($sq) use ($astap) {
+                                $sq->where('jenis_astap_id', $astap->jenis_astap_id);
+                                if (!empty($astap->triwulan)) {
+                                    $sq->where('triwulan', $astap->triwulan);
+                                }
+                            })
+                            ->orderBy('nibar', 'desc')
+                            ->value('nibar');
+
+                        if ($latestNibar && strlen($latestNibar) >= 7) {
+                            $lastNum = (int) substr($latestNibar, -7);
+                            if ($lastNum > $runningRegNum) {
+                                $runningRegNum = $lastNum;
+                            }
+                        }
+
+                        for ($i = $currentRegCount; $i < $targetVolume; $i++) {
+                            $runningRegNum++;
+                            $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                            $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+
+                            while (\App\Models\AstapRegister::where('nibar', $nibar)->exists()) {
+                                $runningRegNum++;
+                                $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                                $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+                            }
+
+                            $newKondisi = isset($unitSpecs[$i]) ? $unitSpecs[$i]['kondisi'] : $overallKondisi;
+                            \App\Models\AstapRegister::create([
+                                'astap_id'        => $astap->id,
+                                'unit_id'         => null,
+                                'tahun_perolehan' => $tahun,
+                                'no_register_int' => $runningRegNum,
+                                'no_register'     => $nibar,
+                                'nibar'           => $nibar,
+                                'qr_code_path'    => "/scan/{$nibar}",
+                                'ruang_pemegang'  => null,
+                                'kondisi'         => $newKondisi,
+                                'status'          => 'Tersedia',
+                                'is_deleted'      => 0,
+                            ]);
+                        }
+                    } elseif ($targetVolume < $currentRegCount) {
+                        $excessRegisters = \App\Models\AstapRegister::where('astap_id', $astap->id)
+                            ->orderBy('id', 'desc')
+                            ->take($currentRegCount - $targetVolume)
+                            ->get();
+
+                        foreach ($excessRegisters as $exReg) {
+                            $hasDist = \App\Models\DistribusiItemRegister::where('astap_register_id', $exReg->id)->exists();
+                            $hasMutasi = \App\Models\AstapMutasiRegister::where('astap_register_id', $exReg->id)->exists();
+                            if (!$hasDist && !$hasMutasi) {
+                                $exReg->delete();
                             }
                         }
                     }

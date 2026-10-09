@@ -173,6 +173,10 @@ class MutasiController extends Controller
         $rawRegisters = AstapRegister::with('astap', 'unit')
             ->whereNotNull('nibar')
             ->whereNotIn('id', $lockedIds)
+            ->whereHas('astap', function ($q) {
+                $q->where('sumber_dana', '!=', 'kemitraan')
+                  ->where('kode_108', 'not like', '1.5.2%');
+            })
             ->orderBy('id')
             ->get();
 
@@ -251,6 +255,20 @@ class MutasiController extends Controller
             })->implode(', ');
             return back()->withInput()->withErrors([
                 'astap_register_id' => "Barang aset berikut sedang dalam proses pengajuan mutasi lain dan belum selesai: {$conflictNames}."
+            ]);
+        }
+
+        // Pastikan tidak ada barang kemitraan (Akun 1.5.2) yang diajukan
+        $kemitraanConflict = AstapRegister::whereIn('id', array_map('intval', $registerIds))
+            ->whereHas('astap', function ($q) {
+                $q->where('sumber_dana', 'kemitraan')
+                  ->orWhere('kode_108', 'like', '1.5.2%');
+            })
+            ->with('astap')
+            ->first();
+        if ($kemitraanConflict) {
+            return back()->withInput()->withErrors([
+                'astap_register_id' => "Aset kemitraan (" . ($kemitraanConflict->astap?->nama_barang ?? 'Akun 1.5.2') . " - NIBAR: " . ($kemitraanConflict->nibar ?? $kemitraanConflict->id) . ") tidak dapat dimutasi sebelum masa konsesi berakhir dan direklasifikasi ke Aset Tetap RSUD."
             ]);
         }
 

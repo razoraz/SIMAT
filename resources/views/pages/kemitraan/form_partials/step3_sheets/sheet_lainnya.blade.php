@@ -163,16 +163,22 @@
                                        @click="item.isFilterOpen = true"
                                        @input="item.isFilterOpen = true; syncTotalsFromItems();"
                                        placeholder="Ketik untuk memfilter jenis barang PMDN 108 atau tulis rincian aset lainnya..."
-                                       class="w-full bg-slate-950 border border-slate-700 hover:border-purple-500 focus:border-purple-500 rounded-xl px-3.5 py-2.5 text-xs text-white font-bold focus:outline-none transition-all pl-9 pr-8">
+                                       class="w-full bg-slate-950 border border-slate-700 hover:border-purple-500 focus:border-purple-500 rounded-xl px-3.5 py-2.5 text-xs text-white font-bold focus:outline-none transition-all pl-9 pr-11">
                                 <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                                     </svg>
                                 </div>
                                 <button type="button" 
-                                        x-show="item.lainnya_nama_barang" 
-                                        @click="item.lainnya_nama_barang = ''; item.lainnya_kode_barang = ''; item.isFilterOpen = true; syncTotalsFromItems();" 
-                                        class="absolute inset-y-0 right-2.5 flex items-center text-slate-400 hover:text-white transition-colors cursor-pointer"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg></button>
+                                        x-show="Boolean(item.lainnya_nama_barang)" 
+                                        @click.stop.prevent="clearItem108(item, 'lainnya'); item.lainnya_kode_barang = ''; item.lainnya_nama_barang = ''; item.lainnya_judul = ''; item.searchFilter = ''; formData.nama_barang = ''; item.isFilterOpen = true;" 
+                                        @mousedown.stop.prevent="clearItem108(item, 'lainnya'); item.lainnya_kode_barang = ''; item.lainnya_nama_barang = ''; item.lainnya_judul = ''; item.searchFilter = ''; formData.nama_barang = ''; item.isFilterOpen = true;" 
+                                        class="absolute inset-y-0 right-0 w-11 flex items-center justify-center text-slate-400 hover:text-white transition-colors cursor-pointer z-30"
+                                        title="Hapus / Kosongkan Pilihan">
+                                    <span class="w-6 h-6 rounded-full bg-slate-800/90 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 flex items-center justify-center transition-all border border-slate-700 hover:border-rose-500/50 shadow-sm">
+                                        <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </span>
+                                </button>
                             </div>
 
                             <!-- Dropdown Hasil Filter (Strict Max 5 Baris - Zero Lag) -->

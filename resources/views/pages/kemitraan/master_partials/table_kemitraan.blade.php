@@ -67,6 +67,59 @@
         return 'KIB B';
     };
 
+    $isJenisKemitraanText = function($t) {
+        if (empty($t)) return true;
+        $l = strtolower(trim($t));
+        return str_starts_with($l, 'kerja sama pemanfaatan')
+            || str_starts_with($l, 'bangun guna serah')
+            || str_starts_with($l, 'bangun serah guna')
+            || str_starts_with($l, 'ksp ')
+            || str_starts_with($l, 'kso ')
+            || str_starts_with($l, 'sewa ')
+            || $l === 'sewa tanah'
+            || $l === 'sewa peralatan dan mesin'
+            || $l === 'sewa gedung dan bangunan'
+            || $l === 'sewa jalan, irigasi dan jaringan'
+            || $l === 'sewa aset tetap lainnya'
+            || $l === 'kerja sama pemanfaatan tanah'
+            || $l === 'kerja sama pemanfaatan peralatan dan mesin'
+            || $l === 'kerja sama pemanfaatan gedung dan bangunan'
+            || $l === 'kerja sama pemanfaatan jalan, irigasi dan jaringan'
+            || $l === 'kerja sama pemanfaatan aset tetap lainnya';
+    };
+
+    $resolveNamaFisikBarang = function($astap, $row, $objekAsetBmd, $spec, $reklasHistory) use ($isJenisKemitraanText) {
+        $specNama = $spec['tanah_items'][0]['tanah_nama_barang'] 
+            ?? ($spec['mesin_items'][0]['mesin_nama_barang'] 
+            ?? ($spec['gedung_items'][0]['gedung_nama_barang'] 
+            ?? ($spec['jaringan_items'][0]['jaringan_nama_barang'] 
+            ?? ($spec['lainnya_items'][0]['lainnya_nama_barang'] 
+            ?? ($spec['tanah_nama_barang'] ?? ($spec['gedung_nama_bangunan'] ?? null))))));
+
+        if (!empty($specNama) && !$isJenisKemitraanText($specNama)) {
+            return $specNama;
+        }
+
+        if (!empty($astap?->nama_barang) && !$isJenisKemitraanText($astap->nama_barang)) {
+            return $astap->nama_barang;
+        }
+
+        if ($reklasHistory && !empty($reklasHistory->asal_nama) && !$isJenisKemitraanText($reklasHistory->asal_nama)) {
+            return $reklasHistory->asal_nama;
+        }
+
+        if (!empty($objekAsetBmd?->nama_barang) && !$isJenisKemitraanText($objekAsetBmd->nama_barang)) {
+            return $objekAsetBmd->nama_barang;
+        }
+
+        $merkType = trim(($spec['merk'] ?? '') . ' ' . ($spec['type'] ?? ''));
+        if (!empty($merkType) && strlen($merkType) > 2) {
+            return $merkType;
+        }
+
+        return $astap?->nama_barang ?: 'Objek Aset BMD RSUD';
+    };
+
     $recordsDimanfaatkan = collect($kemitraanRecords ?? [])->filter(fn($r) => $isDimanfaatkan($r))->values();
     $recordsDitambahkan  = collect($kemitraanRecords ?? [])->filter(fn($r) => !$isDimanfaatkan($r))->values();
 
@@ -154,23 +207,14 @@
         }
     }
 
-    $buildRowMeta = function($row, $isDimanfaatkanVal) use ($resolveKemitraanKib) {
+    $buildRowMeta = function($row, $isDimanfaatkanVal) use ($resolveKemitraanKib, $resolveNamaFisikBarang) {
         $astap = $row->astap ?? null;
         $objekAstap = $row->objekAstap ?? null;
         $reklasHistory = $astap?->reklas?->sortByDesc('id')->first();
         $objekAsetBmd = $objekAstap ?: ($row->objekRegister?->astap ?? null);
         $spec = is_array($astap?->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap?->spesifikasi_json ?? '[]', true) ?: []);
 
-        $namaFisik = $spec['tanah_nama_barang'] ?? ($spec['gedung_nama_bangunan'] ?? null);
-        if (!$namaFisik && $reklasHistory && !empty($reklasHistory->asal_nama)) {
-            $namaFisik = $reklasHistory->asal_nama;
-        }
-        if (!$namaFisik && !empty($objekAsetBmd?->nama_barang) && !str_starts_with(strtolower($objekAsetBmd->nama_barang), 'kerja sama pemanfaatan')) {
-            $namaFisik = $objekAsetBmd->nama_barang;
-        }
-        if (!$namaFisik) {
-            $namaFisik = $spec['mesin_items'][0]['mesin_nama_barang'] ?? ($spec['tanah_items'][0]['tanah_nama_barang'] ?? ($astap?->nama_barang ?: 'Objek Aset'));
-        }
+        $namaFisik = $resolveNamaFisikBarang($astap, $row, $objekAsetBmd, $spec, $reklasHistory);
 
         $kib = $resolveKemitraanKib($row);
         $skema = $row->skema_kemitraan ?: ($spec['skema_kemitraan'] ?? 'Sewa');
@@ -260,21 +304,17 @@
         ];
     })->values();
 
-    $serializedDimanfaatkan = $recordsDimanfaatkan->map(function($r) use ($resolveKemitraanKib) {
+    $serializedDimanfaatkan = $recordsDimanfaatkan->map(function($r) use ($resolveKemitraanKib, $resolveNamaFisikBarang) {
         $astap = $r->astap ?? null;
         $objekAstap = $r->objekAstap ?? null;
         $registers = $astap?->registers ?? collect([]);
         $firstReg = $registers->first();
         $spec = is_array($astap?->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap?->spesifikasi_json ?? '[]', true) ?: []);
         $kib = $resolveKemitraanKib($r);
+        $reklasHistory = $astap?->reklas?->sortByDesc('id')->first();
+        $objekAsetBmd = $objekAstap ?: ($r->objekRegister?->astap ?? null);
 
-        $namaFisik = $spec['tanah_nama_barang'] ?? ($spec['gedung_nama_bangunan'] ?? null);
-        if (!$namaFisik && !empty($objekAstap?->nama_barang) && !str_starts_with(strtolower($objekAstap->nama_barang), 'kerja sama')) {
-            $namaFisik = $objekAstap->nama_barang;
-        }
-        if (!$namaFisik) {
-            $namaFisik = $astap?->nama_barang ?: 'Objek BMD RSUD';
-        }
+        $namaFisik = $resolveNamaFisikBarang($astap, $r, $objekAsetBmd, $spec, $reklasHistory);
 
         $luas = $spec['luas_m2'] ?? ($spec['tanah_luas_m2'] ?? ($spec['gedung_luas_lantai'] ?? null));
         $alamat = $spec['tanah_alamat'] ?? ($spec['gedung_alamat'] ?? ($astap?->alamat_barang ?: '-'));
@@ -467,16 +507,7 @@
                             // 1. Resolusi Nama Fisik Barang (Sebelum Reklasifikasi - Gambar 1)
                             $reklasHistory = $astap?->reklas?->sortByDesc('id')->first() ?: ($objekAsetBmd?->reklas?->sortByDesc('id')->first());
                             
-                            $namaFisikAsli = null;
-                            if (!empty($astap->nama_barang) && !str_starts_with(strtolower($astap->nama_barang), 'kerja sama pemanfaatan') && !str_starts_with(strtolower($astap->nama_barang), 'bangun guna serah')) {
-                                $namaFisikAsli = $astap->nama_barang;
-                            } elseif ($reklasHistory && !empty($reklasHistory->asal_nama)) {
-                                $namaFisikAsli = $reklasHistory->asal_nama;
-                            } elseif (!empty($objekAsetBmd?->nama_barang) && !str_starts_with(strtolower($objekAsetBmd->nama_barang), 'kerja sama pemanfaatan')) {
-                                $namaFisikAsli = $objekAsetBmd->nama_barang;
-                            } else {
-                                $namaFisikAsli = $spec['mesin_items'][0]['mesin_nama_barang'] ?? ($spec['tanah_items'][0]['tanah_nama_barang'] ?? ($astap?->nama_barang ?: 'Objek Aset BMD RSUD'));
-                            }
+                            $namaFisikAsli = $resolveNamaFisikBarang($astap, $row, $objekAsetBmd, $spec, $reklasHistory);
 
                             $luasObjek = $spec['luas_m2'] ?? ($spec['tanah_luas_m2'] ?? ($spec['gedung_luas_lantai'] ?? null));
                             $sertifikatObjek = $spec['sertifikat_no'] ?? ($spec['tanah_sertifikat_no'] ?? ($spec['gedung_dokumen_no'] ?? null));
@@ -1203,14 +1234,9 @@
                             <td class="py-4 px-4">
                                 @php
                                     $t3Reklas = $astap?->reklas?->sortByDesc('id')->first();
-                                    $t3NamaFisik = null;
-                                    if (!empty($astap->nama_barang) && !str_starts_with(strtolower($astap->nama_barang), 'kerja sama pemanfaatan') && !str_starts_with(strtolower($astap->nama_barang), 'bangun guna serah')) {
-                                        $t3NamaFisik = $astap->nama_barang;
-                                    } elseif ($t3Reklas && !empty($t3Reklas->asal_nama)) {
-                                        $t3NamaFisik = $t3Reklas->asal_nama;
-                                    } else {
-                                        $t3NamaFisik = $astap?->nama_barang ?: 'Barang Aset Kemitraan';
-                                    }
+                                    $t3Objek = $row->objekAstap ?? ($row->objekRegister?->astap ?? null);
+                                    $t3Spec = is_array($astap?->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap?->spesifikasi_json ?? '[]', true) ?: []);
+                                    $t3NamaFisik = $resolveNamaFisikBarang($astap, $row, $t3Objek, $t3Spec, $t3Reklas);
                                 @endphp
                                 <div class="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors leading-snug">
                                     {{ $t3NamaFisik }}

@@ -228,6 +228,32 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- 0. Nama Barang / Aset Fisik Kemitraan (Eksplisit Bukan Jenis Kemitraan) -->
+            <div class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2.5 shadow-md md:col-span-2">
+                <div class="flex items-center justify-between">
+                    <label class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                        <span>Nama Barang / Aset Fisik Kemitraan <span class="text-rose-400">*</span></span>
+                        <span class="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                            Wajib Nama Barang Asli (Bukan Jenis Kemitraan)
+                        </span>
+                    </label>
+                    <span class="text-[10px] font-mono text-slate-400" x-show="formData.nama_barang">
+                        <strong class="text-cyan-300 font-mono" x-text="(formData.nama_barang || '').length"></strong> karakter
+                    </span>
+                </div>
+                <div class="relative">
+                    <input type="text"
+                        x-model="formData.nama_barang"
+                        @input="syncNameToActiveItem()"
+                        required
+                        placeholder="Contoh: Lahan Parkir Paviliun / Hematology Analyzer XN-1000 / Gedung Rawat Inap Melati"
+                        class="w-full bg-slate-950 border border-slate-700 hover:border-emerald-400 focus:border-emerald-400 rounded-xl px-4 py-2.5 text-xs text-white font-bold focus:outline-none transition-all shadow-inner">
+                </div>
+                <p class="text-[11px] text-slate-400 leading-relaxed">
+                    💡 <strong>Penting:</strong> Tuliskan nama spesifik fisik barang/lahan yang sebenarnya. Jenis kemitraan (Sewa, KSP, KSO, dll.) sudah otomatis ditentukan oleh kode 108 pada pilihan di atas.
+                </p>
+            </div>
+
             <!-- 1. Total Volume / Kuantitas Aset -->
             <div class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2.5 shadow-md">
                 <div class="flex items-center justify-between">
