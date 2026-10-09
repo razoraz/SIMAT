@@ -18,17 +18,22 @@
 
             // Tipe Kemitraan: 'dimanfaatkan' (BMD RSUD disewakan/dimanfaatkan) vs 'ditambahkan' (Aset Baru Rekanan)
             tipeKemitraan: (function() {
+                const urlParam = new URLSearchParams(window.location.search).get('tipe');
+                if (urlParam === 'ditambahkan' || urlParam === 'dimanfaatkan') {
+                    return urlParam;
+                }
                 if (window.initialTipeKemitraan && ['dimanfaatkan', 'ditambahkan'].includes(window.initialTipeKemitraan)) {
                     return window.initialTipeKemitraan;
                 }
-                const urlParam = new URLSearchParams(window.location.search).get('tipe');
-                if (urlParam === 'ditambahkan') return 'ditambahkan';
-                if (urlParam === 'dimanfaatkan') return 'dimanfaatkan';
                 if (window.editAstapData) {
                     const k = window.editAstapData.kemitraan || {};
-                    const spec = window.editAstapData.spesifikasi_json || {};
-                    const hasObj = k.objek_astap_id || spec.objek_astap_id || k.objek_nibar || spec.objek_nibar || window.editAstapData.is_reklas;
-                    return hasObj ? 'dimanfaatkan' : 'ditambahkan';
+                    const spec = (typeof window.editAstapData.spesifikasi_json === 'object' && window.editAstapData.spesifikasi_json !== null) 
+                        ? window.editAstapData.spesifikasi_json 
+                        : (typeof window.editAstapData.spesifikasi_json === 'string' ? (JSON.parse(window.editAstapData.spesifikasi_json) || {}) : {});
+                    if (k.tipe_kemitraan && ['dimanfaatkan', 'ditambahkan'].includes(k.tipe_kemitraan)) return k.tipe_kemitraan;
+                    if (spec.tipe_kemitraan && ['dimanfaatkan', 'ditambahkan'].includes(spec.tipe_kemitraan)) return spec.tipe_kemitraan;
+                    if (window.editAstapData.is_reklas) return 'dimanfaatkan';
+                    return 'ditambahkan';
                 }
                 return 'dimanfaatkan';
             })(),
@@ -1075,10 +1080,12 @@
                     ? d.spesifikasi_json 
                     : (typeof d.spesifikasi_json === 'string' ? (JSON.parse(d.spesifikasi_json) || {}) : {});
 
-                // Tentukan tipe kemitraan berdasarkan data eksisting atau parameter URL
+                // Tentukan tipe kemitraan berdasarkan parameter URL, spesifikasi, atau data relasi
                 const urlParam = new URLSearchParams(window.location.search).get('tipe');
                 if (urlParam && ['dimanfaatkan', 'ditambahkan'].includes(urlParam)) {
                     this.tipeKemitraan = urlParam;
+                } else if (window.initialTipeKemitraan && ['dimanfaatkan', 'ditambahkan'].includes(window.initialTipeKemitraan)) {
+                    this.tipeKemitraan = window.initialTipeKemitraan;
                 } else if (spec.tipe_kemitraan && ['dimanfaatkan', 'ditambahkan'].includes(spec.tipe_kemitraan)) {
                     this.tipeKemitraan = spec.tipe_kemitraan;
                 } else if (kemitraan.tipe_kemitraan && ['dimanfaatkan', 'ditambahkan'].includes(kemitraan.tipe_kemitraan)) {
@@ -1086,7 +1093,7 @@
                 } else if (d.is_reklas) {
                     this.tipeKemitraan = 'dimanfaatkan';
                 } else {
-                    this.tipeKemitraan = (kemitraan.objek_astap_id || spec.objek_astap_id) ? 'ditambahkan' : 'dimanfaatkan';
+                    this.tipeKemitraan = 'ditambahkan';
                 }
 
                 // Step 1: Legalitas PKS & Mitra
