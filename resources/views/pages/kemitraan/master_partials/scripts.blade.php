@@ -1884,10 +1884,55 @@
                 }
             },
 
-            // Konfirmasi Penghapusan
+            // Konfirmasi Penghapusan Normal
             confirmDelete(id, nama) {
                 this.deleteItem = { id: id, nama: nama || 'Aset Kemitraan', alasan: '' };
                 this.showDeleteModal = true;
+            },
+
+            // Konfirmasi Penghapusan Khusus Objek Dimanfaatkan (Opsi 1: Proteksi Ketat Terhadap Aset Mitra)
+            confirmDeleteDimanfaatkan(id, nama, linkedAsets, mitraNama, nomorPks) {
+                if (linkedAsets && Array.isArray(linkedAsets) && linkedAsets.length > 0) {
+                    const count = linkedAsets.length;
+                    const totalNilai = linkedAsets.reduce((sum, it) => sum + (it.nilai || 0), 0);
+                    const totalNilaiFmt = 'Rp ' + Number(totalNilai).toLocaleString('id-ID');
+                    const mitraStr = mitraNama || 'Mitra Rekanan';
+                    const daftarNama = linkedAsets.map(a => `• ${a.nama} (${a.nilai_fmt})`).slice(0, 3).join('\n') + (linkedAsets.length > 3 ? `\n• ...dan ${linkedAsets.length - 3} aset mitra lainnya` : '');
+
+                    this.askConfirmation({
+                        title: '🛡️ Objek Pemanfaatan Tidak Dapat Dihapus Langsung',
+                        message: `Objek pemanfaatan "${nama}" saat ini belum dapat dihapus karena masih menampung ${count} barang inventaris/aset yang ditambahkan oleh mitra rekanan (${mitraStr}).\n\nDemi ketertiban akuntabilitas dan pencegahan kehilangan catatan aset RSUD Koesnandi, seluruh aset yang ditambahkan mitra di dalam objek ini harus dihapus / dibatalkan terlebih dahulu di Tabel 2 (Aset Ditambahkan Mitra).`,
+                        itemName: `${nama} (${mitraStr})`,
+                        itemDetails: {
+                            nama: nama,
+                            badgeText: `${count} ASET MITRA AKTIF`,
+                            totalAset: count,
+                            nilaiFmt: totalNilaiFmt
+                        },
+                        type: 'danger',
+                        isBlocked: true,
+                        actionText: '🔍 Buka & Hapus Aset Mitra Dulu',
+                        assetWarning: `Daftar Aset Mitra di Dalam Objek Ini:\n${daftarNama}\n\n💡 Petunjuk: Bersihkan / hapus aset mitra di atas terlebih dahulu pada Tabel "Aset Ditambahkan Mitra" sebelum menghapus objek pemanfaatan ini.`,
+                        onActionClick: () => {
+                            this.showConfirmModal = false;
+                            this.kemitraanTableTab = 'ditambahkan';
+                            if (nomorPks && nomorPks !== '-' && nomorPks !== 'Belum Ada PKS') {
+                                this.filterSearch = nomorPks;
+                            } else if (mitraStr && mitraStr !== 'Mitra Rekanan' && mitraStr !== '-') {
+                                this.filterSearch = mitraStr;
+                            }
+                            this.showToast(`Menampilkan aset mitra terkait (${mitraStr}). Silakan hapus aset mitra terlebih dahulu.`, 'info');
+                            setTimeout(() => {
+                                const el = document.getElementById('table-kemitraan-ditambahkan');
+                                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }, 300);
+                        }
+                    });
+                    return;
+                }
+
+                // Jika tidak ada aset yang ditambahkan mitra, lanjutkan konfirmasi hapus biasa
+                this.confirmDelete(id, nama);
             },
 
             // Eksekusi Penghapusan (Soft Delete)
@@ -1913,17 +1958,37 @@
 
                     const json = await res.json();
                     if (json.success) {
-                        alert(json.message || 'Data Aset Kemitraan berhasil dipindahkan ke Pusat Pemulihan Data.');
-                        window.location.reload();
+                        this.showDeleteModal = false;
+                        this.showToast(json.message || 'Data Aset Kemitraan berhasil dipindahkan ke Pusat Pemulihan Data (Recycle Bin).', 'success');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 900);
+                    } else if (json.is_blocked) {
+                        this.showDeleteModal = false;
+                        this.askConfirmation({
+                            title: '🛡️ Objek Pemanfaatan Tidak Dapat Dihapus',
+                            message: json.message,
+                            itemName: this.deleteItem.nama || 'Aset Kemitraan',
+                            type: 'danger',
+                            isBlocked: true,
+                            actionText: '🔍 Buka Tabel Aset Mitra',
+                            onActionClick: () => {
+                                this.showConfirmModal = false;
+                                this.kemitraanTableTab = 'ditambahkan';
+                                setTimeout(() => {
+                                    const el = document.getElementById('table-kemitraan-ditambahkan');
+                                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                }, 300);
+                            }
+                        });
                     } else {
-                        alert(json.message || 'Gagal menghapus data.');
+                        this.showToast(json.message || 'Gagal menghapus data.', 'error');
                     }
                 } catch (err) {
                     console.error('Delete error:', err);
-                    alert('Terjadi kesalahan server saat menghapus data.');
+                    this.showToast('Terjadi kesalahan jaringan atau server saat menghapus data.', 'error');
                 } finally {
                     this.isDeleting = false;
-                    this.showDeleteModal = false;
                 }
             },
 
@@ -1950,6 +2015,7 @@
                     actionUrl: opts.actionUrl || null,
                     actionText: opts.actionText || null,
                     assetWarning: opts.assetWarning || null,
+                    onActionClick: opts.onActionClick || null,
                     onConfirm: opts.onConfirm || null
                 };
                 this.showConfirmModal = true;

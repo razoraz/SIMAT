@@ -6085,6 +6085,15 @@ Route::middleware('auth')->group(function () {
                 if ($astap->mutasiEksternal) {
                     $astap->mutasiEksternal->softDelete();
                 }
+                if ($astap->kemitraan) {
+                    $astap->kemitraan->softDelete();
+                }
+                \App\Models\AstapReklas::where('astap_id', $astap->id)->update([
+                    'is_deleted'    => 1,
+                    'deleted_by'    => $deleterName,
+                    'deleted_by_id' => $user?->id,
+                    'deleted_at'    => now(),
+                ]);
             });
 
             // Kirim Notifikasi Sistem saat Terjadi Penghapusan ASTAP

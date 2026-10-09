@@ -499,6 +499,16 @@
                             $totalNilaiDitambahkan = $asetDitambahkanList->sum(function($item) {
                                 return (float) ($item->nilai_aset ?: ($item->astap?->total_realisasi ?: 0));
                             });
+                            $linkedAsetsData = $asetDitambahkanList->map(function($it) {
+                                return [
+                                    'id'        => $it->id,
+                                    'nama'      => $it->astap?->nama_barang ?: 'Aset Ditambahkan Mitra',
+                                    'nilai'     => (float) ($it->nilai_aset ?: ($it->astap?->total_realisasi ?: 0)),
+                                    'nilai_fmt' => 'Rp ' . number_format($it->nilai_aset ?: ($it->astap?->total_realisasi ?: 0), 0, ',', '.'),
+                                    'mitra'     => $it->mitra_nama ?: '-',
+                                    'nomor_pks' => $it->nomor_pks ?: '-'
+                                ];
+                            })->values()->toArray();
                         @endphp
                         <tr x-show="matchKemitraan({{ json_encode($dimanfaatkanMetaList[$idx] ?? []) }})" class="hover:bg-cyan-950/20 transition-colors group {{ $countDitambahkan > 0 ? 'border-l-4 border-l-emerald-500 bg-emerald-950/10' : '' }}">
                             <!-- 1. Nomor -->
@@ -739,8 +749,20 @@
                                         <span>Ubah</span>
                                     </a>
 
-                                    <!-- 4. Tombol Hapus -->
-                                    <button type="button" @click="confirmDelete({{ $row->id ?: ($astap?->kemitraan?->id ?: ($row->astap_id ?: $astap?->id)) }}, '{{ addslashes($astap?->nama_barang ?: 'Aset Kemitraan') }}')"
+                                    <!-- 4. Tombol Hapus (Proteksi Ketat Opsi 1: Cek Keterkaitan Aset Mitra) -->
+                                    @if($countDitambahkan > 0)
+                                    <button type="button" 
+                                        @click="confirmDeleteDimanfaatkan({{ (int) ($row->id ?: ($astap?->kemitraan?->id ?: ($row->astap_id ?: ($astap?->id ?: 0)))) }}, '{{ addslashes($namaFisikAsli ?: ($astap?->nama_barang ?: 'Aset Kemitraan')) }}', {{ json_encode($linkedAsetsData) }}, '{{ addslashes($row->mitra_nama ?: 'Mitra Rekanan') }}', '{{ addslashes($row->nomor_pks ?: '') }}')"
+                                        title="Proteksi: Objek ini masih memuat {{ $countDitambahkan }} aset mitra. Bersihkan aset mitra terkait terlebih dahulu."
+                                        class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-600 text-amber-300 hover:text-slate-950 border border-amber-500/30 hover:border-amber-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-amber-500/30 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
+                                        <svg class="w-3.5 h-3.5 text-amber-400 group-hover/btn:text-slate-950 group-hover/btn:scale-110 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                        </svg>
+                                        <span>Hapus</span>
+                                    </button>
+                                    @else
+                                    <button type="button" 
+                                        @click="confirmDelete({{ (int) ($row->id ?: ($astap?->kemitraan?->id ?: ($row->astap_id ?: ($astap?->id ?: 0)))) }}, '{{ addslashes($namaFisikAsli ?: ($astap?->nama_barang ?: 'Aset Kemitraan')) }}')"
                                         title="Hapus / Batalkan Aset Kemitraan"
                                         class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 hover:border-rose-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-rose-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
                                         <svg class="w-3.5 h-3.5 text-rose-400 group-hover/btn:text-white group-hover/btn:scale-110 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -748,6 +770,7 @@
                                         </svg>
                                         <span>Hapus</span>
                                     </button>
+                                    @endif
                                     @endif
                                 </div>
                             </td>
@@ -786,7 +809,8 @@
     <!-- ========================================================================= -->
     <!-- TABEL 2: ASET YANG DITAMBAHKAN / DIDATANGKAN OLEH MITRA                   -->
     <!-- ========================================================================= -->
-    <div x-show="kemitraanTableTab === 'both' || kemitraanTableTab === 'ditambahkan'"
+    <div id="table-kemitraan-ditambahkan"
+         x-show="kemitraanTableTab === 'both' || kemitraanTableTab === 'ditambahkan'"
          x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="opacity-0 translate-y-2"
          x-transition:enter-end="opacity-100 translate-y-0"
@@ -1044,7 +1068,7 @@
                                     </a>
 
                                     <!-- 4. Tombol Hapus -->
-                                    <button type="button" @click="confirmDelete({{ $row->id }}, '{{ addslashes($astap?->nama_barang ?: 'Aset Kemitraan') }}')"
+                                    <button type="button" @click="confirmDelete({{ (int) ($row->id ?: ($astap?->kemitraan?->id ?: ($row->astap_id ?: ($astap?->id ?: 0)))) }}, '{{ addslashes($astap?->nama_barang ?: 'Aset Kemitraan') }}')"
                                         title="Hapus / Batalkan Aset Kemitraan"
                                         class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 hover:border-rose-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-rose-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
                                         <svg class="w-3.5 h-3.5 text-rose-400 group-hover/btn:text-white group-hover/btn:scale-110 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1321,10 +1345,33 @@
                                         class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 font-bold text-xs transition-all">
                                         Ubah
                                     </a>
-                                    <button type="button" @click="confirmDelete({{ $row->id }}, '{{ addslashes($astap?->nama_barang ?: 'Aset Kemitraan') }}')"
+                                    @php
+                                        $rowLinkedDitambahkan = $isRowDimanfaatkan ? $getAsetDitambahkanForRow($row) : collect();
+                                        $rowCountDitambahkan = $rowLinkedDitambahkan->count();
+                                        $rowLinkedData = $rowLinkedDitambahkan->map(function($it) {
+                                            return [
+                                                'id'        => $it->id,
+                                                'nama'      => $it->astap?->nama_barang ?: 'Aset Ditambahkan Mitra',
+                                                'nilai'     => (float) ($it->nilai_aset ?: ($it->astap?->total_realisasi ?: 0)),
+                                                'nilai_fmt' => 'Rp ' . number_format($it->nilai_aset ?: ($it->astap?->total_realisasi ?: 0), 0, ',', '.'),
+                                                'mitra'     => $it->mitra_nama ?: '-',
+                                                'nomor_pks' => $it->nomor_pks ?: '-'
+                                            ];
+                                        })->values()->toArray();
+                                    @endphp
+                                    @if($isRowDimanfaatkan && $rowCountDitambahkan > 0)
+                                    <button type="button" 
+                                        @click="confirmDeleteDimanfaatkan({{ (int) ($row->id ?: ($astap?->kemitraan?->id ?: ($row->astap_id ?: ($astap?->id ?: 0)))) }}, '{{ addslashes($astap?->nama_barang ?: 'Aset Kemitraan') }}', {{ json_encode($rowLinkedData) }}, '{{ addslashes($row->mitra_nama ?: 'Mitra Rekanan') }}', '{{ addslashes($row->nomor_pks ?: '') }}')"
+                                        title="Proteksi: Objek ini masih memuat {{ $rowCountDitambahkan }} aset mitra. Bersihkan aset mitra terkait terlebih dahulu."
+                                        class="px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-600 text-amber-300 hover:text-slate-950 border border-amber-500/30 font-bold text-xs transition-all">
+                                        Hapus
+                                    </button>
+                                    @else
+                                    <button type="button" @click="confirmDelete({{ (int) ($row->id ?: ($astap?->kemitraan?->id ?: ($row->astap_id ?: ($astap?->id ?: 0)))) }}, '{{ addslashes($astap?->nama_barang ?: 'Aset Kemitraan') }}')"
                                         class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 font-bold text-xs transition-all">
                                         Hapus
                                     </button>
+                                    @endif
                                     @endif
                                 </div>
                             </td>

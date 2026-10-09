@@ -418,11 +418,19 @@ class RecycleBinController extends Controller
             $objekAsalNama = $k->objekAstap?->nama_barang ?: ($k->objek_nibar ? 'Objek BMD (NIBAR: ' . $k->objek_nibar . ')' : null);
             $objekAsalNibar = $k->objek_nibar ?: ($k->objekRegister?->nibar ?: null);
 
+            $linkedMitrasCount = 0;
+            if (!$isDitambahkan && $k->astap_id) {
+                $linkedMitrasCount = AstapKemitraan::onlyDeleted()
+                    ->where('objek_astap_id', $k->astap_id)
+                    ->count();
+            }
+
             return [
                 'id'                  => $k->id,
                 'astap_id'            => $k->astap_id,
                 'tipe_kemitraan'      => $isDitambahkan ? 'ditambahkan' : 'dimanfaatkan',
                 'is_ditambahkan'      => $isDitambahkan,
+                'linked_mitras_count' => $linkedMitrasCount,
                 'nomor_pks'           => $k->nomor_pks,
                 'mitra_nama'          => $k->mitra_nama,
                 'skema_kemitraan'     => $k->skema_kemitraan ?: ($isDitambahkan ? 'KSO' : 'Sewa'),
@@ -842,7 +850,12 @@ class RecycleBinController extends Controller
             case 'kemitraan':
                 $kemitraan = AstapKemitraan::findOrFail($id);
                 $nomorPks = $kemitraan->nomor_pks;
-                DB::transaction(function () use ($kemitraan) {
+                $affectedKemitraanIds = [$kemitraan->id];
+
+                DB::transaction(function () use ($kemitraan, &$affectedKemitraanIds, &$msg) {
+                    $isDitambahkan = ($kemitraan->tipe_kemitraan === 'ditambahkan') || !empty($kemitraan->objek_astap_id);
+
+                    // 1. Pulihkan record kemitraan target
                     $kemitraan->restoreData();
                     if ($kemitraan->astap) {
                         $kemitraan->astap->restoreData();
@@ -855,8 +868,116 @@ class RecycleBinController extends Controller
                         $kemitraan->astap->jumlah_volume = max(1, $kemitraan->astap->registers()->where('is_deleted', 0)->count());
                         $kemitraan->astap->save();
                     }
+
+                    // SKENARIO 1: Yang dipulihkan adalah ASET YANG DITAMBAHKAN MITRA
+                    if ($isDitambahkan) {
+                        $namaBarang = $kemitraan->astap?->nama_barang ?: 'Aset Ditambahkan Mitra';
+                        $parentRestored = false;
+                        $parentNama = '';
+
+                        // Periksa apakah objek pemanfaatan induknya (objek_astap_id) sedang terhapus
+                        if ($kemitraan->objek_astap_id) {
+                            $parentKemitraan = AstapKemitraan::where('astap_id', $kemitraan->objek_astap_id)
+                                ->where('is_deleted', 1)
+                                ->first();
+
+                            if ($parentKemitraan) {
+                                $parentKemitraan->restoreData();
+                                $affectedKemitraanIds[] = $parentKemitraan->id;
+                                if ($parentKemitraan->astap) {
+                                    $parentKemitraan->astap->restoreData();
+                                    $parentKemitraan->astap->registers()->update([
+                                        'is_deleted'    => 0,
+                                        'deleted_by'    => null,
+                                        'deleted_by_id' => null,
+                                        'deleted_at'    => null,
+                                    ]);
+                                    $parentKemitraan->astap->jumlah_volume = max(1, $parentKemitraan->astap->registers()->where('is_deleted', 0)->count());
+                                    $parentKemitraan->astap->save();
+                                }
+                                $parentRestored = true;
+                                $parentNama = $parentKemitraan->astap?->nama_barang ?: 'Objek Pemanfaatan';
+                            } else {
+                                $parentAstap = Astap::where('id', $kemitraan->objek_astap_id)
+                                    ->where('is_deleted', 1)
+                                    ->first();
+                                if ($parentAstap) {
+                                    $parentAstap->restoreData();
+                                    $parentAstap->registers()->update([
+                                        'is_deleted'    => 0,
+                                        'deleted_by'    => null,
+                                        'deleted_by_id' => null,
+                                        'deleted_at'    => null,
+                                    ]);
+                                    $parentAstap->jumlah_volume = max(1, $parentAstap->registers()->where('is_deleted', 0)->count());
+                                    $parentAstap->save();
+                                    $parentRestored = true;
+                                    $parentNama = $parentAstap->nama_barang;
+                                }
+                            }
+
+                            // Pulihkan juga riwayat reklasifikasi induk jika ada yang terhapus
+                            AstapReklas::where('astap_id', $kemitraan->objek_astap_id)
+                                ->where('is_deleted', 1)
+                                ->update([
+                                    'is_deleted'    => 0,
+                                    'deleted_by'    => null,
+                                    'deleted_by_id' => null,
+                                    'deleted_at'    => null,
+                                ]);
+                        }
+
+                        if ($parentRestored) {
+                            $msg = "Aset Mitra \"{$namaBarang}\" beserta Objek Pemanfaatan Induknya (\"{$parentNama}\") berhasil dipulihkan bersamaan ke daftar aktif.";
+                        } else {
+                            $msg = "Aset yang Ditambahkan Mitra \"{$namaBarang}\" berhasil dipulihkan ke daftar aktif.";
+                        }
+                    } 
+                    // SKENARIO 2: Yang dipulihkan adalah OBJEK PEMANFAATAN (TABEL 1)
+                    else {
+                        $namaObjek = $kemitraan->astap?->nama_barang ?: 'Objek Pemanfaatan';
+
+                        // Pulihkan juga riwayat reklasifikasi objek ini jika ada
+                        if ($kemitraan->astap_id) {
+                            AstapReklas::where('astap_id', $kemitraan->astap_id)
+                                ->where('is_deleted', 1)
+                                ->update([
+                                    'is_deleted'    => 0,
+                                    'deleted_by'    => null,
+                                    'deleted_by_id' => null,
+                                    'deleted_at'    => null,
+                                ]);
+                        }
+
+                        // Otomatis ikut pulihkan seluruh aset mitra yang melekat pada objek ini jika ada di Recycle Bin
+                        $linkedMitras = AstapKemitraan::where('objek_astap_id', $kemitraan->astap_id)
+                            ->where('is_deleted', 1)
+                            ->get();
+
+                        foreach ($linkedMitras as $linked) {
+                            $linked->restoreData();
+                            $affectedKemitraanIds[] = $linked->id;
+                            if ($linked->astap) {
+                                $linked->astap->restoreData();
+                                $linked->astap->registers()->update([
+                                    'is_deleted'    => 0,
+                                    'deleted_by'    => null,
+                                    'deleted_by_id' => null,
+                                    'deleted_at'    => null,
+                                ]);
+                                $linked->astap->jumlah_volume = max(1, $linked->astap->registers()->where('is_deleted', 0)->count());
+                                $linked->astap->save();
+                            }
+                        }
+
+                        if ($linkedMitras->isNotEmpty()) {
+                            $mitraCount = $linkedMitras->count();
+                            $msg = "Objek Pemanfaatan \"{$namaObjek}\" beserta {$mitraCount} aset yang ditambahkan mitra terkait berhasil dipulihkan ke daftar aktif.";
+                        } else {
+                            $msg = "Objek Pemanfaatan \"{$namaObjek}\" berhasil dipulihkan ke daftar aktif.";
+                        }
+                    }
                 });
-                $msg = "Data Kerja Sama Kemitraan PKS {$nomorPks} beserta aset terkait berhasil dipulihkan ke daftar aktif.";
                 break;
 
             case 'belanja_barang':
@@ -959,10 +1080,11 @@ class RecycleBinController extends Controller
         session()->flash('success', $msg);
         if ($request->wantsJson()) {
             return response()->json([
-                'success'        => true,
-                'message'        => $msg,
-                'astap_restored' => $astapRestored ?? false,
-                'astap_id'       => isset($astap) && ($astapRestored ?? false) ? $astap->id : null,
+                'success'                => true,
+                'message'                => $msg,
+                'astap_restored'         => $astapRestored ?? false,
+                'astap_id'               => isset($astap) && ($astapRestored ?? false) ? $astap->id : null,
+                'affected_kemitraan_ids' => array_values(array_unique($affectedKemitraanIds ?? [])),
             ]);
         }
 
@@ -1096,9 +1218,12 @@ class RecycleBinController extends Controller
 
             case 'kemitraan':
                 $kemitraans = AstapKemitraan::whereIn('id', $ids)->get();
-                DB::transaction(function () use ($kemitraans, &$restoredCount) {
+                $affectedKemitraanIds = [];
+                DB::transaction(function () use ($kemitraans, &$restoredCount, &$affectedKemitraanIds) {
                     foreach ($kemitraans as $k) {
+                        $isDitambahkan = ($k->tipe_kemitraan === 'ditambahkan') || !empty($k->objek_astap_id);
                         $k->restoreData();
+                        $affectedKemitraanIds[] = $k->id;
                         if ($k->astap) {
                             $k->astap->restoreData();
                             $k->astap->registers()->update([
@@ -1110,10 +1235,84 @@ class RecycleBinController extends Controller
                             $k->astap->jumlah_volume = max(1, $k->astap->registers()->where('is_deleted', 0)->count());
                             $k->astap->save();
                         }
+
+                        if ($isDitambahkan) {
+                            // Pulihkan objek induk jika masih terhapus
+                            if ($k->objek_astap_id) {
+                                $parentKemitraan = AstapKemitraan::where('astap_id', $k->objek_astap_id)
+                                    ->where('is_deleted', 1)
+                                    ->first();
+                                if ($parentKemitraan) {
+                                    $parentKemitraan->restoreData();
+                                    $affectedKemitraanIds[] = $parentKemitraan->id;
+                                    if ($parentKemitraan->astap) {
+                                        $parentKemitraan->astap->restoreData();
+                                        $parentKemitraan->astap->registers()->update([
+                                            'is_deleted'    => 0,
+                                            'deleted_by'    => null,
+                                            'deleted_by_id' => null,
+                                            'deleted_at'    => null,
+                                        ]);
+                                        $parentKemitraan->astap->jumlah_volume = max(1, $parentKemitraan->astap->registers()->where('is_deleted', 0)->count());
+                                        $parentKemitraan->astap->save();
+                                    }
+                                } else {
+                                    $parentAstap = Astap::where('id', $k->objek_astap_id)
+                                        ->where('is_deleted', 1)
+                                        ->first();
+                                    if ($parentAstap) {
+                                        $parentAstap->restoreData();
+                                        $parentAstap->registers()->update([
+                                            'is_deleted'    => 0,
+                                            'deleted_by'    => null,
+                                            'deleted_by_id' => null,
+                                            'deleted_at'    => null,
+                                        ]);
+                                        $parentAstap->jumlah_volume = max(1, $parentAstap->registers()->where('is_deleted', 0)->count());
+                                        $parentAstap->save();
+                                    }
+                                }
+                                AstapReklas::where('astap_id', $k->objek_astap_id)->where('is_deleted', 1)->update([
+                                    'is_deleted'    => 0,
+                                    'deleted_by'    => null,
+                                    'deleted_by_id' => null,
+                                    'deleted_at'    => null,
+                                ]);
+                            }
+                        } else {
+                            // Pulihkan reklas objek induk dan seluruh aset mitra yang melekat padanya
+                            if ($k->astap_id) {
+                                AstapReklas::where('astap_id', $k->astap_id)->where('is_deleted', 1)->update([
+                                    'is_deleted'    => 0,
+                                    'deleted_by'    => null,
+                                    'deleted_by_id' => null,
+                                    'deleted_at'    => null,
+                                ]);
+                            }
+                            $linkedMitras = AstapKemitraan::where('objek_astap_id', $k->astap_id)
+                                ->where('is_deleted', 1)
+                                ->get();
+                            foreach ($linkedMitras as $linked) {
+                                $linked->restoreData();
+                                $affectedKemitraanIds[] = $linked->id;
+                                if ($linked->astap) {
+                                    $linked->astap->restoreData();
+                                    $linked->astap->registers()->update([
+                                        'is_deleted'    => 0,
+                                        'deleted_by'    => null,
+                                        'deleted_by_id' => null,
+                                        'deleted_at'    => null,
+                                    ]);
+                                    $linked->astap->jumlah_volume = max(1, $linked->astap->registers()->where('is_deleted', 0)->count());
+                                    $linked->astap->save();
+                                }
+                            }
+                        }
+
                         $restoredCount++;
                     }
                 });
-                $msg = "Sebanyak {$restoredCount} dokumen kemitraan aset berhasil dipulihkan ke status aktif.";
+                $msg = "Sebanyak {$restoredCount} dokumen kemitraan aset beserta relasi induk/anak terkait berhasil dipulihkan ke status aktif.";
                 break;
 
             case 'belanja_barang':
@@ -1216,10 +1415,11 @@ class RecycleBinController extends Controller
         session()->flash('success', $msg);
         if ($request->wantsJson()) {
             return response()->json([
-                'success'             => true,
-                'message'             => $msg,
-                'count'               => $restoredCount,
-                'restored_parent_ids' => isset($astapParents) ? array_keys($astapParents) : [],
+                'success'                => true,
+                'message'                => $msg,
+                'count'                  => $restoredCount,
+                'restored_parent_ids'    => isset($astapParents) ? array_keys($astapParents) : [],
+                'affected_kemitraan_ids' => array_values(array_unique($affectedKemitraanIds ?? [])),
             ]);
         }
 
@@ -1386,11 +1586,37 @@ class RecycleBinController extends Controller
 
             case 'kemitraan':
                 $kemitraans = AstapKemitraan::whereIn('id', $ids)->get();
-                DB::transaction(function () use ($kemitraans, &$deletedCount) {
-                    foreach ($kemitraans as $k) {
+
+                // Sortir: Aset ditambahkan mitra diproses lebih dulu daripada objek pemanfaatan
+                $sortedKemitraans = $kemitraans->sortByDesc(function ($k) {
+                    return (($k->tipe_kemitraan === 'ditambahkan') || !empty($k->objek_astap_id)) ? 1 : 0;
+                });
+
+                // Cek apakah ada objek pemanfaatan yang dipilih sementara aset mitranya BELUM ikut dipilih dan masih ada di database
+                $selectedIdsSet = collect($ids)->map(fn($v) => (int)$v);
+                foreach ($sortedKemitraans as $k) {
+                    $isDitambahkan = ($k->tipe_kemitraan === 'ditambahkan') || !empty($k->objek_astap_id);
+                    if (!$isDitambahkan && $k->astap_id) {
+                        $unselectedChildCount = AstapKemitraan::where('objek_astap_id', $k->astap_id)
+                            ->whereNotIn('id', $selectedIdsSet)
+                            ->count();
+                        if ($unselectedChildCount > 0) {
+                            $parentName = $k->astap?->nama_barang ?: 'Objek Pemanfaatan';
+                            $blockMsg = "Penghapusan permanen massal ditolak: Objek \"{$parentName}\" masih memiliki {$unselectedChildCount} aset mitra terkait yang belum ikut dipilih untuk dihapus permanen.";
+                            if ($request->wantsJson()) {
+                                return response()->json(['success' => false, 'message' => $blockMsg], 422);
+                            }
+                            return back()->with('error', $blockMsg);
+                        }
+                    }
+                }
+
+                DB::transaction(function () use ($sortedKemitraans, &$deletedCount) {
+                    foreach ($sortedKemitraans as $k) {
                         $astap = $k->astap;
                         if ($astap) {
                             $astap->registers()->delete();
+                            AstapReklas::where('astap_id', $astap->id)->delete();
                             $k->delete();
                             $astap->delete();
                         } else {
@@ -1626,18 +1852,34 @@ class RecycleBinController extends Controller
 
             case 'kemitraan':
                 $kemitraan = AstapKemitraan::findOrFail($id);
+                $isDitambahkan = ($kemitraan->tipe_kemitraan === 'ditambahkan') || !empty($kemitraan->objek_astap_id);
+
+                // Jika yang ingin dihapus permanen adalah Objek Pemanfaatan (Tabel 1):
+                if (!$isDitambahkan && $kemitraan->astap_id) {
+                    $linkedMitrasCount = AstapKemitraan::where('objek_astap_id', $kemitraan->astap_id)->count();
+                    if ($linkedMitrasCount > 0) {
+                        $blockMsg = "Objek Pemanfaatan ini tidak dapat dihapus permanen karena masih memiliki {$linkedMitrasCount} aset mitra terkait di sistem/tong sampah. Silakan hapus permanen seluruh aset mitra terkait terlebih dahulu demi integritas inventaris RSUD.";
+                        if ($request->wantsJson()) {
+                            return response()->json(['success' => false, 'message' => $blockMsg], 422);
+                        }
+                        return back()->with('error', $blockMsg);
+                    }
+                }
+
+                $namaAset = $kemitraan->astap?->nama_barang ?: ($isDitambahkan ? 'Aset Ditambahkan Mitra' : 'Objek Pemanfaatan');
                 $pks = $kemitraan->nomor_pks;
                 DB::transaction(function () use ($kemitraan) {
                     $astap = $kemitraan->astap;
                     if ($astap) {
                         $astap->registers()->delete();
+                        AstapReklas::where('astap_id', $astap->id)->delete();
                         $kemitraan->delete();
                         $astap->delete();
                     } else {
                         $kemitraan->delete();
                     }
                 });
-                $msg = "Data Kemitraan PKS {$pks} beserta aset register terkait telah dihapus secara permanen dari database.";
+                $msg = "Data Kemitraan \"{$namaAset}\" (PKS: {$pks}) beserta aset register terkait telah dihapus secara permanen dari database.";
                 break;
 
             case 'belanja_barang':

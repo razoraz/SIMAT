@@ -136,24 +136,28 @@ class KemitraanController extends Controller
 
         $dbMitraKemitraans = AstapKemitraan::getDistinctMitras();
 
-        // Ambil ID Astap yang SUDAH terdaftar di master kemitraan (agar tidak duplikat dan tidak lolos dari filter)
-        $registeredKemitraanAstapIds = AstapKemitraan::where('is_deleted', 0)
-            ->pluck('astap_id')
-            ->merge(AstapKemitraan::where('is_deleted', 0)->whereNotNull('objek_astap_id')->pluck('objek_astap_id'))
+        // Ambil ID Astap yang SUDAH terdaftar di master kemitraan (baik aktif maupun yang sudah dihapus, agar tidak lolos dari filter reklas)
+        $allKemitraanAstapIds = AstapKemitraan::pluck('astap_id')
+            ->merge(AstapKemitraan::whereNotNull('objek_astap_id')->pluck('objek_astap_id'))
             ->filter()
             ->unique()
             ->values()
             ->toArray();
 
         // Ambil riwayat reklasifikasi aset BMD RSUD ke Kemitraan (1.5.2) HANYA untuk aset yang BELUM dibuatkan PKS Kemitraan
-        $reklasQuery = AstapReklas::where(function ($rq) {
-            $rq->where('tujuan_kib', 'KEMITRAAN')
-               ->orWhere('tujuan_kode', 'like', '1.5.2%');
-        })
-        ->whereNotIn('astap_id', $registeredKemitraanAstapIds)
-        ->with(['astap.registers.unit', 'astap.jenisAstap', 'astap.unit'])
-        ->orderBy('tanggal_reklas', 'desc')
-        ->orderBy('id', 'desc');
+        // DAN HANYA UNTUK ASET & REKLAS YANG BELUM DIHAPUS (is_deleted = 0)
+        $reklasQuery = AstapReklas::where('is_deleted', 0)
+            ->where(function ($rq) {
+                $rq->where('tujuan_kib', 'KEMITRAAN')
+                   ->orWhere('tujuan_kode', 'like', '1.5.2%');
+            })
+            ->whereNotIn('astap_id', $allKemitraanAstapIds)
+            ->whereHas('astap', function ($q) {
+                $q->where('is_deleted', 0);
+            })
+            ->with(['astap.registers.unit', 'astap.jenisAstap', 'astap.unit'])
+            ->orderBy('tanggal_reklas', 'desc')
+            ->orderBy('id', 'desc');
 
         $reklasKemitraanRecords = $reklasQuery->get()->unique('astap_id');
 
@@ -219,28 +223,72 @@ class KemitraanController extends Controller
      */
     public function destroy(Request $request, $id)
     {
+        // 1. Cari catatan kemitraan (aktif maupun berdasarkan astap_id)
         $kemitraan = AstapKemitraan::find($id);
         if (!$kemitraan) {
             $kemitraan = AstapKemitraan::where('astap_id', $id)->first();
         }
 
-        if (!$kemitraan) {
+        // 2. Jika tidak ada di tabel astap_kemitraans, cek apakah ada di tabel Astap atau AstapReklas (kasus reklasifikasi pending)
+        $astap = $kemitraan ? $kemitraan->astap : Astap::find($id);
+        $reklas = AstapReklas::where('astap_id', $id)
+            ->orWhere('id', $id)
+            ->get();
+
+        if (!$kemitraan && !$astap && $reklas->isEmpty()) {
             return response()->json(['success' => false, 'message' => 'Data Kemitraan tidak ditemukan.'], 404);
+        }
+
+        // Proteksi Opsi 1 (Strict Protection): Cek apakah objek pemanfaatan ini masih menampung aset aktif yang ditambahkan mitra
+        $targetAstapId = $astap?->id ?: ($kemitraan?->astap_id ?: $id);
+        if ($targetAstapId) {
+            $activeLinkedCount = AstapKemitraan::where('objek_astap_id', $targetAstapId)
+                ->where('is_deleted', 0)
+                ->count();
+            if ($activeLinkedCount > 0) {
+                return response()->json([
+                    'success' => false,
+                    'is_blocked' => true,
+                    'message' => "Objek pemanfaatan ini tidak dapat dihapus karena masih menampung {$activeLinkedCount} aset aktif yang ditambahkan oleh mitra rekanan di Tabel 2. Silakan hapus/batalkan aset mitra terkait terlebih dahulu demi akuntabilitas inventaris RSUD."
+                ], 422);
+            }
         }
 
         $alasanHapus = $request->input('alasan_hapus', 'Dihapus dari Kelola Kemitraan Aset');
 
-        DB::transaction(function () use ($kemitraan, $alasanHapus) {
+        DB::transaction(function () use ($kemitraan, $astap, $reklas, $id, $alasanHapus) {
             $user = Auth::user();
             $deleterName = $user ? ($user->name . ' (' . ucfirst($user->role ?? 'user') . ')') : 'Administrator';
             $deleterId = $user?->id;
             $now = now();
 
-            // 1. Soft delete catatan kemitraan
-            $kemitraan->softDelete($alasanHapus);
+            // 1. Soft delete catatan kemitraan jika ada
+            if ($kemitraan) {
+                $kemitraan->softDelete($alasanHapus);
+            } else if ($astap) {
+                // Jika baru berstatus reklasifikasi dan belum punya record kemitraan, buat record soft delete agar masuk recycle bin
+                AstapKemitraan::create([
+                    'astap_id'         => $astap->id,
+                    'mitra_nama'       => '-',
+                    'nomor_pks'        => 'Belum Ada PKS',
+                    'tanggal_pks'      => $now,
+                    'skema_kemitraan'  => 'Reklasifikasi',
+                    'status_konsesi'   => 'Siap Dikerjasamakan',
+                    'jumlah_volume'    => max(1, (int) $astap->jumlah_volume),
+                    'satuan'           => $astap->satuan ?: 'Unit',
+                    'nilai_aset'       => (float) $astap->total_realisasi,
+                    'tahun'            => (int) ($astap->tahun_perolehan ?: date('Y')),
+                    'triwulan'         => $astap->triwulan ?: 'TW I',
+                    'tipe_kemitraan'   => 'dimanfaatkan',
+                    'is_deleted'       => 1,
+                    'deleted_at'       => $now,
+                    'deleted_by'       => $deleterName,
+                    'deleted_by_id'    => $deleterId,
+                    'alasan_hapus'     => $alasanHapus,
+                ]);
+            }
 
             // 2. Soft delete aset ASTAP dan unit registernya
-            $astap = $kemitraan->astap;
             if ($astap) {
                 AstapRegister::where('astap_id', $astap->id)->update([
                     'is_deleted'    => 1,
@@ -254,7 +302,56 @@ class KemitraanController extends Controller
                     'deleted_by'    => $deleterName,
                     'deleted_by_id' => $deleterId,
                     'deleted_at'    => $now,
+                    'alasan_hapus'  => $alasanHapus,
                 ]);
+
+                // Soft delete seluruh riwayat reklasifikasi terkait aset ini yang mengarah ke 1.5.2
+                AstapReklas::where('astap_id', $astap->id)->update([
+                    'is_deleted'    => 1,
+                    'deleted_by'    => $deleterName,
+                    'deleted_by_id' => $deleterId,
+                    'deleted_at'    => $now,
+                    'alasan_hapus'  => $alasanHapus,
+                ]);
+            }
+
+            // 3. Jika ada reklas spesifik
+            if ($reklas->isNotEmpty()) {
+                foreach ($reklas as $rek) {
+                    $rek->update([
+                        'is_deleted'    => 1,
+                        'deleted_by'    => $deleterName,
+                        'deleted_by_id' => $deleterId,
+                        'deleted_at'    => $now,
+                        'alasan_hapus'  => $alasanHapus,
+                    ]);
+                }
+            }
+
+            // 4. Soft delete aset yang ditambahkan mitra jika objek pemanfaatan ini yang dihapus
+            $targetAstapId = $astap?->id ?: ($kemitraan?->astap_id ?: $id);
+            if ($targetAstapId) {
+                $linkedDitambahkan = AstapKemitraan::where('objek_astap_id', $targetAstapId)
+                    ->where('is_deleted', 0)
+                    ->get();
+                foreach ($linkedDitambahkan as $linked) {
+                    $linked->softDelete('Objek Aset Pemanfaatan Terkait Dihapus');
+                    if ($linked->astap) {
+                        AstapRegister::where('astap_id', $linked->astap->id)->update([
+                            'is_deleted'    => 1,
+                            'deleted_by'    => $deleterName,
+                            'deleted_by_id' => $deleterId,
+                            'deleted_at'    => $now,
+                        ]);
+                        $linked->astap->update([
+                            'is_deleted'    => 1,
+                            'deleted_by'    => $deleterName,
+                            'deleted_by_id' => $deleterId,
+                            'deleted_at'    => $now,
+                            'alasan_hapus'  => 'Objek Aset Pemanfaatan Terkait Dihapus',
+                        ]);
+                    }
+                }
             }
         });
 

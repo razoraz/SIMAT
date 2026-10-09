@@ -247,12 +247,18 @@
                 } else if (targetMod === 'hibah') {
                     this.hibahs = this.hibahs.filter(i => !idSet.has(Number(i.id)));
                 } else if (targetMod === 'kemitraan') {
-                    this.kemitraans = this.kemitraans.filter(i => !idSet.has(Number(i.id)));
-                    // Jika ada astap_id terkait yang dipulihkan, singkirkan juga dari astaps & nibars
-                    const astapIds = ids.map(id => {
-                        const found = this.kemitraans.find(k => Number(k.id) === Number(id));
-                        return found ? Number(found.astap_id) : null;
-                    }).filter(Boolean);
+                    const allRemovedKemitraanIds = new Set(ids.map(Number));
+                    if (extra && Array.isArray(extra.affected_kemitraan_ids)) {
+                        extra.affected_kemitraan_ids.forEach(xId => allRemovedKemitraanIds.add(Number(xId)));
+                    }
+                    // Kumpulkan astap_id terlebih dahulu sebelum kemitraans difilter
+                    const astapIds = this.kemitraans
+                        .filter(k => allRemovedKemitraanIds.has(Number(k.id)))
+                        .map(k => Number(k.astap_id))
+                        .filter(Boolean);
+
+                    this.kemitraans = this.kemitraans.filter(i => !allRemovedKemitraanIds.has(Number(i.id)));
+
                     if (astapIds.length > 0) {
                         const astapIdSet = new Set(astapIds);
                         this.astaps = this.astaps.filter(a => !astapIdSet.has(Number(a.id)));
@@ -291,9 +297,17 @@
                 if (!item) return;
                 const targetMod = module || this.currentTargetModule;
                 const bNomor = item.nibar || item.nomor_bast || item.kode || item.nama || 'Data';
-                const confirmMsg = targetMod === 'nibar'
-                    ? `Apakah Anda yakin ingin mengembalikan register NIBAR ${bNomor} ke paket pengadaan aset induk? Volume barang akan bertambah +1 unit.`
-                    : `Apakah Anda yakin ingin mengembalikan ${bNomor} ke status aktif? Data akan kembali muncul di katalog operasional.`;
+                let confirmMsg = `Apakah Anda yakin ingin mengembalikan ${bNomor} ke status aktif? Data akan kembali muncul di katalog operasional.`;
+
+                if (targetMod === 'nibar') {
+                    confirmMsg = `Apakah Anda yakin ingin mengembalikan register NIBAR ${bNomor} ke paket pengadaan aset induk? Volume barang akan bertambah +1 unit.`;
+                } else if (targetMod === 'kemitraan') {
+                    if (item.is_ditambahkan) {
+                        confirmMsg = `Apakah Anda yakin ingin memulihkan aset mitra "${item.nama_barang || bNomor}" ke status aktif? Jika objek pemanfaatan induknya saat ini juga berada di Tong Sampah, objek induk akan otomatis ikut dipulihkan bersamaan ke daftar aktif.`;
+                    } else if (Number(item.linked_mitras_count) > 0) {
+                        confirmMsg = `Apakah Anda yakin ingin memulihkan objek pemanfaatan "${item.nama_barang || bNomor}" beserta ${item.linked_mitras_count} aset mitra terkait ke status aktif?`;
+                    }
+                }
 
                 this.askConfirmation({
                     title: 'Konfirmasi Pulihkan Data',
@@ -378,6 +392,28 @@
                 const count = this.selectedIds.length;
                 const targetMod = module || this.currentTargetModule;
                 const targetIds = [...this.selectedIds];
+
+                // BLOKIR PENGHAPUSAN MASSAL JIKA ADA OBJEK PEMANFAATAN YANG MASIH MEMILIKI ASET MITRA TERKAIT
+                if (targetMod === 'kemitraan') {
+                    const parentsWithMitras = this.kemitraanDimanfaatkan.filter(k => targetIds.includes(k.id) && Number(k.linked_mitras_count) > 0);
+                    if (parentsWithMitras.length > 0) {
+                        const totalMitraCount = parentsWithMitras.reduce((sum, k) => sum + Number(k.linked_mitras_count), 0);
+                        const parentNames = parentsWithMitras.map(k => k.nama_barang).slice(0, 3).join(', ') + (parentsWithMitras.length > 3 ? '...' : '');
+                        this.askConfirmation({
+                            title: 'Penghapusan Massal Ditolak',
+                            message: `Terdapat ${parentsWithMitras.length} objek pemanfaatan terpilih (${parentNames}) yang masih menampung total ${totalMitraCount} aset mitra terkait di Tong Sampah.`,
+                            itemName: `${parentsWithMitras.length} Objek Terpilih Masih Memiliki Aset Mitra (Total ${totalMitraCount} Aset Mitra)`,
+                            type: 'danger',
+                            isBlocked: true,
+                            actionUrl: null,
+                            actionText: null,
+                            assetWarning: `Sistem mendeteksi bahwa objek-objek pemanfaatan ini masih memiliki aset yang ditambahkan oleh mitra rekanan di Tong Sampah. Silakan hapus permanen aset mitra terkait terlebih dahulu di sub-tab "📦 Aset Ditambahkan Mitra" atau batalkan centang pada objek pemanfaatan tersebut.`,
+                            btnText: null,
+                            onConfirm: null
+                        });
+                        return;
+                    }
+                }
 
                 // BLOKIR PENGHAPUSAN MASSAL JIKA ADA UNIT YANG MASIH MEMILIKI ASET
                 if (targetMod === 'unit') {
@@ -465,6 +501,23 @@
             forceDeleteSingle(module, item) {
                 if (!item) return;
                 const targetMod = module || this.currentTargetModule;
+
+                // JIKA OBJEK PEMANFAATAN KEMITRAAN MEMILIKI ASET MITRA TERKAIT: BLOKIR HAPUS PERMANEN
+                if (targetMod === 'kemitraan' && !item.is_ditambahkan && Number(item.linked_mitras_count) > 0) {
+                    this.askConfirmation({
+                        title: 'Objek Pemanfaatan Tidak Dapat Dihapus Permanen',
+                        message: `Objek pemanfaatan "${item.nama_barang || item.nama}" saat ini tidak dapat dimusnahkan permanen karena masih memiliki ${item.linked_mitras_count} aset mitra terkait di Tong Sampah (sub-tab Aset Ditambahkan Mitra).`,
+                        itemName: `${item.nama_barang || item.nama} — Menampung ${item.linked_mitras_count} Aset Mitra`,
+                        type: 'danger',
+                        isBlocked: true,
+                        actionUrl: null,
+                        actionText: null,
+                        assetWarning: `Demi integritas data inventaris RSUD Koesnadi, seluruh aset yang ditambahkan oleh mitra pada objek ini harus dimusnahkan permanen terlebih dahulu di sub-tab "📦 Aset Ditambahkan Mitra" sebelum objek pemanfaatan ini dapat dihapus permanen.`,
+                        btnText: null,
+                        onConfirm: null
+                    });
+                    return;
+                }
 
                 // JIKA RUANGAN / UNIT MEMILIKI ASET: BLOKIR PENGHAPUSAN DAN TAMPILKAN LINK AJUKAN MUTASI
                 if (targetMod === 'unit' && Number(item.total_aset) > 0) {

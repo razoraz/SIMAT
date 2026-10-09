@@ -83,6 +83,14 @@
                                                 <span class="text-cyan-400 font-mono" x-text="'• ' + item.luas + ' m²'"></span>
                                             </template>
                                         </div>
+                                        <template x-if="item.linked_mitras_count > 0">
+                                            <div class="mt-1.5 flex items-center gap-1.5">
+                                                <span class="px-2 py-0.5 rounded-lg text-[9.5px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1 shadow-sm">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                                                    <span x-text="'+' + item.linked_mitras_count + ' Aset Mitra di Tong Sampah'"></span>
+                                                </span>
+                                            </div>
+                                        </template>
                                     </td>
                                     <td class="px-4 py-4">
                                         <span class="font-mono text-[11px] font-bold text-cyan-400 bg-cyan-950/60 border border-cyan-500/30 px-2 py-0.5 rounded-lg inline-block" x-text="item.kode_barang"></span>
@@ -117,15 +125,25 @@
                                                 class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
                                                 <span>👁️ Detail</span>
                                             </button>
-                                            <button type="button" @click="restoreSingle('kemitraan', item)" title="Pulihkan Objek Pemanfaatan ke Daftar Aktif"
+                                            <button type="button" @click="restoreSingle('kemitraan', item)" 
+                                                :title="item.linked_mitras_count > 0 ? 'Pulihkan Objek Pemanfaatan beserta ' + item.linked_mitras_count + ' aset mitra terkait ke Daftar Aktif' : 'Pulihkan Objek Pemanfaatan ke Daftar Aktif'"
                                                 class="px-2.5 py-1.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
                                                 <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                                                 <span>Pulihkan</span>
                                             </button>
-                                            <button type="button" @click="forceDeleteSingle('kemitraan', item)" title="Hapus Permanen dari Database"
-                                                class="px-2.5 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
-                                                <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                                <span>Hapus</span>
+                                            <button type="button" @click="forceDeleteSingle('kemitraan', item)" 
+                                                :title="item.linked_mitras_count > 0 ? 'Terkunci: Bersihkan ' + item.linked_mitras_count + ' aset mitra di sub-tab Aset Ditambahkan Mitra terlebih dahulu' : 'Hapus Permanen dari Database'"
+                                                :class="item.linked_mitras_count > 0 
+                                                    ? 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 cursor-not-allowed' 
+                                                    : 'bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 cursor-pointer'"
+                                                class="px-2.5 py-1.5 rounded-xl font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95">
+                                                <template x-if="item.linked_mitras_count > 0">
+                                                    <span class="text-xs">🔒</span>
+                                                </template>
+                                                <template x-if="!item.linked_mitras_count || item.linked_mitras_count === 0">
+                                                    <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                </template>
+                                                <span x-text="item.linked_mitras_count > 0 ? 'Terkunci' : 'Hapus'"></span>
                                             </button>
                                         </div>
                                     </td>
