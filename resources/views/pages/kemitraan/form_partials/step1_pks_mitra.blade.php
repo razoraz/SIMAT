@@ -52,220 +52,27 @@
         </div>
 
         <!-- ========================================================================= -->
-        <!-- 1. SINKRONISASI OBJEK ASET RSUD (HANYA UNTUK ASET YANG DIMANFAATKAN)     -->
+        <!-- BANNER INFO: PEMANFAATAN BMD RSUD (INFORMASI RINGKAS TANPA PENCARIAN)     -->
         <!-- ========================================================================= -->
         <div x-show="tipeKemitraan === 'dimanfaatkan'"
              x-transition:enter="transition ease-out duration-200"
-             class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-cyan-950/30 via-slate-900/90 to-slate-950/90 border border-cyan-500/30 shadow-xl space-y-3.5 relative">
-            <div class="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap pb-3 border-b border-slate-800/80">
-                <div class="flex items-center gap-3 min-w-0">
-                    <div class="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center text-base shrink-0 shadow-inner">
-                        🏛️
-                    </div>
-                    <div class="min-w-0">
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs font-black tracking-wider text-cyan-300 uppercase">
-                                1. Objek Aset Milik RSUD yang Dimanfaatkan / Disewakan <span class="text-rose-400">*</span>
-                            </span>
-                            <span class="text-[10px] text-cyan-400 font-mono font-bold">(Wajib Dipilih)</span>
-                        </div>
-                        <p class="text-[11px] text-slate-400 truncate sm:whitespace-normal mt-0.5">
-                            Pilih aset daerah milik RSUD (Semua KIB: KIB A s.d. E) yang menjadi objek pemanfaatan / sewa dengan pihak ketiga.
-                        </p>
-                    </div>
+             class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-cyan-950/40 via-slate-900/90 to-slate-950/90 border border-cyan-500/30 shadow-xl space-y-2 relative">
+            <div class="flex items-center gap-3.5">
+                <div class="w-10 h-10 rounded-2xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 flex items-center justify-center text-xl shrink-0 shadow-inner">
+                    🏛️
                 </div>
-                <div class="shrink-0 flex items-center gap-2">
-                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-cyan-950/80 text-cyan-300 border border-cyan-500/30 flex items-center gap-1.5 shadow-sm">
-                        <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
-                        <span>Sinkronisasi BMD</span>
-                    </span>
-                    <template x-if="formData.objek_nibar">
-                        <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
-                            <span>✓</span>
-                            <span>Tertaut</span>
+                <div>
+                    <h4 class="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
+                        <span>Pencatatan Pemanfaatan / Sewa Aset BMD RSUD</span>
+                        <span class="px-2 py-0.5 rounded-full text-[9.5px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-mono">
+                            Akun 1.5.2
                         </span>
-                    </template>
+                    </h4>
+                    <p class="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
+                        Aset ini merupakan BMD milik RSUD Dr. H. Koesnandi yang dimanfaatkan / disewakan ke pihak ketiga.
+                        Rincian klasifikasi objek, skema kemitraan, dan nilai kontrak sewa akan diinput pada Langkah 2.
+                    </p>
                 </div>
-            </div>
-
-            <!-- Jika Belum Memilih Objek Aset (Input Pencarian Spotlight) -->
-            <div x-show="!formData.objek_nibar" class="space-y-2">
-                <div class="relative" @click.away="isObjekDropdownOpen = false">
-                    <div class="relative flex items-center">
-                        <div class="absolute left-3.5 text-slate-400 pointer-events-none flex items-center">
-                            <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                            </svg>
-                        </div>
-                        <input type="text"
-                            x-model="objekSearchQuery"
-                            @focus="isObjekDropdownOpen = true"
-                            @input="isObjekDropdownOpen = true"
-                            placeholder="Ketik NIBAR, nama barang aset RSUD (Semua KIB), lokasi ruangan, atau kode 108..."
-                            class="w-full bg-slate-950 border border-slate-700/80 hover:border-slate-600 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20 rounded-xl pl-10 pr-24 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none transition-all shadow-inner">
-                        
-                        <div class="absolute right-2.5 flex items-center gap-1.5">
-                            <template x-if="objekSearchQuery">
-                                <button type="button" @click="objekSearchQuery = ''; isObjekDropdownOpen = true" class="text-slate-400 hover:text-white p-1 text-xs">
-                                    ✕
-                                </button>
-                            </template>
-                            <span class="text-[10px] font-mono text-cyan-400/80 bg-slate-900 px-2 py-0.5 rounded-md border border-slate-800">
-                                Cari BMD
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- Dropdown Hasil Pencarian (Slice 5 Items) -->
-                    <div x-show="isObjekDropdownOpen"
-                        x-transition:enter="transition ease-out duration-150"
-                        x-transition:enter-start="opacity-0 -translate-y-1"
-                        x-transition:enter-end="opacity-100 translate-y-0"
-                        class="absolute left-0 right-0 top-full mt-2 bg-slate-950 border border-cyan-500/40 rounded-2xl shadow-2xl z-30 overflow-hidden divide-y divide-slate-900">
-                        
-                        <!-- Filter Kategori KIB (Semua KIB A - E) & Hitungan Hasil -->
-                        <div class="p-2.5 bg-slate-900/90 flex items-center justify-between gap-2 border-b border-slate-800 flex-wrap">
-                            <div class="flex items-center gap-1 flex-wrap">
-                                <button type="button" @click="objekKibFilter = 'ALL'"
-                                    :class="objekKibFilter === 'ALL' ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/60 font-extrabold shadow-sm shadow-cyan-500/20' : 'bg-slate-950 text-slate-400 hover:text-white border-slate-800'"
-                                    class="px-2.5 py-1 rounded-lg text-[10px] border transition-all">Semua KIB</button>
-                                <button type="button" @click="objekKibFilter = 'KIB A'"
-                                    :class="objekKibFilter === 'KIB A' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/60 font-extrabold shadow-sm shadow-emerald-500/20' : 'bg-slate-950 text-slate-400 hover:text-white border-slate-800'"
-                                    class="px-2 py-1 rounded-lg text-[10px] border transition-all">🌱 KIB A (Tanah)</button>
-                                <button type="button" @click="objekKibFilter = 'KIB B'"
-                                    :class="objekKibFilter === 'KIB B' ? 'bg-amber-500/20 text-amber-300 border-amber-400/60 font-extrabold shadow-sm shadow-amber-500/20' : 'bg-slate-950 text-slate-400 hover:text-white border-slate-800'"
-                                    class="px-2 py-1 rounded-lg text-[10px] border transition-all">🚜 KIB B (Peralatan)</button>
-                                <button type="button" @click="objekKibFilter = 'KIB C'"
-                                    :class="objekKibFilter === 'KIB C' ? 'bg-indigo-500/20 text-indigo-300 border-indigo-400/60 font-extrabold shadow-sm shadow-indigo-500/20' : 'bg-slate-950 text-slate-400 hover:text-white border-slate-800'"
-                                    class="px-2 py-1 rounded-lg text-[10px] border transition-all">🏢 KIB C (Gedung)</button>
-                                <button type="button" @click="objekKibFilter = 'KIB D'"
-                                    :class="objekKibFilter === 'KIB D' ? 'bg-purple-500/20 text-purple-300 border-purple-400/60 font-extrabold shadow-sm shadow-purple-500/20' : 'bg-slate-950 text-slate-400 hover:text-white border-slate-800'"
-                                    class="px-2 py-1 rounded-lg text-[10px] border transition-all">🛣️ KIB D (Jalan)</button>
-                                <button type="button" @click="objekKibFilter = 'KIB E'"
-                                    :class="objekKibFilter === 'KIB E' ? 'bg-teal-500/20 text-teal-300 border-teal-400/60 font-extrabold shadow-sm shadow-teal-500/20' : 'bg-slate-950 text-slate-400 hover:text-white border-slate-800'"
-                                    class="px-2 py-1 rounded-lg text-[10px] border transition-all">📦 KIB E (Lainnya)</button>
-                            </div>
-                            <span class="text-[10px] font-mono text-cyan-400/80 bg-slate-950 px-2 py-0.5 rounded-md border border-slate-800 shrink-0"
-                                x-text="'Menampilkan 5 dari ' + totalFilteredObjekCount + ' aset'"></span>
-                        </div>
-
-                        <!-- Opsi Tanpa Objek Aset Khusus -->
-                        <div @click="clearObjekAset(); isObjekDropdownOpen = false"
-                            class="px-3.5 py-2.5 bg-slate-900/40 hover:bg-slate-800/80 cursor-pointer flex items-center gap-2 text-slate-400 hover:text-slate-200 text-xs transition-colors">
-                            <span class="text-slate-500">🚫</span>
-                            <span class="font-medium">Tanpa Objek Khusus (Aset Ditambahkan Langsung oleh Mitra)</span>
-                        </div>
-
-                        <!-- List 5 Item Aset Teratas -->
-                        <template x-for="item in filteredObjekAsetList" :key="item.register_id">
-                            <div @click="selectObjekAset(item)"
-                                class="p-3 hover:bg-cyan-950/40 cursor-pointer transition-all border-b border-slate-900/80 last:border-b-0 group">
-                                <div class="flex items-center justify-between gap-2">
-                                    <div class="flex items-center gap-2 min-w-0">
-                                        <span class="px-2 py-0.5 rounded text-[9.5px] font-mono font-extrabold uppercase shrink-0"
-                                            :class="{
-                                                'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40': item.kib === 'KIB A',
-                                                'bg-amber-500/20 text-amber-300 border border-amber-500/40': item.kib === 'KIB B',
-                                                'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40': item.kib === 'KIB C',
-                                                'bg-purple-500/20 text-purple-300 border border-purple-500/40': item.kib === 'KIB D',
-                                                'bg-teal-500/20 text-teal-300 border border-teal-500/40': item.kib === 'KIB E'
-                                            }"
-                                            x-text="item.kib"></span>
-                                        <span class="font-bold text-white text-xs truncate group-hover:text-cyan-300 transition-colors" x-text="item.nama_barang"></span>
-                                    </div>
-                                    <span class="font-mono text-cyan-400 text-[11px] font-bold shrink-0 bg-cyan-950/50 px-2 py-0.5 rounded border border-cyan-500/30" x-text="item.nibar"></span>
-                                </div>
-                                <div class="flex items-center justify-between text-[11px] text-slate-400 gap-2 mt-1">
-                                    <span class="truncate flex items-center gap-1">
-                                        <span>📍</span>
-                                        <span x-text="item.unit_nama || item.alamat_barang || 'RSUD Dr. H. Koesnandi'"></span>
-                                    </span>
-                                    <div class="flex items-center gap-2 shrink-0">
-                                        <span x-show="item.luas" class="font-mono text-slate-300" x-text="item.luas + ' m²'"></span>
-                                        <template x-if="item.pks_aktif">
-                                            <span class="px-1.5 py-0.5 rounded text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold"
-                                                x-text="'⚠️ PKS Aktif: ' + item.pks_aktif.nomor_pks"></span>
-                                        </template>
-                                    </div>
-                                </div>
-                            </div>
-                        </template>
-
-                        <template x-if="filteredObjekAsetList.length === 0">
-                            <div class="p-6 text-center text-xs space-y-2">
-                                <template x-if="dbObjekAsetList.length === 0">
-                                    <div class="space-y-1.5">
-                                        <div class="text-2xl">🏛️</div>
-                                        <div class="font-bold text-slate-200">Belum Ada Aset RSUD yang Direklasifikasi ke Kemitraan</div>
-                                        <p class="text-[11px] text-slate-400 max-w-md mx-auto leading-relaxed">
-                                            Aset tanah/gedung milik RSUD yang disewakan ke mitra harus direklasifikasi terlebih dahulu ke Akun 1.5.2 pada Menu Reklasifikasi ASTAP agar dapat dipilih di sini.
-                                        </p>
-                                    </div>
-                                </template>
-                                <template x-if="dbObjekAsetList.length > 0">
-                                    <div class="text-slate-400 py-2">
-                                        Tidak ada aset kemitraan yang cocok dengan kata kunci pencarian.
-                                    </div>
-                                </template>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-                <p class="text-[10.5px] text-slate-500 italic">
-                    💡 Tips: Jika kemitraan ini berupa penerimaan aset baru dari rekanan tanpa menyewa lahan/gedung RSUD, bagian ini boleh dilewati.
-                </p>
-            </div>
-
-            <!-- Jika Sudah Memilih Objek Aset (Kartu Aset BMD Terpilih) -->
-            <div x-show="formData.objek_nibar" class="p-4 rounded-2xl bg-gradient-to-r from-cyan-950/30 via-slate-900/90 to-slate-950 border border-cyan-500/40 space-y-3 relative shadow-lg overflow-hidden">
-                <div class="flex items-start justify-between gap-3 flex-wrap sm:flex-nowrap">
-                    <div class="space-y-1.5 min-w-0 flex-1">
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-mono font-bold"
-                                :class="(formData.objek_aset_terpilih?.kib === 'KIB A') ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40'"
-                                x-text="formData.objek_aset_terpilih?.kib || 'Aset BMD'"></span>
-                            <span class="text-xs font-mono font-extrabold text-cyan-300 bg-cyan-950/60 px-2.5 py-0.5 rounded-lg border border-cyan-500/30" x-text="'NIBAR: ' + formData.objek_nibar"></span>
-                            <span class="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
-                                ✓ Terhubung Database Aset
-                            </span>
-                        </div>
-                        <h4 class="text-sm font-extrabold text-white leading-snug" x-text="formData.objek_aset_terpilih?.nama_barang || 'Aset Objek RSUD Terpilih'"></h4>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs pt-1">
-                            <div class="p-2 rounded-xl bg-slate-950/80 border border-slate-800">
-                                <span class="text-[10px] uppercase font-bold text-slate-500 block">📍 Lokasi / Ruangan</span>
-                                <span class="font-bold text-slate-200 block truncate" x-text="formData.objek_aset_terpilih?.unit_nama || formData.objek_aset_terpilih?.alamat_barang || 'RSUD Dr. H. Koesnandi'"></span>
-                            </div>
-                            <div class="p-2 rounded-xl bg-slate-950/80 border border-slate-800">
-                                <span class="text-[10px] uppercase font-bold text-slate-500 block">📐 Luas Objek</span>
-                                <span class="font-mono font-bold text-cyan-300 block" x-text="formData.objek_aset_terpilih?.luas ? (formData.objek_aset_terpilih.luas + ' m²') : '-'"></span>
-                            </div>
-                            <div class="p-2 rounded-xl bg-slate-950/80 border border-slate-800">
-                                <span class="text-[10px] uppercase font-bold text-slate-500 block">📜 Sertifikat / Dokumen</span>
-                                <span class="font-mono font-bold text-slate-300 block truncate" x-text="formData.objek_aset_terpilih?.sertifikat || '-'"></span>
-                            </div>
-                        </div>
-                    </div>
-                    <button type="button" @click="clearObjekAset()"
-                        class="px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-rose-950/80 border border-slate-700 hover:border-rose-500/50 text-slate-300 hover:text-rose-200 text-xs font-bold transition-all shrink-0 cursor-pointer shadow-sm">
-                        ✕ Ganti / Lepas Objek
-                    </button>
-                </div>
-
-                <!-- Peringatan jika aset sedang dalam PKS aktif -->
-                <template x-if="formData.objek_aset_terpilih?.pks_aktif">
-                    <div class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2.5 text-xs text-amber-200">
-                        <span class="text-amber-400 text-sm mt-0.5">⚠️</span>
-                        <div>
-                            <span class="font-bold">Aset ini memiliki Perjanjian Kerja Sama aktif: </span>
-                            <span class="font-mono font-bold" x-text="formData.objek_aset_terpilih?.pks_aktif.nomor_pks"></span>
-                            <span x-text="' (' + formData.objek_aset_terpilih?.pks_aktif.mitra_nama + ')'"></span>
-                            <span x-show="formData.objek_aset_terpilih?.pks_aktif.tanggal_selesai" x-text="' sampai ' + formData.objek_aset_terpilih?.pks_aktif.tanggal_selesai"></span>.
-                            <div class="text-[11px] text-amber-300/80 mt-0.5">
-                                Pastikan tanggal mulai dan berakhir kemitraan baru ini tidak tumpang tindih dengan periode yang sedang berjalan.
-                            </div>
-                        </div>
-                    </div>
-                </template>
             </div>
         </div>
 
@@ -742,14 +549,42 @@
             </div>
         </div>
 
-        <!-- Ruang Lingkup & Keterangan Kerjasama -->
-        <div>
-            <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                Ruang Lingkup / Keterangan Kerjasama
-            </label>
-            <textarea x-model="formData.kemitraan_keterangan" rows="2"
-                placeholder="Contoh: Kerja Sama Operasional (KSO) penempatan alat laboratorium analyzer dengan skema komitmen reagen, atau Bangun Guna Serah gedung parkir..."
-                class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl p-3 text-xs text-white focus:outline-none"></textarea>
+        <!-- Ruang Lingkup & Keterangan Kerjasama (Diperbesar, Rapi & Responsif) -->
+        <div class="p-4 sm:p-5 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-slate-700/80 transition-all shadow-lg space-y-3">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <label class="block text-xs sm:text-sm font-bold text-slate-100 tracking-wide">
+                            Ruang Lingkup / Keterangan Kerjasama
+                        </label>
+                        <p class="text-[11px] text-slate-400 mt-0.5">
+                            Uraian kesepakatan, ruang lingkup pemanfaatan, klausul operasional, atau dasar reklasifikasi rekening BMD 108
+                        </p>
+                    </div>
+                </div>
+                <span class="text-[10px] px-2.5 py-1 rounded-full bg-slate-800/80 text-cyan-300 border border-cyan-500/20 font-medium">
+                    Dokumen PKS / Berita Acara
+                </span>
+            </div>
+
+            <div class="relative">
+                <textarea x-model="formData.kemitraan_keterangan" rows="4"
+                    placeholder="Contoh: Kerja Sama Operasional (KSO) penempatan alat laboratorium analyzer dengan skema komitmen reagen, atau Bangun Guna Serah gedung parkir, atau keterangan reklasifikasi pemanfaatan rekening BMD..."
+                    class="w-full min-h-[110px] sm:min-h-[130px] bg-slate-950/80 border border-slate-700/80 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20 rounded-xl p-3.5 sm:p-4 text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none transition-all leading-relaxed resize-y"></textarea>
+            </div>
+
+            <div class="flex items-center justify-between text-[11px] text-slate-400 pt-0.5 flex-wrap gap-2">
+                <span class="flex items-center gap-1.5 text-slate-400">
+                    <span class="text-cyan-400">💡</span>
+                    <span>Teks akan dicantumkan secara otomatis pada format lampiran BAST dan rekapitulasi data kemitraan.</span>
+                </span>
+                <span class="text-[10px] font-mono text-slate-500" x-text="(formData.kemitraan_keterangan ? formData.kemitraan_keterangan.length : 0) + ' karakter'"></span>
+            </div>
         </div>
 
         <!-- Unggah Berkas Dokumen BAST / PKS Kerja Sama -->

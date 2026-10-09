@@ -3,49 +3,46 @@
 <!-- ========================================================================= -->
 <div class="space-y-4">
     <!-- Top Header Banner -->
-    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 p-5 sm:p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl relative overflow-hidden">
-        <div class="flex items-center space-x-3.5 sm:space-x-4">
-            <div class="w-12 h-12 rounded-2xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400 text-2xl shrink-0 shadow-lg shadow-cyan-500/10">
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 p-5 sm:p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl relative overflow-hidden backdrop-blur-md">
+        <!-- Subtle Ambient Background Glow -->
+        <div class="absolute -top-20 -left-20 w-52 h-52 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-20 -right-20 w-52 h-52 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <!-- Left: Icon & Text Information -->
+        <div class="flex items-start gap-4 relative z-10">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-500/20 via-slate-800 to-cyan-500/5 border border-cyan-500/30 flex items-center justify-center text-2xl shrink-0 shadow-lg shadow-cyan-500/10 ring-1 ring-cyan-500/20 mt-0.5">
                 🤝
             </div>
-            <div>
-                <div class="flex flex-wrap items-center gap-2">
+            <div class="space-y-1">
+                <div class="flex flex-wrap items-center gap-2.5">
                     <h1 class="text-xl sm:text-2xl font-black text-white tracking-tight leading-tight">
                         Kelola Aset Kemitraan Pihak Ketiga
                     </h1>
-                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-cyan-500/10 text-cyan-300 border border-cyan-500/25 font-mono shadow-sm">
                         Akun 1.5.2 · PMDN 108
                     </span>
                 </div>
-                <p class="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
+                <p class="text-xs text-slate-400 max-w-2xl leading-relaxed">
                     Pusat monitoring aset kerja sama sewa, pemanfaatan (KSP), bangun guna serah (BGS/BSG), dan penyediaan infrastruktur (KSPI) dengan rekanan swasta sebelum direklasifikasi definitif ke Aset Tetap.
                 </p>
             </div>
         </div>
 
-        <!-- Tombol Aksi Cepat -->
-        <div class="flex flex-wrap items-center gap-2 shrink-0">
+        <!-- Right: Action Buttons Group -->
+        <div class="flex flex-wrap items-center gap-2.5 relative z-10 shrink-0 lg:self-center">
+            <!-- Ekspor Excel Button -->
             <button type="button" @click="openExportModal()"
-                class="px-3.5 py-2.5 rounded-xl bg-slate-950 border border-emerald-500/30 hover:border-emerald-500/60 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-all flex items-center gap-1.5 shadow-sm hover:shadow-emerald-500/10 cursor-pointer">
-                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                class="group px-4 py-2.5 rounded-xl bg-slate-950/90 hover:bg-emerald-950/30 border border-slate-700/80 hover:border-emerald-500/60 text-xs font-bold text-slate-300 hover:text-emerald-300 transition-all duration-200 transform hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-500/15 flex items-center gap-2 cursor-pointer active:scale-95">
+                <svg class="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <span>Ekspor Excel Kemitraan</span>
+                <span>Ekspor Excel</span>
             </button>
-
-            <!-- 1. Tombol Catat Pemanfaatan BMD Milik RSUD -->
-            <a href="{{ route('astap.create_kemitraan', ['tipe' => 'dimanfaatkan']) }}"
-                class="px-3.5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-black shadow-lg shadow-cyan-500/25 transition-all flex items-center gap-1.5 active:scale-95"
-                title="Catat Pemanfaatan Barang Milik Daerah RSUD ke Mitra (Sewa / KSP / BGS)">
-                <span>🏛️</span>
-                <span>Catat Pemanfaatan BMD</span>
-            </a>
-
-            <!-- 2. Tombol Catat Aset Ditambahkan Mitra -->
+            <!-- Tombol Catat Aset Ditambahkan Mitra -->
             <a href="{{ route('astap.create_kemitraan', ['tipe' => 'ditambahkan']) }}"
-                class="px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 text-xs font-black shadow-lg shadow-emerald-500/25 transition-all flex items-center gap-1.5 active:scale-95"
+                class="group px-4 py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-slate-950 text-xs font-black shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-400/35 transition-all duration-200 transform hover:-translate-y-0.5 hover:scale-[1.02] flex items-center gap-2 active:scale-95 cursor-pointer"
                 title="Catat Aset / Peralatan Baru yang Ditambahkan Rekanan Mitra ke RSUD (KSO / BGS)">
-                <span>📦</span>
+                <span class="text-base inline-block group-hover:scale-115 group-hover:rotate-6 transition-transform duration-200">📦</span>
                 <span>Catat Aset Ditambahkan Mitra</span>
             </a>
         </div>

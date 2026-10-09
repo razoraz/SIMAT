@@ -38,11 +38,15 @@
             dimanfaatkanMetaList: window.__dimanfaatkanMetaList || [],
             ditambahkanMetaList: window.__ditambahkanMetaList || [],
             allMetaList: window.__allMetaList || [],
+            allDitambahkanDetailList: window.__allDitambahkanDetailList || [],
+            allDimanfaatkanDetailList: window.__allDimanfaatkanDetailList || [],
 
-            initMetaLists(dim, dit, all) {
+            initMetaLists(dim, dit, all, allDitDetails, allDimDetails) {
                 if (dim && Array.isArray(dim)) this.dimanfaatkanMetaList = dim;
                 if (dit && Array.isArray(dit)) this.ditambahkanMetaList = dit;
                 if (all && Array.isArray(all)) this.allMetaList = all;
+                if (allDitDetails && Array.isArray(allDitDetails)) this.allDitambahkanDetailList = allDitDetails;
+                if (allDimDetails && Array.isArray(allDimDetails)) this.allDimanfaatkanDetailList = allDimDetails;
             },
 
             get countVisibleDimanfaatkan() {
@@ -690,7 +694,14 @@
                     status_konsesi: kemitraan?.status_konsesi || 'Aktif',
                     sisa_hari_konsesi: kemitraan?.sisa_hari_konsesi ?? null,
                     dokumen_path: kemitraan?.dokumen_path || spec.dokumen_path || null,
-                    is_dimanfaatkan: Boolean(isDimanfaatkan || kemitraan?.is_reklas_pending)
+                    is_dimanfaatkan: Boolean(isDimanfaatkan || kemitraan?.is_reklas_pending),
+
+                    // Relasi Objek Aset BMD RSUD (untuk aset yang ditambahkan mitra)
+                    objek_astap_id: kemitraan?.objek_astap_id || spec.objek_astap_id || null,
+                    objek_register_id: kemitraan?.objek_register_id || spec.objek_register_id || null,
+                    objek_nibar: kemitraan?.objek_nibar || spec.objek_nibar || null,
+                    objek_astap: kemitraan?.objek_astap || kemitraan?.objekAstap || null,
+                    objek_register: kemitraan?.objek_register || kemitraan?.objekRegister || null
                 };
 
                 // Kompatibilitas state lama
@@ -709,6 +720,188 @@
                 this.detailPenempatanFilter = 'all';
                 this.detailSearchQuery = '';
                 this.showDetailModal = true;
+            },
+
+            // ─── Logika Relasi Aset Ditambahkan Mitra pada Objek Pemanfaatan BMD ───
+            getAsetDitambahkanMitraForDetail(detailItem) {
+                if (!detailItem) return [];
+
+                const pks = (detailItem.nomor_pks || '').trim().toLowerCase();
+                const mitra = (detailItem.penyedia_nama || detailItem.mitra_nama || '').trim().toLowerCase();
+                const astapId = detailItem.id || detailItem.astap_id;
+                const kemitraanId = detailItem.kemitraan_id;
+
+                const nibarList = (detailItem.registers || [])
+                    .map(r => (r.nibar || r.no_register || '').trim().toLowerCase())
+                    .filter(n => n && n !== '-');
+                if (detailItem.objek_nibar) {
+                    nibarList.push(String(detailItem.objek_nibar).trim().toLowerCase());
+                }
+
+                const list = this.allDitambahkanDetailList || window.__allDitambahkanDetailList || [];
+
+                return list.filter(item => {
+                    if (!item) return false;
+
+                    // 1. Cek kesamaan Nomor PKS (jika nomor PKS valid dan bukan placeholder)
+                    const itemPks = (item.nomor_pks || '').trim().toLowerCase();
+                    if (pks && pks !== '-' && pks !== 'belum ada pks' && itemPks === pks) {
+                        return true;
+                    }
+
+                    // 2. Cek kesamaan ID Objek Astap / Kemitraan
+                    if (item.objek_astap_id && (item.objek_astap_id == astapId || item.objek_astap_id == kemitraanId)) {
+                        return true;
+                    }
+
+                    // 3. Cek kesamaan NIBAR objek
+                    const itemObjNibar = (item.objek_nibar || '').trim().toLowerCase();
+                    if (itemObjNibar && nibarList.includes(itemObjNibar)) {
+                        return true;
+                    }
+
+                    // 4. Jika nama mitra cocok dan nomor PKS cocok
+                    if (mitra && mitra !== '-' && (item.mitra_nama || '').trim().toLowerCase() === mitra) {
+                        if (pks && pks !== '-' && itemPks === pks) {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                });
+            },
+
+            getTotalNilaiAsetDitambahkanMitra(detailItem) {
+                const items = this.getAsetDitambahkanMitraForDetail(detailItem);
+                return items.reduce((sum, it) => sum + (parseFloat(it.nilai_aset) || 0), 0);
+            },
+
+            getTotalVolumeAsetDitambahkanMitra(detailItem) {
+                const items = this.getAsetDitambahkanMitraForDetail(detailItem);
+                return items.reduce((sum, it) => sum + (parseInt(it.jumlah_volume) || 1), 0);
+            },
+
+            getLinkTambahAsetMitra(detailItem) {
+                const baseUrl = '{{ route('astap.create_kemitraan') }}';
+                if (!detailItem) return baseUrl + '?tipe=ditambahkan';
+                const p = new URLSearchParams();
+                p.set('tipe', 'ditambahkan');
+                if (detailItem.nomor_pks && detailItem.nomor_pks !== '-' && detailItem.nomor_pks !== 'Belum Ada PKS') {
+                    p.set('pks', detailItem.nomor_pks);
+                }
+                if (detailItem.penyedia_nama && detailItem.penyedia_nama !== '-') {
+                    p.set('mitra', detailItem.penyedia_nama);
+                }
+                if (detailItem.penyedia_pemilik && detailItem.penyedia_pemilik !== '-') {
+                    p.set('pimpinan', detailItem.penyedia_pemilik);
+                }
+                if (detailItem.penyedia_alamat && detailItem.penyedia_alamat !== '-') {
+                    p.set('alamat', detailItem.penyedia_alamat);
+                }
+                if (detailItem.skema_kemitraan && detailItem.skema_kemitraan !== '-') {
+                    p.set('skema', detailItem.skema_kemitraan);
+                }
+                if (detailItem.id) {
+                    p.set('objek_id', detailItem.id);
+                }
+                const nibar = detailItem.objek_nibar || (detailItem.registers && detailItem.registers[0] ? detailItem.registers[0].nibar : null);
+                if (nibar && nibar !== '-') {
+                    p.set('objek_nibar', nibar);
+                }
+                return baseUrl + '?' + p.toString();
+            },
+
+            openDetailFromDitambahkan(item) {
+                if (!item) return;
+                this.openDetail(item.raw_row, item.raw_astap, item.raw_register, false);
+            },
+
+            // ─── Logika Pencarian Objek Pemanfaatan BMD Asal untuk Aset Ditambahkan Mitra ───
+            getObjekPemanfaatanAsal(detailItem) {
+                if (!detailItem) return null;
+
+                const pks = (detailItem.nomor_pks || '').trim().toLowerCase();
+                const mitra = (detailItem.penyedia_nama || detailItem.mitra_nama || '').trim().toLowerCase();
+                const objekAstapId = detailItem.objek_astap_id || detailItem.kemitraan?.objek_astap_id || detailItem.spesifikasi_json?.objek_astap_id;
+                const objekNibar = (detailItem.objek_nibar || detailItem.kemitraan?.objek_nibar || detailItem.spesifikasi_json?.objek_nibar || '').trim().toLowerCase();
+
+                const dimList = this.allDimanfaatkanDetailList || window.__allDimanfaatkanDetailList || [];
+
+                // 1. Cari berdasarkan kecocokan ID Objek Astap
+                if (objekAstapId) {
+                    const match = dimList.find(d => d.astap_id == objekAstapId || d.objek_astap_id == objekAstapId || d.id == objekAstapId);
+                    if (match) return match;
+                }
+
+                // 2. Cari berdasarkan kecocokan NIBAR objek
+                if (objekNibar && objekNibar !== '-') {
+                    const match = dimList.find(d => {
+                        const dNibar = (d.nibar || d.objek_nibar || '').trim().toLowerCase();
+                        return dNibar === objekNibar;
+                    });
+                    if (match) return match;
+                }
+
+                // 3. Cari berdasarkan kecocokan nomor PKS yang sama
+                if (pks && pks !== '-' && pks !== 'belum ada pks') {
+                    const match = dimList.find(d => {
+                        const dPks = (d.nomor_pks || '').trim().toLowerCase();
+                        return dPks === pks;
+                    });
+                    if (match) return match;
+                }
+
+                // 4. Jika ada relasi langsung kemitraan.objekAstap atau objek_astap
+                const oa = detailItem.objek_astap || detailItem.kemitraan?.objekAstap || detailItem.kemitraan?.objek_astap;
+                if (oa) {
+                    let oSpec = oa.spesifikasi_json;
+                    if (typeof oSpec === 'string') {
+                        try { oSpec = JSON.parse(oSpec); } catch(e) { oSpec = {}; }
+                    }
+                    oSpec = oSpec || {};
+                    return {
+                        nama_barang: oSpec.tanah_nama_barang || oSpec.gedung_nama_bangunan || oa.nama_barang || 'Objek BMD RSUD',
+                        category: this.getEffectiveKibCategory(oa),
+                        kode_barang: oa.kode_barang || oa.kode_108 || '-',
+                        nibar: detailItem.objek_nibar || (oa.registers && oa.registers[0] ? oa.registers[0].nibar : '-'),
+                        alamat: oa.alamat_barang || '-',
+                        luas: oSpec.luas_m2 || oSpec.tanah_luas_m2 || oSpec.gedung_luas_lantai || null,
+                        skema_kemitraan: detailItem.skema_kemitraan || 'KSO',
+                        nomor_pks: detailItem.nomor_pks || '-',
+                        status_konsesi: detailItem.status_konsesi || 'Aktif',
+                        raw_row: null,
+                        raw_astap: oa,
+                        raw_register: oa.registers ? oa.registers[0] : null
+                    };
+                }
+
+                // 5. Fallback representasi jika ada objek_nibar di catatan
+                if (objekNibar && objekNibar !== '-') {
+                    return {
+                        nama_barang: detailItem.spesifikasi_json?.objek_nama_barang || 'Objek BMD RSUD Dr. H. Koesnandi',
+                        category: detailItem.spesifikasi_json?.objek_kib || 'KIB A',
+                        nibar: detailItem.objek_nibar || detailItem.spesifikasi_json?.objek_nibar,
+                        kode_barang: detailItem.spesifikasi_json?.objek_kode_108 || '-',
+                        alamat: detailItem.alamat_barang || 'RSUD Dr. H. Koesnandi',
+                        skema_kemitraan: detailItem.skema_kemitraan || 'KSO',
+                        nomor_pks: detailItem.nomor_pks || '-',
+                        status_konsesi: detailItem.status_konsesi || 'Aktif',
+                        raw_row: null,
+                        raw_astap: null,
+                        raw_register: null
+                    };
+                }
+
+                return null;
+            },
+
+            openDetailFromDimanfaatkan(item) {
+                if (!item) return;
+                if (item.raw_row && item.raw_astap) {
+                    this.openDetail(item.raw_row, item.raw_astap, item.raw_register, true);
+                } else if (item.raw_astap) {
+                    this.openDetail(null, item.raw_astap, item.raw_register, true);
+                }
             },
 
             // ─── Fitur Modal Cetak BAST Pemanfaatan / Penambahan Aset Kemitraan (Format Modal SIMAT) ───
@@ -1475,6 +1668,17 @@
                     return this.syncRepeaterItemsWithVolume(toSync, targetTotal, ['tanah_jumlah_bidang', 'tanah_jumlah_barang']);
                 }
                 return [];
+            },
+
+            // Helper kalkulasi nilai taksiran wajar per bidang tanah secara defensif (mencegah Rp 0)
+            getTanahItemNilai(tItem, astap) {
+                if (!tItem && !astap) return 0;
+                const direct = Number(tItem?.tanah_nilai_satuan || tItem?.tanah_nilai_fisik || tItem?.nilai_satuan || tItem?.nilai_perolehan || 0);
+                if (direct > 0) return direct;
+                const items = this.getTanahItemsForDetail(astap);
+                const count = Math.max(1, (items && items.length) ? items.length : 1);
+                const parentTotal = Number(astap?.nilai_aset || astap?.total_realisasi || astap?.jumlah_realisasi || 0);
+                return parentTotal > 0 ? Math.round(parentTotal / count) : 0;
             },
 
             getMesinItemsForDetail(astap) {

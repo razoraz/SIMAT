@@ -154,21 +154,6 @@
                         </div>
                     </div>
 
-                    <!-- Objek Aset NIBAR (jika ada) -->
-                    <template x-if="selectedAstapDetail.objek_nibar || selectedAstapDetail.spesifikasi_json?.objek_nibar">
-                        <div class="w-full p-2.5 rounded-xl bg-slate-900/90 border border-cyan-500/20 flex flex-wrap items-center justify-between gap-2">
-                            <div class="flex items-center gap-2">
-                                <span class="text-xs">🏛️</span>
-                                <div>
-                                    <span class="text-[10px] uppercase font-bold text-slate-400 block">Objek Aset RSUD yang Disewakan / Dikerjasamakan:</span>
-                                    <span class="text-xs font-mono font-bold text-cyan-300" x-text="'NIBAR: ' + (selectedAstapDetail.objek_nibar || selectedAstapDetail.spesifikasi_json?.objek_nibar)"></span>
-                                </div>
-                            </div>
-                            <span class="px-2 py-0.5 rounded text-[10px] bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 font-semibold">
-                                Aset Terkait BMD RSUD
-                            </span>
-                        </div>
-                    </template>
 
                     <!-- KARTU DOKUMEN BAST & KONTRAK KERJASAMA (PRATINJAU, GANTI & HAPUS) - FULL WIDTH -->
                     <div class="w-full pt-3 border-t border-cyan-500/20" style="width: 100%;">
@@ -296,6 +281,286 @@
                     </div>
                 </div>
 
+                <!-- ========================================================================= -->
+                <!-- SECTION: INFORMASI & TABEL ASET YANG DITAMBAHKAN MITRA PADA OBJEK INI   -->
+                <!-- ========================================================================= -->
+                <template x-if="selectedAstapDetail && selectedAstapDetail.is_dimanfaatkan">
+                    <div class="p-4 sm:p-5 rounded-2xl bg-slate-950/90 border border-emerald-500/30 space-y-4 shadow-xl">
+                        
+                        <!-- Header Section -->
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-emerald-500/20 gap-3">
+                            <div class="flex items-start sm:items-center space-x-3">
+                                <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center justify-center text-lg shrink-0 shadow-inner">
+                                    📦
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <h4 class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-emerald-400">
+                                            Aset yang Ditambahkan / Didatangkan oleh Mitra Kerjasama
+                                        </h4>
+                                        <span class="px-2 py-0.5 rounded text-[9.5px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 uppercase tracking-wider">
+                                            Objek Kerjasama Ini
+                                        </span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-400 mt-0.5">
+                                        Daftar peralatan medis, mesin, sarana, atau fasilitas yang disediakan pihak ketiga di atas objek pemanfaatan ini.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Tombol Aksi Tambah & Ringkasan Nilai -->
+                            <div class="flex items-center gap-2 flex-wrap shrink-0">
+                                <template x-if="getAsetDitambahkanMitraForDetail(selectedAstapDetail).length > 0">
+                                    <div class="hidden md:flex items-center gap-2">
+                                        <span class="px-2.5 py-1 rounded-xl text-[10.5px] font-mono font-bold bg-slate-900 border border-emerald-500/30 text-emerald-300"
+                                              x-text="getAsetDitambahkanMitraForDetail(selectedAstapDetail).length + ' Item (' + getTotalVolumeAsetDitambahkanMitra(selectedAstapDetail) + ' Unit)'"></span>
+                                        <span class="px-2.5 py-1 rounded-xl text-[10.5px] font-mono font-extrabold bg-emerald-500/15 border border-emerald-500/30 text-emerald-400"
+                                              x-text="'Rp ' + formatRupiah(getTotalNilaiAsetDitambahkanMitra(selectedAstapDetail))"></span>
+                                    </div>
+                                </template>
+
+                                <a :href="getLinkTambahAsetMitra(selectedAstapDetail)"
+                                   title="Catat barang/aset baru yang didatangkan oleh mitra rekanan untuk objek PKS ini"
+                                   class="px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs transition-all shadow-md shadow-emerald-500/20 active:scale-95 flex items-center gap-1.5 cursor-pointer">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+                                    </svg>
+                                    <span>Catat Aset Ditambahkan Mitra</span>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- 1. Kondisi Ada Aset: Tampilkan Tabel Rincian -->
+                        <template x-if="getAsetDitambahkanMitraForDetail(selectedAstapDetail).length > 0">
+                            <div class="space-y-3">
+                                <div class="rounded-xl border border-slate-800/90 overflow-hidden custom-scrollbar max-h-72 overflow-y-auto">
+                                    <table class="w-full text-left text-[11px] text-slate-300 min-w-[700px]">
+                                        <thead class="bg-slate-950 text-slate-400 font-bold uppercase text-[9.5px] border-b border-slate-800 sticky top-0 z-10 shadow-sm" style="background-color: #020617;">
+                                            <tr>
+                                                <th class="px-3 py-2.5 text-center w-12">#</th>
+                                                <th class="px-3 py-2.5">Nama Barang &amp; Spesifikasi</th>
+                                                <th class="px-3 py-2.5 text-center">Kode 108 &amp; NIBAR</th>
+                                                <th class="px-3 py-2.5 text-center">Volume</th>
+                                                <th class="px-3 py-2.5 text-center">Kondisi</th>
+                                                <th class="px-3 py-2.5 text-right">Taksiran Nilai (Rp)</th>
+                                                <th class="px-3 py-2.5 text-center w-24">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-800/80 bg-slate-900/40">
+                                            <template x-for="(dItem, dIdx) in getAsetDitambahkanMitraForDetail(selectedAstapDetail)" :key="dItem.id || dIdx">
+                                                <tr class="hover:bg-slate-800/50 transition-colors">
+                                                    <!-- No & KIB -->
+                                                    <td class="px-3 py-2 text-center">
+                                                        <div class="flex flex-col items-center gap-1">
+                                                            <span class="text-slate-400 font-mono text-[10px]" x-text="dIdx + 1"></span>
+                                                            <span class="px-1.5 py-0.2 rounded text-[8.5px] font-black border uppercase"
+                                                                  :class="{
+                                                                      'bg-cyan-500/20 text-cyan-300 border-cyan-500/30': dItem.category === 'KIB B',
+                                                                      'bg-purple-500/20 text-purple-300 border-purple-500/30': dItem.category === 'KIB C',
+                                                                      'bg-teal-500/20 text-teal-300 border-teal-500/30': dItem.category === 'KIB D',
+                                                                      'bg-orange-500/20 text-orange-300 border-orange-500/30': dItem.category === 'KIB E',
+                                                                      'bg-amber-500/20 text-amber-300 border-amber-500/30': dItem.category === 'KIB A'
+                                                                  }"
+                                                                  x-text="dItem.category || 'KIB B'"></span>
+                                                        </div>
+                                                    </td>
+
+                                                    <!-- Nama Barang & Spesifikasi -->
+                                                    <td class="px-3 py-2 min-w-[200px]">
+                                                        <div class="font-bold text-white text-xs" x-text="dItem.nama_barang"></div>
+                                                        <div class="text-[10px] text-slate-400 truncate max-w-xs" x-show="dItem.merk_type" x-text="'Merk/Type: ' + dItem.merk_type"></div>
+                                                        <div class="text-[10px] text-teal-400/90 truncate max-w-xs" x-show="dItem.ruang_pemegang && dItem.ruang_pemegang !== '-'" x-text="'📍 ' + dItem.ruang_pemegang"></div>
+                                                    </td>
+
+                                                    <!-- Kode 108 & NIBAR -->
+                                                    <td class="px-3 py-2 text-center whitespace-nowrap">
+                                                        <div class="font-mono text-cyan-400 font-bold text-[10.5px]" x-text="dItem.kode_barang || '-'"></div>
+                                                        <div class="font-mono text-emerald-400 text-[10px]" x-text="dItem.nibar ? ('NIBAR: ' + dItem.nibar) : '-'"></div>
+                                                    </td>
+
+                                                    <!-- Volume -->
+                                                    <td class="px-3 py-2 text-center whitespace-nowrap font-mono font-bold text-slate-200">
+                                                        <span x-text="(dItem.jumlah_volume || 1) + ' ' + (dItem.satuan || 'Unit')"></span>
+                                                    </td>
+
+                                                    <!-- Kondisi -->
+                                                    <td class="px-3 py-2 text-center whitespace-nowrap">
+                                                        <span class="px-2 py-0.5 rounded-lg text-[10px] font-bold border inline-block"
+                                                              :class="{
+                                                                  'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': ['Baik', 'B'].includes(dItem.kondisi),
+                                                                  'bg-amber-500/20 text-amber-300 border-amber-500/30': ['Kurang Baik', 'KB', 'Rusak Ringan', 'RR'].includes(dItem.kondisi),
+                                                                  'bg-rose-500/20 text-rose-300 border-rose-500/30': ['Rusak Berat', 'RB', 'Rusak'].includes(dItem.kondisi)
+                                                              }"
+                                                              x-text="['B', 'Baik'].includes(dItem.kondisi) ? 'Baik' : (['KB', 'RR', 'Kurang Baik', 'Rusak Ringan'].includes(dItem.kondisi) ? 'Kurang Baik' : 'Rusak Berat')"></span>
+                                                    </td>
+
+                                                    <!-- Taksiran Nilai -->
+                                                    <td class="px-3 py-2 text-right whitespace-nowrap font-mono font-bold text-emerald-400">
+                                                        <span x-text="'Rp ' + formatRupiah(dItem.nilai_aset || 0)"></span>
+                                                    </td>
+
+                                                    <!-- Aksi -->
+                                                    <td class="px-3 py-2 text-center whitespace-nowrap">
+                                                        <button type="button" @click="openDetailFromDitambahkan(dItem)"
+                                                                title="Buka detail lengkap aset tambahan ini"
+                                                                class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-cyan-500/20 text-cyan-300 hover:text-cyan-200 border border-slate-700 hover:border-cyan-500/40 text-[10.5px] font-bold transition-all active:scale-95 cursor-pointer">
+                                                            Detail &rarr;
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            </template>
+                                        </tbody>
+                                        <tfoot class="bg-slate-950/90 border-t border-slate-800 text-[10.5px] font-bold font-mono">
+                                            <tr>
+                                                <td colspan="3" class="px-3 py-2 text-right uppercase tracking-wider text-slate-400">Total Investasi Aset Mitra:</td>
+                                                <td class="px-3 py-2 text-center text-teal-300" x-text="getTotalVolumeAsetDitambahkanMitra(selectedAstapDetail) + ' Unit'"></td>
+                                                <td></td>
+                                                <td class="px-3 py-2 text-right text-emerald-400 font-extrabold" x-text="'Rp ' + formatRupiah(getTotalNilaiAsetDitambahkanMitra(selectedAstapDetail))"></td>
+                                                <td></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- 2. Kondisi Kosong (Empty State): Box Edukatif & Tombol CTA -->
+                        <template x-if="getAsetDitambahkanMitraForDetail(selectedAstapDetail).length === 0">
+                            <div class="p-6 rounded-2xl border border-dashed border-emerald-500/30 bg-emerald-950/10 text-center space-y-3">
+                                <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center text-2xl mx-auto shadow-inner">
+                                    📦
+                                </div>
+                                <div class="max-w-md mx-auto space-y-1">
+                                    <h5 class="text-xs font-bold text-white">
+                                        Belum Ada Aset yang Dicatat Ditambahkan oleh Mitra pada Objek Ini
+                                    </h5>
+                                    <p class="text-[11px] text-slate-400 leading-relaxed">
+                                        Jika mitra rekanan (misal sewa tanah/gedung ini) mendatangkan peralatan medis, fasilitas penunjang, atau mesin baru, Anda dapat mencatatnya agar terinventarisasi secara resmi dalam pembukuan kemitraan RSUD.
+                                    </p>
+                                </div>
+                                <div class="pt-1">
+                                    <a :href="getLinkTambahAsetMitra(selectedAstapDetail)"
+                                       class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs transition-all shadow-lg shadow-emerald-500/20 active:scale-95 cursor-pointer">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+                                        </svg>
+                                        <span>Catat Aset Pertama yang Ditambahkan Mitra</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </template>
+
+                    </div>
+                </template>
+
+                <!-- ========================================================================= -->
+                <!-- SHOWCASE CARD: INFORMASI OBJEK PEMANFAATAN BMD ASAL (BUKAN TABEL)        -->
+                <!-- Ditampilkan khusus saat membuka detail aset yang ditambahkan mitra         -->
+                <!-- ========================================================================= -->
+                <template x-if="selectedAstapDetail && !selectedAstapDetail.is_dimanfaatkan">
+                    <div class="rounded-2xl p-4 sm:p-5 bg-gradient-to-br from-slate-900 via-slate-950 to-cyan-950/40 border border-cyan-500/40 shadow-xl space-y-3.5 relative overflow-hidden">
+                        
+                        <!-- Subtle Accent Glow -->
+                        <div class="absolute -right-12 -top-12 w-40 h-40 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                        <!-- Header Card Showcase -->
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-cyan-500/20 gap-3 relative z-10">
+                            <div class="flex items-start sm:items-center space-x-3 min-w-0">
+                                <div class="w-10 h-10 rounded-2xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center justify-center text-xl shrink-0 shadow-inner">
+                                    🏛️
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                                            OBJEK PEMANFAATAN BMD ASAL
+                                        </span>
+                                        <template x-if="getObjekPemanfaatanAsal(selectedAstapDetail)?.category">
+                                            <span class="px-2 py-0.5 rounded-lg text-[9.5px] font-bold uppercase tracking-wider border"
+                                                  :class="{
+                                                      'bg-amber-500/20 text-amber-300 border-amber-500/30': getObjekPemanfaatanAsal(selectedAstapDetail).category === 'KIB A',
+                                                      'bg-purple-500/20 text-purple-300 border-purple-500/30': getObjekPemanfaatanAsal(selectedAstapDetail).category === 'KIB C',
+                                                      'bg-teal-500/20 text-teal-300 border-teal-500/30': getObjekPemanfaatanAsal(selectedAstapDetail).category === 'KIB D'
+                                                  }"
+                                                  x-text="getObjekPemanfaatanAsal(selectedAstapDetail).category"></span>
+                                        </template>
+                                    </div>
+                                    <h4 class="text-xs sm:text-sm font-extrabold text-white mt-1 leading-snug break-words"
+                                        x-text="getObjekPemanfaatanAsal(selectedAstapDetail)?.nama_barang || (selectedAstapDetail.objek_nibar ? ('Objek Tanah / Gedung RSUD (NIBAR: ' + selectedAstapDetail.objek_nibar + ')') : 'Aset Fasilitas Tambahan Kerjasama Rekanan Mitra')">
+                                    </h4>
+                                    <p class="text-[11px] text-slate-400 mt-0.5">
+                                        Objek Barang Milik Daerah (BMD) milik RSUD Koesnandi tempat aset/fasilitas ini didatangkan dan dioperasikan.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Tombol Aksi Buka Detail Objek Asal -->
+                            <template x-if="getObjekPemanfaatanAsal(selectedAstapDetail) && (getObjekPemanfaatanAsal(selectedAstapDetail).raw_astap || getObjekPemanfaatanAsal(selectedAstapDetail).astap_id)">
+                                <div class="shrink-0 flex items-center gap-2">
+                                    <button type="button" @click="openDetailFromDimanfaatkan(getObjekPemanfaatanAsal(selectedAstapDetail))"
+                                            title="Tinjau spesifikasi dan rincian lengkap objek BMD pemanfaatan ini"
+                                            class="px-3.5 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs transition-all shadow-md shadow-cyan-500/20 active:scale-95 flex items-center gap-1.5 cursor-pointer">
+                                        <span>🔍</span>
+                                        <span>Buka Detail Objek BMD</span>
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
+
+                        <!-- Grid Showcase Informasi Objek Asal (Bukan Tabel) -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3 text-xs pt-1 relative z-10">
+                            
+                            <!-- Card 1: NIBAR & Identitas Register -->
+                            <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 space-y-1">
+                                <span class="text-slate-400 text-[10px] uppercase font-bold block">🏷️ NIBAR Objek BMD</span>
+                                <div class="font-mono text-cyan-300 font-extrabold text-xs sm:text-sm truncate"
+                                     x-text="getObjekPemanfaatanAsal(selectedAstapDetail)?.nibar || selectedAstapDetail.objek_nibar || '-'"></div>
+                                <span class="text-[10px] text-slate-400 block truncate"
+                                      x-text="'Kode 108: ' + (getObjekPemanfaatanAsal(selectedAstapDetail)?.kode_barang || '-')"></span>
+                            </div>
+
+                            <!-- Card 2: Lokasi / Alamat Objek -->
+                            <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 space-y-1">
+                                <span class="text-slate-400 text-[10px] uppercase font-bold block">📍 Lokasi Penempatan</span>
+                                <div class="text-slate-200 font-bold text-xs truncate"
+                                     :title="getObjekPemanfaatanAsal(selectedAstapDetail)?.alamat || selectedAstapDetail.alamat_barang"
+                                     x-text="getObjekPemanfaatanAsal(selectedAstapDetail)?.alamat || selectedAstapDetail.alamat_barang || 'RSUD Dr. H. Koesnandi'"></div>
+                                <span class="text-[10px] text-teal-400/90 block truncate"
+                                      x-text="'Unit: ' + (selectedAstapDetail.penempatan || 'Pengelola Aset RSUD')"></span>
+                            </div>
+
+                            <!-- Card 3: Dimensi / Luas / Sertifikat -->
+                            <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 space-y-1">
+                                <span class="text-slate-400 text-[10px] uppercase font-bold block">📐 Luas / Dimensi Objek</span>
+                                <div class="font-mono text-emerald-400 font-extrabold text-xs sm:text-sm"
+                                     x-text="getObjekPemanfaatanAsal(selectedAstapDetail)?.luas ? (Number(getObjekPemanfaatanAsal(selectedAstapDetail).luas).toLocaleString('id-ID') + ' m²') : 'Sesuai Fisik Kerjasama'"></div>
+                                <span class="text-[10px] text-slate-400 block truncate"
+                                      x-text="getObjekPemanfaatanAsal(selectedAstapDetail)?.sertifikat ? ('Sertifikat: ' + getObjekPemanfaatanAsal(selectedAstapDetail).sertifikat) : 'Hak Pengelolaan RSUD'"></span>
+                            </div>
+
+                            <!-- Card 4: Dasar Kerjasama & Mitra -->
+                            <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 space-y-1">
+                                <span class="text-slate-400 text-[10px] uppercase font-bold block">📜 Dasar Kerjasama</span>
+                                <div class="font-mono text-amber-300 font-bold text-xs truncate"
+                                     :title="selectedAstapDetail.nomor_pks"
+                                     x-text="selectedAstapDetail.nomor_pks || '-'"></div>
+                                <span class="text-[10px] text-slate-300 block truncate font-semibold"
+                                      :title="selectedAstapDetail.penyedia_nama"
+                                      x-text="'Mitra: ' + (selectedAstapDetail.penyedia_nama || '-')"></span>
+                            </div>
+
+                        </div>
+
+                        <!-- Catatan Integrasi Operasional jika belum ada relasi spesifik -->
+                        <template x-if="!getObjekPemanfaatanAsal(selectedAstapDetail) && !selectedAstapDetail.objek_nibar">
+                            <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px] text-slate-400 flex items-center gap-2">
+                                <span class="text-amber-400">💡</span>
+                                <span>Aset ini tercatat sebagai pengadaan fasilitas operasional mitra berdasarkan Perjanjian Kerja Sama (PKS) terlampir.</span>
+                            </div>
+                        </template>
+
+                    </div>
+                </template>
+
                 <!-- DYNAMIC SPESIFIKASI BERDASARKAN KATEGORI ASET (KIB A - E) -->
                 <div class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3">
                     <div class="flex items-center justify-between border-b border-slate-800 pb-2">
@@ -334,7 +599,7 @@
                                                 </div>
                                                 <div class="text-[11px] font-mono">
                                                     <span class="text-slate-400">Total Taksiran: </span>
-                                                    <strong class="text-emerald-400 font-bold" x-text="'Rp ' + (Number(tItem.tanah_nilai_perencanaan || 0) + Number(tItem.tanah_nilai_fisik || 0) + Number(tItem.tanah_nilai_pengawasan || 0)).toLocaleString('id-ID')"></strong>
+                                                    <strong class="text-emerald-400 font-bold" x-text="'Rp ' + Number(getTanahItemNilai(tItem, selectedAstapDetail)).toLocaleString('id-ID')"></strong>
                                                 </div>
                                             </div>
                                             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[10.5px]">
@@ -352,8 +617,8 @@
                                                     </span>
                                                 </div>
                                                 <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
-                                                    <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">💰 Komponen Nilai Wajar</span>
-                                                    <span class="text-slate-200 font-medium block text-[10px]" x-text="'Fisik: Rp ' + Number(tItem.tanah_nilai_fisik || 0).toLocaleString('id-ID')"></span>
+                                                    <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">💰 Taksiran Nilai Wajar</span>
+                                                    <span class="text-emerald-400 font-mono font-bold block text-[10.5px]" x-text="'Rp ' + Number(getTanahItemNilai(tItem, selectedAstapDetail)).toLocaleString('id-ID')"></span>
                                                 </div>
                                                 <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                                     <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">📍 Letak / Alamat Lokasi</span>
@@ -401,8 +666,8 @@
                                             </span>
                                         </div>
                                         <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
-                                            <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">💰 Komponen Nilai</span>
-                                            <span class="text-slate-200 font-medium block text-[10px]" x-text="'Fisik: ' + selectedAstapDetail.jumlah_realisasi"></span>
+                                            <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">💰 Taksiran Nilai Wajar</span>
+                                            <span class="text-emerald-400 font-mono font-bold block text-[10.5px]" x-text="selectedAstapDetail.jumlah_realisasi || ('Rp ' + Number(selectedAstapDetail.nilai_aset || selectedAstapDetail.total_realisasi || 0).toLocaleString('id-ID'))"></span>
                                         </div>
                                         <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                             <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">📍 Letak / Lokasi</span>

@@ -60,15 +60,37 @@
 
                         <!-- Tombol Hapus Barang (Muncul jika > 1 item) -->
                         <button type="button" 
-                                x-show="formData.mesin_items.length > 1" 
+                                x-show="formData.mesin_items.length > 1 && tipeKemitraan !== 'dimanfaatkan'" 
                                 @click="removeMesinItem(idx)" 
                                 class="px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white border border-rose-500/30 text-[11px] font-bold transition-all flex items-center space-x-1 self-start sm:self-auto cursor-pointer">
                             <span>🗑️ Hapus Barang Ini</span>
                         </button>
                     </div>
 
-                    <!-- 1. Pilihan Jenis & Nama Barang PMDN 108 (Satu Input Filter & Ketik Langsung) -->
-                    <div class="p-4 rounded-2xl bg-slate-900/90 border border-amber-500/40 space-y-2 shadow-inner">
+                    <!-- 1. MODE DIMANFAATKAN: Kodefikasi 108 Terkunci ke Akun 1.5.2 -->
+                    <div x-show="tipeKemitraan === 'dimanfaatkan'" class="p-4 rounded-2xl bg-cyan-950/30 border border-cyan-500/30 space-y-2.5 shadow-inner">
+                        <div class="flex items-center justify-between mb-1 flex-wrap gap-2">
+                            <label class="text-cyan-300 text-[10.5px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+                                <span>🔒 Kodefikasi PMDN 108 Akun 1.5.2 Pemanfaatan BMD (Terkunci)</span>
+                            </label>
+                            <span class="text-[9.5px] px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold font-mono"
+                                  x-text="'Kode 108: ' + (item.mesin_kode_barang || selectedSubSub?.kode || '1.5.2.01.01.01.002')">
+                            </span>
+                        </div>
+                        <div>
+                            <label class="block text-slate-300 text-[11px] mb-1 font-semibold">
+                                Uraian / Nama Rincian Peralatan &amp; Mesin yang Disewakan / Dimanfaatkan <span class="text-rose-400">*</span>
+                            </label>
+                            <input type="text"
+                                   x-model="item.mesin_nama_barang"
+                                   @input="syncTotalsFromItems()"
+                                   placeholder="Contoh: Mesin Analyzer Laboratorium Kimia Klinik / Peralatan Radiologi..."
+                                   class="w-full bg-slate-950 border border-slate-700 hover:border-cyan-400 focus:border-cyan-400 rounded-xl px-3.5 py-2.5 text-xs text-white font-bold focus:outline-none transition-all">
+                        </div>
+                    </div>
+
+                    <!-- 1. MODE DITAMBAHKAN: Pilihan Jenis & Nama Barang PMDN 108 Belanja Modal 1.3.2 -->
+                    <div x-show="tipeKemitraan !== 'dimanfaatkan'" class="p-4 rounded-2xl bg-slate-900/90 border border-amber-500/40 space-y-2 shadow-inner">
                         <div class="relative" @click.outside="item.isFilterOpen = false">
                             <div class="flex items-center justify-between mb-1.5">
                                 <label class="text-amber-300 text-[10.5px] font-bold uppercase tracking-wider flex items-center gap-1.5">
@@ -397,12 +419,18 @@
         </div>
 
         <!-- Tombol Tambah Barang / Unit Baru -->
-        <div class="flex items-center justify-between pt-2 border-t border-slate-800">
+        <div x-show="tipeKemitraan !== 'dimanfaatkan'" class="flex items-center justify-between pt-2 border-t border-slate-800">
             <button type="button" @click="addMesinItem()"
                 class="px-5 py-2.5 rounded-full bg-slate-950/90 hover:bg-slate-900 text-white font-bold text-xs border border-white/80 hover:border-white shadow-lg flex items-center space-x-2 transition-all cursor-pointer">
                 <span class="text-base font-light leading-none">+</span>
                 <span>Tambah Barang / Unit Baru</span>
             </button>
+            <div class="text-right text-xs">
+                <span class="text-slate-400 block text-[10.5px]">Total Taksiran Mesin / Alkes:</span>
+                <span class="font-mono font-extrabold text-emerald-400 text-sm" x-text="'Rp ' + formatRupiah(totalNilaiMesin)"></span>
+            </div>
+        </div>
+        <div x-show="tipeKemitraan === 'dimanfaatkan'" class="flex items-center justify-end pt-2 border-t border-slate-800">
             <div class="text-right text-xs">
                 <span class="text-slate-400 block text-[10.5px]">Total Taksiran Mesin / Alkes:</span>
                 <span class="font-mono font-extrabold text-emerald-400 text-sm" x-text="'Rp ' + formatRupiah(totalNilaiMesin)"></span>

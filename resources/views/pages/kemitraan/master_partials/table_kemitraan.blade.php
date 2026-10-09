@@ -171,15 +171,101 @@
     foreach ($kemitraanRecords as $r) {
         $allMetaList[] = $buildRowMeta($r, $isDimanfaatkan($r));
     }
+
+    $serializedDitambahkan = $recordsDitambahkan->map(function($r) use ($resolveKemitraanKib) {
+        $astap = $r->astap ?? null;
+        $registers = $astap?->registers ?? collect([]);
+        $firstReg = $registers->first();
+        $spec = is_array($astap?->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap?->spesifikasi_json ?? '[]', true) ?: []);
+        $kib = $resolveKemitraanKib($r);
+
+        $namaBarang = $astap?->nama_barang ?: 'Aset Ditambahkan Mitra';
+        $merkType = trim(($spec['merk'] ?? '') . ' ' . ($spec['type'] ?? ''));
+
+        $kondisi = $firstReg?->kondisi ?: ($spec['kondisi'] ?? 'Baik');
+
+        return [
+            'id'                => $r->id,
+            'astap_id'          => $r->astap_id,
+            'objek_astap_id'    => $r->objek_astap_id,
+            'objek_nibar'       => $r->objek_nibar,
+            'objek_register_id' => $r->objek_register_id,
+            'nomor_pks'         => $r->nomor_pks,
+            'mitra_nama'        => $r->mitra_nama,
+            'nama_barang'       => $namaBarang,
+            'merk_type'         => $merkType,
+            'category'          => $kib,
+            'kode_barang'       => $astap?->kode_barang ?: ($astap?->kode_108 ?: '-'),
+            'jumlah_volume'     => (int) ($r->jumlah_volume ?: ($astap?->jumlah_volume ?: 1)),
+            'satuan'            => $r->satuan ?: ($astap?->satuan ?: 'Unit'),
+            'nilai_aset'        => (float) ($r->nilai_aset ?: ($astap?->total_realisasi ?: 0)),
+            'kondisi'           => $kondisi,
+            'nibar'             => $firstReg?->nibar ?: ($firstReg?->no_register ?: '-'),
+            'ruang_pemegang'    => $firstReg?->ruang_pemegang ?: ($astap?->unit?->nama ?: '-'),
+            'keterangan'        => $r->keterangan ?: ($astap?->keterangan_tambahan ?: '-'),
+            'raw_row'           => $r,
+            'raw_astap'         => $astap,
+            'raw_register'      => $firstReg,
+        ];
+    })->values();
+
+    $serializedDimanfaatkan = $recordsDimanfaatkan->map(function($r) use ($resolveKemitraanKib) {
+        $astap = $r->astap ?? null;
+        $objekAstap = $r->objekAstap ?? null;
+        $registers = $astap?->registers ?? collect([]);
+        $firstReg = $registers->first();
+        $spec = is_array($astap?->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap?->spesifikasi_json ?? '[]', true) ?: []);
+        $kib = $resolveKemitraanKib($r);
+
+        $namaFisik = $spec['tanah_nama_barang'] ?? ($spec['gedung_nama_bangunan'] ?? null);
+        if (!$namaFisik && !empty($objekAstap?->nama_barang) && !str_starts_with(strtolower($objekAstap->nama_barang), 'kerja sama')) {
+            $namaFisik = $objekAstap->nama_barang;
+        }
+        if (!$namaFisik) {
+            $namaFisik = $astap?->nama_barang ?: 'Objek BMD RSUD';
+        }
+
+        $luas = $spec['luas_m2'] ?? ($spec['tanah_luas_m2'] ?? ($spec['gedung_luas_lantai'] ?? null));
+        $alamat = $spec['tanah_alamat'] ?? ($spec['gedung_alamat'] ?? ($astap?->alamat_barang ?: '-'));
+        $nibar = $r->objek_nibar ?: ($firstReg?->nibar ?: ($firstReg?->no_register ?: '-'));
+        $sertifikat = $spec['tanah_sertifikat_no'] ?? ($spec['sertifikat_no'] ?? ($spec['gedung_dokumen_no'] ?? null));
+
+        return [
+            'id'                => $r->id,
+            'astap_id'          => $r->astap_id,
+            'objek_astap_id'    => $r->objek_astap_id,
+            'objek_nibar'       => $r->objek_nibar,
+            'objek_register_id' => $r->objek_register_id,
+            'nomor_pks'         => $r->nomor_pks,
+            'mitra_nama'        => $r->mitra_nama,
+            'nama_barang'       => $namaFisik,
+            'category'          => $kib,
+            'kode_barang'       => $astap?->kode_barang ?: ($astap?->kode_108 ?: '-'),
+            'nibar'             => $nibar,
+            'luas'              => $luas,
+            'alamat'            => $alamat,
+            'sertifikat'        => $sertifikat,
+            'skema_kemitraan'   => $r->skema_kemitraan ?: ($spec['skema_kemitraan'] ?? 'Sewa'),
+            'tanggal_mulai'     => $r->tanggal_mulai,
+            'tanggal_selesai'   => $r->tanggal_selesai,
+            'status_konsesi'    => $r->status_konsesi ?: 'Aktif',
+            'nilai_aset'        => (float) ($r->nilai_aset ?: ($astap?->total_realisasi ?: 0)),
+            'raw_row'           => $r,
+            'raw_astap'         => $astap,
+            'raw_register'      => $firstReg,
+        ];
+    })->values();
 @endphp
 
 <script>
     window.__dimanfaatkanMetaList = @json($dimanfaatkanMetaList);
     window.__ditambahkanMetaList  = @json($ditambahkanMetaList);
     window.__allMetaList          = @json($allMetaList);
+    window.__allDitambahkanDetailList  = @json($serializedDitambahkan);
+    window.__allDimanfaatkanDetailList = @json($serializedDimanfaatkan);
 </script>
 
-<div class="space-y-6" x-init="initMetaLists(@js($dimanfaatkanMetaList), @js($ditambahkanMetaList), @js($allMetaList))">
+<div class="space-y-6" x-init="initMetaLists(@js($dimanfaatkanMetaList), @js($ditambahkanMetaList), @js($allMetaList), @js($serializedDitambahkan), @js($serializedDimanfaatkan))">
 
     <!-- ========================================================================= -->
     <!-- SWITCHER TAB & MODE PEMISAH TABEL KEMITRAAN                              -->

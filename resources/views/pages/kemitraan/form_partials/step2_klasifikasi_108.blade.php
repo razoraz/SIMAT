@@ -59,9 +59,15 @@
                         <span class="px-2 py-0.5 rounded-full bg-slate-800 text-[10px] font-bold border border-slate-700 font-mono"
                               :class="tipeKemitraan === 'dimanfaatkan' ? 'text-cyan-400' : 'text-emerald-400'"
                               x-text="activeSkemaKode"></span>
+                        <span x-show="tipeKemitraan === 'dimanfaatkan' && lockedKibFromData" class="px-2.5 py-0.5 rounded-full bg-cyan-950/60 text-cyan-300 border border-cyan-500/40 text-[10px] font-bold font-mono inline-flex items-center gap-1 shadow-sm">
+                            <span>🔒</span> Objek Terkunci Sesuai Data Aset BMD (KIB <span x-text="lockedKibFromData"></span>)
+                        </span>
                     </div>
                     <p class="text-[11px] text-slate-400 mt-0.5">
-                        <span x-show="tipeKemitraan === 'dimanfaatkan'">Skema Pemanfaatan: <span class="font-bold text-cyan-300" x-text="activeSkemaLabel"></span> &mdash; Klik salah satu kartu objek di bawah:</span>
+                        <span x-show="tipeKemitraan === 'dimanfaatkan'">
+                            <span x-show="lockedKibFromData">Kategori objek terkunci otomatis sesuai data aset BMD yang dimanfaatkan (KIB <span class="font-bold text-cyan-300" x-text="lockedKibFromData"></span>) &mdash; kartu lain dinonaktifkan.</span>
+                            <span x-show="!lockedKibFromData">Pemanfaatan BMD Akun 1.5.2 &mdash; Silakan pilih 1 objek aset yang disewakan / dimanfaatkan di bawah:</span>
+                        </span>
                         <span x-show="tipeKemitraan === 'ditambahkan'">Skema Kemitraan: <span class="font-bold text-emerald-300" x-text="activeSkemaLabel"></span> &mdash; Klik salah satu kartu objek aset baru di bawah:</span>
                     </p>
                 </div>
@@ -81,28 +87,45 @@
         <!-- Buttons Grid: 5 Sub-Sub Rincian Objek Permendagri 108 -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             <template x-for="item in currentSubSubRecommendations" :key="item.id">
-                <button type="button" @click="selectSubSubItem(item)"
-                    class="group p-3.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 relative"
-                    :class="selectedSubSub?.id === item.id 
-                        ? 'bg-cyan-500/20 border-cyan-400 text-white shadow-xl shadow-cyan-500/20 ring-2 ring-cyan-400' 
-                        : 'bg-slate-950/70 border-slate-800 text-slate-300 hover:border-cyan-500/50 hover:bg-slate-850 hover:-translate-y-0.5'">
+                <button type="button" 
+                    @click="selectSubSubItem(item)"
+                    :disabled="isSubSubCardLocked(item)"
+                    class="group p-3.5 rounded-2xl border text-left transition-all duration-200 flex flex-col justify-between gap-3 relative"
+                    :class="[
+                        isSubSubCardLocked(item) 
+                            ? 'opacity-25 cursor-not-allowed pointer-events-none border-dashed border-slate-800/80 bg-slate-950/30 select-none grayscale'
+                            : (selectedSubSub?.id === item.id 
+                                ? (tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-500/20 border-cyan-400 text-white shadow-xl shadow-cyan-500/20 ring-2 ring-cyan-400 cursor-default' : 'bg-emerald-500/20 border-emerald-400 text-white shadow-xl shadow-emerald-500/20 ring-2 ring-emerald-400 cursor-default') 
+                                : 'bg-slate-950/70 border-slate-800 text-slate-300 hover:border-cyan-500/50 hover:bg-slate-850 hover:-translate-y-0.5 cursor-pointer')
+                    ]">
                     
                     <div class="flex items-center justify-between gap-2">
                         <span class="text-xl" x-text="getSubSubIcon(item.kode)"></span>
-                        <span class="font-mono text-[10px] font-black text-cyan-400 group-hover:text-cyan-300" x-text="item.kode"></span>
+                        <div class="flex items-center gap-1">
+                            <span x-show="isSubSubCardLocked(item)" class="text-[9px] px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-500 font-mono">🔒 Non-KIB</span>
+                            <span x-show="selectedSubSub?.id === item.id && lockedKibFromData" class="text-[9px] px-1.5 py-0.5 rounded bg-cyan-950 border border-cyan-500/40 text-cyan-300 font-mono font-bold">🔒 Terkunci</span>
+                            <span class="font-mono text-[10px] font-black"
+                                  :class="isSubSubCardLocked(item) ? 'text-slate-600' : (tipeKemitraan === 'dimanfaatkan' ? 'text-cyan-400 group-hover:text-cyan-300' : 'text-emerald-400 group-hover:text-emerald-300')"
+                                  x-text="item.kode"></span>
+                        </div>
                     </div>
 
                     <div class="min-w-0 flex-1">
-                        <span class="block text-xs font-bold text-slate-200 group-hover:text-white truncate" x-text="getSubSubShortLabel(item.kode, item.nama)"></span>
-                        <span class="block text-[10px] text-slate-400 line-clamp-2 mt-0.5 leading-snug" x-text="item.nama"></span>
+                        <span class="block text-xs font-bold truncate"
+                              :class="isSubSubCardLocked(item) ? 'text-slate-500' : 'text-slate-200 group-hover:text-white'"
+                              x-text="getSubSubShortLabel(item.kode, item.nama)"></span>
+                        <span class="block text-[10px] line-clamp-2 mt-0.5 leading-snug"
+                              :class="isSubSubCardLocked(item) ? 'text-slate-600 italic' : 'text-slate-400'"
+                              x-text="isSubSubCardLocked(item) ? 'Terkunci (Aset BMD bukan kategori ini)' : item.nama"></span>
                     </div>
 
                     <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between">
                         <span class="text-[9px] font-mono text-slate-500" x-text="'ID: ' + item.id"></span>
                         <div class="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] transition-colors font-bold"
-                            :class="selectedSubSub?.id === item.id ? 'bg-cyan-400 text-slate-950 font-black shadow-md shadow-cyan-400/30' : 'bg-slate-800 text-slate-400 group-hover:bg-cyan-400 group-hover:text-slate-950'">
+                            :class="isSubSubCardLocked(item) ? 'bg-slate-900 text-slate-600' : (selectedSubSub?.id === item.id ? (tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-400 text-slate-950 font-black shadow-md shadow-cyan-400/30' : 'bg-emerald-400 text-slate-950 font-black shadow-md shadow-emerald-400/30') : 'bg-slate-800 text-slate-400 group-hover:bg-cyan-400 group-hover:text-slate-950')">
                             <span x-show="selectedSubSub?.id === item.id">✓</span>
-                            <span x-show="selectedSubSub?.id !== item.id">&rarr;</span>
+                            <span x-show="selectedSubSub?.id !== item.id && !isSubSubCardLocked(item)">&rarr;</span>
+                            <span x-show="isSubSubCardLocked(item)">✕</span>
                         </div>
                     </div>
                 </button>
@@ -230,7 +253,8 @@
                 </div>
 
                 <p class="text-[11px] text-slate-400 pt-1 leading-relaxed">
-                    <span x-show="isMultiItemActive">💡 Total volume dihitung otomatis dari akumulasi rincian barang/unit di atas.</span>
+                    <span x-show="isTanah">🌾 Volume dan satuan diisi langsung pada kartu <strong>Bidang Tanah (KIB A)</strong> di atas.</span>
+                    <span x-show="isMultiItemActive && !isTanah">💡 Total volume dihitung otomatis dari akumulasi rincian barang/unit di atas.</span>
                     <span x-show="!isMultiItemActive">Kuantitas fisik unit aset yang dikerjasamakan dalam kemitraan.</span>
                 </p>
             </div>
@@ -266,8 +290,9 @@
 
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between text-[11px] text-slate-400 pt-1">
                     <p>
-                        <span x-show="isMultiItemActive && (isTanah || isGedung || isJaringan)">💡 Total nilai wajar keseluruhan perolehan/appraisal (lump-sum per objek).</span>
-                        <span x-show="isMultiItemActive && (isMesin || isLainnya)">💡 Akumulasi otomatis dari taksiran nilai wajar barang di atas.</span>
+                        <span x-show="isTanah">🌾 Taksiran nilai wajar tanah diisi langsung pada inputan <strong>Volume &amp; Taksiran Nilai Wajar Tanah</strong> pada kartu bidang tanah di atas.</span>
+                        <span x-show="isMultiItemActive && !isTanah && (isGedung || isJaringan)">💡 Total nilai wajar keseluruhan perolehan/appraisal (lump-sum per objek).</span>
+                        <span x-show="isMultiItemActive && !isTanah && (isMesin || isLainnya)">💡 Akumulasi otomatis dari taksiran nilai wajar barang di atas.</span>
                         <span x-show="!isMultiItemActive">Sesuai klausul kontrak PKS atau taksiran appraisal.</span>
                     </p>
                     <template x-if="(isMesin || isLainnya) && formData.jumlah_volume > 1 && formData.total_realisasi > 0">

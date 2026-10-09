@@ -320,6 +320,11 @@
                 } else {
                     this.showToast('Objek Aset Dipilih', `Berhasil memilih objek BMD: ${item.nama_barang} (NIBAR: ${item.nibar})`, 'success');
                 }
+
+                // Otomatis sinkronkan dan kunci objek 1.5.2 sesuai KIB aset yang dipilih
+                this.$nextTick(() => {
+                    this.autoSelectLockedSubSub();
+                });
             },
 
             clearObjekAset() {
@@ -733,9 +738,50 @@
                     this.editId = window.editAstapData.id;
                     this.hydrateFromEditData(window.editAstapData);
                 } else {
+                    // Prefill otomatis jika form dibuka dari tombol Catat Aset Ditambahkan Mitra pada Detail Pemanfaatan
+                    try {
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const qPks = urlParams.get('pks');
+                        const qMitra = urlParams.get('mitra');
+                        const qPimpinan = urlParams.get('pimpinan');
+                        const qAlamat = urlParams.get('alamat');
+                        const qSkema = urlParams.get('skema');
+                        const qObjekId = urlParams.get('objek_id');
+                        const qObjekNibar = urlParams.get('objek_nibar');
+
+                        if (qPks) this.formData.nomor_pks = qPks;
+                        if (qMitra) {
+                            this.formData.mitra_nama = qMitra;
+                            this.onMitraInput(qMitra);
+                        }
+                        if (qPimpinan) this.formData.mitra_pimpinan = qPimpinan;
+                        if (qAlamat) this.formData.mitra_alamat = qAlamat;
+                        if (qSkema && ['Sewa', 'KSP', 'BGS', 'BSG', 'KSPI', 'KSO'].includes(qSkema)) {
+                            this.formData.skema_kemitraan = qSkema;
+                        }
+                        if (qObjekId) this.formData.objek_astap_id = qObjekId;
+                        if (qObjekNibar) this.formData.objek_nibar = qObjekNibar;
+
+                        if (qObjekId || qObjekNibar) {
+                            const foundObjek = this.dbObjekAsetList.find(o => 
+                                (qObjekId && o.astap_id == qObjekId) || 
+                                (qObjekNibar && o.nibar == qObjekNibar)
+                            );
+                            if (foundObjek) {
+                                this.selectObjekAset(foundObjek);
+                            }
+                        }
+                    } catch(e) {
+                        console.error('Error prefill query params:', e);
+                    }
+
                     this.syncTahunTriwulanFromPks();
                     this.syncCascadingToActiveSkema();
                     this.syncTotalsFromItems();
+                }
+
+                if (this.lockedKibFromData) {
+                    this.autoSelectLockedSubSub();
                 }
 
                 this.$watch('formData.tanggal_pks', (newVal) => {
@@ -1047,7 +1093,30 @@
                     }));
                 }
                 if (Array.isArray(spec.tanah_items) && spec.tanah_items.length > 0) {
-                    this.formData.tanah_items = spec.tanah_items;
+                    this.formData.tanah_items = spec.tanah_items.map(t => ({
+                        ...t,
+                        tanah_nilai_satuan: Number(t.tanah_nilai_satuan || t.tanah_nilai_fisik || (spec.tanah_items.length === 1 ? d.total_realisasi : 0) || 0),
+                        tanah_jumlah_barang: parseInt(t.tanah_jumlah_barang || t.tanah_jumlah_bidang || 1),
+                        tanah_satuan: t.tanah_satuan || d.satuan || 'Bidang'
+                    }));
+                } else if (spec.luas_m2 || spec.hak_tanah || spec.sertifikat_no || (d.jenis_astap?.kode && (d.jenis_astap.kode.endsWith('.001') || d.jenis_astap.kode.startsWith('1.3.1')))) {
+                    this.formData.tanah_items = [{
+                        tanah_kode_barang: d.jenis_astap?.kode || '',
+                        tanah_nama_barang: d.nama_barang || '',
+                        isFilterOpen: false,
+                        searchFilter: '',
+                        tanah_luas_m2: spec.luas_m2 || null,
+                        tanah_hak: spec.hak_tanah || 'Hak Pakai',
+                        tanah_sertifikat_no: spec.sertifikat_no || '',
+                        tanah_sertifikat_tgl: spec.sertifikat_tgl || '',
+                        tanah_penggunaan: spec.penggunaan || '',
+                        tanah_kondisi: spec.kondisi || 'Baik',
+                        tanah_batas: spec.batas_wilayah || '',
+                        tanah_alamat: d.alamat_barang || '',
+                        tanah_jumlah_barang: d.jumlah_volume || 1,
+                        tanah_satuan: d.satuan || 'Bidang',
+                        tanah_nilai_satuan: Number(d.total_realisasi || 0)
+                    }];
                 }
                 if (Array.isArray(spec.gedung_items) && spec.gedung_items.length > 0) {
                     this.formData.gedung_items = spec.gedung_items;
@@ -1391,8 +1460,14 @@
             },
 
             getTanahSubtotal(item) {
-                // Untuk aset tanah (KIB A), taksiran nilai wajar adalah nilai keseluruhan per bidang (lump-sum)
-                return Number(item.tanah_nilai_satuan || 0);
+                if (!item) return 0;
+                // Untuk aset tanah (KIB A), taksiran nilai wajar adalah nilai per bidang (lump-sum)
+                const direct = Number(item.tanah_nilai_satuan || item.tanah_nilai_fisik || 0);
+                if (direct > 0) return direct;
+                if (this.formData?.tanah_items?.length === 1 && Number(this.formData?.total_realisasi || 0) > 0) {
+                    return Number(this.formData.total_realisasi);
+                }
+                return 0;
             },
 
             get totalNilaiTanah() {
@@ -1706,9 +1781,12 @@
                     }
                 } else if (this.isTanah) {
                     if (!this.formData.tanah_items || this.formData.tanah_items.length === 0) return;
+                    const first = this.formData.tanah_items[0];
+                    if (this.formData.tanah_items.length === 1 && !first.tanah_nilai_satuan && Number(this.formData.total_realisasi || 0) > 0) {
+                        first.tanah_nilai_satuan = Number(this.formData.total_realisasi);
+                    }
                     this.formData.jumlah_volume = this.totalVolumeTanah;
                     this.formData.total_realisasi = this.totalNilaiTanah;
-                    const first = this.formData.tanah_items[0];
                     if (this.formData.tanah_items.length === 1) {
                         if (first.tanah_nama_barang) {
                             this.formData.nama_barang = first.tanah_nama_barang;
@@ -1895,6 +1973,85 @@
                 return items.sort((a, b) => a.kode.localeCompare(b.kode));
             },
 
+            // Getter: Mendeteksi kategori KIB aset yang dimanfaatkan mitra (dari Objek BMD Langkah 1 atau Mode Reklas/Edit)
+            get lockedKibFromData() {
+                if (this.tipeKemitraan !== 'dimanfaatkan') return null;
+
+                // 1. Cek dari Objek BMD terpilih di Langkah 1
+                const obj = this.formData.objek_aset_terpilih;
+                if (obj) {
+                    if (obj.kib) {
+                        const k = String(obj.kib).toUpperCase();
+                        if (k.includes('A')) return 'A';
+                        if (k.includes('B')) return 'B';
+                        if (k.includes('C')) return 'C';
+                        if (k.includes('D')) return 'D';
+                        if (k.includes('E')) return 'E';
+                    }
+                    if (obj.kode_108) {
+                        const c = String(obj.kode_108).trim();
+                        if (c.startsWith('1.3.1') || c.endsWith('.001')) return 'A';
+                        if (c.startsWith('1.3.2') || c.endsWith('.002')) return 'B';
+                        if (c.startsWith('1.3.3') || c.endsWith('.003')) return 'C';
+                        if (c.startsWith('1.3.4') || c.endsWith('.004')) return 'D';
+                        if (c.startsWith('1.3.5') || c.endsWith('.005')) return 'E';
+                    }
+                }
+
+                // 2. Cek dari data Mode Edit / Reklas (window.editAstapData)
+                if (window.editAstapData) {
+                    const d = window.editAstapData;
+                    const spec = (typeof d.spesifikasi_json === 'object' && d.spesifikasi_json !== null) 
+                        ? d.spesifikasi_json 
+                        : (typeof d.spesifikasi_json === 'string' ? (JSON.parse(d.spesifikasi_json) || {}) : {});
+                    
+                    if (spec.kategori_kib) {
+                        const sk = String(spec.kategori_kib).toUpperCase();
+                        if (sk.includes('KIB A') || sk.includes('TANAH')) return 'A';
+                        if (sk.includes('KIB B') || sk.includes('MESIN')) return 'B';
+                        if (sk.includes('KIB C') || sk.includes('GEDUNG')) return 'C';
+                        if (sk.includes('KIB D') || sk.includes('JARINGAN')) return 'D';
+                        if (sk.includes('KIB E') || sk.includes('LAINNYA')) return 'E';
+                    }
+                    if (d.jenis_astap?.sub_sub_rincian_objek || d.jenis_astap?.kode) {
+                        const kd = String(d.jenis_astap.sub_sub_rincian_objek || d.jenis_astap.kode).trim();
+                        if (kd.startsWith('1.3.1') || kd.endsWith('.001')) return 'A';
+                        if (kd.startsWith('1.3.2') || kd.endsWith('.002')) return 'B';
+                        if (kd.startsWith('1.3.3') || kd.endsWith('.003')) return 'C';
+                        if (kd.startsWith('1.3.4') || kd.endsWith('.004')) return 'D';
+                        if (kd.startsWith('1.3.5') || kd.endsWith('.005')) return 'E';
+                    }
+                }
+
+                return null;
+            },
+
+            // Cek apakah kartu sub-sub tertentu terkunci (disabled) karena tidak cocok dengan KIB aset yang dimanfaatkan
+            isSubSubCardLocked(item) {
+                if (this.tipeKemitraan !== 'dimanfaatkan') return false;
+                const lockedKib = this.lockedKibFromData;
+                if (!lockedKib) return false;
+                const kibMap = { '001': 'A', '002': 'B', '003': 'C', '004': 'D', '005': 'E' };
+                const suffix = (item?.kode || '').slice(-3);
+                const itemKib = kibMap[suffix];
+                return itemKib ? (itemKib !== lockedKib) : false;
+            },
+
+            // Auto-select kartu yang cocok dengan KIB aset yang dimanfaatkan
+            autoSelectLockedSubSub() {
+                const lockedKib = this.lockedKibFromData;
+                if (!lockedKib || !this.currentSubSubRecommendations) return;
+                const kibMap = { 'A': '001', 'B': '002', 'C': '003', 'D': '004', 'E': '005' };
+                const targetSuffix = kibMap[lockedKib];
+                if (!targetSuffix) return;
+                const matchingItem = this.currentSubSubRecommendations.find(it => (it.kode || '').endsWith('.' + targetSuffix));
+                if (matchingItem) {
+                    if (!this.selectedSubSub || !(this.selectedSubSub.kode || '').endsWith('.' + targetSuffix)) {
+                        this.selectSubSubItem(matchingItem);
+                    }
+                }
+            },
+
             // Helper Icon per Kategori Objek
             getSubSubIcon(kode) {
                 if (!kode) return '📦';
@@ -1926,6 +2083,10 @@
 
             // Klik salah satu kartu Sub-Sub Rincian Objek
             selectSubSubItem(item) {
+                if (this.isSubSubCardLocked(item)) {
+                    this.showToast('Objek Terkunci', `Kategori ini terkunci karena data aset yang dimanfaatkan adalah KIB ${this.lockedKibFromData}.`, 'warning');
+                    return;
+                }
                 this.selectFromSearch(item);
             },
 
@@ -2015,6 +2176,26 @@
                         this.formData.skema_kemitraan = 'BGS/BSG';
                     } else if (item.kode.startsWith('1.5.2.01.01.04')) {
                         this.formData.skema_kemitraan = 'KSPI';
+                    }
+
+                    // Khusus mode dimanfaatkan: kunci kode 108 di item sheet KIB ke akun 1.5.2 objek terpilih
+                    if (this.tipeKemitraan === 'dimanfaatkan') {
+                        if (targetType === 'tanah' && this.formData.tanah_items?.[0]) {
+                            this.formData.tanah_items[0].tanah_kode_barang = item.kode;
+                            if (!this.formData.tanah_items[0].tanah_nama_barang) this.formData.tanah_items[0].tanah_nama_barang = item.nama;
+                        } else if (targetType === 'mesin' && this.formData.mesin_items?.[0]) {
+                            this.formData.mesin_items[0].mesin_kode_barang = item.kode;
+                            if (!this.formData.mesin_items[0].mesin_nama_barang) this.formData.mesin_items[0].mesin_nama_barang = item.nama;
+                        } else if (targetType === 'gedung' && this.formData.gedung_items?.[0]) {
+                            this.formData.gedung_items[0].gedung_kode_barang = item.kode;
+                            if (!this.formData.gedung_items[0].gedung_nama_bangunan) this.formData.gedung_items[0].gedung_nama_bangunan = item.nama;
+                        } else if (targetType === 'jaringan' && this.formData.jaringan_items?.[0]) {
+                            this.formData.jaringan_items[0].jaringan_kode_barang = item.kode;
+                            if (!this.formData.jaringan_items[0].jaringan_nama_barang) this.formData.jaringan_items[0].jaringan_nama_barang = item.nama;
+                        } else if (targetType === 'lainnya' && this.formData.lainnya_items?.[0]) {
+                            this.formData.lainnya_items[0].lainnya_kode_barang = item.kode;
+                            if (!this.formData.lainnya_items[0].lainnya_nama_barang) this.formData.lainnya_items[0].lainnya_nama_barang = item.nama;
+                        }
                     }
                 }
 
@@ -2106,11 +2287,14 @@
                 this.currentStep = s;
                 if (s === 2) {
                     this.syncCascadingToActiveSkema();
-                    // BUG-13 FIX: hanya auto-select jika user benar-benar belum pernah memilih apapun
-                    // (cek jenis_astap_id kosong DAN nama_barang kosong, bukan hanya selectedSubSub)
-                    const belumDiisi = !this.formData.jenis_astap_id && !this.formData.nama_barang;
-                    if (belumDiisi && !this.selectedSubSub && this.currentSubSubRecommendations && this.currentSubSubRecommendations.length > 0) {
-                        this.selectSubSubItem(this.currentSubSubRecommendations[0]);
+                    if (this.lockedKibFromData) {
+                        this.autoSelectLockedSubSub();
+                    } else {
+                        // Hanya auto-select jika user belum pernah memilih apapun
+                        const belumDiisi = !this.formData.jenis_astap_id && !this.formData.nama_barang;
+                        if (belumDiisi && !this.selectedSubSub && this.currentSubSubRecommendations && this.currentSubSubRecommendations.length > 0) {
+                            this.selectSubSubItem(this.currentSubSubRecommendations[0]);
+                        }
                     }
                 }
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2121,10 +2305,13 @@
                     this.currentStep++;
                     if (this.currentStep === 2) {
                         this.syncCascadingToActiveSkema();
-                        // BUG-13 FIX: konsisten dengan goToStep — hanya auto-select jika belum diisi
-                        const belumDiisi = !this.formData.jenis_astap_id && !this.formData.nama_barang;
-                        if (belumDiisi && !this.selectedSubSub && this.currentSubSubRecommendations && this.currentSubSubRecommendations.length > 0) {
-                            this.selectSubSubItem(this.currentSubSubRecommendations[0]);
+                        if (this.lockedKibFromData) {
+                            this.autoSelectLockedSubSub();
+                        } else {
+                            const belumDiisi = !this.formData.jenis_astap_id && !this.formData.nama_barang;
+                            if (belumDiisi && !this.selectedSubSub && this.currentSubSubRecommendations && this.currentSubSubRecommendations.length > 0) {
+                                this.selectSubSubItem(this.currentSubSubRecommendations[0]);
+                            }
                         }
                     }
                     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2157,14 +2344,8 @@
 
                 if (s === 1) {
                     // Validasi khusus mode Pemanfaatan BMD RSUD vs Penambahan Aset Mitra
-                    if (this.tipeKemitraan === 'dimanfaatkan') {
-                        if (!this.formData.objek_astap_id && !this.formData.objek_register_id && !this.formData.objek_nibar) {
-                            const msg = 'Pada mode Pemanfaatan BMD, Anda wajib memilih objek aset milik RSUD yang disewakan / dikerjasamakan ke mitra.';
-                            this.showToast('Objek BMD Wajib Dipilih', msg, 'error');
-                            this.setStepError(1, msg);
-                            return false;
-                        }
-                    } else if (this.tipeKemitraan === 'ditambahkan') {
+                    // Mode 'dimanfaatkan': tidak lagi wajib memilih objek BMD eksisting (Gambar 1 dihapus)
+                    if (this.tipeKemitraan === 'ditambahkan') {
                         // Pastikan objek BMD eksisting dinetralkan untuk aset baru mitra
                         this.formData.objek_astap_id = null;
                         this.formData.objek_register_id = null;
