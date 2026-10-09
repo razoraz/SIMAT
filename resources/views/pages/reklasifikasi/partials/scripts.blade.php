@@ -322,6 +322,11 @@
                 alasan_reklas: '',
                 tipe_koreksi: 'kurang',
                 nilai_realisasi_baru: 0,
+                pejabat_opd_tujuan: '',
+                nip_pejabat_opd_tujuan: '',
+                jabatan_opd_tujuan: '',
+                alamat_instansi: '',
+                nomor_sk_dasar: '',
             },
 
             // 108 Hierarchy Getters
@@ -500,6 +505,11 @@
                     pihak_hibah: '',
                     skpd_tujuan: '',
                     tanggal_bast: '',
+                    pejabat_opd_tujuan: '',
+                    nip_pejabat_opd_tujuan: '',
+                    jabatan_opd_tujuan: '',
+                    alamat_instansi: '',
+                    nomor_sk_dasar: '',
                     spekBaru: {
                         tanah_luas_m2: '',
                         tanah_hak: 'Hak Pakai',
@@ -953,6 +963,11 @@
                         pihak_hibah: this.formData.pihak_hibah || null,
                         skpd_tujuan: this.formData.skpd_tujuan || null,
                         tanggal_bast: this.formData.tanggal_bast || null,
+                        pejabat_opd_tujuan: this.formData.pejabat_opd_tujuan || null,
+                        nip_pejabat_opd_tujuan: this.formData.nip_pejabat_opd_tujuan || null,
+                        jabatan_opd_tujuan: this.formData.jabatan_opd_tujuan || null,
+                        alamat_instansi: this.formData.alamat_instansi || null,
+                        nomor_sk_dasar: this.formData.nomor_sk_dasar || null,
                     };
 
                     const response = await fetch('{{ route("master.reklasifikasi.store") }}', {

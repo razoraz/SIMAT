@@ -6,6 +6,8 @@ use App\Models\Astap;
 use App\Models\AstapReklas;
 use App\Models\JenisAstap;
 use App\Models\JenisReklasifikasi;
+use App\Models\MutasiEksternal;
+use App\Models\MutasiEksternalRegister;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -289,6 +291,11 @@ class ReklasifikasiController extends Controller
             'pihak_hibah' => 'nullable|string|max:255',
             'skpd_tujuan' => 'nullable|string|max:255',
             'tanggal_bast' => 'nullable|date',
+            'pejabat_opd_tujuan' => 'nullable|string|max:255',
+            'nip_pejabat_opd_tujuan' => 'nullable|string|max:50',
+            'jabatan_opd_tujuan' => 'nullable|string|max:255',
+            'alamat_instansi' => 'nullable|string|max:500',
+            'nomor_sk_dasar' => 'nullable|string|max:255',
         ], [
             'alasan_reklas.required' => 'Alasan kenapa melakukan reklasifikasi wajib diisi untuk semua jenis reklasifikasi.',
             'alasan_reklas.min' => 'Alasan reklasifikasi minimal berisi 3 karakter penjelasan.',
@@ -1459,6 +1466,84 @@ class ReklasifikasiController extends Controller
                     ->update(['status_konsesi' => 'Selesai / Reklasifikasi']);
             }
 
+            // Sinkronisasi otomatis Mutasi Antar-OPD Keluar (MUTASI_EKSTERNAL)
+            if ($validated['jenis_reklas'] === 'MUTASI_EKSTERNAL') {
+                $skpdTujuan = $validated['skpd_tujuan'] ?? ($request->input('skpd_tujuan') ?? 'SKPD / OPD Luar');
+                $tglBast = $validated['tanggal_bast'] ?? ($request->input('tanggal_bast') ?? ($validated['tanggal_reklas'] ?? date('Y-m-d')));
+                $nomorBast = $validated['nomor_ba_reklas'] ?? ('000.2.3.2/BAST-KLR-' . str_pad($astap->id, 3, '0', STR_PAD_LEFT) . '/430.10.7/' . date('Y'));
+                
+                $pjAsal = $request->input('pj_asal_nama') ?: ($astap->ppk_nama ?: 'dr. H. Yus Priyatna, Sp.P');
+                $pjAsalNip = $request->input('pj_asal_nip') ?: ($astap->ppk_nip ?: '196904121999031004');
+                $pjAsalJabatan = $request->input('pj_asal_jabatan') ?: 'Direktur RSUD Dr. H. Koesnadi';
+                
+                $pjTujuan = $request->input('pejabat_opd_tujuan') ?: ($request->input('pj_tujuan_nama') ?: 'Pejabat Penerima OPD');
+                $pjTujuanNip = $request->input('nip_pejabat_opd_tujuan') ?: ($request->input('pj_tujuan_nip') ?: '-');
+                $pjTujuanJabatan = $request->input('jabatan_opd_tujuan') ?: ($request->input('pj_tujuan_jabatan') ?: 'Pejabat Penerima OPD');
+                $alamatInstansi = $request->input('alamat_instansi') ?: '';
+                $nomorSk = $request->input('nomor_sk_dasar') ?: $nomorBast;
+
+                $mutasiData = [
+                    'astap_id'            => $astap->id,
+                    'nomor_bamb'          => $nomorBast,
+                    'tanggal_mutasi'      => $tglBast,
+                    'jenis_mutasi'        => 'Transfer Antar-OPD',
+                    'tipe'                => 'keluar',
+                    'opd_asal'            => 'RSUD Dr. H. Koesnadi',
+                    'opd_tujuan'          => $skpdTujuan,
+                    'unit_id'             => $astap->unit_id,
+                    'ruangan_tujuan'      => $astap->ruang_unit ?: ($astap->alamat_barang ?: 'RSUD Dr. H. Koesnadi'),
+                    'pj_asal_nama'        => $pjAsal,
+                    'pj_asal_nip'         => $pjAsalNip,
+                    'pj_asal_jabatan'     => $pjAsalJabatan,
+                    'pj_tujuan_nama'      => $pjTujuan,
+                    'pj_tujuan_nip'       => $pjTujuanNip,
+                    'pj_tujuan_jabatan'   => $pjTujuanJabatan,
+                    'nomor_sk_dasar'      => $nomorSk,
+                    'status'              => 'Disahkan (Selesai)',
+                    'jumlah_volume'       => max(1, (int) $astap->jumlah_volume),
+                    'satuan'              => $astap->satuan ?: 'Unit',
+                    'nilai_perolehan'     => (float) ($validated['nilai_reklas'] ?? $astap->total_realisasi),
+                    'kondisi'             => 'Baik',
+                    'alasan_mutasi'       => $validated['alasan_reklas'] ?? 'Pemindahtanganan aset RSUD ke SKPD / OPD luar (Koreksi Baris 42 / Kolom 13).',
+                    'alamat_instansi'     => $alamatInstansi,
+                    'user_id'             => Auth::id(),
+                    'is_deleted'          => 0,
+                ];
+
+                $mutasiKeluar = MutasiEksternal::where('astap_id', $astap->id)
+                    ->where('tipe', 'keluar')
+                    ->where('is_deleted', 0)
+                    ->first();
+
+                if ($mutasiKeluar) {
+                    $mutasiKeluar->update($mutasiData);
+                } else {
+                    $mutasiKeluar = MutasiEksternal::create($mutasiData);
+                }
+
+                // Update status register NIBAR menjadi 'Mutasi Keluar OPD' & link ke mutasi_eksternal_registers
+                if ($astap->registers()->exists()) {
+                    $registers = $astap->registers;
+                    foreach ($registers as $reg) {
+                        $reg->update([
+                            'status'  => 'Mutasi Keluar OPD',
+                            'kondisi' => $reg->kondisi ?: 'Baik',
+                        ]);
+
+                        MutasiEksternalRegister::updateOrCreate(
+                            [
+                                'mutasi_eksternal_id' => $mutasiKeluar->id,
+                                'astap_register_id'   => $reg->id,
+                            ],
+                            [
+                                'kondisi' => $reg->kondisi ?: 'Baik',
+                                'catatan' => 'Diserahkan ke ' . $skpdTujuan,
+                            ]
+                        );
+                    }
+                }
+            }
+
             DB::commit();
 
             $astap->refresh();
@@ -1599,6 +1684,27 @@ class ReklasifikasiController extends Controller
                     $astap->kemitraan->update([
                         'status_konsesi' => $statusPulih
                     ]);
+                }
+
+                // Pulihkan status Mutasi Eksternal Keluar jika transaksi yang dibatalkan adalah MUTASI_EKSTERNAL
+                if ($reklas->jenis_reklas === 'MUTASI_EKSTERNAL' || $jenisReklas === 'MUTASI_EKSTERNAL') {
+                    $mutasiKeluar = MutasiEksternal::where('astap_id', $astapId)
+                        ->where('tipe', 'keluar')
+                        ->where('is_deleted', 0)
+                        ->first();
+                    if ($mutasiKeluar) {
+                        $mutasiKeluar->update([
+                            'is_deleted'    => 1,
+                            'deleted_by'    => Auth::user()?->name ?? 'System',
+                            'deleted_by_id' => Auth::id(),
+                            'deleted_at'    => now(),
+                        ]);
+                    }
+
+                    // Kembalikan status register NIBAR menjadi 'Aktif'
+                    if ($astap && $astap->registers()->exists()) {
+                        $astap->registers()->where('status', 'Mutasi Keluar OPD')->update(['status' => 'Aktif']);
+                    }
                 }
             }
 
