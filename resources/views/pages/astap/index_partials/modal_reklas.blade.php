@@ -1708,48 +1708,119 @@
 
                         <!-- Jika Mutasi Eksternal (Antar-OPD) -->
                         <div x-show="reklasJenis === 'mutasi_eksternal'" class="space-y-4">
-                            <!-- Field Informasi Mutasi Antar-OPD -->
+                            <!-- Header Info Panel Mutasi Antar-OPD -->
+                            <div class="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
+                                <div class="flex items-center space-x-2">
+                                    <span class="w-6 h-6 rounded-lg bg-teal-500/20 text-teal-300 border border-teal-500/40 text-xs font-black flex items-center justify-center">🏛️</span>
+                                    <span class="text-xs font-bold text-white uppercase tracking-wider">
+                                        Informasi Pengalihan Aset Antar-OPD (Mutasi Keluar)
+                                    </span>
+                                </div>
+                                <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-md bg-teal-500/20 text-teal-300 border border-teal-500/40">
+                                    Baris 42 Koreksi Lain / Kolom 13 Mutasi (−)
+                                </span>
+                            </div>
+
+                            <!-- Box Penjelasan Dampak Neraca BMD & Sinkronisasi Sistem -->
+                            <div class="p-3.5 rounded-2xl bg-teal-950/30 border border-teal-500/30 flex items-start space-x-3">
+                                <span class="text-teal-400 text-base shrink-0 mt-0.5">💡</span>
+                                <div class="text-[11px] text-teal-200/90 leading-relaxed space-y-1">
+                                    <div>
+                                        <strong class="text-white">Pengalihan Barang RSUD ke SKPD / Dinas Luar Pemkab:</strong>
+                                        Aset ini akan dialihkan keluar dari RSUD dr. H. Koesnandi ke SKPD penerima. Di laporan rekon BMD, transaksi ini mencatat <strong>Mutasi Kurang (−)</strong> di KIB asal dan mengisi penyeimbang <strong>Mutasi Tambah (+) di Baris 42: Koreksi Lain-Lain (KOR_LAIN)</strong> serta mengisi <strong>Kolom 13 (MUTASI −)</strong>.
+                                    </div>
+                                    <div class="text-[10.5px] text-teal-300/80 pt-1 border-t border-teal-500/20 flex items-center gap-1.5">
+                                        <span class="text-emerald-400 font-bold">✓</span>
+                                        <span>Otomatis tercatat di modul <strong>Mutasi Eksternal Keluar</strong> &amp; status register NIBAR ditandai <strong>Mutasi Keluar OPD</strong> (tidak lagi masuk KIR ruangan aktif).</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bagian 1: Instansi Penerima & Nilai Aset -->
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div class="space-y-1.5">
                                     <label class="block text-slate-300 font-bold text-[10.5px] uppercase tracking-wider">
                                         🏛️ SKPD / Dinas Penerima Mutasi: <span class="text-rose-400">*</span>
                                     </label>
                                     <input type="text" x-model="reklasSkpdTujuan" placeholder="Contoh: Dinas Kesehatan Kab. Bondowoso / BPBD..."
-                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-teal-200 focus:outline-none focus:border-teal-500 font-medium">
+                                           class="w-full bg-slate-950 border border-slate-700 focus:border-teal-400 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none font-medium shadow-inner">
                                 </div>
                                 <div class="space-y-1.5">
                                     <label class="block text-slate-300 font-bold text-[10.5px] uppercase tracking-wider">
-                                        🏷️ Nilai Aset yang Dimutasikan:
+                                        🏷️ Nilai &amp; Volume Aset yang Dimutasikan:
                                     </label>
-                                    <div class="p-2.5 rounded-xl bg-teal-950/30 border border-teal-500/40 flex items-center justify-between">
-                                        <span class="text-[10px] text-teal-300 font-bold">Total Nilai:</span>
-                                        <span class="text-sm font-mono font-extrabold text-teal-300" x-text="selectedAstapReklas?.jumlah_realisasi || 'Rp 0'"></span>
+                                    <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                                        <div class="flex items-center space-x-1.5">
+                                            <span class="text-[10px] text-slate-400">Total Nilai:</span>
+                                            <span class="text-xs font-mono font-extrabold text-teal-300" x-text="selectedAstapReklas?.jumlah_realisasi || 'Rp 0'"></span>
+                                        </div>
+                                        <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-teal-500/15 text-teal-300 border border-teal-500/30"
+                                              x-text="(selectedAstapReklas?.jumlah_volume || 1) + ' Unit'"></span>
                                     </div>
                                 </div>
                             </div>
 
+                            <!-- Bagian 2: Dokumen Dasar & Tanggal BAST -->
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div class="space-y-1.5">
                                     <label class="block text-slate-300 font-bold text-[10.5px] uppercase tracking-wider">
                                         📄 Nomor BAST Mutasi Antar-OPD: <span class="text-rose-400">*</span>
                                     </label>
                                     <input type="text" x-model="reklasNomorBastMutasi" placeholder="Contoh: 028/BAST-MUTASI/430.10.7/2026..."
-                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs font-mono text-white focus:outline-none focus:border-teal-500">
+                                           class="w-full bg-slate-950 border border-slate-700 focus:border-teal-400 rounded-xl px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none shadow-inner">
                                 </div>
                                 <div class="space-y-1.5">
                                     <label class="block text-slate-300 font-bold text-[10.5px] uppercase tracking-wider">
                                         📅 Tanggal BAST Mutasi: <span class="text-rose-400">*</span>
                                     </label>
                                     <input type="date" x-model="reklasTanggalBastMutasi"
-                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs font-mono text-white focus:outline-none focus:border-teal-500">
+                                           class="w-full bg-slate-950 border border-slate-700 focus:border-teal-400 rounded-xl px-3.5 py-2.5 text-xs font-mono text-white focus:outline-none shadow-inner">
                                 </div>
                             </div>
 
-                            <!-- Box Penjelasan Dampak Neraca BMD -->
-                            <div class="p-3 rounded-xl bg-teal-950/30 border border-teal-500/30 flex items-start space-x-2.5">
-                                <span class="text-teal-400 text-sm shrink-0">💡</span>
-                                <div class="text-[11px] text-teal-200/90 leading-relaxed">
-                                    Aset ini akan dialihkan keluar dari RSUD dr. H. Koesnandi ke SKPD penerima. Di laporan rekon BMD, transaksi ini mencatat <strong>Mutasi Kurang (−)</strong> di KIB asal dan mengisi penyeimbang <strong>Mutasi Tambah (+) di Baris 42: Koreksi Lain-Lain (KOR_LAIN)</strong> serta mengisi <strong>Kolom 13 (MUTASI −)</strong>.
+                            <!-- Bagian 3: Pejabat Penerima di SKPD Tujuan -->
+                            <div class="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800/90 space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-[10.5px] font-bold uppercase tracking-wider text-teal-300 flex items-center space-x-1.5">
+                                        <span>👤</span>
+                                        <span>Pejabat Penerima Barang di SKPD Tujuan</span>
+                                    </span>
+                                    <span class="text-[9.5px] font-semibold text-slate-400">Untuk Berita Acara (BAST)</span>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <div class="space-y-1">
+                                        <label class="block text-slate-400 font-semibold text-[10px]">Nama Pejabat Penerima:</label>
+                                        <input type="text" x-model="reklasPejabatOpdTujuan" placeholder="Nama Pejabat / Pengurus Barang"
+                                               class="w-full bg-slate-900 border border-slate-700 focus:border-teal-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none placeholder-slate-500">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="block text-slate-400 font-semibold text-[10px]">NIP Pejabat Penerima:</label>
+                                        <input type="text" x-model="reklasNipPejabatOpdTujuan" placeholder="19xxxxxxxxxxxxxx atau -"
+                                               class="w-full bg-slate-900 border border-slate-700 focus:border-teal-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none placeholder-slate-500">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="block text-slate-400 font-semibold text-[10px]">Jabatan Pejabat Penerima:</label>
+                                        <input type="text" x-model="reklasJabatanOpdTujuan" placeholder="Pengurus Barang / Kabid Aset"
+                                               class="w-full bg-slate-900 border border-slate-700 focus:border-teal-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none placeholder-slate-500">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bagian 4: Alamat Instansi & SK Pemindahtanganan -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div class="space-y-1.5">
+                                    <label class="block text-slate-300 font-bold text-[10.5px] uppercase tracking-wider">
+                                        📍 Alamat SKPD / Instansi Penerima:
+                                    </label>
+                                    <input type="text" x-model="reklasAlamatInstansi" placeholder="Jl. Letnan Karsono No. 2, Bondowoso"
+                                           class="w-full bg-slate-950 border border-slate-700 focus:border-teal-400 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none placeholder-slate-500 shadow-inner">
+                                </div>
+                                <div class="space-y-1.5">
+                                    <label class="block text-slate-300 font-bold text-[10.5px] uppercase tracking-wider">
+                                        📜 Nomor SK Bupati / Dasar Mutasi BMD:
+                                    </label>
+                                    <input type="text" x-model="reklasNomorSkDasar" placeholder="Contoh: SK Bupati No. 188.45/xxx/2026..."
+                                           class="w-full bg-slate-950 border border-slate-700 focus:border-teal-400 rounded-xl px-3.5 py-2 text-xs font-mono text-white focus:outline-none placeholder-slate-500 shadow-inner">
                                 </div>
                             </div>
                         </div>
