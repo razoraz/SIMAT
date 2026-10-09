@@ -59,8 +59,8 @@
                             <span class="text-cyan-300 font-bold text-right max-w-[200px] truncate" x-text="selectedQrItem.mitra_nama || '-'"></span>
                         </div>
                         <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
-                            <span class="text-slate-400 font-semibold text-[10.5px]">📍 Penempatan Ruangan:</span>
-                            <span class="text-teal-300 font-bold text-right max-w-[190px] truncate" x-text="selectedQrItem.ruang_pemegang"></span>
+                            <span class="text-slate-400 font-semibold text-[10.5px]">📍 Lokasi / Pengelolaan:</span>
+                            <span class="text-teal-300 font-bold text-right max-w-[190px] truncate" x-text="selectedQrItem.ruang_pemegang || 'Konsesi Kemitraan'"></span>
                         </div>
                         <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
                             <span class="text-slate-400 font-semibold text-[10.5px]">⚙️ Kondisi Aset:</span>
@@ -223,7 +223,7 @@
                             <div class="flex items-center space-x-2 flex-wrap gap-y-1">
                                 <span class="text-purple-300 font-mono font-bold text-xs" x-text="selectedRiwayatRegister.nibar || selectedRiwayatRegister.no_register"></span>
                                 <span class="text-slate-500 text-[11px]">•</span>
-                                <span class="text-cyan-400 text-[11px] font-semibold truncate" x-text="selectedRiwayatRegister.ruang_pemegang || 'Gudang Aset'"></span>
+                                <span class="text-cyan-400 text-[11px] font-semibold truncate" x-text="selectedRiwayatRegister.ruang_pemegang || (selectedAstapDetail?.kemitraan?.mitra_nama ? ('Mitra ' + selectedAstapDetail.kemitraan.mitra_nama) : 'Konsesi Kemitraan')"></span>
                             </div>
                         </div>
                         <div class="shrink-0 text-right">
@@ -299,7 +299,7 @@
                                 <span class="text-3xl block">📦</span>
                                 <h4 class="text-sm font-bold text-slate-200">Belum Ada Riwayat Tercatat</h4>
                                 <p class="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
-                                    Unit register ini belum pernah dimutasi internal antar-ruangan, dilimpahkan ke SKPD luar, maupun direklasifikasi. Unit saat ini berada di lokasi: <strong class="text-slate-300" x-text="selectedRiwayatRegister.ruang_pemegang || 'Gudang Aset'"></strong> dengan kondisi <strong class="text-emerald-400" x-text="selectedRiwayatRegister.kondisi"></strong>.
+                                    Unit register ini belum pernah dimutasi internal antar-ruangan, dilimpahkan ke SKPD luar, maupun direklasifikasi. Unit saat ini berada di pengelolaan: <strong class="text-slate-300" x-text="selectedRiwayatRegister.ruang_pemegang || (selectedAstapDetail?.kemitraan?.mitra_nama ? ('Mitra ' + selectedAstapDetail.kemitraan.mitra_nama) : 'Konsesi Kemitraan')"></strong> dengan kondisi <strong class="text-emerald-400" x-text="selectedRiwayatRegister.kondisi"></strong>.
                                 </p>
                             </div>
                         </template>
@@ -426,7 +426,7 @@
                                 <span class="text-3xl block">🏢</span>
                                 <h4 class="text-sm font-bold text-slate-200">Belum Ada Mutasi Internal Ruangan</h4>
                                 <p class="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
-                                    Unit register ini belum pernah dimutasi ke ruangan atau paviliun lain di lingkungan RSUD. Posisi terkini: <strong class="text-slate-300" x-text="selectedRiwayatRegister.ruang_pemegang || 'Gudang Aset'"></strong>.
+                                    Unit register ini belum pernah dimutasi ke ruangan atau paviliun lain di lingkungan RSUD. Posisi terkini: <strong class="text-slate-300" x-text="selectedRiwayatRegister.ruang_pemegang || (selectedAstapDetail?.kemitraan?.mitra_nama ? ('Mitra ' + selectedAstapDetail.kemitraan.mitra_nama) : 'Konsesi Kemitraan')"></strong>.
                                 </p>
                             </div>
                         </template>

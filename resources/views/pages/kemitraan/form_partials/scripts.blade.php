@@ -359,7 +359,17 @@
                     this.formData.skema_kemitraan = skema;
                 }
 
-                // JANGAN SENTUH LANGKAH 2 & 3 JIKA TIPE KEMITRAAN ADALAH 'DITAMBAHKAN'!
+                // SINKRONISASI LOKASI RUANGAN / UNIT (UNTUK MODE DITAMBAHKAN MITRA)
+                if (this.tipeKemitraan === 'ditambahkan') {
+                    if (item.unit_id) {
+                        this.formData.unit_id = item.unit_id;
+                    }
+                    if (item.alamat_barang) {
+                        this.formData.alamat_barang = item.alamat_barang;
+                    }
+                }
+
+                // JANGAN SENTUH KLASIFIKASI BARANG LANGKAH 2 & 3 JIKA TIPE KEMITRAAN ADALAH 'DITAMBAHKAN'!
                 // Karena aset yang ditambahkan mitra (Langkah 2 & 3) berbeda klasifikasi barangnya (misal gedung baru di atas tanah sewa)
                 if (this.tipeKemitraan === 'dimanfaatkan') {
                     this.$nextTick(() => {
@@ -368,7 +378,7 @@
                 }
 
                 if (mitraNama || nomorPks) {
-                    this.showToast('Data PKS & Mitra Tersinkron', `Inputan Langkah 1 otomatis mengikuti data kontrak aset pemanfaatan: ${item.nama_barang} (${mitraNama || nomorPks})`, 'success');
+                    this.showToast('Data PKS & Mitra Tersinkron', `Inputan Langkah 1 otomatis mengikuti data kontrak objek pemanfaatan: ${item.nama_barang} (${mitraNama || nomorPks}). Spesifikasi fisik aset tetap aman.`, 'success');
                 } else if (item.pks_aktif) {
                     this.showToast('Perhatian Status Konsesi', `Aset ini sedang dalam PKS aktif: ${item.pks_aktif.nomor_pks} (${item.pks_aktif.mitra_nama}) sampai ${item.pks_aktif.tanggal_selesai || 'selesai'}.`, 'warning');
                 } else {
@@ -642,10 +652,7 @@
                         mesin_jumlah_barang: 1,
                         mesin_satuan: 'Unit',
                         mesin_nilai_satuan: 0,
-                        mesin_keterangan: '',
-                        ruang_pemegang: '',
-                        isRuangOpen: false,
-                        searchRuang: ''
+                        mesin_keterangan: ''
                     }
                 ],
 
@@ -676,10 +683,7 @@
                         gedung_fungsi: '',
                         gedung_jumlah_bangunan: 1,
                         gedung_satuan: 'Gedung',
-                        gedung_nilai_satuan: 0,
-                        ruang_pemegang: '',
-                        isRuangOpen: false,
-                        searchRuang: ''
+                        gedung_nilai_satuan: 0
                     }
                 ],
 
@@ -713,10 +717,7 @@
                         jaringan_jumlah: 1,
                         jaringan_satuan: 'Ruas',
                         jaringan_nilai_satuan: 0,
-                        jaringan_keterangan: '',
-                        ruang_pemegang: '',
-                        isRuangOpen: false,
-                        searchRuang: ''
+                        jaringan_keterangan: ''
                     }
                 ],
 
@@ -752,10 +753,7 @@
                         lainnya_jumlah: 1,
                         lainnya_satuan: 'Buah',
                         lainnya_nilai_satuan: 0,
-                        lainnya_keterangan: '',
-                        ruang_pemegang: '',
-                        isRuangOpen: false,
-                        searchRuang: ''
+                        lainnya_keterangan: ''
                     }
                 ],
 
@@ -1454,10 +1452,7 @@
                     mesin_jumlah_barang: 1,
                     mesin_satuan: 'Unit',
                     mesin_nilai_satuan: 0,
-                    mesin_keterangan: '',
-                    ruang_pemegang: '',
-                    isRuangOpen: false,
-                    searchRuang: ''
+                    mesin_keterangan: ''
                 });
                 this.syncTotalsFromItems();
             },
@@ -1565,10 +1560,7 @@
                     gedung_fungsi: '',
                     gedung_jumlah_bangunan: 1,
                     gedung_satuan: 'Gedung',
-                    gedung_nilai_satuan: 0,
-                    ruang_pemegang: '',
-                    isRuangOpen: false,
-                    searchRuang: ''
+                    gedung_nilai_satuan: 0
                 });
                 this.syncTotalsFromItems();
             },
@@ -1624,10 +1616,7 @@
                     jaringan_jumlah: 1,
                     jaringan_satuan: 'Ruas',
                     jaringan_nilai_satuan: 0,
-                    jaringan_keterangan: '',
-                    ruang_pemegang: '',
-                    isRuangOpen: false,
-                    searchRuang: ''
+                    jaringan_keterangan: ''
                 });
                 this.syncTotalsFromItems();
             },
@@ -1682,10 +1671,7 @@
                     lainnya_jumlah: 1,
                     lainnya_satuan: 'Buah',
                     lainnya_nilai_satuan: 0,
-                    lainnya_keterangan: '',
-                    ruang_pemegang: '',
-                    isRuangOpen: false,
-                    searchRuang: ''
+                    lainnya_keterangan: ''
                 });
                 this.syncTotalsFromItems();
             },
@@ -1764,21 +1750,6 @@
                     item.searchFilter = opt.nama;
                 }
                 item.isFilterOpen = false;
-                this.syncTotalsFromItems();
-            },
-
-            // Helper Pencarian & Pemilihan Unit/Ruangan Penempatan
-            filterUnitsForItem(item) {
-                let list = this.masterUnits || [];
-                if (!item.searchRuang || item.searchRuang.trim() === '') return list;
-                const q = item.searchRuang.toLowerCase().trim();
-                return list.filter(u => (u.nama || '').toLowerCase().includes(q) || (u.kode || '').toLowerCase().includes(q) || (u.tipe || '').toLowerCase().includes(q));
-            },
-
-            selectUnitForItem(item, unit) {
-                item.ruang_pemegang = unit.nama;
-                item.isRuangOpen = false;
-                item.searchRuang = '';
                 this.syncTotalsFromItems();
             },
 

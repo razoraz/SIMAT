@@ -2215,10 +2215,7 @@ Route::middleware('auth')->group(function () {
                             $itemQty = max(1, (int)($mItem['mesin_jumlah_barang'] ?? 1));
                             $rawKondisi = strtoupper(trim((string)($mItem['mesin_kondisi'] ?? $kondisiItem)));
                             $kondisiStr = ($rawKondisi === 'KB' || $rawKondisi === 'KURANG BAIK' || $rawKondisi === 'RR' || $rawKondisi === 'RUSAK RINGAN') ? 'Kurang Baik' : (($rawKondisi === 'RB' || $rawKondisi === 'RUSAK BERAT' || $rawKondisi === 'RUSAK') ? 'Rusak Berat' : 'Baik');
-                            
-                            $itemRuang = $cleanRuang($mItem['ruang_pemegang'] ?? null) 
-                                ?: ($cleanRuang($data['ruang_pemegang'] ?? null) 
-                                ?: ($unitModel ? $unitModel->nama : null));
+                            $itemRuang = null;
 
                             for ($q = 0; $q < $itemQty; $q++) {
                                 $runningRegNum++;
@@ -2234,13 +2231,13 @@ Route::middleware('auth')->group(function () {
                                 $qrPath = "/scan/{$nibar}";
                                 \App\Models\AstapRegister::create([
                                     'astap_id'        => $item->id,
-                                    'unit_id'         => $itemRuang ? ($data['unit_id'] ?? null) : null,
+                                    'unit_id'         => null,
                                     'tahun_perolehan' => $tahun,
                                     'no_register_int' => $runningRegNum,
                                     'no_register'     => $nibar,
                                     'nibar'           => $nibar,
                                     'qr_code_path'    => $qrPath,
-                                    'ruang_pemegang'  => $itemRuang,
+                                    'ruang_pemegang'  => null,
                                     'kondisi'         => $kondisiStr,
                                     'status'          => 'Tersedia',
                                     'is_deleted'      => 0,
@@ -2355,10 +2352,7 @@ Route::middleware('auth')->group(function () {
                             $itemQty = max(1, (int)($lItem['lainnya_jumlah'] ?? 1));
                             $rawKondisi = strtoupper(trim((string)($lItem['lainnya_kondisi'] ?? $kondisiItem)));
                             $kondisiStr = ($rawKondisi === 'KB' || $rawKondisi === 'KURANG BAIK' || $rawKondisi === 'RR' || $rawKondisi === 'RUSAK RINGAN') ? 'Kurang Baik' : (($rawKondisi === 'RB' || $rawKondisi === 'RUSAK BERAT' || $rawKondisi === 'RUSAK') ? 'Rusak Berat' : 'Baik');
-                            
-                            $itemRuang = $cleanRuang($lItem['ruang_pemegang'] ?? null) 
-                                ?: ($cleanRuang($data['ruang_pemegang'] ?? null) 
-                                ?: ($unitModel ? $unitModel->nama : null));
+                            $itemRuang = null;
 
                             for ($q = 0; $q < $itemQty; $q++) {
                                 $runningRegNum++;
@@ -2374,13 +2368,13 @@ Route::middleware('auth')->group(function () {
                                 $qrPath = "/scan/{$nibar}";
                                 \App\Models\AstapRegister::create([
                                     'astap_id'        => $item->id,
-                                    'unit_id'         => $itemRuang ? ($data['unit_id'] ?? null) : null,
+                                    'unit_id'         => null,
                                     'tahun_perolehan' => $tahun,
                                     'no_register_int' => $runningRegNum,
                                     'no_register'     => $nibar,
                                     'nibar'           => $nibar,
                                     'qr_code_path'    => $qrPath,
-                                    'ruang_pemegang'  => $itemRuang,
+                                    'ruang_pemegang'  => null,
                                     'kondisi'         => $kondisiStr,
                                     'status'          => 'Tersedia',
                                     'is_deleted'      => 0,
@@ -2879,7 +2873,8 @@ Route::middleware('auth')->group(function () {
                 $specJson['objek_register_id'] = $data['objek_register_id'] ?? null;
                 $specJson['objek_nibar'] = $data['objek_nibar'] ?? null;
 
-                \Illuminate\Support\Facades\DB::transaction(function () use ($astap, $data, $specJson, $resolvedAlamat, $totalVolume, $totalRealisasi, $hargaSatuan, $tahun, $kondisiItem, $isExtracom, $dokumenPath, $request) {
+                $linkedAsetMitrasCount = 0;
+                \Illuminate\Support\Facades\DB::transaction(function () use ($astap, $data, $specJson, $resolvedAlamat, $totalVolume, $totalRealisasi, $hargaSatuan, $tahun, $kondisiItem, $isExtracom, $dokumenPath, $request, &$linkedAsetMitrasCount) {
                     $astap->update([
                         'nama_barang'          => $data['nama_barang'],
                         'jenis_astap_id'       => $data['jenis_astap_id'],
@@ -2931,6 +2926,62 @@ Route::middleware('auth')->group(function () {
                         'user_id'          => auth()->id(),
                     ]);
                     $kemitraan->save();
+
+                    // =========================================================================
+                    // OPSI A: CASCADE UPDATE OTOMATIS KE ASET YANG DITAMBAHKAN MITRA
+                    // Jika data kontrak Objek Dimanfaatkan (Tabel 1) ini diubah, otomatis perbarui
+                    // seluruh aset mitra yang tertaut padanya di Tabel 2 (nomor PKS, tanggal, mitra, masa konsesi)
+                    // =========================================================================
+                    if ($kemitraan->tipe_kemitraan === 'dimanfaatkan') {
+                        $linkedAsetMitras = \App\Models\AstapKemitraan::where('objek_astap_id', $astap->id)
+                            ->where('is_deleted', 0)
+                            ->get();
+
+                        if ($linkedAsetMitras->isNotEmpty()) {
+                            $linkedAsetMitrasCount = $linkedAsetMitras->count();
+                            foreach ($linkedAsetMitras as $childKemitraan) {
+                                // 1. Update data kontrak di tabel astap_kemitraans anak
+                                $childKemitraan->update([
+                                    'nomor_pks'       => $data['nomor_pks'],
+                                    'tanggal_pks'     => $data['tanggal_pks'],
+                                    'mitra_nama'      => $data['mitra_nama'],
+                                    'mitra_pimpinan'  => $data['mitra_pimpinan'] ?? null,
+                                    'mitra_alamat'    => $data['mitra_alamat'] ?? null,
+                                    'tanggal_mulai'   => $data['tanggal_mulai'] ?? null,
+                                    'tanggal_selesai' => $data['tanggal_selesai'] ?? null,
+                                    'skema_kemitraan' => $kemitraan->skema_kemitraan,
+                                    'status_konsesi'  => $kemitraan->status_konsesi,
+                                    'tahun'           => $tahun,
+                                    'triwulan'        => $data['triwulan'],
+                                ]);
+
+                                // 2. Update dokumen & spesifikasi_json di tabel astaps milik anak
+                                if ($childKemitraan->astap) {
+                                    $childAstap = $childKemitraan->astap;
+                                    $childSpec = $childAstap->spesifikasi_json ?? [];
+                                    if (is_string($childSpec)) {
+                                        $childSpec = json_decode($childSpec, true) ?: [];
+                                    }
+
+                                    $childSpec['nomor_pks']         = $data['nomor_pks'];
+                                    $childSpec['tanggal_pks']       = $data['tanggal_pks'];
+                                    $childSpec['mitra_nama']        = $data['mitra_nama'];
+                                    $childSpec['mitra_pimpinan']    = $data['mitra_pimpinan'] ?? null;
+                                    $childSpec['mitra_alamat']      = $data['mitra_alamat'] ?? null;
+                                    $childSpec['tanggal_mulai']     = $data['tanggal_mulai'] ?? null;
+                                    $childSpec['tanggal_selesai']   = $data['tanggal_selesai'] ?? null;
+                                    $childSpec['skema_kemitraan']   = $kemitraan->skema_kemitraan;
+                                    $childSpec['objek_nama_barang'] = $astap->nama_barang;
+
+                                    $childAstap->update([
+                                        'bast_dokumen_nomor'   => $data['nomor_pks'],
+                                        'bast_dokumen_tanggal' => \App\Models\Astap::parseDateInput($data['tanggal_pks']) ?? $data['tanggal_pks'],
+                                        'spesifikasi_json'     => $childSpec,
+                                    ]);
+                                }
+                            }
+                        }
+                    }
 
                     // Sinkronisasi penempatan ruangan pada tabel AstapRegister yang sudah ada
                     $cleanRuang = function ($val) {
@@ -3051,16 +3102,21 @@ Route::middleware('auth')->group(function () {
                     }
                 });
 
+                $succMessage = 'Perubahan Aset Kemitraan "' . $astap->nama_barang . '" berhasil disimpan!';
+                if ($linkedAsetMitrasCount > 0) {
+                    $succMessage = 'Perubahan Objek Kemitraan "' . $astap->nama_barang . '" beserta ' . $linkedAsetMitrasCount . ' aset mitra terkait berhasil diperbarui otomatis!';
+                }
+
                 if ($request->ajax() || $request->wantsJson()) {
                     return response()->json([
                         'success' => true,
-                        'message' => 'Perubahan Aset Kemitraan "' . $astap->nama_barang . '" berhasil disimpan!',
+                        'message' => $succMessage,
                         'redirect' => route('master.kemitraan')
                     ]);
                 }
 
                 return redirect()->route('master.kemitraan')
-                    ->with('success', 'Perubahan Aset Kemitraan "' . $astap->nama_barang . '" berhasil disimpan.');
+                    ->with('success', $succMessage);
             })->name('astap.update_kemitraan');
 
             Route::get('/astap/create', function () use ($getDistinctPenyedias, $getDistinctPejabats) {

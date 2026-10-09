@@ -252,7 +252,7 @@
             'nilai_aset'        => (float) ($r->nilai_aset ?: ($astap?->total_realisasi ?: 0)),
             'kondisi'           => $kondisi,
             'nibar'             => $firstReg?->nibar ?: ($firstReg?->no_register ?: '-'),
-            'ruang_pemegang'    => $firstReg?->ruang_pemegang ?: ($astap?->unit?->nama ?: '-'),
+            'ruang_pemegang'    => $firstReg?->ruang_pemegang ?: ($astap?->unit?->nama ?: ($r->mitra_nama ? ('Mitra ' . $r->mitra_nama) : 'Konsesi Mitra')),
             'keterangan'        => $r->keterangan ?: ($astap?->keterangan_tambahan ?: '-'),
             'raw_row'           => $r,
             'raw_astap'         => $astap,

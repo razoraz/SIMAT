@@ -728,7 +728,7 @@
                                                     <strong class="text-emerald-400 font-bold" x-text="'Rp ' + Number(((parseFloat(mItem.mesin_jumlah_barang) || 1) * (parseFloat(mItem.mesin_nilai_satuan) || 0)) + (parseFloat(mItem.mesin_administrasi_proyek) || 0)).toLocaleString('id-ID')"></strong>
                                                 </div>
                                             </div>
-                                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[10.5px]">
+                                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[10.5px]">
                                                 <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                                     <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🏷️ Merk / Type / Bahan</span>
                                                     <span class="text-cyan-300 font-bold block truncate" x-text="(mItem.mesin_merk || '-') + ' / ' + (mItem.mesin_type || '-')"></span>
@@ -742,10 +742,6 @@
                                                 <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                                     <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">💰 Nilai Wajar Satuan</span>
                                                     <span class="text-emerald-300 font-medium block text-[10px]" x-text="'Rp ' + Number(mItem.mesin_nilai_satuan || 0).toLocaleString('id-ID')"></span>
-                                                </div>
-                                                <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
-                                                    <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🏥 Ruang / Unit Pemegang</span>
-                                                    <span class="text-amber-300 font-medium block truncate" :title="mItem.ruang_pemegang || mItem.ruang_pemegang_mesin" x-text="mItem.ruang_pemegang || mItem.ruang_pemegang_mesin || '-'"></span>
                                                 </div>
                                             </div>
                                         </div>
@@ -775,10 +771,6 @@
                                     <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
                                         <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🚗 No. Rangka / Mesin</span>
                                         <span class="text-slate-200 font-mono font-semibold" x-text="(selectedAstapDetail.spesifikasi_json?.no_rangka || '-') + ' / ' + (selectedAstapDetail.spesifikasi_json?.no_mesin || '-')"></span>
-                                    </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏥 Ruang / Penempatan RSUD</span>
-                                        <span class="text-amber-300 font-bold truncate block" x-text="(selectedAstapDetail.registers && selectedAstapDetail.registers[0] ? selectedAstapDetail.registers[0].ruang_pemegang : null) || '-'"></span>
                                     </div>
                                 </div>
                             </template>
@@ -941,7 +933,7 @@
                                             <strong class="text-emerald-400 font-bold" x-text="'Rp ' + (Number(lItem.lainnya_jumlah || 1) * Number(lItem.lainnya_nilai_satuan || 0)).toLocaleString('id-ID')"></strong>
                                         </div>
                                     </div>
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[10.5px]">
+                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[10.5px]">
                                         <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                             <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🏷️ Judul / Uraian Rincian</span>
                                             <span class="text-purple-300 font-bold block truncate" :title="lItem.lainnya_judul" x-text="lItem.lainnya_judul || selectedAstapDetail.nama_barang || '-'"></span>
@@ -956,11 +948,6 @@
                                             <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">💰 Nilai Wajar Satuan</span>
                                             <span class="text-emerald-300 font-mono font-bold block text-[11px]" x-text="'Rp ' + Number(lItem.lainnya_nilai_satuan || 0).toLocaleString('id-ID')"></span>
                                             <span class="text-[9.5px]" :class="lItem.is_extracom ? 'text-amber-400 font-medium' : 'text-slate-400'" x-text="lItem.is_extracom ? 'Maksimal Rp 300.000' : 'Aset Tetap Intrakomptabel'"></span>
-                                        </div>
-                                        <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
-                                            <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🏥 Ruang / Unit Pemegang</span>
-                                            <span class="text-amber-300 font-medium block truncate" :title="lItem.ruang_pemegang" x-text="lItem.ruang_pemegang || '-'"></span>
-                                            <span class="text-slate-400 text-[9px] block truncate" x-text="'Ket: ' + (lItem.lainnya_spesifikasi || lItem.lainnya_keterangan || '-')"></span>
                                         </div>
                                     </div>
                                 </div>
@@ -1084,7 +1071,7 @@
                             <thead class="bg-slate-950 text-slate-400 font-bold uppercase text-[9.5px] border-b border-slate-800 shadow-sm" style="position: sticky; top: 0; z-index: 10; background-color: #020617;">
                                 <tr>
                                     <th class="px-3.5 py-2.5 text-center">NIBAR &amp; No. Register Resmi</th>
-                                    <th class="px-3.5 py-2.5 text-center">Penempatan Ruangan</th>
+                                    <th class="px-3.5 py-2.5 text-center">Lokasi / Pengelolaan</th>
                                     <th class="px-3.5 py-2.5 text-center">Kondisi</th>
                                     <th class="px-3.5 py-2.5 text-center whitespace-nowrap">QR Code</th>
                                     <th class="px-3.5 py-2.5 text-center whitespace-nowrap">Aksi</th>
@@ -1102,9 +1089,9 @@
                                                 </span>
                                             </template>
                                             <template x-if="!reg.ruang_pemegang">
-                                                <span class="inline-flex items-center space-x-1.5 text-amber-400 font-bold bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/30 text-[10px] justify-center">
-                                                    <span>⚠️</span>
-                                                    <span>Belum Ditempatkan</span>
+                                                <span class="inline-flex items-center space-x-1.5 text-cyan-400 font-bold bg-cyan-500/10 px-2.5 py-1 rounded-lg border border-cyan-500/30 text-[10px] justify-center">
+                                                    <span>🤝</span>
+                                                    <span x-text="selectedAstapDetail.kemitraan?.mitra_nama ? ('Mitra: ' + selectedAstapDetail.kemitraan.mitra_nama) : 'Konsesi Kemitraan (Mitra)'"></span>
                                                 </span>
                                             </template>
                                         </td>

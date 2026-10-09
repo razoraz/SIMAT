@@ -1791,7 +1791,7 @@
                     nama_barang: (astap ? astap.nama_barang : 'Aset Kemitraan') + ' (Register ' + (reg.no_register || reg.nibar) + ')',
                     category: astap ? astap.category : 'KEMITRAAN',
                     tahun_perolehan: astap ? astap.tahun_perolehan : '-',
-                    ruang_pemegang: reg.ruang_pemegang || 'Ruang Belum Ditempatkan / Gudang Aset',
+                    ruang_pemegang: reg.ruang_pemegang || (astap?.kemitraan?.mitra_nama ? ('Mitra: ' + astap.kemitraan.mitra_nama) : (astap?.mitra_nama ? ('Mitra: ' + astap.mitra_nama) : 'Dikelola Mitra Kemitraan')),
                     kondisi: reg.kondisi || (astap ? astap.kondisi : 'Baik'),
                     riwayat_servis: 'Konsesi Kemitraan: ' + (astap?.kemitraan?.mitra_nama || 'Pihak Ketiga')
                 };
