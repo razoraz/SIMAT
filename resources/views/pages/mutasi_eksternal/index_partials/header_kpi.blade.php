@@ -49,11 +49,22 @@
         <div class="flex flex-wrap items-center gap-2.5 shrink-0 relative z-10">
             <!-- Action 1: Input Pelimpahan Masuk Baru -->
             <a href="{{ route('astap.create_mutasi_eksternal', ['from' => 'eksternal']) }}"
+                x-show="activeDirection === 'masuk'"
                 class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 hover:shadow-indigo-500/50 hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2 active:scale-95 cursor-pointer shrink-0 border border-indigo-500/30">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
                 </svg>
                 <span>+ Pelimpahan Masuk Baru</span>
+            </a>
+
+            <!-- Action 2: Input Mutasi Keluar (via Reklasifikasi) -->
+            <a href="{{ route('master.reklasifikasi', ['tab' => 'matriks']) }}"
+                x-show="activeDirection === 'keluar'"
+                class="px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 active:bg-cyan-700 text-white text-xs font-bold shadow-lg shadow-cyan-600/30 hover:shadow-cyan-500/50 hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2 active:scale-95 cursor-pointer shrink-0 border border-cyan-500/30">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                </svg>
+                <span>+ Input Mutasi Keluar (via Reklasifikasi)</span>
             </a>
         </div>
     </div>

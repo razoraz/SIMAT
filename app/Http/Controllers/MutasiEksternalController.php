@@ -1432,11 +1432,14 @@ class MutasiEksternalController extends Controller
 
                 // Pulihkan aset ASTAP RSUD kembali ke status Aktif (JANGAN di-soft-delete!)
                 if ($astap) {
-                    $astap->update([
-                        'kondisi'      => 'Baik',
+                    $astapPayload = [
                         'is_reklas'    => 0,
                         'jenis_reklas' => null,
-                    ]);
+                    ];
+                    if (\Illuminate\Support\Facades\Schema::hasColumn('astaps', 'kondisi')) {
+                        $astapPayload['kondisi'] = 'Baik';
+                    }
+                    $astap->update($astapPayload);
 
                     // Pulihkan register terkait kembali ke status 'Aktif'
                     AstapRegister::where('astap_id', $astap->id)
