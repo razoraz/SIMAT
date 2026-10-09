@@ -301,6 +301,11 @@ class DashboardController extends Controller
 
         // 2. Data Register Aset di Ruangan Ini — Mendukung unit_id dan ruang_pemegang (sesuai katalog Unit)
         $registers = \App\Models\AstapRegister::with(['astap.jenisAstap'])
+            ->where('is_deleted', 0)
+            ->where(function($q) {
+                $q->whereNull('status')
+                  ->orWhere('status', '!=', 'Mutasi Keluar OPD');
+            })
             ->where(function($q) use ($unitId, $unitNama) {
                 if ($unitId) {
                     $q->where('unit_id', $unitId);

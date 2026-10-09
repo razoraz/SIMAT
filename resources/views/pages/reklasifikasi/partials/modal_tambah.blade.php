@@ -414,10 +414,11 @@
                     <span class="text-base shrink-0 mt-0.5">💡</span>
                     <div>
                         <strong class="text-white block mb-0.5">Pengalihan Aset Keluar RSUD Antar-Perangkat Daerah:</strong>
-                        <span>Aset tetap RSUD dialihkan ke Dinas/Badan/Kecamatan lain di lingkungan Pemkab Bondowoso. Aset RSUD berkurang (Mutasi Kurang -), dan disinkronkan ke Baris 42 Koreksi Lain-Lain (Kolom 13 Mutasi -) sehingga neraca rekonsiliasi belanja modal BPKAD seimbang.</span>
+                        <span>Aset tetap RSUD dialihkan ke Dinas/Badan/Kecamatan lain di lingkungan Pemkab Bondowoso. Aset RSUD berkurang (Mutasi Kurang -), disinkronkan ke Baris 42 Koreksi Lain-Lain (Kolom 13 Mutasi -), serta otomatis tercatat di modul <strong>Mutasi Eksternal Keluar</strong>.</span>
                     </div>
                 </div>
 
+                <!-- Bagian 1: Instansi & Dokumen Dasar -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                     <div>
                         <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
@@ -434,6 +435,57 @@
                         </label>
                         <input type="date" x-model="formData.tanggal_bast"
                                class="w-full bg-slate-900 border border-slate-700 focus:border-teal-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                    </div>
+                </div>
+
+                <!-- Bagian 2: Pejabat Penerima OPD -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                            Nama Pejabat Penerima OPD:
+                        </label>
+                        <input type="text" x-model="formData.pejabat_opd_tujuan"
+                               placeholder="Nama Pejabat Penerima"
+                               class="w-full bg-slate-900 border border-slate-700 focus:border-teal-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                            NIP Pejabat Penerima:
+                        </label>
+                        <input type="text" x-model="formData.nip_pejabat_opd_tujuan"
+                               placeholder="19xxxxxxxxxxxxxx atau -"
+                               class="w-full bg-slate-900 border border-slate-700 focus:border-teal-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none font-mono">
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                            Jabatan Pejabat Penerima:
+                        </label>
+                        <input type="text" x-model="formData.jabatan_opd_tujuan"
+                               placeholder="Pengurus Barang / Kepala Bidang"
+                               class="w-full bg-slate-900 border border-slate-700 focus:border-teal-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                    </div>
+                </div>
+
+                <!-- Bagian 3: Alamat Instansi & SK Pemindahtanganan -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                            Alamat SKPD / Instansi Penerima:
+                        </label>
+                        <input type="text" x-model="formData.alamat_instansi"
+                               placeholder="Jl. Letnan Karsono No. 2, Bondowoso"
+                               class="w-full bg-slate-900 border border-slate-700 focus:border-teal-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                            Nomor SK Pemindahtanganan / Dasar Mutasi:
+                        </label>
+                        <input type="text" x-model="formData.nomor_sk_dasar"
+                               placeholder="SK Bupati / Nomor BAST Transfer BMD"
+                               class="w-full bg-slate-900 border border-slate-700 focus:border-teal-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none font-mono">
                     </div>
                 </div>
             </div>

@@ -429,6 +429,7 @@ class MutasiEksternalController extends Controller
 
         // Pastikan seluruh data pelimpahan di tabel astaps tersinkronisasi ke mutasi_eksternals
         $this->syncLegacyAstapPelimpahan();
+        $this->syncReklasMutasiKeluar();
 
         // Ambil data aktif dari tabel mutasi_eksternals
         $records = MutasiEksternal::with([
@@ -1416,6 +1417,48 @@ class MutasiEksternalController extends Controller
         }
 
         DB::transaction(function () use ($mutasi, $astap, $deleterName, $user, $reason) {
+            if ($mutasi && $mutasi->tipe === 'keluar') {
+                // Mutasi Keluar ke OPD: soft delete data transaksi mutasi keluar
+                $payload = [
+                    'is_deleted'    => 1,
+                    'deleted_by'    => $deleterName,
+                    'deleted_by_id' => $user?->id,
+                    'deleted_at'    => now(),
+                ];
+                if (\Illuminate\Support\Facades\Schema::hasColumn('mutasi_eksternals', 'alasan_hapus')) {
+                    $payload['alasan_hapus'] = $reason;
+                }
+                $mutasi->update($payload);
+
+                // Pulihkan aset ASTAP RSUD kembali ke status Aktif (JANGAN di-soft-delete!)
+                if ($astap) {
+                    $astap->update([
+                        'kondisi'      => 'Baik',
+                        'is_reklas'    => 0,
+                        'jenis_reklas' => null,
+                    ]);
+
+                    // Pulihkan register terkait kembali ke status 'Aktif'
+                    AstapRegister::where('astap_id', $astap->id)
+                        ->where('status', 'Mutasi Keluar OPD')
+                        ->update([
+                            'status' => 'Aktif',
+                        ]);
+
+                    // Soft-delete juga log transaksi reklasifikasi terkait jika ada
+                    \App\Models\AstapReklas::where('astap_id', $astap->id)
+                        ->where('jenis_reklas', 'MUTASI_EKSTERNAL')
+                        ->where('is_deleted', 0)
+                        ->update([
+                            'is_deleted'    => 1,
+                            'deleted_by'    => $deleterName,
+                            'deleted_by_id' => $user?->id,
+                            'deleted_at'    => now(),
+                        ]);
+                }
+                return;
+            }
+
             if ($mutasi) {
                 $payload = [
                     'is_deleted'    => 1,
@@ -1539,6 +1582,83 @@ class MutasiEksternalController extends Controller
                 'user_id'             => $a->user_id,
                 'is_deleted'          => 0,
             ]);
+        }
+    }
+
+    /**
+     * Helper privat untuk sinkronisasi otomatis transaksi reklasifikasi Mutasi Eksternal Keluar ke tabel mutasi_eksternals
+     */
+    private function syncReklasMutasiKeluar(): void
+    {
+        $reklasKeluars = \App\Models\AstapReklas::where('jenis_reklas', 'MUTASI_EKSTERNAL')
+            ->where('is_deleted', 0)
+            ->with(['astap.registers', 'astap.unit'])
+            ->get();
+
+        foreach ($reklasKeluars as $rk) {
+            $astap = $rk->astap;
+            if (!$astap) continue;
+
+            $exists = MutasiEksternal::where('astap_id', $astap->id)
+                ->where('tipe', 'keluar')
+                ->where('is_deleted', 0)
+                ->exists();
+
+            if (!$exists) {
+                $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?? []);
+                $mutInfo = $spec['mutasi_info'] ?? [];
+
+                $skpdTujuan = $mutInfo['skpd_tujuan'] ?? ($rk->tujuan_nama ?: 'SKPD / OPD Luar');
+                $tglBast = $mutInfo['tanggal_bast'] ?? ($rk->tanggal_reklas ? $rk->tanggal_reklas->format('Y-m-d') : date('Y-m-d'));
+                $nomorBast = $rk->nomor_ba_reklas ?: ($mutInfo['nomor_bast'] ?? ('000.2.3.2/BAST-KLR-' . str_pad($astap->id, 3, '0', STR_PAD_LEFT) . '/430.10.7/' . date('Y')));
+
+                $mutasiKeluar = MutasiEksternal::create([
+                    'astap_id'            => $astap->id,
+                    'nomor_bamb'          => $nomorBast,
+                    'tanggal_mutasi'      => $tglBast,
+                    'jenis_mutasi'        => 'Transfer Antar-OPD',
+                    'tipe'                => 'keluar',
+                    'opd_asal'            => 'RSUD Dr. H. Koesnadi',
+                    'opd_tujuan'          => $skpdTujuan,
+                    'unit_id'             => $astap->unit_id,
+                    'ruangan_tujuan'      => $astap->ruang_unit ?: ($astap->alamat_barang ?: 'RSUD Dr. H. Koesnadi'),
+                    'pj_asal_nama'        => $astap->ppk_nama ?: 'dr. H. Yus Priyatna, Sp.P',
+                    'pj_asal_nip'         => $astap->ppk_nip ?: '196904121999031004',
+                    'pj_asal_jabatan'     => 'Direktur RSUD Dr. H. Koesnadi',
+                    'pj_tujuan_nama'      => $mutInfo['pj_tujuan_nama'] ?? 'Pejabat Penerima OPD',
+                    'pj_tujuan_nip'       => $mutInfo['pj_tujuan_nip'] ?? '-',
+                    'pj_tujuan_jabatan'   => $mutInfo['pj_tujuan_jabatan'] ?? 'Pejabat Penerima OPD',
+                    'nomor_sk_dasar'      => $mutInfo['nomor_sk_dasar'] ?? $nomorBast,
+                    'status'              => 'Disahkan (Selesai)',
+                    'jumlah_volume'       => max(1, (int) $astap->jumlah_volume),
+                    'satuan'              => $astap->satuan ?: 'Unit',
+                    'nilai_perolehan'     => (float) ($rk->nilai_reklas ?: $astap->total_realisasi),
+                    'kondisi'             => 'Baik',
+                    'alasan_mutasi'       => $rk->alasan_reklas ?: 'Pemindahtanganan aset RSUD ke SKPD / OPD luar.',
+                    'alamat_instansi'     => $mutInfo['alamat_instansi'] ?? '',
+                    'user_id'             => $rk->user_id,
+                    'is_deleted'          => 0,
+                ]);
+
+                // Link registers
+                if ($astap->registers && $astap->registers->isNotEmpty()) {
+                    foreach ($astap->registers as $reg) {
+                        \App\Models\MutasiEksternalRegister::firstOrCreate(
+                            [
+                                'mutasi_eksternal_id' => $mutasiKeluar->id,
+                                'astap_register_id'   => $reg->id,
+                            ],
+                            [
+                                'kondisi' => $reg->kondisi ?: 'Baik',
+                                'catatan' => 'Mutasi Keluar Antar-OPD Reklasifikasi',
+                            ]
+                        );
+                        if ($reg->status !== 'Mutasi Keluar OPD') {
+                            $reg->update(['status' => 'Mutasi Keluar OPD']);
+                        }
+                    }
+                }
+            }
         }
     }
 }

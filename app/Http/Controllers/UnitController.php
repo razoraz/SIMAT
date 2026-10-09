@@ -19,6 +19,11 @@ class UnitController extends Controller
         $units = Unit::where('is_deleted', 0)->with('user')->orderBy('id', 'asc')->get()->map(function ($u, $index) {
             // 1. Cari register ASTAP yang terhubung via unit_id atau ruang_pemegang
             $registers = \App\Models\AstapRegister::with(['astap.jenisAstap'])
+                ->where('is_deleted', 0)
+                ->where(function($q) {
+                    $q->whereNull('status')
+                      ->orWhere('status', '!=', 'Mutasi Keluar OPD');
+                })
                 ->where(function($q) use ($u) {
                     $q->where('unit_id', $u->id)
                       ->orWhere(function($q2) use ($u) {
@@ -34,12 +39,22 @@ class UnitController extends Controller
 
             // 2. Ambil ASTAP yang terhubung langsung via unit_id (jika ada register yang belum masuk)
             $astapDirectIds = \App\Models\Astap::where('unit_id', $u->id)
+                ->where('is_deleted', 0)
+                ->where(function($q) {
+                    $q->whereNull('kondisi')
+                      ->orWhere('kondisi', '!=', 'Mutasi Keluar OPD');
+                })
                 ->whereNotIn('id', $registers->pluck('astap_id')->filter()->unique())
                 ->pluck('id');
 
             $directRegisters = collect();
             if ($astapDirectIds->isNotEmpty()) {
                 $directRegisters = \App\Models\AstapRegister::with(['astap.jenisAstap'])
+                    ->where('is_deleted', 0)
+                    ->where(function($q) {
+                        $q->whereNull('status')
+                          ->orWhere('status', '!=', 'Mutasi Keluar OPD');
+                    })
                     ->whereIn('astap_id', $astapDirectIds)
                     ->get();
             }
@@ -283,6 +298,11 @@ class UnitController extends Controller
 
         if ($currentUnit) {
             $registers = \App\Models\AstapRegister::with(['astap.jenisAstap'])
+                ->where('is_deleted', 0)
+                ->where(function($q) {
+                    $q->whereNull('status')
+                      ->orWhere('status', '!=', 'Mutasi Keluar OPD');
+                })
                 ->where(function($q) use ($currentUnit) {
                     $q->where('unit_id', $currentUnit->id)
                       ->orWhere(function($q2) use ($currentUnit) {
@@ -297,12 +317,22 @@ class UnitController extends Controller
                 ->get();
 
             $astapDirectIds = \App\Models\Astap::where('unit_id', $currentUnit->id)
+                ->where('is_deleted', 0)
+                ->where(function($q) {
+                    $q->whereNull('kondisi')
+                      ->orWhere('kondisi', '!=', 'Mutasi Keluar OPD');
+                })
                 ->whereNotIn('id', $registers->pluck('astap_id')->filter()->unique())
                 ->pluck('id');
 
             $directRegisters = collect();
             if ($astapDirectIds->isNotEmpty()) {
                 $directRegisters = \App\Models\AstapRegister::with(['astap.jenisAstap'])
+                    ->where('is_deleted', 0)
+                    ->where(function($q) {
+                        $q->whereNull('status')
+                          ->orWhere('status', '!=', 'Mutasi Keluar OPD');
+                    })
                     ->whereIn('astap_id', $astapDirectIds)
                     ->get();
             }
