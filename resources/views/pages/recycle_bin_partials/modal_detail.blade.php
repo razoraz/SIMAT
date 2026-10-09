@@ -420,14 +420,27 @@
                             <div class="bg-slate-950/90 p-4 sm:p-5 rounded-2xl border border-slate-800 space-y-3.5 shadow-inner">
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pb-3 border-b border-slate-800/80">
                                     <div>
-                                        <span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider block">Nomor Dokumen PKS:</span>
+                                        <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+                                            <template x-if="selectedItem.is_ditambahkan">
+                                                <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                                                    📦 Aset Ditambahkan Mitra
+                                                </span>
+                                            </template>
+                                            <template x-if="!selectedItem.is_ditambahkan">
+                                                <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                                                    🏛️ Aset Dimanfaatkan Mitra
+                                                </span>
+                                            </template>
+                                        </div>
+                                        <span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider block">Nomor Dokumen PKS / Kontrak:</span>
                                         <span class="font-mono font-bold text-cyan-300 text-sm sm:text-base tracking-wide block mt-0.5" x-text="selectedItem.nomor_pks"></span>
                                         <span class="text-xs text-slate-400 block mt-1" x-text="'Tanggal PKS: ' + selectedItem.tanggal_pks"></span>
                                     </div>
                                     <div class="sm:text-right">
                                         <span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider block">Skema Kerja Sama:</span>
                                         <div class="mt-1">
-                                            <span class="px-2.5 py-0.5 rounded text-xs font-bold bg-cyan-950/80 border border-cyan-800/60 text-cyan-300 inline-block"
+                                            <span class="px-2.5 py-0.5 rounded text-xs font-bold inline-block"
+                                                :class="selectedItem.is_ditambahkan ? 'bg-emerald-950/80 border border-emerald-800/60 text-emerald-300' : 'bg-cyan-950/80 border border-cyan-800/60 text-cyan-300'"
                                                 x-text="'🤝 ' + selectedItem.skema_kemitraan"></span>
                                         </div>
                                         <span class="text-xs text-slate-400 block mt-1" x-text="'Status: ' + selectedItem.status_konsesi"></span>
@@ -440,21 +453,38 @@
                                         <span class="text-[11px] text-slate-400 block" x-text="'Penempatan: ' + selectedItem.ruangan"></span>
                                     </div>
                                     <div class="sm:text-right">
-                                        <span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider block">Nilai Wajar Aset (Akun 1.5.2):</span>
+                                        <span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider block">
+                                            <span x-text="selectedItem.is_ditambahkan ? 'Taksiran Nilai Investasi Mitra:' : 'Nilai Pemanfaatan / Wajar (Akun 1.5.2):'"></span>
+                                        </span>
                                         <span class="font-mono font-bold text-emerald-400 text-sm block mt-0.5" x-text="selectedItem.nilai_aset_rp"></span>
-                                        <span class="text-xs text-teal-300 font-mono block" x-text="'Volume: ' + selectedItem.volume + ' Unit'"></span>
+                                        <span class="text-xs text-teal-300 font-mono block" x-text="'Volume: ' + selectedItem.volume"></span>
                                     </div>
                                 </div>
-                                <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                                <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400 flex-wrap gap-2">
                                     <span>Periode Konsesi: <strong class="text-white" x-text="selectedItem.tanggal_mulai"></strong> s/d <strong class="text-white" x-text="selectedItem.tanggal_selesai"></strong></span>
                                     <span x-text="selectedItem.triwulan + ' ' + selectedItem.tahun"></span>
                                 </div>
                             </div>
 
-                            <div class="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 space-y-1">
-                                <span class="text-[10px] text-slate-400 block uppercase font-bold tracking-wider">Aset Yang Dikerjasamakan:</span>
+                            <div class="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 space-y-1.5">
+                                <span class="text-[10px] text-slate-400 block uppercase font-bold tracking-wider"
+                                    x-text="selectedItem.is_ditambahkan ? 'Barang yang Didatangkan Mitra:' : 'Objek BMD yang Dikerjasamakan:'"></span>
                                 <p class="font-bold text-white text-xs" x-text="selectedItem.nama_barang"></p>
-                                <p class="font-mono text-[10px] text-cyan-400" x-text="'Kode 108: ' + selectedItem.kode_barang"></p>
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="font-mono text-[10px] text-cyan-400" x-text="'Kode 108: ' + selectedItem.kode_barang"></span>
+                                    <template x-if="selectedItem.merk || selectedItem.type">
+                                        <span class="text-[10px] text-emerald-300 font-medium" x-text="'• Merk/Tipe: ' + [selectedItem.merk, selectedItem.type].filter(Boolean).join(' ')"></span>
+                                    </template>
+                                </div>
+                                <template x-if="selectedItem.objek_asal_nama">
+                                    <div class="mt-1.5 pt-1.5 border-t border-slate-800/80 text-[11px] text-slate-400 flex items-center gap-1.5">
+                                        <span>🏛️ Menempati Objek BMD:</span>
+                                        <strong class="text-cyan-300" x-text="selectedItem.objek_asal_nama"></strong>
+                                        <template x-if="selectedItem.objek_asal_nibar">
+                                            <span class="text-[10px] font-mono text-slate-500" x-text="'(NIBAR: ' + selectedItem.objek_asal_nibar + ')'"></span>
+                                        </template>
+                                    </div>
+                                </template>
                             </div>
 
                             <!-- TABEL REGISTER UNIT BARANG KEMITRAAN -->

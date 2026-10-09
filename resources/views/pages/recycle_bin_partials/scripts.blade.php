@@ -19,6 +19,7 @@
             reklas: {{ Js::from($deletedReklas ?? []) }},
             totalThisMonth: {{ (int) $totalThisMonth }},
             astapSubTab: 'packet',
+            kemitraanSubTab: 'dimanfaatkan',
 
             selectedIds: [],
             searchQuery: '',
@@ -50,6 +51,21 @@
                 this.selectedIds = [];
                 this.searchQuery = '';
                 this.timeFilter = 'all';
+            },
+
+            changeKemitraanSubTab(subTab) {
+                this.kemitraanSubTab = subTab;
+                this.selectedIds = [];
+                this.searchQuery = '';
+                this.timeFilter = 'all';
+            },
+
+            get kemitraanDimanfaatkan() {
+                return (this.kemitraans || []).filter(k => !k.is_ditambahkan);
+            },
+
+            get kemitraanDitambahkan() {
+                return (this.kemitraans || []).filter(k => !!k.is_ditambahkan);
             },
 
             get currentTargetModule() {
@@ -86,6 +102,11 @@
                 if (this.activeModule === 'astap') {
                     return this.astapSubTab === 'nibar' ? 'Register NIBAR' : 'Paket Master ASTAP';
                 }
+                if (this.activeModule === 'kemitraan') {
+                    return this.kemitraanSubTab === 'ditambahkan' 
+                        ? 'Kemitraan (Aset Ditambahkan Mitra)' 
+                        : 'Kemitraan (Aset Dimanfaatkan Mitra)';
+                }
                 const map = {
                     distribusi: 'Distribusi Aset',
                     unit: 'Unit & Paviliun',
@@ -110,11 +131,15 @@
                     }
                     return 'Cari nama aset / kode 108 / NIBAR / penyedia / SPK / penghapus...';
                 }
+                if (this.activeModule === 'kemitraan') {
+                    return this.kemitraanSubTab === 'ditambahkan'
+                        ? 'Cari nomor kontrak / rekanan mitra / nama alat & mesin / merk / tipe / penghapus...'
+                        : 'Cari nomor PKS / rekanan mitra / objek aset BMD / skema / penghapus...';
+                }
                 if (this.activeModule === 'distribusi') return 'Cari kode distribusi / BAST / unit tujuan / tanggal / penghapus...';
                 if (this.activeModule === 'unit') return 'Cari kode unit / nama ruangan / kepala ruangan / NIP / penghapus...';
                 if (this.activeModule === 'users') return 'Cari nama pengguna / email / NIP / role / unit penugasan / penghapus...';
                 if (this.activeModule === 'hibah') return 'Cari nomor BAST / nama barang / pihak hibah / tahun / penghapus...';
-                if (this.activeModule === 'kemitraan') return 'Cari nomor PKS / nama mitra / nama barang / skema / ruangan / penghapus...';
                 if (this.activeModule === 'belanja_barang') return 'Cari nomor faktur / toko penyedia / nama barang / ruangan / penghapus...';
                 if (this.activeModule === 'reklas') return 'Cari nomor BA / nama barang / KIB asal / tujuan / kode 108 / penghapus...';
                 return 'Cari data terhapus...';
@@ -131,7 +156,9 @@
                 if (this.activeModule === 'unit') return this.units;
                 if (this.activeModule === 'users') return this.users;
                 if (this.activeModule === 'hibah') return this.hibahs;
-                if (this.activeModule === 'kemitraan') return this.kemitraans;
+                if (this.activeModule === 'kemitraan') {
+                    return this.kemitraanSubTab === 'ditambahkan' ? this.kemitraanDitambahkan : this.kemitraanDimanfaatkan;
+                }
                 if (this.activeModule === 'belanja_barang') return this.belanjaBarangs;
                 if (this.activeModule === 'reklas') return this.reklas;
                 return [];

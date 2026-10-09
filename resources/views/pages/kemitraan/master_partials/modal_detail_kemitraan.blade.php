@@ -46,6 +46,15 @@
                         </span>
                     </template>
 
+                    <!-- Badge Aset Ditambahkan Mitra jika ada item ditambahkan -->
+                    <template x-if="selectedAstapDetail?.is_dimanfaatkan && getAsetDitambahkanMitraForDetail(selectedAstapDetail).length > 0">
+                        <span class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-sm shadow-emerald-500/10"
+                            :title="'Objek kerjasama ini memuat ' + getAsetDitambahkanMitraForDetail(selectedAstapDetail).length + ' aset yang ditambahkan/didatangkan oleh mitra rekanan'">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                            <span x-text="'📦 +' + getAsetDitambahkanMitraForDetail(selectedAstapDetail).length + ' ASET MITRA'"></span>
+                        </span>
+                    </template>
+
                     <!-- Kode 108 / NIBAR -->
                     <span class="px-2.5 py-0.5 rounded-lg bg-slate-950 border border-slate-800 text-cyan-400 font-mono font-bold text-[11px] truncate max-w-full"
                         x-text="'Kode: ' + (selectedAstapDetail?.kode_barang || '-')"></span>

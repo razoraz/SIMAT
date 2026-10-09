@@ -262,74 +262,85 @@
                         </div>
 
                         <!-- 3. Keterangan / Catatan Khusus Tanah -->
-                        <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-slate-700/80 space-y-1.5 shadow-md transition-all">
-                            <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
+                        <div class="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-slate-700/80 space-y-2 shadow-lg flex flex-col justify-between transition-all">
+                            <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
                                 <label class="block text-slate-300 font-bold text-[11px] uppercase tracking-wider flex items-center space-x-1.5">
-                                    <span>📝 Keterangan / Catatan Khusus Tanah:</span>
+                                    <span class="text-sm">📝</span>
+                                    <span>Keterangan / Catatan Khusus Tanah:</span>
                                 </label>
-                                <span class="text-[9px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-bold">Catatan Tambahan</span>
+                                <span class="text-[9.5px] px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-bold">Catatan Tambahan</span>
                             </div>
-                            <input type="text" x-model="item.tanah_penggunaan"
-                                placeholder="Contoh: Area Parkir Terpadu / Gedung Paviliun / Keterangan Legalitas Lahan"
-                                class="w-full bg-slate-950 border border-slate-700 hover:border-slate-600 focus:border-emerald-500 rounded-xl px-3.5 py-2 text-xs text-white font-medium focus:outline-none transition-all">
+                            <div>
+                                <input type="text" x-model="item.tanah_penggunaan"
+                                    placeholder="Contoh: Area Parkir Terpadu / Gedung Paviliun / Keterangan Legalitas Lahan"
+                                    class="w-full bg-slate-950 border border-slate-700/90 hover:border-slate-600 focus:border-emerald-500 rounded-xl px-3.5 py-2.5 text-xs text-white font-medium focus:outline-none transition-all shadow-inner">
+                                <span class="text-[10px] text-slate-400 mt-1 block">Rincian peruntukan lahan, pemanfaatan blok, atau catatan zonasi.</span>
+                            </div>
                         </div>
 
                         <!-- 4. Lokasi Fisik Tanah -->
-                        <div class="p-4 rounded-2xl bg-slate-900/80 border border-emerald-500/40 space-y-1.5 shadow-md">
-                            <div class="flex items-center justify-between border-b border-emerald-500/30 pb-1.5">
+                        <div class="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-emerald-500/40 hover:border-emerald-500/70 space-y-2 shadow-lg flex flex-col justify-between transition-all">
+                            <div class="flex items-center justify-between border-b border-emerald-500/30 pb-2">
                                 <label class="block text-emerald-400 font-bold text-[11px] uppercase tracking-wider flex items-center space-x-1.5">
-                                    <span>📍 Letak / Alamat Tanah &amp; Lokasi Fisik:</span>
+                                    <span class="text-sm">📍</span>
+                                    <span>Letak / Alamat Tanah &amp; Lokasi Fisik:</span>
                                 </label>
-                                <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">Lokasi Fisik</span>
+                                <span class="text-[9.5px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">Lokasi Fisik</span>
                             </div>
-                            <input type="text" x-model="item.tanah_alamat"
-                                placeholder="Contoh: Kompleks RSUD Dr. H. Koesnandi, Jl. Piere Tendean No. 1, Bondowoso"
-                                class="w-full bg-slate-950 border border-slate-700 hover:border-emerald-500 rounded-xl px-3.5 py-2 text-xs text-white font-semibold focus:outline-none focus:border-emerald-500 transition-all">
+                            <div>
+                                <input type="text" x-model="item.tanah_alamat"
+                                    placeholder="Contoh: Kompleks RSUD Dr. H. Koesnandi, Jl. Piere Tendean No. 1, Bondowoso"
+                                    class="w-full bg-slate-950 border border-slate-700/90 hover:border-emerald-500 focus:border-emerald-400 rounded-xl px-3.5 py-2.5 text-xs text-white font-semibold focus:outline-none transition-all shadow-inner">
+                                <span class="text-[10px] text-slate-400 mt-1 block">Alamat lengkap letak persil tanah atau patok batas RSUD.</span>
+                            </div>
                         </div>
 
-                        <!-- 5. Volume & Taksiran Nilai Wajar Bidang Tanah -->
-                        <div class="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-emerald-500/50 space-y-3.5 shadow-lg shadow-emerald-500/5">
-                            <div class="flex flex-wrap items-center justify-between border-b border-emerald-500/30 pb-2.5 gap-2">
-                                <div class="flex items-center gap-2">
-                                    <span class="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs font-bold border border-emerald-500/30">💰</span>
-                                    <span class="text-xs font-extrabold text-emerald-400 uppercase tracking-wider">
-                                        Volume &amp; Taksiran Nilai Wajar Bidang Tanah
-                                    </span>
+                        <!-- 5. Volume & Taksiran Nilai Wajar Bidang Tanah (Full Width) -->
+                        <div class="col-span-1 lg:col-span-2 p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-slate-900/95 via-emerald-950/20 to-slate-900/95 border border-emerald-500/50 space-y-4 shadow-xl shadow-emerald-500/5">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-emerald-500/30 pb-3 gap-2.5">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm font-bold border border-emerald-500/30 shadow-inner">💰</span>
+                                    <div>
+                                        <span class="text-xs sm:text-sm font-extrabold text-white uppercase tracking-wider block">
+                                            Volume &amp; Taksiran Nilai Wajar Bidang Tanah
+                                        </span>
+                                        <span class="text-[10px] text-slate-400 block mt-0.5">Penilaian wajar appraisal / nilai perolehan per bidang tanah</span>
+                                    </div>
                                 </div>
-                                <div class="flex items-center space-x-2 bg-emerald-950/80 border border-emerald-500/40 px-3 py-1 rounded-xl shadow-sm">
-                                    <span class="text-[10px] text-slate-300 font-semibold">Sub Total Bidang #<span x-text="idx + 1"></span>:</span>
-                                    <span class="text-xs font-black text-emerald-300 font-mono tracking-tight" x-text="'Rp ' + Number(getTanahSubtotal(item)).toLocaleString('id-ID')"></span>
+                                <div class="flex items-center space-x-2 bg-emerald-950/80 border border-emerald-500/40 px-3.5 py-1.5 rounded-xl shadow-sm self-start sm:self-auto">
+                                    <span class="text-[11px] text-slate-300 font-semibold">Sub Total Bidang #<span x-text="idx + 1"></span>:</span>
+                                    <span class="text-xs sm:text-sm font-black text-emerald-300 font-mono tracking-tight" x-text="'Rp ' + Number(getTanahSubtotal(item)).toLocaleString('id-ID')"></span>
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
                                 {{-- Input 1: Jumlah Volume / Bidang --}}
                                 <div>
                                     <label class="block text-slate-300 text-[11px] mb-1.5 font-semibold flex items-center justify-between">
                                         <span>Jumlah Volume / Bidang <span class="text-rose-400">*</span></span>
-                                        <span class="text-[9.5px] font-mono text-emerald-400 bg-emerald-950/50 px-1.5 py-0.5 rounded border border-emerald-800/40">Kuantitas</span>
+                                        <span class="text-[9.5px] font-mono text-emerald-400 bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-800/40 font-bold">Kuantitas</span>
                                     </label>
                                     <input type="number" min="1" x-model.number="item.tanah_jumlah_barang" @input="syncTotalsFromItems()" placeholder="1"
-                                           class="w-full bg-slate-950 border border-slate-700/90 hover:border-emerald-500 focus:border-emerald-400 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono font-bold focus:outline-none transition-all">
+                                           class="w-full bg-slate-950 border border-slate-700/90 hover:border-emerald-500 focus:border-emerald-400 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono font-bold focus:outline-none transition-all shadow-inner">
                                 </div>
 
                                 {{-- Input 2: Satuan --}}
                                 <div>
                                     <label class="block text-slate-300 text-[11px] mb-1.5 font-semibold flex items-center justify-between">
                                         <span>Satuan <span class="text-rose-400">*</span></span>
-                                        <span class="text-[9.5px] font-mono text-slate-400">Unit Ukur</span>
+                                        <span class="text-[9.5px] font-mono text-slate-400 font-bold">Unit Ukur</span>
                                     </label>
                                     <input type="text" x-model="item.tanah_satuan" @input="syncTotalsFromItems()" placeholder="Bidang"
-                                           class="w-full bg-slate-950 border border-slate-700/90 hover:border-emerald-500 focus:border-emerald-400 rounded-xl px-3.5 py-2.5 text-xs text-white font-semibold focus:outline-none transition-all">
+                                           class="w-full bg-slate-950 border border-slate-700/90 hover:border-emerald-500 focus:border-emerald-400 rounded-xl px-3.5 py-2.5 text-xs text-white font-semibold focus:outline-none transition-all shadow-inner">
                                 </div>
 
                                 {{-- Input 3: Taksiran Total Nilai Wajar Bidang (Rp) --}}
                                 <div>
                                     <div class="flex items-center justify-between gap-1 mb-1.5">
-                                        <label class="text-slate-300 text-[11px] font-semibold truncate">
+                                        <label class="text-slate-300 text-[11px] font-semibold">
                                             Taksiran Nilai Wajar (Rp) <span class="text-rose-400">*</span>
                                         </label>
-                                        <span class="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/25 font-mono shrink-0">
+                                        <span class="text-[9.5px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/25 font-mono shrink-0">
                                             Lump-Sum Bidang
                                         </span>
                                     </div>
@@ -344,7 +355,7 @@
                                                    syncTotalsFromItems();
                                                "
                                                placeholder="Contoh: 500.000.000"
-                                               class="w-full bg-slate-950 border border-emerald-500/50 hover:border-emerald-400 focus:border-emerald-400 text-emerald-300 font-mono font-bold rounded-xl pl-10 pr-3.5 py-2.5 text-xs sm:text-sm focus:outline-none transition-all shadow-inner">
+                                               class="w-full bg-slate-950 border border-emerald-500/50 hover:border-emerald-400 focus:border-emerald-400 text-emerald-300 font-mono font-bold rounded-xl pl-11 pr-3.5 py-2.5 text-xs sm:text-sm focus:outline-none transition-all shadow-inner">
                                     </div>
                                 </div>
                             </div>

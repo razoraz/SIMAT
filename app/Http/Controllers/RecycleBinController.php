@@ -383,7 +383,7 @@ class RecycleBinController extends Controller
         // 7. DATA TERHAPUS: KEMITRAAN ASET (AKUN 1.5.2 / KSO)
         // =========================================================================
         $rawDeletedKemitraans = AstapKemitraan::onlyDeleted()
-            ->with(['astap.jenisAstap', 'astap.registers.unit', 'astap.unit', 'user'])
+            ->with(['astap.jenisAstap', 'astap.registers.unit', 'astap.unit', 'objekAstap.jenisAstap', 'objekRegister', 'user'])
             ->latest('deleted_at')
             ->latest('id')
             ->get();
@@ -394,11 +394,18 @@ class RecycleBinController extends Controller
             $tglMulai   = $k->tanggal_mulai ? Carbon::parse($k->tanggal_mulai)->timezone('Asia/Jakarta') : null;
             $tglSelesai = $k->tanggal_selesai ? Carbon::parse($k->tanggal_selesai)->timezone('Asia/Jakarta') : null;
 
-            $namaBarang = $k->astap?->nama_barang ?: 'Barang Kemitraan';
-            $kodeBarang = $k->astap?->kode_108 ?: ($k->astap?->jenisAstap?->sub_sub_rincian_objek ?: '-');
-            $ruangan    = $k->astap?->unit?->nama ?: '-';
+            $astap = $k->astap;
+            $spec = is_array($astap?->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap?->spesifikasi_json ?? '[]', true) ?: []);
+            
+            // Tentukan apakah aset ini merupakan objek yang dimanfaatkan atau aset yang ditambahkan mitra
+            $tipeKemitraan = $k->tipe_kemitraan ?: ($spec['tipe_kemitraan'] ?? null);
+            $isDitambahkan = ($tipeKemitraan === 'ditambahkan') || (!empty($k->objek_astap_id) && $tipeKemitraan !== 'dimanfaatkan') || (!empty($k->objek_nibar) && $tipeKemitraan !== 'dimanfaatkan');
 
-            $registersMapped = $k->astap?->registers?->map(function ($r, $idx) {
+            $namaBarang = $astap?->nama_barang ?: ($isDitambahkan ? 'Aset Ditambahkan Mitra' : 'Objek Pemanfaatan BMD');
+            $kodeBarang = $astap?->kode_108 ?: ($astap?->jenisAstap?->sub_sub_rincian_objek ?: '-');
+            $ruangan    = $astap?->unit?->nama ?: '-';
+
+            $registersMapped = $astap?->registers?->map(function ($r, $idx) {
                 return [
                     'no'          => $idx + 1,
                     'nibar'       => $r->nibar ?: '-',
@@ -408,15 +415,26 @@ class RecycleBinController extends Controller
                 ];
             })->toArray() ?? [];
 
+            $objekAsalNama = $k->objekAstap?->nama_barang ?: ($k->objek_nibar ? 'Objek BMD (NIBAR: ' . $k->objek_nibar . ')' : null);
+            $objekAsalNibar = $k->objek_nibar ?: ($k->objekRegister?->nibar ?: null);
+
             return [
                 'id'                  => $k->id,
                 'astap_id'            => $k->astap_id,
+                'tipe_kemitraan'      => $isDitambahkan ? 'ditambahkan' : 'dimanfaatkan',
+                'is_ditambahkan'      => $isDitambahkan,
                 'nomor_pks'           => $k->nomor_pks,
                 'mitra_nama'          => $k->mitra_nama,
-                'skema_kemitraan'     => $k->skema_kemitraan ?: 'KSO',
+                'skema_kemitraan'     => $k->skema_kemitraan ?: ($isDitambahkan ? 'KSO' : 'Sewa'),
                 'nama_barang'         => $namaBarang,
                 'kode_barang'         => $kodeBarang,
-                'volume'              => $k->jumlah_volume . ' ' . ($k->satuan ?: 'Unit'),
+                'merk'                => $spec['merk'] ?? ($spec['mesin_merk'] ?? null),
+                'type'                => $spec['type'] ?? ($spec['mesin_type'] ?? null),
+                'luas'                => $spec['luas_m2'] ?? ($spec['tanah_luas_m2'] ?? ($spec['gedung_luas_lantai'] ?? null)),
+                'sertifikat'          => $spec['sertifikat_no'] ?? ($spec['tanah_sertifikat_no'] ?? ($spec['gedung_dokumen_no'] ?? null)),
+                'objek_asal_nama'     => $objekAsalNama,
+                'objek_asal_nibar'    => $objekAsalNibar,
+                'volume'              => $k->jumlah_volume . ' ' . ($k->satuan ?: ($isDitambahkan ? 'Unit' : 'Bidang')),
                 'nilai_aset'          => (float) $k->nilai_aset,
                 'nilai_aset_rp'       => 'Rp ' . number_format($k->nilai_aset ?: 0, 0, ',', '.'),
                 'tanggal_pks'         => $tglPks ? $tglPks->locale('id')->translatedFormat('d M Y') : '-',
@@ -612,11 +630,13 @@ class RecycleBinController extends Controller
                 'ready' => true,
             ],
             'kemitraan' => [
-                'name'  => 'Kemitraan Aset',
-                'icon'  => '🤝',
-                'count' => $kemitraanCount,
-                'color' => 'cyan',
-                'ready' => true,
+                'name'               => 'Kemitraan Aset',
+                'icon'               => '🤝',
+                'count'              => $kemitraanCount,
+                'dimanfaatkan_count' => $deletedKemitraans->where('is_ditambahkan', false)->count(),
+                'ditambahkan_count'  => $deletedKemitraans->where('is_ditambahkan', true)->count(),
+                'color'              => 'cyan',
+                'ready'              => true,
             ],
             'belanja_barang' => [
                 'name'  => 'Belanja Barang',

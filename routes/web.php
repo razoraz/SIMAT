@@ -2405,6 +2405,7 @@ Route::middleware('auth')->group(function () {
                         'tahun'            => $tahun,
                         'triwulan'         => $data['triwulan'],
                         'keterangan'       => $data['kemitraan_keterangan'] ?? null,
+                        'tipe_kemitraan'   => $request->input('tipe_kemitraan', $data['tipe_kemitraan'] ?? 'dimanfaatkan'),
                         'dokumen_path'     => $dokumenPath,
                         'user_id'          => auth()->id(),
                     ]);
@@ -2487,7 +2488,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/astap/kemitraan/{id}/cetak-bast', [\App\Http\Controllers\KemitraanController::class, 'cetakBast'])->name('astap.kemitraan.cetak_bast');
 
             // ─── Form Kemitraan Pihak Ketiga (Edit & Update) ─────────────────
-            Route::get('/astap/{id}/edit-kemitraan', function ($id) use ($getDistinctPenyedias, $getDistinctPejabats, $getDistinctMitras, $getObjekAsetKemitraans) {
+            Route::get('/astap/{id}/edit-kemitraan', function (\Illuminate\Http\Request $request, $id) use ($getDistinctPenyedias, $getDistinctPejabats, $getDistinctMitras, $getObjekAsetKemitraans) {
                 $astap = \App\Models\Astap::with(['registers.unit', 'jenisAstap', 'kemitraan'])->findOrFail($id);
                 $dbMaster108 = \App\Models\JenisAstap::getNested108();
                 $dbUnits = \App\Models\Unit::orderBy('nama')->get();
@@ -2521,7 +2522,17 @@ Route::middleware('auth')->group(function () {
                     ]);
                 }
 
-                $tipe = ($astap?->kemitraan?->objek_astap_id || $astap?->kemitraan?->objek_nibar || $astap?->is_reklas) ? 'dimanfaatkan' : 'ditambahkan';
+                $spec = is_array($astap?->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap?->spesifikasi_json ?? '[]', true) ?: []);
+                $queryTipe = $request->query('tipe');
+                if ($queryTipe && in_array($queryTipe, ['ditambahkan', 'dimanfaatkan'])) {
+                    $tipe = $queryTipe;
+                } elseif (!empty($astap?->kemitraan?->tipe_kemitraan) && in_array($astap->kemitraan->tipe_kemitraan, ['ditambahkan', 'dimanfaatkan'])) {
+                    $tipe = $astap->kemitraan->tipe_kemitraan;
+                } elseif (!empty($spec['tipe_kemitraan']) && in_array($spec['tipe_kemitraan'], ['ditambahkan', 'dimanfaatkan'])) {
+                    $tipe = $spec['tipe_kemitraan'];
+                } else {
+                    $tipe = ($astap?->is_reklas) ? 'dimanfaatkan' : 'ditambahkan';
+                }
 
                 return view('pages.kemitraan.form', compact(
                     'astap', 'dbMaster108', 'dbUnits', 'dbPenyedias', 'dbPejabats',
@@ -2874,6 +2885,7 @@ Route::middleware('auth')->group(function () {
                         'tahun'            => $tahun,
                         'triwulan'         => $data['triwulan'],
                         'keterangan'       => $data['kemitraan_keterangan'] ?? null,
+                        'tipe_kemitraan'   => $request->input('tipe_kemitraan', $data['tipe_kemitraan'] ?? ($kemitraan->tipe_kemitraan ?: 'dimanfaatkan')),
                         'dokumen_path'     => $dokumenPath,
                         'user_id'          => auth()->id(),
                     ]);
