@@ -155,12 +155,19 @@
                 </div>
 
                 <!-- Banner Info Aset Baru Mitra (Hanya Muncul di Mode Ditambahkan) -->
-                <div x-show="tipeKemitraan === 'ditambahkan'" class="col-span-2 p-3 rounded-2xl bg-emerald-950/20 border border-emerald-500/30">
-                    <div class="flex items-center gap-2">
-                        <span class="text-emerald-400 text-sm">📦</span>
-                        <div>
-                            <span class="text-[10px] font-bold text-emerald-300 uppercase tracking-wider block">Pengadaan Aset Baru Rekanan (KSO/BGS)</span>
-                            <span class="text-[11px] text-slate-300">Barang didatangkan baru oleh mitra rekanan, tidak menautkan NIBAR aset RSUD eksisting.</span>
+                <div x-show="tipeKemitraan === 'ditambahkan'" class="col-span-2 p-3.5 rounded-2xl bg-emerald-950/20 border border-emerald-500/30">
+                    <div class="flex items-center gap-3">
+                        <span class="text-emerald-400 text-base">📦</span>
+                        <div class="min-w-0 flex-1">
+                            <span class="text-[10px] font-bold text-emerald-300 uppercase tracking-wider block">Pengadaan Aset Baru Rekanan (KSO / BGS)</span>
+                            <template x-if="formData.objek_nibar || formData.objek_astap_id">
+                                <span class="text-[11px] text-slate-300 block mt-0.5">
+                                    Tertaut pada Objek Pemanfaatan BMD: <strong class="text-cyan-300 font-mono" x-text="formData.objek_aset_terpilih?.nama_barang ? (formData.objek_aset_terpilih.nama_barang + ' (' + (formData.objek_nibar || '-') + ')') : ('NIBAR: ' + (formData.objek_nibar || '-'))"></strong>.
+                                </span>
+                            </template>
+                            <template x-if="!formData.objek_nibar && !formData.objek_astap_id">
+                                <span class="text-[11px] text-slate-300 block mt-0.5">Barang didatangkan baru secara mandiri oleh mitra rekanan, tanpa penautan objek BMD eksisting RSUD.</span>
+                            </template>
                         </div>
                     </div>
                 </div>

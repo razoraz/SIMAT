@@ -76,7 +76,7 @@
                                 Uraian / Nama Rincian Gedung &amp; Bangunan yang Disewakan / Dimanfaatkan <span class="text-rose-400">*</span>
                             </label>
                             <input type="text"
-                                   x-model="item.gedung_nama_bangunan"
+                                   x-model="item.gedung_nama_barang"
                                    @input="syncTotalsFromItems()"
                                    placeholder="Contoh: Gedung Rawat Inap Paviliun Melati / Bangunan Kantin &amp; Pujasera RSUD..."
                                    class="w-full bg-slate-950 border border-slate-700 hover:border-cyan-400 focus:border-cyan-400 rounded-xl px-3.5 py-2.5 text-xs text-white font-bold focus:outline-none transition-all">
