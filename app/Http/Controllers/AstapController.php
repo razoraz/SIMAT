@@ -23,6 +23,16 @@ class AstapController extends Controller
     public function index()
     {
         $astaps = \App\Models\Astap::where('is_deleted', 0)
+            ->where(function($q) {
+                $q->whereNull('jenis_reklas')
+                  ->orWhere('jenis_reklas', '!=', 'MUTASI_EKSTERNAL');
+            })
+            ->whereDoesntHave('mutasiEksternals', function($q) {
+                $q->where('tipe', 'keluar')->where('is_deleted', 0);
+            })
+            ->whereDoesntHave('reklas', function($q) {
+                $q->where('jenis_reklas', 'MUTASI_EKSTERNAL')->where('is_deleted', 0);
+            })
             ->with([
                 'registers.mutasis' => function($q) {
                     $q->where('status', 'Disetujui Admin (Selesai)');

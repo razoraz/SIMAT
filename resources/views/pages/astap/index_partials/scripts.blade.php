@@ -9574,6 +9574,11 @@
                 reklasNomorBastMutasi: '',
                 reklasTanggalBastMutasi: new Date().toLocaleDateString('en-CA'),
                 reklasSkpdTujuan: '',
+                reklasPejabatOpdTujuan: '',
+                reklasNipPejabatOpdTujuan: '',
+                reklasJabatanOpdTujuan: 'Pengurus Barang / Pengelola Aset OPD',
+                reklasAlamatInstansi: '',
+                reklasNomorSkDasar: '',
                 isSubmittingReklas: false,
                 reklasKdpProgresAwal: 0,
                 reklasKemitraanTipeFisik: 'mesin', // 'tanah' | 'mesin' | 'gedung' | 'jaringan' | 'lainnya'
@@ -10387,6 +10392,11 @@
                     this.reklasNomorBastMutasi = '';
                     this.reklasTanggalBastMutasi = new Date().toLocaleDateString('en-CA');
                     this.reklasSkpdTujuan = '';
+                    this.reklasPejabatOpdTujuan = '';
+                    this.reklasNipPejabatOpdTujuan = '';
+                    this.reklasJabatanOpdTujuan = 'Pengurus Barang / Pengelola Aset OPD';
+                    this.reklasAlamatInstansi = '';
+                    this.reklasNomorSkDasar = '';
                     this.initReklasSpekBaru();
                     this.showReklasModal = true;
                 },
@@ -11348,6 +11358,11 @@
                             alasan_reklas: (this.reklasAlasan || '').trim() || null,
                             pihak_hibah: (this.reklasJenis === 'hibah') ? this.reklasPihakHibah : null,
                             skpd_tujuan: (this.reklasJenis === 'mutasi_eksternal') ? this.reklasSkpdTujuan : null,
+                            pejabat_opd_tujuan: (this.reklasJenis === 'mutasi_eksternal') ? this.reklasPejabatOpdTujuan : null,
+                            nip_pejabat_opd_tujuan: (this.reklasJenis === 'mutasi_eksternal') ? this.reklasNipPejabatOpdTujuan : null,
+                            jabatan_opd_tujuan: (this.reklasJenis === 'mutasi_eksternal') ? this.reklasJabatanOpdTujuan : null,
+                            alamat_instansi: (this.reklasJenis === 'mutasi_eksternal') ? this.reklasAlamatInstansi : null,
+                            nomor_sk_dasar: (this.reklasJenis === 'mutasi_eksternal') ? this.reklasNomorSkDasar : null,
                             tanggal_bast: (this.reklasJenis === 'hibah') ? this.reklasTanggalBastHibah : ((this.reklasJenis === 'mutasi_eksternal') ? this.reklasTanggalBastMutasi : null),
                             tanggal_dokumen_koreksi: (this.reklasJenis === 'koreksi_nilai') ? this.reklasDokumenTglKoreksi : null,
                             keterangan: this.getReklasNarasiPreview(),
@@ -11391,38 +11406,55 @@
                             it.is_reklas = true;
                             it.jenis_reklas = jenisReklasDb;
 
-                            // Jika ada data astap terbaru dikembalikan dari backend
-                            if (resJson.astap) {
-                                it.total_realisasi = resJson.astap.total_realisasi;
-                                it.total_realisasi_num = resJson.astap.total_realisasi_num;
-                                it.jumlah_realisasi = resJson.astap.total_realisasi;
-                                it.jumlah_anggaran = resJson.astap.jumlah_anggaran ?? it.jumlah_anggaran;
-                                it.jumlah_volume = resJson.astap.jumlah_volume;
-                                it.harga_satuan = resJson.astap.harga_satuan;
-                                it.is_extracomtable = resJson.astap.is_extracomtable;
-                                it.category = resJson.astap.category;
-                                it.spesifikasi_json = resJson.astap.spesifikasi_json;
-
-                                // Update juga di array astaps jika matching id
+                            // Jika mutasi eksternal: hapus dari daftar tabel ASTAP aktif karena sudah dipindahtangankan keluar ke OPD lain
+                            if (this.reklasJenis === 'mutasi_eksternal') {
                                 const idxInList = this.astaps.findIndex(a => a.id === it.id);
                                 if (idxInList !== -1) {
-                                    Object.assign(this.astaps[idxInList], {
-                                        total_realisasi: resJson.astap.total_realisasi,
-                                        total_realisasi_num: resJson.astap.total_realisasi_num,
-                                        jumlah_realisasi: resJson.astap.total_realisasi,
-                                        jumlah_anggaran: resJson.astap.jumlah_anggaran ?? this.astaps[idxInList].jumlah_anggaran,
-                                        jumlah_volume: resJson.astap.jumlah_volume,
-                                        harga_satuan: resJson.astap.harga_satuan,
-                                        is_extracomtable: resJson.astap.is_extracomtable,
-                                        category: resJson.astap.category,
-                                        is_reklas: true,
-                                        jenis_reklas: jenisReklasDb,
-                                        spesifikasi_json: resJson.astap.spesifikasi_json,
-                                    });
+                                    this.astaps.splice(idxInList, 1);
+                                }
+                                this.showReklasModal = false;
+                                this.showDetailModal = false;
+                                this.selectedAstapDetail = null;
+                                this.selectedAstapReklas = null;
+                            } else {
+                                // Jika ada data astap terbaru dikembalikan dari backend
+                                if (resJson.astap) {
+                                    it.total_realisasi = resJson.astap.total_realisasi;
+                                    it.total_realisasi_num = resJson.astap.total_realisasi_num;
+                                    it.jumlah_realisasi = resJson.astap.total_realisasi;
+                                    it.jumlah_anggaran = resJson.astap.jumlah_anggaran ?? it.jumlah_anggaran;
+                                    it.jumlah_volume = resJson.astap.jumlah_volume;
+                                    it.harga_satuan = resJson.astap.harga_satuan;
+                                    it.is_extracomtable = resJson.astap.is_extracomtable;
+                                    it.category = resJson.astap.category;
+                                    it.spesifikasi_json = resJson.astap.spesifikasi_json;
+
+                                    // Update juga di array astaps jika matching id
+                                    const idxInList = this.astaps.findIndex(a => a.id === it.id);
+                                    if (idxInList !== -1) {
+                                        Object.assign(this.astaps[idxInList], {
+                                            total_realisasi: resJson.astap.total_realisasi,
+                                            total_realisasi_num: resJson.astap.total_realisasi_num,
+                                            jumlah_realisasi: resJson.astap.total_realisasi,
+                                            jumlah_anggaran: resJson.astap.jumlah_anggaran ?? this.astaps[idxInList].jumlah_anggaran,
+                                            jumlah_volume: resJson.astap.jumlah_volume,
+                                            harga_satuan: resJson.astap.harga_satuan,
+                                            is_extracomtable: resJson.astap.is_extracomtable,
+                                            category: resJson.astap.category,
+                                            is_reklas: true,
+                                            jenis_reklas: jenisReklasDb,
+                                            spesifikasi_json: resJson.astap.spesifikasi_json,
+                                        });
+                                    }
                                 }
                             }
 
-                            if (resJson.cetak_bast_url) {
+                            if (resJson.cetak_bast_mutasi_url) {
+                                this.showToast('Mutasi keluar antar-OPD berhasil! Aset telah dialihkan dan kini hanya dapat dilihat di Katalog Mutasi Eksternal Keluar.', 'success');
+                                setTimeout(() => {
+                                    window.open(resJson.cetak_bast_mutasi_url, '_blank');
+                                }, 700);
+                            } else if (resJson.cetak_bast_url) {
                                 this.showToast('Reklasifikasi ke Kemitraan berhasil! Draf resmi BAST dibuka di tab baru.', 'success');
                                 setTimeout(() => {
                                     window.open(resJson.cetak_bast_url, '_blank');

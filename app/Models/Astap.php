@@ -253,6 +253,16 @@ class Astap extends Model
         return $this->hasOne(MutasiEksternal::class, 'astap_id');
     }
 
+    public function mutasiEksternals()
+    {
+        return $this->hasMany(MutasiEksternal::class, 'astap_id');
+    }
+
+    public function mutasiEksternalKeluar()
+    {
+        return $this->hasOne(MutasiEksternal::class, 'astap_id')->where('tipe', 'keluar')->where('is_deleted', 0)->latestOfMany();
+    }
+
     public function hibahDetail()
     {
         return $this->hasOne(AstapHibah::class, 'astap_id')->where('tipe_hibah', 'masuk');

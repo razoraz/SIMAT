@@ -59,7 +59,15 @@
                                 </span>
                             </template>
 
-                            <template x-if="selectedAstapDetail?.has_reklas || selectedAstapDetail?.is_reklas || (selectedAstapDetail?.reklas_count && selectedAstapDetail?.reklas_count > 0)">
+                            <template x-if="selectedAstapDetail?.jenis_reklas === 'MUTASI_EKSTERNAL' || !!selectedAstapDetail?.mutasi_keluar">
+                                <span class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-lg text-[10px] font-black border uppercase tracking-wider shrink-0 bg-cyan-500/25 text-cyan-300 border-cyan-400/50 shadow-md shadow-cyan-500/20"
+                                    :title="'Aset telah dimutasi keluar ke ' + (selectedAstapDetail?.mutasi_keluar?.opd_tujuan || selectedAstapDetail?.opd_tujuan || 'OPD Luar')">
+                                    <span>🏛️</span>
+                                    <span x-text="'MUTASI KELUAR KE ' + (selectedAstapDetail?.mutasi_keluar?.opd_tujuan || selectedAstapDetail?.opd_tujuan || 'OPD LUAR').toUpperCase()"></span>
+                                </span>
+                            </template>
+
+                            <template x-if="selectedAstapDetail?.jenis_reklas !== 'MUTASI_EKSTERNAL' && !selectedAstapDetail?.mutasi_keluar && (selectedAstapDetail?.has_reklas || selectedAstapDetail?.is_reklas || (selectedAstapDetail?.reklas_count && selectedAstapDetail?.reklas_count > 0))">
                                 <span class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 bg-indigo-500/20 text-indigo-300 border-indigo-500/30 shadow-sm"
                                     :title="'Aset ini memiliki riwayat Reklasifikasi' + (selectedAstapDetail?.jenis_reklas ? ' (' + selectedAstapDetail.jenis_reklas.replace(/_/g, ' ') + ')' : '')">
                                     <svg class="w-3 h-3 shrink-0 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -190,6 +198,52 @@
                                     <span x-text="selectedAstapDetail.mutasi_keterangan"></span>
                                 </div>
                             </template>
+                        </div>
+
+                        <!-- DOKUMEN BAST MUTASI KELUAR ANTAR-OPD (KHUSUS MUTASI EKSTERNAL) -->
+                        <div x-show="selectedAstapDetail?.jenis_reklas === 'MUTASI_EKSTERNAL' || !!selectedAstapDetail?.mutasi_keluar" class="p-4 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-2 text-cyan-300 font-extrabold text-xs uppercase tracking-wider">
+                                    <span>🏛️ Dokumen Berita Acara Serah Terima (BAST) Mutasi Keluar OPD</span>
+                                </div>
+                                <template x-if="selectedAstapDetail?.mutasi_keluar?.cetak_url">
+                                    <a :href="selectedAstapDetail.mutasi_keluar.cetak_url" target="_blank"
+                                       class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-200 text-[11px] font-bold transition shadow-sm">
+                                        <span>🖨️ Cetak BAST Mutasi</span>
+                                    </a>
+                                </template>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
+                                <div>
+                                    <span class="text-slate-400 block text-[10px] uppercase font-bold">SKPD / Instansi Penerima:</span>
+                                    <span class="font-bold text-white text-sm" x-text="selectedAstapDetail?.mutasi_keluar?.opd_tujuan || selectedAstapDetail?.opd_tujuan || '-'"></span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 block text-[10px] uppercase font-bold">Nomor BAST / BAMB:</span>
+                                    <span class="font-mono text-cyan-300 font-semibold" x-text="selectedAstapDetail?.mutasi_keluar?.nomor_bamb || '-'"></span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 block text-[10px] uppercase font-bold">Tanggal Penyerahan:</span>
+                                    <span class="text-slate-200 font-medium" x-text="formatTanggalIndo(selectedAstapDetail?.mutasi_keluar?.tanggal_mutasi_raw)"></span>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1 border-t border-cyan-500/20">
+                                <div>
+                                    <span class="text-slate-400 block text-[10px] uppercase font-bold">Pejabat Penerima:</span>
+                                    <span class="text-slate-200 font-semibold" x-text="selectedAstapDetail?.mutasi_keluar?.pj_tujuan_nama || '-'"></span>
+                                    <span class="text-slate-400 text-[10px] block" x-text="selectedAstapDetail?.mutasi_keluar?.pj_tujuan_nip ? ('NIP: ' + selectedAstapDetail.mutasi_keluar.pj_tujuan_nip) : ''"></span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 block text-[10px] uppercase font-bold">Dasar Hukum / SK:</span>
+                                    <span class="font-mono text-cyan-300 font-semibold" x-text="selectedAstapDetail?.mutasi_keluar?.nomor_sk_dasar || '-'"></span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 block text-[10px] uppercase font-bold">Status Pemindahtanganan:</span>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                        ✅ Selesai / Diserahkan
+                                    </span>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- DYNAMIC LANGKAH 3 SPESIFIKASI BERDASARKAN JENIS ASET (KIB A - F, ATB, EXTRACOM) -->
@@ -1044,26 +1098,43 @@
                                             <tr class="hover:bg-slate-800/60 transition-colors">
                                                 <td class="px-3.5 py-2.5 font-mono font-bold text-emerald-400 whitespace-nowrap text-center" x-text="reg.nibar || reg.no_register"></td>
                                                 <td class="px-3.5 py-2.5 text-center">
-                                                    <template x-if="reg.ruang_pemegang">
-                                                        <span class="inline-flex items-center space-x-1.5 text-slate-200 font-semibold justify-center">
-                                                            <span class="text-teal-400 text-xs">📍</span>
-                                                            <span x-text="reg.ruang_pemegang"></span>
+                                                    <template x-if="reg.status === 'Mutasi Keluar OPD' || selectedAstapDetail?.jenis_reklas === 'MUTASI_EKSTERNAL'">
+                                                        <span class="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-xl bg-cyan-500/15 border border-cyan-500/35 text-cyan-300 font-bold text-[10.5px] shadow-sm justify-center">
+                                                            <span class="text-xs">🏛️</span>
+                                                            <span x-text="reg.ruang_pemegang ? (reg.ruang_pemegang.startsWith('Mutasi Keluar') ? reg.ruang_pemegang : 'Mutasi Keluar: ' + reg.ruang_pemegang) : ('Mutasi Keluar: ' + (selectedAstapDetail?.mutasi_keluar?.opd_tujuan || 'OPD Luar'))"></span>
                                                         </span>
                                                     </template>
-                                                    <template x-if="!reg.ruang_pemegang">
-                                                        <span class="inline-flex items-center space-x-1.5 text-amber-400 font-bold bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/30 text-[10px] justify-center">
-                                                            <span>⚠️</span>
-                                                            <span>Belum Ditempatkan</span>
-                                                        </span>
+                                                    <template x-if="reg.status !== 'Mutasi Keluar OPD' && selectedAstapDetail?.jenis_reklas !== 'MUTASI_EKSTERNAL'">
+                                                        <div>
+                                                            <template x-if="reg.ruang_pemegang">
+                                                                <span class="inline-flex items-center space-x-1.5 text-slate-200 font-semibold justify-center">
+                                                                    <span class="text-teal-400 text-xs">📍</span>
+                                                                    <span x-text="reg.ruang_pemegang"></span>
+                                                                </span>
+                                                            </template>
+                                                            <template x-if="!reg.ruang_pemegang">
+                                                                <span class="inline-flex items-center space-x-1.5 text-amber-400 font-bold bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/30 text-[10px] justify-center">
+                                                                    <span>⚠️</span>
+                                                                    <span>Belum Ditempatkan</span>
+                                                                </span>
+                                                            </template>
+                                                        </div>
                                                     </template>
                                                 </td>
                                                 <td class="px-3.5 py-2.5 text-center whitespace-nowrap">
-                                                    <span class="px-2.5 py-1 rounded-xl text-[10.5px] font-bold border inline-block shadow-sm"
-                                                          :class="{
-                                                              'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': reg.kondisi === 'Baik' || reg.kondisi === 'B',
-                                                              'bg-amber-500/20 text-amber-300 border-amber-500/30': reg.kondisi === 'Kurang Baik' || reg.kondisi === 'KB' || reg.kondisi === 'Rusak Ringan' || reg.kondisi === 'RR',
-                                                              'bg-rose-500/20 text-rose-300 border-rose-500/30': reg.kondisi === 'Rusak Berat' || reg.kondisi === 'RB' || reg.kondisi === 'Rusak'
-                                                          }" x-text="reg.kondisi === 'B' ? 'Baik' : ((reg.kondisi === 'KB' || reg.kondisi === 'RR' || reg.kondisi === 'Rusak Ringan') ? 'Kurang Baik' : ((reg.kondisi === 'RB' || reg.kondisi === 'Rusak') ? 'Rusak Berat' : (reg.kondisi || 'Baik')))"></span>
+                                                    <div class="flex flex-col items-center gap-1">
+                                                        <template x-if="reg.status === 'Mutasi Keluar OPD' || selectedAstapDetail?.jenis_reklas === 'MUTASI_EKSTERNAL'">
+                                                            <span class="px-2 py-0.5 rounded-md text-[9.5px] font-black uppercase tracking-wide bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                                                                🏛️ MUTASI KELUAR
+                                                            </span>
+                                                        </template>
+                                                        <span class="px-2.5 py-1 rounded-xl text-[10.5px] font-bold border inline-block shadow-sm"
+                                                              :class="{
+                                                                  'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': reg.kondisi === 'Baik' || reg.kondisi === 'B',
+                                                                  'bg-amber-500/20 text-amber-300 border-amber-500/30': reg.kondisi === 'Kurang Baik' || reg.kondisi === 'KB' || reg.kondisi === 'Rusak Ringan' || reg.kondisi === 'RR',
+                                                                  'bg-rose-500/20 text-rose-300 border-rose-500/30': reg.kondisi === 'Rusak Berat' || reg.kondisi === 'RB' || reg.kondisi === 'Rusak'
+                                                              }" x-text="reg.kondisi === 'B' ? 'Baik' : ((reg.kondisi === 'KB' || reg.kondisi === 'RR' || reg.kondisi === 'Rusak Ringan') ? 'Kurang Baik' : ((reg.kondisi === 'RB' || reg.kondisi === 'Rusak') ? 'Rusak Berat' : (reg.kondisi || 'Baik')))"></span>
+                                                    </div>
                                                 </td>
                                                 <td class="px-3.5 py-2.5 text-center whitespace-nowrap">
                                                     <button type="button" @click.stop="downloadQrCodeNibar(reg, selectedAstapDetail)"

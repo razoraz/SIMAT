@@ -1285,8 +1285,10 @@ class ReklasifikasiController extends Controller
                 $astap->spesifikasi_json = $currSpec;
                 $specBaru = $currSpec;
             } elseif ($validated['jenis_reklas'] === 'MUTASI_EKSTERNAL') {
+                $skpdTujuanNama = $validated['skpd_tujuan'] ?? ($request->input('skpd_tujuan') ?? 'OPD Luar');
                 $astap->is_reklas = 1;
                 $astap->jenis_reklas = 'MUTASI_EKSTERNAL';
+                $astap->alamat_barang = 'Mutasi Keluar: ' . $skpdTujuanNama;
                 $tujuanKodeAset = 'KOR_LAIN';
                 $tujuanNamaAset = 'Koreksi Lain-Lain (Mutasi Keluar Antar-OPD)';
                 if (\Illuminate\Support\Facades\Schema::hasColumn('astaps', 'kondisi')) {
@@ -1295,7 +1297,7 @@ class ReklasifikasiController extends Controller
                 $currSpec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?? []);
                 $currSpec['status_barang'] = 'Mutasi Keluar OPD';
                 $currSpec['mutasi_info'] = [
-                    'skpd_tujuan'  => $validated['skpd_tujuan'] ?? ($request->input('skpd_tujuan') ?? null),
+                    'skpd_tujuan'  => $skpdTujuanNama,
                     'nomor_bast'   => $validated['nomor_ba_reklas'] ?? null,
                     'tanggal_bast' => $validated['tanggal_bast'] ?? ($request->input('tanggal_bast') ?? null),
                     'alasan'       => $validated['alasan_reklas'],
@@ -1526,8 +1528,9 @@ class ReklasifikasiController extends Controller
                     $registers = $astap->registers;
                     foreach ($registers as $reg) {
                         $reg->update([
-                            'status'  => 'Mutasi Keluar OPD',
-                            'kondisi' => $reg->kondisi ?: 'Baik',
+                            'status'         => 'Mutasi Keluar OPD',
+                            'ruang_pemegang' => 'Mutasi Keluar: ' . $skpdTujuan,
+                            'kondisi'        => $reg->kondisi ?: 'Baik',
                         ]);
 
                         MutasiEksternalRegister::updateOrCreate(
@@ -1555,6 +1558,9 @@ class ReklasifikasiController extends Controller
                     'data' => $reklas,
                     'is_kemitraan' => ($targetKib === 'KEMITRAAN'),
                     'cetak_bast_url' => ($targetKib === 'KEMITRAAN') ? route('astap.kemitraan.cetak_bast', ['id' => $astap->id]) : null,
+                    'is_mutasi_keluar' => ($validated['jenis_reklas'] === 'MUTASI_EKSTERNAL'),
+                    'cetak_bast_mutasi_url' => ($validated['jenis_reklas'] === 'MUTASI_EKSTERNAL' && isset($mutasiKeluar)) ? route('mutasi.eksternal.cetak', ['id' => $mutasiKeluar->id]) : null,
+                    'mutasi_eksternal_url' => ($validated['jenis_reklas'] === 'MUTASI_EKSTERNAL') ? route('mutasi.eksternal') : null,
                     'astap' => [
                         'id' => $astap->id,
                         'total_realisasi' => 'Rp ' . number_format($astap->total_realisasi, 0, ',', '.'),

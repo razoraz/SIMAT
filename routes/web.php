@@ -273,6 +273,16 @@ Route::middleware('auth')->group(function () {
         };
 
         $astaps = \App\Models\Astap::where('is_deleted', 0)
+            ->where(function($q) {
+                $q->whereNull('jenis_reklas')
+                  ->orWhere('jenis_reklas', '!=', 'MUTASI_EKSTERNAL');
+            })
+            ->whereDoesntHave('mutasiEksternals', function($q) {
+                $q->where('tipe', 'keluar')->where('is_deleted', 0);
+            })
+            ->whereDoesntHave('reklas', function($q) {
+                $q->where('jenis_reklas', 'MUTASI_EKSTERNAL')->where('is_deleted', 0);
+            })
             ->with([
                 'registers' => function($q) {
                     $q->where('is_deleted', 0);
@@ -291,7 +301,10 @@ Route::middleware('auth')->group(function () {
                 'reklas' => function($q) {
                     $q->orderBy('id', 'desc');
                 },
-                'kemitraan'
+                'kemitraan',
+                'mutasiEksternals' => function($q) {
+                    $q->where('is_deleted', 0)->orderBy('id', 'desc');
+                }
             ])
             ->orderBy('id', 'desc')
             ->get()
@@ -362,6 +375,10 @@ Route::middleware('auth')->group(function () {
                 $reklasCount = $a->reklas ? $a->reklas->count() : 0;
                 $hasEverReklas = $reklasCount > 0 || (bool) $a->is_reklas || !empty($a->jenis_reklas);
 
+                $latestMutasiKeluar = $a->mutasiEksternals ? $a->mutasiEksternals->where('tipe', 'keluar')->first() : null;
+                $isMutasiKeluar = ($a->jenis_reklas === 'MUTASI_EKSTERNAL') || ($latestMutasiKeluar !== null);
+                $skpdTujuanNama = $latestMutasiKeluar?->opd_tujuan ?: ($spec['mutasi_info']['skpd_tujuan'] ?? null);
+
                 return [
                     'id' => $a->id,
                     'created_at' => $a->created_at ? $a->created_at->format('Y-m-d H:i:s') : null,
@@ -370,6 +387,22 @@ Route::middleware('auth')->group(function () {
                     'has_reklas' => $hasEverReklas,
                     'reklas_count' => $reklasCount,
                     'jenis_reklas' => $a->jenis_reklas ?: ($latestReklas?->jenis_reklas),
+                    'mutasi_keluar' => $latestMutasiKeluar ? [
+                        'id' => $latestMutasiKeluar->id,
+                        'nomor_bamb' => $latestMutasiKeluar->nomor_bamb,
+                        'tanggal_mutasi' => $latestMutasiKeluar->tanggal_mutasi ? $latestMutasiKeluar->tanggal_mutasi->format('d M Y') : '-',
+                        'tanggal_mutasi_raw' => $latestMutasiKeluar->tanggal_mutasi ? $latestMutasiKeluar->tanggal_mutasi->format('Y-m-d') : '',
+                        'opd_asal' => $latestMutasiKeluar->opd_asal,
+                        'opd_tujuan' => $latestMutasiKeluar->opd_tujuan,
+                        'pj_tujuan_nama' => $latestMutasiKeluar->pj_tujuan_nama,
+                        'pj_tujuan_nip' => $latestMutasiKeluar->pj_tujuan_nip,
+                        'pj_tujuan_jabatan' => $latestMutasiKeluar->pj_tujuan_jabatan,
+                        'nomor_sk_dasar' => $latestMutasiKeluar->nomor_sk_dasar,
+                        'alamat_instansi' => $latestMutasiKeluar->alamat_instansi,
+                        'status' => $latestMutasiKeluar->status,
+                        'cetak_url' => route('mutasi.eksternal.cetak', ['id' => $latestMutasiKeluar->id]),
+                    ] : null,
+                    'opd_tujuan' => $skpdTujuanNama,
                     'tujuan_kib' => $latestReklas?->tujuan_kib,
                     'tujuan_kode' => $latestReklas?->tujuan_kode,
                     'tujuan_kode_barang' => $latestReklas?->tujuan_kode,
@@ -489,7 +522,7 @@ Route::middleware('auth')->group(function () {
                     'no_polisi' => $spec['no_polisi'] ?? ($spec['polisi'] ?? ($spec['nopol'] ?? '-')),
                     'bahan' => $spec['bahan'] ?? '-',
                     'kondisi' => $firstReg ? $firstReg->kondisi : ($spec['kondisi'] ?? 'Baik'),
-                    'ruang_unit' => $firstReg ? $firstReg->ruang_pemegang : ($spec['ruang_unit'] ?? ($a->unit ? $a->unit->nama_unit : '-')),
+                    'ruang_unit' => $isMutasiKeluar ? ('Mutasi Keluar: ' . ($skpdTujuanNama ?: 'OPD Luar')) : ($firstReg ? $firstReg->ruang_pemegang : ($spec['ruang_unit'] ?? ($a->unit ? $a->unit->nama_unit : '-'))),
                     'asal_usul' => 'BLUD RSUD',
 
                     // Rincian Gedung & Bangunan (KIB C)
@@ -531,7 +564,7 @@ Route::middleware('auth')->group(function () {
                     'progres_fisik' => $spec['progres_fisik'] ?? ($spec['capaian_fisik'] ?? '100%'),
 
                     // LANGKAH 4 (REKANAN, PPK, KETERANGAN)
-                    'alamat_barang' => $a->alamat_barang ?: ($spec['alamat_barang'] ?? 'RSUD Dr. H. Koesnandi'),
+                    'alamat_barang' => $isMutasiKeluar ? ('Mutasi Keluar: ' . ($skpdTujuanNama ?: 'OPD Luar')) : ($a->alamat_barang ?: ($spec['alamat_barang'] ?? 'RSUD Dr. H. Koesnandi')),
                     'penyedia_nama' => $a->penyedia_nama ?: ($spec['penyedia_nama'] ?? '-'),
                     'penyedia_pemilik' => $a->penyedia_pemilik ?: ($spec['penyedia_pemilik'] ?? '-'),
                     'penyedia_telepon' => $a->penyedia_telepon ?: ($spec['penyedia_telepon'] ?? ($spec['penyedia_kontak'] ?? '-')),
@@ -545,15 +578,23 @@ Route::middleware('auth')->group(function () {
 
                     'registers' => $a->registers ? $a->registers->sortBy(function($r) {
                         return $r->no_register_int ?: intval(substr($r->nibar ?? '', -7));
-                    })->values()->map(function($r) {
+                    })->values()->map(function($r) use ($isMutasiKeluar, $skpdTujuanNama) {
+                        $isRegMutasiKeluar = $isMutasiKeluar || ($r->status === 'Mutasi Keluar OPD');
+                        $ruangPemegangVal = $r->ruang_pemegang ?: ($r->unit?->nama ?? null);
+                        if ($isRegMutasiKeluar) {
+                            if (!$ruangPemegangVal || !str_starts_with($ruangPemegangVal, 'Mutasi Keluar')) {
+                                $ruangPemegangVal = 'Mutasi Keluar: ' . ($skpdTujuanNama ?: 'OPD Luar');
+                            }
+                        }
                         return [
                             'id' => $r->id,
                             'unit_id' => $r->unit_id,
                             'no_register_int' => $r->no_register_int ?: intval(substr($r->nibar ?? '', -7)),
                             'no_register' => $r->nibar ?: $r->no_register,
                             'nibar' => $r->nibar,
-                            'ruang_pemegang' => $r->ruang_pemegang ?: ($r->unit?->nama ?? null),
+                            'ruang_pemegang' => $ruangPemegangVal,
                             'kondisi' => $r->kondisi,
+                            'status' => $isRegMutasiKeluar ? 'Mutasi Keluar OPD' : ($r->status ?: 'Aktif'),
                             'status_mutasi' => $r->status_mutasi,
                             'qr_code_path' => $r->qr_code_path,
                             'mutasis' => $r->mutasis ? $r->mutasis->where('status', 'Disetujui Admin (Selesai)')->sortByDesc('tanggal_mutasi')->map(function($m) use ($r) {
