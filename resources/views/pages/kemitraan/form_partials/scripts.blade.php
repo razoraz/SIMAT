@@ -315,16 +315,60 @@
                 this.isObjekDropdownOpen = false;
                 this.objekSearchQuery = '';
 
-                if (item.pks_aktif) {
-                    this.showToast('Perhatian Status Konsesi', `Aset ini sedang dalam PKS aktif: ${item.pks_aktif.nomor_pks} (${item.pks_aktif.mitra_nama}) sampai ${item.pks_aktif.tanggal_selesai || 'selesai'}. Pastikan masa berlaku kerjasama tidak tumpang tindih.`, 'warning');
+                // OTOMATIS IKUTI DATA KEMITRAAN DARI ASET YANG DIMANFAATKAN KE INPUTAN LANGKAH 1
+                const kData = item.kemitraan_data || item.pks_aktif || {};
+                const mitraNama = kData.mitra_nama || (item.pks_aktif ? item.pks_aktif.mitra_nama : '');
+                const nomorPks  = kData.nomor_pks || (item.pks_aktif ? item.pks_aktif.nomor_pks : '');
+                const tglPks    = kData.tanggal_pks || '';
+                const tglMulai  = kData.tanggal_mulai || '';
+                const tglSelesai = kData.tanggal_selesai || (item.pks_aktif ? item.pks_aktif.tanggal_selesai : '');
+                const pimpinan  = kData.mitra_pimpinan || '';
+                const alamat    = kData.mitra_alamat || '';
+                const skema     = kData.skema_kemitraan || '';
+
+                if (mitraNama) {
+                    this.formData.mitra_nama = mitraNama;
+                    this.onMitraInput(mitraNama);
+                }
+                if (pimpinan) {
+                    this.formData.mitra_pimpinan = pimpinan;
+                }
+                if (alamat) {
+                    this.formData.mitra_alamat = alamat;
+                }
+                if (nomorPks) {
+                    this.formData.nomor_pks = nomorPks;
+                }
+                if (tglPks) {
+                    this.formData.tanggal_pks = this.cleanDateString(tglPks);
+                    this.syncTahunTriwulanFromPks(this.formData.tanggal_pks);
+                }
+                if (tglMulai) {
+                    this.formData.tanggal_mulai = this.cleanDateString(tglMulai);
+                }
+                if (tglSelesai) {
+                    this.formData.tanggal_selesai = this.cleanDateString(tglSelesai);
+                }
+                // Jika pada mode dimanfaatkan, skema bisa mengikuti objek
+                if (skema && this.tipeKemitraan === 'dimanfaatkan') {
+                    this.formData.skema_kemitraan = skema;
+                }
+
+                // JANGAN SENTUH LANGKAH 2 & 3 JIKA TIPE KEMITRAAN ADALAH 'DITAMBAHKAN'!
+                // Karena aset yang ditambahkan mitra (Langkah 2 & 3) berbeda klasifikasi barangnya (misal gedung baru di atas tanah sewa)
+                if (this.tipeKemitraan === 'dimanfaatkan') {
+                    this.$nextTick(() => {
+                        this.autoSelectLockedSubSub();
+                    });
+                }
+
+                if (mitraNama || nomorPks) {
+                    this.showToast('Data PKS & Mitra Tersinkron', `Inputan Langkah 1 otomatis mengikuti data kontrak aset pemanfaatan: ${item.nama_barang} (${mitraNama || nomorPks})`, 'success');
+                } else if (item.pks_aktif) {
+                    this.showToast('Perhatian Status Konsesi', `Aset ini sedang dalam PKS aktif: ${item.pks_aktif.nomor_pks} (${item.pks_aktif.mitra_nama}) sampai ${item.pks_aktif.tanggal_selesai || 'selesai'}.`, 'warning');
                 } else {
                     this.showToast('Objek Aset Dipilih', `Berhasil memilih objek BMD: ${item.nama_barang} (NIBAR: ${item.nibar})`, 'success');
                 }
-
-                // Otomatis sinkronkan dan kunci objek 1.5.2 sesuai KIB aset yang dipilih
-                this.$nextTick(() => {
-                    this.autoSelectLockedSubSub();
-                });
             },
 
             clearObjekAset() {
@@ -758,6 +802,8 @@
                         if (qAlamat) this.formData.mitra_alamat = qAlamat;
                         if (qSkema && ['Sewa', 'KSP', 'BGS', 'BSG', 'KSPI', 'KSO'].includes(qSkema)) {
                             this.formData.skema_kemitraan = qSkema;
+                        } else if (!qSkema && this.tipeKemitraan === 'ditambahkan' && this.formData.skema_kemitraan === 'Sewa') {
+                            this.formData.skema_kemitraan = 'KSO';
                         }
                         if (qObjekId) this.formData.objek_astap_id = qObjekId;
                         if (qObjekNibar) this.formData.objek_nibar = qObjekNibar;
@@ -1029,11 +1075,18 @@
                     ? d.spesifikasi_json 
                     : (typeof d.spesifikasi_json === 'string' ? (JSON.parse(d.spesifikasi_json) || {}) : {});
 
-                // Tentukan tipe kemitraan berdasarkan data eksisting
-                if (kemitraan.objek_astap_id || kemitraan.objek_register_id || kemitraan.objek_nibar || spec.objek_nibar || spec.objek_astap_id || d.is_reklas) {
+                // Tentukan tipe kemitraan berdasarkan data eksisting atau parameter URL
+                const urlParam = new URLSearchParams(window.location.search).get('tipe');
+                if (urlParam && ['dimanfaatkan', 'ditambahkan'].includes(urlParam)) {
+                    this.tipeKemitraan = urlParam;
+                } else if (spec.tipe_kemitraan && ['dimanfaatkan', 'ditambahkan'].includes(spec.tipe_kemitraan)) {
+                    this.tipeKemitraan = spec.tipe_kemitraan;
+                } else if (kemitraan.tipe_kemitraan && ['dimanfaatkan', 'ditambahkan'].includes(kemitraan.tipe_kemitraan)) {
+                    this.tipeKemitraan = kemitraan.tipe_kemitraan;
+                } else if (d.is_reklas) {
                     this.tipeKemitraan = 'dimanfaatkan';
                 } else {
-                    this.tipeKemitraan = 'ditambahkan';
+                    this.tipeKemitraan = (kemitraan.objek_astap_id || spec.objek_astap_id) ? 'ditambahkan' : 'dimanfaatkan';
                 }
 
                 // Step 1: Legalitas PKS & Mitra
@@ -2039,6 +2092,7 @@
 
             // Auto-select kartu yang cocok dengan KIB aset yang dimanfaatkan
             autoSelectLockedSubSub() {
+                if (this.tipeKemitraan !== 'dimanfaatkan') return;
                 const lockedKib = this.lockedKibFromData;
                 if (!lockedKib || !this.currentSubSubRecommendations) return;
                 const kibMap = { 'A': '001', 'B': '002', 'C': '003', 'D': '004', 'E': '005' };
@@ -2346,11 +2400,13 @@
                     // Validasi khusus mode Pemanfaatan BMD RSUD vs Penambahan Aset Mitra
                     // Mode 'dimanfaatkan': tidak lagi wajib memilih objek BMD eksisting (Gambar 1 dihapus)
                     if (this.tipeKemitraan === 'ditambahkan') {
-                        // Pastikan objek BMD eksisting dinetralkan untuk aset baru mitra
-                        this.formData.objek_astap_id = null;
-                        this.formData.objek_register_id = null;
-                        this.formData.objek_nibar = '';
-                        this.formData.objek_aset_terpilih = null;
+                        // Jika tidak ada objek pemanfaatan asal yang ditautkan, pastikan dinetralkan agar tidak mengirim string kosong
+                        if (!this.formData.objek_astap_id && !this.formData.objek_nibar) {
+                            this.formData.objek_astap_id = null;
+                            this.formData.objek_register_id = null;
+                            this.formData.objek_nibar = '';
+                            this.formData.objek_aset_terpilih = null;
+                        }
                     }
 
                     if (!this.formData.mitra_nama || !this.formData.mitra_nama.trim()) {
@@ -2788,6 +2844,16 @@
                         kondisi: this.formData.kondisi || firstL.lainnya_kondisi || 'Baik',
                         lainnya_items: this.formData.lainnya_items
                     };
+                }
+
+                // Tautkan identitas objek BMD pemanfaatan jika ada
+                specJson.tipe_kemitraan = this.tipeKemitraan;
+                this.formData.tipe_kemitraan = this.tipeKemitraan;
+                specJson.objek_astap_id = this.formData.objek_astap_id || null;
+                specJson.objek_register_id = this.formData.objek_register_id || null;
+                specJson.objek_nibar = this.formData.objek_nibar || null;
+                if (this.formData.objek_aset_terpilih) {
+                    specJson.objek_nama_barang = this.formData.objek_aset_terpilih.nama_barang || '';
                 }
 
                 // Bersihkan string tanggal sebelum dikirim ke backend

@@ -1600,30 +1600,76 @@ Route::middleware('auth')->group(function () {
 
                 $reklasKemitraanAstapIds = $reklasKemitraans->keys()->toArray();
 
-                // HANYA ambil aset register dari BMD RSUD yang memiliki riwayat reklasifikasi ke Kemitraan (Akun 1.5.2)
-                if (empty($reklasKemitraanAstapIds)) {
-                    return collect([]);
-                }
+                // Ambil seluruh kemitraan aktif atau terakhir untuk pencocokan kontrak & pihak ketiga
+                $kemitraanByAstapId = \App\Models\AstapKemitraan::where('is_deleted', 0)
+                    ->orderBy('id', 'desc')
+                    ->get()
+                    ->keyBy('astap_id');
 
+                $kemitraanByObjRegId = \App\Models\AstapKemitraan::whereNotNull('objek_register_id')
+                    ->where('is_deleted', 0)
+                    ->orderBy('id', 'desc')
+                    ->get()
+                    ->keyBy('objek_register_id');
+
+                $kemitraanByObjAstapId = \App\Models\AstapKemitraan::whereNotNull('objek_astap_id')
+                    ->where('is_deleted', 0)
+                    ->orderBy('id', 'desc')
+                    ->get()
+                    ->keyBy('objek_astap_id');
+
+                // Ambil aset register dari BMD RSUD:
+                // 1. Yang memiliki riwayat reklasifikasi ke Kemitraan (Akun 1.5.2)
+                // 2. Atau berakun Kemitraan 1.5.2 (Sewa Tanah, Sewa Gedung, Sewa Mesin, dll)
+                // 3. Atau Aset Tanah RSUD (1.3.1 / KIB A) & Bangunan Gedung (1.3.3 / KIB C) yang dapat disewakan/dimanfaatkan
                 return \App\Models\AstapRegister::where('is_deleted', 0)
-                    ->whereIn('astap_id', $reklasKemitraanAstapIds)
-                    ->whereHas('astap', function($q) {
-                        $q->where('is_deleted', 0);
+                    ->whereHas('astap', function($q) use ($reklasKemitraanAstapIds) {
+                        $q->where('is_deleted', 0)
+                          ->where(function($sq) use ($reklasKemitraanAstapIds) {
+                              if (!empty($reklasKemitraanAstapIds)) {
+                                  $sq->whereIn('id', $reklasKemitraanAstapIds);
+                              }
+                              $sq->orWhereHas('jenisAstap', function($j) {
+                                  $j->where('jenis', 'like', '1.5.2%')
+                                    ->orWhere('jenis', 'like', '1.3.1%')
+                                    ->orWhere('jenis', 'like', '1.3.3%');
+                              });
+                          });
                     })
                     ->with(['astap.jenisAstap', 'astap.unit', 'unit'])
                     ->get()
-                    ->map(function($reg) use ($activeKemitraanByRegId, $reklasKemitraans) {
+                    ->map(function($reg) use ($activeKemitraanByRegId, $reklasKemitraans, $kemitraanByAstapId, $kemitraanByObjRegId, $kemitraanByObjAstapId) {
                         $astap = $reg->astap;
                         $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?: []);
                         $reklasRow = $reklasKemitraans[$astap->id] ?? null;
                         
                         // KIB Asal Aset BMD RSUD (KIB A Tanah, KIB B Mesin, KIB C Gedung, dsb)
-                        $kib = $reklasRow?->asal_kib ?: (
-                            str_starts_with($astap->jenisAstap?->jenis ?? '', '1.3.1') ? 'KIB A' : (
-                            str_starts_with($astap->jenisAstap?->jenis ?? '', '1.3.2') ? 'KIB B' : (
-                            str_starts_with($astap->jenisAstap?->jenis ?? '', '1.3.3') ? 'KIB C' : (
-                            str_starts_with($astap->jenisAstap?->jenis ?? '', '1.3.4') ? 'KIB D' : 'KIB E'
-                        ))));
+                        $kib = 'KIB E';
+                        if (!empty($reklasRow?->asal_kib)) {
+                            $kib = $reklasRow->asal_kib;
+                        } else {
+                            $jenis = $astap->jenisAstap?->jenis ?? '';
+                            if (str_starts_with($jenis, '1.3.1')) {
+                                $kib = 'KIB A';
+                            } elseif (str_starts_with($jenis, '1.3.2')) {
+                                $kib = 'KIB B';
+                            } elseif (str_starts_with($jenis, '1.3.3')) {
+                                $kib = 'KIB C';
+                            } elseif (str_starts_with($jenis, '1.3.4')) {
+                                $kib = 'KIB D';
+                            } elseif (str_starts_with($jenis, '1.5.2')) {
+                                $nb = strtolower($astap->nama_barang ?? '');
+                                if (str_contains($nb, 'tanah')) {
+                                    $kib = 'KIB A';
+                                } elseif (str_contains($nb, 'gedung') || str_contains($nb, 'bangunan') || str_contains($nb, 'ruang')) {
+                                    $kib = 'KIB C';
+                                } elseif (str_contains($nb, 'mesin') || str_contains($nb, 'alat')) {
+                                    $kib = 'KIB B';
+                                } else {
+                                    $kib = 'KIB E';
+                                }
+                            }
+                        }
                         
                         $luas = null;
                         $sertifikat = null;
@@ -1638,6 +1684,33 @@ Route::middleware('auth')->group(function () {
                         }
 
                         $pksAktif = $activeKemitraanByRegId[$reg->id] ?? null;
+
+                        // Ambil data detail kemitraan eksisting untuk auto-fill Langkah 1
+                        $kem = $kemitraanByObjRegId[$reg->id] 
+                            ?? ($kemitraanByAstapId[$astap->id] 
+                            ?? ($kemitraanByObjAstapId[$astap->id] ?? null));
+
+                        $mitraNama = $kem?->mitra_nama ?: ($spec['mitra_nama'] ?? null);
+                        $nomorPks  = $kem?->nomor_pks ?: ($astap->bast_dokumen_nomor ?: ($spec['nomor_pks'] ?? null));
+                        $tglPks    = $kem?->tanggal_pks ? $kem->tanggal_pks->format('Y-m-d') : ($astap->bast_dokumen_tanggal ? date('Y-m-d', strtotime($astap->bast_dokumen_tanggal)) : ($spec['tanggal_pks'] ?? null));
+                        $tglMulai  = $kem?->tanggal_mulai ? $kem->tanggal_mulai->format('Y-m-d') : ($spec['tanggal_mulai'] ?? null);
+                        $tglSelesai = $kem?->tanggal_selesai ? $kem->tanggal_selesai->format('Y-m-d') : ($spec['tanggal_selesai'] ?? null);
+                        $skema     = $kem?->skema_kemitraan ?: ($spec['skema_kemitraan'] ?? 'Sewa');
+                        $pimpinan  = $kem?->mitra_pimpinan ?: ($spec['mitra_pimpinan'] ?? null);
+                        $alamat    = $kem?->mitra_alamat ?: ($spec['mitra_alamat'] ?? null);
+                        $keterangan = $kem?->keterangan ?: ($astap->keterangan_tambahan ?: ($spec['keterangan'] ?? null));
+
+                        $kemitraanData = ($mitraNama || $nomorPks) ? [
+                            'mitra_nama'       => $mitraNama,
+                            'mitra_pimpinan'   => $pimpinan,
+                            'mitra_alamat'     => $alamat,
+                            'nomor_pks'        => $nomorPks,
+                            'tanggal_pks'      => $tglPks,
+                            'tanggal_mulai'    => $tglMulai,
+                            'tanggal_selesai'  => $tglSelesai,
+                            'skema_kemitraan'  => $skema,
+                            'keterangan'       => $keterangan,
+                        ] : null;
 
                         return [
                             'register_id'     => $reg->id,
@@ -1659,6 +1732,7 @@ Route::middleware('auth')->group(function () {
                                 'mitra_nama'      => $pksAktif->mitra_nama,
                                 'tanggal_selesai' => $pksAktif->tanggal_selesai ? $pksAktif->tanggal_selesai->format('d/m/Y') : null,
                             ] : null,
+                            'kemitraan_data'  => $kemitraanData,
                         ];
                     })
                     ->values();
