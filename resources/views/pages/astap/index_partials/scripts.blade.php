@@ -11515,7 +11515,8 @@
                                         it.registers.forEach(r => {
                                             if (this.reklasSelectedNibarIds.includes(r.id)) {
                                                 r.status = 'Mutasi Keluar OPD';
-                                                r.ruang_pemegang = 'Mutasi Keluar: ' + (this.reklasSkpdTujuan || 'OPD Luar');
+                                                r.ruang_pemegang = this.reklasSkpdTujuan || 'OPD Luar';
+                                                r.opd_tujuan = this.reklasSkpdTujuan || 'OPD Luar';
                                             }
                                         });
                                     }

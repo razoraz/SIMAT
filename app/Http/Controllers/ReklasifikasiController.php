@@ -1833,9 +1833,14 @@ class ReklasifikasiController extends Controller
                         ]);
                     }
 
-                    // Kembalikan status register NIBAR menjadi 'Aktif'
+                    // Kembalikan status register NIBAR menjadi 'Aktif' dan pulihkan ruangan
                     if ($astap && $astap->registers()->exists()) {
-                        $astap->registers()->where('status', 'Mutasi Keluar OPD')->update(['status' => 'Aktif']);
+                        $astap->registers()->where('status', 'Mutasi Keluar OPD')->get()->each(function($r) {
+                            $r->update([
+                                'status' => 'Aktif',
+                                'ruang_pemegang' => $r->unit?->nama ?? null,
+                            ]);
+                        });
                     }
                 }
             }

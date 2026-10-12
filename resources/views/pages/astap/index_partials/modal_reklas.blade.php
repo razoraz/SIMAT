@@ -1800,9 +1800,20 @@
                                                                   }"
                                                                   x-text="reg.kondisi || 'Baik'"></span>
                                                         </div>
-                                                        <div class="text-[10.5px] text-slate-400 flex items-center space-x-1.5 mt-0.5">
-                                                            <span class="text-slate-500">Ruangan:</span>
-                                                            <span class="text-slate-300 truncate" x-text="reg.ruang_pemegang || selectedAstapReklas?.ruang_unit || 'Gudang RSUD'"></span>
+                                                        <!-- Keterangan Penempatan Ruangan RSUD vs Instansi Tujuan -->
+                                                        <div class="text-[10.5px] flex items-center space-x-1.5 mt-0.5">
+                                                            <template x-if="reg.status === 'Mutasi Keluar OPD' || (reg.ruang_pemegang && reg.ruang_pemegang.startsWith('Mutasi Keluar'))">
+                                                                <div class="flex items-center space-x-1 text-cyan-300 font-medium">
+                                                                    <span class="text-cyan-400 font-bold">🏛️ Instansi:</span>
+                                                                    <span class="truncate" x-text="reg.ruang_pemegang ? reg.ruang_pemegang.replace(/^Mutasi Keluar:\s*/i, '') : (selectedAstapReklas?.opd_tujuan || selectedAstapReklas?.mutasi_keluar?.opd_tujuan || 'OPD Luar')"></span>
+                                                                </div>
+                                                            </template>
+                                                            <template x-if="reg.status !== 'Mutasi Keluar OPD' && (!reg.ruang_pemegang || !reg.ruang_pemegang.startsWith('Mutasi Keluar'))">
+                                                                <div class="flex items-center space-x-1 text-slate-400">
+                                                                    <span class="text-slate-500">📍 Ruangan:</span>
+                                                                    <span class="text-slate-300 truncate" x-text="reg.ruang_pemegang || selectedAstapReklas?.ruang_unit || 'Belum Ditempatkan'"></span>
+                                                                </div>
+                                                            </template>
                                                         </div>
                                                     </div>
                                                 </div>

@@ -604,11 +604,12 @@ Route::middleware('auth')->group(function () {
                         return $r->no_register_int ?: intval(substr($r->nibar ?? '', -7));
                     })->values()->map(function($r) use ($isFullMutasiKeluar, $skpdTujuanNama) {
                         $isRegMutasiKeluar = $isFullMutasiKeluar || ($r->status === 'Mutasi Keluar OPD');
-                        $ruangPemegangVal = $r->ruang_pemegang ?: ($r->unit?->nama ?? null);
                         if ($isRegMutasiKeluar) {
-                            if (!$ruangPemegangVal || !str_starts_with($ruangPemegangVal, 'Mutasi Keluar')) {
-                                $ruangPemegangVal = 'Mutasi Keluar: ' . ($skpdTujuanNama ?: 'OPD Luar');
-                            }
+                            $cleanOpd = $skpdTujuanNama ?: ($r->ruang_pemegang ? preg_replace('/^Mutasi Keluar:\s*/i', '', $r->ruang_pemegang) : 'OPD Luar');
+                            $ruangPemegangVal = $cleanOpd;
+                        } else {
+                            $cleanRuang = ($r->ruang_pemegang && !str_starts_with($r->ruang_pemegang, 'Mutasi Keluar')) ? $r->ruang_pemegang : null;
+                            $ruangPemegangVal = $cleanRuang ?: ($r->unit?->nama ?? null);
                         }
                         return [
                             'id' => $r->id,
@@ -617,6 +618,8 @@ Route::middleware('auth')->group(function () {
                             'no_register' => $r->nibar ?: $r->no_register,
                             'nibar' => $r->nibar,
                             'ruang_pemegang' => $ruangPemegangVal,
+                            'opd_tujuan' => $isRegMutasiKeluar ? $ruangPemegangVal : null,
+                            'is_mutasi_keluar' => $isRegMutasiKeluar,
                             'kondisi' => $r->kondisi,
                             'status' => $isRegMutasiKeluar ? 'Mutasi Keluar OPD' : ($r->status ?: 'Aktif'),
                             'status_mutasi' => $r->status_mutasi,

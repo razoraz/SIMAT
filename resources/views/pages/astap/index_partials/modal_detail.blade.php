@@ -1087,7 +1087,7 @@
                                     <thead class="bg-slate-950 text-slate-400 font-bold uppercase text-[9.5px] border-b border-slate-800 shadow-sm" style="position: sticky; top: 0; z-index: 10; background-color: #020617;">
                                         <tr>
                                             <th class="px-3.5 py-2.5 text-center">NIBAR &amp; No. Register Resmi</th>
-                                            <th class="px-3.5 py-2.5 text-center">Penempatan Ruangan</th>
+                                            <th class="px-3.5 py-2.5 text-center">Penempatan / Instansi Tujuan</th>
                                             <th class="px-3.5 py-2.5 text-center">Kondisi</th>
                                             <th class="px-3.5 py-2.5 text-center whitespace-nowrap">QR Code</th>
                                             <th class="px-3.5 py-2.5 text-center whitespace-nowrap">Aksi</th>
@@ -1101,7 +1101,7 @@
                                                     <template x-if="reg.status === 'Mutasi Keluar OPD' || selectedAstapDetail?.jenis_reklas === 'MUTASI_EKSTERNAL'">
                                                         <span class="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-xl bg-cyan-500/15 border border-cyan-500/35 text-cyan-300 font-bold text-[10.5px] shadow-sm justify-center">
                                                             <span class="text-xs">🏛️</span>
-                                                            <span x-text="reg.ruang_pemegang ? (reg.ruang_pemegang.startsWith('Mutasi Keluar') ? reg.ruang_pemegang : 'Mutasi Keluar: ' + reg.ruang_pemegang) : ('Mutasi Keluar: ' + (selectedAstapDetail?.mutasi_keluar?.opd_tujuan || 'OPD Luar'))"></span>
+                                                            <span x-text="'Instansi: ' + (reg.ruang_pemegang ? reg.ruang_pemegang.replace(/^Mutasi Keluar:\s*/i, '') : (selectedAstapDetail?.mutasi_keluar?.opd_tujuan || selectedAstapDetail?.opd_tujuan || 'OPD Luar'))"></span>
                                                         </span>
                                                     </template>
                                                     <template x-if="reg.status !== 'Mutasi Keluar OPD' && selectedAstapDetail?.jenis_reklas !== 'MUTASI_EKSTERNAL'">
