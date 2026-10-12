@@ -184,12 +184,29 @@ class KemitraanController extends Controller
         $kemitraan = AstapKemitraan::findOrFail($id);
 
         $request->validate([
-            'status_konsesi' => 'required|string|in:Aktif,Konsesi Berakhir,Selesai,Selesai / Reklasifikasi,Dihentikan'
+            'status_konsesi' => 'required|string|in:Aktif,Konsesi Berakhir,Selesai,Selesai / Reklasifikasi,Dihentikan,Dikembalikan ke Rekanan'
         ]);
 
         $newStatus = $request->input('status_konsesi');
         $kemitraan->status_konsesi = $newStatus;
         $kemitraan->save();
+
+        // Sinkronisasi status register fisik aset
+        if ($kemitraan->astap_id) {
+            if ($newStatus === 'Dikembalikan ke Rekanan') {
+                AstapRegister::where('astap_id', $kemitraan->astap_id)
+                    ->update([
+                        'status'         => 'Dikembalikan ke Rekanan',
+                        'ruang_pemegang' => 'Telah Dikembalikan ke Rekanan',
+                    ]);
+            } elseif ($newStatus === 'Aktif') {
+                AstapRegister::where('astap_id', $kemitraan->astap_id)
+                    ->where('status', 'Dikembalikan ke Rekanan')
+                    ->update([
+                        'status' => 'Tersedia',
+                    ]);
+            }
+        }
 
         // Sinkronisasi status dari Objek Pemanfaatan BMD RSUD (Induk) ke aset mitra terkait
         if ($kemitraan->tipe_kemitraan === 'dimanfaatkan') {
@@ -208,6 +225,207 @@ class KemitraanController extends Controller
 
         return redirect()->route('master.kemitraan')
             ->with('success', "Status kerja sama {$kemitraan->nomor_pks} berhasil diperbarui.");
+    }
+
+    /**
+     * Perpanjang Masa Konsesi / Adendum PKS Kemitraan (Extend)
+     */
+    public function extendKonsesi(Request $request, $id)
+    {
+        $kemitraan = AstapKemitraan::find($id);
+        if (!$kemitraan) {
+            $kemitraan = AstapKemitraan::where('astap_id', $id)->firstOrFail();
+        }
+
+        $request->validate([
+            'nomor_adendum'        => 'required|string|max:150',
+            'tanggal_adendum'      => 'required|date',
+            'tanggal_selesai_baru' => 'required|date',
+            'nilai_aset_baru'      => 'nullable',
+            'keterangan_adendum'   => 'nullable|string|max:1000',
+            'berkas_adendum'       => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+        ]);
+
+        return DB::transaction(function () use ($request, $kemitraan) {
+            $user = Auth::user();
+            $userName = $user ? ($user->name . ' (' . ucfirst($user->role ?? 'user') . ')') : 'Administrator';
+
+            // Upload berkas jika ada
+            $uploadedPath = $kemitraan->dokumen_adendum_path;
+            if ($request->hasFile('berkas_adendum')) {
+                $file = $request->file('berkas_adendum');
+                $filename = 'adendum_' . $kemitraan->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+                $uploadedPath = $file->storeAs('kemitraan/adendum', $filename, 'public');
+            }
+
+            // Parsing nilai baru jika ada
+            $nilaiBaru = $kemitraan->nilai_aset;
+            if ($request->filled('nilai_aset_baru')) {
+                $rawNilai = str_replace(['Rp', '.', ' '], '', $request->input('nilai_aset_baru'));
+                $rawNilai = str_replace(',', '.', $rawNilai);
+                if (is_numeric($rawNilai)) {
+                    $nilaiBaru = (float) $rawNilai;
+                }
+            }
+
+            $currentHistory = $kemitraan->riwayat_adendum ?: [];
+            if (!is_array($currentHistory)) {
+                $currentHistory = json_decode($currentHistory, true) ?: [];
+            }
+
+            $nextExtendNo = ($kemitraan->jumlah_extend ?? 0) + 1;
+            $tglSelesaiLama = $kemitraan->tanggal_selesai ? Carbon::parse($kemitraan->tanggal_selesai)->format('Y-m-d') : null;
+
+            $newAdendumEntry = [
+                'extend_ke'            => $nextExtendNo,
+                'nomor_adendum'        => $request->input('nomor_adendum'),
+                'tanggal_adendum'      => $request->input('tanggal_adendum'),
+                'tanggal_selesai_lama' => $tglSelesaiLama,
+                'tanggal_selesai_baru' => $request->input('tanggal_selesai_baru'),
+                'nilai_aset_lama'      => (float) $kemitraan->nilai_aset,
+                'nilai_aset_baru'      => (float) $nilaiBaru,
+                'keterangan'           => $request->input('keterangan_adendum') ?: '-',
+                'berkas_path'          => $uploadedPath,
+                'created_by'           => $userName,
+                'created_at'           => now()->toDateTimeString(),
+            ];
+
+            $currentHistory[] = $newAdendumEntry;
+
+            // Simpan perubahan ke record kemitraan
+            $kemitraan->tanggal_selesai      = $request->input('tanggal_selesai_baru');
+            $kemitraan->status_konsesi       = 'Aktif';
+            $kemitraan->is_extended          = 1;
+            $kemitraan->jumlah_extend        = $nextExtendNo;
+            $kemitraan->nilai_aset           = $nilaiBaru;
+            $kemitraan->riwayat_adendum      = $currentHistory;
+            $kemitraan->dokumen_adendum_path = $uploadedPath;
+            $kemitraan->save();
+
+            // Cek apakah ada aset mitra (Tabel 2) yang terhubung pada objek pemanfaatan ini
+            $targetAstapId = $kemitraan->astap_id ?: $kemitraan->id;
+            $linkedMitraList = collect([]);
+            if ($kemitraan->tipe_kemitraan === 'dimanfaatkan' || empty($kemitraan->objek_astap_id)) {
+                $linkedMitraList = AstapKemitraan::where('objek_astap_id', $targetAstapId)
+                    ->where('is_deleted', 0)
+                    ->with(['astap.registers'])
+                    ->get();
+            }
+
+            $formattedLinkedMitra = $linkedMitraList->map(function ($m) {
+                return [
+                    'id'                   => $m->id,
+                    'astap_id'             => $m->astap_id,
+                    'nama_barang'          => $m->astap?->nama_barang ?: 'Aset Mitra',
+                    'kode_108'             => $m->astap?->kode_108 ?: ($m->astap?->kode_barang ?: '-'),
+                    'nibar'                => $m->objek_nibar ?: ($m->astap?->registers?->first()?->nibar ?: '-'),
+                    'tanggal_selesai_lama' => $m->tanggal_selesai ? Carbon::parse($m->tanggal_selesai)->format('d/m/Y') : '-',
+                    'status_konsesi'       => $m->status_konsesi ?: 'Aktif',
+                ];
+            });
+
+            $tglBaruFormatted = Carbon::parse($request->input('tanggal_selesai_baru'))->format('d/m/Y');
+
+            return response()->json([
+                'success'              => true,
+                'message'              => "Masa pemanfaatan PKS {$kemitraan->nomor_pks} berhasil diperpanjang (Adendum #{$nextExtendNo}) sampai dengan {$tglBaruFormatted}.",
+                'kemitraan_id'         => $kemitraan->id,
+                'tanggal_selesai_baru' => $request->input('tanggal_selesai_baru'),
+                'tanggal_selesai_fmt'  => $tglBaruFormatted,
+                'nomor_adendum'        => $request->input('nomor_adendum'),
+                'tanggal_adendum'      => $request->input('tanggal_adendum'),
+                'has_linked_mitra'     => $linkedMitraList->isNotEmpty(),
+                'linked_mitra_count'   => $linkedMitraList->count(),
+                'linked_mitra_assets'  => $formattedLinkedMitra,
+                'riwayat_adendum'      => $currentHistory,
+            ]);
+        });
+    }
+
+    /**
+     * Batch Extend untuk Aset Mitra (Tabel 2) yang terhubung ke Objek Pemanfaatan
+     */
+    public function extendMitraBatch(Request $request)
+    {
+        $request->validate([
+            'mitra_ids'            => 'required|array|min:1',
+            'mitra_ids.*'          => 'required|integer',
+            'tanggal_selesai_baru' => 'required|date',
+            'nomor_adendum'        => 'required|string|max:150',
+            'tanggal_adendum'      => 'nullable|date',
+            'keterangan'           => 'nullable|string|max:1000',
+        ]);
+
+        return DB::transaction(function () use ($request) {
+            $user = Auth::user();
+            $userName = $user ? ($user->name . ' (' . ucfirst($user->role ?? 'user') . ')') : 'Administrator';
+            $now = now();
+            $mitraIds = $request->input('mitra_ids');
+            $tglBaru = $request->input('tanggal_selesai_baru');
+            $noAdendum = $request->input('nomor_adendum');
+            $tglAdendum = $request->input('tanggal_adendum') ?: $now->format('Y-m-d');
+            $keterangan = $request->input('keterangan') ?: "Ikut perpanjangan masa pemanfaatan PKS Adendum No. {$noAdendum}";
+
+            $updatedCount = 0;
+            $updatedRecords = [];
+
+            $mitras = AstapKemitraan::whereIn('id', $mitraIds)->where('is_deleted', 0)->get();
+
+            foreach ($mitras as $mitra) {
+                $currentHistory = $mitra->riwayat_adendum ?: [];
+                if (!is_array($currentHistory)) {
+                    $currentHistory = json_decode($currentHistory, true) ?: [];
+                }
+
+                $nextExtendNo = ($mitra->jumlah_extend ?? 0) + 1;
+                $tglLama = $mitra->tanggal_selesai ? Carbon::parse($mitra->tanggal_selesai)->format('Y-m-d') : null;
+
+                $currentHistory[] = [
+                    'extend_ke'            => $nextExtendNo,
+                    'nomor_adendum'        => $noAdendum,
+                    'tanggal_adendum'      => $tglAdendum,
+                    'tanggal_selesai_lama' => $tglLama,
+                    'tanggal_selesai_baru' => $tglBaru,
+                    'nilai_aset_lama'      => (float) $mitra->nilai_aset,
+                    'nilai_aset_baru'      => (float) $mitra->nilai_aset,
+                    'keterangan'           => $keterangan,
+                    'berkas_path'          => null,
+                    'created_by'           => $userName,
+                    'created_at'           => $now->toDateTimeString(),
+                ];
+
+                $mitra->tanggal_selesai = $tglBaru;
+                $mitra->status_konsesi  = 'Aktif';
+                $mitra->is_extended     = 1;
+                $mitra->jumlah_extend   = $nextExtendNo;
+                $mitra->riwayat_adendum = $currentHistory;
+                $mitra->save();
+
+                // Pastikan register fisik aset mitra juga berstatus aktif / tersedia
+                if ($mitra->astap_id) {
+                    AstapRegister::where('astap_id', $mitra->astap_id)
+                        ->where('status', 'Dikembalikan ke Rekanan')
+                        ->update(['status' => 'Tersedia']);
+                }
+
+                $updatedCount++;
+                $updatedRecords[] = [
+                    'id'                  => $mitra->id,
+                    'tanggal_selesai'     => $tglBaru,
+                    'status_konsesi'      => 'Aktif',
+                    'jumlah_extend'       => $nextExtendNo,
+                ];
+            }
+
+            $tglBaruFmt = Carbon::parse($tglBaru)->format('d/m/Y');
+
+            return response()->json([
+                'success'         => true,
+                'message'         => "Sebanyak {$updatedCount} aset rekanan mitra (Tabel 2) berhasil diperpanjang masa operasionalnya sampai {$tglBaruFmt}.",
+                'updated_count'   => $updatedCount,
+                'updated_records' => $updatedRecords,
+            ]);
+        });
     }
 
     /**

@@ -126,10 +126,11 @@
                                   :class="{
                                       'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': selectedAstapDetail.status_konsesi === 'Aktif',
                                       'bg-amber-500/20 text-amber-300 border-amber-500/30': selectedAstapDetail.status_konsesi === 'Konsesi Berakhir',
+                                      'bg-purple-500/20 text-purple-300 border-purple-500/30': selectedAstapDetail.status_konsesi === 'Dikembalikan ke Rekanan',
                                       'bg-blue-500/20 text-blue-300 border-blue-500/30': selectedAstapDetail.status_konsesi === 'Selesai' || selectedAstapDetail.status_konsesi === 'Selesai / Reklasifikasi',
                                       'bg-rose-500/20 text-rose-300 border-rose-500/30': selectedAstapDetail.status_konsesi === 'Dihentikan'
                                   }"
-                                  x-text="'Status: ' + ((selectedAstapDetail.status_konsesi === 'Selesai' || selectedAstapDetail.status_konsesi === 'Selesai / Reklasifikasi') ? 'Selesai' : selectedAstapDetail.status_konsesi)"></span>
+                                  x-text="'Status: ' + (selectedAstapDetail.status_konsesi === 'Dikembalikan ke Rekanan' ? 'Dikembalikan ke Rekanan' : ((selectedAstapDetail.status_konsesi === 'Selesai' || selectedAstapDetail.status_konsesi === 'Selesai / Reklasifikasi') ? 'Sudah Jadi Milik RSUD' : selectedAstapDetail.status_konsesi))"></span>
 
                             <template x-if="selectedAstapDetail.sisa_hari_konsesi !== null && selectedAstapDetail.sisa_hari_konsesi !== undefined">
                                 <span class="px-2 py-0.5 rounded-lg text-[10.5px] font-mono font-bold"
@@ -139,6 +140,13 @@
                                           'bg-rose-500/15 text-rose-300': selectedAstapDetail.sisa_hari_konsesi <= 0
                                       }"
                                       x-text="selectedAstapDetail.sisa_hari_konsesi > 0 ? ('⏱️ Sisa ' + selectedAstapDetail.sisa_hari_konsesi + ' Hari') : '🛑 Konsesi Berakhir'"></span>
+                            </template>
+                            <template x-if="selectedAstapDetail.is_extended || (selectedAstapDetail.riwayat_adendum && selectedAstapDetail.riwayat_adendum.length > 0)">
+                                <span class="px-2 py-0.5 rounded-lg text-[10.5px] font-mono font-black uppercase tracking-wider bg-emerald-500/25 text-emerald-300 border border-emerald-400/50 shadow-sm flex items-center gap-1"
+                                      title="Kontrak PKS telah diperpanjang (Adendum)">
+                                    <span>🔄</span>
+                                    <span x-text="'ADENDUM #' + (selectedAstapDetail.jumlah_extend || (selectedAstapDetail.riwayat_adendum ? selectedAstapDetail.riwayat_adendum.length : 1))"></span>
+                                </span>
                             </template>
                         </div>
                     </div>
@@ -289,6 +297,81 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- ========================================================================= -->
+                <!-- SECTION: RIWAYAT ADENDUM / PERPANJANGAN KONSESI PKS (AUDIT TRAIL)         -->
+                <!-- ========================================================================= -->
+                <template x-if="selectedAstapDetail && selectedAstapDetail.riwayat_adendum && selectedAstapDetail.riwayat_adendum.length > 0">
+                    <div class="p-4 sm:p-5 rounded-2xl bg-slate-950/90 border border-emerald-500/30 space-y-3.5 shadow-xl">
+                        <div class="flex items-center justify-between pb-2.5 border-b border-emerald-500/20 gap-2 flex-wrap">
+                            <div class="flex items-center space-x-2.5">
+                                <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center justify-center text-base shadow-inner">
+                                    🔄
+                                </div>
+                                <div>
+                                    <h4 class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-emerald-400">
+                                        Riwayat Perpanjangan / Adendum PKS (Audit Trail)
+                                    </h4>
+                                    <p class="text-[11px] text-slate-400">
+                                        Histori legalitas perpanjangan masa pemanfaatan dan penyesuaian nilai wajar.
+                                    </p>
+                                </div>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-xl text-[10.5px] font-mono font-extrabold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
+                                  x-text="selectedAstapDetail.riwayat_adendum.length + ' Kali Adendum'"></span>
+                        </div>
+
+                        <div class="space-y-2.5">
+                            <template x-for="(adendum, idx) in selectedAstapDetail.riwayat_adendum" :key="idx">
+                                <div class="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/40 transition-colors space-y-2">
+                                    <div class="flex items-center justify-between flex-wrap gap-2">
+                                        <div class="flex items-center space-x-2">
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                                                  x-text="'Adendum #' + (adendum.extend_ke || (idx + 1))"></span>
+                                            <span class="font-bold text-white text-xs font-mono" x-text="adendum.nomor_adendum"></span>
+                                        </div>
+                                        <span class="text-[11px] text-slate-400 font-mono" x-text="'📅 ' + formatTanggalIndo(adendum.tanggal_adendum)"></span>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/80">
+                                        <div>
+                                            <span class="text-slate-400 block text-[9.5px] uppercase font-bold">Masa Selesai Baru:</span>
+                                            <span class="font-mono text-emerald-400 font-bold" x-text="formatTanggalIndo(adendum.tanggal_selesai_baru)"></span>
+                                            <template x-if="adendum.tanggal_selesai_lama">
+                                                <span class="text-[9.5px] text-slate-400 block" x-text="'(Sebelumnya: ' + formatTanggalIndo(adendum.tanggal_selesai_lama) + ')'"></span>
+                                            </template>
+                                        </div>
+                                        <div>
+                                            <span class="text-slate-400 block text-[9.5px] uppercase font-bold">Nilai Wajar:</span>
+                                            <span class="font-mono text-cyan-300 font-bold" x-text="adendum.nilai_aset_baru ? ('Rp ' + Number(adendum.nilai_aset_baru).toLocaleString('id-ID')) : '-'"></span>
+                                        </div>
+                                        <div>
+                                            <span class="text-slate-400 block text-[9.5px] uppercase font-bold">Dicatat Oleh:</span>
+                                            <span class="text-slate-300 font-medium truncate block" x-text="adendum.created_by || 'Admin'"></span>
+                                        </div>
+                                    </div>
+
+                                    <template x-if="adendum.keterangan && adendum.keterangan !== '-'">
+                                        <div class="text-[11px] text-slate-300 flex items-start space-x-1.5 italic">
+                                            <span class="text-slate-400">📝</span>
+                                            <span x-text="adendum.keterangan"></span>
+                                        </div>
+                                    </template>
+
+                                    <template x-if="adendum.berkas_path">
+                                        <div class="pt-1 flex items-center justify-end">
+                                            <a :href="'/storage/' + adendum.berkas_path" target="_blank"
+                                               class="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10.5px] font-bold flex items-center gap-1 transition-all">
+                                                <span>📎 Berkas Adendum</span>
+                                                <span>↗</span>
+                                            </a>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
 
                 <!-- ========================================================================= -->
                 <!-- SECTION: INFORMASI & TABEL ASET YANG DITAMBAHKAN MITRA PADA OBJEK INI   -->
@@ -1166,6 +1249,8 @@
                                 class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-colors">
                                 <option value="Aktif">🟢 Aktif</option>
                                 <option value="Konsesi Berakhir">🟠 Konsesi Berakhir</option>
+                                <option value="Dikembalikan ke Rekanan">📦 Dikembalikan ke Rekanan</option>
+                                <option value="Selesai / Reklasifikasi">🏛️ Sudah Jadi Milik RSUD (Reklasifikasi)</option>
                                 <option value="Selesai">🔵 Selesai</option>
                                 <option value="Dihentikan">🔴 Dihentikan</option>
                             </select>
@@ -1222,6 +1307,18 @@
                         <span>Buka Berkas Scan BAST</span>
                         <span>↗</span>
                     </a>
+                </template>
+
+                <!-- Tombol Extend / Perpanjang Masa Konsesi PKS -->
+                <template x-if="selectedAstapDetail && selectedAstapDetail.status_konsesi !== 'Dikembalikan ke Rekanan' && selectedAstapDetail.status_konsesi !== 'Selesai' && selectedAstapDetail.status_konsesi !== 'Selesai / Reklasifikasi' && selectedAstapDetail.status_konsesi !== 'Dihentikan'">
+                    <button type="button" @click="openExtendModalFromDetail()"
+                        class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs transition-all shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:-translate-y-0.5 active:scale-95 flex items-center gap-2 cursor-pointer"
+                        title="Perpanjang Masa Konsesi (Buat Adendum PKS)">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        <span>Perpanjang PKS (Extend)</span>
+                    </button>
                 </template>
             </div>
             <div class="flex items-center space-x-2.5">

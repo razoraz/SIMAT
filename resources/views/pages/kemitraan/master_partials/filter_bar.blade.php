@@ -123,6 +123,8 @@
                         <option value="all" class="bg-slate-900 text-slate-200 py-1">Semua Status</option>
                         <option value="Aktif" class="bg-slate-900 text-emerald-300 py-1">🟢 Aktif</option>
                         <option value="Konsesi Berakhir" class="bg-slate-900 text-amber-300 py-1">🟠 Konsesi Berakhir</option>
+                        <option value="Dikembalikan ke Rekanan" class="bg-slate-900 text-purple-300 py-1">📦 Dikembalikan ke Rekanan</option>
+                        <option value="Selesai / Reklasifikasi" class="bg-slate-900 text-blue-300 py-1">🏛️ Sudah Jadi Milik RSUD</option>
                         <option value="Selesai" class="bg-slate-900 text-blue-300 py-1">🔵 Selesai</option>
                         <option value="Dihentikan" class="bg-slate-900 text-rose-300 py-1">🔴 Dihentikan</option>
                     </select>

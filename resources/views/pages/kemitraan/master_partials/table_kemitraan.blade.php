@@ -3,6 +3,24 @@
 <!-- DIPISAH: 1. Aset RSUD Dimanfaatkan Mitra | 2. Aset Ditambahkan Mitra       -->
 <!-- ========================================================================= -->
 
+<style>
+    /* Freeze Column Aksi Kemitraan: 100% Solid Opaque (Anti-Transparan) */
+    .kemitraan-sticky-aksi {
+        position: sticky !important;
+        right: 0 !important;
+        z-index: 10 !important;
+        background-color: #0f172a !important; /* Solid Slate-900 Opaque */
+        box-shadow: -8px 0 16px -2px rgba(0, 0, 0, 0.75) !important;
+    }
+    tr:hover .kemitraan-sticky-aksi {
+        background-color: #172239 !important; /* Solid Slate-850 Opaque saat Hover */
+    }
+    th.kemitraan-sticky-aksi {
+        z-index: 20 !important;
+        background-color: #020617 !important; /* Solid Slate-950 Opaque untuk Header */
+    }
+</style>
+
 @php
     $isDimanfaatkan = function($row) {
         $astap = $row->astap;
@@ -221,6 +239,18 @@
         $tahun = (int) ($row->tahun ?: ($astap?->tahun_perolehan ?: date('Y')));
         $tw = $row->triwulan ?: ($astap?->triwulan ?: 'TW I');
         $status = $row->status_konsesi ?: 'Aktif';
+        $statusLower = strtolower($status);
+        $hasReklasDone = in_array($status, ['Selesai / Reklasifikasi']) || (!empty($astap?->is_reklas) && $astap->is_reklas == 1 && $row->skema_kemitraan !== 'Reklasifikasi') || ($status === 'Selesai' && $reklasHistory !== null);
+        $isDikembalikan = in_array($status, ['Dikembalikan ke Rekanan', 'Ditarik Mitra', 'Dihentikan']) || str_contains($statusLower, 'kembali') || str_contains($statusLower, 'tarik');
+
+        $siklus = 'kemitraan';
+        if ($isDikembalikan) {
+            $siklus = 'dikembalikan';
+        } elseif ($hasReklasDone) {
+            $siklus = 'milik_rsud';
+        } else {
+            $siklus = 'kemitraan';
+        }
 
         $searchParts = [
             $namaFisik,
@@ -247,6 +277,7 @@
             'tahun'           => $tahun,
             'triwulan'        => $tw,
             'status'          => $status,
+            'siklus'          => $siklus,
             'is_dimanfaatkan' => $isDimanfaatkanVal,
             'search_text'     => $searchText,
         ];
@@ -359,24 +390,24 @@
 <div class="space-y-6" x-init="initMetaLists(@js($dimanfaatkanMetaList), @js($ditambahkanMetaList), @js($allMetaList), @js($serializedDitambahkan), @js($serializedDimanfaatkan))">
 
     <!-- ========================================================================= -->
-    <!-- SWITCHER TAB & MODE PEMISAH TABEL KEMITRAAN                              -->
+    <!-- SWITCHER TAB PEMILIHAN TAMPILAN TABEL KEMITRAAN (HEADER UTAMA)             -->
     <!-- ========================================================================= -->
     <div class="p-4 sm:p-5 rounded-3xl bg-slate-900/95 border border-slate-800 shadow-xl space-y-3">
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
             <div>
                 <span class="text-[10px] font-extrabold uppercase tracking-wider text-cyan-400 block mb-0.5">
-                    🗂️ Pemisah Klasifikasi Aset Kemitraan (Akun 1.5.2)
+                    🗂️ Navigasi Penyajian Tabel
                 </span>
                 <h3 class="text-sm sm:text-base font-extrabold text-white flex items-center gap-2">
-                    <span>Pemisahan Objek Aset BMD RSUD &amp; Pengadaan Barang KSO Mitra</span>
+                    <span>Pilihan Tampilan Tabel Kemitraan</span>
                 </h3>
             </div>
 
-            <!-- Tombol Switcher Tab -->
+            <!-- Tombol Switcher Tab Tabel -->
             <div class="flex items-center gap-1.5 p-1.5 rounded-2xl bg-slate-950 border border-slate-800/90 shrink-0 overflow-x-auto max-w-full">
                 <!-- 1. Tampilkan Kedua Tabel Sekaligus -->
                 <button type="button" @click="kemitraanTableTab = 'both'"
-                    :class="kemitraanTableTab === 'both' ? 'bg-gradient-to-r from-cyan-500/20 to-teal-500/20 text-cyan-300 border-cyan-400 font-extrabold shadow-md shadow-cyan-500/20' : 'text-slate-400 hover:text-white border-transparent'"
+                    :class="kemitraanTableTab === 'both' ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400 font-extrabold shadow-sm' : 'text-slate-400 hover:text-white border-transparent'"
                     class="px-3 py-1.5 rounded-xl text-xs border transition-all flex items-center gap-1.5 shrink-0 cursor-pointer">
                     <span>📑</span>
                     <span>Tampilkan Kedua Tabel</span>
@@ -384,10 +415,10 @@
 
                 <!-- 2. Tab: Aset RSUD Dimanfaatkan Mitra -->
                 <button type="button" @click="kemitraanTableTab = 'dimanfaatkan'"
-                    :class="kemitraanTableTab === 'dimanfaatkan' ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400 font-extrabold shadow-md shadow-cyan-500/20' : 'text-slate-400 hover:text-white border-transparent'"
+                    :class="kemitraanTableTab === 'dimanfaatkan' ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400 font-extrabold shadow-sm' : 'text-slate-400 hover:text-white border-transparent'"
                     class="px-3 py-1.5 rounded-xl text-xs border transition-all flex items-center gap-1.5 shrink-0 cursor-pointer">
                     <span>🏛️</span>
-                    <span>Aset RSUD Dimanfaatkan</span>
+                    <span>Aset Dimanfaatkan Mitra</span>
                     <span class="px-1.5 py-0.2 rounded-md text-[10px] font-mono font-bold"
                         :class="kemitraanTableTab === 'dimanfaatkan' ? 'bg-cyan-400 text-slate-950' : 'bg-slate-800 text-slate-300'"
                         x-text="countVisibleDimanfaatkan">
@@ -397,7 +428,7 @@
 
                 <!-- 3. Tab: Aset Ditambahkan Mitra -->
                 <button type="button" @click="kemitraanTableTab = 'ditambahkan'"
-                    :class="kemitraanTableTab === 'ditambahkan' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400 font-extrabold shadow-md shadow-emerald-500/20' : 'text-slate-400 hover:text-white border-transparent'"
+                    :class="kemitraanTableTab === 'ditambahkan' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400 font-extrabold shadow-sm' : 'text-slate-400 hover:text-white border-transparent'"
                     class="px-3 py-1.5 rounded-xl text-xs border transition-all flex items-center gap-1.5 shrink-0 cursor-pointer">
                     <span>📦</span>
                     <span>Aset Ditambahkan Mitra</span>
@@ -411,9 +442,9 @@
                 <!-- 4. Tab: Semua Data Gabungan -->
                 <button type="button" @click="kemitraanTableTab = 'all'"
                     :class="kemitraanTableTab === 'all' ? 'bg-slate-800 text-white border-slate-700 font-extrabold' : 'text-slate-500 hover:text-slate-300 border-transparent'"
-                    class="px-2.5 py-1.5 rounded-xl text-xs border transition-all flex items-center gap-1 shrink-0 cursor-pointer">
+                    class="px-3 py-1.5 rounded-xl text-xs border transition-all flex items-center gap-1 shrink-0 cursor-pointer">
                     <span>📋</span>
-                    <span>Semua (<span x-text="countVisibleAll">{{ count($recordsDimanfaatkan) + count($recordsDitambahkan) }}</span>)</span>
+                    <span>Semua Gabungan (<span x-text="countVisibleAll">{{ count($recordsDimanfaatkan) + count($recordsDitambahkan) }}</span>)</span>
                 </button>
             </div>
         </div>
@@ -443,7 +474,7 @@
                     <span>Menampilkan tabel gabungan seluruh arsip aset kemitraan Akun 1.5.2.</span>
                 </span>
             </template>
-            <span class="font-mono text-cyan-400/80 text-[10px] hidden sm:inline-block">Total <span x-text="countVisibleAll">{{ count($recordsDimanfaatkan) + count($recordsDitambahkan) }}</span> Data Kemitraan</span>
+            <span class="font-mono text-cyan-400/80 text-[10px] hidden sm:inline-block">Total <span x-text="countVisibleAll">{{ count($recordsDimanfaatkan) + count($recordsDitambahkan) }}</span> Data Aset Terdata</span>
         </div>
     </div>
 
@@ -491,7 +522,7 @@
                         <th class="py-3.5 px-4 min-w-[135px] text-center bg-slate-950 whitespace-nowrap">Kondisi</th>
                         <th class="py-3.5 px-4 min-w-[140px] text-right bg-slate-950 whitespace-nowrap">Nilai Pemanfaatan (Rp)</th>
                         <th class="py-3.5 px-4 min-w-[180px] bg-slate-950">Masa Pemanfaatan / Konsesi</th>
-                        <th class="py-3.5 px-4 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800/80 shrink-0 min-w-[260px] sticky right-0 z-10">Aksi</th>
+                        <th class="py-3.5 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[340px] w-[340px] sticky right-0 z-20 kemitraan-sticky-aksi" style="background-color: #020617 !important; box-shadow: -8px 0 16px -2px rgba(0, 0, 0, 0.75);">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-800/60">
@@ -541,7 +572,7 @@
                                 ];
                             })->values()->toArray();
                         @endphp
-                        <tr x-show="matchKemitraan({{ json_encode($dimanfaatkanMetaList[$idx] ?? []) }})" class="hover:bg-cyan-950/20 transition-colors group {{ $countDitambahkan > 0 ? 'border-l-4 border-l-emerald-500 bg-emerald-950/10' : '' }}">
+                        <tr x-show="matchKemitraan({{ json_encode($dimanfaatkanMetaList[$idx] ?? []) }})" class="hover:bg-cyan-950/20 transition-colors group">
                             <!-- 1. Nomor -->
                             <td class="py-4 px-4 text-center font-mono text-cyan-400 font-bold text-xs">
                                 {{ $idx + 1 }}
@@ -712,12 +743,20 @@
                                     <span class="px-2 py-0.5 rounded text-[10px] font-bold
                                         {{ $row->status_konsesi === 'Aktif' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : '' }}
                                         {{ $row->status_konsesi === 'Konsesi Berakhir' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : '' }}
-                                        {{ in_array($row->status_konsesi, ['Selesai', 'Selesai / Reklasifikasi']) ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : '' }}
+                                        {{ $row->status_konsesi === 'Dikembalikan ke Rekanan' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : '' }}
+                                        {{ $row->status_konsesi === 'Selesai / Reklasifikasi' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : '' }}
+                                        {{ $row->status_konsesi === 'Selesai' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : '' }}
                                         {{ $row->status_konsesi === 'Dihentikan' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : '' }}
                                         {{ $row->status_konsesi === 'Siap Dikerjasamakan' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : '' }}
                                     ">
-                                        {{ in_array($row->status_konsesi, ['Selesai', 'Selesai / Reklasifikasi']) ? 'Selesai' : ($row->status_konsesi === 'Konsesi Berakhir' ? 'Konsesi Berakhir' : $row->status_konsesi) }}
+                                        {{ $row->status_konsesi === 'Dikembalikan ke Rekanan' ? '📦 Dikembalikan' : ($row->status_konsesi === 'Selesai / Reklasifikasi' ? '🏛️ Milik RSUD' : ($row->status_konsesi === 'Selesai' ? 'Selesai' : ($row->status_konsesi === 'Konsesi Berakhir' ? 'Konsesi Berakhir' : $row->status_konsesi))) }}
                                     </span>
+                                    @if($row->is_extended || !empty($row->riwayat_adendum))
+                                        <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-black uppercase tracking-wider bg-emerald-500/25 text-emerald-300 border border-emerald-400/50 shadow-sm shadow-emerald-500/20"
+                                              title="Kontrak PKS telah diperpanjang (Adendum #{{ $row->jumlah_extend ?: 1 }})">
+                                            <span>🔄 ADENDUM #{{ $row->jumlah_extend ?: 1 }}</span>
+                                        </span>
+                                    @endif
                                     @if($sisaHari !== null && $row->status_konsesi === 'Aktif')
                                         <span class="text-[10px] font-mono {{ $sisaHari <= 30 ? 'text-amber-400 font-bold' : 'text-slate-400' }}">
                                             {{ $sisaHari > 0 ? $sisaHari . ' hari lagi' : 'Berakhir' }}
@@ -729,8 +768,8 @@
                                 </div>
                             </td>
 
-                            <!-- 7. Aksi (Sticky Right) -->
-                            <td class="py-4 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 sticky right-0 z-10 bg-slate-900/95 group-hover:bg-[#072535] transition-colors">
+                            <!-- 7. Aksi (Sticky Right Solid Anti-Transparan) -->
+                            <td class="py-4 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 sticky right-0 z-10 min-w-[340px] w-[340px] kemitraan-sticky-aksi" style="background-color: #0f172a !important; box-shadow: -8px 0 16px -2px rgba(0, 0, 0, 0.75);">
                                 <div class="flex items-center justify-center space-x-1.5">
                                     <!-- 1. Tombol Detail -->
                                     <button type="button" @click="openDetail({{ json_encode($row) }}, {{ json_encode($astap) }}, {{ json_encode($firstReg) }}, true)"
@@ -747,9 +786,18 @@
                                         @endif
                                     </button>
 
+                                    <!-- 2. Tombol Extend / Perpanjang PKS (Adendum) -->
+                                    <button type="button" @click="openExtendModal({{ json_encode($row) }}, {{ json_encode($astap) }}, true, {{ $countDitambahkan }})"
+                                        title="Perpanjang Masa Konsesi / Adendum PKS Pemanfaatan{{ $countDitambahkan > 0 ? ' (Menampung ' . $countDitambahkan . ' Aset Mitra)' : '' }}"
+                                        class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 hover:border-emerald-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-emerald-500/30 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
+                                        <svg class="w-3.5 h-3.5 text-emerald-400 group-hover/btn:text-white group-hover/btn:rotate-180 transition-all duration-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                        </svg>
+                                        <span>Extend</span>
+                                    </button>
 
                                     @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
-                                    <!-- 2. Tombol Reklas -->
+                                    <!-- 3. Tombol Reklas -->
                                     @if($row->status_konsesi === 'Konsesi Berakhir')
                                     <button type="button" @click="openReklas({{ json_encode($astap) }}, {{ json_encode($row) }})"
                                         title="Masa konsesi berakhir! Reklasifikasi balik aset ini ke KIB Asal RSUD"
@@ -870,6 +918,73 @@
             </div>
         </div>
 
+        <!-- SUB-HEADER: FILTER SIKLUS STATUS KEBERADAAN ASET (KHUSUS ASET YANG DITAMBAHKAN MITRA) -->
+        <div class="px-5 py-3.5 border-b border-emerald-500/20 bg-slate-950/75 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            <div>
+                <span class="text-[10px] font-extrabold uppercase tracking-wider text-emerald-400 block mb-0.5">
+                    ⚡ Filter Siklus Status Keberadaan Aset
+                </span>
+                <h3 class="text-sm font-extrabold text-white flex items-center gap-2">
+                    <span>Status Siklus Kontrak &amp; Alih Kepemilikan</span>
+                </h3>
+            </div>
+
+            <!-- Segmented Control Siklus Aset Mitra -->
+            <div class="flex items-center gap-1.5 p-1.5 rounded-2xl bg-slate-900 border border-slate-800/90 shrink-0 overflow-x-auto max-w-full">
+                <!-- 1. Semua Status -->
+                <button type="button" @click="statusSiklusFilter = 'all'"
+                    :class="statusSiklusFilter === 'all' ? 'bg-slate-800 text-white border-slate-600 font-extrabold shadow-sm' : 'text-slate-400 hover:text-white border-transparent'"
+                    class="px-3 py-1.5 rounded-xl text-xs border transition-all flex items-center gap-1.5 shrink-0 cursor-pointer">
+                    <span>🌐</span>
+                    <span>Semua Status</span>
+                    <span class="px-1.5 py-0.2 rounded-md text-[10px] font-mono font-bold"
+                        :class="statusSiklusFilter === 'all' ? 'bg-cyan-400 text-slate-950' : 'bg-slate-800 text-slate-400'"
+                        x-text="ditambahkanMetaList.length">
+                        {{ count($recordsDitambahkan) }}
+                    </span>
+                </button>
+
+                <!-- 2. Masih di Kemitraan (Aktif Konsesi) -->
+                <button type="button" @click="statusSiklusFilter = 'kemitraan'"
+                    :class="statusSiklusFilter === 'kemitraan' ? 'bg-gradient-to-r from-cyan-500/25 to-teal-500/25 text-cyan-300 border-cyan-400 font-extrabold shadow-md shadow-cyan-500/20 ring-1 ring-cyan-400/40' : 'text-slate-400 hover:text-cyan-300 border-transparent'"
+                    class="px-3 py-1.5 rounded-xl text-xs border transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
+                    title="Aset yang saat ini masih dalam masa konsesi aktif (Akun 1.5.2)">
+                    <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                    <span>Masih di Kemitraan</span>
+                    <span class="px-1.5 py-0.2 rounded-md text-[10px] font-mono font-bold"
+                        :class="statusSiklusFilter === 'kemitraan' ? 'bg-cyan-400 text-slate-950' : 'bg-slate-800 text-cyan-400'"
+                        x-text="countSiklusKemitraanDitambahkan">
+                    </span>
+                </button>
+
+                <!-- 3. Di Kembalikan (ke Mitra) -->
+                <button type="button" @click="statusSiklusFilter = 'dikembalikan'"
+                    :class="statusSiklusFilter === 'dikembalikan' ? 'bg-gradient-to-r from-purple-500/25 to-indigo-500/25 text-purple-300 border-purple-400 font-extrabold shadow-md shadow-purple-500/20 ring-1 ring-purple-400/40' : 'text-slate-400 hover:text-purple-300 border-transparent'"
+                    class="px-3 py-1.5 rounded-xl text-xs border transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
+                    title="Aset kemitraan yang selesai/dihentikan dan ditarik kembali oleh pihak ketiga / rekanan vendor">
+                    <span>📦</span>
+                    <span>Di Kembalikan</span>
+                    <span class="px-1.5 py-0.2 rounded-md text-[10px] font-mono font-bold"
+                        :class="statusSiklusFilter === 'dikembalikan' ? 'bg-purple-400 text-slate-950' : 'bg-slate-800 text-purple-400'"
+                        x-text="countSiklusDikembalikanDitambahkan">
+                    </span>
+                </button>
+
+                <!-- 4. Sudah Jadi Milik RSUD -->
+                <button type="button" @click="statusSiklusFilter = 'milik_rsud'"
+                    :class="statusSiklusFilter === 'milik_rsud' ? 'bg-gradient-to-r from-emerald-500/25 to-teal-500/25 text-emerald-300 border-emerald-400 font-extrabold shadow-md shadow-emerald-500/20 ring-1 ring-emerald-400/40' : 'text-slate-400 hover:text-emerald-300 border-transparent'"
+                    class="px-3 py-1.5 rounded-xl text-xs border transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
+                    title="Aset hasil kemitraan yang telah direklasifikasi / diserahkan menjadi Aset Tetap Definitif RSUD (KIB A s.d. E)">
+                    <span>🏛️</span>
+                    <span>Sudah Jadi Milik RSUD</span>
+                    <span class="px-1.5 py-0.2 rounded-md text-[10px] font-mono font-bold"
+                        :class="statusSiklusFilter === 'milik_rsud' ? 'bg-emerald-400 text-slate-950' : 'bg-slate-800 text-emerald-400'"
+                        x-text="countSiklusMilikRsudDitambahkan">
+                    </span>
+                </button>
+            </div>
+        </div>
+
         <div class="border-t border-slate-800/80 bg-slate-950/40 custom-scrollbar" style="max-height: 480px; overflow-y: auto; overflow-x: auto;">
             <table class="w-full text-left text-xs text-slate-300 relative border-collapse">
                 <thead class="text-slate-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-800 shrink-0 sticky top-0 z-10 bg-slate-950">
@@ -881,7 +996,7 @@
                         <th class="py-3.5 px-4 min-w-[135px] text-center bg-slate-950 whitespace-nowrap">Kondisi</th>
                         <th class="py-3.5 px-4 min-w-[140px] text-right bg-slate-950 whitespace-nowrap">Taksiran Nilai (Rp)</th>
                         <th class="py-3.5 px-4 min-w-[180px] bg-slate-950">Masa Konsesi Operasional</th>
-                        <th class="py-3.5 px-4 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800/80 shrink-0 min-w-[260px] sticky right-0 z-10">Aksi</th>
+                        <th class="py-3.5 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[340px] w-[340px] sticky right-0 z-20 kemitraan-sticky-aksi" style="background-color: #020617 !important; box-shadow: -8px 0 16px -2px rgba(0, 0, 0, 0.75);">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-800/60">
@@ -1036,11 +1151,19 @@
                                     <span class="px-2 py-0.5 rounded text-[10px] font-bold
                                         {{ $row->status_konsesi === 'Aktif' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : '' }}
                                         {{ $row->status_konsesi === 'Konsesi Berakhir' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : '' }}
-                                        {{ in_array($row->status_konsesi, ['Selesai', 'Selesai / Reklasifikasi']) ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : '' }}
+                                        {{ $row->status_konsesi === 'Dikembalikan ke Rekanan' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : '' }}
+                                        {{ $row->status_konsesi === 'Selesai / Reklasifikasi' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : '' }}
+                                        {{ $row->status_konsesi === 'Selesai' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : '' }}
                                         {{ $row->status_konsesi === 'Dihentikan' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : '' }}
                                     ">
-                                        {{ in_array($row->status_konsesi, ['Selesai', 'Selesai / Reklasifikasi']) ? 'Selesai' : ($row->status_konsesi === 'Konsesi Berakhir' ? 'Konsesi Berakhir' : $row->status_konsesi) }}
+                                        {{ $row->status_konsesi === 'Dikembalikan ke Rekanan' ? '📦 Dikembalikan' : ($row->status_konsesi === 'Selesai / Reklasifikasi' ? '🏛️ Milik RSUD' : ($row->status_konsesi === 'Selesai' ? 'Selesai' : ($row->status_konsesi === 'Konsesi Berakhir' ? 'Konsesi Berakhir' : $row->status_konsesi))) }}
                                     </span>
+                                    @if($row->is_extended || !empty($row->riwayat_adendum))
+                                        <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-black uppercase tracking-wider bg-emerald-500/25 text-emerald-300 border border-emerald-400/50 shadow-sm shadow-emerald-500/20"
+                                              title="Kontrak PKS telah diperpanjang (Adendum #{{ $row->jumlah_extend ?: 1 }})">
+                                            <span>🔄 ADENDUM #{{ $row->jumlah_extend ?: 1 }}</span>
+                                        </span>
+                                    @endif
                                     @if($sisaHari !== null && $row->status_konsesi === 'Aktif')
                                         <span class="text-[10px] font-mono {{ $sisaHari <= 30 ? 'text-amber-400 font-bold' : 'text-slate-400' }}">
                                             {{ $sisaHari > 0 ? $sisaHari . ' hari lagi' : 'Berakhir' }}
@@ -1052,8 +1175,8 @@
                                 </div>
                             </td>
 
-                            <!-- 7. Aksi (Sticky Right) -->
-                            <td class="py-4 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 sticky right-0 z-10 bg-slate-900/95 group-hover:bg-[#062922] transition-colors">
+                            <!-- 7. Aksi (Sticky Right Solid Anti-Transparan) -->
+                            <td class="py-4 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 sticky right-0 z-10 min-w-[340px] w-[340px] kemitraan-sticky-aksi" style="background-color: #0f172a !important; box-shadow: -8px 0 16px -2px rgba(0, 0, 0, 0.75);">
                                 <div class="flex items-center justify-center space-x-1.5">
                                     <!-- 1. Tombol Detail -->
                                     <button type="button" @click="openDetail({{ json_encode($row) }}, {{ json_encode($astap) }}, {{ json_encode($firstReg) }}, false)"
@@ -1066,8 +1189,18 @@
                                         <span>Detail</span>
                                     </button>
 
+                                    <!-- 2. Tombol Extend / Perpanjang PKS Mitra -->
+                                    <button type="button" @click="openExtendModal({{ json_encode($row) }}, {{ json_encode($astap) }}, false, 0)"
+                                        title="Perpanjang Masa Konsesi Aset Mitra Ini (Adendum PKS)"
+                                        class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 hover:border-emerald-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-emerald-500/30 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
+                                        <svg class="w-3.5 h-3.5 text-emerald-400 group-hover/btn:text-white group-hover/btn:rotate-180 transition-all duration-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                        </svg>
+                                        <span>Extend</span>
+                                    </button>
+
                                     @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
-                                    <!-- 2. Tombol Reklas -->
+                                    <!-- 3. Tombol Reklas -->
                                     @if($row->status_konsesi === 'Konsesi Berakhir')
                                     <button type="button" @click="openReklas({{ json_encode($astap) }}, {{ json_encode($row) }})"
                                         title="Masa konsesi berakhir! Reklasifikasi aset ini menjadi Aset Tetap RSUD"
@@ -1178,7 +1311,7 @@
                         <th class="py-3.5 px-4 min-w-[125px] text-center bg-slate-950 whitespace-nowrap">Kondisi</th>
                         <th class="py-3.5 px-4 min-w-[130px] text-right bg-slate-950 whitespace-nowrap">Total Nilai (Rp)</th>
                         <th class="py-3.5 px-4 min-w-[170px] bg-slate-950">Masa Konsesi</th>
-                        <th class="py-3.5 px-4 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800/80 shrink-0 min-w-[260px] sticky right-0 z-10">Aksi</th>
+                        <th class="py-3.5 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[280px] w-[280px] sticky right-0 z-20 kemitraan-sticky-aksi" style="background-color: #020617 !important; box-shadow: -8px 0 16px -2px rgba(0, 0, 0, 0.75);">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-800/60">
@@ -1329,19 +1462,27 @@
                                     <span class="px-1.5 py-0.2 rounded text-[10px] font-bold
                                         {{ $row->status_konsesi === 'Aktif' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : '' }}
                                         {{ $row->status_konsesi === 'Konsesi Berakhir' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : '' }}
-                                        {{ in_array($row->status_konsesi, ['Selesai', 'Selesai / Reklasifikasi']) ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : '' }}
+                                        {{ $row->status_konsesi === 'Dikembalikan ke Rekanan' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : '' }}
+                                        {{ $row->status_konsesi === 'Selesai / Reklasifikasi' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : '' }}
+                                        {{ $row->status_konsesi === 'Selesai' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : '' }}
                                         {{ $row->status_konsesi === 'Dihentikan' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : '' }}
                                     ">
-                                        {{ in_array($row->status_konsesi, ['Selesai', 'Selesai / Reklasifikasi']) ? 'Selesai' : ($row->status_konsesi === 'Konsesi Berakhir' ? 'Konsesi Berakhir' : $row->status_konsesi) }}
+                                        {{ $row->status_konsesi === 'Dikembalikan ke Rekanan' ? '📦 Dikembalikan' : ($row->status_konsesi === 'Selesai / Reklasifikasi' ? '🏛️ Milik RSUD' : ($row->status_konsesi === 'Selesai' ? 'Selesai' : ($row->status_konsesi === 'Konsesi Berakhir' ? 'Konsesi Berakhir' : $row->status_konsesi))) }}
                                     </span>
+                                    @if($row->is_extended || !empty($row->riwayat_adendum))
+                                        <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-black uppercase tracking-wider bg-emerald-500/25 text-emerald-300 border border-emerald-400/50 shadow-sm shadow-emerald-500/20"
+                                              title="Kontrak PKS telah diperpanjang (Adendum #{{ $row->jumlah_extend ?: 1 }})">
+                                            <span>🔄 ADENDUM #{{ $row->jumlah_extend ?: 1 }}</span>
+                                        </span>
+                                    @endif
                                 </div>
                                 <div class="text-[10px] font-mono text-slate-400">
                                     {{ $row->tanggal_mulai ? \Carbon\Carbon::parse($row->tanggal_mulai)->format('d/m/y') : '?' }} - {{ $row->tanggal_selesai ? \Carbon\Carbon::parse($row->tanggal_selesai)->format('d/m/y') : '?' }}
                                 </div>
                             </td>
 
-                            <!-- 8. Aksi (Sticky Right) -->
-                            <td class="py-4 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 sticky right-0 z-10 bg-slate-900/95 group-hover:bg-slate-800 transition-colors">
+                            <!-- 8. Aksi (Sticky Right Solid Anti-Transparan) -->
+                            <td class="py-4 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 sticky right-0 z-10 min-w-[340px] w-[340px] kemitraan-sticky-aksi" style="background-color: #0f172a !important; box-shadow: -8px 0 16px -2px rgba(0, 0, 0, 0.75);">
                                 <div class="flex items-center justify-center space-x-1.5">
                                     <!-- 1. Tombol Detail -->
                                     <button type="button" @click="openDetail({{ json_encode($row) }}, {{ json_encode($astap) }}, {{ json_encode($firstReg) }}, false)"
@@ -1352,6 +1493,16 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                         </svg>
                                         <span>Detail</span>
+                                    </button>
+
+                                    <!-- 2. Tombol Extend / Perpanjang PKS (Adendum) -->
+                                    <button type="button" @click="openExtendModal({{ json_encode($row) }}, {{ json_encode($astap) }}, false, 0)"
+                                        title="Perpanjang Masa Konsesi / Adendum PKS Aset Ini"
+                                        class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 hover:border-emerald-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-emerald-500/30 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
+                                        <svg class="w-3.5 h-3.5 text-emerald-400 group-hover/btn:text-white group-hover/btn:rotate-180 transition-all duration-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                        </svg>
+                                        <span>Extend</span>
                                     </button>
 
                                     @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))

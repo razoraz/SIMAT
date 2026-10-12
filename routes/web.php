@@ -6566,6 +6566,8 @@ Route::middleware('auth')->group(function () {
         // Master Kemitraan Aset (KSO, BGS, Sewa Akun 1.5.2)
         Route::get('/master-data/kemitraan', [\App\Http\Controllers\KemitraanController::class, 'index'])->name('master.kemitraan');
         Route::put('/master-data/kemitraan/{id}/status', [\App\Http\Controllers\KemitraanController::class, 'updateStatus'])->name('master.kemitraan.status');
+        Route::post('/master-data/kemitraan/{id}/extend', [\App\Http\Controllers\KemitraanController::class, 'extendKonsesi'])->name('master.kemitraan.extend');
+        Route::post('/master-data/kemitraan/extend-mitra-batch', [\App\Http\Controllers\KemitraanController::class, 'extendMitraBatch'])->name('master.kemitraan.extend_mitra_batch');
         Route::delete('/master-data/kemitraan/{id}', [\App\Http\Controllers\KemitraanController::class, 'destroy'])->name('master.kemitraan.destroy');
     });
 

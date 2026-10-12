@@ -38,6 +38,12 @@
         <!-- MODAL CETAK RESMI BAST PEMANFAATAN KEMITRAAN -->
         @include('pages.kemitraan.master_partials.modal_print_bast')
 
+        <!-- MODAL EXTEND / PERPANJANG MASA KONSESI (ADENDUM PKS) -->
+        @include('pages.kemitraan.master_partials.modal_extend_kemitraan')
+
+        <!-- MODAL KONFIRMASI SINKRONISASI EXTEND ASET MITRA (TABEL 2) -->
+        @include('pages.kemitraan.master_partials.modal_confirm_extend_mitra')
+
         <!-- FLOATING TOAST NOTIFICATION -->
         @include('pages.kemitraan.master_partials.toast')
     </div>

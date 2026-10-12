@@ -24,6 +24,9 @@ class AstapKemitraan extends Model
         'tahun'           => 'integer',
         'is_deleted'      => 'integer',
         'deleted_at'      => 'datetime',
+        'riwayat_adendum' => 'array',
+        'is_extended'     => 'boolean',
+        'jumlah_extend'   => 'integer',
     ];
 
     public function astap()

@@ -27,6 +27,9 @@
             // Mode Tampilan Pemisah Tabel Kemitraan: 'both' | 'dimanfaatkan' | 'ditambahkan' | 'all'
             kemitraanTableTab: 'both',
 
+            // Filter Siklus Status Keberadaan Aset: 'all' | 'kemitraan' | 'dikembalikan' | 'milik_rsud'
+            statusSiklusFilter: 'all',
+
             // State Filter Client-Side Instan Kemitraan (0ms Tanpa Reload persis seperti Data ASTAP)
             filterSearch: '{{ $search ?? '' }}',
             filterKib: '{{ $filterKib ?? 'all' }}',
@@ -40,6 +43,32 @@
             allMetaList: window.__allMetaList || [],
             allDitambahkanDetailList: window.__allDitambahkanDetailList || [],
             allDimanfaatkanDetailList: window.__allDimanfaatkanDetailList || [],
+
+            // State Extend Konsesi (Adendum PKS)
+            showModalExtend: false,
+            isSubmittingExtend: false,
+            extendData: {},
+            extendForm: {
+                id: null,
+                nomor_adendum: '',
+                tanggal_adendum: '',
+                tanggal_selesai_baru: '',
+                nilai_aset_baru: '',
+                keterangan_adendum: '',
+                berkas_adendum: null,
+            },
+
+            // State Confirm Extend Mitra (Tabel 2: Aset Ditambahkan Mitra)
+            showModalConfirmExtendMitra: false,
+            isSubmittingExtendMitra: false,
+            extendMitraState: {
+                nomor_adendum: '',
+                tanggal_selesai_baru: '',
+                tanggal_selesai_fmt: '',
+                linked_mitra_assets: []
+            },
+            selectedMitraIds: [],
+            extendMitraKeterangan: '',
 
             initMetaLists(dim, dit, all, allDitDetails, allDimDetails) {
                 if (dim && Array.isArray(dim)) this.dimanfaatkanMetaList = dim;
@@ -61,7 +90,21 @@
                 return (this.allMetaList || []).filter(row => this.matchKemitraan(row)).length;
             },
 
+            // Counter untuk Filter Siklus Keberadaan Aset (Khusus Aset Ditambahkan Mitra / Tabel 2)
+            get countSiklusKemitraanDitambahkan() {
+                return (this.ditambahkanMetaList || []).filter(row => (row.siklus || 'kemitraan') === 'kemitraan').length;
+            },
+
+            get countSiklusDikembalikanDitambahkan() {
+                return (this.ditambahkanMetaList || []).filter(row => row.siklus === 'dikembalikan').length;
+            },
+
+            get countSiklusMilikRsudDitambahkan() {
+                return (this.ditambahkanMetaList || []).filter(row => row.siklus === 'milik_rsud').length;
+            },
+
             resetAllFilters() {
+                this.statusSiklusFilter = 'all';
                 this.filterSearch = '';
                 this.filterKib = 'all';
                 this.filterSkema = 'all';
@@ -72,6 +115,14 @@
 
             matchKemitraan(row) {
                 if (!row) return false;
+
+                // 0. Filter Siklus Keberadaan Aset (HANYA BERLAKU UNTUK ASET DITAMBAHKAN MITRA / TABEL 2)
+                if (!row.is_dimanfaatkan && this.statusSiklusFilter && this.statusSiklusFilter !== 'all') {
+                    const rowSiklus = row.siklus || 'kemitraan';
+                    if (rowSiklus !== this.statusSiklusFilter) {
+                        return false;
+                    }
+                }
 
                 // 1. Live Text Search (real-time 0ms)
                 if (this.filterSearch && this.filterSearch.trim() !== '') {
@@ -144,6 +195,10 @@
                         if (!rowStatus.includes('aktif') || rowStatus.includes('berakhir')) return false;
                     } else if (targetStatus.includes('berakhir')) {
                         if (!rowStatus.includes('berakhir')) return false;
+                    } else if (targetStatus.includes('kembali')) {
+                        if (!rowStatus.includes('kembali')) return false;
+                    } else if (targetStatus.includes('reklas') || targetStatus.includes('rsud')) {
+                        if (!rowStatus.includes('reklas') && !rowStatus.includes('rsud') && row.siklus !== 'milik_rsud') return false;
                     } else if (targetStatus.includes('selesai')) {
                         if (!rowStatus.includes('selesai')) return false;
                     } else if (targetStatus.includes('dihentikan')) {
@@ -701,7 +756,15 @@
                     objek_register_id: kemitraan?.objek_register_id || spec.objek_register_id || null,
                     objek_nibar: kemitraan?.objek_nibar || spec.objek_nibar || null,
                     objek_astap: kemitraan?.objek_astap || kemitraan?.objekAstap || null,
-                    objek_register: kemitraan?.objek_register || kemitraan?.objekRegister || null
+                    objek_register: kemitraan?.objek_register || kemitraan?.objekRegister || null,
+
+                    // Riwayat Adendum & Status Extend PKS
+                    is_extended: Boolean(kemitraan?.is_extended),
+                    jumlah_extend: kemitraan?.jumlah_extend || 0,
+                    riwayat_adendum: kemitraan?.riwayat_adendum || [],
+                    dokumen_adendum_path: kemitraan?.dokumen_adendum_path || null,
+                    raw_row: kemitraan || {},
+                    raw_astap: astap || {}
                 };
 
                 // Kompatibilitas state lama
@@ -1881,6 +1944,236 @@
                     alert('Terjadi kesalahan jaringan atau server saat menyimpan status.');
                 } finally {
                     this.isUpdatingStatus = false;
+                }
+            },
+
+            // =========================================================================
+            // METODE EXTEND / PERPANJANG MASA KONSESI (ADENDUM PKS KEMITRAAN)
+            // =========================================================================
+            openExtendModal(row, astap, isDimanfaatkan, linkedCount = 0) {
+                if (!row && !astap) return;
+                const todayStr = new Date().toISOString().split('T')[0];
+                const currentTglSelesai = row?.tanggal_selesai || astap?.tanggal_selesai || null;
+                
+                // Hitung default tanggal selesai baru (+1 tahun dari tgl selesai saat ini, atau +1 tahun dari hari ini)
+                let defaultNewEnd = '';
+                if (currentTglSelesai) {
+                    const d = new Date(currentTglSelesai);
+                    if (!isNaN(d.getTime())) {
+                        d.setFullYear(d.getFullYear() + 1);
+                        defaultNewEnd = d.toISOString().split('T')[0];
+                    }
+                }
+                if (!defaultNewEnd) {
+                    const d = new Date();
+                    d.setFullYear(d.getFullYear() + 1);
+                    defaultNewEnd = d.toISOString().split('T')[0];
+                }
+
+                // Resolusi Nama Barang
+                let namaBarang = astap?.nama_barang || row?.nama_barang || 'Aset Kemitraan';
+                let formatTglLama = currentTglSelesai ? this.formatTanggalIndo(currentTglSelesai) : '-';
+
+                const targetId = row?.id || row?.kemitraan_id || astap?.kemitraan?.id || astap?.id || null;
+
+                this.extendData = {
+                    id: targetId,
+                    astap_id: astap?.id || row?.astap_id || null,
+                    nama_barang: namaBarang,
+                    mitra_nama: row?.mitra_nama || 'Mitra Rekanan',
+                    nomor_pks: row?.nomor_pks || '-',
+                    status_konsesi: row?.status_konsesi || 'Aktif',
+                    tanggal_mulai: row?.tanggal_mulai || null,
+                    tanggal_selesai: currentTglSelesai,
+                    tanggal_selesai_lama_fmt: formatTglLama,
+                    nilai_aset: row?.nilai_aset || 0,
+                    jumlah_extend: row?.jumlah_extend || 0,
+                    is_dimanfaatkan: !!isDimanfaatkan,
+                    linked_mitra_count: linkedCount || 0
+                };
+
+                this.extendForm = {
+                    id: targetId,
+                    nomor_adendum: '',
+                    tanggal_adendum: todayStr,
+                    tanggal_selesai_baru: defaultNewEnd,
+                    nilai_aset_baru: row?.nilai_aset ? Number(row.nilai_aset).toLocaleString('id-ID') : '',
+                    keterangan_adendum: '',
+                    berkas_adendum: null
+                };
+
+                this.showModalExtend = true;
+            },
+
+            openExtendModalFromDetail() {
+                if (!this.selectedAstapDetail) return;
+                const detail = this.selectedAstapDetail;
+                const linkedAsets = this.getAsetDitambahkanMitraForDetail(detail);
+                const targetRow = (detail.raw_row && Object.keys(detail.raw_row).length > 0) ? detail.raw_row : (detail.kemitraan || detail);
+                const targetAstap = (detail.raw_astap && Object.keys(detail.raw_astap).length > 0) ? detail.raw_astap : detail;
+                this.showDetailModal = false;
+                this.openExtendModal(targetRow, targetAstap, detail.is_dimanfaatkan, linkedAsets.length);
+            },
+
+            closeExtendModal() {
+                this.showModalExtend = false;
+                this.isSubmittingExtend = false;
+            },
+
+            setExtendDuration(amount, unit) {
+                let base = new Date();
+                if (this.extendData.tanggal_selesai) {
+                    const currentD = new Date(this.extendData.tanggal_selesai);
+                    if (!isNaN(currentD.getTime()) && currentD > base) {
+                        base = currentD;
+                    }
+                }
+                const newD = new Date(base.getTime());
+                if (unit === 'months') {
+                    newD.setMonth(newD.getMonth() + amount);
+                } else if (unit === 'years') {
+                    newD.setFullYear(newD.getFullYear() + amount);
+                }
+                this.extendForm.tanggal_selesai_baru = newD.toISOString().split('T')[0];
+            },
+
+            handleExtendFileChange(event) {
+                if (event.target && event.target.files && event.target.files[0]) {
+                    this.extendForm.berkas_adendum = event.target.files[0];
+                } else {
+                    this.extendForm.berkas_adendum = null;
+                }
+            },
+
+            async submitExtendForm() {
+                if (!this.extendForm.id || !this.extendForm.nomor_adendum || !this.extendForm.tanggal_selesai_baru) {
+                    alert('Harap isi Nomor Adendum dan Tanggal Selesai Baru.');
+                    return;
+                }
+
+                this.isSubmittingExtend = true;
+                try {
+                    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                    const url = `{{ url('/master-data/kemitraan') }}/${this.extendForm.id}/extend`;
+
+                    const fd = new FormData();
+                    fd.append('nomor_adendum', this.extendForm.nomor_adendum);
+                    fd.append('tanggal_adendum', this.extendForm.tanggal_adendum);
+                    fd.append('tanggal_selesai_baru', this.extendForm.tanggal_selesai_baru);
+                    if (this.extendForm.nilai_aset_baru) {
+                        fd.append('nilai_aset_baru', this.extendForm.nilai_aset_baru);
+                    }
+                    if (this.extendForm.keterangan_adendum) {
+                        fd.append('keterangan_adendum', this.extendForm.keterangan_adendum);
+                    }
+                    if (this.extendForm.berkas_adendum) {
+                        fd.append('berkas_adendum', this.extendForm.berkas_adendum);
+                    }
+
+                    const res = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': csrf,
+                            'Accept': 'application/json'
+                        },
+                        body: fd
+                    });
+
+                    const json = await res.json();
+                    if (json.success) {
+                        this.closeExtendModal();
+
+                        // Cek apakah ada linked aset mitra (Tabel 2)
+                        if (json.has_linked_mitra && json.linked_mitra_assets && json.linked_mitra_assets.length > 0) {
+                            this.extendMitraState = {
+                                nomor_adendum: json.nomor_adendum,
+                                tanggal_selesai_baru: json.tanggal_selesai_baru,
+                                tanggal_selesai_fmt: json.tanggal_selesai_fmt,
+                                linked_mitra_assets: json.linked_mitra_assets
+                            };
+                            this.selectedMitraIds = json.linked_mitra_assets.map(m => m.id);
+                            this.extendMitraKeterangan = `Ikut perpanjangan masa pemanfaatan PKS Adendum No. ${json.nomor_adendum}`;
+                            this.showModalConfirmExtendMitra = true;
+                        } else {
+                            if (typeof this.showToast === 'function') {
+                                this.showToast(json.message, 'success');
+                            } else {
+                                alert(json.message);
+                            }
+                            setTimeout(() => window.location.reload(), 1200);
+                        }
+                    } else {
+                        alert(json.message || 'Gagal menyimpan perpanjangan konsesi.');
+                    }
+                } catch (err) {
+                    console.error('Extend error:', err);
+                    alert('Terjadi kesalahan saat memproses perpanjangan konsesi.');
+                } finally {
+                    this.isSubmittingExtend = false;
+                }
+            },
+
+            selectAllMitra() {
+                this.selectedMitraIds = (this.extendMitraState.linked_mitra_assets || []).map(m => m.id);
+            },
+
+            deselectAllMitra() {
+                this.selectedMitraIds = [];
+            },
+
+            closeConfirmExtendMitraModal() {
+                this.showModalConfirmExtendMitra = false;
+                this.isSubmittingExtendMitra = false;
+                if (typeof this.showToast === 'function') {
+                    this.showToast('Objek pemanfaatan berhasil diperpanjang. Aset mitra tetap pada masa konsesi sebelumnya.', 'info');
+                }
+                setTimeout(() => window.location.reload(), 1200);
+            },
+
+            async submitExtendMitraBatch() {
+                if (this.selectedMitraIds.length === 0) {
+                    alert('Pilih setidaknya satu aset mitra untuk diperpanjang.');
+                    return;
+                }
+
+                this.isSubmittingExtendMitra = true;
+                try {
+                    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                    const url = `{{ route('master.kemitraan.extend_mitra_batch') }}`;
+
+                    const res = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrf,
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            mitra_ids: this.selectedMitraIds,
+                            tanggal_selesai_baru: this.extendMitraState.tanggal_selesai_baru,
+                            nomor_adendum: this.extendMitraState.nomor_adendum,
+                            tanggal_adendum: this.extendMitraState.tanggal_adendum || null,
+                            keterangan: this.extendMitraKeterangan
+                        })
+                    });
+
+                    const json = await res.json();
+                    if (json.success) {
+                        this.showModalConfirmExtendMitra = false;
+                        if (typeof this.showToast === 'function') {
+                            this.showToast(json.message, 'success');
+                        } else {
+                            alert(json.message);
+                        }
+                        setTimeout(() => window.location.reload(), 1200);
+                    } else {
+                        alert(json.message || 'Gagal memperpanjang aset mitra.');
+                    }
+                } catch (err) {
+                    console.error('Batch extend mitra error:', err);
+                    alert('Terjadi kesalahan jaringan atau server saat memperpanjang aset mitra.');
+                } finally {
+                    this.isSubmittingExtendMitra = false;
                 }
             },
 
