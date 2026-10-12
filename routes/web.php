@@ -522,7 +522,9 @@ Route::middleware('auth')->group(function () {
                     'sp2d_nomor' => $a->sp2d_nomor ?: ($spec['sp2d_nomor'] ?? '-'),
                     'sp2d_tanggal' => $fmtDate($a->sp2d_tanggal, $spec['sp2d_tanggal'] ?? '-'),
                     'bast_dokumen_nomor' => $a->bast_dokumen_nomor ?: ($spec['bast_dokumen_nomor'] ?? '-'),
+                    'bast_nomor' => $a->bast_nomor ?: ($a->bast_dokumen_nomor ?: ($spec['bast_dokumen_nomor'] ?? '-')),
                     'bast_dokumen_tanggal' => $fmtDate($a->bast_dokumen_tanggal, $spec['bast_dokumen_tanggal'] ?? '-'),
+                    'bast_tanggal' => $fmtDate($a->bast_tanggal ?: $a->bast_dokumen_tanggal, $spec['bast_dokumen_tanggal'] ?? '-'),
                     
                     // Rincian Tanah Khusus (KIB A)
                     'hak_tanah' => $spec['hak_tanah'] ?? ($spec['tanah_hak'] ?? 'Hak Pakai'),
@@ -3290,7 +3292,7 @@ Route::middleware('auth')->group(function () {
             })->name('astap.create');
 
             Route::get('/astap/{id}/edit', function ($id) use ($getDistinctPenyedias, $getDistinctPejabats) {
-                $astap = \App\Models\Astap::with(['registers', 'jenisAstap', 'rekeningBelanja', 'jenisPengadaan'])->findOrFail($id);
+                $astap = \App\Models\Astap::with(['registers', 'jenisAstap', 'rekeningBelanja', 'jenisPengadaan', 'belanjaModal'])->findOrFail($id);
                 if ($astap->sumber_dana === 'pelimpahan_skpd' || !empty($astap->mutasi_nomor_bamb) || !empty($astap->mutasi_asal)) {
                     return redirect()->route('astap.edit_mutasi_eksternal', ['id' => $id, 'from' => request('from', 'eksternal')]);
                 }

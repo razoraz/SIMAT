@@ -78,6 +78,30 @@ class Astap extends Model
         'biaya_administrasi_proyek' => 'decimal:2',
     ];
 
+    protected $appends = [
+        'spk_nomor',
+        'spk_tanggal',
+        'surat_pesanan_nomor',
+        'surat_pesanan_tanggal',
+        'kwitansi_nomor',
+        'kwitansi_tanggal',
+        'faktur_nomor',
+        'faktur_tanggal',
+        'sp2d_nomor',
+        'sp2d_tanggal',
+        'bast_dokumen_nomor',
+        'bast_dokumen_tanggal',
+        'bast_nomor',
+        'bast_tanggal',
+        'penyedia_nama',
+        'penyedia_pemilik',
+        'penyedia_rekening_nama',
+        'penyedia_rekening_nomor',
+        'penyedia_alamat',
+        'jenis_pengadaan_id',
+        'rekening_belanja_id',
+    ];
+
     /**
      * Izinkan mass assignment untuk kolom ekstensi agar tidak tertahan oleh accessor
      */
@@ -111,27 +135,27 @@ class Astap extends Model
                 if (!empty($ext) || !empty($astap->belanjaModal)) {
                     \App\Models\AstapBelanjaModal::updateOrCreate(
                         ['astap_id' => $astap->id],
-                        array_filter([
-                            'jenis_pengadaan_id'     => $ext['jenis_pengadaan_id'] ?? ($astap->belanjaModal?->jenis_pengadaan_id),
-                            'rekening_belanja_id'    => $ext['rekening_belanja_id'] ?? ($astap->belanjaModal?->rekening_belanja_id),
-                            'spk_nomor'              => $ext['spk_nomor'] ?? ($astap->belanjaModal?->spk_nomor),
-                            'spk_tanggal'            => isset($ext['spk_tanggal']) ? static::parseDateInput($ext['spk_tanggal']) : ($astap->belanjaModal?->getRawOriginal('spk_tanggal')),
-                            'surat_pesanan_nomor'    => $ext['surat_pesanan_nomor'] ?? ($astap->belanjaModal?->surat_pesanan_nomor),
-                            'surat_pesanan_tanggal'  => isset($ext['surat_pesanan_tanggal']) ? static::parseDateInput($ext['surat_pesanan_tanggal']) : ($astap->belanjaModal?->getRawOriginal('surat_pesanan_tanggal')),
-                            'kwitansi_nomor'         => $ext['kwitansi_nomor'] ?? ($astap->belanjaModal?->kwitansi_nomor),
-                            'kwitansi_tanggal'       => isset($ext['kwitansi_tanggal']) ? static::parseDateInput($ext['kwitansi_tanggal']) : ($astap->belanjaModal?->getRawOriginal('kwitansi_tanggal')),
-                            'faktur_nomor'           => $ext['faktur_nomor'] ?? ($astap->belanjaModal?->faktur_nomor),
-                            'faktur_tanggal'         => isset($ext['faktur_tanggal']) ? static::parseDateInput($ext['faktur_tanggal']) : ($astap->belanjaModal?->getRawOriginal('faktur_tanggal')),
-                            'sp2d_nomor'             => $ext['sp2d_nomor'] ?? ($astap->belanjaModal?->sp2d_nomor),
-                            'sp2d_tanggal'           => isset($ext['sp2d_tanggal']) ? static::parseDateInput($ext['sp2d_tanggal']) : ($astap->belanjaModal?->getRawOriginal('sp2d_tanggal')),
-                            'bast_dokumen_nomor'     => $ext['bast_dokumen_nomor'] ?? ($astap->belanjaModal?->bast_dokumen_nomor),
-                            'bast_dokumen_tanggal'   => isset($ext['bast_dokumen_tanggal']) ? static::parseDateInput($ext['bast_dokumen_tanggal']) : ($astap->belanjaModal?->getRawOriginal('bast_dokumen_tanggal')),
-                            'penyedia_nama'          => $ext['penyedia_nama'] ?? ($astap->belanjaModal?->penyedia_nama),
-                            'penyedia_pemilik'       => $ext['penyedia_pemilik'] ?? ($astap->belanjaModal?->penyedia_pemilik),
-                            'penyedia_rekening_nama' => $ext['penyedia_rekening_nama'] ?? ($astap->belanjaModal?->penyedia_rekening_nama),
-                            'penyedia_rekening_nomor'=> $ext['penyedia_rekening_nomor'] ?? ($astap->belanjaModal?->penyedia_rekening_nomor),
-                            'penyedia_alamat'        => $ext['penyedia_alamat'] ?? ($astap->belanjaModal?->penyedia_alamat),
-                        ], fn($val) => !is_null($val))
+                        [
+                            'jenis_pengadaan_id'     => array_key_exists('jenis_pengadaan_id', $ext) ? $ext['jenis_pengadaan_id'] : ($astap->belanjaModal?->jenis_pengadaan_id),
+                            'rekening_belanja_id'    => array_key_exists('rekening_belanja_id', $ext) ? $ext['rekening_belanja_id'] : ($astap->belanjaModal?->rekening_belanja_id),
+                            'spk_nomor'              => array_key_exists('spk_nomor', $ext) ? $ext['spk_nomor'] : ($astap->belanjaModal?->spk_nomor),
+                            'spk_tanggal'            => array_key_exists('spk_tanggal', $ext) ? static::parseDateInput($ext['spk_tanggal']) : ($astap->belanjaModal?->getRawOriginal('spk_tanggal')),
+                            'surat_pesanan_nomor'    => array_key_exists('surat_pesanan_nomor', $ext) ? $ext['surat_pesanan_nomor'] : ($astap->belanjaModal?->surat_pesanan_nomor),
+                            'surat_pesanan_tanggal'  => array_key_exists('surat_pesanan_tanggal', $ext) ? static::parseDateInput($ext['surat_pesanan_tanggal']) : ($astap->belanjaModal?->getRawOriginal('surat_pesanan_tanggal')),
+                            'kwitansi_nomor'         => array_key_exists('kwitansi_nomor', $ext) ? $ext['kwitansi_nomor'] : ($astap->belanjaModal?->kwitansi_nomor),
+                            'kwitansi_tanggal'       => array_key_exists('kwitansi_tanggal', $ext) ? static::parseDateInput($ext['kwitansi_tanggal']) : ($astap->belanjaModal?->getRawOriginal('kwitansi_tanggal')),
+                            'faktur_nomor'           => array_key_exists('faktur_nomor', $ext) ? $ext['faktur_nomor'] : ($astap->belanjaModal?->faktur_nomor),
+                            'faktur_tanggal'         => array_key_exists('faktur_tanggal', $ext) ? static::parseDateInput($ext['faktur_tanggal']) : ($astap->belanjaModal?->getRawOriginal('faktur_tanggal')),
+                            'sp2d_nomor'             => array_key_exists('sp2d_nomor', $ext) ? $ext['sp2d_nomor'] : ($astap->belanjaModal?->sp2d_nomor),
+                            'sp2d_tanggal'           => array_key_exists('sp2d_tanggal', $ext) ? static::parseDateInput($ext['sp2d_tanggal']) : ($astap->belanjaModal?->getRawOriginal('sp2d_tanggal')),
+                            'bast_dokumen_nomor'     => array_key_exists('bast_dokumen_nomor', $ext) ? $ext['bast_dokumen_nomor'] : ($astap->belanjaModal?->bast_dokumen_nomor),
+                            'bast_dokumen_tanggal'   => array_key_exists('bast_dokumen_tanggal', $ext) ? static::parseDateInput($ext['bast_dokumen_tanggal']) : ($astap->belanjaModal?->getRawOriginal('bast_dokumen_tanggal')),
+                            'penyedia_nama'          => array_key_exists('penyedia_nama', $ext) ? $ext['penyedia_nama'] : ($astap->belanjaModal?->penyedia_nama),
+                            'penyedia_pemilik'       => array_key_exists('penyedia_pemilik', $ext) ? $ext['penyedia_pemilik'] : ($astap->belanjaModal?->penyedia_pemilik),
+                            'penyedia_rekening_nama' => array_key_exists('penyedia_rekening_nama', $ext) ? $ext['penyedia_rekening_nama'] : ($astap->belanjaModal?->penyedia_rekening_nama),
+                            'penyedia_rekening_nomor'=> array_key_exists('penyedia_rekening_nomor', $ext) ? $ext['penyedia_rekening_nomor'] : ($astap->belanjaModal?->penyedia_rekening_nomor),
+                            'penyedia_alamat'        => array_key_exists('penyedia_alamat', $ext) ? $ext['penyedia_alamat'] : ($astap->belanjaModal?->penyedia_alamat),
+                        ]
                     );
                 }
             }
@@ -311,7 +335,8 @@ class Astap extends Model
 
     public function getSpkTanggalAttribute($val = null)
     {
-        return $val ?? ($this->pendingExtensionAttributes['spk_tanggal'] ?? ($this->belanjaModal?->spk_tanggal ?? null));
+        $d = $val ?? ($this->pendingExtensionAttributes['spk_tanggal'] ?? ($this->belanjaModal?->getRawOriginal('spk_tanggal') ?? null));
+        return $d ? substr((string)$d, 0, 10) : null;
     }
 
     public function getSuratPesananNomorAttribute($val = null)
@@ -321,7 +346,8 @@ class Astap extends Model
 
     public function getSuratPesananTanggalAttribute($val = null)
     {
-        return $val ?? ($this->pendingExtensionAttributes['surat_pesanan_tanggal'] ?? ($this->belanjaModal?->surat_pesanan_tanggal ?? null));
+        $d = $val ?? ($this->pendingExtensionAttributes['surat_pesanan_tanggal'] ?? ($this->belanjaModal?->getRawOriginal('surat_pesanan_tanggal') ?? null));
+        return $d ? substr((string)$d, 0, 10) : null;
     }
 
     public function getKwitansiNomorAttribute($val = null)
@@ -331,7 +357,8 @@ class Astap extends Model
 
     public function getKwitansiTanggalAttribute($val = null)
     {
-        return $val ?? ($this->pendingExtensionAttributes['kwitansi_tanggal'] ?? ($this->belanjaModal?->kwitansi_tanggal ?? null));
+        $d = $val ?? ($this->pendingExtensionAttributes['kwitansi_tanggal'] ?? ($this->belanjaModal?->getRawOriginal('kwitansi_tanggal') ?? null));
+        return $d ? substr((string)$d, 0, 10) : null;
     }
 
     public function getFakturNomorAttribute($val = null)
@@ -341,7 +368,8 @@ class Astap extends Model
 
     public function getFakturTanggalAttribute($val = null)
     {
-        return $val ?? ($this->pendingExtensionAttributes['faktur_tanggal'] ?? ($this->belanjaModal?->faktur_tanggal ?? ($this->belanjaBarang?->tanggal_faktur ?? null)));
+        $d = $val ?? ($this->pendingExtensionAttributes['faktur_tanggal'] ?? ($this->belanjaModal?->getRawOriginal('faktur_tanggal') ?? ($this->belanjaBarang?->tanggal_faktur ?? null)));
+        return $d ? substr((string)$d, 0, 10) : null;
     }
 
     public function getSp2dNomorAttribute($val = null)
@@ -351,7 +379,8 @@ class Astap extends Model
 
     public function getSp2dTanggalAttribute($val = null)
     {
-        return $val ?? ($this->pendingExtensionAttributes['sp2d_tanggal'] ?? ($this->belanjaModal?->sp2d_tanggal ?? null));
+        $d = $val ?? ($this->pendingExtensionAttributes['sp2d_tanggal'] ?? ($this->belanjaModal?->getRawOriginal('sp2d_tanggal') ?? null));
+        return $d ? substr((string)$d, 0, 10) : null;
     }
 
     public function getBastDokumenNomorAttribute($val = null)
@@ -361,7 +390,18 @@ class Astap extends Model
 
     public function getBastDokumenTanggalAttribute($val = null)
     {
-        return $val ?? ($this->pendingExtensionAttributes['bast_dokumen_tanggal'] ?? ($this->belanjaModal?->bast_dokumen_tanggal ?? ($this->hibahDetail?->tanggal_bast ?? ($this->pelimpahanSkpd?->tanggal_bamb ?? null))));
+        $d = $val ?? ($this->pendingExtensionAttributes['bast_dokumen_tanggal'] ?? ($this->belanjaModal?->getRawOriginal('bast_dokumen_tanggal') ?? ($this->hibahDetail?->tanggal_bast ?? ($this->pelimpahanSkpd?->tanggal_bamb ?? null))));
+        return $d ? substr((string)$d, 0, 10) : null;
+    }
+
+    public function getBastNomorAttribute($val = null)
+    {
+        return $val ?? $this->bast_dokumen_nomor;
+    }
+
+    public function getBastTanggalAttribute($val = null)
+    {
+        return $val ?? $this->bast_dokumen_tanggal;
     }
 
     public function getHibahPemberiAttribute($val = null)

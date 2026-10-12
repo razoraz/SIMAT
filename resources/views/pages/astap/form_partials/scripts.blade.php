@@ -230,6 +230,7 @@
                 // Data Model Multi-Step — default kosong, diisi oleh init() bila mode edit
                 formData: (() => {
                     const ea = window.editingAstap || null;
+                    const bm = ea && ea.belanja_modal ? ea.belanja_modal : {};
                     let spec = {};
                     if (ea && ea.spesifikasi_json) {
                         try {
@@ -244,7 +245,15 @@
                     const ja = ea && ea.jenis_astap ? ea.jenis_astap : null;
                     const nama = ea ? (ea.nama_barang || '') : '';
                     const kode108Val = ea ? (ea.kode_108 || (ja ? (ja.sub_sub_rincian_objek || ja.jenis) : '')) : '';
-                    const fmtDate = (d) => d ? String(d).substring(0, 10) : '';
+                    const fmtDate = (d) => {
+                        if (!d) return '';
+                        const s = String(d).trim();
+                        const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+                        if (m) {
+                            return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+                        }
+                        return s.substring(0, 10);
+                    };
                     return {
                         id: ea ? ea.id : null,
                         // LANGKAH 1
@@ -687,32 +696,37 @@
                                 }
                             ],
                         // Dokumen Pengadaan
-                        spk_nomor: ea ? (ea.spk_nomor || '') : '',
-                        spk_tanggal: ea ? fmtDate(ea.spk_tanggal) : '',
-                        surat_pesanan_nomor: ea ? (ea.surat_pesanan_nomor || '') : '',
-                        surat_pesanan_tanggal: ea ? fmtDate(ea.surat_pesanan_tanggal) : '',
-                        kwitansi_nomor: ea ? (ea.kwitansi_nomor || '') : '',
-                        kwitansi_tanggal: ea ? fmtDate(ea.kwitansi_tanggal) : '',
-                        faktur_nomor: ea ? (ea.faktur_nomor || '') : '',
-                        faktur_tanggal: ea ? fmtDate(ea.faktur_tanggal) : '',
-                        sp2d_nomor: ea ? (ea.sp2d_nomor || '') : '',
-                        sp2d_tanggal: ea ? fmtDate(ea.sp2d_tanggal) : '',
-                        bast_dokumen_nomor: ea ? (ea.bast_dokumen_nomor || '') : '',
-                        bast_dokumen_tanggal: ea ? fmtDate(ea.bast_dokumen_tanggal) : '',
+                        spk_nomor: ea ? (ea.spk_nomor || bm.spk_nomor || '') : '',
+                        spk_tanggal: ea ? fmtDate(ea.spk_tanggal || bm.spk_tanggal) : '',
+                        surat_pesanan_nomor: ea ? (ea.surat_pesanan_nomor || bm.surat_pesanan_nomor || '') : '',
+                        surat_pesanan_tanggal: ea ? fmtDate(ea.surat_pesanan_tanggal || bm.surat_pesanan_tanggal) : '',
+                        kwitansi_nomor: ea ? (ea.kwitansi_nomor || bm.kwitansi_nomor || '') : '',
+                        kwitansi_tanggal: ea ? fmtDate(ea.kwitansi_tanggal || bm.kwitansi_tanggal) : '',
+                        faktur_nomor: ea ? (ea.faktur_nomor || bm.faktur_nomor || '') : '',
+                        faktur_tanggal: ea ? fmtDate(ea.faktur_tanggal || bm.faktur_tanggal) : '',
+                        sp2d_nomor: ea ? (ea.sp2d_nomor || bm.sp2d_nomor || '') : '',
+                        sp2d_tanggal: ea ? fmtDate(ea.sp2d_tanggal || bm.sp2d_tanggal) : '',
+                        bast_dokumen_nomor: ea ? (ea.bast_dokumen_nomor || bm.bast_dokumen_nomor || '') : '',
+                        bast_dokumen_tanggal: ea ? fmtDate(ea.bast_dokumen_tanggal || bm.bast_dokumen_tanggal) : '',
                         // Langkah 4
                         tahun_perolehan: ea ? (ea.tahun_perolehan || '') : '',
                         alamat_barang: ea ? (ea.alamat_barang || '') : '',
-                        penyedia_nama: ea ? (ea.penyedia_nama || '') : '',
-                        penyedia_pemilik: ea ? (ea.penyedia_pemilik || '') : '',
+                        penyedia_nama: ea ? (ea.penyedia_nama || bm.penyedia_nama || '') : '',
+                        penyedia_pemilik: ea ? (ea.penyedia_pemilik || bm.penyedia_pemilik || '') : '',
                         penyedia_telepon: ea ? (ea.penyedia_telepon || (spec ? (spec.penyedia_telepon || spec.penyedia_kontak) : '') || '') : '',
-                        penyedia_rekening_nama: ea ? (ea.penyedia_rekening_nama || '') : '',
-                        penyedia_rekening_nomor: ea ? (ea.penyedia_rekening_nomor || '') : '',
-                        penyedia_alamat: ea ? (ea.penyedia_alamat || '') : '',
+                        penyedia_rekening_nama: ea ? (ea.penyedia_rekening_nama || bm.penyedia_rekening_nama || '') : '',
+                        penyedia_rekening_nomor: ea ? (ea.penyedia_rekening_nomor || bm.penyedia_rekening_nomor || '') : '',
+                        penyedia_alamat: ea ? (ea.penyedia_alamat || bm.penyedia_alamat || '') : '',
                         ppk_nama: ea ? (ea.ppk_nama || '') : '',
                         ppk_nip: ea ? (ea.ppk_nip || '') : '',
                         keterangan_tambahan: ea ? (ea.keterangan_tambahan || '') : '',
                         is_extracomtable: ea ? !!ea.is_extracomtable : false,
-                        doc_type: ea ? (ea.spk_nomor ? 'spk' : (ea.surat_pesanan_nomor ? 'surat_pesanan' : (ea.kwitansi_nomor ? 'kwitansi' : (ea.faktur_nomor ? 'faktur' : 'spk')))) : 'spk'
+                        doc_type: ea ? (
+                            (ea.spk_nomor || bm.spk_nomor) ? 'spk' :
+                            (ea.surat_pesanan_nomor || bm.surat_pesanan_nomor) ? 'surat_pesanan' :
+                            (ea.kwitansi_nomor || bm.kwitansi_nomor) ? 'kwitansi' :
+                            (ea.faktur_nomor || bm.faktur_nomor) ? 'faktur' : 'spk'
+                        ) : 'spk'
                     };
                 })(),
 

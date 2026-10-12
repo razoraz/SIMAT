@@ -958,7 +958,7 @@
                                 </div>
                                 <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between gap-2 min-w-0">
                                     <span class="text-slate-400 font-medium shrink-0">Nomor BAST:</span>
-                                    <span class="text-rose-300 font-mono font-bold truncate text-right" x-text="selectedAstapDetail.bast_nomor || '-'"></span>
+                                    <span class="text-rose-300 font-mono font-bold truncate text-right" x-text="selectedAstapDetail.bast_dokumen_nomor || selectedAstapDetail.bast_nomor || selectedAstapDetail.belanja_modal?.bast_dokumen_nomor || '-'" :title="selectedAstapDetail.bast_dokumen_tanggal || selectedAstapDetail.bast_tanggal || ''"></span>
                                 </div>
                             </div>
                         </div>

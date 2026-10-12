@@ -674,7 +674,7 @@ class AstapController extends Controller
             $dbJenisPengadaans = \App\Models\JenisPengadaan::all();
             $dbRekeningBelanjas = \App\Models\RekeningBelanja::all();
             $dbUnits = \App\Models\Unit::orderBy('nama')->get();
-            $astap = \App\Models\Astap::with(['registers', 'jenisAstap', 'rekeningBelanja', 'jenisPengadaan'])->find($id);
+            $astap = \App\Models\Astap::with(['registers', 'jenisAstap', 'rekeningBelanja', 'jenisPengadaan', 'belanjaModal'])->find($id);
             return view('pages.astap.form', [
                 'id' => $id, 
                 'astap' => $astap,
