@@ -111,4 +111,55 @@
             <p class="text-[10px] text-slate-500 mt-1">Vendor Alkes &amp; Pengembang</p>
         </div>
     </div>
+
+    <!-- KMT-04: BANNER PERINGATAN KONSESI AKAN BERAKHIR -->
+    @if(($akanBerakhir7 ?? 0) > 0)
+        <!-- Banner Peringatan Kritis: Konsesi Berakhir <= 7 Hari -->
+        <div class="p-4 rounded-2xl bg-rose-950/40 border border-rose-500/40 shadow-xl shadow-rose-950/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 relative overflow-hidden backdrop-blur-md">
+            <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-rose-500/10 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="flex items-center gap-3 relative z-10">
+                <div class="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-300 text-lg shrink-0 animate-pulse">
+                    🚨
+                </div>
+                <div>
+                    <h4 class="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
+                        <span>Peringatan Kritis: {{ $akanBerakhir7 }} PKS Kemitraan Akan Berakhir dalam 7 Hari!</span>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-rose-500/20 text-rose-300 border border-rose-500/30 font-mono">Segera Ditindaklanjuti</span>
+                    </h4>
+                    <p class="text-[11px] text-rose-300/80 mt-0.5">
+                        Masa konsesi kerja sama hampir selesai. Mohon segera lakukan musyawarah adendum perpanjangan (Extend) atau persiapan reklasifikasi aset ke Aset Tetap RSUD.
+                    </p>
+                </div>
+            </div>
+            <button type="button" @click="filterStatus = 'akan_berakhir_7'"
+                class="self-end sm:self-center px-3.5 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 border border-rose-500/40 text-xs font-extrabold transition-all active:scale-95 shrink-0 flex items-center gap-1.5 cursor-pointer shadow-sm">
+                <span>Filter Data (≤ 7 Hari)</span>
+                <span>→</span>
+            </button>
+        </div>
+    @elseif(($akanBerakhir30 ?? 0) > 0)
+        <!-- Banner Peringatan Dini: Konsesi Berakhir <= 30 Hari -->
+        <div class="p-4 rounded-2xl bg-amber-950/40 border border-amber-500/40 shadow-xl shadow-amber-950/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 relative overflow-hidden backdrop-blur-md">
+            <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="flex items-center gap-3 relative z-10">
+                <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300 text-lg shrink-0">
+                    ⏳
+                </div>
+                <div>
+                    <h4 class="text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
+                        <span>Pengingat Dini: {{ $akanBerakhir30 }} PKS Kemitraan Akan Berakhir dalam 30 Hari</span>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30 font-mono">Perlu Perhatian</span>
+                    </h4>
+                    <p class="text-[11px] text-amber-300/80 mt-0.5">
+                        Terdapat dokumen kerja sama yang memasuki masa tenggang 30 hari ke depan. Evaluasi realisasi operasional aset sebelum masa konsesi resmi berakhir.
+                    </p>
+                </div>
+            </div>
+            <button type="button" @click="filterStatus = 'akan_berakhir_30'"
+                class="self-end sm:self-center px-3.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/40 text-xs font-extrabold transition-all active:scale-95 shrink-0 flex items-center gap-1.5 cursor-pointer shadow-sm">
+                <span>Filter Data (≤ 30 Hari)</span>
+                <span>→</span>
+            </button>
+        </div>
+    @endif
 </div>

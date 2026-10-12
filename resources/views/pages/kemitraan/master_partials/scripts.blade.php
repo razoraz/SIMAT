@@ -70,6 +70,28 @@
             selectedMitraIds: [],
             extendMitraKeterangan: '',
 
+            // State Edit Metadata Dokumen PKS (KMT-03)
+            showModalEditPks: false,
+            isSubmittingEditPks: false,
+            editPksForm: {
+                id: null,
+                astap_id: null,
+                nama_barang: '',
+                category: '',
+                nomor_pks: '',
+                mitra_nama: '',
+                mitra_pimpinan: '',
+                mitra_alamat: '',
+                skema_kemitraan: 'Sewa',
+                tanggal_pks: '',
+                tanggal_mulai: '',
+                tanggal_selesai: '',
+                jangka_waktu: '',
+                nilai_aset: '',
+                satuan: 'Unit',
+                keterangan: '',
+            },
+
             initMetaLists(dim, dit, all, allDitDetails, allDimDetails) {
                 if (dim && Array.isArray(dim)) this.dimanfaatkanMetaList = dim;
                 if (dit && Array.isArray(dit)) this.ditambahkanMetaList = dit;
@@ -191,7 +213,13 @@
                 if (this.filterStatus && this.filterStatus !== 'all') {
                     const rowStatus = (row.status || '').toLowerCase().trim();
                     const targetStatus = this.filterStatus.toLowerCase().trim();
-                    if (targetStatus === 'aktif') {
+                    if (targetStatus === 'akan_berakhir_7') {
+                        if (row.sisa_hari === null || row.sisa_hari === undefined || row.sisa_hari < 0 || row.sisa_hari > 7) return false;
+                        if (rowStatus.includes('berakhir') || rowStatus.includes('selesai') || rowStatus.includes('kembali') || rowStatus.includes('dihentikan')) return false;
+                    } else if (targetStatus === 'akan_berakhir_30') {
+                        if (row.sisa_hari === null || row.sisa_hari === undefined || row.sisa_hari < 0 || row.sisa_hari > 30) return false;
+                        if (rowStatus.includes('berakhir') || rowStatus.includes('selesai') || rowStatus.includes('kembali') || rowStatus.includes('dihentikan')) return false;
+                    } else if (targetStatus === 'aktif') {
                         if (!rowStatus.includes('aktif') || rowStatus.includes('berakhir')) return false;
                     } else if (targetStatus.includes('berakhir')) {
                         if (!rowStatus.includes('berakhir')) return false;
@@ -2018,6 +2046,95 @@
             closeExtendModal() {
                 this.showModalExtend = false;
                 this.isSubmittingExtend = false;
+            },
+
+            // KMT-03: Modal Edit Metadata PKS
+            openEditPksModal(detail) {
+                if (!detail) return;
+                const kemitraanId = detail.kemitraan_id || detail.id;
+                const kemitraan = detail.kemitraan || detail.raw_row || {};
+                const spec = detail.spesifikasi_json || {};
+
+                const formatDateForInput = (val) => {
+                    if (!val) return '';
+                    if (typeof val === 'string' && val.includes('T')) return val.split('T')[0];
+                    if (typeof val === 'string' && val.length === 10) return val;
+                    const d = new Date(val);
+                    return !isNaN(d.getTime()) ? d.toISOString().split('T')[0] : '';
+                };
+
+                this.editPksForm = {
+                    id: kemitraanId,
+                    astap_id: detail.astap_id || detail.id,
+                    nama_barang: detail.nama_barang || kemitraan.mitra_nama || 'Aset Kemitraan',
+                    category: detail.category || '1.5.2',
+                    nomor_pks: (detail.nomor_pks && detail.nomor_pks !== '-') ? detail.nomor_pks : (kemitraan.nomor_pks || ''),
+                    mitra_nama: (detail.penyedia_nama && detail.penyedia_nama !== '-') ? detail.penyedia_nama : (kemitraan.mitra_nama || ''),
+                    mitra_pimpinan: (detail.penyedia_pemilik && detail.penyedia_pemilik !== '-') ? detail.penyedia_pemilik : (kemitraan.mitra_pimpinan || ''),
+                    mitra_alamat: (detail.penyedia_alamat && detail.penyedia_alamat !== '-') ? detail.penyedia_alamat : (kemitraan.mitra_alamat || ''),
+                    skema_kemitraan: detail.skema_kemitraan || kemitraan.skema_kemitraan || 'Sewa',
+                    tanggal_pks: formatDateForInput(detail.tanggal_pks || kemitraan.tanggal_pks),
+                    tanggal_mulai: formatDateForInput(detail.tanggal_mulai || kemitraan.tanggal_mulai),
+                    tanggal_selesai: formatDateForInput(detail.tanggal_selesai || kemitraan.tanggal_selesai),
+                    jangka_waktu: detail.jangka_waktu || spec.jangka_waktu || kemitraan.jangka_waktu || '',
+                    nilai_aset: detail.nilai_aset || kemitraan.nilai_aset || '',
+                    satuan: detail.satuan || kemitraan.satuan || 'Unit',
+                    keterangan: (detail.keterangan && detail.keterangan !== '-') ? detail.keterangan : (kemitraan.keterangan || ''),
+                };
+
+                this.showModalEditPks = true;
+            },
+
+            closeEditPksModal() {
+                this.showModalEditPks = false;
+                this.isSubmittingEditPks = false;
+            },
+
+            async submitEditPksForm() {
+                if (!this.editPksForm.id) {
+                    if (typeof this.showToast === 'function') this.showToast('ID kemitraan tidak valid.', 'error');
+                    return;
+                }
+                if (!this.editPksForm.mitra_nama || !this.editPksForm.nomor_pks) {
+                    if (typeof this.showToast === 'function') this.showToast('Nomor PKS dan Nama Rekanan Mitra wajib diisi.', 'warning');
+                    return;
+                }
+
+                this.isSubmittingEditPks = true;
+                try {
+                    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                    const url = `{{ url('/master-data/kemitraan') }}/${this.editPksForm.id}`;
+
+                    const res = await fetch(url, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrf,
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify(this.editPksForm)
+                    });
+
+                    const json = await res.json();
+                    if (json.success) {
+                        if (typeof this.showToast === 'function') {
+                            this.showToast(json.message || 'Data PKS berhasil diperbarui!', 'success');
+                        }
+                        this.closeEditPksModal();
+                        setTimeout(() => window.location.reload(), 700);
+                    } else {
+                        if (typeof this.showToast === 'function') {
+                            this.showToast(json.message || 'Gagal memperbarui metadata PKS.', 'error');
+                        }
+                    }
+                } catch (err) {
+                    console.error('Update PKS error:', err);
+                    if (typeof this.showToast === 'function') {
+                        this.showToast('Terjadi kesalahan jaringan atau server saat menyimpan data.', 'error');
+                    }
+                } finally {
+                    this.isSubmittingEditPks = false;
+                }
             },
 
             setExtendDuration(amount, unit) {
