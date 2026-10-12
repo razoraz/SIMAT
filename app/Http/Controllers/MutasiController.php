@@ -24,24 +24,35 @@ class MutasiController extends Controller
         }
         $pendingMutasiIds = $query->pluck('id')->toArray();
 
-        if (empty($pendingMutasiIds)) {
-            return [];
+        $regIds = [];
+        $legacyIds = [];
+        if (!empty($pendingMutasiIds)) {
+            $regIds = AstapMutasiRegister::whereIn('astap_mutasi_id', $pendingMutasiIds)
+                ->pluck('astap_register_id')
+                ->filter()
+                ->unique()
+                ->toArray();
+
+            $legacyIds = AstapMutasi::whereIn('id', $pendingMutasiIds)
+                ->whereNotNull('astap_register_id')
+                ->pluck('astap_register_id')
+                ->filter()
+                ->unique()
+                ->toArray();
         }
 
-        $regIds = AstapMutasiRegister::whereIn('astap_mutasi_id', $pendingMutasiIds)
-            ->pluck('astap_register_id')
-            ->filter()
-            ->unique()
+        // Kunci secara permanen seluruh register yang telah dialihkan keluar ke OPD lain (Mutasi Eksternal) atau terhapus
+        $mutasiEksternalIds = AstapRegister::where(function($q) {
+                $q->where('status', 'Mutasi Keluar OPD')
+                  ->orWhere('is_deleted', 1)
+                  ->orWhereHas('astap', function($sub) {
+                      $sub->where('jenis_reklas', 'MUTASI_EKSTERNAL');
+                  });
+            })
+            ->pluck('id')
             ->toArray();
 
-        $legacyIds = AstapMutasi::whereIn('id', $pendingMutasiIds)
-            ->whereNotNull('astap_register_id')
-            ->pluck('astap_register_id')
-            ->filter()
-            ->unique()
-            ->toArray();
-
-        return array_values(array_unique(array_merge($regIds, $legacyIds)));
+        return array_values(array_unique(array_merge($regIds, $legacyIds, $mutasiEksternalIds)));
     }
 
     /**
@@ -172,9 +183,19 @@ class MutasiController extends Controller
         $units = Unit::orderBy('nama')->get(['id', 'nama', 'kepala']);
         $rawRegisters = AstapRegister::with('astap', 'unit')
             ->whereNotNull('nibar')
+            ->where('is_deleted', 0)
+            ->where(function($q) {
+                $q->whereNull('status')
+                  ->orWhere('status', '!=', 'Mutasi Keluar OPD');
+            })
             ->whereNotIn('id', $lockedIds)
             ->whereHas('astap', function ($q) {
-                $q->where('sumber_dana', '!=', 'kemitraan')
+                $q->where('is_deleted', 0)
+                  ->where(function($sub) {
+                      $sub->whereNull('jenis_reklas')
+                          ->orWhere('jenis_reklas', '!=', 'MUTASI_EKSTERNAL');
+                  })
+                  ->where('sumber_dana', '!=', 'kemitraan')
                   ->where('kode_108', 'not like', '1.5.2%');
             })
             ->orderBy('id')
@@ -244,6 +265,27 @@ class MutasiController extends Controller
 
         if (empty($registerIds)) {
             return back()->withErrors(['astap_register_id' => 'Silakan pilih minimal 1 barang aset yang akan dimutasi.']);
+        }
+
+        // Pastikan tidak ada barang yang telah dialihkan keluar ke OPD lain (Mutasi Eksternal)
+        $mutasiKeluarConflicts = AstapRegister::whereIn('id', array_map('intval', $registerIds))
+            ->where(function($q) {
+                $q->where('status', 'Mutasi Keluar OPD')
+                  ->orWhere('is_deleted', 1)
+                  ->orWhereHas('astap', function($sub) {
+                      $sub->where('jenis_reklas', 'MUTASI_EKSTERNAL');
+                  });
+            })
+            ->with('astap')
+            ->get();
+
+        if ($mutasiKeluarConflicts->isNotEmpty()) {
+            $conflictNames = $mutasiKeluarConflicts->map(function ($r) {
+                return ($r->astap?->nama_barang ?? 'Aset') . " (" . ($r->nibar ?? '-') . ")";
+            })->implode(', ');
+            return back()->withInput()->withErrors([
+                'astap_register_id' => "Barang aset berikut telah dialihkan keluar ke OPD lain (Mutasi Eksternal) dan tidak dapat diajukan untuk mutasi internal: {$conflictNames}."
+            ]);
         }
 
         // Pastikan tidak ada barang yang sedang terkunci dalam proses mutasi aktif lain
@@ -435,7 +477,21 @@ class MutasiController extends Controller
 
         $rawRegisters = AstapRegister::with('astap', 'unit')
             ->whereNotNull('nibar')
+            ->where('is_deleted', 0)
+            ->where(function($q) {
+                $q->whereNull('status')
+                  ->orWhere('status', '!=', 'Mutasi Keluar OPD');
+            })
             ->whereNotIn('id', $lockedIds)
+            ->whereHas('astap', function ($q) {
+                $q->where('is_deleted', 0)
+                  ->where(function($sub) {
+                      $sub->whereNull('jenis_reklas')
+                          ->orWhere('jenis_reklas', '!=', 'MUTASI_EKSTERNAL');
+                  })
+                  ->where('sumber_dana', '!=', 'kemitraan')
+                  ->where('kode_108', 'not like', '1.5.2%');
+            })
             ->orderBy('id')
             ->get();
         $registers = $rawRegisters->map(function ($r) {
@@ -504,6 +560,27 @@ class MutasiController extends Controller
         }
         if (empty($registerIds)) {
             $registerIds = [$mutasi->astap_register_id];
+        }
+
+        // Pastikan tidak ada barang yang telah dialihkan keluar ke OPD lain (Mutasi Eksternal)
+        $mutasiKeluarConflicts = AstapRegister::whereIn('id', array_map('intval', $registerIds))
+            ->where(function($q) {
+                $q->where('status', 'Mutasi Keluar OPD')
+                  ->orWhere('is_deleted', 1)
+                  ->orWhereHas('astap', function($sub) {
+                      $sub->where('jenis_reklas', 'MUTASI_EKSTERNAL');
+                  });
+            })
+            ->with('astap')
+            ->get();
+
+        if ($mutasiKeluarConflicts->isNotEmpty()) {
+            $conflictNames = $mutasiKeluarConflicts->map(function ($r) {
+                return ($r->astap?->nama_barang ?? 'Aset') . " (" . ($r->nibar ?? '-') . ")";
+            })->implode(', ');
+            return back()->withInput()->withErrors([
+                'astap_register_id' => "Barang aset berikut telah dialihkan keluar ke OPD lain (Mutasi Eksternal) dan tidak dapat diajukan untuk mutasi internal: {$conflictNames}."
+            ]);
         }
 
         // Pastikan tidak ada barang yang bentrok dengan mutasi aktif lain
