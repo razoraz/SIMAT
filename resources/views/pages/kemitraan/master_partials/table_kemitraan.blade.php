@@ -280,6 +280,8 @@
             'siklus'          => $siklus,
             'is_dimanfaatkan' => $isDimanfaatkanVal,
             'search_text'     => $searchText,
+            'sisa_hari'       => $row->sisa_hari_konsesi,
+            'tanggal_selesai' => $row->tanggal_selesai ? (is_string($row->tanggal_selesai) ? $row->tanggal_selesai : $row->tanggal_selesai->format('Y-m-d')) : null,
         ];
     };
 

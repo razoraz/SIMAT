@@ -122,6 +122,8 @@
                         class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-400 rounded-xl px-3 py-2 pr-7 text-xs font-semibold text-slate-200 focus:outline-none cursor-pointer hover:bg-slate-900/80 transition-all">
                         <option value="all" class="bg-slate-900 text-slate-200 py-1">Semua Status</option>
                         <option value="Aktif" class="bg-slate-900 text-emerald-300 py-1">🟢 Aktif</option>
+                        <option value="akan_berakhir_7" class="bg-slate-900 text-rose-400 py-1 font-bold">🚨 Kritis (≤ 7 Hari)</option>
+                        <option value="akan_berakhir_30" class="bg-slate-900 text-amber-300 py-1">⏳ Akan Berakhir (≤ 30 Hari)</option>
                         <option value="Konsesi Berakhir" class="bg-slate-900 text-amber-300 py-1">🟠 Konsesi Berakhir</option>
                         <option value="Dikembalikan ke Rekanan" class="bg-slate-900 text-purple-300 py-1">📦 Dikembalikan ke Rekanan</option>
                         <option value="Selesai / Reklasifikasi" class="bg-slate-900 text-blue-300 py-1">🏛️ Sudah Jadi Milik RSUD</option>

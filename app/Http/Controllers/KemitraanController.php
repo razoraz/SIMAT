@@ -111,6 +111,19 @@ class KemitraanController extends Controller
             })->count();
         $totalMitraUnik      = (clone $kpiBase)->distinct('mitra_nama')->count('mitra_nama');
 
+        // KMT-04: Hitung peringatan masa konsesi yang akan berakhir
+        $akanBerakhir30 = (clone $kpiBase)
+            ->where('status_konsesi', 'Aktif')
+            ->whereNotNull('tanggal_selesai')
+            ->whereBetween('tanggal_selesai', [$today, $today->copy()->addDays(30)])
+            ->count();
+
+        $akanBerakhir7 = (clone $kpiBase)
+            ->where('status_konsesi', 'Aktif')
+            ->whereNotNull('tanggal_selesai')
+            ->whereBetween('tanggal_selesai', [$today, $today->copy()->addDays(7)])
+            ->count();
+
         // Daftar Unit & Jenis 108 untuk modal atau filter
         $dbUnits = Unit::orderBy('nama')->get();
         $dbMaster108 = JenisAstap::getNested108();
@@ -159,6 +172,8 @@ class KemitraanController extends Controller
             'totalVolumeUnit',
             'totalAktif',
             'totalBerakhir',
+            'akanBerakhir30',
+            'akanBerakhir7',
             'totalMitraUnik',
             'dbUnits',
             'dbMaster108',
@@ -170,6 +185,110 @@ class KemitraanController extends Controller
             'search',
             'dbMitraKemitraans'
         ));
+    }
+
+    /**
+     * KMT-03: Memperbarui Metadata PKS Kemitraan (Inline Edit dari Halaman Master)
+     */
+    public function update(Request $request, $id)
+    {
+        $kemitraan = AstapKemitraan::find($id);
+        if (!$kemitraan) {
+            $kemitraan = AstapKemitraan::where('astap_id', $id)->firstOrFail();
+        }
+
+        $validated = $request->validate([
+            'nomor_pks'       => 'nullable|string|max:150',
+            'mitra_nama'      => 'required|string|max:255',
+            'mitra_pimpinan'  => 'nullable|string|max:255',
+            'mitra_alamat'    => 'nullable|string|max:500',
+            'skema_kemitraan' => 'nullable|string|max:50',
+            'tanggal_pks'     => 'nullable|date',
+            'tanggal_mulai'   => 'nullable|date',
+            'tanggal_selesai' => 'nullable|date',
+            'jangka_waktu'    => 'nullable|string|max:100',
+            'nilai_aset'      => 'nullable|numeric|min:0',
+            'satuan'          => 'nullable|string|max:50',
+            'keterangan'      => 'nullable|string|max:1000',
+        ]);
+
+        return DB::transaction(function () use ($validated, $kemitraan, $request) {
+            $kemitraan->mitra_nama = trim($validated['mitra_nama']);
+            if (array_key_exists('nomor_pks', $validated)) {
+                $kemitraan->nomor_pks = $validated['nomor_pks'] ? trim($validated['nomor_pks']) : $kemitraan->nomor_pks;
+            }
+            if (array_key_exists('mitra_pimpinan', $validated)) {
+                $kemitraan->mitra_pimpinan = $validated['mitra_pimpinan'] ? trim($validated['mitra_pimpinan']) : null;
+            }
+            if (array_key_exists('mitra_alamat', $validated)) {
+                $kemitraan->mitra_alamat = $validated['mitra_alamat'] ? trim($validated['mitra_alamat']) : null;
+            }
+            if (isset($validated['skema_kemitraan'])) {
+                $kemitraan->skema_kemitraan = $validated['skema_kemitraan'];
+            }
+            if (array_key_exists('tanggal_pks', $validated)) {
+                $kemitraan->tanggal_pks = $validated['tanggal_pks'];
+            }
+            if (array_key_exists('tanggal_mulai', $validated)) {
+                $kemitraan->tanggal_mulai = $validated['tanggal_mulai'];
+            }
+            if (array_key_exists('tanggal_selesai', $validated)) {
+                $kemitraan->tanggal_selesai = $validated['tanggal_selesai'];
+            }
+            if (isset($validated['nilai_aset'])) {
+                $kemitraan->nilai_aset = (float) $validated['nilai_aset'];
+            }
+            if (isset($validated['satuan'])) {
+                $kemitraan->satuan = $validated['satuan'];
+            }
+            if (array_key_exists('keterangan', $validated)) {
+                $kemitraan->keterangan = $validated['keterangan'];
+            }
+
+            $kemitraan->save();
+
+            // Sinkronisasi data ke ASTAP jika terhubung
+            if ($kemitraan->astap_id && $kemitraan->astap) {
+                $astap = $kemitraan->astap;
+                $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json ?? '[]', true) ?: []);
+                
+                $spec['nomor_pks']        = $kemitraan->nomor_pks;
+                $spec['perjanjian_nomor'] = $kemitraan->nomor_pks;
+                $spec['mitra_nama']       = $kemitraan->mitra_nama;
+                $spec['mitra_pimpinan']   = $kemitraan->mitra_pimpinan;
+                $spec['mitra_alamat']     = $kemitraan->mitra_alamat;
+                $spec['skema_kemitraan']  = $kemitraan->skema_kemitraan;
+                if ($kemitraan->tanggal_pks) {
+                    $spec['tanggal_pks'] = is_string($kemitraan->tanggal_pks) ? $kemitraan->tanggal_pks : $kemitraan->tanggal_pks->format('Y-m-d');
+                }
+                if ($kemitraan->tanggal_mulai) {
+                    $spec['tanggal_mulai'] = is_string($kemitraan->tanggal_mulai) ? $kemitraan->tanggal_mulai : $kemitraan->tanggal_mulai->format('Y-m-d');
+                }
+                if ($kemitraan->tanggal_selesai) {
+                    $spec['tanggal_selesai'] = is_string($kemitraan->tanggal_selesai) ? $kemitraan->tanggal_selesai : $kemitraan->tanggal_selesai->format('Y-m-d');
+                }
+                if (!empty($validated['jangka_waktu'])) {
+                    $spec['jangka_waktu'] = $validated['jangka_waktu'];
+                }
+                
+                $astap->spesifikasi_json = $spec;
+                if (isset($validated['nilai_aset']) && (float)$validated['nilai_aset'] > 0) {
+                    $astap->total_realisasi = (float) $validated['nilai_aset'];
+                }
+                $astap->save();
+            }
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "Metadata PKS '{$kemitraan->nomor_pks}' ({$kemitraan->mitra_nama}) berhasil diperbarui.",
+                    'data'    => $kemitraan->fresh(['astap']),
+                ]);
+            }
+
+            return redirect()->route('master.kemitraan')
+                ->with('success', "Metadata PKS '{$kemitraan->nomor_pks}' berhasil diperbarui.");
+        });
     }
 
     /**

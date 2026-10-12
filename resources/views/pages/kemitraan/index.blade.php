@@ -44,6 +44,9 @@
         <!-- MODAL KONFIRMASI SINKRONISASI EXTEND ASET MITRA (TABEL 2) -->
         @include('pages.kemitraan.master_partials.modal_confirm_extend_mitra')
 
+        <!-- MODAL EDIT METADATA DOKUMEN PKS (KMT-03) -->
+        @include('pages.kemitraan.master_partials.modal_edit_pks')
+
         <!-- FLOATING TOAST NOTIFICATION -->
         @include('pages.kemitraan.master_partials.toast')
     </div>
