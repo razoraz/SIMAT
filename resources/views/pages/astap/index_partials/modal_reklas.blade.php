@@ -1800,18 +1800,29 @@
                                                                   }"
                                                                   x-text="reg.kondisi || 'Baik'"></span>
                                                         </div>
-                                                        <!-- Keterangan Penempatan Ruangan RSUD vs Instansi Tujuan -->
+                                                        <!-- Keterangan Penempatan Ruangan RSUD vs Instansi Tujuan vs Belum Ditempatkan -->
                                                         <div class="text-[10.5px] flex items-center space-x-1.5 mt-0.5">
+                                                            {{-- 1. Jika sudah dialihkan keluar ke instansi/OPD lain --}}
                                                             <template x-if="reg.status === 'Mutasi Keluar OPD' || (reg.ruang_pemegang && reg.ruang_pemegang.startsWith('Mutasi Keluar'))">
                                                                 <div class="flex items-center space-x-1 text-cyan-300 font-medium">
                                                                     <span class="text-cyan-400 font-bold">🏛️ Instansi:</span>
                                                                     <span class="truncate" x-text="reg.ruang_pemegang ? reg.ruang_pemegang.replace(/^Mutasi Keluar:\s*/i, '') : (selectedAstapReklas?.opd_tujuan || selectedAstapReklas?.mutasi_keluar?.opd_tujuan || 'OPD Luar')"></span>
                                                                 </div>
                                                             </template>
-                                                            <template x-if="reg.status !== 'Mutasi Keluar OPD' && (!reg.ruang_pemegang || !reg.ruang_pemegang.startsWith('Mutasi Keluar'))">
+
+                                                            {{-- 2. Jika aktif di RSUD & sudah ada ruangan penempatan resmi --}}
+                                                            <template x-if="reg.status !== 'Mutasi Keluar OPD' && (!reg.ruang_pemegang || !reg.ruang_pemegang.startsWith('Mutasi Keluar')) && ((reg.ruang_pemegang && reg.ruang_pemegang !== 'Belum Ditempatkan') || (selectedAstapReklas?.ruang_unit && selectedAstapReklas?.ruang_unit !== 'Belum Ditempatkan'))">
                                                                 <div class="flex items-center space-x-1 text-slate-400">
                                                                     <span class="text-slate-500">📍 Ruangan:</span>
-                                                                    <span class="text-slate-300 truncate" x-text="reg.ruang_pemegang || selectedAstapReklas?.ruang_unit || 'Belum Ditempatkan'"></span>
+                                                                    <span class="text-slate-300 truncate" x-text="reg.ruang_pemegang || selectedAstapReklas?.ruang_unit"></span>
+                                                                </div>
+                                                            </template>
+
+                                                            {{-- 3. Jika aktif di RSUD tapi belum ditempatkan ke ruangan (masih di gudang aset) --}}
+                                                            <template x-if="reg.status !== 'Mutasi Keluar OPD' && (!reg.ruang_pemegang || !reg.ruang_pemegang.startsWith('Mutasi Keluar')) && (!reg.ruang_pemegang || reg.ruang_pemegang === 'Belum Ditempatkan') && (!selectedAstapReklas?.ruang_unit || selectedAstapReklas?.ruang_unit === 'Belum Ditempatkan')">
+                                                                <div class="inline-flex items-center space-x-1 text-amber-300/90 font-medium text-[10px]">
+                                                                    <span class="text-amber-400">📦</span>
+                                                                    <span class="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/25">Belum Ditempatkan (Gudang Aset)</span>
                                                                 </div>
                                                             </template>
                                                         </div>
