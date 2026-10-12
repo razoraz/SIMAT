@@ -9579,6 +9579,7 @@
                 reklasJabatanOpdTujuan: 'Pengurus Barang / Pengelola Aset OPD',
                 reklasAlamatInstansi: '',
                 reklasNomorSkDasar: '',
+                reklasSelectedNibarIds: [],
                 isSubmittingReklas: false,
                 reklasKdpProgresAwal: 0,
                 reklasKemitraanTipeFisik: 'mesin', // 'tanah' | 'mesin' | 'gedung' | 'jaringan' | 'lainnya'
@@ -10142,7 +10143,7 @@
                     return 'Rekening Simda Baru';
                 },
 
-                openReklas(item) {
+                openReklas(item, specificReg = null) {
                     this.selectedAstapReklas = item;
                     const kode = item.kode_barang || item.jenis_aset_kode || item.kode_rekening || '';
                     const isExtracomNow = this.isCurrentAstapExtracom();
@@ -10153,29 +10154,38 @@
                     const isKemitraanOrSewa = (cat === 'KEMITRAAN' || kode.startsWith('1.5.2') || kode.startsWith('1.4') || namaBarang.includes('kemitraan') || namaBarang.startsWith('sewa '));
                     const isNonExtracom = (kode.startsWith('1.3.1') || kode.startsWith('1.3.3') || kode.startsWith('1.3.4') || kode.startsWith('1.3.6') || kode.startsWith('1.5.3') || isKemitraanOrSewa || cat === 'KIB A' || cat === 'KIB C' || cat === 'KIB D' || cat === 'KIB F' || cat === 'ATB' || cat === 'KEMITRAAN');
 
-                    if (this.isKemitraanAktif()) {
-                        this.reklasJenis = 'pindah_kib';
-                        this.reklasTujuanKib = 'KEMITRAAN';
-                        this.reklasKemitraanTipeFisik = this.detectKemitraanPhysicalType(item);
-                    } else if (isExtracomNow) {
-                        // Kebalikan: dari Ekstrakomptabel dikapitalisasi ke Intrakomptabel
-                        this.reklasJenis = 'intracom';
-                        this.reklasTujuanKib = (kode.startsWith('1.3.5') || cat === 'KIB E') ? 'KIB E' : 'KIB B';
-                    } else if (cat === 'KIB F' || kode.startsWith('1.3.6')) {
-                        // Proyek KDP selesai -> Kapitalisasi ke KIB C / D Definitif
-                        this.reklasJenis = 'kdp';
-                        this.reklasTujuanKib = 'KIB C';
-                    } else if (isKemitraanOrSewa) {
-                        this.reklasJenis = 'pindah_kib';
-                        this.reklasTujuanKib = 'KEMITRAAN';
-                        this.reklasKemitraanTipeFisik = this.detectKemitraanPhysicalType(item);
-                    } else if (isNonExtracom) {
-                        this.reklasJenis = 'pindah_kib';
-                        this.reklasTujuanKib = cat === 'KIB A' ? 'KIB C' : 'KIB B';
+                    // Inisialisasi NIBAR yang dipilih untuk mutasi eksternal
+                    if (specificReg && specificReg.id) {
+                        this.reklasSelectedNibarIds = [specificReg.id];
+                        this.reklasJenis = 'mutasi_eksternal';
+                        this.reklasTujuanKib = 'MUTASI_OPD';
                     } else {
-                        // Normal KIB B / KIB E -> opsi ke Ekstrakomptabel
-                        this.reklasJenis = 'extracom';
-                        this.reklasTujuanKib = 'EKSTRAKOMPTABEL';
+                        const activeRegs = (item.registers || []).filter(r => r.status !== 'Mutasi Keluar OPD');
+                        this.reklasSelectedNibarIds = activeRegs.map(r => r.id);
+                        if (this.isKemitraanAktif()) {
+                            this.reklasJenis = 'pindah_kib';
+                            this.reklasTujuanKib = 'KEMITRAAN';
+                            this.reklasKemitraanTipeFisik = this.detectKemitraanPhysicalType(item);
+                        } else if (isExtracomNow) {
+                            // Kebalikan: dari Ekstrakomptabel dikapitalisasi ke Intrakomptabel
+                            this.reklasJenis = 'intracom';
+                            this.reklasTujuanKib = (kode.startsWith('1.3.5') || cat === 'KIB E') ? 'KIB E' : 'KIB B';
+                        } else if (cat === 'KIB F' || kode.startsWith('1.3.6')) {
+                            // Proyek KDP selesai -> Kapitalisasi ke KIB C / D Definitif
+                            this.reklasJenis = 'kdp';
+                            this.reklasTujuanKib = 'KIB C';
+                        } else if (isKemitraanOrSewa) {
+                            this.reklasJenis = 'pindah_kib';
+                            this.reklasTujuanKib = 'KEMITRAAN';
+                            this.reklasKemitraanTipeFisik = this.detectKemitraanPhysicalType(item);
+                        } else if (isNonExtracom) {
+                            this.reklasJenis = 'pindah_kib';
+                            this.reklasTujuanKib = cat === 'KIB A' ? 'KIB C' : 'KIB B';
+                        } else {
+                            // Normal KIB B / KIB E -> opsi ke Ekstrakomptabel
+                            this.reklasJenis = 'extracom';
+                            this.reklasTujuanKib = 'EKSTRAKOMPTABEL';
+                        }
                     }
                     this.reklasTipeKoreksiNilai = 'kurang';
                     this.reklasNominalKoreksi = 0;
@@ -11018,6 +11028,79 @@
                     });
                 },
 
+                getReklasAvailableRegisters() {
+                    if (!this.selectedAstapReklas) return [];
+                    const it = this.selectedAstapReklas;
+                    if (it.registers && Array.isArray(it.registers) && it.registers.length > 0) {
+                        return it.registers;
+                    }
+                    const totalVol = parseInt(it.jumlah_volume) || 1;
+                    const totalVal = parseFloat(it.total_realisasi_num || it.total_realisasi || it.harga_satuan || 0);
+                    return [{
+                        id: it.id,
+                        nibar: it.kode_barang || 'Unit Register Utama',
+                        no_register: '0001',
+                        ruang_pemegang: it.ruang_unit || 'Gudang RSUD',
+                        kondisi: it.kondisi || 'Baik',
+                        harga_satuan: totalVol > 0 ? (totalVal / totalVol) : totalVal,
+                        status: it.status || 'Normal'
+                    }];
+                },
+
+                toggleSelectAllNibars(selectAll = true) {
+                    if (!selectAll) {
+                        this.reklasSelectedNibarIds = [];
+                        return;
+                    }
+                    const regs = this.getReklasAvailableRegisters();
+                    this.reklasSelectedNibarIds = regs
+                        .filter(r => r.status !== 'Mutasi Keluar OPD')
+                        .map(r => r.id);
+                },
+
+                getRegisterNilaiSatuan(reg) {
+                    if (reg && reg.harga_satuan && parseFloat(reg.harga_satuan) > 0) {
+                        return parseFloat(reg.harga_satuan);
+                    }
+                    const it = this.selectedAstapReklas;
+                    if (!it) return 0;
+                    const totalVal = parseFloat(it.total_realisasi_num || it.total_realisasi || it.jumlah_realisasi || 0);
+                    const totalVol = parseInt(it.jumlah_volume) || (it.registers ? it.registers.length : 1) || 1;
+                    return totalVol > 0 ? (totalVal / totalVol) : totalVal;
+                },
+
+                getReklasMutasiSelectedVolume() {
+                    return this.reklasSelectedNibarIds.length;
+                },
+
+                getReklasMutasiSelectedNilai() {
+                    const regs = this.getReklasAvailableRegisters();
+                    let total = 0;
+                    for (const id of this.reklasSelectedNibarIds) {
+                        const r = regs.find(x => x.id === id);
+                        if (r) {
+                            total += this.getRegisterNilaiSatuan(r);
+                        }
+                    }
+                    return total;
+                },
+
+                getReklasMutasiRemainingVolume() {
+                    const regs = this.getReklasAvailableRegisters();
+                    const activeRegs = regs.filter(r => r.status !== 'Mutasi Keluar OPD');
+                    return Math.max(0, activeRegs.length - this.reklasSelectedNibarIds.length);
+                },
+
+                getReklasMutasiRemainingNilai() {
+                    const regs = this.getReklasAvailableRegisters();
+                    const activeRegs = regs.filter(r => r.status !== 'Mutasi Keluar OPD');
+                    let totalActive = 0;
+                    for (const r of activeRegs) {
+                        totalActive += this.getRegisterNilaiSatuan(r);
+                    }
+                    return Math.max(0, totalActive - this.getReklasMutasiSelectedNilai());
+                },
+
                 getReklasNarasiPreview() {
                     const it = this.selectedAstapReklas;
                     if (!it) return 'Pilih aset terlebih dahulu untuk melihat pratinjau narasi...';
@@ -11241,6 +11324,10 @@
                             this.showToast('SKPD / Dinas Penerima Mutasi wajib diisi!', 'warning');
                             return;
                         }
+                        if (!this.reklasSelectedNibarIds || this.reklasSelectedNibarIds.length === 0) {
+                            this.showToast('Pilih minimal 1 unit register NIBAR yang akan dimutasikan!', 'warning');
+                            return;
+                        }
                         if (!this.reklasNomorBastMutasi || !this.reklasNomorBastMutasi.trim()) {
                             this.showToast('Nomor BAST Mutasi Antar-OPD wajib diisi!', 'warning');
                             return;
@@ -11328,7 +11415,11 @@
 
                         let nilaiReklas = (this.reklasJenis === 'extracom' || this.reklasJenis === 'intracom') 
                             ? this.getReklasExtracomTotal()
-                            : (this.reklasJenis === 'koreksi_nilai' ? (parseFloat(this.reklasNominalKoreksi) || 0) : rawNilai);
+                            : (this.reklasJenis === 'koreksi_nilai' 
+                                ? (parseFloat(this.reklasNominalKoreksi) || 0) 
+                                : (this.reklasJenis === 'mutasi_eksternal' 
+                                    ? this.getReklasMutasiSelectedNilai() 
+                                    : rawNilai));
 
                         const targetKode = (this.reklasSubSubRincianKode || this.reklasSubRincianKode || this.reklasTujuanKode || '').trim() || null;
                         const targetNama = (this.reklasSubSubRincianNama || this.reklasSubRincianNama || this.reklasTujuanNama || '').trim() || null;
@@ -11365,6 +11456,7 @@
                             nomor_sk_dasar: (this.reklasJenis === 'mutasi_eksternal') ? this.reklasNomorSkDasar : null,
                             tanggal_bast: (this.reklasJenis === 'hibah') ? this.reklasTanggalBastHibah : ((this.reklasJenis === 'mutasi_eksternal') ? this.reklasTanggalBastMutasi : null),
                             tanggal_dokumen_koreksi: (this.reklasJenis === 'koreksi_nilai') ? this.reklasDokumenTglKoreksi : null,
+                            selected_register_ids: (this.reklasJenis === 'mutasi_eksternal') ? this.reklasSelectedNibarIds : null,
                             keterangan: this.getReklasNarasiPreview(),
                             progres_persen: (this.reklasJenis === 'kdp') ? 100 : undefined,
                             jumlah_anggaran: (this.reklasJenis === 'koreksi_nilai') ? (this.isReklasBelanjaModal() ? this.reklasNilaiAnggaran : null) : (parseFloat(it.jumlah_anggaran) || null),
@@ -11406,11 +11498,34 @@
                             it.is_reklas = true;
                             it.jenis_reklas = jenisReklasDb;
 
-                            // Jika mutasi eksternal: hapus dari daftar tabel ASTAP aktif karena sudah dipindahtangankan keluar ke OPD lain
+                            // Jika mutasi eksternal: cek apakah mutasi penuh (100%) atau parsial
                             if (this.reklasJenis === 'mutasi_eksternal') {
-                                const idxInList = this.astaps.findIndex(a => a.id === it.id);
-                                if (idxInList !== -1) {
-                                    this.astaps.splice(idxInList, 1);
+                                const isFull = (resJson.is_full_transfer !== undefined)
+                                    ? resJson.is_full_transfer
+                                    : (this.getReklasMutasiRemainingVolume() <= 0);
+
+                                if (isFull) {
+                                    const idxInList = this.astaps.findIndex(a => a.id === it.id);
+                                    if (idxInList !== -1) {
+                                        this.astaps.splice(idxInList, 1);
+                                    }
+                                } else {
+                                    // Mutasi parsial: perbarui status register yang dipilih di array lokal
+                                    if (it.registers && Array.isArray(it.registers)) {
+                                        it.registers.forEach(r => {
+                                            if (this.reklasSelectedNibarIds.includes(r.id)) {
+                                                r.status = 'Mutasi Keluar OPD';
+                                                r.ruang_pemegang = 'Mutasi Keluar: ' + (this.reklasSkpdTujuan || 'OPD Luar');
+                                            }
+                                        });
+                                    }
+                                    it.is_mutasi_keluar_partial = true;
+                                    it.mutasi_keluar_count = (it.mutasi_keluar_count || 0) + this.reklasSelectedNibarIds.length;
+                                    it.active_regs_count = Math.max(0, (it.active_regs_count || (it.registers ? it.registers.length : 1)) - this.reklasSelectedNibarIds.length);
+                                    it.opd_tujuan = this.reklasSkpdTujuan;
+                                    if (resJson.mutasi_keluar) {
+                                        it.mutasi_keluar = resJson.mutasi_keluar;
+                                    }
                                 }
                                 this.showReklasModal = false;
                                 this.showDetailModal = false;

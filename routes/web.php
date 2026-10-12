@@ -274,14 +274,30 @@ Route::middleware('auth')->group(function () {
 
         $astaps = \App\Models\Astap::where('is_deleted', 0)
             ->where(function($q) {
-                $q->whereNull('jenis_reklas')
-                  ->orWhere('jenis_reklas', '!=', 'MUTASI_EKSTERNAL');
-            })
-            ->whereDoesntHave('mutasiEksternals', function($q) {
-                $q->where('tipe', 'keluar')->where('is_deleted', 0);
-            })
-            ->whereDoesntHave('reklas', function($q) {
-                $q->where('jenis_reklas', 'MUTASI_EKSTERNAL')->where('is_deleted', 0);
+                $q->where(function($sub) {
+                    $sub->whereNull('jenis_reklas')
+                        ->orWhere('jenis_reklas', '!=', 'MUTASI_EKSTERNAL');
+                })
+                ->where(function($sub) {
+                    $sub->whereHas('registers', function($r) {
+                        $r->where('is_deleted', 0)
+                          ->where(function($sr) {
+                              $sr->whereNull('status')
+                                 ->orWhere('status', '!=', 'Mutasi Keluar OPD');
+                          });
+                    })
+                    ->orWhere(function($noReg) {
+                        $noReg->whereDoesntHave('registers', function($r) {
+                            $r->where('is_deleted', 0);
+                        })
+                        ->whereDoesntHave('mutasiEksternals', function($m) {
+                            $m->where('tipe', 'keluar')->where('is_deleted', 0);
+                        })
+                        ->whereDoesntHave('reklas', function($rk) {
+                            $rk->where('jenis_reklas', 'MUTASI_EKSTERNAL')->where('is_deleted', 0);
+                        });
+                    });
+                });
             })
             ->with([
                 'registers' => function($q) {
@@ -376,7 +392,11 @@ Route::middleware('auth')->group(function () {
                 $hasEverReklas = $reklasCount > 0 || (bool) $a->is_reklas || !empty($a->jenis_reklas);
 
                 $latestMutasiKeluar = $a->mutasiEksternals ? $a->mutasiEksternals->where('tipe', 'keluar')->first() : null;
-                $isMutasiKeluar = ($a->jenis_reklas === 'MUTASI_EKSTERNAL') || ($latestMutasiKeluar !== null);
+                $activeRegsCount = $a->registers ? $a->registers->where('status', '!=', 'Mutasi Keluar OPD')->count() : 0;
+                $mutatedRegsCount = $a->registers ? $a->registers->where('status', 'Mutasi Keluar OPD')->count() : 0;
+                $isFullMutasiKeluar = ($a->jenis_reklas === 'MUTASI_EKSTERNAL') || ($mutatedRegsCount > 0 && $activeRegsCount === 0);
+                $isPartialMutasiKeluar = ($mutatedRegsCount > 0 && $activeRegsCount > 0);
+                $isMutasiKeluar = $isFullMutasiKeluar || $isPartialMutasiKeluar;
                 $skpdTujuanNama = $latestMutasiKeluar?->opd_tujuan ?: ($spec['mutasi_info']['skpd_tujuan'] ?? null);
 
                 return [
@@ -387,6 +407,10 @@ Route::middleware('auth')->group(function () {
                     'has_reklas' => $hasEverReklas,
                     'reklas_count' => $reklasCount,
                     'jenis_reklas' => $a->jenis_reklas ?: ($latestReklas?->jenis_reklas),
+                    'is_mutasi_keluar_full' => $isFullMutasiKeluar,
+                    'is_mutasi_keluar_partial' => $isPartialMutasiKeluar,
+                    'mutasi_keluar_count' => $mutatedRegsCount,
+                    'active_regs_count' => $activeRegsCount,
                     'mutasi_keluar' => $latestMutasiKeluar ? [
                         'id' => $latestMutasiKeluar->id,
                         'nomor_bamb' => $latestMutasiKeluar->nomor_bamb,
@@ -578,8 +602,8 @@ Route::middleware('auth')->group(function () {
 
                     'registers' => $a->registers ? $a->registers->sortBy(function($r) {
                         return $r->no_register_int ?: intval(substr($r->nibar ?? '', -7));
-                    })->values()->map(function($r) use ($isMutasiKeluar, $skpdTujuanNama) {
-                        $isRegMutasiKeluar = $isMutasiKeluar || ($r->status === 'Mutasi Keluar OPD');
+                    })->values()->map(function($r) use ($isFullMutasiKeluar, $skpdTujuanNama) {
+                        $isRegMutasiKeluar = $isFullMutasiKeluar || ($r->status === 'Mutasi Keluar OPD');
                         $ruangPemegangVal = $r->ruang_pemegang ?: ($r->unit?->nama ?? null);
                         if ($isRegMutasiKeluar) {
                             if (!$ruangPemegangVal || !str_starts_with($ruangPemegangVal, 'Mutasi Keluar')) {

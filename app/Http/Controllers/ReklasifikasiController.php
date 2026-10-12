@@ -296,6 +296,8 @@ class ReklasifikasiController extends Controller
             'jabatan_opd_tujuan' => 'nullable|string|max:255',
             'alamat_instansi' => 'nullable|string|max:500',
             'nomor_sk_dasar' => 'nullable|string|max:255',
+            'selected_register_ids' => 'nullable|array',
+            'selected_register_ids.*' => 'integer',
         ], [
             'alasan_reklas.required' => 'Alasan kenapa melakukan reklasifikasi wajib diisi untuk semua jenis reklasifikasi.',
             'alasan_reklas.min' => 'Alasan reklasifikasi minimal berisi 3 karakter penjelasan.',
@@ -339,6 +341,15 @@ class ReklasifikasiController extends Controller
                         'message' => "Harga satuan untuk {$nama} (Rp " . number_format($harga, 0, ',', '.') . ") harus lebih dari Rp 300.000 untuk masuk ke Intrakomptabel / Aset Tetap.",
                     ], 422);
                 }
+            }
+        }
+
+        if ($validated['jenis_reklas'] === 'MUTASI_EKSTERNAL') {
+            if ($request->has('selected_register_ids') && is_array($request->input('selected_register_ids')) && count($request->input('selected_register_ids')) === 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pilih minimal 1 unit register NIBAR yang akan dimutasikan ke OPD luar.',
+                ], 422);
             }
         }
 
@@ -1306,21 +1317,51 @@ class ReklasifikasiController extends Controller
                 $specBaru = $currSpec;
             } elseif ($validated['jenis_reklas'] === 'MUTASI_EKSTERNAL') {
                 $skpdTujuanNama = $validated['skpd_tujuan'] ?? ($request->input('skpd_tujuan') ?? 'OPD Luar');
+                $selectedRegisterIds = $request->input('selected_register_ids', []);
+                if (!is_array($selectedRegisterIds)) {
+                    $selectedRegisterIds = [];
+                }
+
+                $activeRegsQuery = $astap->registers()->where('is_deleted', 0)->where(function($sr) {
+                    $sr->whereNull('status')->orWhere('status', '!=', 'Mutasi Keluar OPD');
+                });
+                $totalActiveRegs = $activeRegsQuery->count();
+
+                // Cek apakah transfer mutasi keluar ini mencakup seluruh unit aktif (100%) atau hanya sebagian (parsial)
+                $isFullTransfer = false;
+                if ($totalActiveRegs === 0) {
+                    $isFullTransfer = true;
+                } elseif (!empty($selectedRegisterIds)) {
+                    $isFullTransfer = count($selectedRegisterIds) >= $totalActiveRegs;
+                } else {
+                    $isFullTransfer = true;
+                }
+
                 $astap->is_reklas = 1;
-                $astap->jenis_reklas = 'MUTASI_EKSTERNAL';
-                $astap->alamat_barang = 'Mutasi Keluar: ' . $skpdTujuanNama;
+                // Hanya jika transfer 100% penuh, set jenis_reklas = 'MUTASI_EKSTERNAL' agar disembunyikan dari tabel aktif ASTAP
+                if ($isFullTransfer) {
+                    $astap->jenis_reklas = 'MUTASI_EKSTERNAL';
+                    $astap->alamat_barang = 'Mutasi Keluar: ' . $skpdTujuanNama;
+                    if (\Illuminate\Support\Facades\Schema::hasColumn('astaps', 'kondisi')) {
+                        $astap->kondisi = 'Mutasi Keluar OPD';
+                    }
+                }
+
                 $tujuanKodeAset = 'KOR_LAIN';
                 $tujuanNamaAset = 'Koreksi Lain-Lain (Mutasi Keluar Antar-OPD)';
-                if (\Illuminate\Support\Facades\Schema::hasColumn('astaps', 'kondisi')) {
-                    $astap->kondisi = 'Mutasi Keluar OPD';
-                }
+
                 $currSpec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?? []);
-                $currSpec['status_barang'] = 'Mutasi Keluar OPD';
+                if ($isFullTransfer) {
+                    $currSpec['status_barang'] = 'Mutasi Keluar OPD';
+                }
                 $currSpec['mutasi_info'] = [
-                    'skpd_tujuan'  => $skpdTujuanNama,
-                    'nomor_bast'   => $validated['nomor_ba_reklas'] ?? null,
-                    'tanggal_bast' => $validated['tanggal_bast'] ?? ($request->input('tanggal_bast') ?? null),
-                    'alasan'       => $validated['alasan_reklas'],
+                    'skpd_tujuan'           => $skpdTujuanNama,
+                    'nomor_bast'            => $validated['nomor_ba_reklas'] ?? null,
+                    'tanggal_bast'          => $validated['tanggal_bast'] ?? ($request->input('tanggal_bast') ?? null),
+                    'alasan'                => $validated['alasan_reklas'],
+                    'selected_register_ids' => $selectedRegisterIds,
+                    'is_full_transfer'      => $isFullTransfer,
+                    'transferred_count'     => count($selectedRegisterIds),
                 ];
                 $astap->spesifikasi_json = $currSpec;
                 $specBaru = $currSpec;
@@ -1332,8 +1373,8 @@ class ReklasifikasiController extends Controller
 
             $astap->save();
 
-            // Sinkronkan data ke register jika ada perubahan pada kolom register yang valid
-            if ($astap->registers()->exists()) {
+            // Sinkronkan data ke register jika ada perubahan pada kolom register yang valid (JANGAN timpa register jika MUTASI_EKSTERNAL)
+            if ($validated['jenis_reklas'] !== 'MUTASI_EKSTERNAL' && $astap->registers()->exists()) {
                 $regUpdate = [];
                 if (\Illuminate\Support\Facades\Schema::hasColumn('astap_registers', 'ruang_pemegang') && !empty($astap->ruang_unit)) {
                     $regUpdate['ruang_pemegang'] = $astap->ruang_unit;
@@ -1489,6 +1530,7 @@ class ReklasifikasiController extends Controller
             }
 
             // Sinkronisasi otomatis Mutasi Antar-OPD Keluar (MUTASI_EKSTERNAL)
+            $isFullTransferFinal = true;
             if ($validated['jenis_reklas'] === 'MUTASI_EKSTERNAL') {
                 $skpdTujuan = $validated['skpd_tujuan'] ?? ($request->input('skpd_tujuan') ?? 'SKPD / OPD Luar');
                 $tglBast = $validated['tanggal_bast'] ?? ($request->input('tanggal_bast') ?? ($validated['tanggal_reklas'] ?? date('Y-m-d')));
@@ -1503,6 +1545,40 @@ class ReklasifikasiController extends Controller
                 $pjTujuanJabatan = $request->input('jabatan_opd_tujuan') ?: ($request->input('pj_tujuan_jabatan') ?: 'Pejabat Penerima OPD');
                 $alamatInstansi = $request->input('alamat_instansi') ?: '';
                 $nomorSk = $request->input('nomor_sk_dasar') ?: $nomorBast;
+
+                // Ambil register yang dipilih
+                $selectedRegisterIds = $request->input('selected_register_ids', []);
+                if (!is_array($selectedRegisterIds)) {
+                    $selectedRegisterIds = [];
+                }
+
+                $targetRegisters = collect();
+                if ($astap->registers()->exists()) {
+                    if (!empty($selectedRegisterIds)) {
+                        $targetRegisters = $astap->registers()->whereIn('id', $selectedRegisterIds)->get();
+                    } else {
+                        // Fallback jika tidak ada id spesifik yang dikirim: seluruh register aktif
+                        $targetRegisters = $astap->registers()->where('status', '!=', 'Mutasi Keluar OPD')->get();
+                        if ($targetRegisters->isEmpty()) {
+                            $targetRegisters = $astap->registers;
+                        }
+                    }
+                }
+
+                $selectedVol = $targetRegisters->isNotEmpty() ? $targetRegisters->count() : max(1, (int) $astap->jumlah_volume);
+                
+                // Hitung total nilai perolehan untuk unit yang terpilih
+                $totalUnitVal = 0;
+                if ($targetRegisters->isNotEmpty()) {
+                    foreach ($targetRegisters as $tReg) {
+                        $totalUnitVal += (float) ($tReg->harga_satuan ?: ($astap->total_realisasi / max(1, (int)$astap->jumlah_volume)));
+                    }
+                } else {
+                    $totalUnitVal = (float) ($validated['nilai_reklas'] ?? $astap->total_realisasi);
+                }
+                if ($totalUnitVal <= 0) {
+                    $totalUnitVal = (float) ($validated['nilai_reklas'] ?? $astap->total_realisasi);
+                }
 
                 $mutasiData = [
                     'astap_id'            => $astap->id,
@@ -1522,9 +1598,9 @@ class ReklasifikasiController extends Controller
                     'pj_tujuan_jabatan'   => $pjTujuanJabatan,
                     'nomor_sk_dasar'      => $nomorSk,
                     'status'              => 'Disahkan (Selesai)',
-                    'jumlah_volume'       => max(1, (int) $astap->jumlah_volume),
+                    'jumlah_volume'       => $selectedVol,
                     'satuan'              => $astap->satuan ?: 'Unit',
-                    'nilai_perolehan'     => (float) ($validated['nilai_reklas'] ?? $astap->total_realisasi),
+                    'nilai_perolehan'     => $totalUnitVal,
                     'kondisi'             => 'Baik',
                     'alasan_mutasi'       => $validated['alasan_reklas'] ?? 'Pemindahtanganan aset RSUD ke SKPD / OPD luar (Koreksi Baris 42 / Kolom 13).',
                     'alamat_instansi'     => $alamatInstansi,
@@ -1534,8 +1610,16 @@ class ReklasifikasiController extends Controller
 
                 $mutasiKeluar = MutasiEksternal::where('astap_id', $astap->id)
                     ->where('tipe', 'keluar')
+                    ->where('nomor_bamb', $nomorBast)
                     ->where('is_deleted', 0)
                     ->first();
+
+                if (!$mutasiKeluar) {
+                    $mutasiKeluar = MutasiEksternal::where('astap_id', $astap->id)
+                        ->where('tipe', 'keluar')
+                        ->where('is_deleted', 0)
+                        ->first();
+                }
 
                 if ($mutasiKeluar) {
                     $mutasiKeluar->update($mutasiData);
@@ -1543,10 +1627,9 @@ class ReklasifikasiController extends Controller
                     $mutasiKeluar = MutasiEksternal::create($mutasiData);
                 }
 
-                // Update status register NIBAR menjadi 'Mutasi Keluar OPD' & link ke mutasi_eksternal_registers
-                if ($astap->registers()->exists()) {
-                    $registers = $astap->registers;
-                    foreach ($registers as $reg) {
+                // Update status HANYA register yang dipilih menjadi 'Mutasi Keluar OPD' & link ke mutasi_eksternal_registers
+                if ($targetRegisters->isNotEmpty()) {
+                    foreach ($targetRegisters as $reg) {
                         $reg->update([
                             'status'         => 'Mutasi Keluar OPD',
                             'ruang_pemegang' => 'Mutasi Keluar: ' . $skpdTujuan,
@@ -1565,6 +1648,21 @@ class ReklasifikasiController extends Controller
                         );
                     }
                 }
+
+                // Cek sisa register aktif di RSUD setelah transaksi ini
+                $remainingActiveCount = $astap->registers()
+                    ->where('is_deleted', 0)
+                    ->where(function($sr) {
+                        $sr->whereNull('status')
+                           ->orWhere('status', '!=', 'Mutasi Keluar OPD');
+                    })
+                    ->count();
+
+                $isFullTransferFinal = ($remainingActiveCount === 0);
+                if ($isFullTransferFinal) {
+                    $astap->jenis_reklas = 'MUTASI_EKSTERNAL';
+                    $astap->save();
+                }
             }
 
             DB::commit();
@@ -1579,8 +1677,16 @@ class ReklasifikasiController extends Controller
                     'is_kemitraan' => ($targetKib === 'KEMITRAAN'),
                     'cetak_bast_url' => ($targetKib === 'KEMITRAAN') ? route('astap.kemitraan.cetak_bast', ['id' => $astap->id]) : null,
                     'is_mutasi_keluar' => ($validated['jenis_reklas'] === 'MUTASI_EKSTERNAL'),
+                    'is_full_transfer' => $isFullTransferFinal,
                     'cetak_bast_mutasi_url' => ($validated['jenis_reklas'] === 'MUTASI_EKSTERNAL' && isset($mutasiKeluar)) ? route('mutasi.eksternal.cetak', ['id' => $mutasiKeluar->id]) : null,
                     'mutasi_eksternal_url' => ($validated['jenis_reklas'] === 'MUTASI_EKSTERNAL') ? route('mutasi.eksternal') : null,
+                    'mutasi_keluar' => isset($mutasiKeluar) ? [
+                        'id' => $mutasiKeluar->id,
+                        'nomor_bamb' => $mutasiKeluar->nomor_bamb,
+                        'opd_tujuan' => $mutasiKeluar->opd_tujuan,
+                        'jumlah_volume' => $mutasiKeluar->jumlah_volume,
+                        'nilai_perolehan' => $mutasiKeluar->nilai_perolehan,
+                    ] : null,
                     'astap' => [
                         'id' => $astap->id,
                         'total_realisasi' => 'Rp ' . number_format($astap->total_realisasi, 0, ',', '.'),

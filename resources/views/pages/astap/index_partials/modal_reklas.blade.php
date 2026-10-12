@@ -1736,8 +1736,8 @@
                                 </div>
                             </div>
 
-                            <!-- Bagian 1: Instansi Penerima & Nilai Aset -->
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <!-- Bagian 1: Instansi Penerima Mutasi & Pemilihan Unit NIBAR -->
+                            <div class="space-y-3">
                                 <div class="space-y-1.5">
                                     <label class="block text-slate-300 font-bold text-[10.5px] uppercase tracking-wider">
                                         🏛️ SKPD / Dinas Penerima Mutasi: <span class="text-rose-400">*</span>
@@ -1745,17 +1745,130 @@
                                     <input type="text" x-model="reklasSkpdTujuan" placeholder="Contoh: Dinas Kesehatan Kab. Bondowoso / BPBD..."
                                            class="w-full bg-slate-950 border border-slate-700 focus:border-teal-400 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none font-medium shadow-inner">
                                 </div>
-                                <div class="space-y-1.5">
-                                    <label class="block text-slate-300 font-bold text-[10.5px] uppercase tracking-wider">
-                                        🏷️ Nilai &amp; Volume Aset yang Dimutasikan:
-                                    </label>
-                                    <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-                                        <div class="flex items-center space-x-1.5">
-                                            <span class="text-[10px] text-slate-400">Total Nilai:</span>
-                                            <span class="text-xs font-mono font-extrabold text-teal-300" x-text="selectedAstapReklas?.jumlah_realisasi || 'Rp 0'"></span>
+
+                                <!-- PANEL CHECKLIST UNIT REGISTER NIBAR -->
+                                <div class="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
+                                    <div class="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-xs font-bold text-teal-300 uppercase tracking-wider flex items-center gap-1.5">
+                                                <span>📋</span>
+                                                <span>Pilih Unit Register / NIBAR yang Dimutasikan:</span>
+                                                <span class="text-rose-400">*</span>
+                                            </span>
                                         </div>
-                                        <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-teal-500/15 text-teal-300 border border-teal-500/30"
-                                              x-text="(selectedAstapReklas?.jumlah_volume || 1) + ' Unit'"></span>
+                                        <div class="flex items-center space-x-2">
+                                            <button type="button" @click="toggleSelectAllNibars(true)"
+                                                    class="text-[10px] font-bold px-2 py-1 rounded-lg bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/30 transition-all cursor-pointer">
+                                                Pilih Semua
+                                            </button>
+                                            <button type="button" @click="toggleSelectAllNibars(false)"
+                                                    class="text-[10px] font-bold px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border border-slate-700 transition-all cursor-pointer">
+                                                Batal Pilih
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Daftar Unit Register NIBAR (Scrollable) -->
+                                    <div class="space-y-2 max-h-56 overflow-y-auto custom-scrollbar pr-1">
+                                        <template x-for="reg in getReklasAvailableRegisters()" :key="reg.id">
+                                            <div class="p-2.5 rounded-xl border transition-all flex items-center justify-between gap-3"
+                                                 :class="reg.status === 'Mutasi Keluar OPD' 
+                                                     ? 'bg-slate-950/40 border-slate-900 opacity-60' 
+                                                     : (reklasSelectedNibarIds.includes(reg.id) 
+                                                         ? 'bg-teal-500/10 border-teal-500/50 shadow-sm shadow-teal-500/10' 
+                                                         : 'bg-slate-900/60 border-slate-800/90 hover:border-slate-700')">
+                                                
+                                                <div class="flex items-center space-x-3 min-w-0">
+                                                    <template x-if="reg.status !== 'Mutasi Keluar OPD'">
+                                                        <input type="checkbox" :value="reg.id" x-model="reklasSelectedNibarIds"
+                                                               class="w-4 h-4 rounded border-slate-700 text-teal-500 focus:ring-teal-400/30 bg-slate-950 cursor-pointer">
+                                                    </template>
+                                                    <template x-if="reg.status === 'Mutasi Keluar OPD'">
+                                                        <span class="text-slate-600 cursor-not-allowed text-xs" title="Unit ini sudah dimutasikan keluar">🔒</span>
+                                                    </template>
+                                                    
+                                                    <div class="min-w-0">
+                                                        <div class="flex items-center space-x-2">
+                                                            <span class="font-mono font-bold text-xs"
+                                                                  :class="reklasSelectedNibarIds.includes(reg.id) ? 'text-teal-300' : 'text-emerald-400'"
+                                                                  x-text="reg.nibar || reg.no_register || ('Unit #' + reg.id)"></span>
+                                                            <span class="px-2 py-0.5 rounded text-[9.5px] font-bold border"
+                                                                  :class="{
+                                                                      'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': reg.kondisi === 'Baik' || reg.kondisi === 'B',
+                                                                      'bg-amber-500/20 text-amber-300 border-amber-500/30': reg.kondisi === 'Kurang Baik' || reg.kondisi === 'KB' || reg.kondisi === 'Rusak Ringan',
+                                                                      'bg-rose-500/20 text-rose-300 border-rose-500/30': reg.kondisi === 'Rusak Berat' || reg.kondisi === 'RB'
+                                                                  }"
+                                                                  x-text="reg.kondisi || 'Baik'"></span>
+                                                        </div>
+                                                        <div class="text-[10.5px] text-slate-400 flex items-center space-x-1.5 mt-0.5">
+                                                            <span class="text-slate-500">Ruangan:</span>
+                                                            <span class="text-slate-300 truncate" x-text="reg.ruang_pemegang || selectedAstapReklas?.ruang_unit || 'Gudang RSUD'"></span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="text-right shrink-0">
+                                                    <template x-if="reg.status === 'Mutasi Keluar OPD'">
+                                                        <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wide bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                                                            Sudah Keluar OPD
+                                                        </span>
+                                                    </template>
+                                                    <template x-if="reg.status !== 'Mutasi Keluar OPD'">
+                                                        <div>
+                                                            <span class="text-[10px] text-slate-400 block">Nilai Satuan:</span>
+                                                            <span class="text-xs font-mono font-extrabold text-teal-300"
+                                                                  x-text="'Rp ' + Number(getRegisterNilaiSatuan(reg)).toLocaleString('id-ID')"></span>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </template>
+                                        <template x-if="getReklasAvailableRegisters().length === 0">
+                                            <div class="p-3 text-center text-xs text-slate-500 italic">
+                                                Tidak ditemukan rincian register NIBAR pada aset ini. Seluruh kuantitas volume (1 Unit) akan dimutasikan.
+                                            </div>
+                                        </template>
+                                    </div>
+
+                                    <!-- Ringkasan Kalkulasi Pilihan (Real-Time Dynamic Box) -->
+                                    <div class="p-3 rounded-xl bg-slate-900 border border-teal-500/30 flex flex-wrap items-center justify-between gap-3">
+                                        <div>
+                                            <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Unit Terpilih yang Dialihkan:</span>
+                                            <div class="text-xs font-bold text-white flex items-center gap-1.5 mt-0.5">
+                                                <span class="px-2 py-0.5 rounded bg-teal-500/20 text-teal-300 border border-teal-500/40 font-mono"
+                                                      x-text="getReklasMutasiSelectedVolume() + ' Unit Terpilih'"></span>
+                                                <span class="text-slate-400 text-[11px]"
+                                                      x-text="'dari total ' + (selectedAstapReklas?.registers?.length || selectedAstapReklas?.jumlah_volume || 1) + ' unit'"></span>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Total Nilai Mutasi Keluar:</span>
+                                            <span class="text-sm font-mono font-extrabold text-teal-300"
+                                                  x-text="'Rp ' + Number(getReklasMutasiSelectedNilai()).toLocaleString('id-ID')"></span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Indikator Status Dampak Mutasi -->
+                                    <div class="text-[10.5px] p-2.5 rounded-xl border"
+                                         :class="getReklasMutasiRemainingVolume() > 0 ? 'bg-indigo-950/30 border-indigo-500/30 text-indigo-200' : 'bg-amber-950/30 border-amber-500/30 text-amber-200'">
+                                        <template x-if="getReklasMutasiRemainingVolume() > 0">
+                                            <div class="flex items-center space-x-2">
+                                                <span class="text-indigo-400 text-sm">ℹ️</span>
+                                                <span><strong>Mutasi Parsial:</strong> <span class="font-bold font-mono text-white" x-text="getReklasMutasiRemainingVolume()"></span> unit (<span class="font-bold font-mono text-emerald-300" x-text="'Rp ' + Number(getReklasMutasiRemainingNilai()).toLocaleString('id-ID')"></span>) akan <strong>tetap aktif di RSUD Koesnadi</strong> dan tetap tampil pada daftar ASTAP.</span>
+                                            </div>
+                                        </template>
+                                        <template x-if="getReklasMutasiRemainingVolume() <= 0 && getReklasMutasiSelectedVolume() > 0">
+                                            <div class="flex items-center space-x-2">
+                                                <span class="text-amber-400 text-sm">⚠️</span>
+                                                <span><strong>Mutasi Penuh (100%):</strong> Seluruh unit akan dipindahtangankan keluar. Aset ini akan <strong>diarsipkan dari daftar aktif ASTAP</strong> dan dipindahkan ke katalog Mutasi Eksternal Keluar.</span>
+                                            </div>
+                                        </template>
+                                        <template x-if="getReklasMutasiSelectedVolume() === 0">
+                                            <div class="flex items-center space-x-2 text-rose-300">
+                                                <span class="text-rose-400 text-sm">⚠️</span>
+                                                <span>Pilih minimal 1 unit register NIBAR untuk melanjutkan mutasi eksternal.</span>
+                                            </div>
+                                        </template>
                                     </div>
                                 </div>
                             </div>

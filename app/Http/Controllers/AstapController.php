@@ -24,14 +24,30 @@ class AstapController extends Controller
     {
         $astaps = \App\Models\Astap::where('is_deleted', 0)
             ->where(function($q) {
-                $q->whereNull('jenis_reklas')
-                  ->orWhere('jenis_reklas', '!=', 'MUTASI_EKSTERNAL');
-            })
-            ->whereDoesntHave('mutasiEksternals', function($q) {
-                $q->where('tipe', 'keluar')->where('is_deleted', 0);
-            })
-            ->whereDoesntHave('reklas', function($q) {
-                $q->where('jenis_reklas', 'MUTASI_EKSTERNAL')->where('is_deleted', 0);
+                $q->where(function($sub) {
+                    $sub->whereNull('jenis_reklas')
+                        ->orWhere('jenis_reklas', '!=', 'MUTASI_EKSTERNAL');
+                })
+                ->where(function($sub) {
+                    $sub->whereHas('registers', function($r) {
+                        $r->where('is_deleted', 0)
+                          ->where(function($sr) {
+                              $sr->whereNull('status')
+                                 ->orWhere('status', '!=', 'Mutasi Keluar OPD');
+                          });
+                    })
+                    ->orWhere(function($noReg) {
+                        $noReg->whereDoesntHave('registers', function($r) {
+                            $r->where('is_deleted', 0);
+                        })
+                        ->whereDoesntHave('mutasiEksternals', function($m) {
+                            $m->where('tipe', 'keluar')->where('is_deleted', 0);
+                        })
+                        ->whereDoesntHave('reklas', function($rk) {
+                            $rk->where('jenis_reklas', 'MUTASI_EKSTERNAL')->where('is_deleted', 0);
+                        });
+                    });
+                });
             })
             ->with([
                 'registers.mutasis' => function($q) {
@@ -42,7 +58,10 @@ class AstapController extends Controller
                 'jenisPengadaan', 
                 'unit',
                 'reklas',
-                'kemitraan'
+                'kemitraan',
+                'mutasiEksternals' => function($q) {
+                    $q->where('is_deleted', 0)->orderBy('id', 'desc');
+                }
             ])
             ->orderBy('id', 'desc')
             ->get()
@@ -110,14 +129,46 @@ class AstapController extends Controller
                 $rb = $a->rekeningBelanja;
                 $kode108Val = $a->kode_108 ?: ($ja ? ($ja->sub_sub_rincian_objek ?: $ja->jenis) : '');
                 $latestReklas = $a->reklas ? $a->reklas->first() : null;
+                $reklasCount = $a->reklas ? $a->reklas->count() : 0;
+                $hasEverReklas = $reklasCount > 0 || (bool) $a->is_reklas || !empty($a->jenis_reklas);
+
+                $latestMutasiKeluar = $a->mutasiEksternals ? $a->mutasiEksternals->where('tipe', 'keluar')->first() : null;
+                $activeRegsCount = $a->registers ? $a->registers->where('status', '!=', 'Mutasi Keluar OPD')->count() : 0;
+                $mutatedRegsCount = $a->registers ? $a->registers->where('status', 'Mutasi Keluar OPD')->count() : 0;
+                $isFullMutasiKeluar = ($a->jenis_reklas === 'MUTASI_EKSTERNAL') || ($mutatedRegsCount > 0 && $activeRegsCount === 0);
+                $isPartialMutasiKeluar = ($mutatedRegsCount > 0 && $activeRegsCount > 0);
+                $isMutasiKeluar = $isFullMutasiKeluar || $isPartialMutasiKeluar;
+                $skpdTujuanNama = $latestMutasiKeluar?->opd_tujuan ?: ($spec['mutasi_info']['skpd_tujuan'] ?? null);
 
                 return [
                     'id' => $a->id,
                     'created_at' => $a->created_at ? $a->created_at->format('Y-m-d H:i:s') : null,
                     'category' => $a->category,
                     'is_extracomtable' => (bool) $a->is_extracomtable,
-                    'is_reklas' => (bool) $a->is_reklas,
-                    'jenis_reklas' => $a->jenis_reklas,
+                    'is_reklas' => (bool) ($a->is_reklas || $hasEverReklas),
+                    'has_reklas' => $hasEverReklas,
+                    'reklas_count' => $reklasCount,
+                    'jenis_reklas' => $a->jenis_reklas ?: ($latestReklas?->jenis_reklas),
+                    'is_mutasi_keluar_full' => $isFullMutasiKeluar,
+                    'is_mutasi_keluar_partial' => $isPartialMutasiKeluar,
+                    'mutasi_keluar_count' => $mutatedRegsCount,
+                    'active_regs_count' => $activeRegsCount,
+                    'mutasi_keluar' => $latestMutasiKeluar ? [
+                        'id' => $latestMutasiKeluar->id,
+                        'nomor_bamb' => $latestMutasiKeluar->nomor_bamb,
+                        'tanggal_mutasi' => $latestMutasiKeluar->tanggal_mutasi ? $latestMutasiKeluar->tanggal_mutasi->format('d M Y') : '-',
+                        'tanggal_mutasi_raw' => $latestMutasiKeluar->tanggal_mutasi ? $latestMutasiKeluar->tanggal_mutasi->format('Y-m-d') : '',
+                        'opd_asal' => $latestMutasiKeluar->opd_asal,
+                        'opd_tujuan' => $latestMutasiKeluar->opd_tujuan,
+                        'pj_tujuan_nama' => $latestMutasiKeluar->pj_tujuan_nama,
+                        'pj_tujuan_nip' => $latestMutasiKeluar->pj_tujuan_nip,
+                        'pj_tujuan_jabatan' => $latestMutasiKeluar->pj_tujuan_jabatan,
+                        'nomor_sk_dasar' => $latestMutasiKeluar->nomor_sk_dasar,
+                        'alamat_instansi' => $latestMutasiKeluar->alamat_instansi,
+                        'status' => $latestMutasiKeluar->status,
+                        'cetak_url' => route('mutasi.eksternal.cetak', ['id' => $latestMutasiKeluar->id]),
+                    ] : null,
+                    'opd_tujuan' => $skpdTujuanNama,
                     'tujuan_kib' => $latestReklas?->tujuan_kib,
                     'tujuan_kode' => $latestReklas?->tujuan_kode,
                     'tujuan_kode_barang' => $latestReklas?->tujuan_kode,
@@ -283,15 +334,23 @@ class AstapController extends Controller
 
                     'registers' => $a->registers ? $a->registers->sortBy(function($r) {
                         return $r->no_register_int ?: intval(substr($r->nibar ?? '', -7));
-                    })->values()->map(function($r) {
+                    })->values()->map(function($r) use ($isFullMutasiKeluar, $skpdTujuanNama) {
+                        $isRegMutasiKeluar = $isFullMutasiKeluar || ($r->status === 'Mutasi Keluar OPD');
+                        $ruangPemegangVal = $r->ruang_pemegang ?: ($r->unit?->nama ?? null);
+                        if ($isRegMutasiKeluar) {
+                            if (!$ruangPemegangVal || !str_starts_with($ruangPemegangVal, 'Mutasi Keluar')) {
+                                $ruangPemegangVal = 'Mutasi Keluar: ' . ($skpdTujuanNama ?: 'OPD Luar');
+                            }
+                        }
                         return [
                             'id' => $r->id,
                             'unit_id' => $r->unit_id,
                             'no_register_int' => $r->no_register_int ?: intval(substr($r->nibar ?? '', -7)),
                             'no_register' => $r->nibar ?: $r->no_register,
                             'nibar' => $r->nibar,
-                            'ruang_pemegang' => $r->ruang_pemegang ?: ($r->unit?->nama ?? null),
+                            'ruang_pemegang' => $ruangPemegangVal,
                             'kondisi' => $r->kondisi,
+                            'status' => $isRegMutasiKeluar ? 'Mutasi Keluar OPD' : ($r->status ?: 'Aktif'),
                             'status_mutasi' => $r->status_mutasi,
                             'qr_code_path' => $r->qr_code_path,
                             'mutasis' => $r->mutasis ? $r->mutasis->where('status', 'Disetujui Admin (Selesai)')->sortByDesc('tanggal_mutasi')->map(function($m) use ($r) {

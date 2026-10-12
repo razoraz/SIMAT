@@ -71,8 +71,19 @@
                                             </span>
                                         </template>
 
-                                        {{-- Badge Mutasi Keluar OPD --}}
-                                        <template x-if="item.jenis_reklas === 'MUTASI_EKSTERNAL' || !!item.mutasi_keluar">
+                                        {{-- Badge Mutasi Keluar OPD (Parsial) --}}
+                                        <template x-if="item.is_mutasi_keluar_partial">
+                                            <span class="inline-flex items-center space-x-1.5 px-2 py-0.5 rounded-md text-[9px] font-black whitespace-nowrap leading-none shrink-0 bg-cyan-500/20 text-cyan-200 border border-cyan-400/40 shadow-sm shadow-cyan-500/10 tracking-wider"
+                                                :title="'Sebagian unit register dialihkan ke ' + (item.mutasi_keluar?.opd_tujuan || item.opd_tujuan || 'OPD Luar')">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                                                <span>🏛️ MUTASI KELUAR PARSIAL</span>
+                                                <span class="px-1 py-0.2 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/30 font-mono text-[8.5px]"
+                                                    x-text="(item.mutasi_keluar_count || 1) + ' KELUAR / ' + (item.active_regs_count || 0) + ' AKTIF'"></span>
+                                            </span>
+                                        </template>
+
+                                        {{-- Badge Mutasi Keluar OPD (Penuh / 100%) --}}
+                                        <template x-if="!item.is_mutasi_keluar_partial && (item.jenis_reklas === 'MUTASI_EKSTERNAL' || item.is_mutasi_keluar_full || !!item.mutasi_keluar)">
                                             <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[9px] font-black whitespace-nowrap leading-none shrink-0 bg-cyan-500/25 text-cyan-300 border border-cyan-400/50 shadow-sm shadow-cyan-500/20 tracking-wider"
                                                 :title="'Aset telah dimutasi keluar ke ' + (item.mutasi_keluar?.opd_tujuan || item.opd_tujuan || 'OPD Luar')">
                                                 <span>🏛️</span>
@@ -121,8 +132,17 @@
                                 <!-- Kondisi Aset Terkini -->
                                 <td class="px-4 py-4 text-center whitespace-nowrap">
                                     <div x-data="{ get st() { return getKondisiStats(item); } }">
-                                        <!-- Indikator Mutasi Keluar jika aset sudah dimutasi keluar -->
-                                        <template x-if="item.jenis_reklas === 'MUTASI_EKSTERNAL' || !!item.mutasi_keluar">
+                                        <!-- Indikator Mutasi Keluar Parsial -->
+                                        <template x-if="item.is_mutasi_keluar_partial">
+                                            <div class="mb-1">
+                                                <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-200 border border-cyan-400/40">
+                                                    <span>🏛️</span>
+                                                    <span x-text="(item.mutasi_keluar_count || 1) + ' KELUAR'"></span>
+                                                </span>
+                                            </div>
+                                        </template>
+                                        <!-- Indikator Mutasi Keluar Penuh jika aset sudah dimutasi keluar 100% -->
+                                        <template x-if="!item.is_mutasi_keluar_partial && (item.jenis_reklas === 'MUTASI_EKSTERNAL' || item.is_mutasi_keluar_full || !!item.mutasi_keluar)">
                                             <div class="mb-1">
                                                 <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
                                                     🏛️ MUTASI KELUAR
