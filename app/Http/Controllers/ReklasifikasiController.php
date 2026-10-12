@@ -344,6 +344,23 @@ class ReklasifikasiController extends Controller
 
         $astap = Astap::findOrFail($validated['astap_id']);
 
+        // Proteksi Validasi Duplikasi: Jenis reklasifikasi non-repeatable dalam satu periode tahun anggaran
+        $jenisNonRepeat = ['EKSTRAKOMPTABEL', 'KAPITALISASI_INTRAKOM', 'DEFINITIF_TO_KDP'];
+        if (in_array($validated['jenis_reklas'], $jenisNonRepeat, true)) {
+            $duplikat = AstapReklas::where('astap_id', $astap->id)
+                ->where('jenis_reklas', $validated['jenis_reklas'])
+                ->where('tahun', (int) $validated['tahun'])
+                ->where('is_deleted', 0)
+                ->exists();
+
+            if ($duplikat) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Aset '{$astap->nama_barang}' sudah pernah direklasifikasi sebagai {$validated['jenis_reklas']} pada tahun {$validated['tahun']}. Tidak diperbolehkan transaksi duplikat untuk jenis ini pada tahun yang sama.",
+                ], 422);
+            }
+        }
+
         // Proteksi Validasi Aturan Bisnis: Kemitraan Aktif (Akun 1.5.2)
         $kemitraan = $astap->kemitraan ?? \App\Models\AstapKemitraan::where(function ($q) use ($astap) {
             $q->where('astap_id', $astap->id)->orWhere('objek_astap_id', $astap->id);
@@ -404,7 +421,10 @@ class ReklasifikasiController extends Controller
             // Catat identitas rekening & KIB asal sebelum aset dimodifikasi
             $asalKibAset = ($validated['asal_kib'] ?? null) ?: ($astap->category ?: 'KIB B');
             $asalKodeAset = $astap->jenisAstap?->sub_sub_rincian_objek ?: ($astap->jenisAstap?->sub_rincian_objek ?: $astap->jenisAstap?->jenis);
-            $asalNamaAset = $astap->jenisAstap?->uraian_sub_sub_rincian ?: ($astap->jenisAstap?->uraian_sub_rincian ?: ($astap->jenisAstap?->nama_jenis ?: $astap->nama_barang));
+            $asalNamaAset = $astap->jenisAstap?->uraian_sub_sub_rincian 
+                ?: ($astap->jenisAstap?->uraian_sub_rincian 
+                ?: ($astap->jenisAstap?->nama_jenis 
+                ?: ($astap->nama_barang ?: 'Aset Tidak Dikenal')));
             $tujuanKodeAset = $request->input('tujuan_kode') ?: ($request->input('kode_108') ?: null);
             $tujuanNamaAset = $request->input('tujuan_nama');
 
@@ -1402,7 +1422,7 @@ class ReklasifikasiController extends Controller
                 'sub_koreksi'                   => $validated['sub_koreksi'] ?? ($subKoreksi ?? null),
                 'asal_kib'                      => $asalKibFinal,
                 'asal_kode'                     => $asalKodeAset ?? null,
-                'asal_nama'                     => $asalNamaAset ?? null,
+                'asal_nama'                     => $asalNamaAset ?: 'Aset Tidak Dikenal',
                 'tujuan_kib'                    => $tujuanKibFinal,
                 'tujuan_kode'                   => $tujuanKodeAset ?? null,
                 'tujuan_nama'                   => $tujuanNamaAset ?? null,

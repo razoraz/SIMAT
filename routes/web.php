@@ -2519,8 +2519,6 @@ Route::middleware('auth')->group(function () {
                 ]);
             })->name('astap.kemitraan.delete_dokumen');
 
-            // Cetak Dokumen Resmi BAST Pemanfaatan BMD Kemitraan (Format Kedinasan A4)
-            Route::get('/astap/kemitraan/{id}/cetak-bast', [\App\Http\Controllers\KemitraanController::class, 'cetakBast'])->name('astap.kemitraan.cetak_bast');
 
             // ─── Form Kemitraan Pihak Ketiga (Edit & Update) ─────────────────
             Route::get('/astap/{id}/edit-kemitraan', function (\Illuminate\Http\Request $request, $id) use ($getDistinctPenyedias, $getDistinctPejabats, $getDistinctMitras, $getObjekAsetKemitraans) {

@@ -54,17 +54,13 @@ class KemitraanController extends Controller
             });
         }
 
-        // Sinkronisasi status konsesi: Jika tanggal_selesai sudah lewat, ubah status 'Aktif' menjadi 'Konsesi Berakhir'
+        // Sinkronisasi status konsesi: Jika tanggal_selesai sudah lewat, ubah status 'Aktif' menjadi 'Konsesi Berakhir' (Bulk update efisien)
         $today = Carbon::today();
-        $expiredKemitraans = AstapKemitraan::where('is_deleted', 0)
+        AstapKemitraan::where('is_deleted', 0)
             ->where('status_konsesi', 'Aktif')
             ->whereNotNull('tanggal_selesai')
             ->where('tanggal_selesai', '<', $today)
-            ->get();
-
-        foreach ($expiredKemitraans as $exp) {
-            $exp->update(['status_konsesi' => 'Konsesi Berakhir']);
-        }
+            ->update(['status_konsesi' => 'Konsesi Berakhir']);
 
         $filterKib    = $request->query('kib', 'all');
         $filterSkema  = $request->query('skema', 'all');   // 'all', 'KSO', 'BGS', 'BSG', 'KSP', 'Sewa'
@@ -576,121 +572,4 @@ class KemitraanController extends Controller
             ->with('success', 'Data Aset Kemitraan berhasil dipindahkan ke Pusat Pemulihan Data (Recycle Bin).');
     }
 
-    /**
-     * Cetak Draf Dokumen Resmi BAST Pemanfaatan BMD Kemitraan (Format Kedinasan A4)
-     */
-    public function cetakBast(Request $request, $id)
-    {
-        Carbon::setLocale('id');
-
-        // 1. Cek apakah ID merujuk ke record tabel astap_kemitraans
-        $kemitraan = AstapKemitraan::with([
-            'astap.jenisAstap', 
-            'astap.registers.unit', 
-            'astap.unit', 
-            'astap.reklas',
-            'objekRegister.astap.reklas', 
-            'objekAstap.reklas'
-        ])->find($id);
-        $astap = null;
-
-        if ($kemitraan) {
-            $astap = $kemitraan->astap ?: ($kemitraan->objekRegister?->astap ?: $kemitraan->objekAstap);
-        } else {
-            // 2. Jika bukan ID kemitraan, cari dari tabel astaps (misal: aset hasil reklasifikasi yang belum ada PKS)
-            $astap = Astap::with(['jenisAstap', 'registers.unit', 'kemitraan', 'unit', 'reklas'])->find($id);
-            if ($astap) {
-                $kemitraan = $astap->kemitraan;
-            }
-        }
-
-        // 3. Fallback pencarian kemitraan berdasarkan relasi astap_id / objek_astap_id
-        if (!$kemitraan && $astap) {
-            $kemitraan = AstapKemitraan::where('astap_id', $astap->id)
-                ->orWhere('objek_astap_id', $astap->id)
-                ->first();
-        }
-
-        if (!$astap) {
-            abort(404, 'Data aset kemitraan atau objek BAST tidak ditemukan.');
-        }
-
-        $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?? []);
-
-        // Objek Aset Terkait (Jika ada aset tanah RSUD yang disewakan / dimanfaatkan)
-        $objekAset = null;
-        if (!empty($spec['objek_astap_id'])) {
-            $objekAset = Astap::with(['jenisAstap', 'registers'])->find($spec['objek_astap_id']);
-        }
-        if (!$objekAset && !empty($kemitraan?->objek_astap_id)) {
-            $objekAset = Astap::with(['jenisAstap', 'registers'])->find($kemitraan->objek_astap_id);
-        }
-        if (!$objekAset && !empty($kemitraan?->objek_register_id)) {
-            $regObj = AstapRegister::with('astap.jenisAstap')->find($kemitraan->objek_register_id);
-            $objekAset = $regObj?->astap;
-        }
-        if (!$objekAset) {
-            $objekAset = $astap;
-        }
-
-        $objekSpec = is_array($objekAset?->spesifikasi_json) ? $objekAset->spesifikasi_json : (json_decode($objekAset?->spesifikasi_json, true) ?? []);
-
-        // Tanggal BAST & Hari
-        $tglPks = $kemitraan?->tanggal_pks ?: ($spec['tanggal_pks'] ?? ($astap->bast_dokumen_tanggal ?? now()));
-        $carbonTgl = Carbon::parse($tglPks);
-        $hariTgl = $carbonTgl->isoFormat('dddd');
-        $tglFormatted = $carbonTgl->isoFormat('D MMMM Y');
-        $tahun = $carbonTgl->format('Y');
-
-        // Pejabat Pihak Pertama (RSUD Dr. H. Koesnandi)
-        $pihakSatu = [
-            'nama'        => 'dr. YUS PRIYATNA ADRYANTO, Sp.P, FISR',
-            'nip'         => '19771002 200604 1 006',
-            'pangkat'     => 'Pembina Tingkat I (IV/b)',
-            'jabatan'     => 'Direktur RSUD dr. H. Koesnandi Bondowoso',
-            'instansi'    => 'RSUD dr. H. Koesnandi Kabupaten Bondowoso',
-            'alamat'      => 'Jl. Kapten Piere Tendean No. 1, Bondowoso',
-        ];
-
-        // Pejabat Pihak Kedua (Mitra)
-        $pihakDua = [
-            'perusahaan'  => $kemitraan?->mitra_nama ?: ($spec['mitra_nama'] ?? 'Mitra Kerja Sama'),
-            'pimpinan'    => $kemitraan?->mitra_pimpinan ?: ($kemitraan?->pimpinan_mitra ?: ($spec['mitra_pimpinan'] ?? 'Pimpinan / Direktur Rekanan')),
-            'alamat'      => $kemitraan?->mitra_alamat ?: ($kemitraan?->alamat_mitra ?: ($spec['mitra_alamat'] ?? 'Alamat Domisili Mitra')),
-            'jabatan'     => 'Pimpinan / Kuasa Direksi',
-        ];
-
-        // Pejabat Pengurus Barang Pengguna (Saksi / Mengetahui)
-        $pengurusBarang = [
-            'nama'        => 'BUDI HARTONO, S.Sos',
-            'nip'         => '19760229 200801 1 010',
-            'jabatan'     => 'Pengurus Barang Pengguna RSUD dr. H. Koesnandi',
-        ];
-
-        // Rincian Objek Fisik (Spesifikasi Tanah KIB A atau Gedung Bangunan)
-        $tanahItems = $spec['tanah_items'] ?? ($objekSpec['tanah_items'] ?? []);
-        $luasTotal = (float) ($spec['luas_m2'] ?? ($spec['tanah_luas_m2'] ?? ($objekSpec['luas_m2'] ?? ($objekSpec['tanah_luas_m2'] ?? 0))));
-        $sertifikatNo = $spec['sertifikat_no'] ?? ($spec['tanah_sertifikat_no'] ?? ($objekSpec['sertifikat_no'] ?? ($objekSpec['tanah_sertifikat_no'] ?? '-')));
-        $hakTanah = $spec['hak_tanah'] ?? ($spec['tanah_hak'] ?? ($objekSpec['hak_tanah'] ?? ($objekSpec['tanah_hak'] ?? 'Hak Pakai')));
-
-        // Nomor Surat BAST
-        $nomorPks = $kemitraan?->nomor_pks ?: ($spec['nomor_pks'] ?? ($spec['perjanjian_nomor'] ?? ($astap->bast_dokumen_nomor ?: '000.2.3.2/BAST-KSO/430.10.7/' . $tahun)));
-        $nomorBast = '000.2.3.2/BAST-KMT/' . ($kemitraan?->id ?: $astap->id) . '/430.10.7/' . $tahun;
-
-        // Resolusi Nama Fisik Asli Barang (jika pernah direklasifikasi dari aset fisik)
-        $reklasHistory = $astap?->reklas?->sortByDesc('id')->first() ?: ($objekAset?->reklas?->sortByDesc('id')->first());
-        $namaFisikAsli = null;
-        if (!empty($astap?->nama_barang) && !str_starts_with(strtolower($astap->nama_barang), 'kerja sama pemanfaatan') && !str_starts_with(strtolower($astap->nama_barang), 'bangun guna serah')) {
-            $namaFisikAsli = $astap->nama_barang;
-        } elseif ($reklasHistory && !empty($reklasHistory->asal_nama)) {
-            $namaFisikAsli = $reklasHistory->asal_nama;
-        } elseif (!empty($objekAset?->nama_barang) && !str_starts_with(strtolower($objekAset->nama_barang), 'kerja sama pemanfaatan')) {
-            $namaFisikAsli = $objekAset->nama_barang;
-        } else {
-            $namaFisikAsli = $spec['mesin_items'][0]['mesin_nama_barang'] ?? ($spec['tanah_items'][0]['tanah_nama_barang'] ?? ($astap?->nama_barang ?: 'Objek Aset BMD RSUD'));
-        }
-
-        return redirect()->route('master.kemitraan')
-            ->with('info', 'Dokumen resmi BAST dapat dicetak langsung melalui tombol Cetak Resmi BAST pada menu Detail Aset.');
-    }
 }
