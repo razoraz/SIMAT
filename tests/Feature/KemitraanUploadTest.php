@@ -227,5 +227,25 @@ class KemitraanUploadTest extends TestCase
         $masterRes->assertDontSee('Kolom 22');
         $masterRes->assertDontSee('Kolom 23');
     }
+
+    public function test_create_kemitraan_objek_aset_pemanfaatan_bmd_deduplicated(): void
+    {
+        $admin = User::whereIn('role', ['admin', 'master_admin'])->first();
+
+        $formRes = $this->actingAs($admin)->get('/astap/create-kemitraan?tipe=ditambahkan');
+        $formRes->assertStatus(200);
+
+        $objekList = $formRes->viewData('dbObjekAsetKemitraan');
+        $this->assertNotNull($objekList);
+        
+        // Pastikan tidak ada NIBAR yang diekspos di dropdown list objek
+        foreach ($objekList as $item) {
+            $this->assertNull($item['nibar'], 'NIBAR harus null agar tidak muncul di pilihan dropdown objek pemanfaatan');
+            $this->assertFalse(
+                str_contains($item['nama_barang'], ', ' . $item['nama_barang']),
+                'Nama barang tidak boleh duplikat kata berulang'
+            );
+        }
+    }
 }
 

@@ -524,7 +524,7 @@
                         <th class="py-3.5 px-4 min-w-[135px] text-center bg-slate-950 whitespace-nowrap">Kondisi</th>
                         <th class="py-3.5 px-4 min-w-[140px] text-right bg-slate-950 whitespace-nowrap">Nilai Pemanfaatan (Rp)</th>
                         <th class="py-3.5 px-4 min-w-[180px] bg-slate-950">Masa Pemanfaatan / Konsesi</th>
-                        <th class="py-3.5 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[340px] w-[340px] sticky right-0 z-20 kemitraan-sticky-aksi" style="background-color: #020617 !important; box-shadow: -8px 0 16px -2px rgba(0, 0, 0, 0.75);">Aksi</th>
+                        <th class="py-3.5 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[280px] w-[280px] sticky right-0 z-20 kemitraan-sticky-aksi" style="background-color: #020617 !important; box-shadow: -8px 0 16px -2px rgba(0, 0, 0, 0.75);">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-800/60">
@@ -771,31 +771,17 @@
                             </td>
 
                             <!-- 7. Aksi (Sticky Right Solid Anti-Transparan) -->
-                            <td class="py-4 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 sticky right-0 z-10 min-w-[340px] w-[340px] kemitraan-sticky-aksi" style="background-color: #0f172a !important; box-shadow: -8px 0 16px -2px rgba(0, 0, 0, 0.75);">
+                            <td class="py-4 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 sticky right-0 z-10 min-w-[280px] w-[280px] kemitraan-sticky-aksi" style="background-color: #0f172a !important; box-shadow: -8px 0 16px -2px rgba(0, 0, 0, 0.75);">
                                 <div class="flex items-center justify-center space-x-1.5">
                                     <!-- 1. Tombol Detail -->
                                     <button type="button" @click="openDetail({{ json_encode($row) }}, {{ json_encode($astap) }}, {{ json_encode($firstReg) }}, true)"
                                         title="Lihat Detail Lengkap PKS & Objek Aset{{ $countDitambahkan > 0 ? ' (Termasuk ' . $countDitambahkan . ' Aset Tambahan Mitra)' : '' }}"
-                                        class="group/btn inline-flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 hover:border-cyan-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-cyan-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
+                                        class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 hover:border-cyan-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-cyan-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
                                         <svg class="w-3.5 h-3.5 text-cyan-400 group-hover/btn:text-white group-hover/btn:scale-110 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                         </svg>
                                         <span>Detail</span>
-                                        @if($countDitambahkan > 0)
-                                            <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[9px] font-black font-mono bg-emerald-400 text-slate-950 shadow-sm ring-1 ring-emerald-300 animate-pulse ml-0.5"
-                                                title="{{ $countDitambahkan }} Aset Tambahan Mitra Terpasang">+{{ $countDitambahkan }}</span>
-                                        @endif
-                                    </button>
-
-                                    <!-- 2. Tombol Extend / Perpanjang PKS (Adendum) -->
-                                    <button type="button" @click="openExtendModal({{ json_encode($row) }}, {{ json_encode($astap) }}, true, {{ $countDitambahkan }})"
-                                        title="Perpanjang Masa Konsesi / Adendum PKS Pemanfaatan{{ $countDitambahkan > 0 ? ' (Menampung ' . $countDitambahkan . ' Aset Mitra)' : '' }}"
-                                        class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 hover:border-emerald-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-emerald-500/30 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
-                                        <svg class="w-3.5 h-3.5 text-emerald-400 group-hover/btn:text-white group-hover/btn:rotate-180 transition-all duration-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                                        </svg>
-                                        <span>Extend</span>
                                     </button>
 
                                     @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
@@ -998,7 +984,7 @@
                         <th class="py-3.5 px-4 min-w-[135px] text-center bg-slate-950 whitespace-nowrap">Kondisi</th>
                         <th class="py-3.5 px-4 min-w-[140px] text-right bg-slate-950 whitespace-nowrap">Taksiran Nilai (Rp)</th>
                         <th class="py-3.5 px-4 min-w-[180px] bg-slate-950">Masa Konsesi Operasional</th>
-                        <th class="py-3.5 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[340px] w-[340px] sticky right-0 z-20 kemitraan-sticky-aksi" style="background-color: #020617 !important; box-shadow: -8px 0 16px -2px rgba(0, 0, 0, 0.75);">Aksi</th>
+                        <th class="py-3.5 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[280px] w-[280px] sticky right-0 z-20 kemitraan-sticky-aksi" style="background-color: #020617 !important; box-shadow: -8px 0 16px -2px rgba(0, 0, 0, 0.75);">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-800/60">
@@ -1178,7 +1164,7 @@
                             </td>
 
                             <!-- 7. Aksi (Sticky Right Solid Anti-Transparan) -->
-                            <td class="py-4 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 sticky right-0 z-10 min-w-[340px] w-[340px] kemitraan-sticky-aksi" style="background-color: #0f172a !important; box-shadow: -8px 0 16px -2px rgba(0, 0, 0, 0.75);">
+                            <td class="py-4 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 sticky right-0 z-10 min-w-[280px] w-[280px] kemitraan-sticky-aksi" style="background-color: #0f172a !important; box-shadow: -8px 0 16px -2px rgba(0, 0, 0, 0.75);">
                                 <div class="flex items-center justify-center space-x-1.5">
                                     <!-- 1. Tombol Detail -->
                                     <button type="button" @click="openDetail({{ json_encode($row) }}, {{ json_encode($astap) }}, {{ json_encode($firstReg) }}, false)"
@@ -1189,16 +1175,6 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                         </svg>
                                         <span>Detail</span>
-                                    </button>
-
-                                    <!-- 2. Tombol Extend / Perpanjang PKS Mitra -->
-                                    <button type="button" @click="openExtendModal({{ json_encode($row) }}, {{ json_encode($astap) }}, false, 0)"
-                                        title="Perpanjang Masa Konsesi Aset Mitra Ini (Adendum PKS)"
-                                        class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 hover:border-emerald-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-emerald-500/30 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
-                                        <svg class="w-3.5 h-3.5 text-emerald-400 group-hover/btn:text-white group-hover/btn:rotate-180 transition-all duration-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                                        </svg>
-                                        <span>Extend</span>
                                     </button>
 
                                     @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
@@ -1484,7 +1460,7 @@
                             </td>
 
                             <!-- 8. Aksi (Sticky Right Solid Anti-Transparan) -->
-                            <td class="py-4 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 sticky right-0 z-10 min-w-[340px] w-[340px] kemitraan-sticky-aksi" style="background-color: #0f172a !important; box-shadow: -8px 0 16px -2px rgba(0, 0, 0, 0.75);">
+                            <td class="py-4 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 sticky right-0 z-10 min-w-[280px] w-[280px] kemitraan-sticky-aksi" style="background-color: #0f172a !important; box-shadow: -8px 0 16px -2px rgba(0, 0, 0, 0.75);">
                                 <div class="flex items-center justify-center space-x-1.5">
                                     <!-- 1. Tombol Detail -->
                                     <button type="button" @click="openDetail({{ json_encode($row) }}, {{ json_encode($astap) }}, {{ json_encode($firstReg) }}, false)"
@@ -1495,16 +1471,6 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                         </svg>
                                         <span>Detail</span>
-                                    </button>
-
-                                    <!-- 2. Tombol Extend / Perpanjang PKS (Adendum) -->
-                                    <button type="button" @click="openExtendModal({{ json_encode($row) }}, {{ json_encode($astap) }}, false, 0)"
-                                        title="Perpanjang Masa Konsesi / Adendum PKS Aset Ini"
-                                        class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 hover:border-emerald-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-emerald-500/30 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
-                                        <svg class="w-3.5 h-3.5 text-emerald-400 group-hover/btn:text-white group-hover/btn:rotate-180 transition-all duration-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                                        </svg>
-                                        <span>Extend</span>
                                     </button>
 
                                     @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))

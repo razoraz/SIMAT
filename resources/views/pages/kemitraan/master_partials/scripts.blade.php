@@ -1977,29 +1977,54 @@
 
             // =========================================================================
             // METODE EXTEND / PERPANJANG MASA KONSESI (ADENDUM PKS KEMITRAAN)
+            // Helper parsing tanggal lokal YYYY-MM-DD tanpa offset timezone UTC
+            parseLocalDate(dateStr) {
+                if (!dateStr) return new Date();
+                if (typeof dateStr === 'string' && dateStr.includes('-')) {
+                    const parts = dateStr.split('T')[0].split('-').map(Number);
+                    if (parts.length === 3) {
+                        return new Date(parts[0], parts[1] - 1, parts[2]);
+                    }
+                }
+                const d = new Date(dateStr);
+                return isNaN(d.getTime()) ? new Date() : d;
+            },
+
+            formatLocalDate(d) {
+                if (!d || isNaN(d.getTime())) return '';
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            },
+
+            // =========================================================================
+            // METODE EXTEND / PERPANJANG MASA KONSESI (ADENDUM PKS KEMITRAAN)
             // =========================================================================
             openExtendModal(row, astap, isDimanfaatkan, linkedCount = 0) {
                 if (!row && !astap) return;
-                const todayStr = new Date().toISOString().split('T')[0];
+                const todayStr = this.formatLocalDate(new Date());
                 const currentTglSelesai = row?.tanggal_selesai || astap?.tanggal_selesai || null;
                 
                 // Hitung default tanggal selesai baru (+1 tahun dari tgl selesai saat ini, atau +1 tahun dari hari ini)
                 let defaultNewEnd = '';
                 if (currentTglSelesai) {
-                    const d = new Date(currentTglSelesai);
-                    if (!isNaN(d.getTime())) {
-                        d.setFullYear(d.getFullYear() + 1);
-                        defaultNewEnd = d.toISOString().split('T')[0];
-                    }
-                }
-                if (!defaultNewEnd) {
+                    const d = this.parseLocalDate(currentTglSelesai);
+                    d.setFullYear(d.getFullYear() + 1);
+                    defaultNewEnd = this.formatLocalDate(d);
+                } else {
                     const d = new Date();
                     d.setFullYear(d.getFullYear() + 1);
-                    defaultNewEnd = d.toISOString().split('T')[0];
+                    defaultNewEnd = this.formatLocalDate(d);
                 }
 
-                // Resolusi Nama Barang
-                let namaBarang = astap?.nama_barang || row?.nama_barang || 'Aset Kemitraan';
+                // Resolusi Nama Barang (Deduplikasi jika nama berulang seperti "Sewa Aset Tetap, Sewa Aset Tetap")
+                let rawNama = astap?.nama_barang || row?.nama_barang || 'Aset Kemitraan';
+                let namaBarang = rawNama;
+                if (typeof rawNama === 'string' && rawNama.includes(',')) {
+                    const parts = rawNama.split(',').map(s => s.trim()).filter(Boolean);
+                    namaBarang = [...new Set(parts)].join(', ');
+                }
                 let formatTglLama = currentTglSelesai ? this.formatTanggalIndo(currentTglSelesai) : '-';
 
                 const targetId = row?.id || row?.kemitraan_id || astap?.kemitraan?.id || astap?.id || null;
@@ -2138,20 +2163,29 @@
             },
 
             setExtendDuration(amount, unit) {
-                let base = new Date();
-                if (this.extendData.tanggal_selesai) {
-                    const currentD = new Date(this.extendData.tanggal_selesai);
-                    if (!isNaN(currentD.getTime()) && currentD > base) {
-                        base = currentD;
-                    }
+                let base = this.parseLocalDate(this.extendData.tanggal_selesai);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                // Jika tanggal selesai lama sudah lewat jauh dari hari ini (sudah expired), hitung dari hari ini
+                if (base < today) {
+                    base = new Date();
                 }
-                const newD = new Date(base.getTime());
+                const newD = new Date(base.getFullYear(), base.getMonth(), base.getDate());
                 if (unit === 'months') {
                     newD.setMonth(newD.getMonth() + amount);
                 } else if (unit === 'years') {
                     newD.setFullYear(newD.getFullYear() + amount);
                 }
-                this.extendForm.tanggal_selesai_baru = newD.toISOString().split('T')[0];
+                this.extendForm.tanggal_selesai_baru = this.formatLocalDate(newD);
+            },
+
+            formatExtendNilai(e) {
+                let val = (e.target.value || '').replace(/[^0-9]/g, '');
+                if (!val) {
+                    this.extendForm.nilai_aset_baru = '';
+                    return;
+                }
+                this.extendForm.nilai_aset_baru = Number(val).toLocaleString('id-ID');
             },
 
             handleExtendFileChange(event) {

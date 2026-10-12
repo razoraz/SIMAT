@@ -126,6 +126,14 @@
                                     <span>✏️</span>
                                     <span>Edit Data PKS</span>
                                 </button>
+                                <template x-if="selectedAstapDetail.status_konsesi !== 'Dikembalikan ke Rekanan' && selectedAstapDetail.status_konsesi !== 'Selesai' && selectedAstapDetail.status_konsesi !== 'Selesai / Reklasifikasi' && selectedAstapDetail.status_konsesi !== 'Dihentikan'">
+                                    <button type="button" @click="openExtendModalFromDetail()"
+                                       class="px-2.5 py-1 rounded-xl text-[10.5px] font-extrabold bg-gradient-to-r from-emerald-600/30 to-teal-600/30 hover:from-emerald-600/50 hover:to-teal-600/50 text-emerald-200 border border-emerald-500/40 flex items-center gap-1.5 transition-all active:scale-95 shadow-sm cursor-pointer"
+                                       title="Perpanjang Masa Konsesi (Buat Adendum PKS)">
+                                        <span>🔄</span>
+                                        <span>Perpanjang PKS (Extend)</span>
+                                    </button>
+                                </template>
                             </template>
 
                             <span class="px-2.5 py-0.5 rounded-lg text-[10.5px] font-bold border"

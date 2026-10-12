@@ -283,15 +283,16 @@
                 if (this.objekKibFilter !== 'ALL') {
                     list = list.filter(item => item.kib === this.objekKibFilter);
                 }
-                if (!q) return list.slice(0, 5);
+                if (!q) return list.slice(0, 10);
                 return list.filter(item => {
-                    const nibar = (item.nibar || '').toLowerCase();
                     const nama = (item.nama_barang || '').toLowerCase();
+                    const pks = (item.nomor_pks || '').toLowerCase();
+                    const mitra = (item.mitra_nama || '').toLowerCase();
                     const kode = (item.kode_108 || '').toLowerCase();
                     const unit = (item.unit_nama || '').toLowerCase();
                     const alamat = (item.alamat_barang || '').toLowerCase();
-                    return nibar.includes(q) || nama.includes(q) || kode.includes(q) || unit.includes(q) || alamat.includes(q);
-                }).slice(0, 5);
+                    return nama.includes(q) || pks.includes(q) || mitra.includes(q) || kode.includes(q) || unit.includes(q) || alamat.includes(q);
+                }).slice(0, 10);
             },
 
             get totalFilteredObjekCount() {
@@ -302,12 +303,13 @@
                 }
                 if (!q) return list.length;
                 return list.filter(item => {
-                    const nibar = (item.nibar || '').toLowerCase();
                     const nama = (item.nama_barang || '').toLowerCase();
+                    const pks = (item.nomor_pks || '').toLowerCase();
+                    const mitra = (item.mitra_nama || '').toLowerCase();
                     const kode = (item.kode_108 || '').toLowerCase();
                     const unit = (item.unit_nama || '').toLowerCase();
                     const alamat = (item.alamat_barang || '').toLowerCase();
-                    return nibar.includes(q) || nama.includes(q) || kode.includes(q) || unit.includes(q) || alamat.includes(q);
+                    return nama.includes(q) || pks.includes(q) || mitra.includes(q) || kode.includes(q) || unit.includes(q) || alamat.includes(q);
                 }).length;
             },
 
@@ -322,16 +324,17 @@
 
                 // OTOMATIS IKUTI DATA KEMITRAAN DARI ASET YANG DIMANFAATKAN KE INPUTAN LANGKAH 1
                 const kData = item.kemitraan_data || item.pks_aktif || {};
-                const mitraNama = kData.mitra_nama || (item.pks_aktif ? item.pks_aktif.mitra_nama : '');
-                const nomorPks  = kData.nomor_pks || (item.pks_aktif ? item.pks_aktif.nomor_pks : '');
-                const tglPks    = kData.tanggal_pks || '';
-                const tglMulai  = kData.tanggal_mulai || '';
-                const tglSelesai = kData.tanggal_selesai || (item.pks_aktif ? item.pks_aktif.tanggal_selesai : '');
-                const pimpinan  = kData.mitra_pimpinan || '';
-                const alamat    = kData.mitra_alamat || '';
-                const skema     = kData.skema_kemitraan || '';
+                const mitraNama = kData.mitra_nama || (item.pks_aktif ? item.pks_aktif.mitra_nama : '') || item.mitra_nama || '';
+                const nomorPks  = kData.nomor_pks || (item.pks_aktif ? item.pks_aktif.nomor_pks : '') || item.nomor_pks || '';
+                const tglPks    = kData.tanggal_pks || item.tanggal_pks || '';
+                const tglMulai  = kData.tanggal_mulai || item.tanggal_mulai || '';
+                const tglSelesai = kData.tanggal_selesai || (item.pks_aktif ? item.pks_aktif.tanggal_selesai : '') || item.tanggal_selesai || '';
+                const pimpinan  = kData.mitra_pimpinan || item.mitra_pimpinan || '';
+                const alamat    = kData.mitra_alamat || item.mitra_alamat || '';
+                const skema     = kData.skema_kemitraan || item.skema_kemitraan || '';
+                const tahunPerolehan = item.tahun_perolehan || kData.tahun || '';
 
-                if (mitraNama) {
+                if (mitraNama && mitraNama !== '-') {
                     this.formData.mitra_nama = mitraNama;
                     this.onMitraInput(mitraNama);
                 }
@@ -341,7 +344,7 @@
                 if (alamat) {
                     this.formData.mitra_alamat = alamat;
                 }
-                if (nomorPks) {
+                if (nomorPks && nomorPks !== '-') {
                     this.formData.nomor_pks = nomorPks;
                 }
                 if (tglPks) {
@@ -354,9 +357,11 @@
                 if (tglSelesai) {
                     this.formData.tanggal_selesai = this.cleanDateString(tglSelesai);
                 }
-                // Jika pada mode dimanfaatkan, skema bisa mengikuti objek
-                if (skema && this.tipeKemitraan === 'dimanfaatkan') {
+                if (skema) {
                     this.formData.skema_kemitraan = skema;
+                }
+                if (tahunPerolehan) {
+                    this.formData.tahun_perolehan = parseInt(tahunPerolehan, 10);
                 }
 
                 // SINKRONISASI LOKASI RUANGAN / UNIT (UNTUK MODE DITAMBAHKAN MITRA)
@@ -380,12 +385,23 @@
                     });
                 }
 
+                // SINKRONISASIKAN LANGSUNG KE FLATPICKR DOM AGAR TAMPILAN DATEPICKER SEGERA TERISI
+                this.$nextTick(() => {
+                    ['tanggal_pks', 'tanggal_mulai', 'tanggal_selesai'].forEach(field => {
+                        const inputEl = document.querySelector(`input[x-model="formData.${field}"]`);
+                        if (inputEl && inputEl._flatpickr && this.formData[field]) {
+                            inputEl._flatpickr.setDate(this.formData[field], false);
+                        }
+                    });
+                });
+
+                const displayNama = (item.nama_barang && item.nama_barang !== '--' && item.nama_barang !== '- -') ? item.nama_barang : ('Objek Pemanfaatan ' + (item.kib || 'BMD'));
                 if (mitraNama || nomorPks) {
-                    this.showToast('Data PKS & Mitra Tersinkron', `Inputan Langkah 1 otomatis mengikuti data kontrak objek pemanfaatan: ${item.nama_barang} (${mitraNama || nomorPks}). Spesifikasi fisik aset tetap aman.`, 'success');
+                    this.showToast('Data PKS & Mitra Tersinkron', `Inputan Langkah 1 otomatis mengikuti kontrak: ${displayNama} (${mitraNama || nomorPks}). Anda tetap dapat mengedit tanggal jika diperlukan.`, 'success');
                 } else if (item.pks_aktif) {
-                    this.showToast('Perhatian Status Konsesi', `Aset ini sedang dalam PKS aktif: ${item.pks_aktif.nomor_pks} (${item.pks_aktif.mitra_nama}) sampai ${item.pks_aktif.tanggal_selesai || 'selesai'}.`, 'warning');
+                    this.showToast('Perhatian Status Konsesi', `Aset ini sedang dalam PKS aktif: ${item.pks_aktif.nomor_pks} (${item.pks_aktif.mitra_nama}).`, 'warning');
                 } else {
-                    this.showToast('Objek Aset Dipilih', `Berhasil memilih objek BMD: ${item.nama_barang} (NIBAR: ${item.nibar})`, 'success');
+                    this.showToast('Objek Aset Dipilih', `Berhasil memilih objek BMD: ${displayNama}`, 'success');
                 }
             },
 
@@ -500,27 +516,21 @@
 
             isTanggalMulaiInvalid() {
                 if (!this.formData.tanggal_mulai) return false;
-                const tMulai = this.parseDateToTimestamp(this.formData.tanggal_mulai);
-                const today = this.getTodayTimestamp();
-                if (tMulai > 0 && tMulai > today) return true;
-                if (this.formData.tanggal_pks) {
-                    const tPks = this.parseDateToTimestamp(this.formData.tanggal_pks);
-                    if (tPks > 0 && tMulai > 0 && tMulai < tPks) return true;
+                if (this.formData.tanggal_selesai) {
+                    const tMulai = this.parseDateToTimestamp(this.formData.tanggal_mulai);
+                    const tSelesai = this.parseDateToTimestamp(this.formData.tanggal_selesai);
+                    if (tMulai > 0 && tSelesai > 0 && tMulai > tSelesai) return true;
                 }
                 return false;
             },
 
             getTanggalMulaiErrorMsg() {
                 if (!this.formData.tanggal_mulai) return '';
-                const tMulai = this.parseDateToTimestamp(this.formData.tanggal_mulai);
-                const today = this.getTodayTimestamp();
-                if (tMulai > 0 && tMulai > today) {
-                    return 'Tanggal mulai berlaku kerjasama tidak boleh melebihi tanggal hari ini!';
-                }
-                if (this.formData.tanggal_pks) {
-                    const tPks = this.parseDateToTimestamp(this.formData.tanggal_pks);
-                    if (tPks > 0 && tMulai > 0 && tMulai < tPks) {
-                        return 'Tanggal mulai kerjasama harus sama dengan atau setelah tanggal penandatanganan PKS!';
+                if (this.formData.tanggal_selesai) {
+                    const tMulai = this.parseDateToTimestamp(this.formData.tanggal_mulai);
+                    const tSelesai = this.parseDateToTimestamp(this.formData.tanggal_selesai);
+                    if (tMulai > 0 && tSelesai > 0 && tMulai > tSelesai) {
+                        return 'Tanggal mulai kerjasama tidak boleh melebihi tanggal berakhir!';
                     }
                 }
                 return '';
@@ -838,19 +848,6 @@
 
                 this.$watch('formData.tanggal_pks', (newVal) => {
                     this.syncTahunTriwulanFromPks(newVal);
-                    if (newVal) {
-                        const tPks = this.parseDateToTimestamp(newVal);
-                        const today = this.getTodayTimestamp();
-                        if (tPks > today) {
-                            this.showToast('Tanggal PKS Tidak Valid', 'Tanggal penandatanganan PKS tidak boleh melebihi tanggal hari ini.', 'error');
-                        } else if (this.formData.tanggal_mulai) {
-                            const tMulai = this.parseDateToTimestamp(this.formData.tanggal_mulai);
-                            if (tMulai > 0 && tMulai < tPks) {
-                                this.formData.tanggal_mulai = '';
-                                this.showToast('Penyesuaian Tanggal', 'Tanggal mulai kerjasama dikosongkan karena harus sama atau setelah tanggal PKS.', 'warning');
-                            }
-                        }
-                    }
                 });
 
                 this.$watch('formData.skema_kemitraan', (newVal) => {
@@ -890,45 +887,9 @@
                     this.syncTotalsFromItems();
                 }, { deep: true });
 
-                // Validasi relasi Tanggal Mulai dan Tanggal PKS serta Tanggal Selesai
-                this.$watch('formData.tanggal_mulai', (newVal) => {
-                    if (newVal) {
-                        const tMulai = this.parseDateToTimestamp(newVal);
-                        const today = this.getTodayTimestamp();
-                        if (tMulai > today) {
-                            this.formData.tanggal_mulai = '';
-                            this.showToast('Tanggal Mulai Tidak Valid', 'Tanggal mulai berlaku kerjasama tidak boleh melebihi tanggal hari ini.', 'error');
-                            return;
-                        }
-                        if (this.formData.tanggal_pks) {
-                            const tPks = this.parseDateToTimestamp(this.formData.tanggal_pks);
-                            if (tPks > 0 && tMulai < tPks) {
-                                this.formData.tanggal_mulai = '';
-                                this.showToast('Tanggal Mulai Tidak Valid', 'Tanggal mulai kerjasama harus di atas atau sama dengan tanggal penandatanganan PKS.', 'error');
-                                return;
-                            }
-                        }
-                    }
-                    if (newVal && this.formData.tanggal_selesai) {
-                        const tMulai = this.parseDateToTimestamp(newVal);
-                        const tSelesai = this.parseDateToTimestamp(this.formData.tanggal_selesai);
-                        if (tMulai > 0 && tSelesai > 0 && tSelesai < tMulai) {
-                            this.formData.tanggal_selesai = '';
-                            this.showToast('Penyesuaian Tanggal', 'Tanggal berakhir dikosongkan karena tidak boleh lebih awal dari tanggal mulai kerjasama.', 'warning');
-                        }
-                    }
-                });
-
-                this.$watch('formData.tanggal_selesai', (newVal) => {
-                    if (newVal && this.formData.tanggal_mulai) {
-                        const tMulai = this.parseDateToTimestamp(this.formData.tanggal_mulai);
-                        const tSelesai = this.parseDateToTimestamp(newVal);
-                        if (tMulai > 0 && tSelesai > 0 && tSelesai < tMulai) {
-                            this.formData.tanggal_selesai = '';
-                            this.showToast('Tanggal Tidak Valid', 'Tanggal berakhir kerjasama tidak boleh di bawah (lebih awal dari) tanggal mulai kerjasama.', 'error');
-                        }
-                    }
-                });
+                // Reaktivitas estimasi durasi konsesi (perhitungan tanggal ditangani oleh getter durasiKonsesiText)
+                this.$watch('formData.tanggal_mulai', () => {});
+                this.$watch('formData.tanggal_selesai', () => {});
             },
 
             // Sinkronisasi otomatis Tahun Pembukuan dan Triwulan dari Tanggal Penandatanganan PKS
@@ -1115,15 +1076,17 @@
                 this.formData.objek_astap_id = kemitraan.objek_astap_id || spec.objek_astap_id || null;
                 this.formData.objek_register_id = kemitraan.objek_register_id || spec.objek_register_id || null;
                 this.formData.objek_nibar = kemitraan.objek_nibar || spec.objek_nibar || '';
-                if (this.formData.objek_register_id) {
-                    const foundObj = this.dbObjekAsetList.find(o => o.register_id == this.formData.objek_register_id);
+                if (this.formData.objek_astap_id || this.formData.objek_register_id) {
+                    const foundObj = this.dbObjekAsetList.find(o => 
+                        (this.formData.objek_astap_id && o.astap_id == this.formData.objek_astap_id) ||
+                        (this.formData.objek_register_id && o.register_id == this.formData.objek_register_id)
+                    );
                     if (foundObj) {
                         this.formData.objek_aset_terpilih = foundObj;
-                    } else if (this.formData.objek_nibar) {
+                    } else if (this.formData.objek_astap_id) {
                         this.formData.objek_aset_terpilih = {
                             register_id: this.formData.objek_register_id,
                             astap_id: this.formData.objek_astap_id,
-                            nibar: this.formData.objek_nibar,
                             nama_barang: 'Aset BMD RSUD Terpilih',
                             kib: 'KIB Terkait',
                             unit_nama: 'RSUD Dr. H. Koesnandi',

@@ -1651,158 +1651,239 @@ Route::middleware('auth')->group(function () {
 
             // ─── Form Kemitraan Pihak Ketiga / KSO (Create & Store) ────────
             $getObjekAsetKemitraans = function() {
-                $activeKemitraanByRegId = \App\Models\AstapKemitraan::whereNotNull('objek_register_id')
-                    ->where('status_konsesi', 'Aktif')
-                    ->where('is_deleted', 0)
-                    ->get()
-                    ->keyBy('objek_register_id');
+                // 1. Ambil data Kemitraan yang terdaftar sebagai Objek Pemanfaatan BMD (Tabel 1 Master Kemitraan)
+                $kemitraans = \App\Models\AstapKemitraan::with([
+                    'astap.jenisAstap',
+                    'astap.registers.unit',
+                    'astap.unit',
+                    'astap.reklas',
+                    'objekAstap.reklas',
+                    'objekRegister.astap.reklas'
+                ])
+                ->where('is_deleted', 0)
+                ->whereHas('astap', fn($q) => $q->where('is_deleted', 0))
+                ->orderBy('tanggal_pks', 'desc')
+                ->orderBy('id', 'desc')
+                ->get();
 
-                // Kumpulkan riwayat reklasifikasi ke Kemitraan (1.5.2) beserta KIB asalnya
-                $reklasKemitraans = \App\Models\AstapReklas::where(function($rq) {
+                // Filter aset yang dimanfaatkan (bukan ditambahkan) persis seperti logika Tabel 1
+                $dimanfaatkan = $kemitraans->filter(function($row) {
+                    $tipe = $row->tipe_kemitraan;
+                    if ($tipe === 'ditambahkan') return false;
+                    if ($tipe === 'dimanfaatkan') return true;
+                    $astap = $row->astap;
+                    if ($astap && ($astap->is_reklas || ($astap->reklas && $astap->reklas->isNotEmpty()))) return true;
+                    $namaBarang = strtolower($astap?->nama_barang ?? '');
+                    if (str_starts_with($namaBarang, 'sewa ') || str_contains($namaBarang, 'pemanfaatan')) return true;
+                    return false;
+                })->values();
+
+                // 2. Ambil Reklasifikasi ke Akun Kemitraan (1.5.2) yang belum dibuatkan PKS
+                $existingAstapIds = $kemitraans->flatMap(fn($r) => array_filter([$r->astap_id, $r->objek_astap_id]))->unique()->toArray();
+                $reklasPending = \App\Models\AstapReklas::where('is_deleted', 0)
+                    ->where(function ($rq) {
                         $rq->where('tujuan_kib', 'KEMITRAAN')
                            ->orWhere('tujuan_kode', 'like', '1.5.2%');
                     })
+                    ->whereNotIn('astap_id', $existingAstapIds)
+                    ->whereHas('astap', fn($q) => $q->where('is_deleted', 0))
+                    ->with(['astap.registers.unit', 'astap.jenisAstap', 'astap.unit', 'astap.reklas'])
                     ->orderBy('tanggal_reklas', 'desc')
                     ->get()
-                    ->keyBy('astap_id');
+                    ->unique('astap_id');
 
-                $reklasKemitraanAstapIds = $reklasKemitraans->keys()->toArray();
+                // Helper deduplikasi kata berulang (misal "Sewa Aset Tetap lainnya, Sewa Aset Tetap lainnya")
+                $cleanDuplicateWords = function($t) {
+                    if (empty($t)) return '';
+                    if (str_contains($t, ',')) {
+                        $parts = array_filter(array_map('trim', explode(',', $t)));
+                        return implode(', ', array_unique($parts));
+                    }
+                    return trim($t);
+                };
 
-                // Ambil seluruh kemitraan aktif atau terakhir untuk pencocokan kontrak & pihak ketiga
-                $kemitraanByAstapId = \App\Models\AstapKemitraan::where('is_deleted', 0)
-                    ->orderBy('id', 'desc')
-                    ->get()
-                    ->keyBy('astap_id');
+                $isJenisKemitraanText = function($t) {
+                    if (empty($t)) return true;
+                    $l = strtolower(trim($t));
+                    return str_starts_with($l, 'kerja sama pemanfaatan')
+                        || str_starts_with($l, 'bangun guna serah')
+                        || str_starts_with($l, 'bangun serah guna')
+                        || str_starts_with($l, 'ksp ')
+                        || str_starts_with($l, 'kso ')
+                        || str_starts_with($l, 'sewa ')
+                        || $l === 'sewa tanah'
+                        || $l === 'sewa peralatan dan mesin'
+                        || $l === 'sewa gedung dan bangunan'
+                        || $l === 'sewa jalan, irigasi dan jaringan'
+                        || $l === 'sewa aset tetap lainnya'
+                        || $l === 'kerja sama pemanfaatan tanah'
+                        || $l === 'kerja sama pemanfaatan peralatan dan mesin'
+                        || $l === 'kerja sama pemanfaatan gedung dan bangunan'
+                        || $l === 'kerja sama pemanfaatan jalan, irigasi dan jaringan'
+                        || $l === 'kerja sama pemanfaatan aset tetap lainnya';
+                };
 
-                $kemitraanByObjRegId = \App\Models\AstapKemitraan::whereNotNull('objek_register_id')
-                    ->where('is_deleted', 0)
-                    ->orderBy('id', 'desc')
-                    ->get()
-                    ->keyBy('objek_register_id');
+                $isInvalidDummyName = function($str) {
+                    if (empty($str)) return true;
+                    $cleaned = trim(str_replace([' ', '-', '_', '.', '—'], '', (string)$str));
+                    return empty($cleaned);
+                };
 
-                $kemitraanByObjAstapId = \App\Models\AstapKemitraan::whereNotNull('objek_astap_id')
-                    ->where('is_deleted', 0)
-                    ->orderBy('id', 'desc')
-                    ->get()
-                    ->keyBy('objek_astap_id');
+                $resolveNama = function($astap, $row, $spec, $reklasHistory, $kib = 'KIB A') use ($isJenisKemitraanText, $cleanDuplicateWords, $isInvalidDummyName) {
+                    $specNama = $spec['tanah_items'][0]['tanah_nama_barang'] 
+                        ?? ($spec['mesin_items'][0]['mesin_nama_barang'] 
+                        ?? ($spec['gedung_items'][0]['gedung_nama_barang'] 
+                        ?? ($spec['jaringan_items'][0]['jaringan_nama_barang'] 
+                        ?? ($spec['lainnya_items'][0]['lainnya_nama_barang'] 
+                        ?? ($spec['tanah_nama_barang'] ?? ($spec['gedung_nama_bangunan'] ?? null))))));
 
-                // Ambil aset register dari BMD RSUD:
-                // 1. Yang memiliki riwayat reklasifikasi ke Kemitraan (Akun 1.5.2)
-                // 2. Atau berakun Kemitraan 1.5.2 (Sewa Tanah, Sewa Gedung, Sewa Mesin, dll)
-                return \App\Models\AstapRegister::where('is_deleted', 0)
-                    ->whereHas('astap', function($q) use ($reklasKemitraanAstapIds) {
-                        $q->where('is_deleted', 0)
-                          ->where(function($sq) use ($reklasKemitraanAstapIds) {
-                              if (!empty($reklasKemitraanAstapIds)) {
-                                  $sq->whereIn('id', $reklasKemitraanAstapIds);
-                              }
-                              $sq->orWhere('sumber_dana', 'kemitraan')
-                                ->orWhere('kode_108', 'like', '1.5.2%')
-                                ->orWhereHas('jenisAstap', function($j) {
-                                    $j->where('jenis', 'like', '1.5.2%');
-                                });
-                          });
-                    })
-                    ->with(['astap.jenisAstap', 'astap.unit', 'unit'])
-                    ->get()
-                    ->map(function($reg) use ($activeKemitraanByRegId, $reklasKemitraans, $kemitraanByAstapId, $kemitraanByObjRegId, $kemitraanByObjAstapId) {
-                        $astap = $reg->astap;
-                        $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?: []);
-                        $reklasRow = $reklasKemitraans[$astap->id] ?? null;
-                        
-                        // KIB Asal Aset BMD RSUD (KIB A Tanah, KIB B Mesin, KIB C Gedung, dsb)
-                        $kib = 'KIB E';
-                        if (!empty($reklasRow?->asal_kib)) {
-                            $kib = $reklasRow->asal_kib;
-                        } else {
-                            $jenis = $astap->jenisAstap?->jenis ?? '';
-                            if (str_starts_with($jenis, '1.3.1')) {
-                                $kib = 'KIB A';
-                            } elseif (str_starts_with($jenis, '1.3.2')) {
-                                $kib = 'KIB B';
-                            } elseif (str_starts_with($jenis, '1.3.3')) {
-                                $kib = 'KIB C';
-                            } elseif (str_starts_with($jenis, '1.3.4')) {
-                                $kib = 'KIB D';
-                            } elseif (str_starts_with($jenis, '1.5.2')) {
-                                $nb = strtolower($astap->nama_barang ?? '');
-                                if (str_contains($nb, 'tanah')) {
-                                    $kib = 'KIB A';
-                                } elseif (str_contains($nb, 'gedung') || str_contains($nb, 'bangunan') || str_contains($nb, 'ruang')) {
-                                    $kib = 'KIB C';
-                                } elseif (str_contains($nb, 'mesin') || str_contains($nb, 'alat')) {
-                                    $kib = 'KIB B';
-                                } else {
-                                    $kib = 'KIB E';
-                                }
-                            }
-                        }
-                        
-                        $luas = null;
-                        $sertifikat = null;
-                        if ($kib === 'KIB A') {
-                            $luas = $spec['luas_m2'] ?? ($spec['tanah_luas_m2'] ?? null);
-                            $sertifikat = $spec['sertifikat_no'] ?? ($spec['tanah_sertifikat_no'] ?? null);
-                        } elseif ($kib === 'KIB C') {
-                            $luas = $spec['gedung_luas_lantai'] ?? ($spec['luas_lantai'] ?? null);
-                            $sertifikat = $spec['gedung_dokumen_no'] ?? null;
-                        } elseif ($kib === 'KIB B') {
-                            $sertifikat = $spec['mesin_no_polisi'] ?? ($spec['no_polisi'] ?? ($spec['mesin_no_pabrik'] ?? ($spec['no_pabrik'] ?? null)));
-                        }
+                    if (!empty($specNama) && !$isInvalidDummyName($specNama) && !$isJenisKemitraanText($specNama)) {
+                        return $cleanDuplicateWords($specNama);
+                    }
 
-                        $pksAktif = $activeKemitraanByRegId[$reg->id] ?? null;
+                    if (!empty($astap?->nama_barang) && !$isInvalidDummyName($astap->nama_barang) && !$isJenisKemitraanText($astap->nama_barang)) {
+                        return $cleanDuplicateWords($astap->nama_barang);
+                    }
 
-                        // Ambil data detail kemitraan eksisting untuk auto-fill Langkah 1
-                        $kem = $kemitraanByObjRegId[$reg->id] 
-                            ?? ($kemitraanByAstapId[$astap->id] 
-                            ?? ($kemitraanByObjAstapId[$astap->id] ?? null));
+                    if ($reklasHistory && !empty($reklasHistory->asal_nama) && !$isInvalidDummyName($reklasHistory->asal_nama) && !$isJenisKemitraanText($reklasHistory->asal_nama)) {
+                        return $cleanDuplicateWords($reklasHistory->asal_nama);
+                    }
 
-                        $mitraNama = $kem?->mitra_nama ?: ($spec['mitra_nama'] ?? null);
-                        $nomorPks  = $kem?->nomor_pks ?: ($astap->bast_dokumen_nomor ?: ($spec['nomor_pks'] ?? null));
-                        $tglPks    = $kem?->tanggal_pks ? $kem->tanggal_pks->format('Y-m-d') : ($astap->bast_dokumen_tanggal ? date('Y-m-d', strtotime($astap->bast_dokumen_tanggal)) : ($spec['tanggal_pks'] ?? null));
-                        $tglMulai  = $kem?->tanggal_mulai ? $kem->tanggal_mulai->format('Y-m-d') : ($spec['tanggal_mulai'] ?? null);
-                        $tglSelesai = $kem?->tanggal_selesai ? $kem->tanggal_selesai->format('Y-m-d') : ($spec['tanggal_selesai'] ?? null);
-                        $skema     = $kem?->skema_kemitraan ?: ($spec['skema_kemitraan'] ?? 'Sewa');
-                        $pimpinan  = $kem?->mitra_pimpinan ?: ($spec['mitra_pimpinan'] ?? null);
-                        $alamat    = $kem?->mitra_alamat ?: ($spec['mitra_alamat'] ?? null);
-                        $keterangan = $kem?->keterangan ?: ($astap->keterangan_tambahan ?: ($spec['keterangan'] ?? null));
+                    $merkType = trim(($spec['merk'] ?? '') . ' ' . ($spec['type'] ?? ''));
+                    if (!empty($merkType) && strlen($merkType) > 2 && !$isInvalidDummyName($merkType)) {
+                        return $cleanDuplicateWords($merkType);
+                    }
 
-                        $kemitraanData = ($mitraNama || $nomorPks) ? [
-                            'mitra_nama'       => $mitraNama,
-                            'mitra_pimpinan'   => $pimpinan,
-                            'mitra_alamat'     => $alamat,
-                            'nomor_pks'        => $nomorPks,
-                            'tanggal_pks'      => $tglPks,
-                            'tanggal_mulai'    => $tglMulai,
-                            'tanggal_selesai'  => $tglSelesai,
-                            'skema_kemitraan'  => $skema,
-                            'keterangan'       => $keterangan,
-                        ] : null;
+                    $rawNama = $astap?->nama_barang ?: 'Objek BMD';
+                    if ($isInvalidDummyName($rawNama)) {
+                        $rawNama = $reklasHistory?->tujuan_nama 
+                            ?: ($astap?->jenisAstap?->uraian_sub_sub_rincian 
+                            ?: ($astap?->jenisAstap?->uraian_sub_rincian 
+                            ?: ($astap?->jenisAstap?->nama_jenis ?: 'Sewa ' . ($kib === 'KIB A' ? 'Tanah' : ($kib === 'KIB C' ? 'Gedung' : ($kib === 'KIB B' ? 'Peralatan' : 'BMD'))))));
+                    }
+                    if ($isInvalidDummyName($rawNama)) {
+                        $rawNama = 'Sewa ' . ($kib === 'KIB A' ? 'Tanah' : ($kib === 'KIB C' ? 'Gedung' : 'Objek BMD'));
+                    }
+                    return $cleanDuplicateWords($rawNama);
+                };
 
-                        return [
-                            'register_id'     => $reg->id,
-                            'astap_id'        => $astap->id,
-                            'nibar'           => $reg->nibar,
-                            'nama_barang'     => $astap->nama_barang,
-                            'kib'             => $kib,
-                            'kode_108'        => $astap->jenisAstap?->sub_sub_rincian_objek ?: ($astap->jenisAstap?->sub_rincian_objek ?: $astap->jenisAstap?->jenis),
-                            'alamat_barang'   => $astap->alamat_barang ?: 'RSUD Dr. H. Koesnandi',
-                            'unit_id'         => $reg->unit_id ?: $astap->unit_id,
-                            'unit_nama'       => $reg->unit?->nama ?: ($astap->unit?->nama ?: 'RSUD Dr. H. Koesnandi'),
-                            'tahun_perolehan' => $reg->tahun_perolehan ?: $astap->tahun_perolehan,
-                            'total_realisasi' => (float) $astap->total_realisasi,
-                            'kondisi'         => $reg->kondisi ?: 'Baik',
-                            'luas'            => $luas,
-                            'sertifikat'      => $sertifikat,
-                            'pks_aktif'       => $pksAktif ? [
-                                'nomor_pks'       => $pksAktif->nomor_pks,
-                                'mitra_nama'      => $pksAktif->mitra_nama,
-                                'tanggal_selesai' => $pksAktif->tanggal_selesai ? $pksAktif->tanggal_selesai->format('d/m/Y') : null,
-                            ] : null,
-                            'kemitraan_data'  => $kemitraanData,
-                        ];
-                    })
-                    ->values();
+                $resolveKib = function($astap, $spec, $reklasHistory) {
+                    if (!empty($reklasHistory?->asal_kib)) return strtoupper($reklasHistory->asal_kib);
+                    if (!empty($astap?->category) && in_array(strtoupper($astap->category), ['KIB A', 'KIB B', 'KIB C', 'KIB D', 'KIB E'])) {
+                        return strtoupper($astap->category);
+                    }
+                    $kode = $astap?->kode_108 ?: ($astap?->jenisAstap?->sub_sub_rincian_objek ?: ($astap?->jenisAstap?->jenis ?: ''));
+                    if (str_contains($kode, '.01.01.001') || str_ends_with($kode, '.001') || str_starts_with($kode, '1.3.1')) return 'KIB A';
+                    if (str_contains($kode, '.01.01.002') || str_ends_with($kode, '.002') || str_starts_with($kode, '1.3.2')) return 'KIB B';
+                    if (str_contains($kode, '.01.01.003') || str_ends_with($kode, '.003') || str_starts_with($kode, '1.3.3')) return 'KIB C';
+                    if (str_contains($kode, '.01.01.004') || str_ends_with($kode, '.004') || str_starts_with($kode, '1.3.4')) return 'KIB D';
+                    if (str_contains($kode, '.01.01.005') || str_ends_with($kode, '.005') || str_starts_with($kode, '1.3.5')) return 'KIB E';
+
+                    $nb = strtolower($astap?->nama_barang ?? '');
+                    if (str_contains($nb, 'tanah') || str_contains($nb, 'lahan')) return 'KIB A';
+                    if (str_contains($nb, 'gedung') || str_contains($nb, 'bangunan') || str_contains($nb, 'ruang')) return 'KIB C';
+                    if (str_contains($nb, 'mesin') || str_contains($nb, 'alat') || str_contains($nb, 'alkes')) return 'KIB B';
+                    if (str_contains($nb, 'jalan') || str_contains($nb, 'jaringan') || str_contains($nb, 'irigasi')) return 'KIB D';
+
+                    return 'KIB A';
+                };
+
+                $result = collect();
+
+                // Masukkan data Kemitraan Dimanfaatkan (Per Aset/Kontrak Induk)
+                foreach ($dimanfaatkan as $kem) {
+                    $astap = $kem->astap;
+                    if (!$astap) continue;
+                    $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?: []);
+                    $firstReg = $astap->registers?->first();
+                    $reklasHistory = $astap->reklas?->sortByDesc('id')->first();
+                    $kib = $resolveKib($astap, $spec, $reklasHistory);
+                    $namaBarang = $resolveNama($astap, $kem, $spec, $reklasHistory, $kib);
+
+                    $luas = $spec['luas_m2'] ?? ($spec['tanah_luas_m2'] ?? ($spec['gedung_luas_lantai'] ?? null));
+                    $sertifikat = $spec['sertifikat_no'] ?? ($spec['tanah_sertifikat_no'] ?? ($spec['gedung_dokumen_no'] ?? ($spec['mesin_no_polisi'] ?? null)));
+
+                    $tglPks = $kem->tanggal_pks ? $kem->tanggal_pks->format('Y-m-d') : ($astap->bast_dokumen_tanggal ? date('Y-m-d', strtotime($astap->bast_dokumen_tanggal)) : ($spec['tanggal_pks'] ?? null));
+                    $tglMulai = $kem->tanggal_mulai ? $kem->tanggal_mulai->format('Y-m-d') : ($spec['tanggal_mulai'] ?? null);
+                    $tglSelesai = $kem->tanggal_selesai ? $kem->tanggal_selesai->format('Y-m-d') : ($spec['tanggal_selesai'] ?? null);
+
+                    $result->push([
+                        'id'              => $kem->id,
+                        'kemitraan_id'    => $kem->id,
+                        'astap_id'        => $astap->id,
+                        'register_id'     => $firstReg?->id ?: null,
+                        'nibar'           => null, // Sesuai permintaan user: tidak menampilkan NIBAR register
+                        'nama_barang'     => $namaBarang,
+                        'kib'             => $kib,
+                        'kode_108'        => $astap->jenisAstap?->sub_sub_rincian_objek ?: ($astap->jenisAstap?->sub_rincian_objek ?: ($astap->jenisAstap?->jenis ?: '1.5.2')),
+                        'volume'          => $kem->jumlah_volume ?: ($astap->jumlah_volume ?: 1),
+                        'satuan'          => $kem->satuan ?: ($astap->satuan ?: 'Unit'),
+                        'nomor_pks'       => $kem->nomor_pks ?: ($astap->bast_dokumen_nomor ?: '-'),
+                        'mitra_nama'      => $kem->mitra_nama ?: '-',
+                        'alamat_barang'   => $astap->alamat_barang ?: 'RSUD Dr. H. Koesnandi',
+                        'unit_id'         => $astap->unit_id,
+                        'unit_nama'       => $astap->unit?->nama ?: 'RSUD Dr. H. Koesnandi',
+                        'tahun_perolehan' => $kem->tahun ?: $astap->tahun_perolehan,
+                        'total_realisasi' => (float) ($kem->nilai_aset ?: $astap->total_realisasi),
+                        'kondisi'         => $firstReg?->kondisi ?: 'Baik',
+                        'luas'            => $luas,
+                        'sertifikat'      => $sertifikat,
+                        'skema_kemitraan' => $kem->skema_kemitraan ?: ($spec['skema_kemitraan'] ?? 'Sewa'),
+                        'kemitraan_data'  => [
+                            'mitra_nama'      => $kem->mitra_nama,
+                            'mitra_pimpinan'  => $kem->mitra_pimpinan,
+                            'mitra_alamat'    => $kem->mitra_alamat,
+                            'nomor_pks'       => $kem->nomor_pks,
+                            'tanggal_pks'     => $tglPks,
+                            'tanggal_mulai'   => $tglMulai,
+                            'tanggal_selesai' => $tglSelesai,
+                            'skema_kemitraan' => $kem->skema_kemitraan ?: ($spec['skema_kemitraan'] ?? 'Sewa'),
+                            'keterangan'      => $kem->keterangan ?: ($astap->keterangan_tambahan ?: null),
+                        ],
+                        'pks_aktif'       => ($kem->status_konsesi === 'Aktif') ? [
+                            'nomor_pks'       => $kem->nomor_pks,
+                            'mitra_nama'      => $kem->mitra_nama,
+                            'tanggal_selesai' => $kem->tanggal_selesai ? \Carbon\Carbon::parse($kem->tanggal_selesai)->format('d/m/Y') : null,
+                        ] : null,
+                    ]);
+                }
+
+                // Masukkan data Reklasifikasi yang belum ber-PKS
+                foreach ($reklasPending as $reklas) {
+                    $astap = $reklas->astap;
+                    if (!$astap) continue;
+                    $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?: []);
+                    $firstReg = $astap->registers?->first();
+                    $kib = $resolveKib($astap, $spec, $reklas);
+                    $namaBarang = $resolveNama($astap, null, $spec, $reklas, $kib);
+
+                    $result->push([
+                        'id'              => null,
+                        'kemitraan_id'    => null,
+                        'astap_id'        => $astap->id,
+                        'register_id'     => $firstReg?->id ?: null,
+                        'nibar'           => null,
+                        'nama_barang'     => $namaBarang,
+                        'kib'             => $kib,
+                        'kode_108'        => $reklas->tujuan_kode ?: ($astap->jenisAstap?->sub_sub_rincian_objek ?: '1.5.2'),
+                        'volume'          => $astap->jumlah_volume ?: 1,
+                        'satuan'          => $astap->satuan ?: 'Unit',
+                        'nomor_pks'       => null,
+                        'mitra_nama'      => null,
+                        'alamat_barang'   => $astap->alamat_barang ?: 'RSUD Dr. H. Koesnandi',
+                        'unit_id'         => $astap->unit_id,
+                        'unit_nama'       => $astap->unit?->nama ?: 'RSUD Dr. H. Koesnandi',
+                        'tahun_perolehan' => $astap->tahun_perolehan,
+                        'total_realisasi' => (float) $astap->total_realisasi,
+                        'kondisi'         => $firstReg?->kondisi ?: 'Baik',
+                        'luas'            => $spec['luas_m2'] ?? ($spec['tanah_luas_m2'] ?? null),
+                        'sertifikat'      => $spec['sertifikat_no'] ?? ($spec['tanah_sertifikat_no'] ?? null),
+                        'kemitraan_data'  => null,
+                        'pks_aktif'       => null,
+                    ]);
+                }
+
+                return $result->values();
             };
 
             Route::get('/astap/create-kemitraan', function (\Illuminate\Http\Request $request) use ($getDistinctPenyedias, $getDistinctPejabats, $getDistinctMitras, $getObjekAsetKemitraans) {

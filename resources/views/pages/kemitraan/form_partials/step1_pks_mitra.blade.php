@@ -84,7 +84,7 @@
              class="space-y-4">
 
             <!-- KASUS A: SUDAH MEMILIH OBJEK BMD (SHOWCASE CARD ELEGAN) -->
-            <div x-show="formData.objek_nibar || formData.objek_astap_id"
+            <div x-show="formData.objek_astap_id"
                  class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-slate-900/95 to-slate-950/90 border border-emerald-500/40 shadow-xl space-y-3 relative">
                 <div class="flex items-start justify-between gap-3 flex-wrap sm:flex-nowrap pb-3 border-b border-slate-800">
                     <div class="space-y-1.5 min-w-0">
@@ -98,17 +98,23 @@
                                       'bg-teal-500/20 text-teal-300 border-teal-500/40': formData.objek_aset_terpilih?.kib === 'KIB E'
                                   }"
                                   x-text="formData.objek_aset_terpilih?.kib || 'Objek BMD'"></span>
-                            <span class="text-xs font-mono font-extrabold text-cyan-300 bg-cyan-950/60 px-2.5 py-0.5 rounded-lg border border-cyan-500/30"
-                                  x-text="'NIBAR: ' + (formData.objek_nibar || '-')"></span>
+                            <template x-if="formData.objek_aset_terpilih?.nomor_pks && formData.objek_aset_terpilih?.nomor_pks !== '-'">
+                                <span class="text-xs font-mono font-extrabold text-cyan-300 bg-cyan-950/60 px-2.5 py-0.5 rounded-lg border border-cyan-500/30"
+                                      x-text="'PKS: ' + formData.objek_aset_terpilih.nomor_pks"></span>
+                            </template>
+                            <template x-if="formData.objek_aset_terpilih?.volume">
+                                <span class="text-xs font-mono font-bold text-slate-300 bg-slate-900 px-2.5 py-0.5 rounded-lg border border-slate-700/80"
+                                      x-text="'Vol: ' + formData.objek_aset_terpilih.volume + ' ' + (formData.objek_aset_terpilih.satuan || 'Unit')"></span>
+                            </template>
                             <span class="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20 flex items-center gap-1">
                                 <span>✓</span>
                                 <span>Tertaut Objek Pemanfaatan BMD</span>
                             </span>
                         </div>
                         <h4 class="text-sm font-extrabold text-white leading-snug"
-                            x-text="formData.objek_aset_terpilih?.nama_barang || 'Aset Objek Pemanfaatan BMD Terpilih'"></h4>
+                            x-text="(formData.objek_aset_terpilih?.nama_barang && formData.objek_aset_terpilih?.nama_barang !== '--' && formData.objek_aset_terpilih?.nama_barang !== '- -') ? formData.objek_aset_terpilih.nama_barang : ('Objek Pemanfaatan ' + (formData.objek_aset_terpilih?.kib || 'BMD') + (formData.objek_aset_terpilih?.nomor_pks ? ' (' + formData.objek_aset_terpilih.nomor_pks + ')' : ''))"></h4>
                         <p class="text-[11px] text-slate-400">
-                            Fasilitas / bangunan baru yang ditambahkan mitra akan dicatat menempati objek BMD ini.
+                            Fasilitas / aset baru yang ditambahkan mitra akan dicatat menempati objek BMD ini.
                         </p>
                     </div>
                     <button type="button" @click="clearObjekAset()"
@@ -168,7 +174,7 @@
             </div>
 
             <!-- KASUS B: BELUM MEMILIH OBJEK BMD (PENCARIAN SPOTLIGHT OPSIONAL) -->
-            <div x-show="!formData.objek_nibar && !formData.objek_astap_id"
+            <div x-show="!formData.objek_astap_id"
                  class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-emerald-950/30 via-slate-900/90 to-slate-950/90 border border-emerald-500/30 shadow-xl space-y-3.5 relative">
                 <div class="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap pb-3 border-b border-slate-800/80">
                     <div class="flex items-center gap-3 min-w-0">
@@ -208,7 +214,7 @@
                                 x-model="objekSearchQuery"
                                 @focus="isObjekDropdownOpen = true"
                                 @input="isObjekDropdownOpen = true"
-                                placeholder="Cari nama tanah sewa, gedung, atau NIBAR aset yang dimanfaatkan..."
+                                placeholder="Cari nama objek sewa, nomor PKS, atau rekanan mitra..."
                                 class="w-full bg-slate-950/90 border border-slate-700/80 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/50 rounded-xl pl-10 pr-10 py-2.5 text-xs text-white placeholder-slate-500 transition-all shadow-inner">
                             <button type="button" x-show="objekSearchQuery" @click="objekSearchQuery = ''"
                                 class="absolute right-3 text-slate-400 hover:text-slate-200 text-xs">✕</button>
@@ -241,7 +247,7 @@
                                         class="px-2 py-1 rounded-lg text-[10px] border transition-all">📦 KIB E (Lainnya)</button>
                                 </div>
                                 <span class="text-[10px] font-mono text-emerald-400/90 bg-slate-950 px-2 py-0.5 rounded-md border border-slate-800 shrink-0"
-                                    x-text="'Menampilkan 5 dari ' + totalFilteredObjekCount + ' aset'"></span>
+                                    x-text="'Menampilkan ' + filteredObjekAsetList.length + ' dari ' + totalFilteredObjekCount + ' objek'"></span>
                             </div>
 
                             <!-- Opsi Tanpa Objek / Mandiri -->
@@ -252,7 +258,7 @@
                             </div>
 
                             <!-- List Item Aset Teratas -->
-                            <template x-for="item in filteredObjekAsetList" :key="item.register_id">
+                            <template x-for="item in filteredObjekAsetList" :key="item.id || item.astap_id">
                                 <div @click="selectObjekAset(item)"
                                     class="p-3 hover:bg-emerald-950/40 cursor-pointer transition-all border-b border-slate-900/80 last:border-b-0 group">
                                     <div class="flex items-center justify-between gap-2">
@@ -268,7 +274,17 @@
                                                 x-text="item.kib"></span>
                                             <span class="font-bold text-white text-xs truncate group-hover:text-emerald-300 transition-colors" x-text="item.nama_barang"></span>
                                         </div>
-                                        <span class="font-mono text-cyan-400 text-[11px] font-bold shrink-0 bg-cyan-950/50 px-2 py-0.5 rounded border border-cyan-500/30" x-text="item.nibar"></span>
+                                        <!-- Identitas PKS & Volume (GANTI NIBAR) -->
+                                        <div class="flex items-center gap-1.5 shrink-0">
+                                            <template x-if="item.nomor_pks && item.nomor_pks !== '-'">
+                                                <span class="font-mono text-cyan-300 text-[10.5px] font-bold bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-500/30"
+                                                    x-text="'No: ' + item.nomor_pks"></span>
+                                            </template>
+                                            <template x-if="item.volume">
+                                                <span class="font-mono text-slate-300 text-[10px] bg-slate-900 px-2 py-0.5 rounded border border-slate-700/80"
+                                                    x-text="'Vol: ' + item.volume + ' ' + (item.satuan || 'Unit')"></span>
+                                            </template>
+                                        </div>
                                     </div>
                                     <div class="flex items-center justify-between text-[11px] text-slate-400 gap-2 mt-1">
                                         <span class="truncate flex items-center gap-1">
@@ -277,13 +293,14 @@
                                         </span>
                                         <div class="flex items-center gap-2 shrink-0">
                                             <span x-show="item.luas" class="font-mono text-slate-300" x-text="item.luas + ' m²'"></span>
-                                            <template x-if="item.kemitraan_data?.mitra_nama">
-                                                <span class="px-1.5 py-0.5 rounded text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold"
-                                                    x-text="'🤝 Sewa: ' + item.kemitraan_data.mitra_nama"></span>
+                                            <template x-if="item.mitra_nama && item.mitra_nama !== '-'">
+                                                <span class="px-1.5 py-0.5 rounded text-[9.5px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold"
+                                                    x-text="'🤝 ' + (item.kemitraan_data?.skema_kemitraan || 'Sewa') + ': ' + item.mitra_nama"></span>
                                             </template>
-                                            <template x-if="!item.kemitraan_data?.mitra_nama && item.pks_aktif">
-                                                <span class="px-1.5 py-0.5 rounded text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold"
-                                                    x-text="'⚠️ PKS: ' + item.pks_aktif.nomor_pks"></span>
+                                            <template x-if="!item.mitra_nama || item.mitra_nama === '-'">
+                                                <span class="px-1.5 py-0.5 rounded text-[9.5px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-bold">
+                                                    Akun 1.5.2 Kemitraan
+                                                </span>
                                             </template>
                                         </div>
                                     </div>
@@ -618,10 +635,10 @@
                     <label class="block text-xs font-bold text-slate-200">
                         Tanggal Penandatanganan PKS <span class="text-rose-400">*</span>
                     </label>
-                    <span class="text-[10px] font-mono text-cyan-300 bg-cyan-950/50 px-2 py-0.5 rounded-md border border-cyan-700/50 shrink-0">Maks: Hari Ini</span>
+                    <span class="text-[10px] font-mono text-cyan-300 bg-cyan-950/50 px-2 py-0.5 rounded-md border border-cyan-700/50 shrink-0" x-show="formData.tanggal_pks" x-text="formatTanggalIndo(formData.tanggal_pks)"></span>
                 </div>
                 <input type="text" 
-                    x-datepicker="{ maxDate: 'today' }" 
+                    x-datepicker
                     x-model="formData.tanggal_pks"
                     @input="syncTahunTriwulanFromPks($event.target.value)"
                     @change="syncTahunTriwulanFromPks($event.target.value)"
@@ -661,15 +678,14 @@
                 <div class="flex flex-col">
                     <div class="h-7 flex items-center justify-between mb-1.5 gap-2">
                         <label class="text-[11px] font-semibold text-slate-300 truncate">
-                            Tanggal Mulai Berlaku Kerjasama
+                            Tanggal Mulai Berlaku Kerjasama <span class="text-rose-400">*</span>
                         </label>
                         <div class="flex items-center gap-1.5 text-[9.5px] font-mono text-cyan-400/90 shrink-0">
-                            <span x-show="formData.tanggal_pks" class="bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700/80 text-[9.5px]">Min (PKS): <span class="text-cyan-300 font-semibold" x-text="formatTanggalIndo(formData.tanggal_pks)"></span></span>
-                            <span class="bg-cyan-950/50 text-cyan-300 px-2 py-0.5 rounded-md border border-cyan-700/50 text-[9.5px]">Maks: Hari Ini</span>
+                            <span x-show="formData.tanggal_mulai" class="bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700/80 text-[9.5px]">Mulai: <span class="text-cyan-300 font-semibold" x-text="formatTanggalIndo(formData.tanggal_mulai)"></span></span>
                         </div>
                     </div>
                     <input type="text" 
-                        x-datepicker="{ minDate: formatDateToIso(formData.tanggal_pks) || undefined, maxDate: 'today' }" 
+                        x-datepicker="{ maxDate: formatDateToIso(formData.tanggal_selesai) || undefined }" 
                         x-model="formData.tanggal_mulai"
                         placeholder="dd/mm/yyyy"
                         :class="isTanggalMulaiInvalid() ? 'border-rose-500 focus:border-rose-400 bg-rose-950/20' : 'border-slate-700 focus:border-cyan-400 bg-slate-950'"
@@ -686,16 +702,16 @@
                 <div class="flex flex-col">
                     <div class="h-7 flex items-center justify-between mb-1.5 gap-2">
                         <label class="text-[11px] font-semibold text-slate-300 truncate">
-                            Tanggal Berakhir Kerjasama (Konsesi Berakhir)
+                            Tanggal Berakhir Kerjasama (Konsesi Berakhir) <span class="text-rose-400">*</span>
                         </label>
                         <div class="flex items-center gap-1.5 text-[9.5px] font-mono text-cyan-400/90 shrink-0">
-                            <span x-show="formData.tanggal_mulai || formData.tanggal_pks" class="bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700/80 text-[9.5px]">
-                                Min: <span class="text-cyan-300 font-semibold" x-text="formatTanggalIndo(formData.tanggal_mulai || formData.tanggal_pks)"></span>
+                            <span x-show="formData.tanggal_selesai" class="bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700/80 text-[9.5px]">
+                                Selesai: <span class="text-cyan-300 font-semibold" x-text="formatTanggalIndo(formData.tanggal_selesai)"></span>
                             </span>
                         </div>
                     </div>
                     <input type="text" 
-                        x-datepicker="{ minDate: formatDateToIso(formData.tanggal_mulai || formData.tanggal_pks) || undefined }" 
+                        x-datepicker="{ minDate: formatDateToIso(formData.tanggal_mulai) || undefined }" 
                         x-model="formData.tanggal_selesai"
                         placeholder="dd/mm/yyyy"
                         :class="isTanggalSelesaiInvalid() ? 'border-rose-500 focus:border-rose-400 bg-rose-950/20' : 'border-slate-700 focus:border-cyan-400 bg-slate-950'"
