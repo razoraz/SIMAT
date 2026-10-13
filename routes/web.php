@@ -2601,11 +2601,23 @@ Route::middleware('auth')->group(function () {
                     'dokumen_file' => 'required|file|mimes:pdf,jpg,jpeg,png,webp,doc,docx|max:10240'
                 ]);
 
-                $astap = \App\Models\Astap::with('kemitraan')->findOrFail($id);
-                $kemitraan = $astap->kemitraan ?: \App\Models\AstapKemitraan::where('astap_id', $astap->id)->first();
+                $astap = \App\Models\Astap::with('kemitraan')->find($id);
+                $kemitraan = null;
+                if ($astap) {
+                    $kemitraan = $astap->kemitraan ?: \App\Models\AstapKemitraan::where('astap_id', $astap->id)->first();
+                } else {
+                    $kemitraan = \App\Models\AstapKemitraan::find($id);
+                    if ($kemitraan && $kemitraan->astap_id) {
+                        $astap = \App\Models\Astap::with('kemitraan')->find($kemitraan->astap_id);
+                    }
+                }
+
+                if (!$astap && !$kemitraan) {
+                    return response()->json(['success' => false, 'message' => 'Aset atau data kemitraan tidak ditemukan.'], 404);
+                }
 
                 // Hapus berkas lama jika ada
-                $oldPath = $kemitraan?->dokumen_path ?: ($astap->spesifikasi_json['dokumen_path'] ?? null);
+                $oldPath = $kemitraan?->dokumen_path ?: ($astap?->spesifikasi_json['dokumen_path'] ?? null);
                 if ($oldPath && \Illuminate\Support\Facades\Storage::disk('public')->exists($oldPath)) {
                     \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPath);
                 }
@@ -2618,9 +2630,11 @@ Route::middleware('auth')->group(function () {
                     $kemitraan->update(['dokumen_path' => $newPath]);
                 }
 
-                $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json ?? '[]', true) ?: []);
-                $spec['dokumen_path'] = $newPath;
-                $astap->update(['spesifikasi_json' => $spec]);
+                if ($astap) {
+                    $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json ?? '[]', true) ?: []);
+                    $spec['dokumen_path'] = $newPath;
+                    $astap->update(['spesifikasi_json' => $spec]);
+                }
 
                 return response()->json([
                     'success'      => true,
@@ -2632,10 +2646,22 @@ Route::middleware('auth')->group(function () {
             })->name('astap.kemitraan.upload_dokumen');
 
             Route::delete('/astap/kemitraan/{id}/delete-dokumen', function($id) {
-                $astap = \App\Models\Astap::with('kemitraan')->findOrFail($id);
-                $kemitraan = $astap->kemitraan ?: \App\Models\AstapKemitraan::where('astap_id', $astap->id)->first();
+                $astap = \App\Models\Astap::with('kemitraan')->find($id);
+                $kemitraan = null;
+                if ($astap) {
+                    $kemitraan = $astap->kemitraan ?: \App\Models\AstapKemitraan::where('astap_id', $astap->id)->first();
+                } else {
+                    $kemitraan = \App\Models\AstapKemitraan::find($id);
+                    if ($kemitraan && $kemitraan->astap_id) {
+                        $astap = \App\Models\Astap::with('kemitraan')->find($kemitraan->astap_id);
+                    }
+                }
 
-                $oldPath = $kemitraan?->dokumen_path ?: ($astap->spesifikasi_json['dokumen_path'] ?? null);
+                if (!$astap && !$kemitraan) {
+                    return response()->json(['success' => false, 'message' => 'Aset atau data kemitraan tidak ditemukan.'], 404);
+                }
+
+                $oldPath = $kemitraan?->dokumen_path ?: ($astap?->spesifikasi_json['dokumen_path'] ?? null);
                 if ($oldPath && \Illuminate\Support\Facades\Storage::disk('public')->exists($oldPath)) {
                     \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPath);
                 }
@@ -2644,9 +2670,11 @@ Route::middleware('auth')->group(function () {
                     $kemitraan->update(['dokumen_path' => null]);
                 }
 
-                $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json ?? '[]', true) ?: []);
-                unset($spec['dokumen_path']);
-                $astap->update(['spesifikasi_json' => $spec]);
+                if ($astap) {
+                    $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json ?? '[]', true) ?: []);
+                    unset($spec['dokumen_path']);
+                    $astap->update(['spesifikasi_json' => $spec]);
+                }
 
                 return response()->json([
                     'success' => true,

@@ -114,18 +114,6 @@
                         </div>
                         <div class="flex items-center gap-2 flex-wrap">
                             <template x-if="selectedAstapDetail && (selectedAstapDetail.kemitraan_id || selectedAstapDetail.id)">
-                                <button type="button" @click="showDetailModal = false; openPrintBast(selectedAstapDetail, selectedAstapDetail.is_dimanfaatkan)"
-                                   class="px-2.5 py-1 rounded-xl text-[10.5px] font-extrabold bg-gradient-to-r from-purple-600/30 to-indigo-600/30 hover:from-purple-600/50 hover:to-indigo-600/50 text-purple-200 border border-purple-500/40 flex items-center gap-1.5 transition-all active:scale-95 shadow-sm cursor-pointer"
-                                   title="Buka Dokumen Resmi Berita Acara Serah Terima (BAST Kemitraan Format A4)">
-                                    <span>🖨️</span>
-                                    <span>Cetak Draf BAST</span>
-                                </button>
-                                <button type="button" @click="openEditPksModal(selectedAstapDetail)"
-                                   class="px-2.5 py-1 rounded-xl text-[10.5px] font-extrabold bg-gradient-to-r from-amber-600/30 to-orange-600/30 hover:from-amber-600/50 hover:to-orange-600/50 text-amber-200 border border-amber-500/40 flex items-center gap-1.5 transition-all active:scale-95 shadow-sm cursor-pointer"
-                                   title="Edit Data Dasar Dokumen Perjanjian Kerja Sama (PKS)">
-                                    <span>✏️</span>
-                                    <span>Edit Data PKS</span>
-                                </button>
                                 <template x-if="selectedAstapDetail.status_konsesi !== 'Dikembalikan ke Rekanan' && selectedAstapDetail.status_konsesi !== 'Selesai' && selectedAstapDetail.status_konsesi !== 'Selesai / Reklasifikasi' && selectedAstapDetail.status_konsesi !== 'Dihentikan'">
                                     <button type="button" @click="openExtendModalFromDetail()"
                                        class="px-2.5 py-1 rounded-xl text-[10.5px] font-extrabold bg-gradient-to-r from-emerald-600/30 to-teal-600/30 hover:from-emerald-600/50 hover:to-teal-600/50 text-emerald-200 border border-emerald-500/40 flex items-center gap-1.5 transition-all active:scale-95 shadow-sm cursor-pointer"
@@ -1332,18 +1320,6 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                         </svg>
                         <span>Perpanjang PKS (Extend)</span>
-                    </button>
-                </template>
-
-                <!-- Tombol Edit Metadata Dokumen PKS (KMT-03) -->
-                <template x-if="selectedAstapDetail && (selectedAstapDetail.kemitraan_id || selectedAstapDetail.id)">
-                    <button type="button" @click="openEditPksModal(selectedAstapDetail)"
-                        class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs transition-all shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 hover:-translate-y-0.5 active:scale-95 flex items-center gap-2 cursor-pointer"
-                        title="Edit Dokumen PKS, Nama Rekanan, Nilai, dan Tanggal Konsesi">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                        <span>Edit Data PKS</span>
                     </button>
                 </template>
             </div>
