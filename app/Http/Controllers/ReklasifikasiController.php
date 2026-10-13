@@ -353,6 +353,62 @@ class ReklasifikasiController extends Controller
             }
         }
 
+        // Validasi Mandatory Form Kemitraan Pihak Ketiga (Akun 1.5.2)
+        if (($validated['tujuan_kib'] ?? null) === 'KEMITRAAN') {
+            $spek = $request->input('spesifikasi_baru', []);
+            $firstItem = (!empty($spek['items']) && is_array($spek['items']) && !empty($spek['items'][0])) ? $spek['items'][0] : $spek;
+
+            $mitraNama = trim((string) ($firstItem['kemitraan_mitra'] ?? ($spek['kemitraan_mitra'] ?? '')));
+            $pimpinan = trim((string) ($firstItem['kemitraan_pimpinan'] ?? ($spek['kemitraan_pimpinan'] ?? '')));
+            $pksNo = trim((string) ($firstItem['kemitraan_perjanjian_no'] ?? ($spek['kemitraan_perjanjian_no'] ?? '')));
+            $pksTgl = trim((string) ($firstItem['kemitraan_tanggal_pks'] ?? ($spek['kemitraan_tanggal_pks'] ?? '')));
+            $tglMulai = trim((string) ($firstItem['kemitraan_tanggal_mulai'] ?? ($spek['kemitraan_tanggal_mulai'] ?? '')));
+            $tglSelesai = trim((string) ($firstItem['kemitraan_tanggal_selesai'] ?? ($spek['kemitraan_tanggal_selesai'] ?? '')));
+
+            if (empty($mitraNama)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Nama Perusahaan Mitra / Rekanan wajib diisi untuk reklasifikasi ke Kemitraan.',
+                ], 422);
+            }
+            if (empty($pimpinan)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pejabat Mitra / Direktur Rekanan wajib diisi untuk reklasifikasi ke Kemitraan.',
+                ], 422);
+            }
+            if (empty($pksNo)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Nomor Dokumen Perjanjian (PKS / MoU) wajib diisi untuk reklasifikasi ke Kemitraan.',
+                ], 422);
+            }
+            if (empty($pksTgl)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tanggal Penandatanganan PKS wajib dipilih untuk reklasifikasi ke Kemitraan.',
+                ], 422);
+            }
+            if (empty($tglMulai)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tanggal Mulai Berlaku Konsesi wajib dipilih untuk reklasifikasi ke Kemitraan.',
+                ], 422);
+            }
+            if (empty($tglSelesai)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tanggal Berakhir Konsesi wajib dipilih untuk reklasifikasi ke Kemitraan.',
+                ], 422);
+            }
+            if ($tglMulai && $tglSelesai && strtotime($tglSelesai) < strtotime($tglMulai)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tanggal Berakhir Konsesi tidak boleh mendahului Tanggal Mulai Berlaku.',
+                ], 422);
+            }
+        }
+
         $astap = Astap::findOrFail($validated['astap_id']);
 
         // Proteksi Validasi Duplikasi: Jenis reklasifikasi non-repeatable dalam satu periode tahun anggaran

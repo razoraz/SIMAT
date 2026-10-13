@@ -965,7 +965,7 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
-                                    Pejabat Mitra / Direktur Rekanan:
+                                    Pejabat Mitra / Direktur Rekanan: <span class="text-rose-400">*</span>
                                 </label>
                                 <input type="text" x-model="formData.spekBaru.kemitraan_pimpinan"
                                     placeholder="Nama Direktur / Penanggung Jawab Rekanan"
@@ -1011,7 +1011,7 @@
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
                                     <label class="block text-[10px] font-semibold text-slate-400 mb-1">
-                                        Tanggal Mulai Berlaku:
+                                        Tanggal Mulai Berlaku: <span class="text-rose-400">*</span>
                                     </label>
                                     <input type="date" x-model="formData.spekBaru.kemitraan_tanggal_mulai"
                                         @input="calcReklasKemitraanDurasi()"
@@ -1020,7 +1020,7 @@
                                 </div>
                                 <div>
                                     <label class="block text-[10px] font-semibold text-slate-400 mb-1">
-                                        Tanggal Berakhir (Konsesi Selesai):
+                                        Tanggal Berakhir (Konsesi Selesai): <span class="text-rose-400">*</span>
                                     </label>
                                     <input type="date" x-model="formData.spekBaru.kemitraan_tanggal_selesai"
                                         @input="calcReklasKemitraanDurasi()"

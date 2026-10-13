@@ -11338,11 +11338,16 @@
                         }
                     }
 
-                    // Validasi form Kemitraan Pihak Ketiga (Wajib ada Nama Mitra, Nomor Dokumen PKS, dan Tanggal PKS)
+                    // Validasi form Kemitraan Pihak Ketiga (Wajib ada Nama Mitra, Pejabat, Nomor PKS, Tanggal PKS, Tanggal Mulai & Tanggal Berakhir)
                     if (this.reklasTujuanKib === 'KEMITRAAN') {
                         const mitraNama = (this.reklasSpekBaru?.kemitraan_mitra || '').trim();
                         if (!mitraNama) {
                             this.showToast('Nama Perusahaan Mitra / Rekanan wajib diisi!', 'warning');
+                            return;
+                        }
+                        const pimpinan = (this.reklasSpekBaru?.kemitraan_pimpinan || '').trim();
+                        if (!pimpinan) {
+                            this.showToast('Pejabat Mitra / Direktur Rekanan wajib diisi!', 'warning');
                             return;
                         }
                         const pksNo = (this.reklasSpekBaru?.kemitraan_perjanjian_no || '').trim();
@@ -11353,6 +11358,20 @@
                         const pksTgl = (this.reklasSpekBaru?.kemitraan_tanggal_pks || '').trim();
                         if (!pksTgl) {
                             this.showToast('Tanggal Penandatanganan PKS wajib dipilih!', 'warning');
+                            return;
+                        }
+                        const tglMulai = (this.reklasSpekBaru?.kemitraan_tanggal_mulai || '').trim();
+                        if (!tglMulai) {
+                            this.showToast('Tanggal Mulai Berlaku Konsesi wajib dipilih!', 'warning');
+                            return;
+                        }
+                        const tglSelesai = (this.reklasSpekBaru?.kemitraan_tanggal_selesai || '').trim();
+                        if (!tglSelesai) {
+                            this.showToast('Tanggal Berakhir Konsesi wajib dipilih!', 'warning');
+                            return;
+                        }
+                        if (new Date(tglSelesai) < new Date(tglMulai)) {
+                            this.showToast('Tanggal Berakhir Konsesi tidak boleh mendahului Tanggal Mulai!', 'warning');
                             return;
                         }
                     }

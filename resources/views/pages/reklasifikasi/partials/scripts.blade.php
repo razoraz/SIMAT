@@ -949,6 +949,53 @@
 
             async submitFormTambah() {
                 if (this.isSubmitting) return;
+
+                // Validasi form Kemitraan Pihak Ketiga jika tujuan KIB adalah KEMITRAAN
+                if (this.formData.tujuan_kib === 'KEMITRAAN') {
+                    const spek = this.formData.spekBaru || {};
+                    const mitraNama = (spek.kemitraan_mitra || '').trim();
+                    if (!mitraNama) {
+                        if (typeof window.showSimatToast === 'function') window.showSimatToast('Nama Perusahaan Mitra / Rekanan wajib diisi!', 'warning');
+                        else alert('Nama Perusahaan Mitra / Rekanan wajib diisi!');
+                        return;
+                    }
+                    const pimpinan = (spek.kemitraan_pimpinan || '').trim();
+                    if (!pimpinan) {
+                        if (typeof window.showSimatToast === 'function') window.showSimatToast('Pejabat Mitra / Direktur Rekanan wajib diisi!', 'warning');
+                        else alert('Pejabat Mitra / Direktur Rekanan wajib diisi!');
+                        return;
+                    }
+                    const pksNo = (spek.kemitraan_perjanjian_no || '').trim();
+                    if (!pksNo) {
+                        if (typeof window.showSimatToast === 'function') window.showSimatToast('Nomor Dokumen Perjanjian (PKS / MoU) wajib diisi!', 'warning');
+                        else alert('Nomor Dokumen Perjanjian (PKS / MoU) wajib diisi!');
+                        return;
+                    }
+                    const pksTgl = (spek.kemitraan_tanggal_pks || '').trim();
+                    if (!pksTgl) {
+                        if (typeof window.showSimatToast === 'function') window.showSimatToast('Tanggal Penandatanganan PKS wajib dipilih!', 'warning');
+                        else alert('Tanggal Penandatanganan PKS wajib dipilih!');
+                        return;
+                    }
+                    const tglMulai = (spek.kemitraan_tanggal_mulai || '').trim();
+                    if (!tglMulai) {
+                        if (typeof window.showSimatToast === 'function') window.showSimatToast('Tanggal Mulai Berlaku Konsesi wajib dipilih!', 'warning');
+                        else alert('Tanggal Mulai Berlaku Konsesi wajib dipilih!');
+                        return;
+                    }
+                    const tglSelesai = (spek.kemitraan_tanggal_selesai || '').trim();
+                    if (!tglSelesai) {
+                        if (typeof window.showSimatToast === 'function') window.showSimatToast('Tanggal Berakhir Konsesi wajib dipilih!', 'warning');
+                        else alert('Tanggal Berakhir Konsesi wajib dipilih!');
+                        return;
+                    }
+                    if (new Date(tglSelesai) < new Date(tglMulai)) {
+                        if (typeof window.showSimatToast === 'function') window.showSimatToast('Tanggal Berakhir Konsesi tidak boleh mendahului Tanggal Mulai!', 'warning');
+                        else alert('Tanggal Berakhir Konsesi tidak boleh mendahului Tanggal Mulai!');
+                        return;
+                    }
+                }
+
                 this.isSubmitting = true;
 
                 try {

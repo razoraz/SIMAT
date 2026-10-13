@@ -938,27 +938,57 @@
                             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 text-[11px]">
                                 <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between gap-2 min-w-0">
                                     <span class="text-slate-400 font-medium shrink-0">Nomor SPK / Kontrak:</span>
-                                    <span class="text-cyan-300 font-mono font-bold truncate text-right" x-text="selectedAstapDetail.spk_nomor || '-'"></span>
+                                    <div class="text-right min-w-0 truncate">
+                                        <span class="text-cyan-300 font-mono font-bold truncate block" x-text="selectedAstapDetail.spk_nomor || '-'"></span>
+                                        <span x-show="selectedAstapDetail.spk_tanggal && selectedAstapDetail.spk_tanggal !== '-' && selectedAstapDetail.spk_nomor && selectedAstapDetail.spk_nomor !== '-'" 
+                                              class="text-[9.5px] text-slate-400 font-mono block leading-tight tracking-tight mt-0.5" 
+                                              x-text="'📅 ' + formatTanggalIndo(selectedAstapDetail.spk_tanggal)"></span>
+                                    </div>
                                 </div>
                                 <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between gap-2 min-w-0">
                                     <span class="text-slate-400 font-medium shrink-0">Surat Pesanan / BAP:</span>
-                                    <span class="text-purple-300 font-mono font-bold truncate text-right" x-text="selectedAstapDetail.surat_pesanan_nomor || '-'"></span>
+                                    <div class="text-right min-w-0 truncate">
+                                        <span class="text-purple-300 font-mono font-bold truncate block" x-text="selectedAstapDetail.surat_pesanan_nomor || '-'"></span>
+                                        <span x-show="selectedAstapDetail.surat_pesanan_tanggal && selectedAstapDetail.surat_pesanan_tanggal !== '-' && selectedAstapDetail.surat_pesanan_nomor && selectedAstapDetail.surat_pesanan_nomor !== '-'" 
+                                              class="text-[9.5px] text-slate-400 font-mono block leading-tight tracking-tight mt-0.5" 
+                                              x-text="'📅 ' + formatTanggalIndo(selectedAstapDetail.surat_pesanan_tanggal)"></span>
+                                    </div>
                                 </div>
                                 <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between gap-2 min-w-0">
                                     <span class="text-slate-400 font-medium shrink-0">Nomor Kwitansi:</span>
-                                    <span class="text-amber-300 font-mono font-bold truncate text-right" x-text="selectedAstapDetail.kwitansi_nomor || '-'"></span>
+                                    <div class="text-right min-w-0 truncate">
+                                        <span class="text-amber-300 font-mono font-bold truncate block" x-text="selectedAstapDetail.kwitansi_nomor || '-'"></span>
+                                        <span x-show="selectedAstapDetail.kwitansi_tanggal && selectedAstapDetail.kwitansi_tanggal !== '-' && selectedAstapDetail.kwitansi_nomor && selectedAstapDetail.kwitansi_nomor !== '-'" 
+                                              class="text-[9.5px] text-slate-400 font-mono block leading-tight tracking-tight mt-0.5" 
+                                              x-text="'📅 ' + formatTanggalIndo(selectedAstapDetail.kwitansi_tanggal)"></span>
+                                    </div>
                                 </div>
                                 <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between gap-2 min-w-0">
                                     <span class="text-slate-400 font-medium shrink-0">Nomor Faktur / Invoice:</span>
-                                    <span class="text-emerald-300 font-mono font-bold truncate text-right" x-text="selectedAstapDetail.faktur_nomor || '-'"></span>
+                                    <div class="text-right min-w-0 truncate">
+                                        <span class="text-emerald-300 font-mono font-bold truncate block" x-text="selectedAstapDetail.faktur_nomor || '-'"></span>
+                                        <span x-show="selectedAstapDetail.faktur_tanggal && selectedAstapDetail.faktur_tanggal !== '-' && selectedAstapDetail.faktur_nomor && selectedAstapDetail.faktur_nomor !== '-'" 
+                                              class="text-[9.5px] text-slate-400 font-mono block leading-tight tracking-tight mt-0.5" 
+                                              x-text="'📅 ' + formatTanggalIndo(selectedAstapDetail.faktur_tanggal)"></span>
+                                    </div>
                                 </div>
                                 <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between gap-2 min-w-0">
                                     <span class="text-slate-400 font-medium shrink-0">Nomor SP2D:</span>
-                                    <span class="text-teal-300 font-mono font-bold truncate text-right" x-text="selectedAstapDetail.sp2d_nomor || '-'"></span>
+                                    <div class="text-right min-w-0 truncate">
+                                        <span class="text-teal-300 font-mono font-bold truncate block" x-text="selectedAstapDetail.sp2d_nomor || '-'"></span>
+                                        <span x-show="selectedAstapDetail.sp2d_tanggal && selectedAstapDetail.sp2d_tanggal !== '-' && selectedAstapDetail.sp2d_nomor && selectedAstapDetail.sp2d_nomor !== '-'" 
+                                              class="text-[9.5px] text-slate-400 font-mono block leading-tight tracking-tight mt-0.5" 
+                                              x-text="'📅 ' + formatTanggalIndo(selectedAstapDetail.sp2d_tanggal)"></span>
+                                    </div>
                                 </div>
                                 <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between gap-2 min-w-0">
                                     <span class="text-slate-400 font-medium shrink-0">Nomor BAST:</span>
-                                    <span class="text-rose-300 font-mono font-bold truncate text-right" x-text="selectedAstapDetail.bast_dokumen_nomor || selectedAstapDetail.bast_nomor || selectedAstapDetail.belanja_modal?.bast_dokumen_nomor || '-'" :title="selectedAstapDetail.bast_dokumen_tanggal || selectedAstapDetail.bast_tanggal || ''"></span>
+                                    <div class="text-right min-w-0 truncate">
+                                        <span class="text-rose-300 font-mono font-bold truncate block" x-text="selectedAstapDetail.bast_dokumen_nomor || selectedAstapDetail.bast_nomor || selectedAstapDetail.belanja_modal?.bast_dokumen_nomor || '-'"></span>
+                                        <span x-show="(selectedAstapDetail.bast_dokumen_tanggal || selectedAstapDetail.bast_tanggal || selectedAstapDetail.belanja_modal?.bast_dokumen_tanggal) && (selectedAstapDetail.bast_dokumen_tanggal !== '-' && selectedAstapDetail.bast_tanggal !== '-') && (selectedAstapDetail.bast_dokumen_nomor || selectedAstapDetail.bast_nomor || selectedAstapDetail.belanja_modal?.bast_dokumen_nomor) && (selectedAstapDetail.bast_dokumen_nomor !== '-' && selectedAstapDetail.bast_nomor !== '-')" 
+                                              class="text-[9.5px] text-slate-400 font-mono block leading-tight tracking-tight mt-0.5" 
+                                              x-text="'📅 ' + formatTanggalIndo(selectedAstapDetail.bast_dokumen_tanggal || selectedAstapDetail.bast_tanggal || selectedAstapDetail.belanja_modal?.bast_dokumen_tanggal)"></span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
