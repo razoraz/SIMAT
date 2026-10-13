@@ -876,9 +876,15 @@ class BeritaAcaraController extends Controller
         if ($ext) {
             $judul = 'Berita Acara Serah Terima (BAST) Pelimpahan BMD';
             $nomor = $ext->nomor_bamb ?: ('BAST-EXT-' . $ext->id);
-            $nama = $ext->pj_tujuan_nama ?: 'BUDI HARTONO, S.Sos';
-            $nip = $ext->pj_tujuan_nip ?: '19760229 200801 1 010';
-            $jabatan = $ext->pj_tujuan_jabatan ?: 'Pengurus Barang / PPK RSUD Dr. H. Koesnandi';
+            if ($ext->tipe === 'keluar') {
+                $nama = $ext->pj_asal_nama ?: 'dr. H. Yus Priyatna, Sp.P';
+                $nip = $ext->pj_asal_nip ?: '196904121999031004';
+                $jabatan = $ext->pj_asal_jabatan ?: 'Direktur RSUD Dr. H. Koesnandi';
+            } else {
+                $nama = $ext->pj_tujuan_nama ?: 'BUDI HARTONO, S.Sos';
+                $nip = $ext->pj_tujuan_nip ?: '19760229 200801 1 010';
+                $jabatan = $ext->pj_tujuan_jabatan ?: 'Pengurus Barang / PPK RSUD Dr. H. Koesnandi';
+            }
             $tgl = $ext->tgl_signed ?: ($ext->tanggal_mutasi ? date('d/m/Y', strtotime($ext->tanggal_mutasi)) . ' WIB' : date('d/m/Y H:i') . ' WIB');
         }
 

@@ -11034,17 +11034,7 @@
                     if (it.registers && Array.isArray(it.registers) && it.registers.length > 0) {
                         return it.registers;
                     }
-                    const totalVol = parseInt(it.jumlah_volume) || 1;
-                    const totalVal = parseFloat(it.total_realisasi_num || it.total_realisasi || it.harga_satuan || 0);
-                    return [{
-                        id: it.id,
-                        nibar: it.kode_barang || 'Unit Register Utama',
-                        no_register: '0001',
-                        ruang_pemegang: it.ruang_unit || 'Gudang RSUD',
-                        kondisi: it.kondisi || 'Baik',
-                        harga_satuan: totalVol > 0 ? (totalVal / totalVol) : totalVal,
-                        status: it.status || 'Normal'
-                    }];
+                    return [];
                 },
 
                 toggleSelectAllNibars(selectAll = true) {
@@ -11070,11 +11060,18 @@
                 },
 
                 getReklasMutasiSelectedVolume() {
+                    const regs = this.getReklasAvailableRegisters();
+                    if (!regs || regs.length === 0) {
+                        return this.selectedAstapReklas ? (parseInt(this.selectedAstapReklas.jumlah_volume) || 1) : 0;
+                    }
                     return this.reklasSelectedNibarIds.length;
                 },
 
                 getReklasMutasiSelectedNilai() {
                     const regs = this.getReklasAvailableRegisters();
+                    if (!regs || regs.length === 0) {
+                        return this.selectedAstapReklas ? parseFloat(this.selectedAstapReklas.total_realisasi_num || this.selectedAstapReklas.total_realisasi || this.selectedAstapReklas.jumlah_realisasi || 0) : 0;
+                    }
                     let total = 0;
                     for (const id of this.reklasSelectedNibarIds) {
                         const r = regs.find(x => x.id === id);
@@ -11324,7 +11321,8 @@
                             this.showToast('SKPD / Dinas Penerima Mutasi wajib diisi!', 'warning');
                             return;
                         }
-                        if (!this.reklasSelectedNibarIds || this.reklasSelectedNibarIds.length === 0) {
+                        const hasRealRegs = (this.selectedAstapReklas?.registers && this.selectedAstapReklas.registers.length > 0);
+                        if (hasRealRegs && (!this.reklasSelectedNibarIds || this.reklasSelectedNibarIds.length === 0)) {
                             this.showToast('Pilih minimal 1 unit register NIBAR yang akan dimutasikan!', 'warning');
                             return;
                         }
@@ -11475,7 +11473,7 @@
                             nomor_sk_dasar: (this.reklasJenis === 'mutasi_eksternal') ? this.reklasNomorSkDasar : null,
                             tanggal_bast: (this.reklasJenis === 'hibah') ? this.reklasTanggalBastHibah : ((this.reklasJenis === 'mutasi_eksternal') ? this.reklasTanggalBastMutasi : null),
                             tanggal_dokumen_koreksi: (this.reklasJenis === 'koreksi_nilai') ? this.reklasDokumenTglKoreksi : null,
-                            selected_register_ids: (this.reklasJenis === 'mutasi_eksternal') ? this.reklasSelectedNibarIds : null,
+                            selected_register_ids: (this.reklasJenis === 'mutasi_eksternal' && (this.selectedAstapReklas?.registers && this.selectedAstapReklas.registers.length > 0)) ? this.reklasSelectedNibarIds : null,
                             keterangan: this.getReklasNarasiPreview(),
                             progres_persen: (this.reklasJenis === 'kdp') ? 100 : undefined,
                             jumlah_anggaran: (this.reklasJenis === 'koreksi_nilai') ? (this.isReklasBelanjaModal() ? this.reklasNilaiAnggaran : null) : (parseFloat(it.jumlah_anggaran) || null),

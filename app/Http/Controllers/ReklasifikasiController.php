@@ -1619,6 +1619,30 @@ class ReklasifikasiController extends Controller
                             $targetRegisters = $astap->registers;
                         }
                     }
+                } else {
+                    // Penanganan Graceful jika aset belum memiliki register fisik (Zero-Register Fallback)
+                    $vol = max(1, (int) $astap->jumlah_volume);
+                    $thn = $astap->tahun_perolehan ?: date('Y');
+                    $startReg = \App\Models\AstapRegister::where('tahun_perolehan', $thn)->max('no_register_int') ?: 0;
+                    $kode108Clean = preg_replace('/[^0-9]/', '', $astap->jenisAstap->sub_rincian_objek ?? $astap->kode_barang ?? '000000000000');
+                    for ($i = 0; $i < $vol; $i++) {
+                        $regNum = $startReg + $i + 1;
+                        $noRegStr = str_pad($regNum, 7, '0', STR_PAD_LEFT);
+                        $nibar = "1201351102000000280000{$thn}{$kode108Clean}{$noRegStr}";
+                        $regCreated = \App\Models\AstapRegister::create([
+                            'astap_id'        => $astap->id,
+                            'tahun_perolehan' => $thn,
+                            'no_register_int' => $regNum,
+                            'no_register'     => $nibar,
+                            'nibar'           => $nibar,
+                            'qr_code_path'    => "/scan/{$nibar}",
+                            'ruang_pemegang'  => null,
+                            'kondisi'         => $astap->kondisi ?: 'Baik',
+                            'status'          => 'Mutasi Keluar OPD',
+                            'harga_satuan'    => (float) ($astap->total_realisasi / $vol),
+                        ]);
+                        $targetRegisters->push($regCreated);
+                    }
                 }
 
                 $selectedVol = $targetRegisters->isNotEmpty() ? $targetRegisters->count() : max(1, (int) $astap->jumlah_volume);
@@ -1684,11 +1708,12 @@ class ReklasifikasiController extends Controller
                 }
 
                 // Update status HANYA register yang dipilih menjadi 'Mutasi Keluar OPD' & link ke mutasi_eksternal_registers
+                // Kosongkan ruang_pemegang menjadi null (nama OPD disimpan di mutasi_eksternals & catatan)
                 if ($targetRegisters->isNotEmpty()) {
                     foreach ($targetRegisters as $reg) {
                         $reg->update([
                             'status'         => 'Mutasi Keluar OPD',
-                            'ruang_pemegang' => 'Mutasi Keluar: ' . $skpdTujuan,
+                            'ruang_pemegang' => null,
                             'kondisi'        => $reg->kondisi ?: 'Baik',
                         ]);
 
@@ -1889,12 +1914,13 @@ class ReklasifikasiController extends Controller
                         ]);
                     }
 
-                    // Kembalikan status register NIBAR menjadi 'Aktif' dan pulihkan ruangan
+                    // Kembalikan status register NIBAR sesuai ketersediaan ruangan (defensive reversion)
                     if ($astap && $astap->registers()->exists()) {
-                        $astap->registers()->where('status', 'Mutasi Keluar OPD')->get()->each(function($r) {
+                        $astap->registers()->where('status', 'Mutasi Keluar OPD')->with('unit')->get()->each(function($r) {
+                            $hasUnit = !empty($r->unit_id) || !empty($r->unit);
                             $r->update([
-                                'status' => 'Aktif',
-                                'ruang_pemegang' => $r->unit?->nama ?? null,
+                                'status'         => $hasUnit ? 'Tidak Tersedia' : 'Tersedia',
+                                'ruang_pemegang' => $hasUnit ? ($r->unit?->nama ?? $r->ruang_pemegang) : null,
                             ]);
                         });
                     }

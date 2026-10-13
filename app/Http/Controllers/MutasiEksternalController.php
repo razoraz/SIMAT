@@ -1441,12 +1441,19 @@ class MutasiEksternalController extends Controller
                     }
                     $astap->update($astapPayload);
 
-                    // Pulihkan register terkait kembali ke status 'Aktif'
-                    AstapRegister::where('astap_id', $astap->id)
+                    // Pulihkan register terkait kembali ke status sesuai ketersediaan unit/ruangan (Defensive Reversion)
+                    $mutasiRegisters = AstapRegister::where('astap_id', $astap->id)
                         ->where('status', 'Mutasi Keluar OPD')
-                        ->update([
-                            'status' => 'Aktif',
+                        ->with('unit')
+                        ->get();
+
+                    foreach ($mutasiRegisters as $mReg) {
+                        $hasUnit = !empty($mReg->unit_id) || !empty($mReg->unit);
+                        $mReg->update([
+                            'status'         => $hasUnit ? 'Tidak Tersedia' : 'Tersedia',
+                            'ruang_pemegang' => $hasUnit ? ($mReg->unit?->nama ?? $mReg->ruang_pemegang) : null,
                         ]);
+                    }
 
                     // Soft-delete juga log transaksi reklasifikasi terkait jika ada
                     \App\Models\AstapReklas::where('astap_id', $astap->id)
@@ -1615,6 +1622,25 @@ class MutasiEksternalController extends Controller
                 $tglBast = $mutInfo['tanggal_bast'] ?? ($rk->tanggal_reklas ? $rk->tanggal_reklas->format('Y-m-d') : date('Y-m-d'));
                 $nomorBast = $rk->nomor_ba_reklas ?: ($mutInfo['nomor_bast'] ?? ('000.2.3.2/BAST-KLR-' . str_pad($astap->id, 3, '0', STR_PAD_LEFT) . '/430.10.7/' . date('Y')));
 
+                $selectedRegIds = $mutInfo['selected_register_ids'] ?? [];
+                if (!is_array($selectedRegIds)) {
+                    $selectedRegIds = [];
+                }
+
+                $targetRegisters = collect();
+                if ($astap->registers && $astap->registers->isNotEmpty()) {
+                    if (!empty($selectedRegIds)) {
+                        $targetRegisters = $astap->registers->whereIn('id', $selectedRegIds);
+                    } else {
+                        $targetRegisters = $astap->registers->where('status', '!=', 'Mutasi Keluar OPD');
+                        if ($targetRegisters->isEmpty()) {
+                            $targetRegisters = $astap->registers;
+                        }
+                    }
+                }
+
+                $vol = $targetRegisters->isNotEmpty() ? $targetRegisters->count() : max(1, (int) $astap->jumlah_volume);
+
                 $mutasiKeluar = MutasiEksternal::create([
                     'astap_id'            => $astap->id,
                     'nomor_bamb'          => $nomorBast,
@@ -1633,7 +1659,7 @@ class MutasiEksternalController extends Controller
                     'pj_tujuan_jabatan'   => $mutInfo['pj_tujuan_jabatan'] ?? 'Pejabat Penerima OPD',
                     'nomor_sk_dasar'      => $mutInfo['nomor_sk_dasar'] ?? $nomorBast,
                     'status'              => 'Disahkan (Selesai)',
-                    'jumlah_volume'       => max(1, (int) $astap->jumlah_volume),
+                    'jumlah_volume'       => $vol,
                     'satuan'              => $astap->satuan ?: 'Unit',
                     'nilai_perolehan'     => (float) ($rk->nilai_reklas ?: $astap->total_realisasi),
                     'kondisi'             => 'Baik',
@@ -1643,9 +1669,9 @@ class MutasiEksternalController extends Controller
                     'is_deleted'          => 0,
                 ]);
 
-                // Link registers
-                if ($astap->registers && $astap->registers->isNotEmpty()) {
-                    foreach ($astap->registers as $reg) {
+                // Link registers: HANYA targetRegisters yang dipilih untuk mutasi ini!
+                if ($targetRegisters->isNotEmpty()) {
+                    foreach ($targetRegisters as $reg) {
                         \App\Models\MutasiEksternalRegister::firstOrCreate(
                             [
                                 'mutasi_eksternal_id' => $mutasiKeluar->id,
@@ -1653,12 +1679,13 @@ class MutasiEksternalController extends Controller
                             ],
                             [
                                 'kondisi' => $reg->kondisi ?: 'Baik',
-                                'catatan' => 'Mutasi Keluar Antar-OPD Reklasifikasi',
+                                'catatan' => 'Mutasi Keluar Antar-OPD ke ' . $skpdTujuan,
                             ]
                         );
-                        if ($reg->status !== 'Mutasi Keluar OPD') {
-                            $reg->update(['status' => 'Mutasi Keluar OPD']);
-                        }
+                        $reg->update([
+                            'status'         => 'Mutasi Keluar OPD',
+                            'ruang_pemegang' => null,
+                        ]);
                     }
                 }
             }

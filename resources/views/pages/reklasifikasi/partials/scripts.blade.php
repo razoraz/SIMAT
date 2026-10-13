@@ -327,6 +327,7 @@
                 jabatan_opd_tujuan: '',
                 alamat_instansi: '',
                 nomor_sk_dasar: '',
+                selected_register_ids: [],
             },
 
             // 108 Hierarchy Getters
@@ -510,6 +511,7 @@
                     jabatan_opd_tujuan: '',
                     alamat_instansi: '',
                     nomor_sk_dasar: '',
+                    selected_register_ids: [],
                     spekBaru: {
                         tanah_luas_m2: '',
                         tanah_hak: 'Hak Pakai',
@@ -547,9 +549,55 @@
                 this.showModalTambah = true;
             },
 
+            getReklasAvailableRegisters() {
+                if (!this.selectedAstap) return [];
+                if (this.selectedAstap.registers && Array.isArray(this.selectedAstap.registers) && this.selectedAstap.registers.length > 0) {
+                    return this.selectedAstap.registers;
+                }
+                return [];
+            },
+
+            toggleSelectAllReklasNibars(selectAll = true) {
+                if (!selectAll) {
+                    this.formData.selected_register_ids = [];
+                } else {
+                    const regs = this.getReklasAvailableRegisters();
+                    this.formData.selected_register_ids = regs
+                        .filter(r => r.status !== 'Mutasi Keluar OPD')
+                        .map(r => r.id);
+                }
+                this.onSelectedNibarsChange();
+            },
+
+            calculateSelectedNibarsValue() {
+                if (!this.selectedAstap) return 0;
+                const regs = this.getReklasAvailableRegisters();
+                if (!regs || regs.length === 0) {
+                    return parseFloat(this.selectedAstap.total_realisasi || 0);
+                }
+                const selectedIds = this.formData.selected_register_ids || [];
+                if (selectedIds.length === 0) return 0;
+
+                const defaultUnitVal = parseFloat(this.selectedAstap.total_realisasi || 0) / Math.max(1, regs.length);
+                let total = 0;
+                for (const reg of regs) {
+                    if (selectedIds.includes(reg.id)) {
+                        total += parseFloat(reg.harga_satuan || defaultUnitVal);
+                    }
+                }
+                return total;
+            },
+
+            onSelectedNibarsChange() {
+                if (this.formData.jenis_reklas === 'MUTASI_EKSTERNAL') {
+                    this.formData.nilai_reklas = this.calculateSelectedNibarsValue();
+                }
+            },
+
             onSelectAstap(astapId) {
                 if (!astapId) {
                     this.selectedAstap = null;
+                    this.formData.selected_register_ids = [];
                     return;
                 }
                 const found = (window.kandidatAstaps || []).find(it => String(it.id) === String(astapId));
@@ -559,8 +607,18 @@
                 this.formData.nama_barang = found.nama_barang || '';
                 this.formData.nilai_realisasi_baru = parseFloat(found.total_realisasi || 0);
 
+                if (found.registers && found.registers.length > 0) {
+                    this.formData.selected_register_ids = found.registers
+                        .filter(r => r.status !== 'Mutasi Keluar OPD')
+                        .map(r => r.id);
+                } else {
+                    this.formData.selected_register_ids = [];
+                }
+
                 if (this.formData.jenis_reklas === 'KOREKSI_LAIN') {
                     this.formData.nilai_reklas = 0;
+                } else if (this.formData.jenis_reklas === 'MUTASI_EKSTERNAL') {
+                    this.formData.nilai_reklas = this.calculateSelectedNibarsValue();
                 } else {
                     this.formData.nilai_reklas = parseFloat(found.total_realisasi || 0);
                 }
@@ -636,6 +694,16 @@
                         this.formData.jenis_reklasifikasi_tujuan_id = mutasiRow.id;
                     }
                     this.formData.tujuan_kib = 'KOREKSI';
+                    if (this.selectedAstap && this.selectedAstap.registers && this.selectedAstap.registers.length > 0) {
+                        if (!this.formData.selected_register_ids || this.formData.selected_register_ids.length === 0) {
+                            this.formData.selected_register_ids = this.selectedAstap.registers
+                                .filter(r => r.status !== 'Mutasi Keluar OPD')
+                                .map(r => r.id);
+                        }
+                        this.formData.nilai_reklas = this.calculateSelectedNibarsValue();
+                    } else if (this.selectedAstap) {
+                        this.formData.nilai_reklas = parseFloat(this.selectedAstap.total_realisasi || 0);
+                    }
                 } else if (this.formData.jenis_reklas === 'KOREKSI_LAIN') {
                     const currentTot = parseFloat(this.selectedAstap?.total_realisasi || 0);
                     if (!this.formData.nilai_realisasi_baru || this.formData.nilai_realisasi_baru === 0) {
@@ -996,11 +1064,25 @@
                     }
                 }
 
+                // Validasi khusus Mutasi Eksternal jika aset memiliki register
+                if (this.formData.jenis_reklas === 'MUTASI_EKSTERNAL' && this.selectedAstap && this.selectedAstap.registers && this.selectedAstap.registers.length > 0) {
+                    if (!this.formData.selected_register_ids || this.formData.selected_register_ids.length === 0) {
+                        const errMsg = '⚠️ Pilih minimal 1 unit register/NIBAR yang akan dimutasikan keluar OPD.';
+                        if (typeof window.showSimatToast === 'function') {
+                            window.showSimatToast(errMsg, 'error');
+                        } else {
+                            alert(errMsg);
+                        }
+                        return;
+                    }
+                }
+
                 this.isSubmitting = true;
 
                 try {
                     const payload = {
                         ...this.formData,
+                        selected_register_ids: (this.formData.jenis_reklas === 'MUTASI_EKSTERNAL') ? (this.formData.selected_register_ids || []) : null,
                         tipe_koreksi: this.formData.tipe_koreksi || 'kurang',
                         sub_koreksi: (this.formData.jenis_reklas === 'KOREKSI_LAIN') ? (this.formData.sub_koreksi || 'biasa') : null,
                         nilai_realisasi_baru: parseFloat(this.formData.nilai_realisasi_baru || 0),

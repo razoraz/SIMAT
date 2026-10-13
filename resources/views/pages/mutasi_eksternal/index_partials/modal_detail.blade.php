@@ -621,7 +621,7 @@
                             <thead class="bg-slate-950 text-slate-400 font-bold uppercase text-[9.5px] border-b border-slate-800 shadow-sm" style="position: sticky; top: 0; z-index: 10; background-color: #020617;">
                                 <tr>
                                     <th class="px-3.5 py-2.5 text-center">NIBAR &amp; No. Register Resmi</th>
-                                    <th class="px-3.5 py-2.5 text-center">Penempatan Ruangan</th>
+                                    <th class="px-3.5 py-2.5 text-center" x-text="(selectedMutasi && selectedMutasi.tipe === 'keluar') ? 'Instansi Tujuan' : 'Penempatan Ruangan'">Penempatan Ruangan</th>
                                     <th class="px-3.5 py-2.5 text-center">Kondisi</th>
                                     <th class="px-3.5 py-2.5 text-center whitespace-nowrap">QR Code</th>
                                 </tr>
@@ -631,16 +631,25 @@
                                     <tr class="hover:bg-slate-800/60 transition-colors">
                                         <td class="px-3.5 py-2.5 font-mono font-bold text-emerald-400 whitespace-nowrap text-center" x-text="reg.nibar || reg.no_register"></td>
                                         <td class="px-3.5 py-2.5 text-center">
-                                            <template x-if="reg.ruang_pemegang">
+                                            <!-- 1. Barang Mutasi Keluar OPD -->
+                                            <template x-if="(selectedMutasi && selectedMutasi.tipe === 'keluar') || reg.status === 'Mutasi Keluar OPD'">
+                                                <span class="inline-flex items-center space-x-1.5 text-cyan-300 font-bold bg-cyan-500/10 px-2.5 py-1 rounded-lg border border-cyan-500/30 text-[10.5px] justify-center">
+                                                    <span>🏛️</span>
+                                                    <span x-text="(selectedMutasi && selectedMutasi.opd_tujuan) ? selectedMutasi.opd_tujuan : 'SKPD / OPD Luar'"></span>
+                                                </span>
+                                            </template>
+                                            <!-- 2. Barang Masuk / Internal yang memiliki penempatan ruangan -->
+                                            <template x-if="!(selectedMutasi && selectedMutasi.tipe === 'keluar') && reg.status !== 'Mutasi Keluar OPD' && reg.ruang_pemegang">
                                                 <span class="inline-flex items-center space-x-1.5 text-slate-200 font-semibold justify-center">
                                                     <span class="text-teal-400 text-xs">📍</span>
                                                     <span x-text="reg.ruang_pemegang"></span>
                                                 </span>
                                             </template>
-                                            <template x-if="!reg.ruang_pemegang">
+                                            <!-- 3. Barang Masuk / Internal yang belum ditempatkan (Gudang) -->
+                                            <template x-if="!(selectedMutasi && selectedMutasi.tipe === 'keluar') && reg.status !== 'Mutasi Keluar OPD' && !reg.ruang_pemegang">
                                                 <span class="inline-flex items-center space-x-1.5 text-amber-400 font-bold bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/30 text-[10px] justify-center">
-                                                    <span>⚠️</span>
-                                                    <span>Belum Ditempatkan</span>
+                                                    <span>📦</span>
+                                                    <span>Gudang Aset (Belum Ditempatkan)</span>
                                                 </span>
                                             </template>
                                         </td>
