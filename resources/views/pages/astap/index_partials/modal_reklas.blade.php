@@ -852,24 +852,14 @@
                                 <!-- Multi-Item Navigation & Mass Actions (Tampil bila > 1 Item Rincian Barang) -->
                                 <template x-if="reklasSpekBaruItems && reklasSpekBaruItems.length > 1">
                                     <div class="p-3 rounded-2xl bg-slate-950/80 border border-cyan-500/30 space-y-2.5 shadow-inner">
-                                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                                            <div class="flex items-center space-x-2">
-                                                <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
-                                                <span class="text-[11px] font-extrabold text-cyan-300 tracking-wide uppercase">
-                                                    Pilih Rincian Barang (<span x-text="reklasSpekBaruItems.length"></span> Item):
-                                                </span>
-                                                <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold"
-                                                      :class="isPartialReklas() ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'"
-                                                      x-text="getSelectedReklasItems().length + ' dari ' + reklasSpekBaruItems.length + ' Item Dialihkan' + (isPartialReklas() ? ' (Reklas Parsial)' : ' (Penuh)')"></span>
-                                            </div>
-                                            <!-- Tombol Salin Cepat Spesifikasi ke Seluruh Item -->
-                                            <button type="button" @click="copyActiveSpekToAll()"
-                                                class="px-2.5 py-1 rounded-xl bg-cyan-950/90 hover:bg-cyan-900 text-cyan-300 hover:text-white border border-cyan-500/40 hover:border-cyan-400 text-[10.5px] font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95 cursor-pointer">
-                                                <svg class="w-3.5 h-3.5 text-cyan-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
-                                                </svg>
-                                                <span>⚡ Salin Spesifikasi ke Semua Item</span>
-                                            </button>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                                            <span class="text-[11px] font-extrabold text-cyan-300 tracking-wide uppercase">
+                                                Pilih Rincian Barang (<span x-text="reklasSpekBaruItems.length"></span> Item):
+                                            </span>
+                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold"
+                                                  :class="isPartialReklas() ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'"
+                                                  x-text="getSelectedReklasItems().length + ' dari ' + reklasSpekBaruItems.length + ' Item Dialihkan' + (isPartialReklas() ? ' (Reklas Parsial)' : ' (Penuh)')"></span>
                                         </div>
 
                                         <!-- Tab Pills: Full-Width (2-5 Item) & Scrollable (6+ Item) -->
