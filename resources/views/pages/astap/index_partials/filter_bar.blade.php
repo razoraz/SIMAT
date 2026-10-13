@@ -150,7 +150,9 @@
                                 <option value="hibah" class="bg-slate-900 text-amber-300 py-2 font-medium">🎁 Hibah Masuk</option>
                                 <option value="belanja_barang" class="bg-slate-900 text-indigo-300 py-2 font-medium">📦 Belanja Barang (Perbekalan)</option>
                                 <option value="pelimpahan" class="bg-slate-900 text-purple-300 py-2 font-medium">🔄 Pelimpahan SKPD</option>
-                                <option value="kemitraan" class="bg-slate-900 text-cyan-300 py-2 font-medium">🤝 Kemitraan Pihak Ketiga</option>
+                                <option value="kemitraan" class="bg-slate-900 text-cyan-300 py-2 font-medium">🤝 Kemitraan (Semua)</option>
+                                <option value="bmd_dimanfaatkan" class="bg-slate-900 text-cyan-400 py-2 font-medium">🏛️ BMD Dimanfaatkan Mitra</option>
+                                <option value="kemitraan_mitra" class="bg-slate-900 text-teal-300 py-2 font-medium">🤝 Kemitraan (Aset Mitra)</option>
                             </select>
                             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400">
                                 <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>

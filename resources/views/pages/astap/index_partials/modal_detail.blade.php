@@ -29,12 +29,6 @@
                                 }"
                                 x-text="selectedAstapDetail?.category === 'EXTRACOM' ? '📦 EXTRACOM' : (getEffectiveKibCategory(selectedAstapDetail) === 'ASET LAIN' ? 'ASET LAIN (1.5.4)' : getEffectiveKibCategory(selectedAstapDetail))"></span>
 
-                            <template x-if="selectedAstapDetail?.sumber_dana === 'kemitraan' || selectedAstapDetail?.sumber_dana_raw === 'kemitraan' || selectedAstapDetail?.category === 'KEMITRAAN'">
-                                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 bg-cyan-500/20 text-cyan-300 border-cyan-500/30">
-                                    🤝 KEMITRAAN AKUN 1.5.2
-                                </span>
-                            </template>
-
                             <template x-if="selectedAstapDetail?.sumber_dana === 'hibah' || selectedAstapDetail?.sumber_dana_raw === 'hibah' || selectedAstapDetail?.jenis_reklas === 'HIBAH_MASUK'">
                                 <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 bg-amber-400/20 text-amber-300 border-amber-400/30">
                                     🎁 HIBAH
@@ -53,9 +47,10 @@
                                 </span>
                             </template>
 
-                            <template x-if="selectedAstapDetail?.sumber_dana === 'kemitraan' || selectedAstapDetail?.sumber_dana_raw === 'kemitraan' || !!selectedAstapDetail?.kemitraan">
-                                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 bg-cyan-500/20 text-cyan-300 border-cyan-500/30">
-                                    🤝 KEMITRAAN PIHAK KETIGA
+                            <template x-if="selectedAstapDetail?.sumber_dana === 'kemitraan' || selectedAstapDetail?.sumber_dana_raw === 'kemitraan' || selectedAstapDetail?.category === 'KEMITRAAN' || !!selectedAstapDetail?.kemitraan">
+                                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 shadow-sm"
+                                    :class="(selectedAstapDetail?.is_bmd_dimanfaatkan || selectedAstapDetail?.kemitraan?.tipe_kemitraan === 'dimanfaatkan') ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40 shadow-cyan-500/10' : 'bg-teal-500/20 text-teal-300 border-teal-400/40 shadow-teal-500/10'"
+                                    x-text="(selectedAstapDetail?.is_bmd_dimanfaatkan || selectedAstapDetail?.kemitraan?.tipe_kemitraan === 'dimanfaatkan') ? '🏛️ BMD DIMANFAATKAN' : '🤝 KEMITRAAN PIHAK KETIGA'">
                                 </span>
                             </template>
 
@@ -241,6 +236,50 @@
                                     <span class="text-slate-400 block text-[10px] uppercase font-bold">Status Pemindahtanganan:</span>
                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                                         ✅ Selesai / Diserahkan
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- DOKUMEN PKS KEMITRAAN / PEMANFAATAN BMD RSUD -->
+                        <div x-show="selectedAstapDetail?.sumber_dana === 'kemitraan' || selectedAstapDetail?.sumber_dana_raw === 'kemitraan' || !!selectedAstapDetail?.kemitraan"
+                             class="p-4 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-2 text-cyan-300 font-extrabold text-xs uppercase tracking-wider">
+                                    <span x-text="(selectedAstapDetail?.is_bmd_dimanfaatkan || selectedAstapDetail?.kemitraan?.tipe_kemitraan === 'dimanfaatkan') ? '🏛️ Dokumen Perjanjian Kerja Sama (PKS) Pemanfaatan BMD RSUD' : '🤝 Dokumen Perjanjian Kerja Sama (PKS) Kemitraan Pihak Ketiga'"></span>
+                                </div>
+                                <span class="px-2 py-0.5 rounded-lg text-[9.5px] font-black uppercase tracking-wider border shadow-sm"
+                                      :class="(selectedAstapDetail?.is_bmd_dimanfaatkan || selectedAstapDetail?.kemitraan?.tipe_kemitraan === 'dimanfaatkan') ? 'bg-cyan-500/20 text-cyan-200 border-cyan-400/40' : 'bg-teal-500/20 text-teal-200 border-teal-400/40'"
+                                      x-text="(selectedAstapDetail?.is_bmd_dimanfaatkan || selectedAstapDetail?.kemitraan?.tipe_kemitraan === 'dimanfaatkan') ? 'BMD DIMANFAATKAN' : 'ASET MITRA'">
+                                </span>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
+                                <div>
+                                    <span class="text-slate-400 block text-[10px] uppercase font-bold">Mitra Kerja Sama:</span>
+                                    <span class="font-bold text-white text-sm" x-text="selectedAstapDetail?.kemitraan?.mitra_nama || selectedAstapDetail?.spesifikasi_json?.mitra_nama || '-'"></span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 block text-[10px] uppercase font-bold">Nomor PKS:</span>
+                                    <span class="font-mono text-cyan-300 font-semibold" x-text="selectedAstapDetail?.kemitraan?.nomor_pks || selectedAstapDetail?.spesifikasi_json?.nomor_pks || '-'"></span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 block text-[10px] uppercase font-bold">Tanggal PKS:</span>
+                                    <span class="text-slate-200 font-medium" x-text="formatTanggalIndo(selectedAstapDetail?.kemitraan?.tanggal_pks || selectedAstapDetail?.spesifikasi_json?.tanggal_pks)"></span>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1 border-t border-cyan-500/20">
+                                <div>
+                                    <span class="text-slate-400 block text-[10px] uppercase font-bold">Skema Pemanfaatan:</span>
+                                    <span class="text-cyan-300 font-bold" x-text="selectedAstapDetail?.kemitraan?.skema_kemitraan || selectedAstapDetail?.spesifikasi_json?.skema_kemitraan || 'Sewa'"></span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 block text-[10px] uppercase font-bold">Masa Berlaku PKS:</span>
+                                    <span class="text-slate-200 font-mono text-[11px]" x-text="(selectedAstapDetail?.kemitraan?.tanggal_mulai ? formatTanggalIndo(selectedAstapDetail.kemitraan.tanggal_mulai) : '-') + ' s/d ' + (selectedAstapDetail?.kemitraan?.tanggal_selesai ? formatTanggalIndo(selectedAstapDetail.kemitraan.tanggal_selesai) : '-')"></span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 block text-[10px] uppercase font-bold">Status Konsesi:</span>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
+                                          x-text="selectedAstapDetail?.kemitraan?.status_konsesi || 'Aktif'">
                                     </span>
                                 </div>
                             </div>
@@ -1165,8 +1204,9 @@
                                                             </span>
                                                         </template>
                                                         <template x-if="(reg.status === 'Kemitraan' || selectedAstapDetail?.sumber_dana === 'kemitraan' || selectedAstapDetail?.category === 'KEMITRAAN' || !!selectedAstapDetail?.kemitraan) && reg.status !== 'Mutasi Keluar OPD' && selectedAstapDetail?.jenis_reklas !== 'MUTASI_EKSTERNAL'">
-                                                            <span class="px-2 py-0.5 rounded-md text-[9.5px] font-black uppercase tracking-wide bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                                                                🤝 KEMITRAAN
+                                                            <span class="px-2 py-0.5 rounded-md text-[9.5px] font-black uppercase tracking-wide border shadow-sm"
+                                                                  :class="(selectedAstapDetail?.is_bmd_dimanfaatkan || selectedAstapDetail?.kemitraan?.tipe_kemitraan === 'dimanfaatkan') ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' : 'bg-teal-500/20 text-teal-300 border-teal-500/30'"
+                                                                  x-text="(selectedAstapDetail?.is_bmd_dimanfaatkan || selectedAstapDetail?.kemitraan?.tipe_kemitraan === 'dimanfaatkan') ? '🏛️ BMD DIMANFAATKAN' : '🤝 KEMITRAAN'">
                                                             </span>
                                                         </template>
                                                         <span class="px-2.5 py-1 rounded-xl text-[10.5px] font-bold border inline-block shadow-sm"

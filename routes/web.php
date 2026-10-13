@@ -405,6 +405,23 @@ Route::middleware('auth')->group(function () {
                 $isMutasiKeluar = $isFullMutasiKeluar || $isPartialMutasiKeluar;
                 $skpdTujuanNama = $latestMutasiKeluar?->opd_tujuan ?: ($spec['mutasi_info']['skpd_tujuan'] ?? null);
 
+                // Klasifikasi Pemanfaatan BMD RSUD vs Aset Baru Ditambahkan Mitra
+                $isKemitraanAset = $a->isKemitraan() || $a->sumber_dana === 'kemitraan' || !empty($a->kemitraan);
+                $isBmdDimanfaatkan = false;
+                if ($isKemitraanAset) {
+                    $explicitTipe = $a->kemitraan?->tipe_kemitraan ?: ($spec['tipe_kemitraan'] ?? null);
+                    if ($explicitTipe === 'ditambahkan') {
+                        $isBmdDimanfaatkan = false;
+                    } elseif ($explicitTipe === 'dimanfaatkan') {
+                        $isBmdDimanfaatkan = true;
+                    } elseif ($a->is_reklas || $hasEverReklas || $a->jenis_reklas === 'KOREKSI_REKENING' || ($latestReklas && $latestReklas->tujuan_kib === 'KEMITRAAN') || !empty($spec['split_parent_id']) || !empty($a->kemitraan?->objek_astap_id)) {
+                        $isBmdDimanfaatkan = true;
+                    } else {
+                        $nb = strtolower($a->nama_barang ?? '');
+                        $isBmdDimanfaatkan = str_starts_with($nb, 'sewa ') || str_contains($nb, 'pemanfaatan');
+                    }
+                }
+
                 return [
                     'id' => $a->id,
                     'created_at' => $a->created_at ? $a->created_at->format('Y-m-d H:i:s') : null,
@@ -413,6 +430,7 @@ Route::middleware('auth')->group(function () {
                     'has_reklas' => $hasEverReklas,
                     'reklas_count' => $reklasCount,
                     'jenis_reklas' => $a->jenis_reklas ?: ($latestReklas?->jenis_reklas),
+                    'is_bmd_dimanfaatkan' => $isBmdDimanfaatkan,
                     'is_mutasi_keluar_full' => $isFullMutasiKeluar,
                     'is_mutasi_keluar_partial' => $isPartialMutasiKeluar,
                     'mutasi_keluar_count' => $mutatedRegsCount,
@@ -449,6 +467,8 @@ Route::middleware('auth')->group(function () {
                         'nomor_pks' => $a->kemitraan->nomor_pks,
                         'tanggal_pks' => $a->kemitraan->tanggal_pks ? $a->kemitraan->tanggal_pks->format('Y-m-d') : ($spec['tanggal_pks'] ?? null),
                         'skema_kemitraan' => $a->kemitraan->skema_kemitraan ?: ($spec['skema_kemitraan'] ?? 'Sewa'),
+                        'tipe_kemitraan' => $a->kemitraan->tipe_kemitraan ?: ($isBmdDimanfaatkan ? 'dimanfaatkan' : ($spec['tipe_kemitraan'] ?? 'dimanfaatkan')),
+                        'objek_astap_id' => $a->kemitraan->objek_astap_id,
                         'tanggal_mulai' => $a->kemitraan->tanggal_mulai ? $a->kemitraan->tanggal_mulai->format('Y-m-d') : ($spec['tanggal_mulai'] ?? null),
                         'tanggal_selesai' => $a->kemitraan->tanggal_selesai ? $a->kemitraan->tanggal_selesai->format('Y-m-d') : ($spec['tanggal_selesai'] ?? null),
                         'status_konsesi' => $a->kemitraan->status_konsesi ?: 'Aktif',
@@ -464,6 +484,8 @@ Route::middleware('auth')->group(function () {
                             'nomor_pks' => $a->bast_dokumen_nomor ?? ($spec['nomor_pks'] ?? '-'),
                             'tanggal_pks' => $a->bast_dokumen_tanggal ? (is_string($a->bast_dokumen_tanggal) ? $a->bast_dokumen_tanggal : $a->bast_dokumen_tanggal->format('Y-m-d')) : ($spec['tanggal_pks'] ?? null),
                             'skema_kemitraan' => $spec['skema_kemitraan'] ?? 'Sewa',
+                            'tipe_kemitraan' => $spec['tipe_kemitraan'] ?? ($isBmdDimanfaatkan ? 'dimanfaatkan' : 'ditambahkan'),
+                            'objek_astap_id' => $spec['objek_astap_id'] ?? null,
                             'tanggal_mulai' => $spec['tanggal_mulai'] ?? null,
                             'tanggal_selesai' => $spec['tanggal_selesai'] ?? null,
                             'status_konsesi' => 'Aktif',

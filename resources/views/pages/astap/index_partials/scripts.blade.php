@@ -13410,8 +13410,13 @@
                             const isBelanjaBarang = item.sumber_dana === 'belanja_barang' || item.sumber_dana_raw === 'belanja_barang' || item.sumber_dana === 'belanja_rekening' || (item.jenis_pengadaan && item.jenis_pengadaan.includes('barang'));
                             const isPelimpahan = item.sumber_dana === 'pelimpahan' || item.sumber_dana === 'pelimpahan_skpd' || item.sumber_dana === 'mutasi_masuk' || item.sumber_dana === 'mutasi' || item.sumber_dana_raw === 'pelimpahan_skpd' || item.sumber_dana_raw === 'mutasi_masuk';
 
+                            const isBmdDimanfaatkan = item.is_bmd_dimanfaatkan || item.kemitraan?.tipe_kemitraan === 'dimanfaatkan';
                             if (this.sumberDanaFilter === 'kemitraan') {
                                 matchSumber = isKemitraan;
+                            } else if (this.sumberDanaFilter === 'bmd_dimanfaatkan') {
+                                matchSumber = isKemitraan && isBmdDimanfaatkan;
+                            } else if (this.sumberDanaFilter === 'kemitraan_mitra') {
+                                matchSumber = isKemitraan && !isBmdDimanfaatkan;
                             } else if (this.sumberDanaFilter === 'hibah') {
                                 matchSumber = isHibah;
                             } else if (this.sumberDanaFilter === 'belanja_barang') {
