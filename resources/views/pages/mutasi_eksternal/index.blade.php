@@ -10,7 +10,7 @@
             @include('pages.mutasi_eksternal.index_partials.header_kpi')
             @include('pages.mutasi_eksternal.index_partials.filter_bar')
 
-            <!-- 1. TABEL MUTASI MASUK (PELIMPAHAN DARI SKPD LUAR) -->
+            <!-- 1. TABEL MUTASI MASUK (TRANSFER DARI OPD LUAR) -->
             <div x-show="activeDirection === 'masuk'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-1" x-transition:enter-end="opacity-100 translate-y-0">
                 @include('pages.mutasi_eksternal.index_partials.table_mutasi')
             </div>
@@ -24,7 +24,7 @@
         <!-- MODAL DETAIL BAST ANTAR-OPD -->
         @include('pages.mutasi_eksternal.index_partials.modal_detail')
 
-        <!-- MODAL CETAK BAST PELIMPAHAN BMD (INTERAKTIF & LIVE EDIT) -->
+        <!-- MODAL CETAK BAST MUTASI MASUK BMD (INTERAKTIF & LIVE EDIT) -->
         @include('pages.mutasi_eksternal.index_partials.modal_print_bast')
 
         <!-- MODAL KONFIRMASI HAPUS (SOFT-DELETE) -->

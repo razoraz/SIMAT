@@ -76,25 +76,25 @@
             },
             {
                 id: 'mutasi',
-                title: 'Pelimpahan SKPD (Dinas Luar)',
-                shortTitle: '4. Pelimpahan SKPD',
-                subLabel: 'Mutasi Antar-OPD',
-                badge: 'Pelimpahan SKPD Luar',
+                title: 'Mutasi Eksternal (Transfer Antar-OPD)',
+                shortTitle: '4. Mutasi Eksternal',
+                subLabel: 'Transfer Masuk Antar-OPD',
+                badge: 'Mutasi Eksternal Antar-OPD',
                 account: 'Akun 1.3 · Mutasi Antar-OPD',
                 icon: '🔄',
                 theme: 'purple',
                 route: '{{ route('astap.create_mutasi_eksternal') }}',
                 actionLabel: 'Buka Form Mutasi Eksternal',
                 stepCount: 'Form Mutasi Masuk',
-                purpose: 'Pencatatan penyerahan atau pelimpahan status penggunaan aset dari SKPD/Dinas lain di lingkungan Pemkab Bondowoso atau dinas luar daerah ke RSUD Dr. H. Koesnandi.',
-                cases: 'Pelimpahan mobil dinas dari Sekretariat Daerah ke RSUD, penyerahan tanah/gedung dari BPKAD, atau pemindahan perlengkapan server dari Diskominfo.',
+                purpose: 'Pencatatan penyerahan atau alih status penggunaan aset dari SKPD/Dinas/Instansi lain di lingkungan Pemerintah Daerah ke RSUD Dr. H. Koesnandi.',
+                cases: 'Mutasi mobil ambulans/dinas dari Dinas Kesehatan ke RSUD, penyerahan tanah/gedung dari BPKAD, atau pemindahan perangkat IT server dari Diskominfo.',
                 docs: [
-                    'Berita Acara Mutasi Barang (BAMB / BAP Eksternal)',
-                    'SK Bupati / Kepala Daerah tentang Status Penggunaan Aset',
-                    'Kartu Inventaris Barang (KIB) Asal SKPD Pemberi'
+                    'Berita Acara Mutasi Barang (BAMB / BAST Eksternal)',
+                    'SK Bupati / Kepala Daerah tentang Penetapan Status Penggunaan BMD',
+                    'Kartu Inventaris Barang (KIB) Asal OPD Penyerah'
                 ],
-                accounting: 'Dicatat sebagai mutasi aset masuk antar-SKPD Pemkab Bondowoso dengan mengadopsi nilai buku dan akumulasi penyusutan yang tercatat sebelumnya.',
-                tags: ['📑 Berita BAMB', '🏢 Tanpa SIPD', '📍 Lokasi Baru']
+                accounting: 'Dicatat sebagai mutasi aset masuk antar-OPD Pemkab Bondowoso dengan mengadopsi nilai buku dan akumulasi penyusutan yang tercatat sebelumnya.',
+                tags: ['📑 Dokumen BAMB', '🏛️ Mutasi Eksternal', '📍 Lokasi Baru']
             },
             {
                 id: 'kemitraan',

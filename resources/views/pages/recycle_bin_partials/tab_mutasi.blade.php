@@ -31,7 +31,7 @@
 
             <div class="text-xs text-slate-400 flex items-center space-x-2">
                 <span class="inline-block w-2 h-2 rounded-full" :class="mutasiSubTab === 'internal' ? 'bg-amber-400 animate-pulse' : 'bg-cyan-400 animate-pulse'"></span>
-                <span class="text-[11px] font-medium" x-text="mutasiSubTab === 'internal' ? 'Ruang Lingkup: Arsip Mutasi Antar-Ruangan Internal RSUD' : 'Ruang Lingkup: Arsip Pelimpahan / Mutasi Aset Antar-OPD Pemkab'"></span>
+                <span class="text-[11px] font-medium" x-text="mutasiSubTab === 'internal' ? 'Ruang Lingkup: Arsip Mutasi Antar-Ruangan Internal RSUD' : 'Ruang Lingkup: Arsip Mutasi Aset Antar-OPD Pemkab'"></span>
             </div>
         </div>
 

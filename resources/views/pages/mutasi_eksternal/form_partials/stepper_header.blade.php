@@ -11,11 +11,11 @@
             </a>
             <div class="min-w-0 flex-1">
                 <div class="inline-flex items-center space-x-2 px-2.5 py-0.5 rounded-full bg-indigo-400/15 text-indigo-300 border border-indigo-400/30 text-[9px] sm:text-[10px] font-bold mb-1">
-                    <span x-text="isEdit ? '✏️ MODE EDIT DATA PELIMPAHAN BMD' : '🔄 PENCATATAN ASET PELIMPAHAN SKPD / MUTASI EKSTERNAL'">🔄 PENCATATAN ASET PELIMPAHAN SKPD / MUTASI EKSTERNAL</span>
+                    <span x-text="isEdit ? '✏️ MODE EDIT DATA MUTASI MASUK' : '🔄 PENCATATAN MUTASI EKSTERNAL MASUK'">🔄 PENCATATAN MUTASI EKSTERNAL MASUK</span>
                 </div>
                 <h1 class="text-base sm:text-xl md:text-2xl font-extrabold text-white tracking-tight truncate"
-                    x-text="isEdit ? ('Ubah Data Pelimpahan: ' + (formData.nama_barang || 'Aset BMD')) : 'Pencatatan Pelimpahan Aset SKPD (SIMAT-RK)'">
-                    Pencatatan Pelimpahan Aset SKPD (SIMAT-RK)
+                    x-text="isEdit ? ('Ubah Data Mutasi Masuk: ' + (formData.nama_barang || 'Aset BMD')) : 'Pencatatan Mutasi Eksternal Masuk (SIMAT-RK)'">
+                    Pencatatan Mutasi Eksternal Masuk (SIMAT-RK)
                 </h1>
                 <p class="text-xs text-slate-400 mt-0.5 hidden sm:block">
                     Pendaftaran serah terima Barang Milik Daerah (BMD) dari SKPD/Dinas luar ke RSUD Dr. H. Koesnandi berdasarkan Berita Acara (BAMB/BAST) resmi.
@@ -86,7 +86,7 @@
                     <div class="min-w-0">
                         <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate"
                               :class="stepErrors[3] ? 'text-rose-400' : (currentStep === 3 ? 'text-indigo-400' : 'text-slate-500')">Langkah 3</span>
-                        <span class="text-[11px] sm:text-xs font-bold text-white block truncate">Verifikasi Data Pelimpahan</span>
+                        <span class="text-[11px] sm:text-xs font-bold text-white block truncate">Verifikasi Data Mutasi Masuk</span>
                     </div>
                 </div>
                 <div class="h-1 sm:h-1.5 rounded-full w-full transition-all"

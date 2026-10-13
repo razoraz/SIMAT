@@ -1,5 +1,5 @@
 <!-- ========================================================================= -->
-<!-- LANGKAH 3: LEMBAR VERIFIKASI & KONFIRMASI DATA PELIMPAHAN BMD SKPD         -->
+<!-- LANGKAH 3: LEMBAR VERIFIKASI & KONFIRMASI MUTASI EKSTERNAL MASUK            -->
 <!-- ========================================================================= -->
 <div x-show="currentStep === 3" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-6">
     
@@ -10,7 +10,7 @@
                 <span>🛡️ LANGKAH 3 DARI 3: VERIFIKASI &amp; KONFIRMASI RESMI</span>
             </div>
             <h2 class="text-xl font-black text-white tracking-tight flex items-center space-x-2">
-                <span>Lembar Verifikasi Pelimpahan BMD (Mutasi Eksternal)</span>
+                <span>Lembar Verifikasi Mutasi Eksternal Masuk</span>
             </h2>
             <p class="text-xs text-slate-400 mt-0.5">
                 Pastikan seluruh data legalitas Berita Acara, kedua belah pihak, rincian fisik aset, dan nilai perolehan telah sesuai sebelum disahkan ke database SIMAT-RK.
@@ -129,7 +129,7 @@
                         </div>
 
                         <div x-show="formData.nomor_sk_dasar" class="pt-1">
-                            <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Dasar Pelimpahan / SK Bupati:</span>
+                            <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Dasar Mutasi / SK Bupati:</span>
                             <span class="text-indigo-300 font-mono text-xs block font-bold" x-text="formData.nomor_sk_dasar"></span>
                         </div>
 
@@ -275,7 +275,7 @@
         <!-- Catatan Tambahan Jika Ada -->
         <template x-if="formData.mutasi_keterangan">
             <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800 text-xs text-slate-300 space-y-1">
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Catatan / Alasan Pelimpahan:</span>
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Catatan / Alasan Mutasi Masuk:</span>
                 <p class="leading-relaxed text-slate-300" x-text="formData.mutasi_keterangan"></p>
             </div>
         </template>

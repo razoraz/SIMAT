@@ -16,13 +16,13 @@
                 <div>
                     <div class="flex items-center gap-2">
                         <h3 class="text-xs sm:text-sm font-extrabold text-white uppercase tracking-wide">
-                            Spesifikasi Fisik Gedung &amp; Bangunan Pelimpahan
+                            Spesifikasi Fisik Gedung &amp; Bangunan Mutasi Masuk
                         </h3>
                         <span class="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 font-mono font-bold text-[10px] border border-blue-500/40">
                             KIB C · Akun 1.3.3
                         </span>
                     </div>
-                    <p class="text-[11px] text-slate-400 mt-0.5">Dapat mencatat satu atau beberapa unit gedung pelimpahan SKPD lengkap dengan izin PBG/IMB, konstruksi beton, luas lantai, dan nilai perolehan BMD.</p>
+                    <p class="text-[11px] text-slate-400 mt-0.5">Dapat mencatat satu atau beberapa unit gedung mutasi masuk antar-OPD lengkap dengan izin PBG/IMB, konstruksi beton, luas lantai, dan nilai perolehan BMD.</p>
                 </div>
             </div>
             <div class="flex items-center gap-2">

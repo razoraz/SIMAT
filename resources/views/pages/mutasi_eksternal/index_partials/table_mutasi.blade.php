@@ -119,7 +119,7 @@
                                     <span>Reklas</span>
                                 </button>
                                 <a :href="'/astap/' + item.id + '/edit-mutasi-eksternal?from=eksternal'"
-                                    title="Ubah Data Aset Pelimpahan SKPD"
+                                    title="Ubah Data Aset Mutasi Masuk"
                                     class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 hover:border-cyan-400 font-bold text-xs transition-all duration-200 shadow-sm active:scale-95 cursor-pointer leading-none">
                                     <svg class="w-3.5 h-3.5 text-cyan-400 group-hover/btn:text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                     <span>Ubah</span>
@@ -144,9 +144,9 @@
                                     📥
                                 </div>
                                 <div class="space-y-1">
-                                    <h4 class="text-base font-bold text-white">Belum Ada Data Mutasi Eksternal (Pelimpahan SKPD)</h4>
+                                    <h4 class="text-base font-bold text-white">Belum Ada Data Mutasi Eksternal Masuk</h4>
                                     <p class="text-xs text-slate-400 leading-relaxed">
-                                        Data mutasi eksternal bersumber langsung dari aset pelimpahan SKPD luar yang didaftarkan melalui <strong class="text-purple-300 font-semibold">Form Mutasi Eksternal</strong>.
+                                        Data mutasi eksternal bersumber dari aset mutasi masuk antar-OPD yang didaftarkan melalui <strong class="text-purple-300 font-semibold">Form Mutasi Eksternal</strong>.
                                     </p>
                                 </div>
                             </div>

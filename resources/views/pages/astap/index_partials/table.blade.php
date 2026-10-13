@@ -52,10 +52,10 @@
                                                 <span>📦</span><span>PERBEKALAN</span>
                                             </span>
                                         </template>
-                                        {{-- Badge Pelimpahan SKPD --}}
-                                        <template x-if="item.sumber_dana === 'pelimpahan' || item.sumber_dana === 'pelimpahan_skpd' || item.sumber_dana === 'mutasi_masuk' || item.sumber_dana === 'mutasi'">
+                                        {{-- Badge Mutasi Eksternal (Masuk dari Luar OPD) --}}
+                                        <template x-if="item.sumber_dana === 'mutasi_eksternal' || item.sumber_dana === 'pelimpahan' || item.sumber_dana === 'pelimpahan_skpd' || item.sumber_dana === 'mutasi_masuk' || item.sumber_dana === 'mutasi'">
                                             <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[9px] font-black whitespace-nowrap leading-none shrink-0 bg-purple-500/25 text-purple-300 border border-purple-500/50 shadow-sm tracking-wider">
-                                                <span>🔄</span><span>PELIMPAHAN SKPD</span>
+                                                <span>🔄</span><span>MUTASI EKSTERNAL</span>
                                             </span>
                                         </template>
                                         {{-- Badge Kemitraan: BMD Dimanfaatkan vs Aset Mitra --}}
@@ -83,7 +83,7 @@
                                             </span>
                                         </template>
                                         {{-- Badge Belanja Modal (APBD / BLUD RSUD) --}}
-                                        <template x-if="!item.kemitraan && item.sumber_dana !== 'kemitraan' && item.sumber_dana_raw !== 'kemitraan' && item.sumber_dana !== 'hibah' && item.sumber_dana_raw !== 'hibah' && item.jenis_reklas !== 'HIBAH_MASUK' && item.sumber_dana !== 'belanja_barang' && item.sumber_dana !== 'belanja_rekening' && item.sumber_dana !== 'pelimpahan' && item.sumber_dana !== 'pelimpahan_skpd' && item.sumber_dana !== 'mutasi_masuk' && item.sumber_dana !== 'mutasi'">
+                                        <template x-if="!item.kemitraan && item.sumber_dana !== 'kemitraan' && item.sumber_dana_raw !== 'kemitraan' && item.sumber_dana !== 'hibah' && item.sumber_dana_raw !== 'hibah' && item.jenis_reklas !== 'HIBAH_MASUK' && item.sumber_dana !== 'belanja_barang' && item.sumber_dana !== 'belanja_rekening' && item.sumber_dana !== 'mutasi_eksternal' && item.sumber_dana !== 'pelimpahan' && item.sumber_dana !== 'pelimpahan_skpd' && item.sumber_dana !== 'mutasi_masuk' && item.sumber_dana !== 'mutasi'">
                                             <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[9px] font-black whitespace-nowrap leading-none shrink-0 bg-emerald-500/25 text-emerald-300 border border-emerald-500/50 shadow-sm tracking-wider">
                                                 <span>🏛️</span><span>BELANJA MODAL</span>
                                             </span>

@@ -16,7 +16,7 @@
                 <div>
                     <div class="flex items-center gap-2">
                         <h3 class="text-xs sm:text-sm font-extrabold text-white uppercase tracking-wide">
-                            Rincian Peralatan &amp; Mesin / Alkes Medis Pelimpahan
+                            Rincian Peralatan &amp; Mesin / Alkes Medis Mutasi Masuk
                         </h3>
                         <span class="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-mono font-bold text-[10px] border border-purple-500/40">
                             KIB B · Akun 1.3.2
@@ -315,7 +315,7 @@
                             <span class="text-[9px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-bold">Catatan Tambahan</span>
                         </div>
                         <input type="text" x-model="item.mesin_keterangan"
-                            placeholder="Contoh: Kondisi operasional barang pelimpahan / Garansi / Keterangan penyerahan SKPD"
+                            placeholder="Contoh: Kondisi operasional barang mutasi masuk / Garansi / Keterangan penyerahan OPD"
                             class="w-full bg-slate-950 border border-slate-700 hover:border-slate-600 focus:border-amber-500 rounded-xl px-3.5 py-2 text-xs text-white font-medium focus:outline-none transition-all">
                     </div>
 

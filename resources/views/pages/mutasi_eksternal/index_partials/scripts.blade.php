@@ -754,7 +754,7 @@
                                     this.showDetailModal = false;
                                     this.selectedMutasi = null;
                                     this.selectedAstapDetail = null;
-                                    this.showToast(data.message || 'Paket pelimpahan otomatis dipindahkan ke Recycle Bin karena semua unit NIBAR telah dihapus.', 'success');
+                                    this.showToast(data.message || 'Data aset mutasi masuk otomatis dipindahkan ke Recycle Bin karena semua unit NIBAR telah dihapus.', 'success');
                                 } else {
                                     this.mutasiEksternals = this.mutasiEksternals.map(m => {
                                         const mAstapId = m.astap_id || m.id;
@@ -909,9 +909,9 @@
                 if (doc.signed) {
                     doc.qr_hash = doc.qr_hash || `BSRE-KOESNANDI-PLP-${doc.id || 1}-${doc.tahun || 2026}`;
                     if (typeof window.showSimatToast === 'function') {
-                        window.showSimatToast('✍️ BAST Pelimpahan berhasil disahkan secara digital (BSrE Aktif)!', 'success');
+                        window.showSimatToast('✍️ BAST Mutasi Masuk berhasil disahkan secara digital (BSrE Aktif)!', 'success');
                     } else {
-                        alert('✍️ BAST Pelimpahan berhasil disahkan secara digital (BSrE Aktif)!');
+                        alert('✍️ BAST Mutasi Masuk berhasil disahkan secara digital (BSrE Aktif)!');
                     }
                 } else {
                     if (typeof window.showSimatToast === 'function') {
@@ -954,7 +954,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>BAST Pelimpahan BMD - ${this.printDoc?.nomor_bast || 'RSUD Dr. H. Koesnandi'}</title>
+    <title>BAST Mutasi Masuk BMD - ${this.printDoc?.nomor_bast || 'RSUD Dr. H. Koesnandi'}</title>
     ${headStyles}
     <style>
         @page {
@@ -1066,9 +1066,9 @@
                         this.itemToDelete = null;
 
                         if (typeof window.showSimatToast === 'function') {
-                            window.showSimatToast(d.message || 'Data pelimpahan aset berhasil dipindahkan ke Tong Sampah.', 'success');
+                            window.showSimatToast(d.message || 'Data mutasi aset berhasil dipindahkan ke Tong Sampah.', 'success');
                         } else {
-                            alert('✓ ' + (d.message || 'Data pelimpahan aset berhasil dipindahkan ke Tong Sampah.'));
+                            alert('✓ ' + (d.message || 'Data mutasi aset berhasil dipindahkan ke Tong Sampah.'));
                         }
                     } else {
                         alert('❌ ' + (d.message || 'Gagal memindahkan data ke Tong Sampah.'));

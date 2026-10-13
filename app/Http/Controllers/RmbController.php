@@ -238,7 +238,7 @@ class RmbController extends Controller
                 $rows[$code]['c2_hibah'] += $val;
             } elseif ($sumber === 'belanja_barang' || $sumber === 'belanja_rekening') {
                 $rows[$code]['c3_belanja_barang'] += $val;
-            } elseif ($sumber === 'pelimpahan_skpd' || $sumber === 'mutasi_masuk') {
+            } elseif ($sumber === 'mutasi_eksternal' || $sumber === 'pelimpahan_skpd' || $sumber === 'mutasi_masuk') {
                 $rows[$code]['c4_mutasi_tambah'] += $val;
             } else {
                 // Belanja modal APBD/BLUD murni tahun berjalan

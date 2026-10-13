@@ -2,10 +2,10 @@
     $isFromEksternal = request('from') === 'eksternal';
     $isEdit = isset($astap);
     $backUrl = $isFromEksternal ? route('mutasi.eksternal') : ($isEdit ? route('astap.index') : route('astap.pilih_jenis'));
-    $pageTitle = $isEdit ? 'Ubah Data Pelimpahan Aset SKPD' : 'Pencatatan Pelimpahan Aset SKPD';
+    $pageTitle = $isEdit ? 'Ubah Data Mutasi Eksternal Masuk' : 'Pencatatan Mutasi Eksternal Masuk';
     $breadcrumb = $isEdit 
-        ? ($isFromEksternal ? 'Master Aset / Mutasi Eksternal / Ubah Data Pelimpahan Aset' : 'Master Utama / Data ASTAP / Ubah Data Pelimpahan Aset')
-        : ($isFromEksternal ? 'Master Aset / Mutasi Eksternal / Tambah Pelimpahan Aset' : 'Master Utama / Data ASTAP / Tambah Pelimpahan Aset');
+        ? ($isFromEksternal ? 'Master Aset / Mutasi Eksternal / Ubah Data Mutasi Masuk' : 'Master Utama / Data ASTAP / Ubah Data Mutasi Masuk')
+        : ($isFromEksternal ? 'Master Aset / Mutasi Eksternal / Tambah Mutasi Masuk' : 'Master Utama / Data ASTAP / Tambah Mutasi Masuk');
 
     $initialAstap = null;
     if ($isEdit) {
@@ -26,7 +26,7 @@
         $initialAstap = [
             'id' => $astap->id,
             'from' => request('from', 'eksternal'),
-            'sumber_dana' => 'pelimpahan_skpd',
+            'sumber_dana' => 'mutasi_eksternal',
             'tahun_perolehan' => (int) ($astap->tahun_perolehan ?: date('Y')),
             'triwulan' => $astap->triwulan ?: 'TW I',
             'mutasi_asal' => $me?->opd_asal ?: ($astap->pelimpahanSkpd?->skpd_asal ?: ($astap->mutasi_asal ?: ($spec['skpd_asal'] ?? ''))),
@@ -212,7 +212,7 @@
     }
 @endphp
 
-<x-layout :title="($isEdit ? 'Ubah Data Pelimpahan Aset: ' . $astap->nama_barang : 'Pencatatan Pelimpahan Aset SKPD (Mutasi Eksternal)') . ' - SIMAT-RK'">
+<x-layout :title="($isEdit ? 'Ubah Data Mutasi Masuk: ' . $astap->nama_barang : 'Pencatatan Mutasi Eksternal Masuk') . ' - SIMAT-RK'">
     @section('page-title', $pageTitle)
     @section('breadcrumb', $breadcrumb)
 
@@ -233,7 +233,7 @@
             <!-- LANGKAH 2: Klasifikasi Kode Barang 108 & Spesifikasi Fisik KIB -->
             @include('pages.mutasi_eksternal.form_partials.step2_klasifikasi_108')
 
-            <!-- LANGKAH 3: Lembar Verifikasi Data Pelimpahan & Register NIBAR -->
+            <!-- LANGKAH 3: Lembar Verifikasi Data Mutasi Masuk & Register NIBAR -->
             @include('pages.mutasi_eksternal.form_partials.step3_verifikasi_data')
 
             <!-- Stepper Bottom Navigation -->

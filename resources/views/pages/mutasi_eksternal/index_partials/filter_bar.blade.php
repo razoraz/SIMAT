@@ -14,7 +14,7 @@
                     <svg class="w-4 h-4 shrink-0 transition-colors duration-200" :class="activeDirection === 'masuk' ? 'text-indigo-200' : 'text-slate-400 group-hover:text-slate-300'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                     </svg>
-                    <span>Mutasi Masuk (Pelimpahan SKPD)</span>
+                    <span>Mutasi Masuk (Transfer Antar-OPD)</span>
                     <span class="px-2 py-0.5 text-[10px] font-mono font-bold rounded-lg transition-all duration-200"
                         :class="activeDirection === 'masuk' ? 'bg-indigo-950/60 border border-indigo-400/30 text-indigo-100 shadow-sm' : 'bg-slate-900 text-slate-400 border border-slate-800 group-hover:text-slate-300'"
                         x-text="countMasuk"></span>
@@ -41,7 +41,7 @@
                 <template x-if="activeDirection === 'masuk'">
                     <span class="flex items-center space-x-1.5 text-indigo-300">
                         <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
-                        <span>Pelimpahan aset dari SKPD luar ke RSUD dr. H. Koesnadi</span>
+                        <span>Mutasi aset masuk dari Instansi / OPD luar ke RSUD dr. H. Koesnadi</span>
                     </span>
                 </template>
                 <template x-if="activeDirection === 'keluar'">

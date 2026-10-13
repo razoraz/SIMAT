@@ -33,7 +33,7 @@
             // Form Data State
             formData: {
                 from: {{ Js::from(request('from', 'eksternal')) }},
-                sumber_dana: 'pelimpahan_skpd',
+                sumber_dana: 'mutasi_eksternal',
                 is_extracomtable: false,
                 tahun_perolehan: new Date().getFullYear(),
                 triwulan: (function() {
@@ -1592,7 +1592,7 @@
                     }
 
                     if (!this.formData.nama_barang || !this.formData.nama_barang.trim()) {
-                        const msg = 'Mohon isi nama spesifik barang pelimpahan BMD.';
+                        const msg = 'Mohon isi nama spesifik barang mutasi masuk BMD.';
                         this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
                         this.setStepError(2, msg);
                         return false;

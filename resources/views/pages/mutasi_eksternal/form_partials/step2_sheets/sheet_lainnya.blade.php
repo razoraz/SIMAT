@@ -16,13 +16,13 @@
                 <div>
                     <div class="flex items-center gap-2">
                         <h3 class="text-xs sm:text-sm font-extrabold text-white uppercase tracking-wide">
-                            Spesifikasi Aset Tetap Lainnya Pelimpahan
+                            Spesifikasi Aset Tetap Lainnya Mutasi Masuk
                         </h3>
                         <span class="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-mono font-bold text-[10px] border border-purple-500/40">
                             KIB E · Akun 1.3.5
                         </span>
                     </div>
-                    <p class="text-[11px] text-slate-400 mt-0.5">Buku Pustaka Medis, Kesenian &amp; Ornamen Kebudayaan, atau Hewan &amp; Tanaman Pelimpahan BMD ke RSUD.</p>
+                    <p class="text-[11px] text-slate-400 mt-0.5">Buku Pustaka Medis, Kesenian &amp; Ornamen Kebudayaan, atau Hewan &amp; Tanaman Mutasi Masuk BMD ke RSUD.</p>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -454,10 +454,10 @@
                             <label class="block text-slate-300 font-bold text-[11px] uppercase tracking-wider flex items-center space-x-1.5">
                                 <span>📝 KETERANGAN / CATATAN KHUSUS:</span>
                             </label>
-                            <span class="text-[9px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-bold">Catatan Pelimpahan</span>
+                            <span class="text-[9px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-bold">Catatan Mutasi Masuk</span>
                         </div>
                         <input type="text" x-model="item.lainnya_keterangan"
-                            placeholder="Contoh: Koleksi literatur medis pelimpahan SKPD / Aset tetap lainnya / Spesifikasi khusus"
+                            placeholder="Contoh: Koleksi literatur medis mutasi masuk / Aset tetap lainnya / Spesifikasi khusus"
                             class="w-full bg-slate-950 border border-slate-700 hover:border-slate-600 focus:border-purple-500 rounded-xl px-3.5 py-2 text-xs text-white font-medium focus:outline-none transition-all">
                     </div>
 

@@ -35,7 +35,7 @@
                     <!-- Source Badge -->
                     <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0"
                         :class="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' : 'bg-purple-500/20 text-purple-300 border-purple-500/30'"
-                        x-text="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? '📤 TRANSFER KE OPD LUAR (MUTASI KELUAR)' : '🔄 PELIMPAHAN SKPD LUAR (MUTASI MASUK)'">
+                        x-text="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? '📤 TRANSFER KE OPD LUAR (MUTASI KELUAR)' : '🔄 DARI OPD LUAR (MUTASI MASUK)'">
                     </span>
 
                     <!-- Status BAST Badge -->
@@ -99,7 +99,7 @@
                               x-text="(selectedAstapDetail || selectedMutasi).jenis_aset_nama || (selectedAstapDetail || selectedMutasi).kode_108 || '-'"></span>
                     </div>
                     <div class="p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80 min-w-0 shadow-sm">
-                        <span class="text-slate-400 text-[10px] uppercase font-bold block mb-1 truncate">📅 Tahun Pelimpahan</span>
+                        <span class="text-slate-400 text-[10px] uppercase font-bold block mb-1 truncate">📅 Tahun Perolehan</span>
                         <span class="text-cyan-300 font-extrabold font-mono text-xs sm:text-sm block"
                               x-text="(selectedAstapDetail || selectedMutasi).tahun_perolehan || '-'"></span>
                     </div>
@@ -109,7 +109,7 @@
                               x-text="((selectedAstapDetail || selectedMutasi).jumlah_volume || 1) + ' ' + ((selectedAstapDetail || selectedMutasi).satuan || 'Aset')"></span>
                     </div>
                     <div class="p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80 min-w-0 shadow-sm">
-                        <span class="text-slate-400 text-[10px] uppercase font-bold block mb-1 truncate">💰 Realisasi Pelimpahan</span>
+                        <span class="text-slate-400 text-[10px] uppercase font-bold block mb-1 truncate">💰 Realisasi Perolehan</span>
                         <span class="text-emerald-400 font-extrabold font-mono text-xs sm:text-sm block truncate"
                               x-text="(selectedAstapDetail || selectedMutasi).jumlah_realisasi || (selectedAstapDetail || selectedMutasi).nilai_perolehan_formatted || formatRupiah((selectedAstapDetail || selectedMutasi).nilai_perolehan)"></span>
                     </div>
@@ -121,7 +121,7 @@
                     <div class="flex items-center justify-between font-extrabold text-xs uppercase tracking-wider border-b pb-2"
                         :class="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? 'text-cyan-300 border-cyan-500/20' : 'text-purple-300 border-purple-500/20'">
                         <span class="flex items-center space-x-1.5">
-                            <span x-text="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? '📜 Dokumen Berita Acara Serah Terima (BAST) / Transfer Keluar' : '📜 Dokumen Berita Acara Mutasi Barang (BAMB) / SKPD Luar'"></span>
+                            <span x-text="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? '📜 Dokumen Berita Acara Serah Terima (BAST) / Transfer Keluar' : '📜 Dokumen Berita Acara Mutasi Barang (BAMB) / Mutasi Eksternal Masuk'"></span>
                         </span>
                         <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded border"
                             :class="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? 'bg-cyan-950/80 border-cyan-500/40 text-cyan-300' : 'bg-purple-950/80 border-purple-500/40 text-purple-300'"
@@ -130,7 +130,7 @@
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
                         <div>
                             <span class="text-slate-400 block text-[10px] uppercase font-bold"
-                                x-text="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? 'Instansi / SKPD Penerima:' : 'SKPD / Dinas Asal:'"></span>
+                                x-text="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? 'Instansi / SKPD Penerima:' : 'Instansi / OPD Pengirim:'"></span>
                             <span class="font-bold text-white text-sm"
                                 x-text="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? ((selectedAstapDetail || selectedMutasi).opd_tujuan || '-') : ((selectedAstapDetail || selectedMutasi).opd_asal || (selectedAstapDetail || selectedMutasi).mutasi_asal || '-')"></span>
                             <template x-if="(selectedAstapDetail || selectedMutasi).alamat_instansi">
@@ -139,7 +139,7 @@
                         </div>
                         <div>
                             <span class="text-slate-400 block text-[10px] uppercase font-bold"
-                                x-text="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? 'Nomor BAST Serah Terima:' : 'Nomor BAMB / SK Pelimpahan:'"></span>
+                                x-text="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? 'Nomor BAST Serah Terima:' : 'Nomor BAMB / SK Mutasi Masuk:'"></span>
                             <span class="font-mono font-bold"
                                 :class="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? 'text-cyan-300' : 'text-purple-300'"
                                 x-text="(selectedAstapDetail || selectedMutasi).mutasi_nomor_bamb || (selectedAstapDetail || selectedMutasi).kode || '-'"></span>
@@ -218,7 +218,7 @@
                                 'text-orange-400': getEffectiveKibCategory(selectedAstapDetail || selectedMutasi) === 'KIB E',
                                 'text-amber-300': (selectedAstapDetail || selectedMutasi)?.category === 'EXTRACOM'
                             }">
-                            <span>🔍 Rincian Spesifikasi Pelimpahan (<span x-text="getEffectiveKibCategory(selectedAstapDetail || selectedMutasi)"></span>)</span>
+                            <span>🔍 Rincian Spesifikasi Mutasi Masuk (<span x-text="getEffectiveKibCategory(selectedAstapDetail || selectedMutasi)"></span>)</span>
                         </h4>
                         <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400"
                               x-text="'Spesifikasi Fisik ' + getEffectiveKibCategory(selectedAstapDetail || selectedMutasi)"></span>
@@ -579,7 +579,7 @@
                             <div class="flex items-center space-x-2">
                                 <span class="text-xs font-extrabold text-cyan-400 uppercase tracking-wider">🏷️ RINCIAN NIBAR &amp; PENEMPATAN RUANGAN (REGISTER):</span>
                             </div>
-                            <p class="text-[10px] text-slate-400 mt-0.5">Daftar unik kode NIBAR per-aset hasil pelimpahan beserta ruangan penempatannya di RSUD Koesnandi.</p>
+                            <p class="text-[10px] text-slate-400 mt-0.5">Daftar unik kode NIBAR per-aset hasil mutasi masuk beserta ruangan penempatannya di RSUD Koesnandi.</p>
                         </div>
                         <div class="flex items-center space-x-2 shrink-0">
                             <span class="text-[10px] font-extrabold px-3 py-1 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-mono shadow-sm"
@@ -687,7 +687,7 @@
 
                 <!-- 8. CATATAN / MAKSUD & ALASAN MUTASI -->
                 <div class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-1">
-                    <span class="text-slate-400 text-[10px] block font-bold uppercase tracking-wider">💡 Maksud &amp; Alasan Pelimpahan Antar-OPD:</span>
+                    <span class="text-slate-400 text-[10px] block font-bold uppercase tracking-wider">💡 Maksud &amp; Alasan Mutasi Masuk Antar-OPD:</span>
                     <p class="text-slate-200 text-xs leading-relaxed" x-text="(selectedAstapDetail || selectedMutasi).alasan_mutasi || (selectedAstapDetail || selectedMutasi).mutasi_keterangan || '-'"></p>
                 </div>
             </div>

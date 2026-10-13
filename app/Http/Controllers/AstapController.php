@@ -178,7 +178,7 @@ class AstapController extends Controller
                     'asal_kode' => $latestReklas?->asal_kode,
                     'nilai_reklas' => $latestReklas?->nilai_reklas ? (float) $latestReklas->nilai_reklas : null,
                     'asal_usul' => $jp ? ($jp->nama_pengadaan ?: '') : ($spec['asal_usul'] ?? ($spec['cara_perolehan'] ?? '')),
-                    'sumber_dana' => ($a->isKemitraan()) ? 'kemitraan' : (in_array($a->sumber_dana, ['pelimpahan_skpd', 'mutasi_masuk', 'mutasi', 'pelimpahan'], true) ? 'pelimpahan' : ($a->sumber_dana === 'hibah' ? 'hibah' : ($a->sumber_dana === 'belanja_barang' ? 'belanja_barang' : ($spec['sumber_dana'] ?? 'belanja_modal')))),
+                    'sumber_dana' => ($a->isKemitraan()) ? 'kemitraan' : (in_array($a->sumber_dana, ['mutasi_eksternal', 'pelimpahan_skpd', 'mutasi_masuk', 'mutasi', 'pelimpahan'], true) ? 'mutasi_eksternal' : ($a->sumber_dana === 'hibah' ? 'hibah' : ($a->sumber_dana === 'belanja_barang' ? 'belanja_barang' : ($spec['sumber_dana'] ?? 'belanja_modal')))),
                     'sumber_dana_raw' => ($a->isKemitraan()) ? 'kemitraan' : $a->sumber_dana,
                     'kemitraan' => $a->kemitraan ? [
                         'id' => $a->kemitraan->id,

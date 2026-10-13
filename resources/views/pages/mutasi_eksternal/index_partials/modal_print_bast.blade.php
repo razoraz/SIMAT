@@ -9,7 +9,7 @@
             <div class="flex items-center space-x-2">
                 <span class="p-2 rounded-xl bg-purple-500/20 text-purple-300 text-sm">🏛️</span>
                 <div>
-                    <h3 class="text-base font-extrabold text-white">Berita Acara Serah Terima (BAST) Pelimpahan BMD</h3>
+                    <h3 class="text-base font-extrabold text-white">Berita Acara Serah Terima (BAST) Mutasi Masuk BMD</h3>
                     <p class="text-[11px] text-slate-400 font-mono" x-text="printDoc ? ('Nomor BAST: ' + (printDoc.nomor_bast || printDoc.kode || '-')) : ''"></p>
                 </div>
             </div>
@@ -45,7 +45,7 @@
             <div x-show="showEditForm" class="no-print bg-slate-950 p-4 rounded-2xl border border-purple-500/40 text-xs space-y-3.5 shadow-inner">
                 <div class="flex items-center justify-between border-b border-slate-800 pb-2">
                     <span class="font-bold text-purple-300 text-[11px] uppercase tracking-wider flex items-center space-x-1.5">
-                        <span>✏️ Live Edit BAST Pelimpahan BMD (Otomatis Berubah Pada Lembar Cetak):</span>
+                        <span>✏️ Live Edit BAST Mutasi Masuk BMD (Otomatis Berubah Pada Lembar Cetak):</span>
                     </span>
                     <span class="text-[10px] text-emerald-400 font-mono">Teks di kertas cetak otomatis sinkron</span>
                 </div>
@@ -53,7 +53,7 @@
                 <!-- Baris 1: Informasi Dokumen & Tanggal -->
                 <div class="grid grid-cols-2 sm:grid-cols-6 gap-2.5">
                     <div class="col-span-2">
-                        <label class="block text-slate-400 text-[10px] mb-1">Nomor BAST Pelimpahan</label>
+                        <label class="block text-slate-400 text-[10px] mb-1">Nomor BAST Mutasi Masuk</label>
                         <input type="text" x-model="printDoc.nomor_bast" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-purple-300 font-mono font-bold text-xs">
                     </div>
                     <div>
@@ -293,10 +293,10 @@
                         </table>
                     </div>
 
-                    <!-- ALASAN / MAKSUD PELIMPAHAN -->
+                    <!-- ALASAN / MAKSUD MUTASI MASUK -->
                     <div class="my-2.5 p-2 rounded border border-black/40 text-[9pt] leading-relaxed" style="background-color: #fafafa !important;">
-                        <strong>Maksud / Catatan Pelimpahan:</strong>
-                        <span x-text="printDoc.alasan_mutasi || 'Pelimpahan aset barang milik daerah dari SKPD luar ke RSUD dr. H. Koesnandi Kabupaten Bondowoso.'"></span>
+                        <strong>Maksud / Catatan Mutasi Masuk:</strong>
+                        <span x-text="printDoc.alasan_mutasi || 'Mutasi masuk aset barang milik daerah dari OPD luar ke RSUD dr. H. Koesnandi Kabupaten Bondowoso.'"></span>
                     </div>
 
                     <!-- KLAUSUL PENUTUP -->

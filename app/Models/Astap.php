@@ -219,7 +219,7 @@ class Astap extends Model
 
     public function isPelimpahanSkpd(): bool
     {
-        return $this->sumber_dana === 'pelimpahan_skpd' || $this->sumber_dana === 'mutasi_masuk';
+        return in_array($this->sumber_dana, ['mutasi_eksternal', 'pelimpahan_skpd', 'pelimpahan', 'mutasi_masuk'], true);
     }
 
     public function isMutasiMasuk(): bool
@@ -229,7 +229,7 @@ class Astap extends Model
 
     public function isMutasiEksternal(): bool
     {
-        return $this->isPelimpahanSkpd();
+        return $this->isPelimpahanSkpd() || $this->mutasiEksternals()->exists() || $this->jenis_reklas === 'MUTASI_EKSTERNAL';
     }
 
     public function isKemitraan(): bool
@@ -248,11 +248,11 @@ class Astap extends Model
         }
 
         return match ($this->sumber_dana) {
-            'belanja_barang', 'belanja_rekening' => 'Belanja Barang (Perbekalan)',
-            'hibah'                             => 'Hibah Masuk',
-            'pelimpahan_skpd', 'mutasi_masuk'   => 'Pelimpahan SKPD Luar',
-            'kemitraan'                         => 'Kemitraan Pihak Ketiga (KSO)',
-            default                             => 'Belanja Modal (APBD/BLUD)',
+            'belanja_barang', 'belanja_rekening'                                => 'Belanja Barang (Perbekalan)',
+            'hibah'                                                            => 'Hibah Masuk',
+            'mutasi_eksternal', 'pelimpahan_skpd', 'pelimpahan', 'mutasi_masuk' => 'Mutasi Eksternal',
+            'kemitraan'                                                        => 'Kemitraan Pihak Ketiga (KSO)',
+            default                                                            => 'Belanja Modal (APBD/BLUD)',
         };
     }
 

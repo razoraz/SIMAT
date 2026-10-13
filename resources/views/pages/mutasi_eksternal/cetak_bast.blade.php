@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cetak BAST Pelimpahan BMD - {{ $mutasi->nomor_bamb }}</title>
+    <title>Cetak BAST Mutasi Eksternal BMD - {{ $mutasi->nomor_bamb }}</title>
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -43,7 +43,7 @@
                 <span>{{ request('returnTo') ? 'Kembali ke BAST' : 'Kembali ke Katalog' }}</span>
             </a>
             <div>
-                <h2 class="text-sm font-bold text-white">Lembar Cetak Resmi BAST Pelimpahan BMD</h2>
+                <h2 class="text-sm font-bold text-white">Lembar Cetak Resmi BAST Mutasi Eksternal BMD</h2>
                 <p class="text-[11px] text-slate-400 font-mono">No: {{ $mutasi->nomor_bamb }}</p>
             </div>
         </div>
@@ -79,7 +79,7 @@
         $specJson = is_array($astap?->spesifikasi_json) ? $astap->spesifikasi_json : (is_string($astap?->spesifikasi_json) ? (json_decode($astap->spesifikasi_json, true) ?: []) : []);
         $extractedUnits = \App\Http\Controllers\MutasiEksternalController::extractUnitsFromSpec(
             $specJson ?: [],
-            $astap?->nama_barang ?: 'Barang Pelimpahan SKPD',
+            $astap?->nama_barang ?: 'Barang Mutasi Eksternal',
             $mutasi->kondisi ?: 'Baik',
             $mutasi->ruangan_tujuan ?: 'RSUD'
         );
@@ -125,7 +125,7 @@
         <!-- JUDUL SURAT -->
         <div class="text-center mb-4">
             <h3 class="font-bold text-[12pt] uppercase underline tracking-normal m-0 text-black">BERITA ACARA SERAH TERIMA (BAST)</h3>
-            <h4 class="font-bold text-[10.5pt] uppercase tracking-normal m-0 text-black">PELIMPAHAN BARANG MILIK DAERAH (BMD)</h4>
+            <h4 class="font-bold text-[10.5pt] uppercase tracking-normal m-0 text-black">MUTASI MASUK BARANG MILIK DAERAH (BMD)</h4>
             <p class="text-[10pt] font-semibold mt-1 text-black">Nomor : <span class="font-mono font-bold">{{ $mutasi->nomor_bamb }}</span></p>
         </div>
 
@@ -216,9 +216,9 @@
             </table>
         </div>
 
-        <!-- DASAR HUKUM / PELIMPAHAN -->
+        <!-- DASAR HUKUM / MUTASI MASUK -->
         <p class="text-justify mb-2 text-[10pt]">
-            Berdasarkan <strong>{{ $mutasi->nomor_sk_dasar ? 'Surat Keputusan / Penetapan Nomor: ' . $mutasi->nomor_sk_dasar : 'Dokumen Pelimpahan BMD Nomor: ' . $mutasi->nomor_bamb }}</strong>, 
+            Berdasarkan <strong>{{ $mutasi->nomor_sk_dasar ? 'Surat Keputusan / Penetapan Nomor: ' . $mutasi->nomor_sk_dasar : 'Dokumen Berita Acara BMD Nomor: ' . $mutasi->nomor_bamb }}</strong>, 
             PIHAK PERTAMA menyerahkan Barang Milik Daerah (BMD) kepada PIHAK KEDUA, dan PIHAK KEDUA menerima penyerahan barang tersebut dalam keadaan baik dan lengkap untuk dipergunakan pada unit pelayanan RSUD dr. H. Koesnadi Kabupaten Bondowoso, dengan rincian sebagai berikut:
         </p>
 
@@ -240,7 +240,7 @@
                     @if($registers->isNotEmpty())
                         @foreach($registers as $idx => $reg)
                         @php
-                            $uNama = $extractedUnits[$idx]['nama'] ?? ($astap->nama_barang ?: 'Barang Pelimpahan SKPD');
+                            $uNama = $extractedUnits[$idx]['nama'] ?? ($astap->nama_barang ?: 'Barang Mutasi Eksternal');
                             $uKondisi = $reg->kondisi ?: ($extractedUnits[$idx]['kondisi'] ?? ($mutasi->kondisi ?: 'Baik'));
                             $uHarga = !empty($extractedUnits[$idx]['nilai_satuan']) ? $extractedUnits[$idx]['nilai_satuan'] : $hargaSatuan;
                         @endphp
@@ -257,7 +257,7 @@
                     @else
                         <tr>
                             <td class="border border-black px-2 py-1 text-center font-bold">1</td>
-                            <td class="border border-black px-2 py-1 font-semibold">{{ $astap?->nama_barang ?: 'Barang Pelimpahan SKPD' }}</td>
+                            <td class="border border-black px-2 py-1 font-semibold">{{ $astap?->nama_barang ?: 'Barang Mutasi Eksternal' }}</td>
                             <td class="border border-black px-2 py-1 font-mono text-center">{{ $kode108 }}</td>
                             <td class="border border-black px-2 py-1 font-mono text-center">-</td>
                             <td class="border border-black px-2 py-1 text-center font-mono">{{ $mutasi->astap?->tahun_perolehan ?: date('Y', strtotime($tglObj)) }}</td>
@@ -283,7 +283,7 @@
 
         @if($mutasi->alasan_mutasi)
         <p class="text-[9.5pt] mb-3">
-            <strong>Catatan / Keterangan Pelimpahan:</strong> {{ $mutasi->alasan_mutasi }}
+            <strong>Catatan / Keterangan Mutasi Masuk:</strong> {{ $mutasi->alasan_mutasi }}
         </p>
         @endif
 

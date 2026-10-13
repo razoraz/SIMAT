@@ -455,7 +455,7 @@ Route::middleware('auth')->group(function () {
                     'asal_kib' => $latestReklas?->asal_kib,
                     'asal_kode' => $latestReklas?->asal_kode,
                     'nilai_reklas' => $latestReklas?->nilai_reklas ? (float) $latestReklas->nilai_reklas : null,
-                    'sumber_dana' => ($a->isKemitraan()) ? 'kemitraan' : (in_array($a->sumber_dana, ['pelimpahan_skpd', 'mutasi_masuk', 'mutasi', 'pelimpahan'], true) ? 'pelimpahan' : ($a->sumber_dana === 'hibah' ? 'hibah' : ($a->sumber_dana === 'belanja_barang' ? 'belanja_barang' : ($spec['sumber_dana'] ?? 'belanja_modal')))),
+                    'sumber_dana' => ($a->isKemitraan()) ? 'kemitraan' : (in_array($a->sumber_dana, ['mutasi_eksternal', 'pelimpahan_skpd', 'mutasi_masuk', 'mutasi', 'pelimpahan'], true) ? 'mutasi_eksternal' : ($a->sumber_dana === 'hibah' ? 'hibah' : ($a->sumber_dana === 'belanja_barang' ? 'belanja_barang' : ($spec['sumber_dana'] ?? 'belanja_modal')))),
                     'sumber_dana_raw' => ($a->isKemitraan()) ? 'kemitraan' : $a->sumber_dana,
                     'sumber_dana_label' => $a->sumber_dana_label,
                     'kemitraan' => $a->kemitraan ? [
@@ -3346,7 +3346,7 @@ Route::middleware('auth')->group(function () {
 
             Route::get('/astap/{id}/edit', function ($id) use ($getDistinctPenyedias, $getDistinctPejabats) {
                 $astap = \App\Models\Astap::with(['registers', 'jenisAstap', 'rekeningBelanja', 'jenisPengadaan', 'belanjaModal'])->findOrFail($id);
-                if ($astap->sumber_dana === 'pelimpahan_skpd' || !empty($astap->mutasi_nomor_bamb) || !empty($astap->mutasi_asal)) {
+                if (in_array($astap->sumber_dana, ['mutasi_eksternal', 'pelimpahan_skpd', 'pelimpahan', 'mutasi_masuk'], true) || !empty($astap->mutasi_nomor_bamb) || !empty($astap->mutasi_asal)) {
                     return redirect()->route('astap.edit_mutasi_eksternal', ['id' => $id, 'from' => request('from', 'eksternal')]);
                 }
                 if ($astap->sumber_dana === 'kemitraan' || \App\Models\AstapKemitraan::where('astap_id', $id)->where('is_deleted', 0)->exists()) {

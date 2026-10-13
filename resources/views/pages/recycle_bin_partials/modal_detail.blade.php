@@ -73,7 +73,7 @@
                                             <span class="text-slate-400 text-[11px] block" x-text="'PJ: ' + (selectedItem.penerima_pj || '-')"></span>
                                         </div>
                                         <div class="sm:col-span-2 pt-2 border-t border-slate-800/80">
-                                            <span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider block">Alasan / Catatan Pelimpahan:</span>
+                                            <span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider block">Alasan / Catatan Mutasi Eksternal:</span>
                                             <span class="text-xs text-slate-300 italic block mt-0.5" x-text="selectedItem.alasan_mutasi || '-'"></span>
                                         </div>
                                     </div>

@@ -41,9 +41,9 @@
                                 </span>
                             </template>
 
-                            <template x-if="selectedAstapDetail?.sumber_dana === 'pelimpahan' || selectedAstapDetail?.sumber_dana === 'pelimpahan_skpd' || selectedAstapDetail?.sumber_dana === 'mutasi_masuk' || selectedAstapDetail?.sumber_dana === 'mutasi'">
+                            <template x-if="selectedAstapDetail?.sumber_dana === 'mutasi_eksternal' || selectedAstapDetail?.sumber_dana === 'pelimpahan' || selectedAstapDetail?.sumber_dana === 'pelimpahan_skpd' || selectedAstapDetail?.sumber_dana === 'mutasi_masuk' || selectedAstapDetail?.sumber_dana === 'mutasi'">
                                 <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 bg-purple-500/20 text-purple-300 border-purple-500/30">
-                                    🔄 PELIMPAHAN SKPD LUAR
+                                    🔄 MUTASI EKSTERNAL MASUK
                                 </span>
                             </template>
 
@@ -168,14 +168,14 @@
                             </template>
                         </div>
 
-                        <!-- DOKUMEN BAMB PELIMPAHAN SKPD (KHUSUS DINAS LUAR) -->
-                        <div x-show="selectedAstapDetail?.sumber_dana === 'pelimpahan_skpd' || selectedAstapDetail?.sumber_dana === 'mutasi_masuk' || selectedAstapDetail?.mutasi_nomor_bamb" class="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/30 space-y-2">
+                        <!-- DOKUMEN BAMB MUTASI EKSTERNAL MASUK (DARI OPD LUAR) -->
+                        <div x-show="selectedAstapDetail?.sumber_dana === 'mutasi_eksternal' || selectedAstapDetail?.sumber_dana === 'pelimpahan_skpd' || selectedAstapDetail?.sumber_dana === 'mutasi_masuk' || selectedAstapDetail?.mutasi_nomor_bamb" class="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/30 space-y-2">
                             <div class="flex items-center space-x-2 text-purple-300 font-extrabold text-xs uppercase tracking-wider">
-                                <span>📜 Dokumen Berita Acara Mutasi Barang (BAMB) / SKPD Luar</span>
+                                <span>📜 Dokumen Berita Acara Mutasi Barang (BAMB) / Mutasi Eksternal Masuk</span>
                             </div>
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
                                 <div>
-                                    <span class="text-slate-400 block text-[10px] uppercase font-bold">SKPD / Dinas Asal:</span>
+                                    <span class="text-slate-400 block text-[10px] uppercase font-bold">Instansi / OPD Pengirim:</span>
                                     <span class="font-bold text-white text-sm" x-text="selectedAstapDetail?.mutasi_asal || '-'"></span>
                                 </div>
                                 <div>
@@ -189,7 +189,7 @@
                             </div>
                             <template x-if="selectedAstapDetail?.mutasi_keterangan">
                                 <div class="pt-1 text-[11px] text-slate-300">
-                                    <span class="text-slate-400 font-semibold">Keterangan Pelimpahan: </span>
+                                    <span class="text-slate-400 font-semibold">Keterangan Mutasi: </span>
                                     <span x-text="selectedAstapDetail.mutasi_keterangan"></span>
                                 </div>
                             </template>

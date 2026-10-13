@@ -25,18 +25,18 @@
             <div>
                 <div class="flex flex-wrap items-center gap-2">
                     <h1 class="text-xl sm:text-2xl font-black text-white tracking-tight leading-tight">
-                        <span x-show="activeDirection === 'masuk'">Katalog Pelimpahan Aset (Mutasi Masuk)</span>
+                        <span x-show="activeDirection === 'masuk'">Katalog Mutasi Eksternal Masuk</span>
                         <span x-show="activeDirection === 'keluar'">Katalog Transfer Aset Keluar (Mutasi Keluar)</span>
                     </h1>
                     <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border transition-all"
                         :class="activeDirection === 'keluar' ? 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30' : 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30'">
                         <span class="w-1.5 h-1.5 rounded-full animate-pulse" :class="activeDirection === 'keluar' ? 'bg-cyan-400' : 'bg-indigo-400'"></span>
-                        <span x-text="activeDirection === 'keluar' ? 'Transfer Aset RSUD · Pemindahtanganan OPD' : 'Pelimpahan Antar-SKPD · BMD Masuk'"></span>
+                        <span x-text="activeDirection === 'keluar' ? 'Transfer Aset RSUD · Pemindahtanganan OPD' : 'Mutasi Masuk Antar-OPD · BMD Masuk'"></span>
                     </span>
                 </div>
                 <p class="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
                     <span x-show="activeDirection === 'masuk'">
-                        Pencatatan resmi Berita Acara Serah Terima (BAST / BAMB) atas pelimpahan Barang Milik Daerah (BMD) dari SKPD / Dinas di lingkungan Pemerintah Kabupaten Bondowoso ke RSUD dr. H. Koesnadi.
+                        Pencatatan resmi Berita Acara Serah Terima (BAST / BAMB) atas mutasi masuk Barang Milik Daerah (BMD) dari Instansi / OPD di lingkungan Pemerintah Kabupaten Bondowoso ke RSUD dr. H. Koesnadi.
                     </span>
                     <span x-show="activeDirection === 'keluar'">
                         Pencatatan resmi Berita Acara Serah Terima (BAST) pemindahtanganan, hibah, atau transfer pinjam-pakai aset dari RSUD dr. H. Koesnadi ke SKPD / Instansi luar di lingkungan Pemkab Bondowoso.
@@ -47,14 +47,14 @@
 
         <!-- Tombol Aksi Cepat (Bespoke Action Group) -->
         <div class="flex flex-wrap items-center gap-2.5 shrink-0 relative z-10">
-            <!-- Action 1: Input Pelimpahan Masuk Baru -->
+            <!-- Action 1: Input Mutasi Masuk Baru -->
             <a href="{{ route('astap.create_mutasi_eksternal', ['from' => 'eksternal']) }}"
                 x-show="activeDirection === 'masuk'"
                 class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 hover:shadow-indigo-500/50 hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2 active:scale-95 cursor-pointer shrink-0 border border-indigo-500/30">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
                 </svg>
-                <span>+ Pelimpahan Masuk Baru</span>
+                <span>+ Mutasi Masuk Baru</span>
             </a>
 
             <!-- Action 2: Input Mutasi Keluar (via Reklasifikasi) -->
@@ -76,7 +76,7 @@
             :class="activeDirection === 'keluar' ? 'hover:border-cyan-500/50' : 'hover:border-indigo-500/50'">
             <div class="flex items-center justify-between">
                 <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider"
-                    x-text="activeDirection === 'keluar' ? 'TOTAL BAST TRANSFER KELUAR' : 'TOTAL BAST PELIMPAHAN MASUK'"></span>
+                    x-text="activeDirection === 'keluar' ? 'TOTAL BAST TRANSFER KELUAR' : 'TOTAL BAST MUTASI MASUK'"></span>
                 <span class="p-1.5 rounded-lg text-xs"
                     :class="activeDirection === 'keluar' ? 'bg-cyan-500/10 text-cyan-400' : 'bg-indigo-500/10 text-indigo-400'"
                     x-text="activeDirection === 'keluar' ? '📤' : '🏛️'"></span>
@@ -87,7 +87,7 @@
             </div>
             <p class="text-[10px] mt-1 font-medium"
                 :class="activeDirection === 'keluar' ? 'text-cyan-400/80' : 'text-indigo-400/80'"
-                x-text="activeDirection === 'keluar' ? 'Penyerahan RSUD ke OPD' : 'Registrasi SKPD ke RSUD'"></p>
+                x-text="activeDirection === 'keluar' ? 'Penyerahan RSUD ke OPD' : 'Registrasi Masuk ke RSUD'"></p>
         </div>
 
         <!-- KPI 2: Total Nilai Perolehan / Realisasi -->

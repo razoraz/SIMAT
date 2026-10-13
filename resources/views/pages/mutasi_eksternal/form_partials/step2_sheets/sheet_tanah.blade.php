@@ -16,13 +16,13 @@
                 <div>
                     <div class="flex items-center gap-2">
                         <h3 class="text-xs sm:text-sm font-extrabold text-white uppercase tracking-wide">
-                            Spesifikasi Fisik &amp; Legalitas Tanah Pelimpahan
+                            Spesifikasi Fisik &amp; Legalitas Tanah Mutasi Masuk
                         </h3>
                         <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono font-bold text-[10px] border border-emerald-500/40">
                             KIB A · Akun 1.3.1
                         </span>
                     </div>
-                    <p class="text-[11px] text-slate-400 mt-0.5">Dapat mencatat satu atau beberapa bidang tanah pelimpahan SKPD lengkap dengan legalitas hak, sertifikat, luas, lokasi, dan nilai perolehan BMD.</p>
+                    <p class="text-[11px] text-slate-400 mt-0.5">Dapat mencatat satu atau beberapa bidang tanah mutasi masuk antar-OPD lengkap dengan legalitas hak, sertifikat, luas, lokasi, dan nilai perolehan BMD.</p>
                 </div>
             </div>
             <div class="flex items-center gap-2">

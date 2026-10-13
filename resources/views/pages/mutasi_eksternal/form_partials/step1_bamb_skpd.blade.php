@@ -1,5 +1,5 @@
 <!-- ========================================================================= -->
-<!-- LANGKAH 1: DOKUMEN BAMB & SKPD PENGIRIM (PELIMPAHAN BMD SKPD)              -->
+<!-- LANGKAH 1: DOKUMEN BAMB & SKPD PENGIRIM (MUTASI EKSTERNAL MASUK)          -->
 <!-- ========================================================================= -->
 <div x-show="currentStep === 1" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-6">
     
@@ -9,7 +9,7 @@
         </div>
         <h2 class="text-lg font-bold text-white flex items-center space-x-2">
             <span class="p-2 rounded-xl bg-indigo-400/10 text-indigo-400 text-sm">📜</span>
-            <span>Langkah 1: Dokumen BAMB &amp; SKPD Pengirim</span>
+            <span>Langkah 1: Dokumen BAMB &amp; Instansi Pengirim (Mutasi Eksternal Masuk)</span>
         </h2>
         <p class="text-xs text-slate-400 mt-1">
             Lengkapi data legalitas Berita Acara Mutasi Barang (BAMB/BAST), instansi atau SKPD pengirim, pejabat penyerah, serta dokumen berkas serah terima.
@@ -38,7 +38,7 @@
                 <span class="text-rose-400">*</span>
             </span>
             <span class="text-[10px] font-bold text-indigo-300 bg-indigo-400/10 px-2 py-0.5 rounded-lg border border-indigo-400/20">
-                Pelimpahan BMD · Antar-OPD
+                Mutasi Masuk BMD · Antar-OPD
             </span>
         </div>
 
@@ -367,12 +367,12 @@
         </div>
     </div>
 
-    <!-- Bagian 4: Keterangan Tambahan / Alasan Pelimpahan Status -->
+    <!-- Bagian 4: Keterangan Tambahan / Alasan Mutasi Masuk -->
     <div class="p-6 rounded-3xl bg-slate-950/80 border border-slate-800 space-y-4 shadow-xl">
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
             <div class="flex items-center gap-2">
                 <span class="text-xs font-extrabold text-white uppercase tracking-wider flex items-center gap-1.5">
-                    <span>📝 Keterangan Tambahan &amp; Alasan Pelimpahan</span>
+                    <span>📝 Keterangan Tambahan &amp; Alasan Mutasi Masuk</span>
                 </span>
                 <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-slate-800 text-slate-400 border border-slate-700">Opsional</span>
             </div>
@@ -381,11 +381,11 @@
 
         <div>
             <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
-                <span>Keterangan Tambahan / Alasan Pelimpahan Status</span>
+                <span>Keterangan Tambahan / Alasan Mutasi Masuk</span>
                 <span class="text-[10px] text-slate-400 font-normal">Boleh Dikosongkan</span>
             </label>
             <textarea x-model="formData.mutasi_keterangan" rows="3"
-                placeholder="Contoh: Pelimpahan status penggunaan aset peralatan kesehatan dari Dinas Kesehatan Bondowoso untuk pemenuhan sarana medis pelayanan RSUD dr. H. Koesnandi (Boleh kosong)..."
+                placeholder="Contoh: Mutasi masuk status penggunaan aset peralatan kesehatan dari Dinas Kesehatan Bondowoso untuk pemenuhan sarana medis pelayanan RSUD dr. H. Koesnadi (Boleh kosong)..."
                 class="w-full bg-slate-900 border border-slate-700 focus:border-indigo-400 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-500 focus:outline-none shadow-inner leading-relaxed"></textarea>
         </div>
     </div>

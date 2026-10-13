@@ -291,7 +291,7 @@ class MutasiEksternalController extends Controller
             }
 
             // 3. Tambahan dari Astap spesifikasi_json (diurutkan desc)
-            $astaps = Astap::where('sumber_dana', 'pelimpahan_skpd')
+            $astaps = Astap::whereIn('sumber_dana', ['mutasi_eksternal', 'pelimpahan_skpd'])
                 ->whereNotNull('mutasi_asal')
                 ->where('mutasi_asal', '!=', '')
                 ->orderBy('id', 'desc')
@@ -543,7 +543,7 @@ class MutasiEksternalController extends Controller
                 'kode'                      => $nomorBamb,
                 'jenis'                     => $m->jenis_mutasi ?: ($isKeluar ? 'Transfer Keluar ke OPD' : 'Transfer Antar-OPD'),
                 'tipe'                      => $m->tipe ?: 'masuk',
-                'kategori_label'            => $isKeluar ? 'Transfer ke OPD (Mutasi Keluar)' : 'Pelimpahan SKPD (Mutasi Masuk)',
+                'kategori_label'            => $isKeluar ? 'Transfer ke OPD (Mutasi Keluar)' : 'Mutasi Eksternal Masuk (Dari OPD Luar)',
                 'nama'                      => ($isKeluar && !empty($items[0]['nama_barang']) ? $items[0]['nama_barang'] : ($astap?->nama_barang ?: 'Barang Mutasi')) . ($itemCount > 1 ? " (+{$itemCount} unit)" : ''),
                 'nama_murni'                => $isKeluar && !empty($items[0]['nama_barang']) ? $items[0]['nama_barang'] : ($astap?->nama_barang ?: 'Barang Mutasi'),
                 'nama_barang'               => $isKeluar && !empty($items[0]['nama_barang']) ? $items[0]['nama_barang'] : ($astap?->nama_barang ?: 'Barang Mutasi'),
@@ -551,9 +551,9 @@ class MutasiEksternalController extends Controller
                 'is_extracomtable'          => (bool) ($astap?->is_extracomtable ?? false),
                 'is_reklas'                 => (bool) ($astap?->is_reklas ?? false),
                 'jenis_reklas'              => $astap?->jenis_reklas,
-                'sumber_dana'               => $astap?->sumber_dana ?: 'pelimpahan_skpd',
-                'sumber_dana_raw'           => $astap?->sumber_dana ?: 'pelimpahan_skpd',
-                'jenis_aset_nama'           => $astap?->jenisAstap?->nama_jenis ?: ($astap?->jenisAstap?->jenis ?: ($isKeluar ? 'TRANSFER KE OPD' : 'PELIMPAHAN SKPD')),
+                'sumber_dana'               => $astap?->sumber_dana ?: 'mutasi_eksternal',
+                'sumber_dana_raw'           => $astap?->sumber_dana ?: 'mutasi_eksternal',
+                'jenis_aset_nama'           => $astap?->jenisAstap?->nama_jenis ?: ($astap?->jenisAstap?->jenis ?: ($isKeluar ? 'TRANSFER KE OPD' : 'MUTASI EKSTERNAL')),
                 'tahun_perolehan'           => $tahunMasuk,
                 'volume_satuan'             => $volAset . ' Aset',
                 'jumlah_volume'             => $volAset,
@@ -685,7 +685,7 @@ class MutasiEksternalController extends Controller
             'total_realisasi'           => $totalRealisasi,
             'biaya_administrasi_proyek' => 0,
             'triwulan'                  => $data['triwulan'],
-            'sumber_dana'               => 'pelimpahan_skpd',
+            'sumber_dana'               => 'mutasi_eksternal',
             'mutasi_asal'               => $data['mutasi_asal'],
             'mutasi_nomor_bamb'         => $data['mutasi_nomor_bamb'],
             'mutasi_tanggal'            => $data['mutasi_tanggal'],
@@ -700,7 +700,7 @@ class MutasiEksternalController extends Controller
             'is_reklas'                 => false,
             'is_deleted'                => 0,
             'spesifikasi_json'          => [
-                'sumber_dana'     => 'pelimpahan_skpd',
+                'sumber_dana'     => 'mutasi_eksternal',
                 'skpd_asal'       => $data['mutasi_asal'],
                 'nomor_bamb'      => $data['mutasi_nomor_bamb'],
                 'tanggal_bamb'    => $data['mutasi_tanggal'],
@@ -1087,10 +1087,11 @@ class MutasiEksternalController extends Controller
             'keterangan_tambahan'       => $data['mutasi_keterangan'] ?? null,
             'unit_id'                   => $data['unit_id'] ?? null,
             'alamat_barang'             => $data['alamat_barang'] ?: 'RSUD Dr. H. Koesnadi',
+            'sumber_dana'               => 'mutasi_eksternal',
         ];
 
         $specJson = is_array($item->spesifikasi_json) ? $item->spesifikasi_json : [];
-        $specJson['sumber_dana'] = 'pelimpahan_skpd';
+        $specJson['sumber_dana'] = 'mutasi_eksternal';
         $specJson['skpd_asal'] = $data['mutasi_asal'];
         $specJson['nomor_bamb'] = $data['mutasi_nomor_bamb'];
         $specJson['tanggal_bamb'] = $data['mutasi_tanggal'];
@@ -1549,7 +1550,7 @@ class MutasiEksternalController extends Controller
     private function syncLegacyAstapPelimpahan(): void
     {
         $legacyAstaps = Astap::where('is_deleted', 0)
-            ->whereIn('sumber_dana', ['pelimpahan_skpd', 'mutasi_masuk'])
+            ->whereIn('sumber_dana', ['mutasi_eksternal', 'pelimpahan_skpd', 'mutasi_masuk'])
             ->whereDoesntHave('mutasiEksternal')
             ->with(['pelimpahanSkpd', 'unit'])
             ->get();
