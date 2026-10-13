@@ -23,33 +23,10 @@ class AstapController extends Controller
     public function index()
     {
         $astaps = \App\Models\Astap::where('is_deleted', 0)
-            ->where(function($q) {
-                $q->where(function($sub) {
-                    $sub->whereNull('jenis_reklas')
-                        ->orWhere('jenis_reklas', '!=', 'MUTASI_EKSTERNAL');
-                })
-                ->where(function($sub) {
-                    $sub->whereHas('registers', function($r) {
-                        $r->where('is_deleted', 0)
-                          ->where(function($sr) {
-                              $sr->whereNull('status')
-                                 ->orWhere('status', '!=', 'Mutasi Keluar OPD');
-                          });
-                    })
-                    ->orWhere(function($noReg) {
-                        $noReg->whereDoesntHave('registers', function($r) {
-                            $r->where('is_deleted', 0);
-                        })
-                        ->whereDoesntHave('mutasiEksternals', function($m) {
-                            $m->where('tipe', 'keluar')->where('is_deleted', 0);
-                        })
-                        ->whereDoesntHave('reklas', function($rk) {
-                            $rk->where('jenis_reklas', 'MUTASI_EKSTERNAL')->where('is_deleted', 0);
-                        });
-                    });
-                });
-            })
             ->with([
+                'registers' => function($q) {
+                    $q->where('is_deleted', 0);
+                },
                 'registers.mutasis' => function($q) {
                     $q->where('status', 'Disetujui Admin (Selesai)');
                 }, 
@@ -138,7 +115,45 @@ class AstapController extends Controller
                 $isFullMutasiKeluar = ($a->jenis_reklas === 'MUTASI_EKSTERNAL') || ($mutatedRegsCount > 0 && $activeRegsCount === 0);
                 $isPartialMutasiKeluar = ($mutatedRegsCount > 0 && $activeRegsCount > 0);
                 $isMutasiKeluar = $isFullMutasiKeluar || $isPartialMutasiKeluar;
-                $skpdTujuanNama = $latestMutasiKeluar?->opd_tujuan ?: ($spec['mutasi_info']['skpd_tujuan'] ?? null);
+                $skpdTujuanNama = $latestMutasiKeluar?->opd_tujuan ?: ($spec['mutasi_info']['skpd_tujuan'] ?? ($latestReklas?->tujuan_nama ?? null));
+
+                $mutasiKeluarData = null;
+                if ($latestMutasiKeluar) {
+                    $mutasiKeluarData = [
+                        'id' => $latestMutasiKeluar->id,
+                        'nomor_bamb' => $latestMutasiKeluar->nomor_bamb,
+                        'tanggal_mutasi' => $latestMutasiKeluar->tanggal_mutasi ? $latestMutasiKeluar->tanggal_mutasi->format('d M Y') : '-',
+                        'tanggal_mutasi_raw' => $latestMutasiKeluar->tanggal_mutasi ? $latestMutasiKeluar->tanggal_mutasi->format('Y-m-d') : '',
+                        'opd_asal' => $latestMutasiKeluar->opd_asal,
+                        'opd_tujuan' => $latestMutasiKeluar->opd_tujuan,
+                        'pj_tujuan_nama' => $latestMutasiKeluar->pj_tujuan_nama,
+                        'pj_tujuan_nip' => $latestMutasiKeluar->pj_tujuan_nip,
+                        'pj_tujuan_jabatan' => $latestMutasiKeluar->pj_tujuan_jabatan,
+                        'nomor_sk_dasar' => $latestMutasiKeluar->nomor_sk_dasar,
+                        'alamat_instansi' => $latestMutasiKeluar->alamat_instansi,
+                        'status' => $latestMutasiKeluar->status,
+                        'cetak_url' => route('mutasi.eksternal.cetak', ['id' => $latestMutasiKeluar->id]),
+                    ];
+                } elseif (!empty($spec['mutasi_info']) || $a->jenis_reklas === 'MUTASI_EKSTERNAL' || $isMutasiKeluar) {
+                    $mInfo = $spec['mutasi_info'] ?? [];
+                    $skpdTujuan = $mInfo['skpd_tujuan'] ?? ($latestReklas?->tujuan_nama ?? ($skpdTujuanNama ?: 'OPD Luar'));
+                    $tglBast = $mInfo['tanggal_bast'] ?? ($latestReklas?->tanggal_reklas ? $latestReklas->tanggal_reklas->format('Y-m-d') : '');
+                    $mutasiKeluarData = [
+                        'id' => null,
+                        'nomor_bamb' => $mInfo['nomor_bast'] ?? ($latestReklas?->nomor_ba_reklas ?? '-'),
+                        'tanggal_mutasi' => $tglBast ?: '-',
+                        'tanggal_mutasi_raw' => $tglBast,
+                        'opd_asal' => 'RSUD Dr. H. Koesnadi',
+                        'opd_tujuan' => $skpdTujuan,
+                        'pj_tujuan_nama' => $mInfo['pj_tujuan_nama'] ?? ($spec['pj_tujuan_nama'] ?? '-'),
+                        'pj_tujuan_nip' => $mInfo['pj_tujuan_nip'] ?? ($spec['pj_tujuan_nip'] ?? '-'),
+                        'pj_tujuan_jabatan' => $mInfo['pj_tujuan_jabatan'] ?? ($spec['pj_tujuan_jabatan'] ?? '-'),
+                        'nomor_sk_dasar' => $mInfo['nomor_sk_dasar'] ?? ($spec['nomor_sk_dasar'] ?? '-'),
+                        'alamat_instansi' => $mInfo['alamat_instansi'] ?? ($spec['alamat_instansi'] ?? ''),
+                        'status' => 'Disahkan (Selesai)',
+                        'cetak_url' => null,
+                    ];
+                }
 
                 return [
                     'id' => $a->id,
@@ -153,21 +168,7 @@ class AstapController extends Controller
                     'is_mutasi_keluar_partial' => $isPartialMutasiKeluar,
                     'mutasi_keluar_count' => $mutatedRegsCount,
                     'active_regs_count' => $activeRegsCount,
-                    'mutasi_keluar' => $latestMutasiKeluar ? [
-                        'id' => $latestMutasiKeluar->id,
-                        'nomor_bamb' => $latestMutasiKeluar->nomor_bamb,
-                        'tanggal_mutasi' => $latestMutasiKeluar->tanggal_mutasi ? $latestMutasiKeluar->tanggal_mutasi->format('d M Y') : '-',
-                        'tanggal_mutasi_raw' => $latestMutasiKeluar->tanggal_mutasi ? $latestMutasiKeluar->tanggal_mutasi->format('Y-m-d') : '',
-                        'opd_asal' => $latestMutasiKeluar->opd_asal,
-                        'opd_tujuan' => $latestMutasiKeluar->opd_tujuan,
-                        'pj_tujuan_nama' => $latestMutasiKeluar->pj_tujuan_nama,
-                        'pj_tujuan_nip' => $latestMutasiKeluar->pj_tujuan_nip,
-                        'pj_tujuan_jabatan' => $latestMutasiKeluar->pj_tujuan_jabatan,
-                        'nomor_sk_dasar' => $latestMutasiKeluar->nomor_sk_dasar,
-                        'alamat_instansi' => $latestMutasiKeluar->alamat_instansi,
-                        'status' => $latestMutasiKeluar->status,
-                        'cetak_url' => route('mutasi.eksternal.cetak', ['id' => $latestMutasiKeluar->id]),
-                    ] : null,
+                    'mutasi_keluar' => $mutasiKeluarData,
                     'opd_tujuan' => $skpdTujuanNama,
                     'tujuan_kib' => $latestReklas?->tujuan_kib,
                     'tujuan_kode' => $latestReklas?->tujuan_kode,

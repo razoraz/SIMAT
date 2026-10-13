@@ -150,6 +150,7 @@
                                 <option value="hibah" class="bg-slate-900 text-amber-300 py-2 font-medium">🎁 Hibah Masuk</option>
                                 <option value="belanja_barang" class="bg-slate-900 text-indigo-300 py-2 font-medium">📦 Belanja Barang (Perbekalan)</option>
                                 <option value="pelimpahan" class="bg-slate-900 text-purple-300 py-2 font-medium">🔄 Pelimpahan SKPD</option>
+                                <option value="mutasi_keluar" class="bg-slate-900 text-cyan-300 py-2 font-medium">🏛️ Mutasi Keluar OPD</option>
                                 <option value="kemitraan" class="bg-slate-900 text-cyan-300 py-2 font-medium">🤝 Kemitraan (Semua)</option>
                                 <option value="bmd_dimanfaatkan" class="bg-slate-900 text-cyan-400 py-2 font-medium">🏛️ BMD Dimanfaatkan Mitra</option>
                                 <option value="kemitraan_mitra" class="bg-slate-900 text-teal-300 py-2 font-medium">🤝 Kemitraan (Aset Mitra)</option>

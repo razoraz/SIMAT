@@ -13411,6 +13411,7 @@
                             const isPelimpahan = item.sumber_dana === 'pelimpahan' || item.sumber_dana === 'pelimpahan_skpd' || item.sumber_dana === 'mutasi_masuk' || item.sumber_dana === 'mutasi' || item.sumber_dana_raw === 'pelimpahan_skpd' || item.sumber_dana_raw === 'mutasi_masuk';
 
                             const isBmdDimanfaatkan = item.is_bmd_dimanfaatkan || item.kemitraan?.tipe_kemitraan === 'dimanfaatkan';
+                            const isMutasiKeluar = item.jenis_reklas === 'MUTASI_EKSTERNAL' || !!item.is_mutasi_keluar_full || !!item.is_mutasi_keluar_partial || !!item.mutasi_keluar;
                             if (this.sumberDanaFilter === 'kemitraan') {
                                 matchSumber = isKemitraan;
                             } else if (this.sumberDanaFilter === 'bmd_dimanfaatkan') {
@@ -13423,8 +13424,10 @@
                                 matchSumber = isBelanjaBarang;
                             } else if (this.sumberDanaFilter === 'pelimpahan') {
                                 matchSumber = isPelimpahan;
+                            } else if (this.sumberDanaFilter === 'mutasi_keluar') {
+                                matchSumber = isMutasiKeluar;
                             } else if (this.sumberDanaFilter === 'belanja_modal') {
-                                matchSumber = !isKemitraan && !isHibah && !isBelanjaBarang && !isPelimpahan;
+                                matchSumber = !isKemitraan && !isHibah && !isBelanjaBarang && !isPelimpahan && !(item.jenis_reklas === 'MUTASI_EKSTERNAL' || item.is_mutasi_keluar_full);
                             }
                         }
 
