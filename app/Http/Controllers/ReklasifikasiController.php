@@ -298,6 +298,11 @@ class ReklasifikasiController extends Controller
             'nomor_sk_dasar' => 'nullable|string|max:255',
             'selected_register_ids' => 'nullable|array',
             'selected_register_ids.*' => 'integer',
+            'is_partial_reklas' => 'nullable|boolean',
+            'selected_indices' => 'nullable|array',
+            'selected_indices.*' => 'integer',
+            'selected_items' => 'nullable|array',
+            'unselected_items' => 'nullable|array',
         ], [
             'alasan_reklas.required' => 'Alasan kenapa melakukan reklasifikasi wajib diisi untuk semua jenis reklasifikasi.',
             'alasan_reklas.min' => 'Alasan reklasifikasi minimal berisi 3 karakter penjelasan.',
@@ -485,6 +490,15 @@ class ReklasifikasiController extends Controller
         try {
             $specLama = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?? []);
 
+            $selectedIndices = $request->input('selected_indices');
+            $isPartial = $request->boolean('is_partial_reklas') 
+                && is_array($selectedIndices) 
+                && count($selectedIndices) > 0 
+                && (
+                    (is_array($request->input('unselected_items')) && count($request->input('unselected_items')) > 0)
+                    || count($selectedIndices) < max(1, (int) $astap->jumlah_volume)
+                );
+
             // Catat identitas rekening & KIB asal sebelum aset dimodifikasi
             $asalKibAset = ($validated['asal_kib'] ?? null) ?: ($astap->category ?: 'KIB B');
             $asalKodeAset = $astap->jenisAstap?->sub_sub_rincian_objek ?: ($astap->jenisAstap?->sub_rincian_objek ?: $astap->jenisAstap?->jenis);
@@ -581,8 +595,10 @@ class ReklasifikasiController extends Controller
                 $validated['nilai_reklas'] = $totalBaru;
             }
 
-            $astap->is_reklas = true;
-            $astap->jenis_reklas = $validated['jenis_reklas'];
+            if (!$isPartial) {
+                $astap->is_reklas = true;
+                $astap->jenis_reklas = $validated['jenis_reklas'];
+            }
             if ($validated['jenis_reklas'] === 'EKSTRAKOMPTABEL') {
                 $astap->is_extracomtable = true;
                 $tujuanKodeAset = 'KOR_EXTRACOM';
@@ -826,7 +842,7 @@ class ReklasifikasiController extends Controller
                 $targetKode = $request->input('tujuan_kode') ?: ($request->input('kode_108') ?: null);
                 $targetNama = $request->input('tujuan_nama');
 
-                if ($targetKib) {
+                if ($targetKib && !$isPartial) {
                     $astap->category = $targetKib;
                 }
 
@@ -836,11 +852,13 @@ class ReklasifikasiController extends Controller
                         ->orWhere('jenis', $targetKode)
                         ->first();
                     if ($matchingJenis) {
-                        $astap->jenis_astap_id = $matchingJenis->id;
+                        if (!$isPartial) {
+                            $astap->jenis_astap_id = $matchingJenis->id;
+                        }
                         $tujuanKodeAset = $targetKode;
                         $tujuanNamaAset = $targetNama ?: ($matchingJenis->uraian_sub_sub_rincian ?: ($matchingJenis->uraian_sub_rincian ?: $matchingJenis->nama_jenis));
                     }
-                    if ($targetNama && !empty($matchingJenis?->sub_sub_rincian_objek)) {
+                    if ($targetNama && !empty($matchingJenis?->sub_sub_rincian_objek) && !$isPartial) {
                         // Untuk Kemitraan (Akun 1.5.2), pertahankan nama fisik aset (jangan ditimpa nama rekening generic 108)
                         if ($targetKib !== 'KEMITRAAN') {
                             $astap->nama_barang = $targetNama;
@@ -862,7 +880,9 @@ class ReklasifikasiController extends Controller
                     if ($prefix) {
                         $matchingJenis = JenisAstap::where('jenis', 'like', $prefix . '%')->first();
                         if ($matchingJenis) {
-                            $astap->jenis_astap_id = $matchingJenis->id;
+                            if (!$isPartial) {
+                                $astap->jenis_astap_id = $matchingJenis->id;
+                            }
                             $tujuanKodeAset = $matchingJenis->sub_sub_rincian_objek ?: ($matchingJenis->sub_rincian_objek ?: $matchingJenis->jenis);
                             $tujuanNamaAset = $targetNama ?: ($matchingJenis->uraian_sub_sub_rincian ?: ($matchingJenis->uraian_sub_rincian ?: $matchingJenis->nama_jenis));
                         }
@@ -955,7 +975,10 @@ class ReklasifikasiController extends Controller
                 // Deteksi jika spesifikasi baru dikirim dalam format multi-unit/multi-bidang
                 $unitItems = (!empty($rawNew['items']) && is_array($rawNew['items'])) ? $rawNew['items'] : [$rawNew];
                 $unitCount = max(1, count($unitItems));
-                $unitPrice = (float) ($astap->total_realisasi / $unitCount);
+                $isPartialMode = $request->boolean('is_partial_reklas') && is_array($request->input('selected_indices')) && count($request->input('selected_indices')) > 0;
+                $unitPrice = $isPartialMode
+                    ? (float) ((float) $validated['nilai_reklas'] / $unitCount)
+                    : (float) ($astap->total_realisasi / $unitCount);
 
                 if ($targetKib === 'KIB A') {
                     $tanahItems = [];
@@ -1168,11 +1191,11 @@ class ReklasifikasiController extends Controller
                     $newSpec['jangka_waktu']      = $kemitraanItems[0]['jangka_waktu'] ?? '5 Tahun';
 
                     // Simpan juga spesifikasi fisik (Mesin / Tanah / Gedung / Jaringan / Lainnya) sesuai data input
-                    $hasMesinData = !empty($rawNew['mesin_merk']) || !empty($rawNew['mesin_type']) || !empty($rawNew['mesin_no_pabrik']) || !empty($unitItems[0]['mesin_merk']);
-                    $hasTanahData = !empty($rawNew['tanah_luas_m2']) || !empty($rawNew['tanah_sertifikat_no']) || !empty($unitItems[0]['tanah_luas_m2']);
-                    $hasGedungData = !empty($rawNew['gedung_luas_lantai_m2']) || !empty($rawNew['gedung_dokumen_nomor']) || !empty($unitItems[0]['gedung_luas_lantai_m2']);
-                    $hasJaringanData = !empty($rawNew['jaringan_konstruksi']) || !empty($rawNew['jaringan_luas_m2']) || !empty($unitItems[0]['jaringan_luas_m2']);
-                    $hasLainnyaData = !empty($rawNew['lainnya_judul_pencipta']) || !empty($unitItems[0]['lainnya_judul_pencipta']);
+                    $hasMesinData = !empty($rawNew['mesin_merk']) || !empty($rawNew['mesin_type']) || !empty($rawNew['mesin_no_pabrik']) || !empty($unitItems[0]['mesin_merk']) || !empty($specLama['mesin_items']) || $asalKibAset === 'KIB B';
+                    $hasTanahData = !empty($rawNew['tanah_luas_m2']) || !empty($rawNew['tanah_sertifikat_no']) || !empty($unitItems[0]['tanah_luas_m2']) || !empty($specLama['tanah_items']) || $asalKibAset === 'KIB A';
+                    $hasGedungData = !empty($rawNew['gedung_luas_lantai_m2']) || !empty($rawNew['gedung_dokumen_nomor']) || !empty($unitItems[0]['gedung_luas_lantai_m2']) || !empty($specLama['gedung_items']) || $asalKibAset === 'KIB C';
+                    $hasJaringanData = !empty($rawNew['jaringan_konstruksi']) || !empty($rawNew['jaringan_luas_m2']) || !empty($unitItems[0]['jaringan_luas_m2']) || !empty($specLama['jaringan_items']) || $asalKibAset === 'KIB D';
+                    $hasLainnyaData = !empty($rawNew['lainnya_judul_pencipta']) || !empty($unitItems[0]['lainnya_judul_pencipta']) || !empty($specLama['lainnya_items']) || $asalKibAset === 'KIB E';
 
                     if ($hasMesinData) {
                         $mesinItems = [];
@@ -1427,22 +1450,6 @@ class ReklasifikasiController extends Controller
                 $specBaru = $astap->spesifikasi_json;
             }
 
-            $astap->save();
-
-            // Sinkronkan data ke register jika ada perubahan pada kolom register yang valid (JANGAN timpa register jika MUTASI_EKSTERNAL)
-            if ($validated['jenis_reklas'] !== 'MUTASI_EKSTERNAL' && $astap->registers()->exists()) {
-                $regUpdate = [];
-                if (\Illuminate\Support\Facades\Schema::hasColumn('astap_registers', 'ruang_pemegang') && !empty($astap->ruang_unit)) {
-                    $regUpdate['ruang_pemegang'] = $astap->ruang_unit;
-                }
-                if (\Illuminate\Support\Facades\Schema::hasColumn('astap_registers', 'kondisi') && !empty($astap->kondisi)) {
-                    $regUpdate['kondisi'] = $astap->kondisi;
-                }
-                if (!empty($regUpdate)) {
-                    $astap->registers()->update($regUpdate);
-                }
-            }
-
             // Pastikan fallback nama dan kode asal/tujuan jika masih kosong
             if (empty($tujuanNamaAset) && !empty($validated['jenis_reklasifikasi_tujuan_id'])) {
                 $tRow = $allTemplateRows->firstWhere('id', $validated['jenis_reklasifikasi_tujuan_id']);
@@ -1510,79 +1517,276 @@ class ReklasifikasiController extends Controller
                 }
             }
 
-            // Simpan audit log reklasifikasi
-            $reklasData = [
-                'astap_id'                      => $validated['astap_id'],
-                'jenis_reklasifikasi_asal_id'   => $asalId,
-                'jenis_reklasifikasi_tujuan_id' => $tujuanId,
-                'jenis_reklas'                  => $validated['jenis_reklas'],
-                'sub_koreksi'                   => $validated['sub_koreksi'] ?? ($subKoreksi ?? null),
-                'asal_kib'                      => $asalKibFinal,
-                'asal_kode'                     => $asalKodeAset ?? null,
-                'asal_nama'                     => $asalNamaAset ?: 'Aset Tidak Dikenal',
-                'tujuan_kib'                    => $tujuanKibFinal,
-                'tujuan_kode'                   => $tujuanKodeAset ?? null,
-                'tujuan_nama'                   => $tujuanNamaAset ?? null,
-                'nilai_reklas'                  => $validated['nilai_reklas'],
-                'tanggal_reklas'                => $validated['tanggal_reklas'],
-                'triwulan'                      => $validated['triwulan'],
-                'tahun'                         => $validated['tahun'],
-                'nomor_ba_reklas'               => $validated['nomor_ba_reklas'] ?? null,
-                'alasan_reklas'                 => $validated['alasan_reklas'] ?? ($request->input('alasan_reklas') ?? null),
-                'keterangan'                    => $validated['keterangan'] ?? null,
-                'spesifikasi_lama'              => $specLama,
-                'spesifikasi_baru'              => $specBaru,
-                'user_id'                       => Auth::id(),
-            ];
-            $reklas = AstapReklas::create($reklasData);
+            if ($isPartial) {
+                // =========================================================================
+                // OPSI 2: AUTO-SPLIT / REKLASIFIKASI PARSIAL
+                // Item terpilih dialihkan ke KIB/Rekening Tujuan (misal Kemitraan 1.5.2).
+                // Sisa item yang tidak dipilih tetap berada di KIB asal (misal KIB A Tanah).
+                // =========================================================================
+                $selectedCount = count($selectedIndices);
+                $unselectedItems = $request->input('unselected_items', []);
+                $totalOrigVol = max(1, (int) $astap->jumlah_volume);
+                $effectiveTotalVol = max($totalOrigVol, $selectedCount + count($unselectedItems));
+                $remainingVol = max(1, $effectiveTotalVol - $selectedCount);
 
-            // Sinkronisasi status dan data Kemitraan (Akun 1.5.2)
-            if ($targetKib === 'KEMITRAAN') {
-                $astap->sumber_dana = 'kemitraan';
+                $nilaiReklasSplit = (float) $validated['nilai_reklas'];
+                if ($nilaiReklasSplit <= 0) {
+                    $nilaiReklasSplit = round(((float) $astap->total_realisasi / $effectiveTotalVol) * $selectedCount);
+                }
+                $sisaRealisasi = max(0, (float) $astap->total_realisasi - $nilaiReklasSplit);
+
+                $anggaranReklasSplit = round(((float) $astap->jumlah_anggaran / $effectiveTotalVol) * $selectedCount);
+                $sisaAnggaran = max(0, (float) $astap->jumlah_anggaran - $anggaranReklasSplit);
+
+                // 1. Buat record baru untuk unit yang dialihkan ($targetAstap)
+                $targetAstap = $astap->replicate();
+                $targetAstap->jumlah_volume = $selectedCount;
+                $targetAstap->total_realisasi = $nilaiReklasSplit;
+                $targetAstap->harga_satuan = $selectedCount > 0 ? ($nilaiReklasSplit / $selectedCount) : $nilaiReklasSplit;
+                $targetAstap->jumlah_anggaran = $anggaranReklasSplit;
+                $targetAstap->is_reklas = 1;
+                $targetAstap->jenis_reklas = $validated['jenis_reklas'];
+
+                if ($targetKib === 'KEMITRAAN') {
+                    $targetAstap->sumber_dana = 'kemitraan';
+                    $kemitraanJenis = null;
+                    if ($tujuanKodeAset) {
+                        $kemitraanJenis = JenisAstap::where('sub_sub_rincian_objek', $tujuanKodeAset)
+                            ->orWhere('sub_rincian_objek', $tujuanKodeAset)
+                            ->orWhere('jenis', $tujuanKodeAset)
+                            ->first();
+                    }
+                    if (!$kemitraanJenis) {
+                        $kemitraanJenis = JenisAstap::where('jenis', 'like', '1.5.2%')->first();
+                    }
+                    if ($kemitraanJenis) {
+                        $targetAstap->jenis_astap_id = $kemitraanJenis->id;
+                    }
+                } elseif ($tujuanKodeAset) {
+                    $tJenis = JenisAstap::where('sub_sub_rincian_objek', $tujuanKodeAset)
+                        ->orWhere('sub_rincian_objek', $tujuanKodeAset)
+                        ->orWhere('jenis', $tujuanKodeAset)
+                        ->first();
+                    if ($tJenis) {
+                        $targetAstap->jenis_astap_id = $tJenis->id;
+                    }
+                }
+
+                $targetSpec = is_array($specBaru) ? $specBaru : [];
+                $targetSpec['split_parent_id'] = $astap->id;
+                $targetSpec['split_is_partial'] = true;
+                $targetSpec['split_volume'] = $selectedCount;
+                $targetAstap->spesifikasi_json = $targetSpec;
+                $targetAstap->save();
+
+                // Replikasi dokumen belanja modal jika ada
+                $origBm = \App\Models\AstapBelanjaModal::where('astap_id', $astap->id)->first();
+                if ($origBm) {
+                    $targetBm = $origBm->replicate();
+                    $targetBm->astap_id = $targetAstap->id;
+                    $targetBm->save();
+                }
+
+                // Pindahkan register NIBAR terpilih ke $targetAstap
+                $allRegisters = $astap->registers()->orderBy('no_register_int', 'asc')->orderBy('id', 'asc')->get();
+                $firstTransferredReg = null;
+                foreach ($selectedIndices as $sIdx) {
+                    if (isset($allRegisters[$sIdx])) {
+                        $regToMove = $allRegisters[$sIdx];
+                        $regToMove->astap_id = $targetAstap->id;
+                        $regToMove->save();
+                        if (!$firstTransferredReg) {
+                            $firstTransferredReg = $regToMove;
+                        }
+                    }
+                }
+
+                // 2. Perbarui aset asal ($astap) yang tetap berada di KIB asal (misal KIB A Tanah)
+                $astap->jumlah_volume = $remainingVol;
+                $astap->total_realisasi = $sisaRealisasi;
+                $astap->harga_satuan = $remainingVol > 0 ? ($sisaRealisasi / $remainingVol) : $sisaRealisasi;
+                $astap->jumlah_anggaran = $sisaAnggaran;
+
+                // Filter spesifikasi item di aset asal agar hanya tersisa unit yang TIDAK dialihkan
+                $currOrigSpec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?? []);
+                $repeaterKeys = ['tanah_items', 'mesin_items', 'gedung_items', 'jaringan_items', 'lainnya_items', 'atb_items', 'kemitraan_items', 'kdp_items', 'aset_lain_items'];
+                foreach ($repeaterKeys as $rk) {
+                    if (!empty($currOrigSpec[$rk]) && is_array($currOrigSpec[$rk])) {
+                        $filtered = [];
+                        foreach ($currOrigSpec[$rk] as $idx => $item) {
+                            if (!in_array($idx, $selectedIndices, true)) {
+                                $filtered[] = $item;
+                            }
+                        }
+                        $currOrigSpec[$rk] = !empty($filtered) ? array_values($filtered) : (!empty($unselectedItems) ? $unselectedItems : []);
+                    }
+                }
+                if (!empty($currOrigSpec['tanah_items'])) {
+                    $currOrigSpec['luas_m2'] = array_sum(array_column($currOrigSpec['tanah_items'], 'tanah_luas_m2'));
+                }
+                if (!isset($currOrigSpec['riwayat_split'])) {
+                    $currOrigSpec['riwayat_split'] = [];
+                }
+                $currOrigSpec['riwayat_split'][] = [
+                    'tanggal'          => $validated['tanggal_reklas'],
+                    'tipe'             => 'split_partial_out',
+                    'target_astap_id'  => $targetAstap->id,
+                    'volume_dipindah'  => $selectedCount,
+                    'nilai_dipindah'   => $nilaiReklasSplit,
+                    'tujuan_kib'       => $targetKib ?: $tujuanKibFinal,
+                    'keterangan'       => "Pemecahan parsial: {$selectedCount} unit dialihkan ke " . ($targetKib ?: $tujuanKibFinal) . " (Aset Baru ID #{$targetAstap->id})",
+                ];
+                $astap->spesifikasi_json = $currOrigSpec;
                 $astap->save();
 
-                $spec = $astap->spesifikasi_json ?? [];
-                $existingKemitraan = $astap->kemitraan ?? $kemitraan;
-                $kemitraanData = [
-                    'astap_id'         => $astap->id,
-                    'mitra_nama'       => $spec['mitra_nama'] ?? ($validated['spesifikasi_baru']['kemitraan_mitra'] ?? ($existingKemitraan?->mitra_nama ?? 'Mitra Pihak Ketiga')),
-                    'mitra_pimpinan'   => $spec['mitra_pimpinan'] ?? ($validated['spesifikasi_baru']['kemitraan_pimpinan'] ?? ($existingKemitraan?->mitra_pimpinan ?? null)),
-                    'mitra_alamat'     => $spec['mitra_alamat'] ?? ($validated['spesifikasi_baru']['kemitraan_alamat'] ?? ($existingKemitraan?->mitra_alamat ?? null)),
-                    'nomor_pks'        => $spec['perjanjian_nomor'] ?? ($validated['spesifikasi_baru']['kemitraan_perjanjian_no'] ?? ($existingKemitraan?->nomor_pks ?? ($validated['nomor_ba_reklas'] ?? '-'))),
-                    'tanggal_pks'      => $spec['tanggal_pks'] ?? ($validated['spesifikasi_baru']['kemitraan_tanggal_pks'] ?? ($existingKemitraan?->tanggal_pks ?? ($validated['tanggal_reklas'] ?? now()))),
-                    'skema_kemitraan'  => $spec['skema_kemitraan'] ?? ($validated['spesifikasi_baru']['kemitraan_skema'] ?? ($existingKemitraan?->skema_kemitraan ?? 'Sewa')),
-                    'tanggal_mulai'    => $spec['tanggal_mulai'] ?? ($validated['spesifikasi_baru']['kemitraan_tanggal_mulai'] ?? ($existingKemitraan?->tanggal_mulai ?? null)),
-                    'tanggal_selesai'  => $spec['tanggal_selesai'] ?? ($validated['spesifikasi_baru']['kemitraan_tanggal_selesai'] ?? ($existingKemitraan?->tanggal_selesai ?? null)),
-                    'status_konsesi'   => 'Aktif',
-                    'jumlah_volume'    => max(1, (int) $astap->jumlah_volume),
-                    'satuan'           => $astap->satuan ?: 'Bidang / Titik',
-                    'nilai_aset'       => (float) $astap->total_realisasi,
-                    'tahun'            => (int) ($validated['tahun'] ?? date('Y')),
-                    'triwulan'         => (string) ($validated['triwulan'] ?? 1),
-                    'keterangan'       => $validated['keterangan'] ?? ($astap->keterangan_tambahan ?? null),
-                    'user_id'          => Auth::id(),
+                // Simpan audit log reklasifikasi untuk $targetAstap
+                $reklasData = [
+                    'astap_id'                      => $targetAstap->id,
+                    'jenis_reklasifikasi_asal_id'   => $asalId,
+                    'jenis_reklasifikasi_tujuan_id' => $tujuanId,
+                    'jenis_reklas'                  => $validated['jenis_reklas'],
+                    'sub_koreksi'                   => $validated['sub_koreksi'] ?? ($subKoreksi ?? null),
+                    'asal_kib'                      => $asalKibFinal,
+                    'asal_kode'                     => $asalKodeAset ?? null,
+                    'asal_nama'                     => $asalNamaAset ?: 'Aset Tidak Dikenal',
+                    'tujuan_kib'                    => $tujuanKibFinal,
+                    'tujuan_kode'                   => $tujuanKodeAset ?? null,
+                    'tujuan_nama'                   => $tujuanNamaAset ?? null,
+                    'nilai_reklas'                  => $nilaiReklasSplit,
+                    'tanggal_reklas'                => $validated['tanggal_reklas'],
+                    'triwulan'                      => $validated['triwulan'],
+                    'tahun'                         => $validated['tahun'],
+                    'nomor_ba_reklas'               => $validated['nomor_ba_reklas'] ?? null,
+                    'alasan_reklas'                 => $validated['alasan_reklas'] ?? ($request->input('alasan_reklas') ?? null),
+                    'keterangan'                    => ($validated['keterangan'] ? ($validated['keterangan'] . ' | ') : '')
+                        . "Reklasifikasi Parsial dari {$astap->nama_barang} (ID Asal: #{$astap->id}) - {$selectedCount} dari {$effectiveTotalVol} unit dipisahkan ke " . ($targetKib ?: $tujuanKibFinal),
+                    'spesifikasi_lama'              => $specLama,
+                    'spesifikasi_baru'              => $targetSpec,
+                    'user_id'                       => Auth::id(),
                 ];
+                $reklas = AstapReklas::create($reklasData);
 
-                if ($astap->kemitraan) {
-                    $astap->kemitraan->update($kemitraanData);
-                } elseif ($kemitraan) {
-                    $kemitraan->update($kemitraanData);
-                } else {
+                // Simpan Kemitraan untuk $targetAstap (ditautkan ke $astap sebagai objek_astap_id)
+                if ($targetKib === 'KEMITRAAN') {
+                    $spec = $targetSpec;
+                    $kemitraanData = [
+                        'astap_id'         => $targetAstap->id,
+                        'objek_astap_id'   => $astap->id,
+                        'objek_register_id'=> $firstTransferredReg?->id ?? null,
+                        'objek_nibar'      => $firstTransferredReg?->nibar ?? null,
+                        'mitra_nama'       => $spec['mitra_nama'] ?? ($validated['spesifikasi_baru']['kemitraan_mitra'] ?? 'Mitra Pihak Ketiga'),
+                        'mitra_pimpinan'   => $spec['mitra_pimpinan'] ?? ($validated['spesifikasi_baru']['kemitraan_pimpinan'] ?? null),
+                        'mitra_alamat'     => $spec['mitra_alamat'] ?? ($validated['spesifikasi_baru']['kemitraan_alamat'] ?? null),
+                        'nomor_pks'        => $spec['perjanjian_nomor'] ?? ($validated['spesifikasi_baru']['kemitraan_perjanjian_no'] ?? ($validated['nomor_ba_reklas'] ?? '-')),
+                        'tanggal_pks'      => $spec['tanggal_pks'] ?? ($validated['spesifikasi_baru']['kemitraan_tanggal_pks'] ?? ($validated['tanggal_reklas'] ?? now())),
+                        'skema_kemitraan'  => $spec['skema_kemitraan'] ?? ($validated['spesifikasi_baru']['kemitraan_skema'] ?? 'Sewa'),
+                        'tanggal_mulai'    => $spec['tanggal_mulai'] ?? ($validated['spesifikasi_baru']['kemitraan_tanggal_mulai'] ?? null),
+                        'tanggal_selesai'  => $spec['tanggal_selesai'] ?? ($validated['spesifikasi_baru']['kemitraan_tanggal_selesai'] ?? null),
+                        'status_konsesi'   => 'Aktif',
+                        'jumlah_volume'    => $selectedCount,
+                        'satuan'           => $targetAstap->satuan ?: ($astap->satuan ?: 'Bidang / Titik'),
+                        'nilai_aset'       => $nilaiReklasSplit,
+                        'tahun'            => (int) ($validated['tahun'] ?? date('Y')),
+                        'triwulan'         => (string) ($validated['triwulan'] ?? 1),
+                        'keterangan'       => $validated['keterangan'] ?? ($targetAstap->keterangan_tambahan ?? null),
+                        'user_id'          => Auth::id(),
+                    ];
                     \App\Models\AstapKemitraan::create($kemitraanData);
                 }
-            } elseif ($astap->kemitraan && $asalKibFinal === 'KEMITRAAN') {
-                // Hanya perbarui status menjadi Selesai jika asal reklas adalah Kemitraan (berakhirnya masa konsesi)
-                $astap->kemitraan->update([
-                    'status_konsesi' => 'Selesai / Reklasifikasi'
-                ]);
+            } else {
+                // =========================================================================
+                // ALUR NORMAL: REKLASIFIKASI PENUH (100% UNIT ASET)
+                // =========================================================================
+                $astap->save();
 
-                // Sinkronkan objek aset BMD terkait (2 arah)
-                if ($astap->kemitraan->objek_astap_id) {
-                    \App\Models\AstapKemitraan::where('astap_id', $astap->kemitraan->objek_astap_id)
+                // Sinkronkan data ke register jika ada perubahan pada kolom register yang valid (JANGAN timpa register jika MUTASI_EKSTERNAL)
+                if ($validated['jenis_reklas'] !== 'MUTASI_EKSTERNAL' && $astap->registers()->exists()) {
+                    $regUpdate = [];
+                    if (\Illuminate\Support\Facades\Schema::hasColumn('astap_registers', 'ruang_pemegang') && !empty($astap->ruang_unit)) {
+                        $regUpdate['ruang_pemegang'] = $astap->ruang_unit;
+                    }
+                    if (\Illuminate\Support\Facades\Schema::hasColumn('astap_registers', 'kondisi') && !empty($astap->kondisi)) {
+                        $regUpdate['kondisi'] = $astap->kondisi;
+                    }
+                    if (!empty($regUpdate)) {
+                        $astap->registers()->update($regUpdate);
+                    }
+                }
+
+                // Simpan audit log reklasifikasi
+                $reklasData = [
+                    'astap_id'                      => $validated['astap_id'],
+                    'jenis_reklasifikasi_asal_id'   => $asalId,
+                    'jenis_reklasifikasi_tujuan_id' => $tujuanId,
+                    'jenis_reklas'                  => $validated['jenis_reklas'],
+                    'sub_koreksi'                   => $validated['sub_koreksi'] ?? ($subKoreksi ?? null),
+                    'asal_kib'                      => $asalKibFinal,
+                    'asal_kode'                     => $asalKodeAset ?? null,
+                    'asal_nama'                     => $asalNamaAset ?: 'Aset Tidak Dikenal',
+                    'tujuan_kib'                    => $tujuanKibFinal,
+                    'tujuan_kode'                   => $tujuanKodeAset ?? null,
+                    'tujuan_nama'                   => $tujuanNamaAset ?? null,
+                    'nilai_reklas'                  => $validated['nilai_reklas'],
+                    'tanggal_reklas'                => $validated['tanggal_reklas'],
+                    'triwulan'                      => $validated['triwulan'],
+                    'tahun'                         => $validated['tahun'],
+                    'nomor_ba_reklas'               => $validated['nomor_ba_reklas'] ?? null,
+                    'alasan_reklas'                 => $validated['alasan_reklas'] ?? ($request->input('alasan_reklas') ?? null),
+                    'keterangan'                    => $validated['keterangan'] ?? null,
+                    'spesifikasi_lama'              => $specLama,
+                    'spesifikasi_baru'              => $specBaru,
+                    'user_id'                       => Auth::id(),
+                ];
+                $reklas = AstapReklas::create($reklasData);
+
+                // Sinkronisasi status dan data Kemitraan (Akun 1.5.2)
+                if ($targetKib === 'KEMITRAAN') {
+                    $astap->sumber_dana = 'kemitraan';
+                    $astap->save();
+
+                    $spec = $astap->spesifikasi_json ?? [];
+                    $existingKemitraan = $astap->kemitraan ?? $kemitraan;
+                    $kemitraanData = [
+                        'astap_id'         => $astap->id,
+                        'mitra_nama'       => $spec['mitra_nama'] ?? ($validated['spesifikasi_baru']['kemitraan_mitra'] ?? ($existingKemitraan?->mitra_nama ?? 'Mitra Pihak Ketiga')),
+                        'mitra_pimpinan'   => $spec['mitra_pimpinan'] ?? ($validated['spesifikasi_baru']['kemitraan_pimpinan'] ?? ($existingKemitraan?->mitra_pimpinan ?? null)),
+                        'mitra_alamat'     => $spec['mitra_alamat'] ?? ($validated['spesifikasi_baru']['kemitraan_alamat'] ?? ($existingKemitraan?->mitra_alamat ?? null)),
+                        'nomor_pks'        => $spec['perjanjian_nomor'] ?? ($validated['spesifikasi_baru']['kemitraan_perjanjian_no'] ?? ($existingKemitraan?->nomor_pks ?? ($validated['nomor_ba_reklas'] ?? '-'))),
+                        'tanggal_pks'      => $spec['tanggal_pks'] ?? ($validated['spesifikasi_baru']['kemitraan_tanggal_pks'] ?? ($existingKemitraan?->tanggal_pks ?? ($validated['tanggal_reklas'] ?? now()))),
+                        'skema_kemitraan'  => $spec['skema_kemitraan'] ?? ($validated['spesifikasi_baru']['kemitraan_skema'] ?? ($existingKemitraan?->skema_kemitraan ?? 'Sewa')),
+                        'tanggal_mulai'    => $spec['tanggal_mulai'] ?? ($validated['spesifikasi_baru']['kemitraan_tanggal_mulai'] ?? ($existingKemitraan?->tanggal_mulai ?? null)),
+                        'tanggal_selesai'  => $spec['tanggal_selesai'] ?? ($validated['spesifikasi_baru']['kemitraan_tanggal_selesai'] ?? ($existingKemitraan?->tanggal_selesai ?? null)),
+                        'status_konsesi'   => 'Aktif',
+                        'jumlah_volume'    => max(1, (int) $astap->jumlah_volume),
+                        'satuan'           => $astap->satuan ?: 'Bidang / Titik',
+                        'nilai_aset'       => (float) $astap->total_realisasi,
+                        'tahun'            => (int) ($validated['tahun'] ?? date('Y')),
+                        'triwulan'         => (string) ($validated['triwulan'] ?? 1),
+                        'keterangan'       => $validated['keterangan'] ?? ($astap->keterangan_tambahan ?? null),
+                        'user_id'          => Auth::id(),
+                    ];
+
+                    if ($astap->kemitraan) {
+                        $astap->kemitraan->update($kemitraanData);
+                    } elseif ($kemitraan) {
+                        $kemitraan->update($kemitraanData);
+                    } else {
+                        \App\Models\AstapKemitraan::create($kemitraanData);
+                    }
+                } elseif ($astap->kemitraan && $asalKibFinal === 'KEMITRAAN') {
+                    // Hanya perbarui status menjadi Selesai jika asal reklas adalah Kemitraan (berakhirnya masa konsesi)
+                    $astap->kemitraan->update([
+                        'status_konsesi' => 'Selesai / Reklasifikasi'
+                    ]);
+
+                    // Sinkronkan objek aset BMD terkait (2 arah)
+                    if ($astap->kemitraan->objek_astap_id) {
+                        \App\Models\AstapKemitraan::where('astap_id', $astap->kemitraan->objek_astap_id)
+                            ->update(['status_konsesi' => 'Selesai / Reklasifikasi']);
+                    }
+                    \App\Models\AstapKemitraan::where('objek_astap_id', $astap->id)
                         ->update(['status_konsesi' => 'Selesai / Reklasifikasi']);
                 }
-                \App\Models\AstapKemitraan::where('objek_astap_id', $astap->id)
-                    ->update(['status_konsesi' => 'Selesai / Reklasifikasi']);
             }
 
             // Sinkronisasi otomatis Mutasi Antar-OPD Keluar (MUTASI_EKSTERNAL)
@@ -1749,14 +1953,24 @@ class ReklasifikasiController extends Controller
             DB::commit();
 
             $astap->refresh();
+            $responseTarget = ($isPartial && isset($targetAstap)) ? $targetAstap : $astap;
 
             if ($request->wantsJson()) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'Transaksi reklasifikasi aset berhasil dicatat!',
+                    'message' => $isPartial
+                        ? "Reklasifikasi parsial berhasil! Sebanyak {$selectedCount} unit dialihkan ke " . ($targetKib ?: $tujuanKibFinal) . " dan sisa {$remainingVol} unit tetap di {$asalKibFinal}."
+                        : 'Transaksi reklasifikasi aset berhasil dicatat!',
                     'data' => $reklas,
+                    'is_partial' => $isPartial,
+                    'split_volume' => $isPartial ? $selectedCount : null,
+                    'remaining_volume' => $isPartial ? $remainingVol : null,
+                    'target_astap_id' => $isPartial ? $targetAstap->id : null,
+                    'original_astap_id' => $astap->id,
+                    'tujuan_kib' => $targetKib ?: $tujuanKibFinal,
+                    'asal_kib' => $asalKibFinal,
                     'is_kemitraan' => ($targetKib === 'KEMITRAAN'),
-                    'cetak_bast_url' => ($targetKib === 'KEMITRAAN') ? route('astap.kemitraan.cetak_bast', ['id' => $astap->id]) : null,
+                    'cetak_bast_url' => ($targetKib === 'KEMITRAAN') ? route('astap.kemitraan.cetak_bast', ['id' => $responseTarget->id]) : null,
                     'is_mutasi_keluar' => ($validated['jenis_reklas'] === 'MUTASI_EKSTERNAL'),
                     'is_full_transfer' => $isFullTransferFinal,
                     'cetak_bast_mutasi_url' => ($validated['jenis_reklas'] === 'MUTASI_EKSTERNAL' && isset($mutasiKeluar)) ? route('mutasi.eksternal.cetak', ['id' => $mutasiKeluar->id]) : null,
@@ -1873,30 +2087,53 @@ class ReklasifikasiController extends Controller
 
             $astap = Astap::find($astapId);
             if ($astap) {
-                if (! empty($updateData)) {
-                    $astap->update($updateData);
-                }
-
-                // Sinkronkan kembali ke register fisik jika category dipulihkan
-                if (isset($updateData['category']) && $astap->registers()->exists()) {
-                    $astap->registers()->update(['kelompok_kib' => $updateData['category']]);
-                }
-
-                // Pulihkan status kemitraan jika aset terkait dengan Akun 1.5.2 Kemitraan
-                if ($reklas->tujuan_kib === 'KEMITRAAN') {
-                    $astap->sumber_dana = 'belanja_modal';
-                    $astap->save();
+                $targetSpec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?? []);
+                $splitParentId = $targetSpec['split_parent_id'] ?? null;
+                if ($splitParentId) {
+                    $parentAstap = Astap::find($splitParentId);
+                    if ($parentAstap) {
+                        $parentAstap->jumlah_volume = (int) $parentAstap->jumlah_volume + (int) $astap->jumlah_volume;
+                        $parentAstap->total_realisasi = (float) $parentAstap->total_realisasi + (float) $astap->total_realisasi;
+                        $parentAstap->jumlah_anggaran = (float) $parentAstap->jumlah_anggaran + (float) $astap->jumlah_anggaran;
+                        if ($parentAstap->jumlah_volume > 0) {
+                            $parentAstap->harga_satuan = $parentAstap->total_realisasi / $parentAstap->jumlah_volume;
+                        }
+                        // Kembalikan registers yang dipindahkan ke parent
+                        $astap->registers()->update(['astap_id' => $parentAstap->id]);
+                        $parentAstap->save();
+                    }
                     if ($astap->kemitraan) {
                         $astap->kemitraan->delete();
                     }
-                } elseif ($astap->kemitraan) {
-                    $statusPulih = 'Aktif';
-                    if ($astap->kemitraan->tanggal_selesai && \Carbon\Carbon::parse($astap->kemitraan->tanggal_selesai)->isPast()) {
-                        $statusPulih = 'Konsesi Berakhir';
+                    $astap->is_deleted = 1;
+                    $astap->deleted_at = now();
+                    $astap->save();
+                } else {
+                    if (! empty($updateData)) {
+                        $astap->update($updateData);
                     }
-                    $astap->kemitraan->update([
-                        'status_konsesi' => $statusPulih
-                    ]);
+
+                    // Sinkronkan kembali ke register fisik jika category dipulihkan
+                    if (isset($updateData['category']) && $astap->registers()->exists()) {
+                        $astap->registers()->update(['kelompok_kib' => $updateData['category']]);
+                    }
+
+                    // Pulihkan status kemitraan jika aset terkait dengan Akun 1.5.2 Kemitraan
+                    if ($reklas->tujuan_kib === 'KEMITRAAN') {
+                        $astap->sumber_dana = 'belanja_modal';
+                        $astap->save();
+                        if ($astap->kemitraan) {
+                            $astap->kemitraan->delete();
+                        }
+                    } elseif ($astap->kemitraan) {
+                        $statusPulih = 'Aktif';
+                        if ($astap->kemitraan->tanggal_selesai && \Carbon\Carbon::parse($astap->kemitraan->tanggal_selesai)->isPast()) {
+                            $statusPulih = 'Konsesi Berakhir';
+                        }
+                        $astap->kemitraan->update([
+                            'status_konsesi' => $statusPulih
+                        ]);
+                    }
                 }
 
                 // Pulihkan status Mutasi Eksternal Keluar jika transaksi yang dibatalkan adalah MUTASI_EKSTERNAL

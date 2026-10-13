@@ -60,13 +60,28 @@
                                 <div class="text-[11px] font-mono text-cyan-400 font-medium mt-0.5" x-text="'Kode: ' + (selectedAstapReklas?.kode_barang || '-')"></div>
                             </div>
                             <div class="text-right shrink-0">
-                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block" x-text="(reklasJenis === 'extracom' || reklasJenis === 'intracom') ? 'Nilai Realisasi (Disesuaikan)' : 'Nilai Realisasi'"></span>
-                                <div class="text-sm font-extrabold font-mono"
-                                     :class="reklasJenis === 'extracom' ? 'text-amber-300' : (reklasJenis === 'intracom' ? 'text-emerald-300' : 'text-emerald-400')"
-                                     x-text="(reklasJenis === 'extracom' || reklasJenis === 'intracom') ? ('Rp ' + Number(getReklasExtracomTotal()).toLocaleString('id-ID')) : (selectedAstapReklas?.jumlah_realisasi || 'Rp 0')"></div>
-                                <div class="text-[10.5px] font-mono mt-0.5"
-                                     :class="reklasJenis === 'extracom' ? 'text-amber-200/80' : (reklasJenis === 'intracom' ? 'text-emerald-200/80' : 'text-teal-300')"
-                                     x-text="((reklasJenis === 'extracom' || reklasJenis === 'intracom') ? getReklasExtracomTotalVolume() : (selectedAstapReklas?.jumlah_volume || 1)) + ' Unit'"></div>
+                                <template x-if="isPartialReklas()">
+                                    <div>
+                                        <span class="text-[10px] font-extrabold uppercase tracking-wider text-amber-300 block">Dialihkan (Parsial)</span>
+                                        <div class="text-sm font-extrabold font-mono text-cyan-300"
+                                             x-text="'Rp ' + Number(getReklasSelectedNilai()).toLocaleString('id-ID')"></div>
+                                        <div class="text-[10px] font-mono text-slate-400 mt-0.5"
+                                             x-text="getSelectedReklasItems().length + ' ' + (selectedAstapReklas?.satuan || 'Unit') + ' dialihkan'"></div>
+                                        <div class="text-[9.5px] font-mono text-emerald-400 mt-0.5 font-semibold"
+                                             x-text="'Sisa di ' + (selectedAstapReklas?.category || 'KIB') + ': Rp ' + Number(getReklasRemainingNilai()).toLocaleString('id-ID')"></div>
+                                    </div>
+                                </template>
+                                <template x-if="!isPartialReklas()">
+                                    <div>
+                                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block" x-text="(reklasJenis === 'extracom' || reklasJenis === 'intracom') ? 'Nilai Realisasi (Disesuaikan)' : 'Nilai Realisasi'"></span>
+                                        <div class="text-sm font-extrabold font-mono"
+                                             :class="reklasJenis === 'extracom' ? 'text-amber-300' : (reklasJenis === 'intracom' ? 'text-emerald-300' : 'text-emerald-400')"
+                                             x-text="(reklasJenis === 'extracom' || reklasJenis === 'intracom') ? ('Rp ' + Number(getReklasExtracomTotal()).toLocaleString('id-ID')) : (selectedAstapReklas?.jumlah_realisasi || 'Rp 0')"></div>
+                                        <div class="text-[10.5px] font-mono mt-0.5"
+                                             :class="reklasJenis === 'extracom' ? 'text-amber-200/80' : (reklasJenis === 'intracom' ? 'text-emerald-200/80' : 'text-teal-300')"
+                                             x-text="((reklasJenis === 'extracom' || reklasJenis === 'intracom') ? getReklasExtracomTotalVolume() : (selectedAstapReklas?.jumlah_volume || 1)) + ' ' + (selectedAstapReklas?.satuan || 'Unit')"></div>
+                                    </div>
+                                </template>
                             </div>
                         </div>
                         <div class="pt-2.5 border-t border-slate-800/80 space-y-2">
@@ -731,6 +746,9 @@
                                                 <span class="text-[11px] font-extrabold text-cyan-300 tracking-wide uppercase">
                                                     Pilih Rincian Barang (<span x-text="reklasSpekBaruItems.length"></span> Item):
                                                 </span>
+                                                <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold"
+                                                      :class="isPartialReklas() ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'"
+                                                      x-text="getSelectedReklasItems().length + ' dari ' + reklasSpekBaruItems.length + ' Item Dialihkan' + (isPartialReklas() ? ' (Reklas Parsial)' : ' (Penuh)')"></span>
                                             </div>
                                             <!-- Tombol Salin Cepat Spesifikasi ke Seluruh Item -->
                                             <button type="button" @click="copyActiveSpekToAll()"
@@ -754,13 +772,25 @@
                                                         reklasSpekBaruItems.length > 5 ? 'shrink-0 min-w-[150px]' : 'w-full',
                                                         activeSpekUnitTab === uIdx 
                                                             ? 'bg-gradient-to-r from-cyan-950 to-slate-900 border-cyan-400 text-cyan-200 font-extrabold shadow-md shadow-cyan-950/60 ring-1 ring-cyan-400/50' 
-                                                            : 'bg-slate-900/60 hover:bg-slate-900 border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-200'
+                                                            : (uItem.is_selected !== false ? 'bg-slate-900/60 hover:bg-slate-900 border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white' : 'bg-slate-950/80 hover:bg-slate-900 border-slate-800/60 text-slate-500 opacity-70')
                                                     ]">
-                                                    <div class="flex items-center space-x-1.5 truncate">
-                                                        <span class="w-4 h-4 rounded-full text-[9px] font-black flex items-center justify-center shrink-0"
-                                                              :class="activeSpekUnitTab === uIdx ? 'bg-cyan-400 text-slate-950' : 'bg-slate-800 text-slate-400'"
-                                                              x-text="uIdx + 1"></span>
-                                                        <span class="font-mono text-[11px] truncate font-bold" x-text="getUnitTabTitle(uIdx)"></span>
+                                                    <div class="flex items-center justify-between w-full">
+                                                        <div class="flex items-center space-x-1.5 truncate">
+                                                            <input type="checkbox"
+                                                                   :checked="uItem.is_selected !== false"
+                                                                   @click.stop="toggleItemReklasSelection(uIdx)"
+                                                                   title="Centang untuk menyewakan/mengalihkan bidang ini"
+                                                                   class="rounded bg-slate-950 border-cyan-500/50 text-cyan-500 focus:ring-0 focus:ring-offset-0 cursor-pointer w-3.5 h-3.5 mr-0.5 shrink-0">
+                                                            <span class="w-4 h-4 rounded-full text-[9px] font-black flex items-center justify-center shrink-0"
+                                                                  :class="activeSpekUnitTab === uIdx ? 'bg-cyan-400 text-slate-950' : (uItem.is_selected !== false ? 'bg-slate-800 text-cyan-300' : 'bg-slate-800 text-slate-500')"
+                                                                  x-text="uIdx + 1"></span>
+                                                            <span class="font-mono text-[11px] truncate font-bold" 
+                                                                  :class="uItem.is_selected === false ? 'line-through text-slate-500' : ''"
+                                                                  x-text="getUnitTabTitle(uIdx)"></span>
+                                                        </div>
+                                                        <span class="text-[8px] font-mono px-1.5 py-0.5 rounded font-extrabold shrink-0 ml-1 uppercase"
+                                                              :class="uItem.is_selected !== false ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-slate-800 text-slate-400 border border-slate-700'"
+                                                              x-text="uItem.is_selected !== false ? 'Dialihkan' : 'Tetap'"></span>
                                                     </div>
                                                     <span class="text-[9px] text-slate-400 truncate ml-5.5 mt-0.5"
                                                           x-show="getUnitTabSubtitle(uItem)"
@@ -769,20 +799,32 @@
                                             </template>
                                         </div>
 
-                                        <!-- Info Banner Unit Aktif -->
-                                        <div class="px-3 py-1.5 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px] text-slate-300 flex items-center justify-between gap-2 shadow-inner">
-                                            <div class="flex items-center space-x-2 truncate">
-                                                <span class="w-2 h-2 rounded-full bg-cyan-400 shrink-0 animate-pulse"></span>
-                                                <span class="font-bold text-white truncate" x-text="getUnitTabTitle(activeSpekUnitTab)"></span>
-                                                <template x-if="getUnitFullTitle(activeSpekUnitTab) && getUnitFullTitle(activeSpekUnitTab) !== getUnitTabTitle(activeSpekUnitTab)">
-                                                    <span class="text-slate-400 text-[10.5px] truncate" x-text="'(' + getUnitFullTitle(activeSpekUnitTab) + ')'"></span>
-                                                </template>
-                                                <template x-if="reklasSpekBaruItems[activeSpekUnitTab]?.ruang_pemegang && reklasSpekBaruItems[activeSpekUnitTab]?.ruang_pemegang !== '-'">
-                                                    <span class="text-slate-400 text-[10px] truncate" x-text="'• ' + reklasSpekBaruItems[activeSpekUnitTab]?.ruang_pemegang"></span>
-                                                </template>
+                                        <!-- Info Banner Unit Aktif & Toggle Pengalihan -->
+                                        <div class="p-2.5 rounded-xl bg-slate-950/90 border border-slate-800 text-[11px] text-slate-300 space-y-2 shadow-inner">
+                                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                                <label class="flex items-center gap-2 cursor-pointer select-none">
+                                                    <input type="checkbox" 
+                                                           :checked="reklasSpekBaruItems[activeSpekUnitTab]?.is_selected !== false"
+                                                           @change="toggleItemReklasSelection(activeSpekUnitTab)"
+                                                           class="rounded bg-slate-900 border-cyan-400 text-cyan-500 focus:ring-0 focus:ring-offset-0 cursor-pointer w-4 h-4">
+                                                    <span class="font-bold text-xs" :class="reklasSpekBaruItems[activeSpekUnitTab]?.is_selected !== false ? 'text-cyan-300' : 'text-slate-400'">
+                                                        <span x-text="reklasSpekBaruItems[activeSpekUnitTab]?.is_selected !== false ? '✓ Alihkan Item #' + (activeSpekUnitTab + 1) + ' ke ' + reklasTujuanKib : '✕ Item #' + (activeSpekUnitTab + 1) + ' TIDAK Dialihkan (Tetap di ' + (selectedAstapReklas?.category || 'KIB Asal') + ')'"></span>
+                                                    </span>
+                                                </label>
+                                                <div class="flex items-center gap-2 shrink-0">
+                                                    <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-900 text-cyan-300 border border-cyan-500/30 font-semibold"
+                                                          x-text="'Estimasi: Rp ' + Number(getUnitEstimatedPrice(activeSpekUnitTab)).toLocaleString('id-ID')"></span>
+                                                    <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-900 text-slate-300 border border-slate-700/80 font-semibold"
+                                                          x-text="'Kondisi: ' + (reklasSpekBaruItems[activeSpekUnitTab]?.kondisi || 'Baik')"></span>
+                                                </div>
                                             </div>
-                                            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-900 text-slate-300 border border-slate-700/80 shrink-0 font-semibold"
-                                                  x-text="'Kondisi: ' + (reklasSpekBaruItems[activeSpekUnitTab]?.kondisi || 'Baik')"></span>
+
+                                            <template x-if="reklasSpekBaruItems[activeSpekUnitTab]?.is_selected === false">
+                                                <div class="p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-200 text-[11px] flex items-center gap-2">
+                                                    <span>ℹ️</span>
+                                                    <span>Bidang/unit ini <strong>TIDAK dialihkan</strong>. Data dan nilainya akan tetap berada di <strong class="text-white" x-text="selectedAstapReklas?.category || 'KIB A'"></strong> operasional RSUD.</span>
+                                                </div>
+                                            </template>
                                         </div>
                                     </div>
                                 </template>

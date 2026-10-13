@@ -10765,6 +10765,7 @@
 
                         return {
                             unit_index: idx,
+                            is_selected: true,
                             item_nama: itemNama,
                             item_volume: itemVol,
                             item_satuan: itemSatuan,
@@ -10843,6 +10844,71 @@
                     }
                 },
 
+                getSelectedReklasItems() {
+                    if (!this.reklasSpekBaruItems || this.reklasSpekBaruItems.length === 0) {
+                        return this.reklasSpekBaru ? [this.reklasSpekBaru] : [];
+                    }
+                    return this.reklasSpekBaruItems.filter(item => item.is_selected !== false);
+                },
+
+                getUnselectedReklasItems() {
+                    if (!this.reklasSpekBaruItems || this.reklasSpekBaruItems.length <= 1) return [];
+                    return this.reklasSpekBaruItems.filter(item => item.is_selected === false);
+                },
+
+                isPartialReklas() {
+                    if (!this.reklasSpekBaruItems || this.reklasSpekBaruItems.length <= 1) return false;
+                    const selected = this.getSelectedReklasItems();
+                    return selected.length > 0 && selected.length < this.reklasSpekBaruItems.length;
+                },
+
+                toggleItemReklasSelection(idx) {
+                    if (!this.reklasSpekBaruItems || !this.reklasSpekBaruItems[idx]) return;
+                    this.syncCurrentSpekToActiveItem();
+                    const current = this.reklasSpekBaruItems[idx].is_selected !== false;
+                    const selectedCount = this.reklasSpekBaruItems.filter(it => it.is_selected !== false).length;
+                    if (current && selectedCount <= 1) {
+                        this.showToast('Minimal 1 rincian barang harus dipilih untuk dialihkan!', 'warning');
+                        return;
+                    }
+                    this.reklasSpekBaruItems[idx].is_selected = !current;
+                    if (this.activeSpekUnitTab === idx) {
+                        this.reklasSpekBaru.is_selected = !current;
+                    }
+                },
+
+                getUnitEstimatedPrice(idx) {
+                    const it = this.selectedAstapReklas;
+                    if (!it) return 0;
+                    let rawNilai = it.jumlah_realisasi_raw ?? it.total_realisasi_num ?? it.total_realisasi ?? it.harga_satuan ?? 0;
+                    if (typeof rawNilai === 'string') rawNilai = parseFloat(rawNilai.replace(/[^0-9.-]/g, '')) || 0;
+                    const totalUnits = (this.reklasSpekBaruItems && this.reklasSpekBaruItems.length > 0) ? this.reklasSpekBaruItems.length : 1;
+                    return Math.round(rawNilai / totalUnits);
+                },
+
+                getReklasSelectedNilai() {
+                    const it = this.selectedAstapReklas;
+                    if (!it) return 0;
+                    let rawNilai = it.jumlah_realisasi_raw ?? it.total_realisasi_num ?? it.total_realisasi ?? it.harga_satuan ?? 0;
+                    if (typeof rawNilai === 'string') rawNilai = parseFloat(rawNilai.replace(/[^0-9.-]/g, '')) || 0;
+                    
+                    if (!this.reklasSpekBaruItems || this.reklasSpekBaruItems.length <= 1) {
+                        return rawNilai;
+                    }
+                    const totalUnits = this.reklasSpekBaruItems.length;
+                    const selectedCount = this.getSelectedReklasItems().length;
+                    if (selectedCount === totalUnits) return rawNilai;
+                    return Math.round((rawNilai / totalUnits) * selectedCount);
+                },
+
+                getReklasRemainingNilai() {
+                    const it = this.selectedAstapReklas;
+                    if (!it) return 0;
+                    let rawNilai = it.jumlah_realisasi_raw ?? it.total_realisasi_num ?? it.total_realisasi ?? it.harga_satuan ?? 0;
+                    if (typeof rawNilai === 'string') rawNilai = parseFloat(rawNilai.replace(/[^0-9.-]/g, '')) || 0;
+                    return Math.max(0, rawNilai - this.getReklasSelectedNilai());
+                },
+
                 switchActiveSpekUnit(idx) {
                     if (!this.reklasSpekBaruItems || idx < 0 || idx >= this.reklasSpekBaruItems.length) return;
                     this.syncCurrentSpekToActiveItem();
@@ -10862,6 +10928,7 @@
                     this.reklasSpekBaruItems.forEach((item) => {
                         const keepProps = {
                             unit_index: item.unit_index,
+                            is_selected: item.is_selected,
                             nibar: item.nibar,
                             ruang_pemegang: item.ruang_pemegang,
                             kondisi: item.kondisi,
@@ -11425,6 +11492,18 @@
                             targetKib = 'MUTASI_OPD';
                         }
 
+                        const isPartial = this.isPartialReklas();
+                        const selectedItems = this.getSelectedReklasItems();
+                        const unselectedItems = this.getUnselectedReklasItems();
+                        const selectedIndices = (this.reklasSpekBaruItems && this.reklasSpekBaruItems.length > 0)
+                            ? this.reklasSpekBaruItems.map((item, idx) => item.is_selected !== false ? idx : null).filter(x => x !== null)
+                            : [0];
+
+                        if (this.reklasSpekBaruItems && this.reklasSpekBaruItems.length > 1 && selectedItems.length === 0) {
+                            this.showToast('Pilih minimal 1 rincian barang yang akan dialihkan!', 'warning');
+                            return;
+                        }
+
                         let rawNilai = it.jumlah_realisasi_raw ?? it.total_realisasi_num ?? it.total_realisasi ?? it.harga_satuan ?? 0;
                         if (typeof rawNilai === 'string') {
                             rawNilai = parseFloat(rawNilai.replace(/[^0-9.-]/g, '')) || 0;
@@ -11436,7 +11515,7 @@
                                 ? (parseFloat(this.reklasNominalKoreksi) || 0) 
                                 : (this.reklasJenis === 'mutasi_eksternal' 
                                     ? this.getReklasMutasiSelectedNilai() 
-                                    : rawNilai));
+                                    : (isPartial ? this.getReklasSelectedNilai() : rawNilai)));
 
                         const targetKode = (this.reklasSubSubRincianKode || this.reklasSubRincianKode || this.reklasTujuanKode || '').trim() || null;
                         const targetNama = (this.reklasSubSubRincianNama || this.reklasSubRincianNama || this.reklasTujuanNama || '').trim() || null;
@@ -11451,6 +11530,10 @@
                         const payload = {
                             astap_id: it.id,
                             jenis_reklas: jenisReklasDb,
+                            is_partial_reklas: isPartial,
+                            selected_indices: isPartial ? selectedIndices : null,
+                            selected_items: isPartial ? selectedItems : null,
+                            unselected_items: isPartial ? unselectedItems : null,
                             tipe_koreksi: this.reklasTipeKoreksiNilai,
                             sub_koreksi: (this.reklasJenis === 'koreksi_nilai') ? this.reklasSubKoreksi : null,
                             asal_kib: asalKib,
@@ -11483,11 +11566,12 @@
                                     progres_persen: (this.reklasJenis === 'kdp') ? 100 : (this.reklasSpekBaru.progres_persen || undefined),
                                     kdp_progres_persen: (this.reklasJenis === 'kdp') ? 100 : undefined,
                                     progres_fisik: (this.reklasJenis === 'kdp') ? '100%' : undefined,
-                                    items: (this.reklasSpekBaruItems && this.reklasSpekBaruItems.length > 0) ? this.reklasSpekBaruItems : [this.reklasSpekBaru]
+                                    items: isPartial
+                                        ? selectedItems
+                                        : ((this.reklasSpekBaruItems && this.reklasSpekBaruItems.length > 0) ? this.reklasSpekBaruItems : [this.reklasSpekBaru])
                                 }) 
                                 : null,
                         };
-
 
                         const res = await fetch('{{ route("master.reklasifikasi.store") }}', {
                             method: 'POST',
@@ -11582,7 +11666,15 @@
                                 }
                             }
 
-                            if (resJson.cetak_bast_mutasi_url) {
+                            if (resJson.is_partial) {
+                                this.showToast('Reklasifikasi Parsial berhasil! ' + (resJson.split_volume || 1) + ' unit berhasil dialihkan ke ' + (resJson.tujuan_kib || 'Kemitraan') + ' dan sisa ' + (resJson.remaining_volume || 1) + ' unit tetap di ' + (resJson.asal_kib || 'KIB Asal') + '.', 'success');
+                                if (resJson.cetak_bast_url) {
+                                    setTimeout(() => {
+                                        window.open(resJson.cetak_bast_url, '_blank');
+                                    }, 700);
+                                }
+                                setTimeout(() => { window.location.reload(); }, 1400);
+                            } else if (resJson.cetak_bast_mutasi_url) {
                                 this.showToast('Mutasi keluar antar-OPD berhasil! Aset telah dialihkan dan kini hanya dapat dilihat di Katalog Mutasi Eksternal Keluar.', 'success');
                                 setTimeout(() => {
                                     window.open(resJson.cetak_bast_mutasi_url, '_blank');
