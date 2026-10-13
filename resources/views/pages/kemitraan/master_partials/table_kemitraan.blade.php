@@ -1008,7 +1008,7 @@
                             <td class="py-4 px-4">
                                 <div class="flex items-center gap-2 mb-1 flex-wrap">
                                     <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                                        {{ $row->skema_kemitraan ?: 'KSO' }}
+                                        {{ $row->skema_kemitraan ?: 'Sewa' }}
                                     </span>
                                     @if($row->status_konsesi === 'Konsesi Berakhir')
                                         <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-emerald-500/25 text-emerald-300 border border-emerald-400/50 shadow-sm shadow-emerald-500/20 animate-pulse"

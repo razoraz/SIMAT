@@ -1289,6 +1289,23 @@
                             </div>
                         </div>
 
+                        <!-- 3. Skema Pemanfaatan Kemitraan (Permendagri 108) -->
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                                Bentuk Skema Pemanfaatan (Permendagri 108): <span class="text-rose-400">*</span>
+                            </label>
+                            <select x-model="formData.spekBaru.kemitraan_skema"
+                                    class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none font-semibold">
+                                <option value="Sewa">Sewa (S) - Akun 1.5.2.01.01.01</option>
+                                <option value="Kerjasama Pemanfaatan (KP)">Kerjasama Pemanfaatan (KP) - Akun 1.5.2.01.01.02</option>
+                                <option value="BGS/BSG">Bangun Guna Serah / Bangun Serah Guna (BGS/BSG) - Akun 1.5.2.01.01.03</option>
+                                <option value="KSPI">Kerja Sama Penyediaan Infrastruktur (KSPI) - Akun 1.5.2.01.01.04</option>
+                            </select>
+                            <p class="text-[9.5px] text-slate-500 mt-1">
+                                Pemanfaatan BMD resmi sesuai Permendagri No. 108 Tahun 2016 (Bentuk resmi: S, KP, BGS/BSG, dan KSPI).
+                            </p>
+                        </div>
+
                         <!-- 4. Nomor PKS & Tanggal PKS -->
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
@@ -1331,6 +1348,7 @@
                                         Tanggal Berakhir (Konsesi Selesai): <span class="text-rose-400">*</span>
                                     </label>
                                     <input type="date" x-model="formData.spekBaru.kemitraan_tanggal_selesai"
+                                        :min="formData.spekBaru.kemitraan_tanggal_mulai"
                                         @input="calcReklasKemitraanDurasi()"
                                         @change="calcReklasKemitraanDurasi()"
                                         class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
@@ -1343,6 +1361,100 @@
                                 <input type="text" x-model="formData.spekBaru.kemitraan_jangka_waktu"
                                     placeholder="Contoh: 5 Tahun (2026 s/d 2031)"
                                     class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                            </div>
+                        </div>
+
+                        <!-- 6. Tarif / Nilai Finansial Sewa & Kontribusi Pemanfaatan -->
+                        <div class="p-3.5 rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border border-cyan-500/30 space-y-3 shadow-md">
+                            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                                <span class="text-[11px] font-bold text-cyan-300 flex items-center gap-1.5">
+                                    <span x-text="formData.spekBaru.kemitraan_skema === 'Sewa' ? '💰' : '🤝'"></span>
+                                    <span x-text="formData.spekBaru.kemitraan_skema === 'Sewa' ? 'Tarif / Nilai Harga Sewa Pemanfaatan BMD' : 'Nilai Kontribusi / Kerja Sama Pemanfaatan'"></span>
+                                </span>
+                                <span class="text-[9.5px] font-mono px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-300 border border-cyan-500/20"
+                                      x-text="formData.spekBaru.kemitraan_skema === 'Sewa' ? 'Pendapatan Sewa BMD' : 'Bagi Hasil / Kontribusi'"></span>
+                            </div>
+
+                            <!-- KONDISI A: JIKA SKEMA SEWA (S) -->
+                            <div x-show="formData.spekBaru.kemitraan_skema === 'Sewa'" class="space-y-3">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-[10px] font-semibold text-slate-300 mb-1">
+                                            Harga / Tarif Sewa (Rp): <span class="text-rose-400">*</span>
+                                        </label>
+                                        <div class="relative">
+                                            <span class="absolute left-3 top-2 text-xs font-bold text-cyan-400">Rp</span>
+                                            <input type="number" min="0" step="1000" x-model="formData.spekBaru.kemitraan_harga_sewa"
+                                                placeholder="Contoh: 50000000"
+                                                class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl pl-9 pr-3 py-2 text-xs font-mono font-bold text-white focus:outline-none shadow-inner">
+                                        </div>
+                                        <template x-if="formData.spekBaru.kemitraan_harga_sewa > 0">
+                                            <p class="text-[10px] text-cyan-400 font-mono font-semibold mt-1"
+                                               x-text="'Terbaca: Rp ' + Number(formData.spekBaru.kemitraan_harga_sewa).toLocaleString('id-ID')"></p>
+                                        </template>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-semibold text-slate-300 mb-1">
+                                            Periode / Satuan Waktu Sewa: <span class="text-rose-400">*</span>
+                                        </label>
+                                        <select x-model="formData.spekBaru.kemitraan_periode_sewa"
+                                            class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none font-semibold">
+                                            <option value="Per Tahun">Per Tahun (Tahunan)</option>
+                                            <option value="Per Bulan">Per Bulan (Bulanan)</option>
+                                            <option value="Total Selama Kontrak">Total Selama Masa Kontrak</option>
+                                        </select>
+                                        <p class="text-[9.5px] text-slate-500 mt-1">Dasar perhitungan tagihan penerimaan sewa daerah.</p>
+                                    </div>
+                                </div>
+
+                                <!-- Highlight Estimasi Total Penerimaan Kontrak Sewa -->
+                                <template x-if="getReklasEstimasiTotalSewa() > 0">
+                                    <div class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-between text-xs">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-base">📈</span>
+                                            <div>
+                                                <span class="text-[10px] text-emerald-300 font-bold uppercase tracking-wider block">Estimasi Total Kontrak Sewa:</span>
+                                                <span class="text-slate-400 text-[10px]" x-text="'Durasi: ' + (formData.spekBaru.kemitraan_jangka_waktu || '-') + ' • Tarif ' + (formData.spekBaru.kemitraan_periode_sewa || 'Per Tahun')"></span>
+                                            </div>
+                                        </div>
+                                        <span class="font-mono font-extrabold text-sm text-emerald-300"
+                                              x-text="'Rp ' + Number(getReklasEstimasiTotalSewa()).toLocaleString('id-ID')"></span>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <!-- KONDISI B: JIKA SKEMA NON-SEWA (KP, BGS/BSG, KSPI) -->
+                            <div x-show="formData.spekBaru.kemitraan_skema !== 'Sewa'" class="space-y-3">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-[10px] font-semibold text-slate-300 mb-1">
+                                            Nilai Kontribusi Tetap / Bagi Hasil (Rp):
+                                        </label>
+                                        <div class="relative">
+                                            <span class="absolute left-3 top-2 text-xs font-bold text-cyan-400">Rp</span>
+                                            <input type="number" min="0" step="1000" x-model="formData.spekBaru.kemitraan_nilai_kontribusi"
+                                                placeholder="Contoh: 75000000"
+                                                class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl pl-9 pr-3 py-2 text-xs font-mono font-bold text-white focus:outline-none shadow-inner">
+                                        </div>
+                                        <template x-if="formData.spekBaru.kemitraan_nilai_kontribusi > 0">
+                                            <p class="text-[10px] text-cyan-400 font-mono font-semibold mt-1"
+                                               x-text="'Terbaca: Rp ' + Number(formData.spekBaru.kemitraan_nilai_kontribusi).toLocaleString('id-ID')"></p>
+                                        </template>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-semibold text-slate-300 mb-1">
+                                            Keterangan Pola Pembagian / Kontribusi:
+                                        </label>
+                                        <input type="text" x-model="formData.spekBaru.kemitraan_keterangan_kontribusi"
+                                            placeholder="Contoh: Kontribusi tetap per tahun + 15% laba operasional"
+                                            class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none shadow-inner">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="text-[9.5px] text-slate-400 bg-slate-950/60 p-2 rounded-lg border border-slate-800 flex items-center gap-1.5">
+                                <span>ℹ️</span>
+                                <span><strong>Catatan:</strong> Nilai buku aset BMD (tanah/gedung) yang direklasifikasi tetap dicatat terpisah sebesar nilai perolehan/revaluasinya. Nilai di atas adalah nilai kontrak finansial pemanfaatan.</span>
                             </div>
                         </div>
                     </div>

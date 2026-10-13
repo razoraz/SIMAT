@@ -205,6 +205,47 @@
                         </div>
                     </template>
 
+                    <!-- 2C. Informasi Administrasi Kemitraan Pihak Ketiga (Akun 1.5.2) -->
+                    <template x-if="detailItem.tujuan_kib === 'KEMITRAAN' || (detailItem.spesifikasi_baru && (detailItem.spesifikasi_baru.kemitraan_items || detailItem.spesifikasi_baru.mitra_nama || detailItem.spesifikasi_baru.kemitraan_mitra))">
+                        <div class="p-4 rounded-2xl bg-cyan-950/30 border border-cyan-500/30 space-y-3 shadow-lg shadow-cyan-500/5">
+                            <div class="flex items-center justify-between border-b border-cyan-500/20 pb-2.5">
+                                <h5 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                                    <span>🤝</span> Dokumen PKS & Kemitraan Pihak Ketiga (Akun 1.5.2)
+                                </h5>
+                                <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
+                                      x-text="'Skema: ' + (detailItem.spesifikasi_baru?.skema_kemitraan || detailItem.spesifikasi_baru?.kemitraan_skema || 'Sewa')"></span>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                                <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Mitra Rekanan:</span>
+                                    <span class="font-bold text-cyan-200 mt-1 inline-block"
+                                          x-text="detailItem.spesifikasi_baru?.mitra_nama || detailItem.spesifikasi_baru?.kemitraan_mitra || '-'"></span>
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Nomor PKS / Perjanjian:</span>
+                                    <span class="font-bold font-mono text-white mt-1 inline-block"
+                                          x-text="detailItem.spesifikasi_baru?.perjanjian_nomor || detailItem.spesifikasi_baru?.kemitraan_perjanjian_no || detailItem.nomor_ba_reklas || '-'"></span>
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                                        <span x-text="(detailItem.spesifikasi_baru?.skema_kemitraan === 'Sewa' || !detailItem.spesifikasi_baru?.skema_kemitraan) ? 'Tarif Sewa BMD:' : 'Nilai Kontribusi:'"></span>
+                                    </span>
+                                    <template x-if="detailItem.spesifikasi_baru?.harga_sewa || detailItem.spesifikasi_baru?.kemitraan_harga_sewa">
+                                        <span class="font-bold font-mono text-emerald-400 mt-1 inline-block"
+                                              x-text="'Rp ' + Number(detailItem.spesifikasi_baru?.harga_sewa || detailItem.spesifikasi_baru?.kemitraan_harga_sewa).toLocaleString('id-ID') + ' (' + (detailItem.spesifikasi_baru?.periode_sewa || detailItem.spesifikasi_baru?.kemitraan_periode_sewa || 'Per Tahun') + ')'"></span>
+                                    </template>
+                                    <template x-if="!detailItem.spesifikasi_baru?.harga_sewa && !detailItem.spesifikasi_baru?.kemitraan_harga_sewa && (detailItem.spesifikasi_baru?.nilai_kontribusi || detailItem.spesifikasi_baru?.kemitraan_nilai_kontribusi)">
+                                        <span class="font-bold font-mono text-cyan-300 mt-1 inline-block"
+                                              x-text="'Rp ' + Number(detailItem.spesifikasi_baru?.nilai_kontribusi || detailItem.spesifikasi_baru?.kemitraan_nilai_kontribusi).toLocaleString('id-ID')"></span>
+                                    </template>
+                                    <template x-if="!detailItem.spesifikasi_baru?.harga_sewa && !detailItem.spesifikasi_baru?.kemitraan_harga_sewa && !detailItem.spesifikasi_baru?.nilai_kontribusi && !detailItem.spesifikasi_baru?.kemitraan_nilai_kontribusi">
+                                        <span class="text-slate-400 mt-1 inline-block font-medium">Berdasarkan Kontrak PKS</span>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
                     <!-- 3. Perpindahan Rekening / Kelompok KIB atau Posisi Aset -->
                     <div class="p-4 rounded-2xl bg-gradient-to-br from-slate-950/90 to-slate-900/90 border border-slate-800 space-y-3">
                         <template x-if="detailItem.jenis_reklas === 'KOREKSI_LAIN'">

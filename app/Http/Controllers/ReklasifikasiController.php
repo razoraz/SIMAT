@@ -1180,29 +1180,37 @@ class ReklasifikasiController extends Controller
                     $kemitraanItems = [];
                     foreach ($unitItems as $uIdx => $uItem) {
                         $kemitraanItems[] = [
-                            'skema_kemitraan'  => $uItem['kemitraan_skema'] ?? ($rawNew['kemitraan_skema'] ?? 'Sewa'),
-                            'mitra_nama'       => $uItem['kemitraan_mitra'] ?? ($rawNew['kemitraan_mitra'] ?? 'Pihak Ketiga Mitra RSUD'),
-                            'mitra_pimpinan'   => $uItem['kemitraan_pimpinan'] ?? ($rawNew['kemitraan_pimpinan'] ?? null),
-                            'mitra_alamat'     => $uItem['kemitraan_alamat'] ?? ($rawNew['kemitraan_alamat'] ?? null),
-                            'perjanjian_nomor' => $uItem['kemitraan_perjanjian_no'] ?? ($rawNew['kemitraan_perjanjian_no'] ?? '-'),
-                            'tanggal_pks'      => $uItem['kemitraan_tanggal_pks'] ?? ($rawNew['kemitraan_tanggal_pks'] ?? null),
-                            'tanggal_mulai'    => $uItem['kemitraan_tanggal_mulai'] ?? ($rawNew['kemitraan_tanggal_mulai'] ?? null),
-                            'tanggal_selesai'  => $uItem['kemitraan_tanggal_selesai'] ?? ($rawNew['kemitraan_tanggal_selesai'] ?? null),
-                            'jangka_waktu'     => $uItem['kemitraan_jangka_waktu'] ?? ($rawNew['kemitraan_jangka_waktu'] ?? '5 Tahun'),
-                            'kemitraan_nilai'  => $unitPrice,
+                            'skema_kemitraan'       => $uItem['kemitraan_skema'] ?? ($rawNew['kemitraan_skema'] ?? 'Sewa'),
+                            'mitra_nama'            => $uItem['kemitraan_mitra'] ?? ($rawNew['kemitraan_mitra'] ?? 'Pihak Ketiga Mitra RSUD'),
+                            'mitra_pimpinan'        => $uItem['kemitraan_pimpinan'] ?? ($rawNew['kemitraan_pimpinan'] ?? null),
+                            'mitra_alamat'          => $uItem['kemitraan_alamat'] ?? ($rawNew['kemitraan_alamat'] ?? null),
+                            'perjanjian_nomor'      => $uItem['kemitraan_perjanjian_no'] ?? ($rawNew['kemitraan_perjanjian_no'] ?? '-'),
+                            'tanggal_pks'           => $uItem['kemitraan_tanggal_pks'] ?? ($rawNew['kemitraan_tanggal_pks'] ?? null),
+                            'tanggal_mulai'         => $uItem['kemitraan_tanggal_mulai'] ?? ($rawNew['kemitraan_tanggal_mulai'] ?? null),
+                            'tanggal_selesai'       => $uItem['kemitraan_tanggal_selesai'] ?? ($rawNew['kemitraan_tanggal_selesai'] ?? null),
+                            'jangka_waktu'          => $uItem['kemitraan_jangka_waktu'] ?? ($rawNew['kemitraan_jangka_waktu'] ?? '5 Tahun'),
+                            'harga_sewa'            => $uItem['kemitraan_harga_sewa'] ?? ($rawNew['kemitraan_harga_sewa'] ?? null),
+                            'periode_sewa'          => $uItem['kemitraan_periode_sewa'] ?? ($rawNew['kemitraan_periode_sewa'] ?? 'Per Tahun'),
+                            'nilai_kontribusi'      => $uItem['kemitraan_nilai_kontribusi'] ?? ($rawNew['kemitraan_nilai_kontribusi'] ?? null),
+                            'keterangan_kontribusi' => $uItem['kemitraan_keterangan_kontribusi'] ?? ($rawNew['kemitraan_keterangan_kontribusi'] ?? null),
+                            'kemitraan_nilai'       => $unitPrice,
                         ];
                     }
-                    $newSpec['kemitraan_items']   = $kemitraanItems;
-                    $newSpec['skema_kemitraan']   = $kemitraanItems[0]['skema_kemitraan'] ?? 'Sewa';
-                    $newSpec['mitra_nama']        = $kemitraanItems[0]['mitra_nama'] ?? '-';
-                    $newSpec['mitra_pimpinan']    = $kemitraanItems[0]['mitra_pimpinan'] ?? null;
-                    $newSpec['mitra_alamat']      = $kemitraanItems[0]['mitra_alamat'] ?? null;
-                    $newSpec['perjanjian_nomor']  = $kemitraanItems[0]['perjanjian_nomor'] ?? '-';
-                    $newSpec['nomor_pks']         = $kemitraanItems[0]['perjanjian_nomor'] ?? '-';
-                    $newSpec['tanggal_pks']       = $kemitraanItems[0]['tanggal_pks'] ?? null;
-                    $newSpec['tanggal_mulai']     = $kemitraanItems[0]['tanggal_mulai'] ?? null;
-                    $newSpec['tanggal_selesai']   = $kemitraanItems[0]['tanggal_selesai'] ?? null;
-                    $newSpec['jangka_waktu']      = $kemitraanItems[0]['jangka_waktu'] ?? '5 Tahun';
+                    $newSpec['kemitraan_items']       = $kemitraanItems;
+                    $newSpec['skema_kemitraan']       = $kemitraanItems[0]['skema_kemitraan'] ?? 'Sewa';
+                    $newSpec['mitra_nama']            = $kemitraanItems[0]['mitra_nama'] ?? '-';
+                    $newSpec['mitra_pimpinan']        = $kemitraanItems[0]['mitra_pimpinan'] ?? null;
+                    $newSpec['mitra_alamat']          = $kemitraanItems[0]['mitra_alamat'] ?? null;
+                    $newSpec['perjanjian_nomor']      = $kemitraanItems[0]['perjanjian_nomor'] ?? '-';
+                    $newSpec['nomor_pks']             = $kemitraanItems[0]['perjanjian_nomor'] ?? '-';
+                    $newSpec['tanggal_pks']           = $kemitraanItems[0]['tanggal_pks'] ?? null;
+                    $newSpec['tanggal_mulai']         = $kemitraanItems[0]['tanggal_mulai'] ?? null;
+                    $newSpec['tanggal_selesai']       = $kemitraanItems[0]['tanggal_selesai'] ?? null;
+                    $newSpec['jangka_waktu']          = $kemitraanItems[0]['jangka_waktu'] ?? '5 Tahun';
+                    $newSpec['harga_sewa']            = $kemitraanItems[0]['harga_sewa'] ?? null;
+                    $newSpec['periode_sewa']          = $kemitraanItems[0]['periode_sewa'] ?? 'Per Tahun';
+                    $newSpec['nilai_kontribusi']      = $kemitraanItems[0]['nilai_kontribusi'] ?? null;
+                    $newSpec['keterangan_kontribusi'] = $kemitraanItems[0]['keterangan_kontribusi'] ?? null;
 
                     // Simpan juga spesifikasi fisik (Tanah / Gedung / Jaringan / Lainnya / Mesin) sesuai wujud asal aset
                     $isTanah = in_array($asalKibAset, ['KIB A', 'A', 'TANAH']) || (!empty($specLama['tanah_items']) && empty($specLama['mesin_items'])) || (!empty($rawNew['tanah_luas_m2']) && empty($rawNew['mesin_merk']));
@@ -1741,7 +1749,8 @@ class ReklasifikasiController extends Controller
                         'nilai_aset'       => $nilaiReklasSplit,
                         'tahun'            => (int) ($validated['tahun'] ?? date('Y')),
                         'triwulan'         => (string) ($validated['triwulan'] ?? 1),
-                        'keterangan'       => $validated['keterangan'] ?? ($targetAstap->keterangan_tambahan ?? null),
+                        'keterangan'       => ($validated['keterangan'] ? ($validated['keterangan'] . ' | ') : '')
+                            . (!empty($spec['harga_sewa']) ? ('Tarif Sewa: Rp ' . number_format((float) $spec['harga_sewa'], 0, ',', '.') . ' (' . ($spec['periode_sewa'] ?? 'Per Tahun') . ')') : (!empty($spec['nilai_kontribusi']) ? ('Nilai Kontribusi: Rp ' . number_format((float) $spec['nilai_kontribusi'], 0, ',', '.') . ($spec['keterangan_kontribusi'] ? ' - ' . $spec['keterangan_kontribusi'] : '')) : ($targetAstap->keterangan_tambahan ?? ''))),
                         'user_id'          => Auth::id(),
                     ];
                     \App\Models\AstapKemitraan::create($kemitraanData);
@@ -1815,7 +1824,8 @@ class ReklasifikasiController extends Controller
                         'nilai_aset'       => (float) $astap->total_realisasi,
                         'tahun'            => (int) ($validated['tahun'] ?? date('Y')),
                         'triwulan'         => (string) ($validated['triwulan'] ?? 1),
-                        'keterangan'       => $validated['keterangan'] ?? ($astap->keterangan_tambahan ?? null),
+                        'keterangan'       => ($validated['keterangan'] ? ($validated['keterangan'] . ' | ') : '')
+                            . (!empty($spec['harga_sewa']) ? ('Tarif Sewa: Rp ' . number_format((float) $spec['harga_sewa'], 0, ',', '.') . ' (' . ($spec['periode_sewa'] ?? 'Per Tahun') . ')') : (!empty($spec['nilai_kontribusi']) ? ('Nilai Kontribusi: Rp ' . number_format((float) $spec['nilai_kontribusi'], 0, ',', '.') . ($spec['keterangan_kontribusi'] ? ' - ' . $spec['keterangan_kontribusi'] : '')) : ($astap->keterangan_tambahan ?? ''))),
                         'user_id'          => Auth::id(),
                     ];
 
