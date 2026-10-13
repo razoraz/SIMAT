@@ -666,6 +666,24 @@
                     try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
                 }
 
+                // Jika spec aset kemitraan belum lengkap (misal akibat pemecahan/reklasifikasi), warisi spesifikasi fisik dari objek asal jika ada
+                if (kemitraan && kemitraan.objek_astap) {
+                    let parentSpec = kemitraan.objek_astap.spesifikasi_json || {};
+                    if (typeof parentSpec === 'string') {
+                        try { parentSpec = JSON.parse(parentSpec); } catch(e) { parentSpec = {}; }
+                    }
+                    if (parentSpec && typeof parentSpec === 'object') {
+                        if ((!spec.tanah_items || !spec.tanah_items.length) && Array.isArray(parentSpec.tanah_items) && parentSpec.tanah_items.length > 0) {
+                            spec.tanah_items = parentSpec.tanah_items;
+                        }
+                        if (!spec.luas_m2 && parentSpec.luas_m2) spec.luas_m2 = parentSpec.luas_m2;
+                        if (!spec.hak_tanah && parentSpec.hak_tanah) spec.hak_tanah = parentSpec.hak_tanah;
+                        if (!spec.sertifikat_no && parentSpec.sertifikat_no) spec.sertifikat_no = parentSpec.sertifikat_no;
+                        if (!spec.sertifikat_tgl && parentSpec.sertifikat_tgl) spec.sertifikat_tgl = parentSpec.sertifikat_tgl;
+                        if (!spec.penggunaan && parentSpec.penggunaan) spec.penggunaan = parentSpec.penggunaan;
+                    }
+                }
+
                 // Deteksi Kategori KIB yang sesuai
                 let category = this.getEffectiveKibCategory(astap);
 
@@ -1753,12 +1771,32 @@
                 if (typeof spec === 'string') {
                     try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
                 }
+                spec = spec || {};
                 const targetTotal = (astap.registers && astap.registers.length > 0) ? astap.registers.length : (parseInt(astap.jumlah_volume) || 1);
-                if (spec && Array.isArray(spec.tanah_items) && spec.tanah_items.length > 0) {
+                if (Array.isArray(spec.tanah_items) && spec.tanah_items.length > 0) {
                     const valid = spec.tanah_items.filter(t => t.tanah_luas_m2 || t.tanah_hak || t.tanah_sertifikat_no || (parseFloat(t.tanah_nilai_satuan) > 0));
                     const toSync = valid.length > 0 ? valid : spec.tanah_items;
                     return this.syncRepeaterItemsWithVolume(toSync, targetTotal, ['tanah_jumlah_bidang', 'tanah_jumlah_barang']);
                 }
+
+                // Fallback jika tidak ada array tanah_items tapi ada luas_m2 / hak_tanah / sertifikat_no di spesifikasi_json
+                const luas = parseFloat(spec.tanah_luas_m2 || spec.luas_m2 || 0);
+                const hak = spec.tanah_hak || spec.hak_tanah || '';
+                const sertifikat = spec.tanah_sertifikat_no || spec.sertifikat_no || '';
+                const alamat = spec.tanah_alamat || spec.alamat || astap.alamat_barang || '';
+                if (luas > 0 || hak || sertifikat) {
+                    return [{
+                        tanah_luas_m2: luas,
+                        tanah_hak: hak || 'Hak Pakai',
+                        tanah_sertifikat_no: sertifikat,
+                        tanah_sertifikat_tgl: spec.tanah_sertifikat_tgl || spec.sertifikat_tgl || '',
+                        tanah_penggunaan: spec.tanah_penggunaan || spec.penggunaan || '',
+                        tanah_alamat: alamat,
+                        tanah_jumlah_bidang: 1,
+                        tanah_nilai_satuan: parseFloat(astap.nilai_aset || astap.total_realisasi || 0)
+                    }];
+                }
+
                 return [];
             },
 
@@ -2005,18 +2043,42 @@
             openExtendModal(row, astap, isDimanfaatkan, linkedCount = 0) {
                 if (!row && !astap) return;
                 const todayStr = this.formatLocalDate(new Date());
-                const currentTglSelesai = row?.tanggal_selesai || astap?.tanggal_selesai || null;
+                const currentTglSelesai = row?.tanggal_selesai || astap?.tanggal_selesai || (row?.kemitraan?.tanggal_selesai) || null;
                 
+                // Hitung batas minimal tanggal selesai baru: harus lebih besar dari tanggal selesai saat ini (+1 hari)
+                let minEndStr = '';
+                if (currentTglSelesai) {
+                    const minD = this.parseLocalDate(currentTglSelesai);
+                    minD.setDate(minD.getDate() + 1);
+                    minEndStr = this.formatLocalDate(minD);
+                } else {
+                    const tomorrow = new Date();
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    minEndStr = this.formatLocalDate(tomorrow);
+                }
+
                 // Hitung default tanggal selesai baru (+1 tahun dari tgl selesai saat ini, atau +1 tahun dari hari ini)
                 let defaultNewEnd = '';
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
                 if (currentTglSelesai) {
                     const d = this.parseLocalDate(currentTglSelesai);
-                    d.setFullYear(d.getFullYear() + 1);
-                    defaultNewEnd = this.formatLocalDate(d);
+                    if (d < today) {
+                        const nextYear = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
+                        defaultNewEnd = this.formatLocalDate(nextYear);
+                    } else {
+                        d.setFullYear(d.getFullYear() + 1);
+                        defaultNewEnd = this.formatLocalDate(d);
+                    }
                 } else {
-                    const d = new Date();
-                    d.setFullYear(d.getFullYear() + 1);
+                    const d = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
                     defaultNewEnd = this.formatLocalDate(d);
+                }
+
+                // Pastikan defaultNewEnd tidak pernah di bawah minEndStr
+                if (minEndStr && defaultNewEnd < minEndStr) {
+                    defaultNewEnd = minEndStr;
                 }
 
                 // Resolusi Nama Barang (Deduplikasi jika nama berulang seperti "Sewa Aset Tetap, Sewa Aset Tetap")
@@ -2065,13 +2127,43 @@
                 const linkedAsets = this.getAsetDitambahkanMitraForDetail(detail);
                 const targetRow = (detail.raw_row && Object.keys(detail.raw_row).length > 0) ? detail.raw_row : (detail.kemitraan || detail);
                 const targetAstap = (detail.raw_astap && Object.keys(detail.raw_astap).length > 0) ? detail.raw_astap : detail;
-                this.showDetailModal = false;
+                // Tetap pertahankan showDetailModal tetap aktif agar saat modal extend ditutup, detail tetap muncul
                 this.openExtendModal(targetRow, targetAstap, detail.is_dimanfaatkan, linkedAsets.length);
             },
 
             closeExtendModal() {
                 this.showModalExtend = false;
                 this.isSubmittingExtend = false;
+            },
+
+            // Hitung tanggal minimal yang boleh dipilih (harus di atas tanggal konsesi berakhir lama)
+            getMinExtendEndDate() {
+                if (!this.extendData?.tanggal_selesai) {
+                    const tomorrow = new Date();
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    return this.formatLocalDate(tomorrow);
+                }
+                const d = this.parseLocalDate(this.extendData.tanggal_selesai);
+                // Tambah 1 hari dari tanggal selesai lama (tidak bisa memilih tanggal di bawah atau sama dengan tanggal selesai lama)
+                d.setDate(d.getDate() + 1);
+                return this.formatLocalDate(d);
+            },
+
+            // Validasi input tanggal konsesi baru secara realtime saat input berubah
+            validateExtendEndDate() {
+                if (!this.extendForm.tanggal_selesai_baru) return;
+                const minDateStr = this.getMinExtendEndDate();
+                if (minDateStr && this.extendForm.tanggal_selesai_baru < minDateStr) {
+                    const minDateFmt = this.formatTanggalIndo(minDateStr);
+                    const tglLamaFmt = this.extendData.tanggal_selesai_lama_fmt || (this.extendData.tanggal_selesai ? this.formatTanggalIndo(this.extendData.tanggal_selesai) : 'saat ini');
+                    const msg = `Tanggal berakhir konsesi baru tidak boleh sama atau di bawah tanggal berakhir konsesi saat ini (${tglLamaFmt}). Minimal tanggal perpanjangan adalah ${minDateFmt}.`;
+                    if (typeof this.showToast === 'function') {
+                        this.showToast('Tanggal Tidak Valid', msg, 'danger');
+                    } else {
+                        alert(msg);
+                    }
+                    this.extendForm.tanggal_selesai_baru = minDateStr;
+                }
             },
 
             setExtendDuration(amount, unit) {
@@ -2088,7 +2180,12 @@
                 } else if (unit === 'years') {
                     newD.setFullYear(newD.getFullYear() + amount);
                 }
-                this.extendForm.tanggal_selesai_baru = this.formatLocalDate(newD);
+                let resDateStr = this.formatLocalDate(newD);
+                const minDateStr = this.getMinExtendEndDate();
+                if (minDateStr && resDateStr < minDateStr) {
+                    resDateStr = minDateStr;
+                }
+                this.extendForm.tanggal_selesai_baru = resDateStr;
             },
 
             formatExtendNilai(e) {
@@ -2111,6 +2208,21 @@
             async submitExtendForm() {
                 if (!this.extendForm.id || !this.extendForm.nomor_adendum || !this.extendForm.tanggal_selesai_baru) {
                     alert('Harap isi Nomor Adendum dan Tanggal Selesai Baru.');
+                    return;
+                }
+
+                // Validasi batas minimal tanggal perpanjangan
+                const minDateStr = this.getMinExtendEndDate();
+                if (minDateStr && this.extendForm.tanggal_selesai_baru < minDateStr) {
+                    const minDateFmt = this.formatTanggalIndo(minDateStr);
+                    const tglLamaFmt = this.extendData.tanggal_selesai_lama_fmt || (this.extendData.tanggal_selesai ? this.formatTanggalIndo(this.extendData.tanggal_selesai) : 'saat ini');
+                    const msg = `Tanggal berakhir konsesi baru tidak boleh sama atau di bawah tanggal berakhir konsesi saat ini (${tglLamaFmt}). Minimal tanggal perpanjangan adalah ${minDateFmt}.`;
+                    if (typeof this.showToast === 'function') {
+                        this.showToast('Tanggal Tidak Valid', msg, 'danger');
+                    } else {
+                        alert(msg);
+                    }
+                    this.extendForm.tanggal_selesai_baru = minDateStr;
                     return;
                 }
 

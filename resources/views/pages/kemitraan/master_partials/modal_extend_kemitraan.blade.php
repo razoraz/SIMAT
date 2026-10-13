@@ -1,10 +1,11 @@
 <!-- ========================================================================= -->
 <!-- MODAL EXTEND / PERPANJANG MASA KONSESI (ADENDUM PKS KEMITRAAN)            -->
 <!-- ========================================================================= -->
+<template x-teleport="body">
 <div x-show="showModalExtend" 
      x-cloak
-     class="fixed inset-0 z-50 overflow-y-auto"
-     style="display: none;"
+     class="fixed inset-0 overflow-y-auto"
+     style="display: none; z-index: 9999;"
      x-transition:enter="transition ease-out duration-300"
      x-transition:enter-start="opacity-0"
      x-transition:enter-end="opacity-100"
@@ -160,11 +161,21 @@
 
                         <input type="date" 
                                x-model="extendForm.tanggal_selesai_baru" 
+                               :min="getMinExtendEndDate()"
+                               @change="validateExtendEndDate()"
                                required
                                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-emerald-500/40 text-xs sm:text-sm text-emerald-300 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 transition-all font-mono font-bold [color-scheme:dark]">
-                        <p class="text-[10px] text-slate-400">
-                            Masa konsesi akan otomatis berstatus <span class="text-emerald-400 font-bold">Aktif</span> kembali terhitung sampai tanggal selesai baru di atas.
-                        </p>
+                        <div class="flex items-center justify-between text-[10px] text-slate-400 flex-wrap gap-1">
+                            <span>
+                                Masa konsesi akan otomatis berstatus <span class="text-emerald-400 font-bold">Aktif</span> kembali terhitung sampai tanggal selesai baru.
+                            </span>
+                            <template x-if="getMinExtendEndDate()">
+                                <span class="text-amber-400/90 font-mono font-semibold flex items-center gap-1">
+                                    <span>🔒</span>
+                                    <span>Minimal: <strong class="text-amber-300" x-text="formatTanggalIndo(getMinExtendEndDate())"></strong></span>
+                                </span>
+                            </template>
+                        </div>
                     </div>
 
                     <!-- 4. Penyesuaian Nilai Finansial & Upload Berkas Adendum -->
@@ -262,3 +273,4 @@
         </div>
     </div>
 </div>
+</template>

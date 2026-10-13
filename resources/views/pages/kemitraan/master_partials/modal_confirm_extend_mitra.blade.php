@@ -1,10 +1,11 @@
 <!-- ========================================================================= -->
 <!-- MODAL KONFIRMASI EXTEND ASET MITRA (TABEL 2) SETELAH TABEL 1 DI-EXTEND    -->
 <!-- ========================================================================= -->
+<template x-teleport="body">
 <div x-show="showModalConfirmExtendMitra" 
      x-cloak
-     class="fixed inset-0 z-50 overflow-y-auto"
-     style="display: none;"
+     class="fixed inset-0 overflow-y-auto"
+     style="display: none; z-index: 10000;"
      x-transition:enter="transition ease-out duration-300"
      x-transition:enter-start="opacity-0"
      x-transition:enter-end="opacity-100"
@@ -162,3 +163,4 @@
         </div>
     </div>
 </div>
+</template>

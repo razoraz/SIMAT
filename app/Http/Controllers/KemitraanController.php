@@ -361,6 +361,19 @@ class KemitraanController extends Controller
             'berkas_adendum'       => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
         ]);
 
+        // Validasi: tanggal berakhir konsesi baru tidak boleh di bawah atau sama dengan tanggal berakhir konsesi lama
+        if ($kemitraan->tanggal_selesai) {
+            $tglSelesaiLama = Carbon::parse($kemitraan->tanggal_selesai)->startOfDay();
+            $tglSelesaiBaru = Carbon::parse($request->input('tanggal_selesai_baru'))->startOfDay();
+
+            if ($tglSelesaiBaru->lte($tglSelesaiLama)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tanggal berakhir konsesi baru harus lebih besar dari tanggal konsesi berakhir saat ini (' . $tglSelesaiLama->format('d/m/Y') . ').'
+                ], 422);
+            }
+        }
+
         return DB::transaction(function () use ($request, $kemitraan) {
             $user = Auth::user();
             $userName = $user ? ($user->name . ' (' . ucfirst($user->role ?? 'user') . ')') : 'Administrator';

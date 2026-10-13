@@ -748,12 +748,12 @@
                                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[10.5px]">
                                         <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                             <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">📜 Hak &amp; Sertifikat</span>
-                                            <span class="text-amber-300 font-bold block" x-text="selectedAstapDetail.spesifikasi_json?.hak_tanah || 'Hak Pakai'"></span>
-                                            <span class="text-cyan-300 font-mono text-[10px] block truncate" x-text="selectedAstapDetail.spesifikasi_json?.sertifikat_no ? ('No: ' + selectedAstapDetail.spesifikasi_json?.sertifikat_no) : 'Tanpa No Sertifikat'"></span>
+                                            <span class="text-amber-300 font-bold block" x-text="selectedAstapDetail.spesifikasi_json?.hak_tanah || selectedAstapDetail.spesifikasi_json?.tanah_hak || 'Hak Pakai'"></span>
+                                            <span class="text-cyan-300 font-mono text-[10px] block truncate" x-text="(selectedAstapDetail.spesifikasi_json?.sertifikat_no || selectedAstapDetail.spesifikasi_json?.tanah_sertifikat_no) ? ('No: ' + (selectedAstapDetail.spesifikasi_json?.sertifikat_no || selectedAstapDetail.spesifikasi_json?.tanah_sertifikat_no)) : 'Tanpa No Sertifikat'"></span>
                                         </div>
                                         <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                             <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">📐 Luas &amp; Kondisi</span>
-                                            <span class="text-cyan-300 font-mono font-bold block" x-text="(Number(selectedAstapDetail.spesifikasi_json?.luas_m2 || 0)).toLocaleString('id-ID') + ' m²'"></span>
+                                            <span class="text-cyan-300 font-mono font-bold block" x-text="(Number(selectedAstapDetail.spesifikasi_json?.luas_m2 || selectedAstapDetail.spesifikasi_json?.tanah_luas_m2 || 0)).toLocaleString('id-ID') + ' m²'"></span>
                                             <span class="font-semibold text-[10px] inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-md border" :class="getRincianKondisiStats(selectedAstapDetail, 0).badge_class">
                                                 <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="getRincianKondisiStats(selectedAstapDetail, 0).dot_class"></span>
                                                 <span x-text="'Kondisi: ' + getRincianKondisiStats(selectedAstapDetail, 0).text"></span>
