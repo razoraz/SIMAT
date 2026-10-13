@@ -768,7 +768,11 @@
                     // Informasi Legalitas PKS & Konsesi
                     nomor_pks: kemitraan?.nomor_pks || spec.nomor_pks || '-',
                     tanggal_pks: kemitraan?.tanggal_pks || spec.tanggal_pks || null,
-                    skema_kemitraan: kemitraan?.skema_kemitraan || spec.skema_kemitraan || 'KSO',
+                    skema_kemitraan: kemitraan?.skema_kemitraan || spec.skema_kemitraan || 'Sewa',
+                    harga_sewa: spec.harga_sewa || spec.kemitraan_harga_sewa || kemitraan?.harga_sewa || null,
+                    periode_sewa: spec.periode_sewa || spec.kemitraan_periode_sewa || kemitraan?.periode_sewa || 'Per Tahun',
+                    nilai_kontribusi: spec.nilai_kontribusi || spec.kemitraan_nilai_kontribusi || kemitraan?.nilai_kontribusi || null,
+                    keterangan_kontribusi: spec.keterangan_kontribusi || spec.kemitraan_keterangan_kontribusi || kemitraan?.keterangan_kontribusi || null,
                     tanggal_mulai: kemitraan?.tanggal_mulai || spec.tanggal_mulai || null,
                     tanggal_selesai: kemitraan?.tanggal_selesai || spec.tanggal_selesai || null,
                     status_konsesi: kemitraan?.status_konsesi || 'Aktif',
@@ -3047,6 +3051,17 @@
                 this.reklasTujuanNama = this.reklasSubSubRincianNama || s.nama;
                 if (this.reklasTujuanKib === 'KEMITRAAN') {
                     this.reklasKemitraanTipeFisik = this.detectKemitraanPhysicalType();
+                    const kode = (s.kode || '');
+                    const nama = (s.nama || '').toLowerCase();
+                    if (kode.endsWith('.01') || nama.includes('sewa')) {
+                        if (this.reklasSpekBaru) this.reklasSpekBaru.kemitraan_skema = 'Sewa';
+                    } else if (kode.endsWith('.02') || nama.includes('pemanfaatan') || nama.includes('kp')) {
+                        if (this.reklasSpekBaru) this.reklasSpekBaru.kemitraan_skema = 'Kerjasama Pemanfaatan (KP)';
+                    } else if (kode.endsWith('.03') || nama.includes('bangun guna') || nama.includes('bgs') || nama.includes('bsg')) {
+                        if (this.reklasSpekBaru) this.reklasSpekBaru.kemitraan_skema = 'BGS/BSG';
+                    } else if (kode.endsWith('.04') || nama.includes('infrastruktur') || nama.includes('kspi')) {
+                        if (this.reklasSpekBaru) this.reklasSpekBaru.kemitraan_skema = 'KSPI';
+                    }
                 }
             },
 

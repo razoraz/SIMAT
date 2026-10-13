@@ -9990,9 +9990,19 @@
                     atb_nomor_lisensi: '',
 
                     // KEMITRAAN - Kemitraan Pihak Ketiga (1.5.2)
+                    kemitraan_skema: 'Sewa',
                     kemitraan_mitra: '',
+                    kemitraan_pimpinan: '',
+                    kemitraan_alamat: '',
                     kemitraan_perjanjian_no: '',
+                    kemitraan_tanggal_pks: new Date().toISOString().split('T')[0],
+                    kemitraan_tanggal_mulai: new Date().toISOString().split('T')[0],
+                    kemitraan_tanggal_selesai: '',
                     kemitraan_jangka_waktu: '5 Tahun',
+                    kemitraan_harga_sewa: '',
+                    kemitraan_periode_sewa: 'Per Tahun',
+                    kemitraan_nilai_kontribusi: '',
+                    kemitraan_keterangan_kontribusi: '',
                 },
 
                 isCurrentAstapExtracom() {
@@ -10553,6 +10563,17 @@
                     this.reklasTujuanNama = this.reklasSubSubRincianNama || s.nama;
                     if (this.reklasTujuanKib === 'KEMITRAAN') {
                         this.reklasKemitraanTipeFisik = this.detectKemitraanPhysicalType();
+                        const kode = (s.kode || '');
+                        const nama = (s.nama || '').toLowerCase();
+                        if (kode.endsWith('.01') || nama.includes('sewa')) {
+                            if (this.reklasSpekBaru) this.reklasSpekBaru.kemitraan_skema = 'Sewa';
+                        } else if (kode.endsWith('.02') || nama.includes('pemanfaatan') || nama.includes('kp')) {
+                            if (this.reklasSpekBaru) this.reklasSpekBaru.kemitraan_skema = 'Kerjasama Pemanfaatan (KP)';
+                        } else if (kode.endsWith('.03') || nama.includes('bangun guna') || nama.includes('bgs') || nama.includes('bsg')) {
+                            if (this.reklasSpekBaru) this.reklasSpekBaru.kemitraan_skema = 'BGS/BSG';
+                        } else if (kode.endsWith('.04') || nama.includes('infrastruktur') || nama.includes('kspi')) {
+                            if (this.reklasSpekBaru) this.reklasSpekBaru.kemitraan_skema = 'KSPI';
+                        }
                     }
                 },
 
@@ -10653,6 +10674,17 @@
                     this.reklasTujuanNama = item.nama;
                     if (this.reklasTujuanKib === 'KEMITRAAN') {
                         this.reklasKemitraanTipeFisik = this.detectKemitraanPhysicalType();
+                        const kode = (this.reklasSubRincianKode || item.kode || '');
+                        const nama = (this.reklasSubRincianNama || item.nama || '').toLowerCase();
+                        if (kode.includes('.01.') || kode.endsWith('.01') || nama.includes('sewa')) {
+                            if (this.reklasSpekBaru) this.reklasSpekBaru.kemitraan_skema = 'Sewa';
+                        } else if (kode.includes('.02.') || kode.endsWith('.02') || nama.includes('pemanfaatan') || nama.includes('kp')) {
+                            if (this.reklasSpekBaru) this.reklasSpekBaru.kemitraan_skema = 'Kerjasama Pemanfaatan (KP)';
+                        } else if (kode.includes('.03.') || kode.endsWith('.03') || nama.includes('bangun guna') || nama.includes('bgs') || nama.includes('bsg')) {
+                            if (this.reklasSpekBaru) this.reklasSpekBaru.kemitraan_skema = 'BGS/BSG';
+                        } else if (kode.includes('.04.') || kode.endsWith('.04') || nama.includes('infrastruktur') || nama.includes('kspi')) {
+                            if (this.reklasSpekBaru) this.reklasSpekBaru.kemitraan_skema = 'KSPI';
+                        }
                     }
                 },
 
@@ -10847,6 +10879,10 @@
                             kemitraan_tanggal_mulai: kData.tanggal_mulai || spec.tanggal_mulai || spec.kemitraan_tanggal_mulai || new Date().toISOString().split('T')[0],
                             kemitraan_tanggal_selesai: kData.tanggal_selesai || spec.tanggal_selesai || spec.kemitraan_tanggal_selesai || '',
                             kemitraan_jangka_waktu: spec.jangka_waktu || spec.kemitraan_jangka_waktu || '5 Tahun',
+                            kemitraan_harga_sewa: spec.harga_sewa || spec.kemitraan_harga_sewa || kData.harga_sewa || '',
+                            kemitraan_periode_sewa: spec.periode_sewa || spec.kemitraan_periode_sewa || kData.periode_sewa || 'Per Tahun',
+                            kemitraan_nilai_kontribusi: spec.nilai_kontribusi || spec.kemitraan_nilai_kontribusi || kData.nilai_kontribusi || '',
+                            kemitraan_keterangan_kontribusi: spec.keterangan_kontribusi || spec.kemitraan_keterangan_kontribusi || '',
 
                             // ASET LAIN
                             aset_lain_kondisi: spec.kondisi_barang || spec.aset_lain_kondisi || (it.kondisi && it.kondisi !== '-' ? it.kondisi : 'Rusak Berat (Menunggu Penghapusan)'),
@@ -11084,6 +11120,30 @@
                     if (years > 0) parts.push(`${years} Tahun`);
                     if (months > 0) parts.push(`${months} Bulan`);
                     this.reklasSpekBaru.kemitraan_jangka_waktu = parts.join(' ') || `${diffDays} Hari`;
+                },
+
+                getReklasEstimasiTotalSewa() {
+                    const harga = parseFloat(this.reklasSpekBaru?.kemitraan_harga_sewa || 0);
+                    if (!harga || harga <= 0) return 0;
+                    const periode = this.reklasSpekBaru?.kemitraan_periode_sewa || 'Per Tahun';
+                    if (periode === 'Total Selama Kontrak') return harga;
+
+                    const tM = this.reklasSpekBaru?.kemitraan_tanggal_mulai;
+                    const tS = this.reklasSpekBaru?.kemitraan_tanggal_selesai;
+                    if (!tM || !tS) return harga;
+                    const dM = new Date(tM);
+                    const dS = new Date(tS);
+                    if (isNaN(dM.getTime()) || isNaN(dS.getTime()) || dS <= dM) return harga;
+
+                    const diffDays = Math.round((dS - dM) / (1000 * 60 * 60 * 24));
+                    if (periode === 'Per Tahun') {
+                        const years = Math.max(1, Math.round(diffDays / 365));
+                        return harga * years;
+                    } else if (periode === 'Per Bulan') {
+                        const months = Math.max(1, Math.round(diffDays / 30));
+                        return harga * months;
+                    }
+                    return harga;
                 },
 
                 getReklasExtracomTotal() {

@@ -165,13 +165,34 @@
                         </div>
                         <div>
                             <span class="text-slate-400 block text-[10px] uppercase font-bold">Skema Kemitraan:</span>
-                            <span class="font-extrabold text-cyan-300 block" x-text="selectedAstapDetail.skema_kemitraan || 'KSO'"></span>
+                            <span class="font-extrabold text-cyan-300 block" x-text="selectedAstapDetail.skema_kemitraan || 'Sewa'"></span>
                         </div>
                         <div>
                             <span class="text-slate-400 block text-[10px] uppercase font-bold">Masa Konsesi / Kerjasama:</span>
                             <span class="text-slate-200 font-medium block" x-text="(formatTanggalIndo(selectedAstapDetail.tanggal_mulai) || '?') + ' s.d. ' + (formatTanggalIndo(selectedAstapDetail.tanggal_selesai) || '?')"></span>
                         </div>
                     </div>
+
+                    <!-- Highlight Finansial / Nilai Sewa atau Kontribusi Pemanfaatan BMD -->
+                    <template x-if="selectedAstapDetail.harga_sewa || selectedAstapDetail.nilai_kontribusi || selectedAstapDetail.spesifikasi_json?.harga_sewa || selectedAstapDetail.spesifikasi_json?.kemitraan_harga_sewa">
+                        <div class="p-3 rounded-xl bg-gradient-to-r from-cyan-950/40 to-slate-950/80 border border-cyan-500/30 flex items-center justify-between text-xs shadow-inner">
+                            <div class="flex items-center gap-2.5">
+                                <span class="p-1.5 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-sm">💰</span>
+                                <div>
+                                    <span class="text-[10px] font-bold uppercase tracking-wider text-cyan-300 block"
+                                          x-text="(selectedAstapDetail.skema_kemitraan === 'Sewa' || !selectedAstapDetail.skema_kemitraan) ? 'Tarif / Nilai Harga Sewa Pemanfaatan BMD:' : 'Nilai Kontribusi / Bagi Hasil:'"></span>
+                                    <span class="text-[10.5px] text-slate-400 font-medium"
+                                          x-text="(selectedAstapDetail.skema_kemitraan === 'Sewa' || !selectedAstapDetail.skema_kemitraan) ? ('Satuan Waktu: ' + (selectedAstapDetail.periode_sewa || selectedAstapDetail.spesifikasi_json?.periode_sewa || 'Per Tahun')) : (selectedAstapDetail.keterangan_kontribusi || selectedAstapDetail.spesifikasi_json?.keterangan_kontribusi || 'Kerja Sama Pemanfaatan')"></span>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-sm font-mono font-extrabold text-cyan-300 block"
+                                      x-text="'Rp ' + Number(selectedAstapDetail.harga_sewa || selectedAstapDetail.nilai_kontribusi || selectedAstapDetail.spesifikasi_json?.harga_sewa || selectedAstapDetail.spesifikasi_json?.kemitraan_harga_sewa || 0).toLocaleString('id-ID')"></span>
+                                <span class="text-[9.5px] text-cyan-400/80 font-mono font-semibold"
+                                      x-text="(selectedAstapDetail.skema_kemitraan === 'Sewa' || !selectedAstapDetail.skema_kemitraan) ? ('/ ' + (selectedAstapDetail.periode_sewa || selectedAstapDetail.spesifikasi_json?.periode_sewa || 'Tahun')) : 'Pemanfaatan BMD'"></span>
+                            </div>
+                        </div>
+                    </template>
 
 
                     <!-- KARTU DOKUMEN BAST & KONTRAK KERJASAMA (PRATINJAU, GANTI & HAPUS) - FULL WIDTH -->

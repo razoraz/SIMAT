@@ -325,6 +325,10 @@
                     kemitraan_tanggal_mulai: new Date().toISOString().split('T')[0],
                     kemitraan_tanggal_selesai: '',
                     kemitraan_jangka_waktu: '5 Tahun',
+                    kemitraan_harga_sewa: '',
+                    kemitraan_periode_sewa: 'Per Tahun',
+                    kemitraan_nilai_kontribusi: '',
+                    kemitraan_keterangan_kontribusi: '',
                 },
                 // Fields tambahan (wajib ada di default agar tidak undefined)
                 alasan_reklas: '',
@@ -958,6 +962,10 @@
                 this.formData.spekBaru.kemitraan_tanggal_mulai = spec.tanggal_mulai || spec.kemitraan_tanggal_mulai || new Date().toISOString().split('T')[0];
                 this.formData.spekBaru.kemitraan_tanggal_selesai = spec.tanggal_selesai || spec.kemitraan_tanggal_selesai || '';
                 this.formData.spekBaru.kemitraan_jangka_waktu = spec.jangka_waktu || spec.kemitraan_jangka_waktu || '5 Tahun';
+                this.formData.spekBaru.kemitraan_harga_sewa = spec.harga_sewa || spec.kemitraan_harga_sewa || '';
+                this.formData.spekBaru.kemitraan_periode_sewa = spec.periode_sewa || spec.kemitraan_periode_sewa || 'Per Tahun';
+                this.formData.spekBaru.kemitraan_nilai_kontribusi = spec.nilai_kontribusi || spec.kemitraan_nilai_kontribusi || '';
+                this.formData.spekBaru.kemitraan_keterangan_kontribusi = spec.keterangan_kontribusi || spec.kemitraan_keterangan_kontribusi || '';
 
                 // ASET LAIN (1.5.4)
                 this.formData.spekBaru.aset_lain_kondisi = spec.kondisi_barang || spec.aset_lain_kondisi || 'Rusak Berat (Menunggu Penghapusan)';
@@ -979,6 +987,30 @@
                 if (years > 0) parts.push(`${years} Tahun`);
                 if (months > 0) parts.push(`${months} Bulan`);
                 this.formData.spekBaru.kemitraan_jangka_waktu = parts.join(' ') || `${diffDays} Hari`;
+            },
+
+            getReklasEstimasiTotalSewa() {
+                const harga = parseFloat(this.formData?.spekBaru?.kemitraan_harga_sewa || 0);
+                if (!harga || harga <= 0) return 0;
+                const periode = this.formData?.spekBaru?.kemitraan_periode_sewa || 'Per Tahun';
+                if (periode === 'Total Selama Kontrak') return harga;
+
+                const tM = this.formData?.spekBaru?.kemitraan_tanggal_mulai;
+                const tS = this.formData?.spekBaru?.kemitraan_tanggal_selesai;
+                if (!tM || !tS) return harga;
+                const dM = new Date(tM);
+                const dS = new Date(tS);
+                if (isNaN(dM.getTime()) || isNaN(dS.getTime()) || dS <= dM) return harga;
+
+                const diffDays = Math.round((dS - dM) / (1000 * 60 * 60 * 24));
+                if (periode === 'Per Tahun') {
+                    const years = Math.max(1, Math.round(diffDays / 365));
+                    return harga * years;
+                } else if (periode === 'Per Bulan') {
+                    const months = Math.max(1, Math.round(diffDays / 30));
+                    return harga * months;
+                }
+                return harga;
             },
 
             openDetailReklas(item) {
@@ -1067,6 +1099,34 @@
                     if (raw.konstruksi || raw.jaringan_konstruksi) out['Konstruksi'] = raw.konstruksi || raw.jaringan_konstruksi;
                     if (raw.nama_software || raw.atb_nama_software) out['Software'] = raw.nama_software || raw.atb_nama_software;
                     if (raw.alamat || raw.tanah_alamat || raw.gedung_alamat || raw.jaringan_alamat) out['Alamat Lokasi'] = raw.alamat || raw.tanah_alamat || raw.gedung_alamat || raw.jaringan_alamat;
+                }
+
+                // Metadata Kemitraan Pihak Ketiga (Akun 1.5.2)
+                if (raw.kemitraan_items && Array.isArray(raw.kemitraan_items) && raw.kemitraan_items[0]) {
+                    const k = raw.kemitraan_items[0];
+                    out['Skema Kemitraan'] = k.skema_kemitraan || raw.skema_kemitraan || 'Sewa';
+                    out['Mitra Rekanan'] = k.mitra_nama || raw.mitra_nama || '-';
+                    if (k.mitra_pimpinan || raw.mitra_pimpinan) out['Pimpinan Mitra'] = k.mitra_pimpinan || raw.mitra_pimpinan;
+                    if (k.perjanjian_nomor || raw.perjanjian_nomor) out['No. PKS / MoU'] = k.perjanjian_nomor || raw.perjanjian_nomor;
+                    if (k.tanggal_mulai && k.tanggal_selesai) out['Masa Konsesi'] = k.tanggal_mulai + ' s/d ' + k.tanggal_selesai + (k.jangka_waktu ? ` (${k.jangka_waktu})` : '');
+                    if (k.harga_sewa || raw.harga_sewa) {
+                        out['Tarif Sewa'] = 'Rp ' + Number(k.harga_sewa || raw.harga_sewa).toLocaleString('id-ID') + ' (' + (k.periode_sewa || raw.periode_sewa || 'Per Tahun') + ')';
+                    }
+                    if (k.nilai_kontribusi || raw.nilai_kontribusi) {
+                        out['Nilai Kontribusi'] = 'Rp ' + Number(k.nilai_kontribusi || raw.nilai_kontribusi).toLocaleString('id-ID') + (k.keterangan_kontribusi ? ` - ${k.keterangan_kontribusi}` : '');
+                    }
+                } else if (raw.mitra_nama || raw.kemitraan_mitra) {
+                    out['Skema Kemitraan'] = raw.skema_kemitraan || raw.kemitraan_skema || 'Sewa';
+                    out['Mitra Rekanan'] = raw.mitra_nama || raw.kemitraan_mitra || '-';
+                    if (raw.mitra_pimpinan || raw.kemitraan_pimpinan) out['Pimpinan Mitra'] = raw.mitra_pimpinan || raw.kemitraan_pimpinan;
+                    if (raw.perjanjian_nomor || raw.kemitraan_perjanjian_no || raw.nomor_pks) out['No. PKS / MoU'] = raw.perjanjian_nomor || raw.kemitraan_perjanjian_no || raw.nomor_pks;
+                    if (raw.tanggal_mulai && raw.tanggal_selesai) out['Masa Konsesi'] = raw.tanggal_mulai + ' s/d ' + raw.tanggal_selesai + (raw.jangka_waktu ? ` (${raw.jangka_waktu})` : '');
+                    if (raw.harga_sewa || raw.kemitraan_harga_sewa) {
+                        out['Tarif Sewa'] = 'Rp ' + Number(raw.harga_sewa || raw.kemitraan_harga_sewa).toLocaleString('id-ID') + ' (' + (raw.periode_sewa || raw.kemitraan_periode_sewa || 'Per Tahun') + ')';
+                    }
+                    if (raw.nilai_kontribusi || raw.kemitraan_nilai_kontribusi) {
+                        out['Nilai Kontribusi'] = 'Rp ' + Number(raw.nilai_kontribusi || raw.kemitraan_nilai_kontribusi).toLocaleString('id-ID') + (raw.keterangan_kontribusi ? ` - ${raw.keterangan_kontribusi}` : '');
+                    }
                 }
 
                 // Metadata Hibah & Mutasi Eksternal
