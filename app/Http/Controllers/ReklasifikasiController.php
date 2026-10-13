@@ -1608,6 +1608,11 @@ class ReklasifikasiController extends Controller
                     if (isset($allRegisters[$sIdx])) {
                         $regToMove = $allRegisters[$sIdx];
                         $regToMove->astap_id = $targetAstap->id;
+                        if ($targetKib === 'KEMITRAAN') {
+                            $regToMove->status = 'Kemitraan';
+                            $mName = $targetSpec['mitra_nama'] ?? ($validated['spesifikasi_baru']['kemitraan_mitra'] ?? 'Pihak Ketiga');
+                            $regToMove->ruang_pemegang = 'Kemitraan: ' . $mName;
+                        }
                         $regToMove->save();
                         if (!$firstTransferredReg) {
                             $firstTransferredReg = $regToMove;
@@ -1787,6 +1792,12 @@ class ReklasifikasiController extends Controller
                     } else {
                         \App\Models\AstapKemitraan::create($kemitraanData);
                     }
+
+                    $mNameFull = $spec['mitra_nama'] ?? ($validated['spesifikasi_baru']['kemitraan_mitra'] ?? 'Mitra Pihak Ketiga');
+                    $astap->registers()->update([
+                        'status' => 'Kemitraan',
+                        'ruang_pemegang' => 'Kemitraan: ' . $mNameFull,
+                    ]);
                 } elseif ($astap->kemitraan && $asalKibFinal === 'KEMITRAAN') {
                     // Hanya perbarui status menjadi Selesai jika asal reklas adalah Kemitraan (berakhirnya masa konsesi)
                     $astap->kemitraan->update([
@@ -2140,7 +2151,11 @@ class ReklasifikasiController extends Controller
                             $parentAstap->harga_satuan = $parentAstap->total_realisasi / $parentAstap->jumlah_volume;
                         }
                         // Kembalikan registers yang dipindahkan ke parent
-                        $astap->registers()->update(['astap_id' => $parentAstap->id]);
+                        $astap->registers()->update([
+                            'astap_id' => $parentAstap->id,
+                            'status' => 'Tersedia',
+                            'ruang_pemegang' => null,
+                        ]);
                         $parentAstap->save();
                     }
                     if ($astap->kemitraan) {
@@ -2163,6 +2178,10 @@ class ReklasifikasiController extends Controller
                     if ($reklas->tujuan_kib === 'KEMITRAAN') {
                         $astap->sumber_dana = 'belanja_modal';
                         $astap->save();
+                        $astap->registers()->update([
+                            'status' => 'Tersedia',
+                            'ruang_pemegang' => null,
+                        ]);
                         if ($astap->kemitraan) {
                             $astap->kemitraan->delete();
                         }

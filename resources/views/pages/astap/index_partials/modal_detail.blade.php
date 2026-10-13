@@ -1134,7 +1134,13 @@
                                                             <span x-text="'Instansi: ' + (reg.ruang_pemegang ? reg.ruang_pemegang.replace(/^Mutasi Keluar:\s*/i, '') : (selectedAstapDetail?.mutasi_keluar?.opd_tujuan || selectedAstapDetail?.opd_tujuan || 'OPD Luar'))"></span>
                                                         </span>
                                                     </template>
-                                                    <template x-if="reg.status !== 'Mutasi Keluar OPD' && selectedAstapDetail?.jenis_reklas !== 'MUTASI_EKSTERNAL'">
+                                                    <template x-if="(reg.status !== 'Mutasi Keluar OPD' && selectedAstapDetail?.jenis_reklas !== 'MUTASI_EKSTERNAL') && (reg.status === 'Kemitraan' || selectedAstapDetail?.sumber_dana === 'kemitraan' || selectedAstapDetail?.category === 'KEMITRAAN' || !!selectedAstapDetail?.kemitraan || (reg.ruang_pemegang && reg.ruang_pemegang.toLowerCase().includes('kemitraan')))">
+                                                        <span class="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-xl bg-cyan-500/15 border border-cyan-500/35 text-cyan-300 font-bold text-[10.5px] shadow-sm justify-center">
+                                                            <span class="text-xs">🤝</span>
+                                                            <span x-text="'Mitra: ' + (selectedAstapDetail?.kemitraan?.mitra_nama || selectedAstapDetail?.spesifikasi_json?.mitra_nama || (reg.ruang_pemegang ? reg.ruang_pemegang.replace(/^Kemitraan:\s*/i, '') : 'Pihak Ketiga')) + ' (' + (selectedAstapDetail?.kemitraan?.skema_kemitraan || selectedAstapDetail?.spesifikasi_json?.skema_kemitraan || 'Sewa') + ')'"></span>
+                                                        </span>
+                                                    </template>
+                                                    <template x-if="reg.status !== 'Mutasi Keluar OPD' && selectedAstapDetail?.jenis_reklas !== 'MUTASI_EKSTERNAL' && reg.status !== 'Kemitraan' && selectedAstapDetail?.sumber_dana !== 'kemitraan' && selectedAstapDetail?.category !== 'KEMITRAAN' && !selectedAstapDetail?.kemitraan && (!reg.ruang_pemegang || !reg.ruang_pemegang.toLowerCase().includes('kemitraan'))">
                                                         <div>
                                                             <template x-if="reg.ruang_pemegang">
                                                                 <span class="inline-flex items-center space-x-1.5 text-slate-200 font-semibold justify-center">
@@ -1156,6 +1162,11 @@
                                                         <template x-if="reg.status === 'Mutasi Keluar OPD' || selectedAstapDetail?.jenis_reklas === 'MUTASI_EKSTERNAL'">
                                                             <span class="px-2 py-0.5 rounded-md text-[9.5px] font-black uppercase tracking-wide bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
                                                                 🏛️ MUTASI KELUAR
+                                                            </span>
+                                                        </template>
+                                                        <template x-if="(reg.status === 'Kemitraan' || selectedAstapDetail?.sumber_dana === 'kemitraan' || selectedAstapDetail?.category === 'KEMITRAAN' || !!selectedAstapDetail?.kemitraan) && reg.status !== 'Mutasi Keluar OPD' && selectedAstapDetail?.jenis_reklas !== 'MUTASI_EKSTERNAL'">
+                                                            <span class="px-2 py-0.5 rounded-md text-[9.5px] font-black uppercase tracking-wide bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                                                                🤝 KEMITRAAN
                                                             </span>
                                                         </template>
                                                         <span class="px-2.5 py-1 rounded-xl text-[10.5px] font-bold border inline-block shadow-sm"
@@ -1186,7 +1197,7 @@
 
                                                         @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
                                                         <!-- 2. Tombol Mutasi Keluar OPD Khusus Unit Ini -->
-                                                        <template x-if="reg.status !== 'Mutasi Keluar OPD' && selectedAstapDetail?.jenis_reklas !== 'MUTASI_EKSTERNAL'">
+                                                        <template x-if="reg.status !== 'Mutasi Keluar OPD' && selectedAstapDetail?.jenis_reklas !== 'MUTASI_EKSTERNAL' && reg.status !== 'Kemitraan' && selectedAstapDetail?.sumber_dana !== 'kemitraan' && selectedAstapDetail?.category !== 'KEMITRAAN'">
                                                             <button type="button" @click.stop="if (isItemLocked(selectedAstapDetail)) { showLockedWarning(selectedAstapDetail); } else { showDetailModal = false; openReklas(selectedAstapDetail, reg); }"
                                                                     title="Mutasi Keluar Antar-OPD Khusus Register NIBAR Ini"
                                                                     class="p-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 hover:text-cyan-200 transition-all cursor-pointer">
