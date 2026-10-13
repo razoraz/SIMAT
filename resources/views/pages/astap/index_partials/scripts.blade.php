@@ -9577,9 +9577,20 @@
                 reklasPejabatOpdTujuan: '',
                 reklasNipPejabatOpdTujuan: '',
                 reklasJabatanOpdTujuan: 'Pengurus Barang / Pengelola Aset OPD',
+                reklasPjAsalNama: 'BUDI HARTONO, S.Sos',
+                reklasPjAsalNip: '19760229 200801 1 010',
+                reklasPjAsalJabatan: 'Pengurus Barang Pengguna',
                 reklasAlamatInstansi: '',
                 reklasNomorSkDasar: '',
                 reklasSelectedNibarIds: [],
+                reklasRegisterKondisiMap: {},
+                skpdDirectory: window.dbSkpdDirectory || {},
+                skpdList: window.dbSkpdAsals || [],
+                dbPejabats: window.dbPejabats || [],
+                isSkpdDropdownOpen: false,
+                isPejabatTujuanDropdownOpen: false,
+                isPejabatAsalDropdownOpen: false,
+                selectedDokumenFile: null,
                 isSubmittingReklas: false,
                 reklasKdpProgresAwal: 0,
                 reklasKemitraanTipeFisik: 'mesin', // 'tanah' | 'mesin' | 'gedung' | 'jaringan' | 'lainnya'
@@ -10405,8 +10416,18 @@
                     this.reklasPejabatOpdTujuan = '';
                     this.reklasNipPejabatOpdTujuan = '';
                     this.reklasJabatanOpdTujuan = 'Pengurus Barang / Pengelola Aset OPD';
+                    this.reklasPjAsalNama = 'BUDI HARTONO, S.Sos';
+                    this.reklasPjAsalNip = '19760229 200801 1 010';
+                    this.reklasPjAsalJabatan = 'Pengurus Barang Pengguna';
                     this.reklasAlamatInstansi = '';
                     this.reklasNomorSkDasar = '';
+                    this.reklasRegisterKondisiMap = {};
+                    if (item.registers && Array.isArray(item.registers)) {
+                        item.registers.forEach(r => {
+                            this.reklasRegisterKondisiMap[r.id] = r.kondisi || 'Baik';
+                        });
+                    }
+                    this.clearDokumenFile();
                     this.initReklasSpekBaru();
                     this.showReklasModal = true;
                 },
@@ -11165,6 +11186,80 @@
                     return Math.max(0, totalActive - this.getReklasMutasiSelectedNilai());
                 },
 
+                // ===== SKPD & PEJABAT MUTASI EKSTERNAL KELUAR =====
+                get filteredSkpdList() {
+                    const q = (this.reklasSkpdTujuan || '').toLowerCase().trim();
+                    const list = this.skpdList || [];
+                    if (!q) return list.slice(0, 25);
+                    return list.filter(s => s.toLowerCase().includes(q)).slice(0, 25);
+                },
+
+                get availablePejabatTujuanList() {
+                    const skpd = this.reklasSkpdTujuan;
+                    if (!skpd || !this.skpdDirectory || !this.skpdDirectory[skpd]) return [];
+                    return this.skpdDirectory[skpd].pejabats || [];
+                },
+
+                get filteredPejabatTujuanList() {
+                    const list = this.availablePejabatTujuanList;
+                    const q = (this.reklasPejabatOpdTujuan || '').toLowerCase().trim();
+                    if (!q) return list;
+                    return list.filter(p => p.nama && p.nama.toLowerCase().includes(q));
+                },
+
+                selectSkpd(skpd) {
+                    this.reklasSkpdTujuan = skpd;
+                    this.isSkpdDropdownOpen = false;
+                    if (this.skpdDirectory && this.skpdDirectory[skpd]) {
+                        if (this.skpdDirectory[skpd].alamat) {
+                            this.reklasAlamatInstansi = this.skpdDirectory[skpd].alamat;
+                        }
+                        const pejabats = this.skpdDirectory[skpd].pejabats || [];
+                        if (pejabats.length === 1) {
+                            this.selectPejabatTujuan(pejabats[0]);
+                        }
+                    }
+                },
+
+                selectPejabatTujuan(p) {
+                    if (!p) return;
+                    this.reklasPejabatOpdTujuan = p.nama || '';
+                    this.reklasNipPejabatOpdTujuan = p.nip || '';
+                    if (p.jabatan) this.reklasJabatanOpdTujuan = p.jabatan;
+                    this.isPejabatTujuanDropdownOpen = false;
+                },
+
+                selectPejabatAsal(p) {
+                    if (!p) return;
+                    this.reklasPjAsalNama = p.nama || '';
+                    this.reklasPjAsalNip = p.nip || '';
+                    this.reklasPjAsalJabatan = p.jabatan || '';
+                    this.isPejabatAsalDropdownOpen = false;
+                },
+
+                handleDokumenFile(e) {
+                    const file = e.target.files && e.target.files[0];
+                    if (!file) return;
+                    if (file.size > 10 * 1024 * 1024) {
+                        this.showToast('Ukuran file dokumen melebihi 10MB!', 'error');
+                        e.target.value = '';
+                        return;
+                    }
+                    this.selectedDokumenFile = file;
+                },
+
+                clearDokumenFile() {
+                    this.selectedDokumenFile = null;
+                    const el = document.getElementById('astap_reklas_dokumen_file_input');
+                    if (el) el.value = '';
+                },
+
+                isTanggalBastInvalid() {
+                    if (!this.reklasTanggalBastMutasi) return false;
+                    const today = new Date().toISOString().split('T')[0];
+                    return this.reklasTanggalBastMutasi > today;
+                },
+
                 getReklasNarasiPreview() {
                     const it = this.selectedAstapReklas;
                     if (!it) return 'Pilih aset terlebih dahulu untuk melihat pratinjau narasi...';
@@ -11401,6 +11496,10 @@
                             this.showToast('Tanggal BAST Mutasi Antar-OPD wajib dipilih!', 'warning');
                             return;
                         }
+                        if (this.isTanggalBastInvalid()) {
+                            this.showToast('Tanggal BAST tidak boleh melebihi tanggal hari ini!', 'error');
+                            return;
+                        }
                     }
 
                     // Validasi form Kemitraan Pihak Ketiga (Wajib ada Nama Mitra, Pejabat, Nomor PKS, Tanggal PKS, Tanggal Mulai & Tanggal Berakhir)
@@ -11552,11 +11651,15 @@
                             pejabat_opd_tujuan: (this.reklasJenis === 'mutasi_eksternal') ? this.reklasPejabatOpdTujuan : null,
                             nip_pejabat_opd_tujuan: (this.reklasJenis === 'mutasi_eksternal') ? this.reklasNipPejabatOpdTujuan : null,
                             jabatan_opd_tujuan: (this.reklasJenis === 'mutasi_eksternal') ? this.reklasJabatanOpdTujuan : null,
+                            pj_asal_nama: (this.reklasJenis === 'mutasi_eksternal') ? (this.reklasPjAsalNama || 'BUDI HARTONO, S.Sos') : null,
+                            pj_asal_nip: (this.reklasJenis === 'mutasi_eksternal') ? (this.reklasPjAsalNip || '19760229 200801 1 010') : null,
+                            pj_asal_jabatan: (this.reklasJenis === 'mutasi_eksternal') ? (this.reklasPjAsalJabatan || 'Pengurus Barang Pengguna') : null,
                             alamat_instansi: (this.reklasJenis === 'mutasi_eksternal') ? this.reklasAlamatInstansi : null,
                             nomor_sk_dasar: (this.reklasJenis === 'mutasi_eksternal') ? this.reklasNomorSkDasar : null,
                             tanggal_bast: (this.reklasJenis === 'hibah') ? this.reklasTanggalBastHibah : ((this.reklasJenis === 'mutasi_eksternal') ? this.reklasTanggalBastMutasi : null),
                             tanggal_dokumen_koreksi: (this.reklasJenis === 'koreksi_nilai') ? this.reklasDokumenTglKoreksi : null,
                             selected_register_ids: (this.reklasJenis === 'mutasi_eksternal' && (this.selectedAstapReklas?.registers && this.selectedAstapReklas.registers.length > 0)) ? this.reklasSelectedNibarIds : null,
+                            register_kondisi_map: (this.reklasJenis === 'mutasi_eksternal') ? this.reklasRegisterKondisiMap : null,
                             keterangan: this.getReklasNarasiPreview(),
                             progres_persen: (this.reklasJenis === 'kdp') ? 100 : undefined,
                             jumlah_anggaran: (this.reklasJenis === 'koreksi_nilai') ? (this.isReklasBelanjaModal() ? this.reklasNilaiAnggaran : null) : (parseFloat(it.jumlah_anggaran) || null),
@@ -11573,14 +11676,33 @@
                                 : null,
                         };
 
+                        let bodyData;
+                        let headers = {
+                            'X-CSRF-TOKEN': token,
+                            'Accept': 'application/json',
+                        };
+
+                        if (this.selectedDokumenFile) {
+                            const fd = new FormData();
+                            for (const key in payload) {
+                                if (payload[key] === null || payload[key] === undefined) continue;
+                                if (typeof payload[key] === 'object') {
+                                    fd.append(key, JSON.stringify(payload[key]));
+                                } else {
+                                    fd.append(key, payload[key]);
+                                }
+                            }
+                            fd.append('dokumen_file', this.selectedDokumenFile);
+                            bodyData = fd;
+                        } else {
+                            headers['Content-Type'] = 'application/json';
+                            bodyData = JSON.stringify(payload);
+                        }
+
                         const res = await fetch('{{ route("master.reklasifikasi.store") }}', {
                             method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': token,
-                                'Accept': 'application/json',
-                            },
-                            body: JSON.stringify(payload),
+                            headers: headers,
+                            body: bodyData,
                         });
 
                         const resJson = await res.json();

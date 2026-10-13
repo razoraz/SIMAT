@@ -4,6 +4,9 @@
 
     <script>
         window.dbMitraKemitraans = @json($dbMitraKemitraans ?? []);
+        window.dbSkpdDirectory = @json($dbSkpdDirectory ?? []);
+        window.dbSkpdAsals = @json($dbSkpdAsals ?? []);
+        window.dbPejabats = @json($dbPejabats ?? []);
     </script>
 
     <!-- 1. Script Ekspor Multi-Sheet Excel & Logika Alpine.js (astapCatalog) -->

@@ -262,6 +262,14 @@
                 }
             ],
 
+            skpdDirectory: @json($dbSkpdDirectory ?? []),
+            skpdList: @json($dbSkpdAsals ?? []),
+            dbPejabats: @json($dbPejabats ?? []),
+            isSkpdDropdownOpen: false,
+            isPejabatTujuanDropdownOpen: false,
+            isPejabatAsalDropdownOpen: false,
+            selectedDokumenFile: null,
+
             formData: {
                 astap_id: '',
                 nama_barang: '',
@@ -322,12 +330,18 @@
                 alasan_reklas: '',
                 tipe_koreksi: 'kurang',
                 nilai_realisasi_baru: 0,
+                skpd_tujuan: '',
+                tanggal_bast: new Date().toISOString().split('T')[0],
                 pejabat_opd_tujuan: '',
                 nip_pejabat_opd_tujuan: '',
                 jabatan_opd_tujuan: '',
+                pj_asal_nama: 'BUDI HARTONO, S.Sos',
+                pj_asal_nip: '19760229 200801 1 010',
+                pj_asal_jabatan: 'Pengurus Barang Pengguna',
                 alamat_instansi: '',
                 nomor_sk_dasar: '',
                 selected_register_ids: [],
+                register_kondisi_map: {},
             },
 
             // 108 Hierarchy Getters
@@ -478,12 +492,94 @@
                 }
             },
 
+            // ===== SKPD & PEJABAT MUTASI EKSTERNAL KELUAR =====
+            get filteredSkpdList() {
+                const q = (this.formData.skpd_tujuan || '').toLowerCase().trim();
+                const list = this.skpdList || [];
+                if (!q) return list.slice(0, 25);
+                return list.filter(s => s.toLowerCase().includes(q)).slice(0, 25);
+            },
+
+            get availablePejabatTujuanList() {
+                const skpd = this.formData.skpd_tujuan;
+                if (!skpd || !this.skpdDirectory || !this.skpdDirectory[skpd]) return [];
+                return this.skpdDirectory[skpd].pejabats || [];
+            },
+
+            get filteredPejabatTujuanList() {
+                const list = this.availablePejabatTujuanList;
+                const q = (this.formData.pejabat_opd_tujuan || '').toLowerCase().trim();
+                if (!q) return list;
+                return list.filter(p => p.nama && p.nama.toLowerCase().includes(q));
+            },
+
+            selectSkpd(skpd) {
+                this.formData.skpd_tujuan = skpd;
+                this.isSkpdDropdownOpen = false;
+                if (this.skpdDirectory && this.skpdDirectory[skpd]) {
+                    if (this.skpdDirectory[skpd].alamat) {
+                        this.formData.alamat_instansi = this.skpdDirectory[skpd].alamat;
+                    }
+                    if (this.skpdDirectory[skpd].pj_nama) {
+                        this.formData.pejabat_opd_tujuan = this.skpdDirectory[skpd].pj_nama;
+                        this.formData.nip_pejabat_opd_tujuan = this.skpdDirectory[skpd].pj_nip || '-';
+                        this.formData.jabatan_opd_tujuan = this.skpdDirectory[skpd].pj_jabatan || 'Pengurus Barang';
+                    }
+                }
+            },
+
+            selectPejabatTujuan(p) {
+                this.formData.pejabat_opd_tujuan = p.nama;
+                this.formData.nip_pejabat_opd_tujuan = p.nip || '-';
+                this.formData.jabatan_opd_tujuan = p.jabatan || 'Pengurus Barang';
+                this.isPejabatTujuanDropdownOpen = false;
+            },
+
+            selectPejabatAsal(p) {
+                this.formData.pj_asal_nama = p.nama;
+                this.formData.pj_asal_nip = p.nip || '-';
+                this.formData.pj_asal_jabatan = p.jabatan || 'Pengurus Barang Pengguna';
+                this.isPejabatAsalDropdownOpen = false;
+            },
+
+            handleDokumenFile(event) {
+                const file = event.target.files ? event.target.files[0] : null;
+                if (!file) {
+                    this.selectedDokumenFile = null;
+                    return;
+                }
+                if (file.size > 10 * 1024 * 1024) {
+                    if (typeof window.showSimatToast === 'function') window.showSimatToast('Ukuran berkas lampiran BAST melebihi batas 10 MB!', 'error');
+                    else alert('Ukuran berkas lampiran BAST melebihi batas 10 MB!');
+                    event.target.value = '';
+                    this.selectedDokumenFile = null;
+                    return;
+                }
+                this.selectedDokumenFile = file;
+            },
+
+            clearDokumenFile() {
+                this.selectedDokumenFile = null;
+                const fileInput = document.getElementById('reklas_dokumen_file_input');
+                if (fileInput) fileInput.value = '';
+            },
+
+            isTanggalBastInvalid() {
+                if (!this.formData.tanggal_bast) return false;
+                const today = new Date().toISOString().split('T')[0];
+                return this.formData.tanggal_bast > today;
+            },
+
             openModalTambah() {
                 this.selectedAstap = null;
                 this.reklasSubRincianKode = '';
                 this.reklasSubRincianNama = '';
                 this.reklasSubSubRincianKode = '';
                 this.reklasSubSubRincianNama = '';
+                this.selectedDokumenFile = null;
+                this.isSkpdDropdownOpen = false;
+                this.isPejabatTujuanDropdownOpen = false;
+                this.isPejabatAsalDropdownOpen = false;
                 this.formData = {
                     astap_id: '',
                     nama_barang: '',
@@ -505,13 +601,17 @@
                     nilai_realisasi_baru: 0,
                     pihak_hibah: '',
                     skpd_tujuan: '',
-                    tanggal_bast: '',
+                    tanggal_bast: new Date().toISOString().split('T')[0],
                     pejabat_opd_tujuan: '',
                     nip_pejabat_opd_tujuan: '',
                     jabatan_opd_tujuan: '',
+                    pj_asal_nama: 'BUDI HARTONO, S.Sos',
+                    pj_asal_nip: '19760229 200801 1 010',
+                    pj_asal_jabatan: 'Pengurus Barang Pengguna',
                     alamat_instansi: '',
                     nomor_sk_dasar: '',
                     selected_register_ids: [],
+                    register_kondisi_map: {},
                     spekBaru: {
                         tanah_luas_m2: '',
                         tanah_hak: 'Hak Pakai',
@@ -611,8 +711,13 @@
                     this.formData.selected_register_ids = found.registers
                         .filter(r => r.status !== 'Mutasi Keluar OPD')
                         .map(r => r.id);
+                    this.formData.register_kondisi_map = {};
+                    found.registers.forEach(r => {
+                        this.formData.register_kondisi_map[r.id] = r.kondisi || 'Baik';
+                    });
                 } else {
                     this.formData.selected_register_ids = [];
+                    this.formData.register_kondisi_map = {};
                 }
 
                 if (this.formData.jenis_reklas === 'KOREKSI_LAIN') {
@@ -1065,15 +1170,32 @@
                 }
 
                 // Validasi khusus Mutasi Eksternal jika aset memiliki register
-                if (this.formData.jenis_reklas === 'MUTASI_EKSTERNAL' && this.selectedAstap && this.selectedAstap.registers && this.selectedAstap.registers.length > 0) {
-                    if (!this.formData.selected_register_ids || this.formData.selected_register_ids.length === 0) {
-                        const errMsg = '⚠️ Pilih minimal 1 unit register/NIBAR yang akan dimutasikan keluar OPD.';
-                        if (typeof window.showSimatToast === 'function') {
-                            window.showSimatToast(errMsg, 'error');
-                        } else {
-                            alert(errMsg);
-                        }
+                if (this.formData.jenis_reklas === 'MUTASI_EKSTERNAL') {
+                    if (!this.formData.skpd_tujuan || !this.formData.skpd_tujuan.trim()) {
+                        const errMsg = '⚠️ SKPD / OPD Penerima wajib dipilih atau diisi!';
+                        if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'warning');
+                        else alert(errMsg);
                         return;
+                    }
+                    if (!this.formData.tanggal_bast) {
+                        const errMsg = '⚠️ Tanggal Dokumen BAST Mutasi Eksternal wajib diisi!';
+                        if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'warning');
+                        else alert(errMsg);
+                        return;
+                    }
+                    if (this.isTanggalBastInvalid()) {
+                        const errMsg = '⚠️ Tanggal BAST Mutasi tidak boleh melebihi tanggal hari ini!';
+                        if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'error');
+                        else alert(errMsg);
+                        return;
+                    }
+                    if (this.selectedAstap && this.selectedAstap.registers && this.selectedAstap.registers.length > 0) {
+                        if (!this.formData.selected_register_ids || this.formData.selected_register_ids.length === 0) {
+                            const errMsg = '⚠️ Pilih minimal 1 unit register/NIBAR yang akan dimutasikan keluar OPD.';
+                            if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'error');
+                            else alert(errMsg);
+                            return;
+                        }
                     }
                 }
 
@@ -1083,6 +1205,7 @@
                     const payload = {
                         ...this.formData,
                         selected_register_ids: (this.formData.jenis_reklas === 'MUTASI_EKSTERNAL') ? (this.formData.selected_register_ids || []) : null,
+                        register_kondisi_map: (this.formData.jenis_reklas === 'MUTASI_EKSTERNAL') ? (this.formData.register_kondisi_map || {}) : null,
                         tipe_koreksi: this.formData.tipe_koreksi || 'kurang',
                         sub_koreksi: (this.formData.jenis_reklas === 'KOREKSI_LAIN') ? (this.formData.sub_koreksi || 'biasa') : null,
                         nilai_realisasi_baru: parseFloat(this.formData.nilai_realisasi_baru || 0),
@@ -1095,18 +1218,40 @@
                         pejabat_opd_tujuan: this.formData.pejabat_opd_tujuan || null,
                         nip_pejabat_opd_tujuan: this.formData.nip_pejabat_opd_tujuan || null,
                         jabatan_opd_tujuan: this.formData.jabatan_opd_tujuan || null,
+                        pj_asal_nama: this.formData.pj_asal_nama || 'BUDI HARTONO, S.Sos',
+                        pj_asal_nip: this.formData.pj_asal_nip || '19760229 200801 1 010',
+                        pj_asal_jabatan: this.formData.pj_asal_jabatan || 'Pengurus Barang Pengguna',
                         alamat_instansi: this.formData.alamat_instansi || null,
                         nomor_sk_dasar: this.formData.nomor_sk_dasar || null,
                     };
 
+                    let bodyData;
+                    let headers = {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json',
+                    };
+
+                    if (this.selectedDokumenFile) {
+                        const fd = new FormData();
+                        for (const key in payload) {
+                            if (payload[key] === null || payload[key] === undefined) continue;
+                            if (typeof payload[key] === 'object') {
+                                fd.append(key, JSON.stringify(payload[key]));
+                            } else {
+                                fd.append(key, payload[key]);
+                            }
+                        }
+                        fd.append('dokumen_file', this.selectedDokumenFile);
+                        bodyData = fd;
+                    } else {
+                        headers['Content-Type'] = 'application/json';
+                        bodyData = JSON.stringify(payload);
+                    }
+
                     const response = await fetch('{{ route("master.reklasifikasi.store") }}', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                            'Accept': 'application/json',
-                        },
-                        body: JSON.stringify(payload),
+                        headers: headers,
+                        body: bodyData,
                     });
 
                     const result = await response.json();

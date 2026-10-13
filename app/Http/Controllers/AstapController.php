@@ -570,8 +570,11 @@ class AstapController extends Controller
         $dbMaster108 = \App\Models\JenisAstap::getNested108();
 
         $dbMitraKemitraans = \App\Models\AstapKemitraan::getDistinctMitras();
+        $dbSkpdDirectory = \App\Http\Controllers\MutasiEksternalController::getSkpdDirectory();
+        $dbSkpdAsals = array_values(array_unique(array_keys($dbSkpdDirectory)));
+        $dbPejabats = \App\Http\Controllers\MutasiEksternalController::getDistinctPejabats();
 
-        return view('pages.astap.index', compact('astaps', 'deletedAstaps', 'dbMaster108', 'dbMitraKemitraans'));
+        return view('pages.astap.index', compact('astaps', 'deletedAstaps', 'dbMaster108', 'dbMitraKemitraans', 'dbSkpdDirectory', 'dbSkpdAsals', 'dbPejabats'));
     }
 
     /**

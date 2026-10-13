@@ -242,6 +242,10 @@ class ReklasifikasiController extends Controller
             ->orderBy('nama_barang', 'asc')
             ->get();
 
+        $dbSkpdDirectory = \App\Http\Controllers\MutasiEksternalController::getSkpdDirectory();
+        $dbSkpdAsals = array_values(array_unique(array_keys($dbSkpdDirectory)));
+        $dbPejabats = \App\Http\Controllers\MutasiEksternalController::getDistinctPejabats();
+
         return view('pages.reklasifikasi.index', [
             'matriks'           => $matriks,
             'subtotals'         => $subtotals,
@@ -257,6 +261,9 @@ class ReklasifikasiController extends Controller
             'kandidatAstaps'    => $kandidatAstaps,
             'dbMaster108'       => JenisAstap::getNested108(),
             'dbMitraKemitraans' => \App\Models\AstapKemitraan::getDistinctMitras(),
+            'dbSkpdDirectory'   => $dbSkpdDirectory,
+            'dbSkpdAsals'       => $dbSkpdAsals,
+            'dbPejabats'        => $dbPejabats,
         ]);
     }
 
@@ -290,14 +297,18 @@ class ReklasifikasiController extends Controller
             'tanggal_dokumen_koreksi' => 'nullable|date',
             'pihak_hibah' => 'nullable|string|max:255',
             'skpd_tujuan' => 'nullable|string|max:255',
-            'tanggal_bast' => 'nullable|date',
+            'tanggal_bast' => 'nullable|date|before_or_equal:today',
             'pejabat_opd_tujuan' => 'nullable|string|max:255',
             'nip_pejabat_opd_tujuan' => 'nullable|string|max:50',
             'jabatan_opd_tujuan' => 'nullable|string|max:255',
+            'pj_asal_nama' => 'nullable|string|max:255',
+            'pj_asal_nip' => 'nullable|string|max:50',
+            'pj_asal_jabatan' => 'nullable|string|max:255',
+            'dokumen_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'register_kondisi_map' => 'nullable',
             'alamat_instansi' => 'nullable|string|max:500',
             'nomor_sk_dasar' => 'nullable|string|max:255',
-            'selected_register_ids' => 'nullable|array',
-            'selected_register_ids.*' => 'integer',
+            'selected_register_ids' => 'nullable',
             'is_partial_reklas' => 'nullable|boolean',
             'selected_indices' => 'nullable|array',
             'selected_indices.*' => 'integer',
@@ -306,6 +317,9 @@ class ReklasifikasiController extends Controller
         ], [
             'alasan_reklas.required' => 'Alasan kenapa melakukan reklasifikasi wajib diisi untuk semua jenis reklasifikasi.',
             'alasan_reklas.min' => 'Alasan reklasifikasi minimal berisi 3 karakter penjelasan.',
+            'tanggal_bast.before_or_equal' => 'Tanggal dokumen BAST Mutasi tidak boleh melebihi tanggal hari ini.',
+            'dokumen_file.max' => 'Ukuran berkas lampiran BAST maksimal 10 MB.',
+            'dokumen_file.mimes' => 'Format berkas lampiran BAST harus berupa PDF, JPG, JPEG, atau PNG.',
         ]);
 
         // Jika jenis reklasifikasi adalah Ekstrakomptabel atau Kapitalisasi ke Intrakomptabel
@@ -1796,9 +1810,9 @@ class ReklasifikasiController extends Controller
                 $tglBast = $validated['tanggal_bast'] ?? ($request->input('tanggal_bast') ?? ($validated['tanggal_reklas'] ?? date('Y-m-d')));
                 $nomorBast = $validated['nomor_ba_reklas'] ?? ('000.2.3.2/BAST-KLR-' . str_pad($astap->id, 3, '0', STR_PAD_LEFT) . '/430.10.7/' . date('Y'));
                 
-                $pjAsal = $request->input('pj_asal_nama') ?: ($astap->ppk_nama ?: 'dr. H. Yus Priyatna, Sp.P');
-                $pjAsalNip = $request->input('pj_asal_nip') ?: ($astap->ppk_nip ?: '196904121999031004');
-                $pjAsalJabatan = $request->input('pj_asal_jabatan') ?: 'Direktur RSUD Dr. H. Koesnadi';
+                $pjAsal = $request->input('pj_asal_nama') ?: ($astap->ppk_nama ?: 'BUDI HARTONO, S.Sos');
+                $pjAsalNip = $request->input('pj_asal_nip') ?: ($astap->ppk_nip ?: '19760229 200801 1 010');
+                $pjAsalJabatan = $request->input('pj_asal_jabatan') ?: 'Pengurus Barang Pengguna';
                 
                 $pjTujuan = $request->input('pejabat_opd_tujuan') ?: ($request->input('pj_tujuan_nama') ?: 'Pejabat Penerima OPD');
                 $pjTujuanNip = $request->input('nip_pejabat_opd_tujuan') ?: ($request->input('pj_tujuan_nip') ?: '-');
@@ -1806,8 +1820,19 @@ class ReklasifikasiController extends Controller
                 $alamatInstansi = $request->input('alamat_instansi') ?: '';
                 $nomorSk = $request->input('nomor_sk_dasar') ?: $nomorBast;
 
+                // Handle berkas lampiran BAST fisik jika diunggah
+                $dokumenLampiranPath = null;
+                if ($request->hasFile('dokumen_file')) {
+                    $docFile = $request->file('dokumen_file');
+                    $docFilename = 'BAST_KELUAR_' . time() . '_' . preg_replace('/[^A-Za-z0-9_\-\.]/', '_', $docFile->getClientOriginalName());
+                    $dokumenLampiranPath = $docFile->storeAs('dokumen_mutasi_eksternal', $docFilename, 'public');
+                }
+
                 // Ambil register yang dipilih
                 $selectedRegisterIds = $request->input('selected_register_ids', []);
+                if (is_string($selectedRegisterIds)) {
+                    $selectedRegisterIds = json_decode($selectedRegisterIds, true) ?: [];
+                }
                 if (!is_array($selectedRegisterIds)) {
                     $selectedRegisterIds = [];
                 }
@@ -1851,11 +1876,21 @@ class ReklasifikasiController extends Controller
 
                 $selectedVol = $targetRegisters->isNotEmpty() ? $targetRegisters->count() : max(1, (int) $astap->jumlah_volume);
                 
+                // Ambil pemetaan kondisi serah terima dari form
+                $regKondisiMap = $request->input('register_kondisi_map', []);
+                if (is_string($regKondisiMap)) {
+                    $regKondisiMap = json_decode($regKondisiMap, true) ?: [];
+                }
+
                 // Hitung total nilai perolehan untuk unit yang terpilih
                 $totalUnitVal = 0;
+                $kondisiSerahUtama = 'Baik';
                 if ($targetRegisters->isNotEmpty()) {
-                    foreach ($targetRegisters as $tReg) {
+                    foreach ($targetRegisters as $idxReg => $tReg) {
                         $totalUnitVal += (float) ($tReg->harga_satuan ?: ($astap->total_realisasi / max(1, (int)$astap->jumlah_volume)));
+                        if ($idxReg === 0) {
+                            $kondisiSerahUtama = $regKondisiMap[$tReg->id] ?? ($tReg->kondisi ?: 'Baik');
+                        }
                     }
                 } else {
                     $totalUnitVal = (float) ($validated['nilai_reklas'] ?? $astap->total_realisasi);
@@ -1885,12 +1920,16 @@ class ReklasifikasiController extends Controller
                     'jumlah_volume'       => $selectedVol,
                     'satuan'              => $astap->satuan ?: 'Unit',
                     'nilai_perolehan'     => $totalUnitVal,
-                    'kondisi'             => 'Baik',
+                    'kondisi'             => $kondisiSerahUtama,
                     'alasan_mutasi'       => $validated['alasan_reklas'] ?? 'Pemindahtanganan aset RSUD ke SKPD / OPD luar (Koreksi Baris 42 / Kolom 13).',
                     'alamat_instansi'     => $alamatInstansi,
                     'user_id'             => Auth::id(),
                     'is_deleted'          => 0,
                 ];
+
+                if ($dokumenLampiranPath) {
+                    $mutasiData['dokumen_lampiran'] = $dokumenLampiranPath;
+                }
 
                 $mutasiKeluar = MutasiEksternal::where('astap_id', $astap->id)
                     ->where('tipe', 'keluar')
@@ -1915,10 +1954,12 @@ class ReklasifikasiController extends Controller
                 // Kosongkan ruang_pemegang menjadi null (nama OPD disimpan di mutasi_eksternals & catatan)
                 if ($targetRegisters->isNotEmpty()) {
                     foreach ($targetRegisters as $reg) {
+                        $kondisiSerah = $regKondisiMap[$reg->id] ?? ($reg->kondisi ?: 'Baik');
+
                         $reg->update([
                             'status'         => 'Mutasi Keluar OPD',
                             'ruang_pemegang' => null,
-                            'kondisi'        => $reg->kondisi ?: 'Baik',
+                            'kondisi'        => $kondisiSerah,
                         ]);
 
                         MutasiEksternalRegister::updateOrCreate(
@@ -1927,7 +1968,7 @@ class ReklasifikasiController extends Controller
                                 'astap_register_id'   => $reg->id,
                             ],
                             [
-                                'kondisi' => $reg->kondisi ?: 'Baik',
+                                'kondisi' => $kondisiSerah,
                                 'catatan' => 'Diserahkan ke ' . $skpdTujuan,
                             ]
                         );
