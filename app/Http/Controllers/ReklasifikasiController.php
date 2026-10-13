@@ -2011,7 +2011,7 @@ class ReklasifikasiController extends Controller
                     'tujuan_kib' => $targetKib ?: $tujuanKibFinal,
                     'asal_kib' => $asalKibFinal,
                     'is_kemitraan' => ($targetKib === 'KEMITRAAN'),
-                    'cetak_bast_url' => ($targetKib === 'KEMITRAAN') ? route('astap.kemitraan.cetak_bast', ['id' => $responseTarget->id]) : null,
+                    'cetak_bast_url' => ($targetKib === 'KEMITRAAN' && \Illuminate\Support\Facades\Route::has('astap.kemitraan.cetak_bast')) ? route('astap.kemitraan.cetak_bast', ['id' => $responseTarget->id]) : null,
                     'is_mutasi_keluar' => ($validated['jenis_reklas'] === 'MUTASI_EKSTERNAL'),
                     'is_full_transfer' => $isFullTransferFinal,
                     'cetak_bast_mutasi_url' => ($validated['jenis_reklas'] === 'MUTASI_EKSTERNAL' && isset($mutasiKeluar)) ? route('mutasi.eksternal.cetak', ['id' => $mutasiKeluar->id]) : null,
