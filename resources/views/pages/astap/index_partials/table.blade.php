@@ -52,10 +52,10 @@
                                                 <span>📦</span><span>PERBEKALAN</span>
                                             </span>
                                         </template>
-                                        {{-- Badge Mutasi Eksternal (Masuk dari Luar OPD) --}}
-                                        <template x-if="item.sumber_dana === 'mutasi_eksternal' || item.sumber_dana === 'pelimpahan' || item.sumber_dana === 'pelimpahan_skpd' || item.sumber_dana === 'mutasi_masuk' || item.sumber_dana === 'mutasi'">
+                                        {{-- Badge Mutasi Masuk (dari Luar OPD) --}}
+                                        <template x-if="!item.is_mutasi_keluar_full && !item.is_mutasi_keluar_partial && !item.mutasi_keluar && item.jenis_reklas !== 'MUTASI_EKSTERNAL' && (item.sumber_dana === 'mutasi_eksternal' || item.sumber_dana === 'pelimpahan' || item.sumber_dana === 'pelimpahan_skpd' || item.sumber_dana === 'mutasi_masuk' || item.sumber_dana === 'mutasi')">
                                             <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[9px] font-black whitespace-nowrap leading-none shrink-0 bg-purple-500/25 text-purple-300 border border-purple-500/50 shadow-sm tracking-wider">
-                                                <span>🔄</span><span>MUTASI EKSTERNAL</span>
+                                                <span>📥</span><span>MUTASI MASUK</span>
                                             </span>
                                         </template>
                                         {{-- Badge Kemitraan: BMD Dimanfaatkan vs Aset Mitra --}}
@@ -89,6 +89,17 @@
                                             </span>
                                         </template>
 
+                                        {{-- Badge Reklasifikasi -- tetap muncul jika aset berstatus mutasi keluar maupun jenis reklas lainnya --}}
+                                        <template x-if="item.has_reklas || item.is_reklas || (item.reklas_count && item.reklas_count > 0) || item.jenis_reklas || !!item.mutasi_keluar">
+                                            <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[9px] font-black whitespace-nowrap leading-none shrink-0 bg-indigo-500/25 text-indigo-300 border border-indigo-400/50 shadow-sm shadow-indigo-500/20 tracking-wider"
+                                                :title="'Aset ini memiliki riwayat Reklasifikasi' + (item.jenis_reklas ? ' (' + item.jenis_reklas.replace(/_/g, ' ') + ')' : '')">
+                                                <svg class="w-2.5 h-2.5 shrink-0 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                                                </svg>
+                                                <span>REKLASIFIKASI</span>
+                                            </span>
+                                        </template>
+
                                         {{-- Badge Mutasi Keluar OPD (Parsial) --}}
                                         <template x-if="item.is_mutasi_keluar_partial">
                                             <span class="inline-flex items-center space-x-1.5 px-2 py-0.5 rounded-md text-[9px] font-black whitespace-nowrap leading-none shrink-0 bg-cyan-500/20 text-cyan-200 border border-cyan-400/40 shadow-sm shadow-cyan-500/10 tracking-wider"
@@ -106,17 +117,6 @@
                                                 :title="'Aset telah dimutasi keluar ke ' + (item.mutasi_keluar?.opd_tujuan || item.opd_tujuan || 'OPD Luar')">
                                                 <span>🏛️</span>
                                                 <span x-text="'MUTASI KELUAR (' + (item.mutasi_keluar?.opd_tujuan || item.opd_tujuan || 'OPD LUAR') + ')'"></span>
-                                            </span>
-                                        </template>
-
-                                        {{-- Badge Reklasifikasi -- tampil jika aset pernah melakukan reklas non-mutasi-eksternal --}}
-                                        <template x-if="item.jenis_reklas !== 'MUTASI_EKSTERNAL' && !item.mutasi_keluar && (item.has_reklas || item.is_reklas || (item.reklas_count && item.reklas_count > 0))">
-                                            <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[9px] font-black whitespace-nowrap leading-none shrink-0 bg-indigo-500/25 text-indigo-300 border border-indigo-400/50 shadow-sm shadow-indigo-500/20 tracking-wider"
-                                                :title="'Aset ini memiliki riwayat Reklasifikasi' + (item.jenis_reklas ? ' (' + item.jenis_reklas.replace(/_/g, ' ') + ')' : '')">
-                                                <svg class="w-2.5 h-2.5 shrink-0 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
-                                                </svg>
-                                                <span>REKLASIFIKASI</span>
                                             </span>
                                         </template>
                                         <span class="text-[11px] text-slate-400 truncate font-medium" x-text="item.jenis_aset_nama"></span>

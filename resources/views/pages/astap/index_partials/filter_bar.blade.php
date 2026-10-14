@@ -149,9 +149,9 @@
                                 <option value="belanja_modal" class="bg-slate-900 text-emerald-300 py-2 font-medium">💰 Belanja Modal (APBD/BLUD)</option>
                                 <option value="hibah" class="bg-slate-900 text-amber-300 py-2 font-medium">🎁 Hibah Masuk</option>
                                 <option value="belanja_barang" class="bg-slate-900 text-indigo-300 py-2 font-medium">📦 Belanja Barang (Perbekalan)</option>
-                                <option value="mutasi_eksternal_all" class="bg-slate-900 text-purple-300 py-2 font-medium">🔄 Mutasi Eksternal (Semua)</option>
-                                <option value="mutasi_eksternal_masuk" class="bg-slate-900 text-purple-400 py-2 font-medium">📥 Mutasi Eksternal Masuk</option>
-                                <option value="mutasi_eksternal_keluar" class="bg-slate-900 text-cyan-300 py-2 font-medium">📤 Mutasi Eksternal Keluar</option>
+                                <option value="mutasi_eksternal_all" class="bg-slate-900 text-purple-300 py-2 font-medium">🔄 Mutasi (Semua)</option>
+                                <option value="mutasi_eksternal_masuk" class="bg-slate-900 text-purple-400 py-2 font-medium">📥 Mutasi Masuk</option>
+                                <option value="mutasi_eksternal_keluar" class="bg-slate-900 text-cyan-300 py-2 font-medium">📤 Mutasi Keluar</option>
                                 <option value="kemitraan" class="bg-slate-900 text-cyan-300 py-2 font-medium">🤝 Kemitraan (Semua)</option>
                                 <option value="bmd_dimanfaatkan" class="bg-slate-900 text-cyan-400 py-2 font-medium">🏛️ BMD Dimanfaatkan Mitra</option>
                                 <option value="kemitraan_mitra" class="bg-slate-900 text-teal-300 py-2 font-medium">🤝 Kemitraan (Aset Mitra)</option>

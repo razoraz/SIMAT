@@ -76,15 +76,15 @@
             },
             {
                 id: 'mutasi',
-                title: 'Mutasi Eksternal (Transfer Antar-OPD)',
-                shortTitle: '4. Mutasi Eksternal',
+                title: 'Mutasi Masuk (Transfer Antar-OPD)',
+                shortTitle: '4. Mutasi Masuk',
                 subLabel: 'Transfer Masuk Antar-OPD',
-                badge: 'Mutasi Eksternal Antar-OPD',
+                badge: 'Mutasi Masuk Antar-OPD',
                 account: 'Akun 1.3 · Mutasi Antar-OPD',
                 icon: '🔄',
                 theme: 'purple',
                 route: '{{ route('astap.create_mutasi_eksternal') }}',
-                actionLabel: 'Buka Form Mutasi Eksternal',
+                actionLabel: 'Buka Form Mutasi Masuk',
                 stepCount: 'Form Mutasi Masuk',
                 purpose: 'Pencatatan penyerahan atau alih status penggunaan aset dari SKPD/Dinas/Instansi lain di lingkungan Pemerintah Daerah ke RSUD Dr. H. Koesnandi.',
                 cases: 'Mutasi mobil ambulans/dinas dari Dinas Kesehatan ke RSUD, penyerahan tanah/gedung dari BPKAD, atau pemindahan perangkat IT server dari Diskominfo.',
@@ -94,7 +94,7 @@
                     'Kartu Inventaris Barang (KIB) Asal OPD Penyerah'
                 ],
                 accounting: 'Dicatat sebagai mutasi aset masuk antar-OPD Pemkab Bondowoso dengan mengadopsi nilai buku dan akumulasi penyusutan yang tercatat sebelumnya.',
-                tags: ['📑 Dokumen BAMB', '🏛️ Mutasi Eksternal', '📍 Lokasi Baru']
+                tags: ['📑 Dokumen BAMB', '📥 Mutasi Masuk', '📍 Lokasi Baru']
             },
             {
                 id: 'kemitraan',

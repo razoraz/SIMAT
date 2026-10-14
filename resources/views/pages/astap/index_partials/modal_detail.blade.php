@@ -41,9 +41,9 @@
                                 </span>
                             </template>
 
-                            <template x-if="selectedAstapDetail?.sumber_dana === 'mutasi_eksternal' || selectedAstapDetail?.sumber_dana === 'pelimpahan' || selectedAstapDetail?.sumber_dana === 'pelimpahan_skpd' || selectedAstapDetail?.sumber_dana === 'mutasi_masuk' || selectedAstapDetail?.sumber_dana === 'mutasi'">
+                            <template x-if="!selectedAstapDetail?.is_mutasi_keluar_full && !selectedAstapDetail?.is_mutasi_keluar_partial && !selectedAstapDetail?.mutasi_keluar && selectedAstapDetail?.jenis_reklas !== 'MUTASI_EKSTERNAL' && (selectedAstapDetail?.sumber_dana === 'mutasi_eksternal' || selectedAstapDetail?.sumber_dana === 'pelimpahan' || selectedAstapDetail?.sumber_dana === 'pelimpahan_skpd' || selectedAstapDetail?.sumber_dana === 'mutasi_masuk' || selectedAstapDetail?.sumber_dana === 'mutasi')">
                                 <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 bg-purple-500/20 text-purple-300 border-purple-500/30">
-                                    🔄 MUTASI EKSTERNAL MASUK
+                                    📥 MUTASI MASUK
                                 </span>
                             </template>
 
@@ -54,21 +54,23 @@
                                 </span>
                             </template>
 
-                            <template x-if="selectedAstapDetail?.jenis_reklas === 'MUTASI_EKSTERNAL' || !!selectedAstapDetail?.mutasi_keluar">
-                                <span class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-lg text-[10px] font-black border uppercase tracking-wider shrink-0 bg-cyan-500/25 text-cyan-300 border-cyan-400/50 shadow-md shadow-cyan-500/20"
-                                    :title="'Aset telah dimutasi keluar ke ' + (selectedAstapDetail?.mutasi_keluar?.opd_tujuan || selectedAstapDetail?.opd_tujuan || 'OPD Luar')">
-                                    <span>🏛️</span>
-                                    <span x-text="'MUTASI KELUAR KE ' + (selectedAstapDetail?.mutasi_keluar?.opd_tujuan || selectedAstapDetail?.opd_tujuan || 'OPD LUAR').toUpperCase()"></span>
-                                </span>
-                            </template>
-
-                            <template x-if="selectedAstapDetail?.jenis_reklas !== 'MUTASI_EKSTERNAL' && !selectedAstapDetail?.mutasi_keluar && (selectedAstapDetail?.has_reklas || selectedAstapDetail?.is_reklas || (selectedAstapDetail?.reklas_count && selectedAstapDetail?.reklas_count > 0))">
+                            {{-- Badge Reklasifikasi -- tetap muncul jika aset pernah reklasifikasi atau mutasi keluar via reklas --}}
+                            <template x-if="selectedAstapDetail?.has_reklas || selectedAstapDetail?.is_reklas || (selectedAstapDetail?.reklas_count && selectedAstapDetail?.reklas_count > 0) || selectedAstapDetail?.jenis_reklas || !!selectedAstapDetail?.mutasi_keluar">
                                 <span class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 bg-indigo-500/20 text-indigo-300 border-indigo-500/30 shadow-sm"
                                     :title="'Aset ini memiliki riwayat Reklasifikasi' + (selectedAstapDetail?.jenis_reklas ? ' (' + selectedAstapDetail.jenis_reklas.replace(/_/g, ' ') + ')' : '')">
                                     <svg class="w-3 h-3 shrink-0 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
                                     </svg>
                                     <span>REKLASIFIKASI</span>
+                                </span>
+                            </template>
+
+                            {{-- Badge Mutasi Keluar ke OPD --}}
+                            <template x-if="selectedAstapDetail?.jenis_reklas === 'MUTASI_EKSTERNAL' || !!selectedAstapDetail?.mutasi_keluar">
+                                <span class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-lg text-[10px] font-black border uppercase tracking-wider shrink-0 bg-cyan-500/25 text-cyan-300 border-cyan-400/50 shadow-md shadow-cyan-500/20"
+                                    :title="'Aset telah dimutasi keluar ke ' + (selectedAstapDetail?.mutasi_keluar?.opd_tujuan || selectedAstapDetail?.opd_tujuan || 'OPD Luar')">
+                                    <span>🏛️</span>
+                                    <span x-text="'MUTASI KELUAR KE ' + (selectedAstapDetail?.mutasi_keluar?.opd_tujuan || selectedAstapDetail?.opd_tujuan || 'OPD LUAR').toUpperCase()"></span>
                                 </span>
                             </template>
 
@@ -168,10 +170,10 @@
                             </template>
                         </div>
 
-                        <!-- DOKUMEN BAMB MUTASI EKSTERNAL MASUK (DARI OPD LUAR) -->
+                        <!-- DOKUMEN BAMB MUTASI MASUK (DARI OPD LUAR) -->
                         <div x-show="selectedAstapDetail?.sumber_dana === 'mutasi_eksternal' || selectedAstapDetail?.sumber_dana === 'pelimpahan_skpd' || selectedAstapDetail?.sumber_dana === 'mutasi_masuk' || selectedAstapDetail?.mutasi_nomor_bamb" class="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/30 space-y-2">
                             <div class="flex items-center space-x-2 text-purple-300 font-extrabold text-xs uppercase tracking-wider">
-                                <span>📜 Dokumen Berita Acara Mutasi Barang (BAMB) / Mutasi Eksternal Masuk</span>
+                                <span>📜 Dokumen Berita Acara Mutasi Barang (BAMB) / Mutasi Masuk</span>
                             </div>
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
                                 <div>
