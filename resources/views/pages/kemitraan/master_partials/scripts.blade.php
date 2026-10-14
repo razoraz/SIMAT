@@ -439,6 +439,29 @@
             },
             isUpdatingStatus: false,
 
+            // State Terminasi Kemitraan (Pengembalian ke Mitra / Serah Terima Milik RSUD)
+            showModalTerminasi: false,
+            terminasiTab: 'kembalikan', // 'kembalikan' | 'serah_terima'
+            isSubmittingTerminasi: false,
+            terminasiData: {},
+            terminasiForm: {
+                id: null,
+                nomor_ba_terminasi: '',
+                tanggal_terminasi: '',
+                tanggal_ba_terminasi: '',
+                kondisi_akhir: 'Baik',
+                pihak_penyerah_nama: '',
+                pihak_penyerah_jabatan: '',
+                pihak_penerima_nama: '',
+                pihak_penerima_jabatan: '',
+                catatan_terminasi: '',
+                berkas_ba_terminasi: null,
+                nilai_perolehan_rsud: '',
+                target_kib_reklas: 'KIB_B',
+                target_kode_108: '',
+                ruangan_tujuan_id: ''
+            },
+
             // Modal Delete States
             showDeleteModal: false,
             deleteItem: {
@@ -804,6 +827,23 @@
                     jumlah_extend: kemitraan?.jumlah_extend || 0,
                     riwayat_adendum: kemitraan?.riwayat_adendum || [],
                     dokumen_adendum_path: kemitraan?.dokumen_adendum_path || null,
+
+                    // Informasi Terminasi Akhir Masa Konsesi
+                    jenis_terminasi: kemitraan?.jenis_terminasi || spec?.terminasi?.jenis || null,
+                    nomor_ba_terminasi: kemitraan?.nomor_ba_terminasi || spec?.terminasi?.nomor_ba || null,
+                    tanggal_terminasi: kemitraan?.tanggal_terminasi || spec?.terminasi?.tanggal_terminasi || null,
+                    berkas_ba_terminasi: kemitraan?.berkas_ba_terminasi || spec?.terminasi?.berkas_path || null,
+                    kondisi_akhir: kemitraan?.kondisi_akhir || spec?.terminasi?.kondisi_akhir || null,
+                    pihak_penyerah_nama: kemitraan?.pihak_penyerah_nama || spec?.terminasi?.pihak_penyerah || null,
+                    pihak_penyerah_jabatan: kemitraan?.pihak_penyerah_jabatan || null,
+                    pihak_penerima_nama: kemitraan?.pihak_penerima_nama || spec?.terminasi?.pihak_penerima || null,
+                    pihak_penerima_jabatan: kemitraan?.pihak_penerima_jabatan || null,
+                    catatan_terminasi: kemitraan?.catatan_terminasi || spec?.terminasi?.catatan || null,
+                    is_transferred_to_rsud: Boolean(kemitraan?.is_transferred_to_rsud || (spec?.terminasi?.jenis === 'serah_terima_rsud')),
+                    target_kib_reklas: kemitraan?.target_kib_reklas || spec?.terminasi?.target_kib || null,
+                    target_kode_108: kemitraan?.target_kode_108 || spec?.terminasi?.target_kode_108 || null,
+                    nilai_perolehan_rsud: kemitraan?.nilai_perolehan_rsud || spec?.terminasi?.nilai_perolehan_rsud || null,
+
                     raw_row: kemitraan || {},
                     raw_astap: astap || {}
                 };
@@ -1023,9 +1063,20 @@
                         try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
                     }
 
-                    // Tentukan apakah tipe 'dimanfaatkan' atau 'ditambahkan'
-                    let isDimanfaatkan = isDim;
-                    if (isDimanfaatkan === null || isDimanfaatkan === undefined) {
+                    // Tentukan apakah tipe 'dimanfaatkan', 'ditambahkan', 'pengembalian', atau 'serah_terima_rsud'
+                    let formatTipe = 'ditambahkan';
+                    let isDimanfaatkan = false;
+
+                    if (isDim === 'pengembalian' || isDim === 'serah_terima_rsud') {
+                        formatTipe = isDim;
+                        isDimanfaatkan = (item.is_dimanfaatkan !== undefined) ? !!item.is_dimanfaatkan : false;
+                    } else if (isDim === true || isDim === 'dimanfaatkan') {
+                        formatTipe = 'dimanfaatkan';
+                        isDimanfaatkan = true;
+                    } else if (isDim === false || isDim === 'ditambahkan') {
+                        formatTipe = 'ditambahkan';
+                        isDimanfaatkan = false;
+                    } else {
                         if (item.is_dimanfaatkan !== undefined) {
                             isDimanfaatkan = !!item.is_dimanfaatkan;
                         } else if (astap && (astap.is_reklas || (astap.reklas && astap.reklas.length > 0))) {
@@ -1035,9 +1086,9 @@
                         } else {
                             isDimanfaatkan = false;
                         }
+                        formatTipe = isDimanfaatkan ? 'dimanfaatkan' : 'ditambahkan';
                     }
 
-                    let formatTipe = isDimanfaatkan ? 'dimanfaatkan' : 'ditambahkan';
                     let targetId = kemitraan?.id || item.kemitraan_id || astap?.id || item.id || 'draft';
                     this.currentBastTargetId = targetId;
                     this.currentBastItem = item;
@@ -1066,7 +1117,9 @@
                     }
 
                     // Tanggal PKS & Tanggal BAST
-                    let rawTglPks = kemitraan?.tanggal_pks || item.tanggal_pks || spec?.tanggal_pks || astap?.bast_dokumen_tanggal || new Date().toISOString().slice(0, 10);
+                    let rawTglPks = (formatTipe === 'pengembalian' || formatTipe === 'serah_terima_rsud') 
+                        ? (kemitraan?.tanggal_terminasi || kemitraan?.tanggal_selesai || item.tanggal_terminasi || new Date().toISOString().slice(0, 10))
+                        : (kemitraan?.tanggal_pks || item.tanggal_pks || spec?.tanggal_pks || astap?.bast_dokumen_tanggal || new Date().toISOString().slice(0, 10));
                     let dPks = new Date(rawTglPks);
                     if (isNaN(dPks.getTime())) dPks = new Date();
 
@@ -1077,7 +1130,12 @@
 
                     let thnPks = dPks.getFullYear();
                     let prefixNoBast = isDimanfaatkan ? 'BAST-KMT-MANFAAT' : 'BAST-KMT-PENGADAAN';
-                    let noBastDefault = `000.2.3.2/${prefixNoBast}/${targetId}/430.10.7/${thnPks}`;
+                    if (formatTipe === 'pengembalian') prefixNoBast = 'BAST-KMT-KEMBALI';
+                    if (formatTipe === 'serah_terima_rsud') prefixNoBast = 'BAST-KMT-MILIK';
+
+                    let noBastDefault = ((formatTipe === 'pengembalian' || formatTipe === 'serah_terima_rsud') && kemitraan?.nomor_ba_terminasi) 
+                        ? kemitraan.nomor_ba_terminasi 
+                        : `000.2.3.2/${prefixNoBast}/${targetId}/430.10.7/${thnPks}`;
                     let noPksDefault = kemitraan?.nomor_pks || item.nomor_pks || spec?.nomor_pks || astap?.bast_dokumen_nomor || `000.2.3.2/PKS-KMT/${targetId}/${thnPks}`;
 
                     // Masa Konsesi
@@ -3652,6 +3710,249 @@
                 } finally {
                     this.isSubmittingReklas = false;
                 }
+            },
+
+            // =========================================================================
+            // METODE TERMINASI KEMITRAAN (PENGEMBALIAN KE MITRA / SERAH TERIMA RSUD)
+            // =========================================================================
+            openTerminasiModal(row, defaultTab = 'kembalikan') {
+                if (!row) return;
+
+                const kemitraanId = row.kemitraan_id || (row.kemitraan ? row.kemitraan.id : row.id);
+                const rawRow = (row.raw_row && Object.keys(row.raw_row).length > 0) ? row.raw_row : (row.kemitraan || row);
+                const isDimanfaatkan = Boolean(row.is_dimanfaatkan ?? rawRow.is_dimanfaatkan ?? (rawRow.tipe_kemitraan === 'dimanfaatkan'));
+                const namaBarang = row.nama_barang || row.astap?.nama_barang || rawRow.nama_barang || 'Aset Kemitraan';
+                const nomorPks = row.nomor_pks || rawRow.nomor_pks || '-';
+                const mitraNama = row.mitra_nama || rawRow.mitra_nama || rawRow.penyedia_nama || 'Mitra Rekanan';
+                const mitraPimpinan = rawRow.mitra_pimpinan || rawRow.penyedia_pemilik || 'Pimpinan Mitra Rekanan';
+                const nilaiNominal = parseFloat(row.total_realisasi_num || row.nilai_aset || rawRow.nilai_aset || 0);
+
+                const currentYear = new Date().getFullYear();
+                const todayStr = this.formatLocalDate(new Date());
+
+                this.terminasiData = {
+                    id: kemitraanId,
+                    nama_barang: namaBarang,
+                    nomor_pks: nomorPks,
+                    mitra_nama: mitraNama,
+                    mitra_pimpinan: mitraPimpinan,
+                    is_dimanfaatkan: isDimanfaatkan,
+                    category: row.category || rawRow.kategori_barang || '',
+                    nilai_aset: nilaiNominal,
+                    raw: rawRow
+                };
+
+                let initialTargetKib = 'KIB_B';
+                if ((this.terminasiData.category || '').toUpperCase().includes('C') || (this.terminasiData.category || '').toUpperCase().includes('GEDUNG')) {
+                    initialTargetKib = 'KIB_C';
+                } else if ((this.terminasiData.category || '').toUpperCase().includes('D') || (this.terminasiData.category || '').toUpperCase().includes('JARINGAN')) {
+                    initialTargetKib = 'KIB_D';
+                } else if ((this.terminasiData.category || '').toUpperCase().includes('E') || (this.terminasiData.category || '').toUpperCase().includes('LAINNYA')) {
+                    initialTargetKib = 'KIB_E';
+                }
+
+                this.terminasiTab = defaultTab;
+                this.terminasiForm = {
+                    id: kemitraanId,
+                    nomor_ba_terminasi: defaultTab === 'kembalikan'
+                        ? `000.2.3.2/BAST-KMT-KEMBALI/${kemitraanId || '001'}/430.10.7/${currentYear}`
+                        : `000.2.3.2/BAST-KMT-MILIK/${kemitraanId || '001'}/430.10.7/${currentYear}`,
+                    tanggal_terminasi: todayStr,
+                    tanggal_ba_terminasi: todayStr,
+                    kondisi_akhir: row.kondisi || 'Baik',
+                    pihak_penyerah_nama: defaultTab === 'kembalikan' ? 'dr. YUS PRIYATNA ADRYANTO, Sp.P, FISR' : mitraPimpinan,
+                    pihak_penyerah_jabatan: defaultTab === 'kembalikan' ? 'Direktur RSUD Dr. H. Koesnandi' : 'Direktur / Penanggung Jawab Mitra',
+                    pihak_penerima_nama: defaultTab === 'kembalikan' ? mitraPimpinan : 'dr. YUS PRIYATNA ADRYANTO, Sp.P, FISR',
+                    pihak_penerima_jabatan: defaultTab === 'kembalikan' ? 'Direktur / Penanggung Jawab Mitra' : 'Direktur RSUD Dr. H. Koesnandi',
+                    catatan_terminasi: defaultTab === 'kembalikan'
+                        ? 'Pengembalian aset operasional kepada mitra rekanan sehubungan dengan selesainya masa konsesi kerja sama.'
+                        : 'Serah terima pengalihan kepemilikan aset kemitraan menjadi Barang Milik Daerah definitif RSUD Dr. H. Koesnandi.',
+                    berkas_ba_terminasi: null,
+                    nilai_perolehan_rsud: nilaiNominal > 0 ? this.formatRupiah(nilaiNominal) : '',
+                    target_kib_reklas: initialTargetKib,
+                    target_kode_108: '',
+                    ruangan_tujuan_id: ''
+                };
+
+                this.showModalTerminasi = true;
+            },
+
+            openTerminasiModalFromDetail(defaultTab = 'kembalikan') {
+                if (!this.selectedAstapDetail) return;
+                const detail = this.selectedAstapDetail;
+                const targetRow = (detail.raw_row && Object.keys(detail.raw_row).length > 0) ? detail.raw_row : (detail.kemitraan || detail);
+                this.openTerminasiModal(targetRow, defaultTab);
+            },
+
+            closeTerminasiModal() {
+                this.showModalTerminasi = false;
+                this.isSubmittingTerminasi = false;
+            },
+
+            formatTerminasiNilai(e) {
+                let val = e.target.value.replace(/[^0-9]/g, '');
+                if (!val) {
+                    this.terminasiForm.nilai_perolehan_rsud = '';
+                    return;
+                }
+                this.terminasiForm.nilai_perolehan_rsud = new Intl.NumberFormat('id-ID').format(val);
+            },
+
+            handleTerminasiFileChange(e) {
+                const file = e.target.files[0];
+                this.terminasiForm.berkas_ba_terminasi = file || null;
+            },
+
+            async submitKembalikanForm() {
+                if (!this.terminasiForm.nomor_ba_terminasi || !this.terminasiForm.tanggal_terminasi) {
+                    this.showToast('Harap lengkapi Nomor BAST dan Tanggal Pengembalian.', 'warning');
+                    return;
+                }
+                if (!this.terminasiForm.pihak_penyerah_nama || !this.terminasiForm.pihak_penerima_nama) {
+                    this.showToast('Harap lengkapi nama pihak penyerah dan penerima.', 'warning');
+                    return;
+                }
+
+                this.isSubmittingTerminasi = true;
+                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+
+                try {
+                    const fd = new FormData();
+                    fd.append('_token', token);
+                    fd.append('nomor_ba_terminasi', this.terminasiForm.nomor_ba_terminasi);
+                    fd.append('tanggal_terminasi', this.terminasiForm.tanggal_terminasi);
+                    fd.append('tanggal_ba_terminasi', this.terminasiForm.tanggal_ba_terminasi || this.terminasiForm.tanggal_terminasi);
+                    fd.append('kondisi_akhir', this.terminasiForm.kondisi_akhir || 'Baik');
+                    fd.append('pihak_penyerah_nama', this.terminasiForm.pihak_penyerah_nama);
+                    fd.append('pihak_penyerah_jabatan', this.terminasiForm.pihak_penyerah_jabatan || '');
+                    fd.append('pihak_penerima_nama', this.terminasiForm.pihak_penerima_nama);
+                    fd.append('pihak_penerima_jabatan', this.terminasiForm.pihak_penerima_jabatan || '');
+                    fd.append('catatan_terminasi', this.terminasiForm.catatan_terminasi || '');
+
+                    if (this.terminasiForm.berkas_ba_terminasi instanceof File) {
+                        fd.append('berkas_ba_terminasi', this.terminasiForm.berkas_ba_terminasi);
+                    }
+
+                    const kemitraanId = this.terminasiData.id;
+                    const res = await fetch(`/master-data/kemitraan/${kemitraanId}/kembalikan-ke-mitra`, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': token
+                        },
+                        body: fd
+                    });
+
+                    const resJson = await res.json();
+                    if (resJson.success) {
+                        this.showToast(resJson.message || 'Aset kemitraan berhasil dikembalikan kepada mitra rekanan!', 'success');
+                        this.closeTerminasiModal();
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1200);
+                    } else {
+                        this.showToast('Gagal memproses pengembalian: ' + (resJson.message || 'Terjadi kesalahan sistem.'), 'error');
+                    }
+                } catch (err) {
+                    console.error('Kembalikan submit error:', err);
+                    this.showToast('Terjadi kesalahan jaringan: ' + err.message, 'error');
+                } finally {
+                    this.isSubmittingTerminasi = false;
+                }
+            },
+
+            async submitSerahTerimaForm() {
+                if (!this.terminasiForm.nomor_ba_terminasi || !this.terminasiForm.tanggal_terminasi) {
+                    this.showToast('Harap lengkapi Nomor BAST dan Tanggal Serah Terima.', 'warning');
+                    return;
+                }
+                if (!this.terminasiForm.target_kib_reklas) {
+                    this.showToast('Harap pilih Target KIB Definitif RSUD.', 'warning');
+                    return;
+                }
+                if (!this.terminasiForm.pihak_penyerah_nama || !this.terminasiForm.pihak_penerima_nama) {
+                    this.showToast('Harap lengkapi nama pihak penyerah dan penerima.', 'warning');
+                    return;
+                }
+
+                this.isSubmittingTerminasi = true;
+                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+
+                try {
+                    const fd = new FormData();
+                    fd.append('_token', token);
+                    fd.append('nomor_ba_terminasi', this.terminasiForm.nomor_ba_terminasi);
+                    fd.append('tanggal_terminasi', this.terminasiForm.tanggal_terminasi);
+                    fd.append('tanggal_ba_terminasi', this.terminasiForm.tanggal_ba_terminasi || this.terminasiForm.tanggal_terminasi);
+                    fd.append('kondisi_akhir', this.terminasiForm.kondisi_akhir || 'Baik');
+                    fd.append('pihak_penyerah_nama', this.terminasiForm.pihak_penyerah_nama);
+                    fd.append('pihak_penyerah_jabatan', this.terminasiForm.pihak_penyerah_jabatan || '');
+                    fd.append('pihak_penerima_nama', this.terminasiForm.pihak_penerima_nama);
+                    fd.append('pihak_penerima_jabatan', this.terminasiForm.pihak_penerima_jabatan || '');
+                    fd.append('target_kib_reklas', this.terminasiForm.target_kib_reklas);
+                    fd.append('target_kode_108', this.terminasiForm.target_kode_108 || '');
+                    fd.append('ruangan_tujuan_id', this.terminasiForm.ruangan_tujuan_id || '');
+                    fd.append('nilai_perolehan_rsud', (this.terminasiForm.nilai_perolehan_rsud || '').replace(/\./g, ''));
+                    fd.append('catatan_terminasi', this.terminasiForm.catatan_terminasi || '');
+
+                    if (this.terminasiForm.berkas_ba_terminasi instanceof File) {
+                        fd.append('berkas_ba_terminasi', this.terminasiForm.berkas_ba_terminasi);
+                    }
+
+                    const kemitraanId = this.terminasiData.id;
+                    const res = await fetch(`/master-data/kemitraan/${kemitraanId}/serah-terima-rsud`, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': token
+                        },
+                        body: fd
+                    });
+
+                    const resJson = await res.json();
+                    if (resJson.success) {
+                        this.showToast(resJson.message || 'Aset kemitraan berhasil diserahterimakan menjadi milik definitif RSUD!', 'success');
+                        this.closeTerminasiModal();
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1200);
+                    } else {
+                        this.showToast('Gagal memproses serah terima: ' + (resJson.message || 'Terjadi kesalahan sistem.'), 'error');
+                    }
+                } catch (err) {
+                    console.error('Serah terima submit error:', err);
+                    this.showToast('Terjadi kesalahan jaringan: ' + err.message, 'error');
+                } finally {
+                    this.isSubmittingTerminasi = false;
+                }
+            },
+
+            printTerminasiBast(tipe) {
+                const tData = this.terminasiData;
+                const fData = this.terminasiForm;
+
+                const rawRow = tData.raw || {};
+                const astapObj = {
+                    id: tData.id,
+                    nama_barang: tData.nama_barang,
+                    kode_barang: tData.kode_barang || rawRow.kode_barang || '1.5.2.01.01.001',
+                    category: tData.category || rawRow.kategori_barang || '',
+                    jumlah_volume: 1,
+                    satuan: 'Unit',
+                    kondisi: fData.kondisi_akhir || 'Baik',
+                    harga_satuan: tData.nilai_aset || 0,
+                    total_realisasi_num: tData.nilai_aset || 0
+                };
+
+                this.openPrintBast(rawRow, tipe);
+            },
+
+            printTerminasiFromDetail() {
+                if (!this.selectedAstapDetail) return;
+                const detail = this.selectedAstapDetail;
+                const rawRow = (detail.raw_row && Object.keys(detail.raw_row).length > 0) ? detail.raw_row : (detail.kemitraan || detail);
+                const tipe = detail.jenis_terminasi === 'serah_terima_rsud' ? 'serah_terima_rsud' : 'pengembalian';
+                this.openPrintBast(rawRow, tipe);
             }
         };
     }

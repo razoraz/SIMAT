@@ -6851,6 +6851,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/master-data/kemitraan/{id}/extend', [\App\Http\Controllers\KemitraanController::class, 'extendKonsesi'])->name('master.kemitraan.extend');
         Route::post('/master-data/kemitraan/extend-mitra-batch', [\App\Http\Controllers\KemitraanController::class, 'extendMitraBatch'])->name('master.kemitraan.extend_mitra_batch');
         Route::patch('/master-data/kemitraan/{id}', [\App\Http\Controllers\KemitraanController::class, 'update'])->name('master.kemitraan.update');
+        Route::post('/master-data/kemitraan/{id}/kembalikan-ke-mitra', [\App\Http\Controllers\KemitraanController::class, 'kembalikanKeMitra'])->name('master.kemitraan.kembalikan');
+        Route::post('/master-data/kemitraan/{id}/serah-terima-rsud', [\App\Http\Controllers\KemitraanController::class, 'serahTerimaRsud'])->name('master.kemitraan.serah_terima');
         Route::delete('/master-data/kemitraan/{id}', [\App\Http\Controllers\KemitraanController::class, 'destroy'])->name('master.kemitraan.destroy');
     });
 

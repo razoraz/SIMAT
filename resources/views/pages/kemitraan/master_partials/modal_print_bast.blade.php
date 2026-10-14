@@ -298,7 +298,13 @@
                     <!-- JUDUL SURAT & NOMOR (DINAMIS SESUAI TIPE BAST) -->
                     <div class="text-center text-black mb-3">
                         <h3 class="font-bold text-[11pt] sm:text-[11.5pt] uppercase underline tracking-normal text-black m-0"
-                            x-text="bastDoc.format_tipe === 'ditambahkan' ? 'BERITA ACARA SERAH TERIMA PENGADAAN & PENAMBAHAN ASET KEMITRAAN' : 'BERITA ACARA SERAH TERIMA PEMANFAATAN BARANG MILIK DAERAH (BMD)'">
+                            x-text="bastDoc.format_tipe === 'pengembalian' 
+                                ? 'BERITA ACARA PENGEMBALIAN BARANG KEMITRAAN KEPADA PIHAK KETIGA' 
+                                : (bastDoc.format_tipe === 'serah_terima_rsud' 
+                                    ? 'BERITA ACARA SERAH TERIMA ASET KEMITRAAN MENJADI BARANG MILIK DAERAH RSUD' 
+                                    : (bastDoc.format_tipe === 'ditambahkan' 
+                                        ? 'BERITA ACARA SERAH TERIMA PENGADAAN & PENAMBAHAN ASET KEMITRAAN' 
+                                        : 'BERITA ACARA SERAH TERIMA PEMANFAATAN BARANG MILIK DAERAH (BMD)'))">
                         </h3>
                         <p class="text-[9.5pt] sm:text-[10pt] font-semibold text-black mt-1 m-0">
                             Nomor: <span class="font-mono font-bold" x-text="bastDoc.nomor_bast"></span>
@@ -337,7 +343,13 @@
                                     <template x-if="bastDoc.format_tipe === 'ditambahkan'">
                                         <span>Dalam hal ini bertindak untuk dan atas nama RSUD Dr. H. Koesnandi selaku <strong class="not-italic">PIHAK KESATU</strong> (Pihak Yang Menerima Aset Kemitraan).</span>
                                     </template>
-                                    <template x-if="bastDoc.format_tipe !== 'ditambahkan'">
+                                    <template x-if="bastDoc.format_tipe === 'pengembalian'">
+                                        <span>Dalam hal ini bertindak untuk dan atas nama RSUD Dr. H. Koesnandi selaku <strong class="not-italic">PIHAK KESATU</strong> (Pihak Yang Menyerahkan Kembali Aset Kemitraan Kepada Mitra Rekanan).</span>
+                                    </template>
+                                    <template x-if="bastDoc.format_tipe === 'serah_terima_rsud'">
+                                        <span>Dalam hal ini bertindak untuk dan atas nama RSUD Dr. H. Koesnandi selaku <strong class="not-italic">PIHAK KESATU</strong> (Pihak Yang Menerima Pengalihan Hak Kepemilikan Menjadi Barang Milik Daerah Definitif).</span>
+                                    </template>
+                                    <template x-if="bastDoc.format_tipe === 'dimanfaatkan'">
                                         <span>Dalam hal ini bertindak untuk dan atas nama RSUD Dr. H. Koesnandi selaku <strong class="not-italic">PIHAK KESATU</strong> (Pihak Yang Menyerahkan Hak Pemanfaatan BMD).</span>
                                     </template>
                                 </td>
@@ -372,7 +384,13 @@
                                     <template x-if="bastDoc.format_tipe === 'ditambahkan'">
                                         <span>Dalam hal ini bertindak untuk dan atas nama <span class="font-semibold not-italic" x-text="bastDoc.p2_perusahaan"></span> selaku <strong class="not-italic">PIHAK KEDUA</strong> (Pihak Penyedia / Yang Menyerahkan Aset Pengadaan Baru).</span>
                                     </template>
-                                    <template x-if="bastDoc.format_tipe !== 'ditambahkan'">
+                                    <template x-if="bastDoc.format_tipe === 'pengembalian'">
+                                        <span>Dalam hal ini bertindak untuk dan atas nama <span class="font-semibold not-italic" x-text="bastDoc.p2_perusahaan"></span> selaku <strong class="not-italic">PIHAK KEDUA</strong> (Pihak Rekanan Yang Menerima Kembali Aset Kemitraan).</span>
+                                    </template>
+                                    <template x-if="bastDoc.format_tipe === 'serah_terima_rsud'">
+                                        <span>Dalam hal ini bertindak untuk dan atas nama <span class="font-semibold not-italic" x-text="bastDoc.p2_perusahaan"></span> selaku <strong class="not-italic">PIHAK KEDUA</strong> (Pihak Mitra Yang Menyerahkan Kepemilikan Aset Kepada Pemerintah Daerah).</span>
+                                    </template>
+                                    <template x-if="bastDoc.format_tipe === 'dimanfaatkan'">
                                         <span>Dalam hal ini bertindak untuk dan atas nama <span class="font-semibold not-italic" x-text="bastDoc.p2_perusahaan"></span> selaku <strong class="not-italic">PIHAK KEDUA</strong> (Pihak Yang Menerima Hak Pemanfaatan BMD).</span>
                                     </template>
                                 </td>
@@ -386,7 +404,17 @@
                             Berdasarkan Surat Perjanjian Kerja Sama (PKS) Nomor: <strong class="font-mono" x-text="bastDoc.nomor_pks"></strong> Tanggal <strong x-text="bastDoc.tanggal_pks"></strong> perihal Kerja Sama Operasional skema <strong x-text="bastDoc.skema_kemitraan"></strong>, <strong>PIHAK KEDUA</strong> telah menyelesaikan pengadaan, penyediaan, instalasi, dan uji fungsi (<em>commissioning</em>) barang baru, serta <strong>menyerahkan kepada PIHAK KESATU</strong>, dan <strong>PIHAK KESATU menerima penyerahan objek aset tersebut</strong> dalam keadaan baru (100%), lengkap, dan berfungsi normal untuk operasional pelayanan pasien di RSUD Dr. H. Koesnandi serta dicatat pada Aset Kemitraan Pihak Ketiga (Akun 1.5.2), dengan rincian sebagai berikut:
                         </p>
                     </template>
-                    <template x-if="bastDoc.format_tipe !== 'ditambahkan'">
+                    <template x-if="bastDoc.format_tipe === 'pengembalian'">
+                        <p class="text-justify mb-2 text-[9.5pt] sm:text-[10pt] leading-[1.5] text-black">
+                            Sehubungan dengan telah berakhirnya jangka waktu masa konsesi Kerja Sama berdasarkan Surat Perjanjian Kerja Sama (PKS) Nomor: <strong class="font-mono" x-text="bastDoc.nomor_pks"></strong> Tanggal <strong x-text="bastDoc.tanggal_pks"></strong>, <strong>PIHAK KESATU menyerahkan kembali</strong> kepada <strong>PIHAK KEDUA</strong>, dan <strong>PIHAK KEDUA menerima penyerahan kembali objek barang kemitraan</strong> dalam keadaan baik dan lengkap untuk dibawa/dikelola kembali oleh pihak penyedia rekanan, dengan rincian sebagai berikut:
+                        </p>
+                    </template>
+                    <template x-if="bastDoc.format_tipe === 'serah_terima_rsud'">
+                        <p class="text-justify mb-2 text-[9.5pt] sm:text-[10pt] leading-[1.5] text-black">
+                            Sehubungan dengan telah berakhirnya masa konsesi dan pemenuhan kewajiban pengalihan kepemilikan aset kerja sama (Bangun Guna Serah / Hibah Aset) berdasarkan Surat Perjanjian Kerja Sama (PKS) Nomor: <strong class="font-mono" x-text="bastDoc.nomor_pks"></strong> Tanggal <strong x-text="bastDoc.tanggal_pks"></strong>, <strong>PIHAK KEDUA menyerahkan hak kepemilikan aset sepenuhnya kepada PIHAK KESATU</strong>, dan <strong>PIHAK KESATU menerima penyerahan objek aset tersebut</strong> untuk dicatat secara sah sebagai <strong>Barang Milik Daerah (BMD) definitif milik Pemerintah Kabupaten Bondowoso pada RSUD Dr. H. Koesnandi</strong>, dengan rincian sebagai berikut:
+                        </p>
+                    </template>
+                    <template x-if="bastDoc.format_tipe === 'dimanfaatkan'">
                         <p class="text-justify mb-2 text-[9.5pt] sm:text-[10pt] leading-[1.5] text-black">
                             Berdasarkan Surat Perjanjian Kerja Sama (PKS) Nomor: <strong class="font-mono" x-text="bastDoc.nomor_pks"></strong> Tanggal <strong x-text="bastDoc.tanggal_pks"></strong> perihal Kerja Sama Pemanfaatan Barang Milik Daerah skema <strong x-text="bastDoc.skema_kemitraan"></strong>, <strong>PIHAK KESATU menyerahkan kepada PIHAK KEDUA</strong>, dan <strong>PIHAK KEDUA menerima penyerahan objek Barang Milik Daerah (BMD)</strong> milik Pemerintah Kabupaten Bondowoso yang tercatat pada RSUD Dr. H. Koesnandi dalam keadaan baik dan lengkap untuk dimanfaatkan sesuai ketentuan kerja sama, dengan rincian sebagai berikut:
                         </p>

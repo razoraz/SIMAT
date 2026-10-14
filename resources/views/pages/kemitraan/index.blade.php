@@ -41,6 +41,9 @@
         <!-- MODAL EXTEND / PERPANJANG MASA KONSESI (ADENDUM PKS) -->
         @include('pages.kemitraan.master_partials.modal_extend_kemitraan')
 
+        <!-- MODAL TERMINASI: PENGEMBALIAN KE MITRA & SERAH TERIMA MILIK RSUD -->
+        @include('pages.kemitraan.master_partials.modal_terminasi_kemitraan')
+
         <!-- MODAL KONFIRMASI SINKRONISASI EXTEND ASET MITRA (TABEL 2) -->
         @include('pages.kemitraan.master_partials.modal_confirm_extend_mitra')
 

@@ -1288,43 +1288,132 @@
                     </div>
                 </div>
 
-                <!-- FORM PEMBARUAN STATUS KONSESI & MATRIKS REKLASIFIKASI -->
-                <div class="p-4 rounded-2xl bg-slate-950 border border-cyan-500/30 space-y-3">
-                    <div class="flex items-center justify-between">
-                        <span class="text-[11px] font-bold text-cyan-300 uppercase tracking-wider">
-                            ⚙️ Perbarui Status Konsesi Kerja Sama
-                        </span>
-                        <span class="text-[10px] text-slate-400">Pilih status terkini untuk pembukuan neraca</span>
+                <!-- SECTION TERMINASI / AKHIR MASA KONSESI & PERUBAHAN STATUS -->
+                <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                            <span class="text-[11px] font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                                <span>⚖️</span>
+                                <span>Penyelesaian Akhir Masa Konsesi (Terminasi Kemitraan)</span>
+                            </span>
+                            <p class="text-[10px] text-slate-400 mt-0.5">
+                                Eksekusi penyelesaian hukum & fisik aset: Pengembalian ke mitra atau penetapan hak milik RSUD.
+                            </p>
+                        </div>
+                        <template x-if="selectedAstapDetail.is_transferred_to_rsud || selectedAstapDetail.status_konsesi === 'Selesai / Reklasifikasi'">
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
+                                🏛️ Resmi Milik RSUD
+                            </span>
+                        </template>
+                        <template x-if="selectedAstapDetail.status_konsesi === 'Dikembalikan ke Rekanan'">
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-purple-500/10 text-purple-300 border border-purple-500/30">
+                                📦 Telah Dikembalikan
+                            </span>
+                        </template>
                     </div>
 
-                    <div class="flex flex-col sm:flex-row sm:items-end gap-3">
-                        <div class="flex-1">
-                            <label class="block text-[10px] font-bold text-slate-400 mb-1">Pilih Status Konsesi:</label>
-                            <select x-model="statusForm.status_konsesi"
-                                class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-colors">
-                                <option value="Aktif">🟢 Aktif</option>
-                                <option value="Konsesi Berakhir">🟠 Konsesi Berakhir</option>
-                                <option value="Dikembalikan ke Rekanan">📦 Dikembalikan ke Rekanan</option>
-                                <option value="Selesai / Reklasifikasi">🏛️ Sudah Jadi Milik RSUD (Reklasifikasi)</option>
-                                <option value="Selesai">🔵 Selesai</option>
-                                <option value="Dihentikan">🔴 Dihentikan</option>
-                            </select>
-                        </div>
+                    <!-- KONDISI A: JIKA SUDAH PERNAH DITERMINASI (TAMPILKAN RINGKASAN BA TERMINASI) -->
+                    <template x-if="selectedAstapDetail.nomor_ba_terminasi || selectedAstapDetail.status_konsesi === 'Dikembalikan ke Rekanan' || selectedAstapDetail.status_konsesi === 'Selesai / Reklasifikasi'">
+                        <div class="p-3.5 rounded-xl border space-y-2.5"
+                             :class="selectedAstapDetail.status_konsesi === 'Dikembalikan ke Rekanan' ? 'bg-purple-950/20 border-purple-500/30' : 'bg-emerald-950/20 border-emerald-500/30'">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold"
+                                      :class="selectedAstapDetail.status_konsesi === 'Dikembalikan ke Rekanan' ? 'text-purple-300' : 'text-emerald-300'"
+                                      x-text="selectedAstapDetail.status_konsesi === 'Dikembalikan ke Rekanan' ? '📦 Ringkasan Berita Acara Pengembalian ke Mitra' : '🏛️ Ringkasan Berita Acara Serah Terima Aset Milik RSUD'"></span>
+                                <span class="text-[10px] font-mono text-slate-400" x-text="selectedAstapDetail.tanggal_terminasi ? formatTanggalIndo(selectedAstapDetail.tanggal_terminasi) : '-'"></span>
+                            </div>
 
-                        <div class="shrink-0 flex items-center">
-                            <button type="button" @click="saveStatusUpdate()" :disabled="isUpdatingStatus"
-                                class="w-full sm:w-auto px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-md shadow-cyan-500/20 disabled:opacity-50 cursor-pointer">
-                                <span x-show="!isUpdatingStatus">Simpan Status</span>
-                                <span x-show="isUpdatingStatus">Menyimpan...</span>
-                            </button>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px]">
+                                <div>
+                                    <span class="text-[10px] text-slate-400 block">Nomor Berita Acara:</span>
+                                    <span class="font-mono font-bold text-white" x-text="selectedAstapDetail.nomor_ba_terminasi || '-'"></span>
+                                </div>
+                                <div>
+                                    <span class="text-[10px] text-slate-400 block">Kondisi Fisik Akhir:</span>
+                                    <span class="font-semibold text-amber-300" x-text="selectedAstapDetail.kondisi_akhir || selectedAstapDetail.kondisi || 'Baik'"></span>
+                                </div>
+                                <div>
+                                    <span class="text-[10px] text-slate-400 block">Penyerah / Penerima:</span>
+                                    <span class="text-slate-200 truncate block" x-text="(selectedAstapDetail.pihak_penyerah_nama || '-') + ' → ' + (selectedAstapDetail.pihak_penerima_nama || '-')"></span>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-800">
+                                <button type="button" @click="printTerminasiFromDetail()"
+                                        class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 flex items-center gap-1.5 cursor-pointer">
+                                    <span>🖨️ Cetak Lembar BAST Terminasi</span>
+                                </button>
+                                <template x-if="selectedAstapDetail.berkas_ba_terminasi">
+                                    <a :href="'/storage/' + selectedAstapDetail.berkas_ba_terminasi" target="_blank"
+                                       class="px-3 py-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-bold flex items-center gap-1.5">
+                                        <span>📎 Unduh Berkas Scan BAST</span>
+                                    </a>
+                                </template>
+                            </div>
                         </div>
+                    </template>
+
+                    <!-- KONDISI B: DUA TOMBOL AKSI UTAMA JALUR 1 & JALUR 2 -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <!-- Jalur 1: Kembalikan ke Mitra -->
+                        <button type="button" @click="openTerminasiModal(selectedAstapDetail, 'kembalikan')"
+                                class="p-3.5 rounded-2xl bg-gradient-to-br from-purple-950/40 via-slate-900 to-slate-950 border border-purple-500/30 hover:border-purple-400 text-left transition-all hover:scale-[1.01] hover:shadow-lg hover:shadow-purple-500/20 group cursor-pointer">
+                            <div class="flex items-center gap-2.5 mb-1.5">
+                                <span class="text-xl group-hover:scale-110 transition-transform">📦</span>
+                                <span class="text-xs font-extrabold text-purple-300 group-hover:text-purple-200">
+                                    Jalur 1: Kembalikan ke Mitra
+                                </span>
+                            </div>
+                            <p class="text-[10px] text-slate-400 leading-relaxed">
+                                Untuk aset titipan mitra (sewa/KSO) yang masa pakainya selesai dan dikembalikan ke pihak rekanan swasta.
+                            </p>
+                        </button>
+
+                        <!-- Jalur 2: Serah Terima Milik RSUD -->
+                        <button type="button" @click="openTerminasiModal(selectedAstapDetail, 'serah_terima')"
+                                class="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-950/40 via-slate-900 to-slate-950 border border-emerald-500/30 hover:border-emerald-400 text-left transition-all hover:scale-[1.01] hover:shadow-lg hover:shadow-emerald-500/20 group cursor-pointer">
+                            <div class="flex items-center gap-2.5 mb-1.5">
+                                <span class="text-xl group-hover:scale-110 transition-transform">🏛️</span>
+                                <span class="text-xs font-extrabold text-emerald-300 group-hover:text-emerald-200">
+                                    Jalur 2: Serah Terima Jadi Milik RSUD
+                                </span>
+                            </div>
+                            <p class="text-[10px] text-slate-400 leading-relaxed">
+                                Untuk skema BGS/BSG atau hibah/alih kepemilikan sehingga aset resmi tercatat sebagai Aset Tetap Milik RSUD.
+                            </p>
+                        </button>
                     </div>
 
-                    <div class="pt-1">
-                        <a href="{{ route('master.reklasifikasi') }}"
-                            class="text-[11px] text-cyan-400 hover:text-cyan-300 transition-colors inline-flex items-center gap-1">
-                            <span>Lihat Matriks Reklasifikasi Neraca &rarr;</span>
-                        </a>
+                    <!-- Dropdown Manual Cepat Status Konsesi -->
+                    <div class="pt-2 border-t border-slate-800/80">
+                        <div class="flex flex-col sm:flex-row sm:items-end gap-3">
+                            <div class="flex-1">
+                                <label class="block text-[10px] font-bold text-slate-400 mb-1">Ubah Status Konsesi Cepat:</label>
+                                <select x-model="statusForm.status_konsesi"
+                                    class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-colors">
+                                    <option value="Aktif">🟢 Aktif</option>
+                                    <option value="Konsesi Berakhir">🟠 Konsesi Berakhir</option>
+                                    <option value="Dikembalikan ke Rekanan">📦 Dikembalikan ke Rekanan</option>
+                                    <option value="Selesai / Reklasifikasi">🏛️ Sudah Jadi Milik RSUD (Reklasifikasi)</option>
+                                    <option value="Selesai">🔵 Selesai</option>
+                                    <option value="Dihentikan">🔴 Dihentikan</option>
+                                </select>
+                            </div>
+                            <div class="shrink-0 flex items-center">
+                                <button type="button" @click="saveStatusUpdate()" :disabled="isUpdatingStatus"
+                                    class="w-full sm:w-auto px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 font-bold text-xs transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer">
+                                    <span x-show="!isUpdatingStatus">Simpan Status Manual</span>
+                                    <span x-show="isUpdatingStatus">Menyimpan...</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="pt-1.5">
+                            <a href="{{ route('master.reklasifikasi') }}"
+                                class="text-[11px] text-cyan-400 hover:text-cyan-300 transition-colors inline-flex items-center gap-1">
+                                <span>Lihat Matriks Reklasifikasi Neraca &rarr;</span>
+                            </a>
+                        </div>
                     </div>
                 </div>
 
