@@ -24,7 +24,7 @@
                 </h1>
                 <p class="text-xs text-slate-400 mt-0.5 hidden sm:block">
                     <span x-show="tipeKemitraan === 'dimanfaatkan'">Pemanfaatan Barang Milik Daerah RSUD (Sewa Tanah, Gedung, Ruang Paviliun, atau KSP Alat) kepada pihak ketiga dengan penautan objek BMD.</span>
-                    <span x-show="tipeKemitraan === 'ditambahkan'">Pengadaan dan penambahan alat medis, laboratorium, mesin, atau fasilitas baru yang didatangkan oleh pihak ketiga (Mitra KSO / BGS) untuk RSUD.</span>
+                    <span x-show="tipeKemitraan === 'ditambahkan'">Pengadaan dan penambahan alat medis, laboratorium, mesin, atau fasilitas baru yang didatangkan oleh pihak ketiga (Mitra Rekanan Kerja Sama) untuk RSUD.</span>
                 </p>
             </div>
         </div>

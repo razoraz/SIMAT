@@ -3807,6 +3807,31 @@ class AstapController extends Controller
                         }
                     }
 
+                    // Kunci juga slot register eksternal (misal unit yang sedang dialihkan ke Kemitraan namun tetap mempertahankan NIBAR fisik 131)
+                    $firstAstap = $sortedAstaps->first();
+                    if ($firstAstap) {
+                        $sampleTahun = $firstAstap->tahun_perolehan ?? '2026';
+                        $sampleKode108Clean = '132000000000';
+                        if ($firstAstap->jenisAstap && !empty($firstAstap->jenisAstap->sub_sub_rincian_objek)) {
+                            $sampleKode108Clean = str_replace('.', '', $firstAstap->jenisAstap->sub_sub_rincian_objek);
+                        } elseif (!empty($firstAstap->kode_barang)) {
+                            $sampleKode108Clean = str_replace('.', '', $firstAstap->kode_barang);
+                        }
+                        $groupNibarPrefix = "1201351102000000280000{$sampleTahun}{$sampleKode108Clean}";
+                        $allGroupRegIds = $sortedAstaps->pluck('registers')->flatten()->pluck('id')->filter()->all();
+
+                        $externalRegs = \App\Models\AstapRegister::where('nibar', 'like', $groupNibarPrefix . '%')
+                            ->whereNotIn('id', $allGroupRegIds)
+                            ->get();
+
+                        foreach ($externalRegs as $extReg) {
+                            $extSlot = $extReg->no_register_int ?: intval(substr($extReg->nibar ?? '', -7));
+                            if ($extSlot > 0) {
+                                $lockedSlots[$extSlot] = $extReg;
+                            }
+                        }
+                    }
+
                     // Susun alokasi slot untuk aset yang BELUM DITEMPATKAN
                     $assignments = [];
                     $candidateSlot = 1;
@@ -3859,6 +3884,13 @@ class AstapController extends Controller
 
                         $noRegStr = str_pad($newSlot, 7, '0', STR_PAD_LEFT);
                         $finalNibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+
+                        // Defensive Check: Jika slot bentrok dengan register yang ada di database, lewati ke slot unik berikutnya
+                        while (\App\Models\AstapRegister::where('nibar', $finalNibar)->where('id', '!=', $reg->id)->exists()) {
+                            $newSlot++;
+                            $noRegStr = str_pad($newSlot, 7, '0', STR_PAD_LEFT);
+                            $finalNibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+                        }
 
                         $reg->tahun_perolehan = $tahun;
                         $reg->no_register_int = $newSlot;

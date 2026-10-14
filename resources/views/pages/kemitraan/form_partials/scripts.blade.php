@@ -46,7 +46,7 @@
                     if (this.formData.skema_kemitraan === 'Sewa') {
                         this.formData.skema_kemitraan = 'KSO';
                     }
-                    this.showToast('Mode Penambahan Aset Mitra', 'Beralih ke template pencatatan aset baru yang didatangkan/ditambahkan oleh pihak ketiga (Mitra KSO).', 'success');
+                    this.showToast('Mode Penambahan Aset Mitra', 'Beralih ke template pencatatan aset baru yang didatangkan/ditambahkan oleh pihak ketiga (Mitra Rekanan Kerja Sama).', 'success');
                 } else {
                     if (this.formData.skema_kemitraan === 'KSO') {
                         this.formData.skema_kemitraan = 'Sewa';
@@ -110,6 +110,14 @@
             triggerFormFileSelect() {
                 const input = document.getElementById('inputDokumenBastForm');
                 if (input) input.click();
+            },
+
+            // Backward-compatible aliases for form file selection
+            handleFormFileSelect(event) {
+                this.handleFileSelect(event);
+            },
+            clearFormFileSelect() {
+                this.removeSelectedFile();
             },
 
             // Daftar PPK dari riwayat kemitraan (object: {nama, nip})

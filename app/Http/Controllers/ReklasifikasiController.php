@@ -1643,7 +1643,7 @@ class ReklasifikasiController extends Controller
                     $targetBm->save();
                 }
 
-                // Pindahkan register NIBAR terpilih ke $targetAstap
+                // Pindahkan register NIBAR terpilih ke $targetAstap (NIBAR fisik asli dipertahankan sebagai NIK barang)
                 $allRegisters = $astap->registers()->orderBy('no_register_int', 'asc')->orderBy('id', 'asc')->get();
                 $firstTransferredReg = null;
                 foreach ($selectedIndices as $sIdx) {

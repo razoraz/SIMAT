@@ -18,7 +18,7 @@
             <p class="text-xs text-slate-400 mt-1"
                x-text="tipeKemitraan === 'dimanfaatkan' 
                     ? 'Tinjau kembali legalitas pemanfaatan BMD RSUD, riwayat penautan aset eksisting, rincian fisik, serta nilai taksiran sewa/wajar sebelum disimpan resmi.' 
-                    : 'Tinjau kembali legalitas kerja sama KSO/BGS, rincian pengadaan fisik baru dari mitra rekanan, serta estimasi nilai wajar sebelum disimpan resmi.'">
+                    : 'Tinjau kembali legalitas kerja sama kemitraan (PKS), rincian pengadaan fisik baru dari mitra rekanan, serta estimasi nilai wajar sebelum disimpan resmi.'">
             </p>
         </div>
 
@@ -159,7 +159,7 @@
                     <div class="flex items-center gap-3">
                         <span class="text-emerald-400 text-base">📦</span>
                         <div class="min-w-0 flex-1">
-                            <span class="text-[10px] font-bold text-emerald-300 uppercase tracking-wider block">Pengadaan Aset Baru Rekanan (KSO / BGS)</span>
+                            <span class="text-[10px] font-bold text-emerald-300 uppercase tracking-wider block">Pengadaan Aset Baru Rekanan (PKS Kemitraan)</span>
                             <template x-if="formData.objek_nibar || formData.objek_astap_id">
                                 <span class="text-[11px] text-slate-300 block mt-0.5">
                                     Tertaut pada Objek Pemanfaatan BMD: <strong class="text-cyan-300 font-mono" x-text="formData.objek_aset_terpilih?.nama_barang ? (formData.objek_aset_terpilih.nama_barang + ' (' + (formData.objek_nibar || '-') + ')') : ('NIBAR: ' + (formData.objek_nibar || '-'))"></strong>.
@@ -812,7 +812,7 @@
                         x-text="tipeKemitraan === 'dimanfaatkan' ? 'Konfirmasi & Validasi Pencatatan Pemanfaatan BMD RSUD:' : 'Konfirmasi & Validasi Pencatatan Aset Ditambahkan Mitra:'"></strong>
                 <span x-text="tipeKemitraan === 'dimanfaatkan' 
                     ? 'Saya menyatakan bahwa seluruh rincian perjanjian pemanfaatan BMD RSUD, penautan objek aset eksisting, taksiran nilai sewa/wajar, spesifikasi teknis fisik, serta pejabat penanggung jawab di atas telah diperiksa dengan cermat dan sesuai dokumen legalitas aslinya.' 
-                    : 'Saya menyatakan bahwa seluruh rincian kerja sama pengadaan aset baru dari rekanan mitra (KSO/BGS), rincian spesifikasi fisik, taksiran nilai wajar pengadaan, serta pejabat penanggung jawab di atas telah diperiksa dengan cermat dan sesuai dokumen legalitas aslinya.'"></span>
+                    : 'Saya menyatakan bahwa seluruh rincian kerja sama pengadaan aset baru dari rekanan mitra (PKS Kemitraan), rincian spesifikasi fisik, taksiran nilai wajar pengadaan, serta pejabat penanggung jawab di atas telah diperiksa dengan cermat dan sesuai dokumen legalitas aslinya.'"></span>
             </div>
         </label>
     </div>

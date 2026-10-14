@@ -653,12 +653,6 @@
                                             <span>{{ $luasObjek }} m²</span>
                                         </span>
                                     @endif
-                                    @if($sertifikatObjek)
-                                        <span class="inline-flex items-center gap-1 bg-slate-800/80 px-1.5 py-0.5 rounded text-slate-300 truncate max-w-[200px]" title="{{ $sertifikatObjek }}">
-                                            <span>📜</span>
-                                            <span>{{ $sertifikatObjek }}</span>
-                                        </span>
-                                    @endif
                                 </div>
                             </td>
 

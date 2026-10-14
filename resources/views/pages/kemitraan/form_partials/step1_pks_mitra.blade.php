@@ -7,18 +7,18 @@
         <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-bold mb-2 border transition-all"
              :class="tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-400/10 text-cyan-300 border-cyan-400/20' : 'bg-emerald-400/10 text-emerald-300 border-emerald-400/20'">
             <span x-show="tipeKemitraan === 'dimanfaatkan'">🏛️ LANGKAH 1 DARI 3: OBJEK BMD RSUD &amp; DOKUMEN PKS PEMANFAATAN</span>
-            <span x-show="tipeKemitraan === 'ditambahkan'">📦 LANGKAH 1 DARI 3: REKANAN PENYEDIA &amp; DOKUMEN KONTRAK KSO</span>
+            <span x-show="tipeKemitraan === 'ditambahkan'">📦 LANGKAH 1 DARI 3: REKANAN PENYEDIA &amp; DOKUMEN PKS KEMITRAAN</span>
         </div>
         <h2 class="text-lg font-bold text-white flex items-center space-x-2">
             <span class="p-2 rounded-xl text-sm"
                   :class="tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-400/10 text-cyan-400' : 'bg-emerald-400/10 text-emerald-400'"
                   x-text="tipeKemitraan === 'dimanfaatkan' ? '🏛️' : '📦'"></span>
             <span x-show="tipeKemitraan === 'dimanfaatkan'">Langkah 1: Objek BMD Milik RSUD &amp; Dokumen PKS Pemanfaatan</span>
-            <span x-show="tipeKemitraan === 'ditambahkan'">Langkah 1: Identitas Rekanan &amp; Dokumen Kontrak KSO</span>
+            <span x-show="tipeKemitraan === 'ditambahkan'">Langkah 1: Identitas Rekanan &amp; Dokumen PKS Kemitraan</span>
         </h2>
         <p class="text-xs text-slate-400 mt-1">
             <span x-show="tipeKemitraan === 'dimanfaatkan'">Pilih objek aset milik RSUD (Semua KIB: KIB A s.d. E) yang disewakan / dimanfaatkan, kemudian lengkapi identitas pihak ketiga penyewa serta dokumen PKS.</span>
-            <span x-show="tipeKemitraan === 'ditambahkan'">Masukkan identitas rekanan mitra penyedia alat/fasilitas baru, nomor dan tanggal kontrak KSO/BGS, serta masa konsesi operasional di RSUD.</span>
+            <span x-show="tipeKemitraan === 'ditambahkan'">Masukkan identitas rekanan mitra penyedia alat/fasilitas baru, nomor dan tanggal dokumen Perjanjian Kerja Sama (PKS), serta masa konsesi operasional di RSUD.</span>
         </p>
     </div>
 
@@ -41,7 +41,7 @@
             <span class="text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5"
                   :class="tipeKemitraan === 'dimanfaatkan' ? 'text-cyan-400' : 'text-emerald-400'">
                 <span x-show="tipeKemitraan === 'dimanfaatkan'">🤝 Identitas Pihak Ketiga &amp; Dokumen PKS Pemanfaatan</span>
-                <span x-show="tipeKemitraan === 'ditambahkan'">🤝 Identitas Mitra Penyedia &amp; Dokumen Kontrak KSO</span>
+                <span x-show="tipeKemitraan === 'ditambahkan'">🤝 Identitas Mitra Penyedia &amp; Dokumen PKS Kemitraan</span>
                 <span class="text-rose-400">*</span>
             </span>
             <span class="text-[10px] font-bold px-2 py-0.5 rounded-lg border font-mono"
@@ -321,12 +321,11 @@
             </div>
         </div>
 
-        <!-- Bentuk Skema Kemitraan Sesuai Permendagri 108 Akun 1.5.2 -->
-        <div>
+        <!-- Bentuk Skema Kemitraan Sesuai Permendagri 108 Akun 1.5.2 (Hanya Untuk Pemanfaatan BMD Milik RSUD) -->
+        <div x-show="tipeKemitraan === 'dimanfaatkan'" x-transition:enter="transition ease-out duration-150">
             <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
                 <span>Bentuk Skema Kemitraan Sesuai Permendagri 108 / SAP <span class="text-rose-400">*</span></span>
-                <span class="text-[10px] font-mono"
-                      :class="tipeKemitraan === 'dimanfaatkan' ? 'text-cyan-400/90' : 'text-emerald-400/90'">Akun Neraca 1.5.2</span>
+                <span class="text-[10px] font-mono text-cyan-400/90">Akun Neraca 1.5.2</span>
             </label>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 <!-- 1. Sewa (1.5.2.01.01.01) -->
@@ -367,12 +366,27 @@
             </div>
         </div>
 
+        <!-- Banner Info Skema Otomatis Khusus Mode Aset Baru Mitra -->
+        <div x-show="tipeKemitraan === 'ditambahkan'" x-transition:enter="transition ease-out duration-150"
+             class="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-slate-900/90 to-slate-950/90 border border-emerald-500/30 flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2.5">
+                <span class="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-sm font-bold shrink-0">🤝</span>
+                <div>
+                    <span class="font-extrabold text-white block">Skema Kerja Sama Kemitraan Rekanan</span>
+                    <span class="text-[11px] text-slate-400">Penyediaan alat/fasilitas operasional oleh pihak ketiga (Akun Neraca 1.5.2 Kemitraan)</span>
+                </div>
+            </div>
+            <span class="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold font-mono shrink-0">
+                PKS Kemitraan
+            </span>
+        </div>
+
         <!-- Nama Mitra / Rekanan Pihak Ketiga (Combobox / Filter Riwayat & Bebas Ketik) -->
         <div class="relative space-y-1.5" @click.away="isMitraDropdownOpen = false">
             <div class="flex items-center justify-between">
                 <label class="block text-xs font-bold text-slate-200">
                     <span x-show="tipeKemitraan === 'dimanfaatkan'">Nama Mitra / Pihak Ketiga Penyewa (Pemanfaatan BMD) <span class="text-rose-400">*</span></span>
-                    <span x-show="tipeKemitraan === 'ditambahkan'">Nama Perusahaan Rekanan / Vendor Mitra (Penyedia KSO) <span class="text-rose-400">*</span></span>
+                    <span x-show="tipeKemitraan === 'ditambahkan'">Nama Perusahaan Rekanan / Vendor Mitra (Penyedia Alat / Fasilitas) <span class="text-rose-400">*</span></span>
                 </label>
                 <template x-if="masterMitraList && masterMitraList.length > 0">
                     <span class="text-[10px] font-mono font-normal flex items-center gap-1 px-2 py-0.5 rounded-md border"
@@ -822,7 +836,7 @@
 
             <div class="flex flex-col sm:flex-row items-center gap-3 pt-1">
                 <input type="file" id="inputDokumenBastForm" name="dokumen_file" accept=".pdf,.jpg,.jpeg,.png" class="hidden"
-                       @change="handleFormFileSelect($event)">
+                       @change="handleFileSelect($event)">
 
                 <button type="button" @click="triggerFormFileSelect()"
                         class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-cyan-300 border border-slate-700/80 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shadow-sm">
@@ -836,7 +850,7 @@
                     <template x-if="selectedFile">
                         <div class="flex items-center justify-between px-3.5 py-2 rounded-xl bg-emerald-950/30 border border-emerald-500/40 text-xs text-emerald-300 font-mono">
                             <span class="truncate" x-text="selectedFile.name"></span>
-                            <button type="button" @click="clearFormFileSelect()" class="text-rose-400 hover:text-rose-300 font-bold ml-2">✕</button>
+                            <button type="button" @click="removeSelectedFile()" class="text-rose-400 hover:text-rose-300 font-bold ml-2">✕</button>
                         </div>
                     </template>
                     <template x-if="!selectedFile && formData.dokumen_path">
