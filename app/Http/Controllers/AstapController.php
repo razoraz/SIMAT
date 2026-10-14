@@ -3616,29 +3616,61 @@ class AstapController extends Controller
      */
     public function destroy($id)
     {
-            $astap = \App\Models\Astap::find($id);
-            if ($astap) {
-                $namaBarang = $astap->nama_barang ?? 'Aset Tetap';
-                $tahun = $astap->tahun_perolehan ?: date('Y');
-                $vol = $astap->jumlah_volume . ' ' . ($astap->satuan ?: 'Unit');
+        $astap = \App\Models\Astap::with(['registers', 'mutasiEksternal', 'pelimpahanSkpd'])->find($id);
+        if ($astap) {
+            $user = Auth::user();
+            $deleterName = $user ? ($user->name . ' (' . ucfirst($user->role ?? 'user') . ')') : 'Administrator';
+            $namaBarang = $astap->nama_barang ?? 'Aset Tetap';
+            $tahun = $astap->tahun_perolehan ?: date('Y');
+            $vol = $astap->jumlah_volume . ' ' . ($astap->satuan ?: 'Unit');
 
-                $astap->registers()->delete();
-                $astap->delete();
+            \Illuminate\Support\Facades\DB::transaction(function () use ($astap, $user, $deleterName) {
+                // 1. Soft delete seluruh register miliknya
+                $astap->registers()->update([
+                    'is_deleted'    => 1,
+                    'deleted_by'    => $deleterName,
+                    'deleted_by_id' => $user?->id,
+                    'deleted_at'    => now(),
+                ]);
 
-                // Kirim Notifikasi Sistem saat Terjadi Penghapusan ASTAP
-                try {
-                    \App\Services\NotificationService::sendToAdminAndMaster(
-                        "Aset Dihapus: {$namaBarang}",
-                        "{$vol} • {$tahun}",
-                        'astap',
-                        route('astap.index')
-                    );
-                } catch (\Throwable $e) {
-                    \Log::warning("Gagal kirim notif astap delete: " . $e->getMessage());
+                // 2. Jika merupakan aset terkait mutasi eksternal, soft delete transaksinya
+                if ($astap->mutasiEksternal) {
+                    $astap->mutasiEksternal->update([
+                        'is_deleted'    => 1,
+                        'deleted_by'    => $deleterName,
+                        'deleted_by_id' => $user?->id,
+                        'deleted_at'    => now(),
+                    ]);
                 }
+
+                // 3. Jika ada transaksi pelimpahan SKPD
+                if ($astap->pelimpahanSkpd) {
+                    $astap->pelimpahanSkpd->update([
+                        'is_deleted'    => 1,
+                        'deleted_by'    => $deleterName,
+                        'deleted_by_id' => $user?->id,
+                        'deleted_at'    => now(),
+                    ]);
+                }
+
+                // 4. Soft delete paket induk ASTAP
+                $astap->softDelete('Dihapus dari modul Master ASTAP');
+            });
+
+            // Kirim Notifikasi Sistem saat Terjadi Penghapusan ASTAP
+            try {
+                \App\Services\NotificationService::sendToAdminAndMaster(
+                    "Aset Dipindahkan ke Tong Sampah: {$namaBarang}",
+                    "{$vol} • {$tahun}",
+                    'astap',
+                    route('astap.index')
+                );
+            } catch (\Throwable $e) {
+                \Log::warning("Gagal kirim notif astap delete: " . $e->getMessage());
             }
-            session()->flash('success', 'Data ASTAP berhasil dihapus.');
-            return response()->json(['success' => true, 'message' => 'Data ASTAP berhasil dihapus.']);
+        }
+        session()->flash('success', 'Data ASTAP berhasil dipindahkan ke Recycle Bin.');
+        return response()->json(['success' => true, 'message' => 'Data ASTAP berhasil dipindahkan ke Recycle Bin.']);
     }
 
     /**

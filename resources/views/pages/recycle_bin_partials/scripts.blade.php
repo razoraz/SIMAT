@@ -20,6 +20,7 @@
             totalThisMonth: {{ (int) $totalThisMonth }},
             astapSubTab: 'packet',
             kemitraanSubTab: 'dimanfaatkan',
+            mutasiEksternalFilter: 'all', // 'all', 'masuk', 'keluar'
 
             selectedIds: [],
             searchQuery: '',
@@ -29,6 +30,11 @@
 
             setTimeFilter(tf) {
                 this.timeFilter = tf;
+                this.selectedIds = [];
+            },
+
+            setMutasiEksternalFilter(f) {
+                this.mutasiEksternalFilter = f;
                 this.selectedIds = [];
             },
 
@@ -66,6 +72,14 @@
 
             get kemitraanDitambahkan() {
                 return (this.kemitraans || []).filter(k => !!k.is_ditambahkan);
+            },
+
+            get countMutasiEksternalMasuk() {
+                return (this.mutasiEksternals || []).filter(m => m.tipe !== 'keluar').length;
+            },
+
+            get countMutasiEksternalKeluar() {
+                return (this.mutasiEksternals || []).filter(m => m.tipe === 'keluar').length;
             },
 
             get currentTargetModule() {
@@ -147,7 +161,16 @@
 
             get currentList() {
                 if (this.activeModule === 'mutasi') {
-                    return this.mutasiSubTab === 'eksternal' ? this.mutasiEksternals : this.mutasis;
+                    if (this.mutasiSubTab === 'eksternal') {
+                        if (this.mutasiEksternalFilter === 'masuk') {
+                            return (this.mutasiEksternals || []).filter(m => m.tipe !== 'keluar');
+                        }
+                        if (this.mutasiEksternalFilter === 'keluar') {
+                            return (this.mutasiEksternals || []).filter(m => m.tipe === 'keluar');
+                        }
+                        return this.mutasiEksternals || [];
+                    }
+                    return this.mutasis || [];
                 }
                 if (this.activeModule === 'astap') {
                     return this.astapSubTab === 'nibar' ? this.nibars : this.astaps;

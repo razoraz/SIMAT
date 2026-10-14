@@ -53,7 +53,16 @@
                                         <div>
                                             <span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider block">Nomor BAST Eksternal:</span>
                                             <span class="font-mono font-bold text-cyan-300 text-sm sm:text-base block mt-0.5" x-text="selectedItem.kode"></span>
-                                            <span class="px-2 py-0.5 rounded text-[9.5px] font-bold bg-cyan-950/70 border border-cyan-800/50 text-cyan-300 inline-block mt-1" x-text="selectedItem.jenis"></span>
+                                            <template x-if="selectedItem.tipe === 'keluar'">
+                                                <span class="px-2 py-0.5 rounded text-[9.5px] font-bold bg-amber-500/15 border border-amber-500/40 text-amber-300 inline-flex items-center gap-1 mt-1 shadow-sm">
+                                                    <span>📤</span> Mutasi Keluar ke OPD
+                                                </span>
+                                            </template>
+                                            <template x-if="selectedItem.tipe !== 'keluar'">
+                                                <span class="px-2 py-0.5 rounded text-[9.5px] font-bold bg-cyan-500/15 border border-cyan-500/40 text-cyan-300 inline-flex items-center gap-1 mt-1 shadow-sm">
+                                                    <span>📥</span> Pelimpahan Masuk SKPD
+                                                </span>
+                                            </template>
                                         </div>
                                         <div class="sm:text-right">
                                             <span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider block">Nilai Perolehan:</span>
@@ -63,17 +72,17 @@
                                     </div>
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-0.5">
                                         <div>
-                                            <span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider block">Instansi / OPD Asal:</span>
+                                            <span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider block" x-text="selectedItem.tipe === 'keluar' ? 'Instansi / Ruangan Asal (RSUD):' : 'Instansi / OPD Pengirim:'"></span>
                                             <span class="font-bold text-slate-200 text-xs block mt-0.5" x-text="selectedItem.asal"></span>
                                             <span class="text-slate-400 text-[11px] block" x-text="'PJ: ' + (selectedItem.pemohon || '-')"></span>
                                         </div>
                                         <div class="sm:text-right">
-                                            <span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider block">Ruangan Tujuan di RSUD:</span>
-                                            <span class="font-bold text-cyan-300 text-xs block mt-0.5" x-text="selectedItem.tujuan"></span>
+                                            <span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider block" x-text="selectedItem.tipe === 'keluar' ? 'Instansi / OPD Penerima:' : 'Ruangan Penempatan di RSUD:'"></span>
+                                            <span class="font-bold text-xs block mt-0.5" :class="selectedItem.tipe === 'keluar' ? 'text-amber-300' : 'text-cyan-300'" x-text="selectedItem.tujuan"></span>
                                             <span class="text-slate-400 text-[11px] block" x-text="'PJ: ' + (selectedItem.penerima_pj || '-')"></span>
                                         </div>
                                         <div class="sm:col-span-2 pt-2 border-t border-slate-800/80">
-                                            <span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider block">Alasan / Catatan Mutasi Eksternal:</span>
+                                            <span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider block" x-text="selectedItem.tipe === 'keluar' ? 'Alasan Mutasi Keluar ke OPD:' : 'Alasan / Catatan Pelimpahan Masuk:'"></span>
                                             <span class="text-xs text-slate-300 italic block mt-0.5" x-text="selectedItem.alasan_mutasi || '-'"></span>
                                         </div>
                                     </div>
