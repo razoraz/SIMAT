@@ -448,17 +448,17 @@
                         <!-- 1. Kondisi Ada Aset: Tampilkan Tabel Rincian -->
                         <template x-if="getAsetDitambahkanMitraForDetail(selectedAstapDetail).length > 0">
                             <div class="space-y-3">
-                                <div class="rounded-xl border border-slate-800/90 overflow-hidden custom-scrollbar max-h-72 overflow-y-auto">
-                                    <table class="w-full text-left text-[11px] text-slate-300 min-w-[700px]">
+                                <div class="rounded-xl border border-slate-800/90 custom-scrollbar" style="max-height: 320px; overflow-y: auto; overflow-x: auto;">
+                                    <table class="w-full text-left text-[11px] text-slate-300 min-w-[800px]">
                                         <thead class="bg-slate-950 text-slate-400 font-bold uppercase text-[9.5px] border-b border-slate-800 sticky top-0 z-10 shadow-sm" style="background-color: #020617;">
                                             <tr>
-                                                <th class="px-3 py-2.5 text-center w-12">#</th>
-                                                <th class="px-3 py-2.5">Nama Barang &amp; Spesifikasi</th>
-                                                <th class="px-3 py-2.5 text-center">Kode 108 &amp; NIBAR</th>
-                                                <th class="px-3 py-2.5 text-center">Volume</th>
-                                                <th class="px-3 py-2.5 text-center">Kondisi</th>
-                                                <th class="px-3 py-2.5 text-right">Taksiran Nilai (Rp)</th>
-                                                <th class="px-3 py-2.5 text-center w-24">Aksi</th>
+                                                <th class="px-3 py-2.5 text-center w-12 whitespace-nowrap">#</th>
+                                                <th class="px-3 py-2.5 min-w-[200px]">Nama Barang &amp; Spesifikasi</th>
+                                                <th class="px-3 py-2.5 text-center whitespace-nowrap min-w-[150px]">Kode 108 &amp; NIBAR</th>
+                                                <th class="px-3 py-2.5 text-center whitespace-nowrap">Volume</th>
+                                                <th class="px-3 py-2.5 text-center whitespace-nowrap">Kondisi</th>
+                                                <th class="px-3 py-2.5 text-right whitespace-nowrap min-w-[130px]">Taksiran Nilai (Rp)</th>
+                                                <th class="px-3 py-2.5 text-center w-24 whitespace-nowrap">Aksi</th>
                                             </tr>
                                         </thead>
                                         <tbody class="divide-y divide-slate-800/80 bg-slate-900/40">
@@ -527,10 +527,10 @@
                                         </tbody>
                                         <tfoot class="bg-slate-950/90 border-t border-slate-800 text-[10.5px] font-bold font-mono">
                                             <tr>
-                                                <td colspan="3" class="px-3 py-2 text-right uppercase tracking-wider text-slate-400">Total Investasi Aset Mitra:</td>
-                                                <td class="px-3 py-2 text-center text-teal-300" x-text="getTotalVolumeAsetDitambahkanMitra(selectedAstapDetail) + ' Unit'"></td>
+                                                <td colspan="3" class="px-3 py-2 text-right uppercase tracking-wider text-slate-400 whitespace-nowrap">Total Investasi Aset Mitra:</td>
+                                                <td class="px-3 py-2 text-center text-teal-300 whitespace-nowrap" x-text="getTotalVolumeAsetDitambahkanMitra(selectedAstapDetail) + ' Unit'"></td>
                                                 <td></td>
-                                                <td class="px-3 py-2 text-right text-emerald-400 font-extrabold" x-text="'Rp ' + formatRupiah(getTotalNilaiAsetDitambahkanMitra(selectedAstapDetail))"></td>
+                                                <td class="px-3 py-2 text-right text-emerald-400 font-extrabold whitespace-nowrap" x-text="'Rp ' + formatRupiah(getTotalNilaiAsetDitambahkanMitra(selectedAstapDetail))"></td>
                                                 <td></td>
                                             </tr>
                                         </tfoot>

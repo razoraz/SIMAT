@@ -38,6 +38,9 @@
                 return 'dimanfaatkan';
             })(),
 
+            // Mode Produksi: Lock KIB aktif secara ketat sesuai data aset BMD yang dimanfaatkan
+            isKibLockActive: true,
+
             setTipeKemitraan(t) {
                 if (this.tipeKemitraan === t) return;
                 this.tipeKemitraan = t;
@@ -390,6 +393,7 @@
                     }
                     this.$nextTick(() => {
                         this.autoSelectLockedSubSub();
+                        this.syncStep3WithLockedObjek();
                     });
                 }
 
@@ -2178,6 +2182,7 @@
 
             // Cek apakah kartu sub-sub tertentu terkunci (disabled) karena tidak cocok dengan KIB aset yang dimanfaatkan
             isSubSubCardLocked(item) {
+                if (!this.isKibLockActive) return false;
                 if (this.tipeKemitraan !== 'dimanfaatkan') return false;
                 const lockedKib = this.lockedKibFromData;
                 if (!lockedKib) return false;
@@ -2189,6 +2194,7 @@
 
             // Auto-select kartu yang cocok dengan KIB aset yang dimanfaatkan
             autoSelectLockedSubSub() {
+                if (!this.isKibLockActive) return;
                 if (this.tipeKemitraan !== 'dimanfaatkan') return;
                 const lockedKib = this.lockedKibFromData;
                 if (!lockedKib || !this.currentSubSubRecommendations) return;
@@ -2200,6 +2206,46 @@
                     if (!this.selectedSubSub || !(this.selectedSubSub.kode || '').endsWith('.' + targetSuffix)) {
                         this.selectSubSubItem(matchingItem);
                     }
+                }
+            },
+
+            // Sinkronisasi data aset BMD terkunci ke sheet fisik Langkah 3
+            syncStep3WithLockedObjek() {
+                if (this.tipeKemitraan !== 'dimanfaatkan') return;
+                const obj = this.formData.objek_aset_terpilih;
+                const subSubKode = this.selectedSubSub?.kode;
+                const objNama = (obj?.nama_barang && !this.isJenisKemitraan(obj.nama_barang)) ? obj.nama_barang : (this.formData.nama_barang && !this.isJenisKemitraan(this.formData.nama_barang) ? this.formData.nama_barang : '');
+
+                if (objNama) {
+                    this.formData.nama_barang = objNama;
+                }
+
+                if (this.isTanah && this.formData.tanah_items && this.formData.tanah_items.length > 0) {
+                    if (subSubKode) this.formData.tanah_items[0].tanah_kode_barang = subSubKode;
+                    if (objNama) this.formData.tanah_items[0].tanah_nama_barang = objNama;
+                    if (obj?.luas && !this.formData.tanah_items[0].tanah_luas_m2) this.formData.tanah_items[0].tanah_luas_m2 = parseFloat(obj.luas) || obj.luas;
+                    if (obj?.sertifikat && !this.formData.tanah_items[0].tanah_sertifikat_no) this.formData.tanah_items[0].tanah_sertifikat_no = obj.sertifikat;
+                    if (obj?.alamat_barang && !this.formData.tanah_items[0].tanah_alamat) this.formData.tanah_items[0].tanah_alamat = obj.alamat_barang;
+                } else if (this.isGedung && this.formData.gedung_items && this.formData.gedung_items.length > 0) {
+                    if (subSubKode) this.formData.gedung_items[0].gedung_kode_barang = subSubKode;
+                    if (objNama) {
+                        this.formData.gedung_items[0].gedung_nama_barang = objNama;
+                        this.formData.gedung_items[0].gedung_nama_bangunan = objNama;
+                    }
+                    if (obj?.luas && !this.formData.gedung_items[0].gedung_luas_lantai_m2) this.formData.gedung_items[0].gedung_luas_lantai_m2 = parseFloat(obj.luas) || obj.luas;
+                    if (obj?.alamat_barang && !this.formData.gedung_items[0].gedung_lokasi) this.formData.gedung_items[0].gedung_lokasi = obj.alamat_barang;
+                } else if (this.isMesin && this.formData.mesin_items && this.formData.mesin_items.length > 0) {
+                    if (subSubKode) this.formData.mesin_items[0].mesin_kode_barang = subSubKode;
+                    if (objNama) this.formData.mesin_items[0].mesin_nama_barang = objNama;
+                    if (obj?.merk && !this.formData.mesin_items[0].merk) this.formData.mesin_items[0].merk = obj.merk;
+                } else if (this.isJaringan && this.formData.jaringan_items && this.formData.jaringan_items.length > 0) {
+                    if (subSubKode) this.formData.jaringan_items[0].jaringan_kode_barang = subSubKode;
+                    if (objNama) this.formData.jaringan_items[0].jaringan_nama_barang = objNama;
+                    if (obj?.luas && !this.formData.jaringan_items[0].jaringan_luas_m2) this.formData.jaringan_items[0].jaringan_luas_m2 = parseFloat(obj.luas) || obj.luas;
+                    if (obj?.alamat_barang && !this.formData.jaringan_items[0].jaringan_lokasi) this.formData.jaringan_items[0].jaringan_lokasi = obj.alamat_barang;
+                } else if (this.isLainnya && this.formData.lainnya_items && this.formData.lainnya_items.length > 0) {
+                    if (subSubKode) this.formData.lainnya_items[0].lainnya_kode_barang = subSubKode;
+                    if (objNama) this.formData.lainnya_items[0].lainnya_nama_barang = objNama;
                 }
             },
 
@@ -2475,6 +2521,8 @@
                             this.selectSubSubItem(this.currentSubSubRecommendations[0]);
                         }
                     }
+                } else if (s === 3) {
+                    this.syncStep3WithLockedObjek();
                 }
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             },
@@ -2492,6 +2540,8 @@
                                 this.selectSubSubItem(this.currentSubSubRecommendations[0]);
                             }
                         }
+                    } else if (this.currentStep === 3) {
+                        this.syncStep3WithLockedObjek();
                     }
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 }

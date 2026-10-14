@@ -127,18 +127,27 @@
                                 <span>🔒 Kodefikasi PMDN 108 Akun 1.5.2 Pemanfaatan BMD (Terkunci)</span>
                             </label>
                             <span class="text-[9.5px] px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold font-mono"
-                                  x-text="'Kode 108: ' + (item.lainnya_kode_barang || selectedSubSub?.kode || '1.5.2.01.01.01.005')">
+                                  x-text="'Kode 108: ' + (selectedSubSub?.kode || (item.lainnya_kode_barang && item.lainnya_kode_barang.startsWith('1.5.2') ? item.lainnya_kode_barang : '1.5.2.01.01.01.005'))">
                             </span>
                         </div>
                         <div>
-                            <label class="block text-slate-300 text-[11px] mb-1 font-semibold">
-                                Uraian / Nama Rincian Aset Tetap Lainnya yang Disewakan / Dimanfaatkan <span class="text-rose-400">*</span>
-                            </label>
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="block text-slate-300 text-[11px] font-semibold">
+                                    Uraian / Nama Rincian Aset Tetap Lainnya yang Disewakan / Dimanfaatkan <span class="text-rose-400">*</span>
+                                </label>
+                                <template x-if="formData.objek_aset_terpilih?.nama_barang">
+                                    <span class="text-[9.5px] text-cyan-300 font-mono font-bold bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-500/30">
+                                        🔒 Terkunci Sesuai Objek BMD
+                                    </span>
+                                </template>
+                            </div>
                             <input type="text"
                                    x-model="item.lainnya_nama_barang"
+                                   :readonly="Boolean(formData.objek_aset_terpilih?.nama_barang)"
                                    @input="syncTotalsFromItems()"
                                    placeholder="Contoh: Koleksi Perpustakaan Medis / Software Aplikasi SIMRS Kemitraan..."
-                                   class="w-full bg-slate-950 border border-slate-700 hover:border-cyan-400 focus:border-cyan-400 rounded-xl px-3.5 py-2.5 text-xs text-white font-bold focus:outline-none transition-all">
+                                   class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold transition-all"
+                                   :class="formData.objek_aset_terpilih?.nama_barang ? 'text-cyan-300 bg-slate-900/80 border-cyan-500/30 cursor-not-allowed select-all' : 'text-white hover:border-cyan-400 focus:border-cyan-400 focus:outline-none'">
                         </div>
                     </div>
 
