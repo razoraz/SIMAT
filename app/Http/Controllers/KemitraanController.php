@@ -124,6 +124,15 @@ class KemitraanController extends Controller
             ->whereBetween('tanggal_selesai', [$today, $today->copy()->addDays(7)])
             ->count();
 
+        // Hitung total aset yang dikembalikan ke rekanan & yang sudah jadi milik RSUD
+        $totalDikembalikan = (clone $kpiBase)
+            ->where('status_konsesi', 'Dikembalikan ke Rekanan')
+            ->count();
+
+        $totalMilikRsud = (clone $kpiBase)
+            ->whereIn('status_konsesi', ['Selesai / Reklasifikasi', 'Selesai'])
+            ->count();
+
         // Daftar Unit & Jenis 108 untuk modal atau filter
         $dbUnits = Unit::orderBy('nama')->get();
         $dbMaster108 = JenisAstap::getNested108();
@@ -172,6 +181,8 @@ class KemitraanController extends Controller
             'totalVolumeUnit',
             'totalAktif',
             'totalBerakhir',
+            'totalDikembalikan',
+            'totalMilikRsud',
             'akanBerakhir30',
             'akanBerakhir7',
             'totalMitraUnik',
@@ -340,6 +351,231 @@ class KemitraanController extends Controller
 
         return redirect()->route('master.kemitraan')
             ->with('success', "Status kerja sama {$kemitraan->nomor_pks} berhasil diperbarui.");
+    }
+
+    /**
+     * Terminasi Kemitraan: Kembalikan Aset ke Pihak Mitra / Rekanan (Jalur 1)
+     */
+    public function kembalikanKeMitra(Request $request, $id)
+    {
+        $kemitraan = AstapKemitraan::find($id);
+        if (!$kemitraan) {
+            $kemitraan = AstapKemitraan::where('astap_id', $id)->firstOrFail();
+        }
+
+        $validated = $request->validate([
+            'nomor_ba_terminasi'     => 'required|string|max:150',
+            'tanggal_terminasi'      => 'required|date',
+            'tanggal_ba_terminasi'   => 'nullable|date',
+            'kondisi_akhir'          => 'required|string|in:Baik,Rusak Ringan,Rusak Berat',
+            'pihak_penyerah_nama'    => 'required|string|max:255',
+            'pihak_penyerah_jabatan' => 'nullable|string|max:255',
+            'pihak_penerima_nama'    => 'required|string|max:255',
+            'pihak_penerima_jabatan' => 'nullable|string|max:255',
+            'catatan_terminasi'      => 'nullable|string|max:1000',
+            'berkas_ba_terminasi'    => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+        ]);
+
+        return DB::transaction(function () use ($request, $validated, $kemitraan) {
+            $berkasPath = $kemitraan->berkas_ba_terminasi;
+            if ($request->hasFile('berkas_ba_terminasi')) {
+                $file = $request->file('berkas_ba_terminasi');
+                $filename = 'BA_PENGEMBALIAN_' . $kemitraan->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+                $berkasPath = $file->storeAs('kemitraan/ba_terminasi', $filename, 'public');
+            }
+
+            $tglTerminasi = $validated['tanggal_terminasi'];
+            $tglBa = !empty($validated['tanggal_ba_terminasi']) ? $validated['tanggal_ba_terminasi'] : $tglTerminasi;
+
+            $kemitraan->update([
+                'status_konsesi'         => 'Dikembalikan ke Rekanan',
+                'jenis_terminasi'        => 'dikembalikan_ke_mitra',
+                'nomor_ba_terminasi'     => trim($validated['nomor_ba_terminasi']),
+                'tanggal_terminasi'      => $tglTerminasi,
+                'tanggal_ba_terminasi'   => $tglBa,
+                'berkas_ba_terminasi'    => $berkasPath,
+                'kondisi_akhir'          => $validated['kondisi_akhir'],
+                'pihak_penyerah_nama'    => trim($validated['pihak_penyerah_nama']),
+                'pihak_penyerah_jabatan' => trim($validated['pihak_penyerah_jabatan'] ?? ''),
+                'pihak_penerima_nama'    => trim($validated['pihak_penerima_nama']),
+                'pihak_penerima_jabatan' => trim($validated['pihak_penerima_jabatan'] ?? ''),
+                'catatan_terminasi'      => $validated['catatan_terminasi'] ?? null,
+                'is_transferred_to_rsud' => false,
+            ]);
+
+            // Sinkronisasi status register fisik aset
+            if ($kemitraan->astap_id) {
+                AstapRegister::where('astap_id', $kemitraan->astap_id)
+                    ->update([
+                        'status'         => 'Dikembalikan ke Rekanan',
+                        'kondisi'        => $validated['kondisi_akhir'],
+                        'ruang_pemegang' => 'Telah Dikembalikan ke Rekanan (BA: ' . trim($validated['nomor_ba_terminasi']) . ')',
+                    ]);
+
+                // Simpan juga ke spesifikasi JSON astap
+                if ($kemitraan->astap) {
+                    $astap = $kemitraan->astap;
+                    $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json ?? '[]', true) ?: []);
+                    $spec['terminasi'] = [
+                        'jenis'              => 'dikembalikan_ke_mitra',
+                        'nomor_ba'           => trim($validated['nomor_ba_terminasi']),
+                        'tanggal_terminasi'  => $tglTerminasi,
+                        'tanggal_ba'         => $tglBa,
+                        'kondisi_akhir'      => $validated['kondisi_akhir'],
+                        'pihak_penyerah'     => trim($validated['pihak_penyerah_nama']),
+                        'pihak_penerima'     => trim($validated['pihak_penerima_nama']),
+                        'catatan'            => $validated['catatan_terminasi'] ?? '',
+                        'berkas_path'        => $berkasPath,
+                        'processed_at'       => now()->toDateTimeString(),
+                        'processed_by'       => Auth::user()?->name ?? 'Admin',
+                    ];
+                    $astap->spesifikasi_json = $spec;
+                    $astap->kondisi = $validated['kondisi_akhir'];
+                    $astap->save();
+                }
+            }
+
+            // Jika objek pemanfaatan BMD RSUD (Induk) dimanfaatkan, lepas status pemanfaatannya
+            if ($kemitraan->tipe_kemitraan === 'dimanfaatkan') {
+                AstapKemitraan::where('objek_astap_id', $kemitraan->astap_id)
+                    ->where('is_deleted', 0)
+                    ->where('nomor_pks', $kemitraan->nomor_pks)
+                    ->update(['status_konsesi' => 'Dikembalikan ke Rekanan']);
+            }
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "Aset kemitraan PKS '{$kemitraan->nomor_pks}' berhasil diproses dan dikembalikan ke pihak rekanan.",
+                    'data'    => $kemitraan->fresh(['astap']),
+                ]);
+            }
+
+            return redirect()->route('master.kemitraan')
+                ->with('success', "Aset kemitraan '{$kemitraan->nomor_pks}' berhasil dikembalikan ke pihak rekanan.");
+        });
+    }
+
+    /**
+     * Terminasi Kemitraan: Serah Terima Aset Menjadi Milik Daerah RSUD (Jalur 2: Alih Milik / Hibah BGS/BSG)
+     */
+    public function serahTerimaRsud(Request $request, $id)
+    {
+        $kemitraan = AstapKemitraan::find($id);
+        if (!$kemitraan) {
+            $kemitraan = AstapKemitraan::where('astap_id', $id)->firstOrFail();
+        }
+
+        $validated = $request->validate([
+            'nomor_ba_terminasi'     => 'required|string|max:150',
+            'tanggal_terminasi'      => 'required|date',
+            'tanggal_ba_terminasi'   => 'nullable|date',
+            'nilai_perolehan_rsud'   => 'required|numeric|min:0',
+            'target_kib_reklas'      => 'required|string|in:KIB_A,KIB_B,KIB_C,KIB_D,KIB_E',
+            'target_kode_108'        => 'nullable|string|max:50',
+            'kondisi_akhir'          => 'required|string|in:Baik,Rusak Ringan,Rusak Berat',
+            'pihak_penyerah_nama'    => 'required|string|max:255',
+            'pihak_penyerah_jabatan' => 'nullable|string|max:255',
+            'pihak_penerima_nama'    => 'required|string|max:255',
+            'pihak_penerima_jabatan' => 'nullable|string|max:255',
+            'ruangan_tujuan_id'      => 'nullable|exists:units,id',
+            'catatan_terminasi'      => 'nullable|string|max:1000',
+            'berkas_ba_terminasi'    => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+        ]);
+
+        return DB::transaction(function () use ($request, $validated, $kemitraan) {
+            $berkasPath = $kemitraan->berkas_ba_terminasi;
+            if ($request->hasFile('berkas_ba_terminasi')) {
+                $file = $request->file('berkas_ba_terminasi');
+                $filename = 'BA_SERAH_TERIMA_RSUD_' . $kemitraan->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+                $berkasPath = $file->storeAs('kemitraan/ba_terminasi', $filename, 'public');
+            }
+
+            $tglTerminasi = $validated['tanggal_terminasi'];
+            $tglBa = !empty($validated['tanggal_ba_terminasi']) ? $validated['tanggal_ba_terminasi'] : $tglTerminasi;
+
+            $kemitraan->update([
+                'status_konsesi'         => 'Selesai / Reklasifikasi',
+                'jenis_terminasi'        => 'serah_terima_rsud',
+                'nomor_ba_terminasi'     => trim($validated['nomor_ba_terminasi']),
+                'tanggal_terminasi'      => $tglTerminasi,
+                'tanggal_ba_terminasi'   => $tglBa,
+                'berkas_ba_terminasi'    => $berkasPath,
+                'kondisi_akhir'          => $validated['kondisi_akhir'],
+                'pihak_penyerah_nama'    => trim($validated['pihak_penyerah_nama']),
+                'pihak_penyerah_jabatan' => trim($validated['pihak_penyerah_jabatan'] ?? ''),
+                'pihak_penerima_nama'    => trim($validated['pihak_penerima_nama']),
+                'pihak_penerima_jabatan' => trim($validated['pihak_penerima_jabatan'] ?? ''),
+                'catatan_terminasi'      => $validated['catatan_terminasi'] ?? null,
+                'is_transferred_to_rsud' => true,
+                'target_kib_reklas'      => $validated['target_kib_reklas'],
+                'target_kode_108'        => $validated['target_kode_108'] ?? null,
+                'nilai_perolehan_rsud'   => (float) $validated['nilai_perolehan_rsud'],
+            ]);
+
+            // Sinkronisasi status register fisik aset
+            if ($kemitraan->astap_id) {
+                $updateReg = [
+                    'status'  => 'Tersedia',
+                    'kondisi' => $validated['kondisi_akhir'],
+                ];
+                if (!empty($validated['ruangan_tujuan_id'])) {
+                    $updateReg['unit_id'] = $validated['ruangan_tujuan_id'];
+                    $unitNama = Unit::find($validated['ruangan_tujuan_id'])?->nama;
+                    if ($unitNama) {
+                        $updateReg['ruang_pemegang'] = $unitNama;
+                    }
+                }
+                AstapRegister::where('astap_id', $kemitraan->astap_id)->update($updateReg);
+
+                // Update data astap
+                if ($kemitraan->astap) {
+                    $astap = $kemitraan->astap;
+                    $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json ?? '[]', true) ?: []);
+                    $spec['terminasi'] = [
+                        'jenis'                => 'serah_terima_rsud',
+                        'nomor_ba'             => trim($validated['nomor_ba_terminasi']),
+                        'tanggal_terminasi'    => $tglTerminasi,
+                        'tanggal_ba'           => $tglBa,
+                        'nilai_perolehan_rsud' => (float) $validated['nilai_perolehan_rsud'],
+                        'target_kib'           => $validated['target_kib_reklas'],
+                        'target_kode_108'      => $validated['target_kode_108'] ?? '',
+                        'kondisi_akhir'        => $validated['kondisi_akhir'],
+                        'pihak_penyerah'       => trim($validated['pihak_penyerah_nama']),
+                        'pihak_penerima'       => trim($validated['pihak_penerima_nama']),
+                        'catatan'              => $validated['catatan_terminasi'] ?? '',
+                        'berkas_path'          => $berkasPath,
+                        'processed_at'         => now()->toDateTimeString(),
+                        'processed_by'         => Auth::user()?->name ?? 'Admin',
+                    ];
+                    $astap->spesifikasi_json = $spec;
+                    $astap->kondisi = $validated['kondisi_akhir'];
+                    if (!empty($validated['ruangan_tujuan_id'])) {
+                        $astap->unit_id = $validated['ruangan_tujuan_id'];
+                    }
+                    $astap->save();
+                }
+            }
+
+            // Jika objek pemanfaatan BMD RSUD (Induk) dimanfaatkan, lepas status pemanfaatannya
+            if ($kemitraan->tipe_kemitraan === 'dimanfaatkan') {
+                AstapKemitraan::where('objek_astap_id', $kemitraan->astap_id)
+                    ->where('is_deleted', 0)
+                    ->where('nomor_pks', $kemitraan->nomor_pks)
+                    ->update(['status_konsesi' => 'Selesai / Reklasifikasi']);
+            }
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "Aset kemitraan PKS '{$kemitraan->nomor_pks}' berhasil diserahterimakan dan resmi menjadi Milik RSUD Koesnandi.",
+                    'data'    => $kemitraan->fresh(['astap']),
+                ]);
+            }
+
+            return redirect()->route('master.kemitraan')
+                ->with('success', "Aset kemitraan '{$kemitraan->nomor_pks}' berhasil diserahterimakan menjadi Milik RSUD.");
+        });
     }
 
     /**

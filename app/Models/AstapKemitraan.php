@@ -16,22 +16,31 @@ class AstapKemitraan extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
-        'tanggal_pks'     => 'date',
-        'tanggal_mulai'   => 'date',
-        'tanggal_selesai' => 'date',
-        'nilai_aset'      => 'decimal:2',
-        'jumlah_volume'   => 'integer',
-        'tahun'           => 'integer',
-        'is_deleted'      => 'integer',
-        'deleted_at'      => 'datetime',
-        'riwayat_adendum' => 'array',
-        'is_extended'     => 'boolean',
-        'jumlah_extend'   => 'integer',
+        'tanggal_pks'            => 'date',
+        'tanggal_mulai'          => 'date',
+        'tanggal_selesai'        => 'date',
+        'tanggal_terminasi'      => 'date',
+        'tanggal_ba_terminasi'   => 'date',
+        'nilai_aset'             => 'decimal:2',
+        'nilai_perolehan_rsud'   => 'decimal:2',
+        'jumlah_volume'          => 'integer',
+        'tahun'                  => 'integer',
+        'is_deleted'             => 'integer',
+        'deleted_at'             => 'datetime',
+        'riwayat_adendum'        => 'array',
+        'is_extended'            => 'boolean',
+        'jumlah_extend'          => 'integer',
+        'is_transferred_to_rsud' => 'boolean',
     ];
 
     public function astap()
     {
         return $this->belongsTo(Astap::class, 'astap_id');
+    }
+
+    public function reklas()
+    {
+        return $this->belongsTo(AstapReklas::class, 'reklas_id');
     }
 
     public function objekAstap()
