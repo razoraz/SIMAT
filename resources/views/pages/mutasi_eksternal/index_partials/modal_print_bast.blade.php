@@ -186,7 +186,7 @@
                                 <td style="border: none !important;"></td>
                                 <td style="border: none !important; vertical-align: top; padding: 1px 0;">Instansi / OPD</td>
                                 <td style="border: none !important; vertical-align: top; padding: 1px 0;">:</td>
-                                <td style="border: none !important; vertical-align: top; padding: 1px 0;" class="font-bold uppercase text-purple-950" x-text="printDoc.opd_asal"></td>
+                                <td style="border: none !important; vertical-align: top; padding: 1px 0;" class="font-bold uppercase" x-text="printDoc.opd_asal"></td>
                             </tr>
                             <template x-if="printDoc.alamat_instansi">
                                 <tr style="border: none !important;">
@@ -269,7 +269,7 @@
                                         <td class="px-2 py-1 text-left font-bold" style="border: 1px solid black;" x-text="sub.nama_barang || printDoc.nama_barang"></td>
                                         <td class="px-2 py-1 font-mono text-[8.5pt] text-left break-all" style="border: 1px solid black;">
                                             <div x-text="sub.kode_108 || printDoc.kode_108 || '-'"></div>
-                                            <div class="text-[8pt] text-slate-700" x-text="sub.nibar ? ('NIBAR: ' + sub.nibar) : ''"></div>
+                                            <div class="text-[8pt] text-black" x-text="sub.nibar ? ('NIBAR: ' + sub.nibar) : ''"></div>
                                         </td>
                                         <td class="px-1 py-1 text-center font-bold" style="border: 1px solid black;" x-text="sub.volume || sub.qty || 1"></td>
                                         <td class="px-1 py-1 text-center" style="border: 1px solid black;" x-text="sub.satuan || printDoc.satuan || 'Unit'"></td>
@@ -282,7 +282,7 @@
                                 </template>
 
                                 <!-- Baris Total -->
-                                <tr style="font-weight: 700; border: 1px solid black; background-color: #f8fafc !important; color: #000000 !important;">
+                                <tr style="font-weight: 700; border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;">
                                     <td colspan="3" style="border: 1px solid black; padding: 5px 8px; text-align: right; text-transform: uppercase;">Total Aset Yang Diserahkan</td>
                                     <td style="border: 1px solid black; padding: 5px 4px; text-align: center;" x-text="printDoc.jumlah_volume || printDoc.items?.length || 1"></td>
                                     <td style="border: 1px solid black; padding: 5px 4px; text-align: center;" x-text="printDoc.satuan || 'Unit'"></td>
@@ -294,7 +294,7 @@
                     </div>
 
                     <!-- ALASAN / MAKSUD MUTASI MASUK -->
-                    <div class="my-2.5 p-2 rounded border border-black/40 text-[9pt] leading-relaxed" style="background-color: #fafafa !important;">
+                    <div class="my-2.5 p-2 rounded border border-black text-[9pt] leading-relaxed" style="background-color: #ffffff !important; color: #000000 !important;">
                         <strong>Maksud / Catatan Mutasi Masuk:</strong>
                         <span x-text="printDoc.alasan_mutasi || 'Mutasi masuk aset barang milik daerah dari OPD luar ke RSUD dr. H. Koesnandi Kabupaten Bondowoso.'"></span>
                     </div>
@@ -328,10 +328,10 @@
                                 <!-- TTD Elektronik BSrE Pengurus Barang (Pak Budi Hartono) -->
                                 <div class="my-1 flex items-center justify-center" style="height: 55px; min-height: 55px;">
                                     <template x-if="printDoc.signed !== false">
-                                        <div style="padding:4px; border:1.5px solid #0d9488; background:#f0fdfa; border-radius:5px; display:inline-flex; align-items:center; gap:6px; text-align:left;">
+                                        <div style="padding:4px; border:1.5px solid #16a34a; background:#f0fdf4; border-radius:5px; display:inline-flex; align-items:center; gap:6px; text-align:left;">
                                             <img :src="getQrCodeSvg(window.location.origin + '/validasi-tte/' + (printDoc.qr_hash || printDoc.nomor_bast || 'BSRE-PELIMPAHAN-BMD'))" alt="QR TTE" style="width:36px; height:36px; flex-shrink:0;">
                                             <div style="font-size:7.5px; line-height:1.35; color:#1e293b;">
-                                                <div style="font-weight:700; color:#134e4a;">DITANDATANGANI ELEKTRONIK</div>
+                                                <div style="font-weight:700; color:#14532d;">DITANDATANGANI ELEKTRONIK</div>
                                                 <div style="color:#374151;">Pengurus Barang Pengguna</div>
                                                 <div style="font-size:6.5px; color:#6b7280; font-family:monospace;">Sertifikat BSrE - BSSN</div>
                                             </div>
