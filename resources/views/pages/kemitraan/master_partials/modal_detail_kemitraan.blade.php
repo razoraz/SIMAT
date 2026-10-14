@@ -1186,37 +1186,69 @@
                             <tbody class="divide-y divide-slate-800/80 bg-slate-900/50">
                                 <template x-for="reg in filteredRegisters" :key="reg.id">
                                     <tr class="hover:bg-slate-800/60 transition-colors">
-                                        <td class="px-3.5 py-2.5 font-mono font-bold text-emerald-400 whitespace-nowrap text-center" x-text="reg.nibar || reg.no_register"></td>
-                                        <td class="px-3.5 py-2.5 text-center">
+                                        <!-- 1. NIBAR & No Register Resmi -->
+                                        <td class="px-4 py-3 text-center whitespace-nowrap align-middle">
+                                            <div class="flex flex-col items-center justify-center gap-1">
+                                                <div class="flex items-center gap-1.5">
+                                                    <span class="px-2 py-0.5 rounded-md text-[10px] font-black font-mono tracking-wider bg-slate-950 text-cyan-400 border border-cyan-500/30 shadow-sm"
+                                                          x-text="'REG #' + (reg.no_register_int ? String(reg.no_register_int).padStart(6, '0') : (reg.nibar ? reg.nibar.slice(-6) : (reg.no_register || '000001')))"></span>
+                                                    <template x-if="reg.tahun_perolehan || selectedAstapDetail?.tahun_perolehan">
+                                                        <span class="text-[9.5px] font-bold text-slate-500 font-mono" x-text="'(' + (reg.tahun_perolehan || selectedAstapDetail?.tahun_perolehan) + ')'"></span>
+                                                    </template>
+                                                </div>
+                                                <div class="flex items-center gap-1.5 group/copy">
+                                                    <span class="font-mono text-[10.5px] font-semibold text-slate-300 tracking-tight group-hover/copy:text-cyan-300 transition-colors select-all"
+                                                          :title="'NIBAR Resmi: ' + (reg.nibar || reg.no_register)"
+                                                          x-text="reg.nibar || reg.no_register"></span>
+                                                    <button type="button" @click.stop="navigator.clipboard.writeText(reg.nibar || reg.no_register); showToast('NIBAR berhasil disalin ke clipboard!', 'success')"
+                                                            title="Salin NIBAR ke Clipboard"
+                                                            class="p-1 rounded-md bg-slate-800/60 hover:bg-cyan-500/20 text-slate-400 hover:text-cyan-300 border border-slate-700/60 hover:border-cyan-500/30 transition-all cursor-pointer">
+                                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/></svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <!-- 2. Lokasi / Pengelolaan -->
+                                        <td class="px-4 py-3 text-center align-middle">
                                             <template x-if="reg.ruang_pemegang">
-                                                <span class="inline-flex items-center space-x-1.5 text-slate-200 font-semibold justify-center">
-                                                    <span class="text-teal-400 text-xs">📍</span>
-                                                    <span x-text="reg.ruang_pemegang"></span>
-                                                </span>
+                                                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs font-semibold shadow-sm max-w-[220px]">
+                                                    <span class="text-teal-400 text-xs shrink-0">📍</span>
+                                                    <span class="truncate" :title="reg.ruang_pemegang" x-text="reg.ruang_pemegang"></span>
+                                                </div>
                                             </template>
                                             <template x-if="!reg.ruang_pemegang">
-                                                <span class="inline-flex items-center space-x-1.5 text-cyan-400 font-bold bg-cyan-500/10 px-2.5 py-1 rounded-lg border border-cyan-500/30 text-[10px] justify-center">
-                                                    <span>🤝</span>
-                                                    <span x-text="selectedAstapDetail?.kemitraan?.mitra_nama ? ('Mitra: ' + selectedAstapDetail.kemitraan.mitra_nama) : 'Konsesi Kemitraan (Mitra)'"></span>
-                                                </span>
+                                                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-cyan-950/80 border border-cyan-500/40 text-cyan-200 font-bold text-[11px] shadow-sm max-w-[220px]">
+                                                    <span class="text-xs shrink-0">🤝</span>
+                                                    <span class="truncate" x-text="selectedAstapDetail?.kemitraan?.mitra_nama ? ('Mitra: ' + selectedAstapDetail.kemitraan.mitra_nama) : 'Konsesi Kemitraan (Mitra)'"></span>
+                                                </div>
                                             </template>
                                         </td>
-                                        <td class="px-3.5 py-2.5 text-center whitespace-nowrap">
-                                            <span class="px-2.5 py-1 rounded-xl text-[10.5px] font-bold border inline-block shadow-sm"
+                                        <!-- 3. Kondisi Fisik -->
+                                        <td class="px-3.5 py-3 text-center whitespace-nowrap align-middle">
+                                            <span class="px-2.5 py-1 rounded-xl text-[10.5px] font-extrabold border inline-flex items-center gap-1.5 shadow-sm"
                                                   :class="{
-                                                      'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': reg.kondisi === 'Baik' || reg.kondisi === 'B',
-                                                      'bg-amber-500/20 text-amber-300 border-amber-500/30': reg.kondisi === 'Kurang Baik' || reg.kondisi === 'KB' || reg.kondisi === 'Rusak Ringan' || reg.kondisi === 'RR',
-                                                      'bg-rose-500/20 text-rose-300 border-rose-500/30': reg.kondisi === 'Rusak Berat' || reg.kondisi === 'RB' || reg.kondisi === 'Rusak'
-                                                  }" x-text="reg.kondisi === 'B' ? 'Baik' : ((reg.kondisi === 'KB' || reg.kondisi === 'RR' || reg.kondisi === 'Rusak Ringan') ? 'Kurang Baik' : ((reg.kondisi === 'RB' || reg.kondisi === 'Rusak') ? 'Rusak Berat' : (reg.kondisi || 'Baik')))"></span>
+                                                      'bg-emerald-500/20 text-emerald-300 border-emerald-500/40': reg.kondisi === 'Baik' || reg.kondisi === 'B',
+                                                      'bg-amber-500/20 text-amber-300 border-amber-500/40': reg.kondisi === 'Kurang Baik' || reg.kondisi === 'KB' || reg.kondisi === 'Rusak Ringan' || reg.kondisi === 'RR',
+                                                      'bg-rose-500/20 text-rose-300 border-rose-500/40': reg.kondisi === 'Rusak Berat' || reg.kondisi === 'RB' || reg.kondisi === 'Rusak'
+                                                  }">
+                                                <span class="w-1.5 h-1.5 rounded-full"
+                                                      :class="{
+                                                          'bg-emerald-400': reg.kondisi === 'Baik' || reg.kondisi === 'B',
+                                                          'bg-amber-400': reg.kondisi === 'Kurang Baik' || reg.kondisi === 'KB' || reg.kondisi === 'Rusak Ringan' || reg.kondisi === 'RR',
+                                                          'bg-rose-400': reg.kondisi === 'Rusak Berat' || reg.kondisi === 'RB' || reg.kondisi === 'Rusak'
+                                                      }"></span>
+                                                <span x-text="reg.kondisi === 'B' ? 'Baik' : ((reg.kondisi === 'KB' || reg.kondisi === 'RR' || reg.kondisi === 'Rusak Ringan') ? 'Kurang Baik' : ((reg.kondisi === 'RB' || reg.kondisi === 'Rusak') ? 'Rusak Berat' : (reg.kondisi || 'Baik')))"></span>
+                                            </span>
                                         </td>
-                                        <td class="px-3.5 py-2.5 text-center whitespace-nowrap">
+                                        <!-- 4. QR Code Download -->
+                                        <td class="px-3.5 py-3 text-center whitespace-nowrap align-middle">
                                             <button type="button" @click.stop="downloadQrCodeNibar(reg, selectedAstapDetail)"
                                                 title="Pratinjau & Download QR NIBAR Aset Ini"
-                                                class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/25 border border-cyan-500/30 hover:border-cyan-400 text-cyan-400 hover:text-cyan-300 font-bold text-[10.5px] transition-all shadow-sm active:scale-95 group cursor-pointer leading-none">
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/25 border border-cyan-500/30 hover:border-cyan-400 text-cyan-400 hover:text-cyan-300 font-bold text-[10.5px] transition-all shadow-sm active:scale-95 group cursor-pointer leading-none">
                                                 <svg class="w-3.5 h-3.5 text-cyan-400 group-hover:scale-110 transition-transform shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v12m0 0l-3.5-3.5M12 16l3.5-3.5M4 20h16"/>
                                                 </svg>
-                                                <span class="leading-none pt-0.5">Download QR</span>
+                                                <span>Download QR</span>
                                             </button>
                                         </td>
                                         <td class="px-3.5 py-2.5 text-center whitespace-nowrap">
