@@ -363,14 +363,7 @@ class ReklasifikasiController extends Controller
             }
         }
 
-        if ($validated['jenis_reklas'] === 'MUTASI_EKSTERNAL') {
-            if ($request->has('selected_register_ids') && is_array($request->input('selected_register_ids')) && count($request->input('selected_register_ids')) === 0) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Pilih minimal 1 unit register NIBAR yang akan dimutasikan ke OPD luar.',
-                ], 422);
-            }
-        }
+
 
         // Validasi Mandatory Form Kemitraan Pihak Ketiga (Akun 1.5.2)
         if (($validated['tujuan_kib'] ?? null) === 'KEMITRAAN') {
@@ -429,6 +422,52 @@ class ReklasifikasiController extends Controller
         }
 
         $astap = Astap::findOrFail($validated['astap_id']);
+
+        // Proteksi Validasi: Aset atau unit yang sudah dimutasi keluar ke OPD lain tidak dapat dimutasi lagi
+        if ($validated['jenis_reklas'] === 'MUTASI_EKSTERNAL') {
+            $isAlreadyFullOut = ($astap->jenis_reklas === 'MUTASI_EKSTERNAL')
+                || (bool) $astap->is_mutasi_keluar_full;
+
+            $activeRegistersCount = $astap->registers()
+                ->where('is_deleted', 0)
+                ->where(function($q) {
+                    $q->whereNull('status')
+                      ->orWhere('status', '!=', 'Mutasi Keluar OPD');
+                })
+                ->count();
+            $totalRegistersCount = $astap->registers()->where('is_deleted', 0)->count();
+
+            if ($isAlreadyFullOut || ($totalRegistersCount > 0 && $activeRegistersCount === 0)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Aset '{$astap->nama_barang}' sudah pernah dimutasi keluar ke OPD lain (Mutasi Eksternal) dan tidak dapat dimutasi lagi.",
+                ], 422);
+            }
+
+            // Validasi register yang dipilih
+            $selectedRegIds = $request->input('selected_register_ids');
+            if (is_array($selectedRegIds) && count($selectedRegIds) === 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pilih minimal 1 unit register NIBAR yang akan dimutasikan ke OPD luar.',
+                ], 422);
+            }
+
+            if (!empty($selectedRegIds) && is_array($selectedRegIds)) {
+                $alreadyOutRegs = \App\Models\AstapRegister::whereIn('id', $selectedRegIds)
+                    ->where('status', 'Mutasi Keluar OPD')
+                    ->pluck('nibar')
+                    ->toArray();
+
+                if (!empty($alreadyOutRegs)) {
+                    $nibarList = implode(', ', $alreadyOutRegs);
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Unit register NIBAR ({$nibarList}) sudah pernah dimutasi keluar ke OPD lain dan tidak dapat dimutasi lagi.",
+                    ], 422);
+                }
+            }
+        }
 
         // Proteksi Validasi Duplikasi: Jenis reklasifikasi non-repeatable dalam satu periode tahun anggaran
         $jenisNonRepeat = ['EKSTRAKOMPTABEL', 'KAPITALISASI_INTRAKOM', 'DEFINITIF_TO_KDP'];

@@ -10164,8 +10164,27 @@
                     return 'Rekening Simda Baru';
                 },
 
+                isCurrentAstapMutasiKeluarFull() {
+                    if (!this.selectedAstapReklas) return false;
+                    const it = this.selectedAstapReklas;
+                    if (it.jenis_reklas === 'MUTASI_EKSTERNAL' || it.is_mutasi_keluar_full) return true;
+                    if (it.mutasi_keluar && !it.is_mutasi_keluar_partial) return true;
+                    if (it.registers && Array.isArray(it.registers) && it.registers.length > 0) {
+                        const activeCount = it.registers.filter(r => r.status !== 'Mutasi Keluar OPD').length;
+                        if (activeCount === 0) return true;
+                    }
+                    return false;
+                },
+
                 openReklas(item, specificReg = null) {
                     this.selectedAstapReklas = item;
+
+                    // Jika register spesifik sudah berstatus Mutasi Keluar OPD
+                    if (specificReg && specificReg.id && specificReg.status === 'Mutasi Keluar OPD') {
+                        this.showToast('Unit register ini sudah dimutasi keluar ke OPD lain dan tidak dapat dimutasi lagi.', 'error');
+                        return;
+                    }
+
                     const kode = item.kode_barang || item.jenis_aset_kode || item.kode_rekening || '';
                     const isExtracomNow = this.isCurrentAstapExtracom();
                     const cat = (typeof this.getEffectiveKibCategory === 'function')
@@ -10174,9 +10193,10 @@
                     const namaBarang = (item.nama_barang || '').toLowerCase();
                     const isKemitraanOrSewa = (cat === 'KEMITRAAN' || kode.startsWith('1.5.2') || kode.startsWith('1.4') || namaBarang.includes('kemitraan') || namaBarang.startsWith('sewa '));
                     const isNonExtracom = (kode.startsWith('1.3.1') || kode.startsWith('1.3.3') || kode.startsWith('1.3.4') || kode.startsWith('1.3.6') || kode.startsWith('1.5.3') || isKemitraanOrSewa || cat === 'KIB A' || cat === 'KIB C' || cat === 'KIB D' || cat === 'KIB F' || cat === 'ATB' || cat === 'KEMITRAAN');
+                    const isAlreadyOut = this.isCurrentAstapMutasiKeluarFull();
 
                     // Inisialisasi NIBAR yang dipilih untuk mutasi eksternal
-                    if (specificReg && specificReg.id) {
+                    if (specificReg && specificReg.id && !isAlreadyOut) {
                         this.reklasSelectedNibarIds = [specificReg.id];
                         this.reklasJenis = 'mutasi_eksternal';
                         this.reklasTujuanKib = 'MUTASI_OPD';
@@ -10187,6 +10207,10 @@
                             this.reklasJenis = 'pindah_kib';
                             this.reklasTujuanKib = 'KEMITRAAN';
                             this.reklasKemitraanTipeFisik = this.detectKemitraanPhysicalType(item);
+                        } else if (isAlreadyOut) {
+                            // Aset yang sudah mutasi keluar tidak boleh mutasi eksternal lagi
+                            this.reklasJenis = 'pindah_kib';
+                            this.reklasTujuanKib = cat || 'KIB B';
                         } else if (isExtracomNow) {
                             // Kebalikan: dari Ekstrakomptabel dikapitalisasi ke Intrakomptabel
                             this.reklasJenis = 'intracom';
@@ -11606,6 +11630,12 @@
 
                     try {
                         const it = this.selectedAstapReklas;
+
+                        if (this.reklasJenis === 'mutasi_eksternal' && this.isCurrentAstapMutasiKeluarFull()) {
+                            this.showToast('Aset ini sudah dimutasi keluar ke OPD lain dan tidak dapat dimutasi lagi.', 'error');
+                            return;
+                        }
+
                         const tgl = this.reklasTanggal || new Date().toISOString().split('T')[0];
                         const dateObj = new Date(tgl);
                         const month = dateObj.getMonth() + 1;

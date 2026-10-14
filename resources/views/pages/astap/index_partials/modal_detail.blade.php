@@ -29,32 +29,7 @@
                                 }"
                                 x-text="selectedAstapDetail?.category === 'EXTRACOM' ? '📦 EXTRACOM' : (getEffectiveKibCategory(selectedAstapDetail) === 'ASET LAIN' ? 'ASET LAIN (1.5.4)' : getEffectiveKibCategory(selectedAstapDetail))"></span>
 
-                            <template x-if="selectedAstapDetail?.sumber_dana === 'hibah' || selectedAstapDetail?.sumber_dana_raw === 'hibah' || selectedAstapDetail?.jenis_reklas === 'HIBAH_MASUK'">
-                                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 bg-amber-400/20 text-amber-300 border-amber-400/30">
-                                    🎁 HIBAH
-                                </span>
-                            </template>
-
-                            <template x-if="selectedAstapDetail?.sumber_dana === 'belanja_barang' || selectedAstapDetail?.sumber_dana === 'belanja_rekening'">
-                                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 bg-indigo-500/20 text-indigo-300 border-indigo-500/30">
-                                    📦 BELANJA BARANG (PERBEKALAN)
-                                </span>
-                            </template>
-
-                            <template x-if="!selectedAstapDetail?.is_mutasi_keluar_full && !selectedAstapDetail?.is_mutasi_keluar_partial && !selectedAstapDetail?.mutasi_keluar && selectedAstapDetail?.jenis_reklas !== 'MUTASI_EKSTERNAL' && (selectedAstapDetail?.sumber_dana === 'mutasi_eksternal' || selectedAstapDetail?.sumber_dana === 'pelimpahan' || selectedAstapDetail?.sumber_dana === 'pelimpahan_skpd' || selectedAstapDetail?.sumber_dana === 'mutasi_masuk' || selectedAstapDetail?.sumber_dana === 'mutasi')">
-                                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 bg-purple-500/20 text-purple-300 border-purple-500/30">
-                                    📥 MUTASI MASUK
-                                </span>
-                            </template>
-
-                            <template x-if="selectedAstapDetail?.sumber_dana === 'kemitraan' || selectedAstapDetail?.sumber_dana_raw === 'kemitraan' || selectedAstapDetail?.category === 'KEMITRAAN' || !!selectedAstapDetail?.kemitraan">
-                                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 shadow-sm"
-                                    :class="(selectedAstapDetail?.is_bmd_dimanfaatkan || selectedAstapDetail?.kemitraan?.tipe_kemitraan === 'dimanfaatkan') ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40 shadow-cyan-500/10' : 'bg-teal-500/20 text-teal-300 border-teal-400/40 shadow-teal-500/10'"
-                                    x-text="(selectedAstapDetail?.is_bmd_dimanfaatkan || selectedAstapDetail?.kemitraan?.tipe_kemitraan === 'dimanfaatkan') ? '🏛️ BMD DIMANFAATKAN' : '🤝 KEMITRAAN PIHAK KETIGA'">
-                                </span>
-                            </template>
-
-                            {{-- Badge Reklasifikasi -- tetap muncul jika aset pernah reklasifikasi atau mutasi keluar via reklas --}}
+                            {{-- 2. Reklasifikasi --}}
                             <template x-if="selectedAstapDetail?.has_reklas || selectedAstapDetail?.is_reklas || (selectedAstapDetail?.reklas_count && selectedAstapDetail?.reklas_count > 0) || selectedAstapDetail?.jenis_reklas || !!selectedAstapDetail?.mutasi_keluar">
                                 <span class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 bg-indigo-500/20 text-indigo-300 border-indigo-500/30 shadow-sm"
                                     :title="'Aset ini memiliki riwayat Reklasifikasi' + (selectedAstapDetail?.jenis_reklas ? ' (' + selectedAstapDetail.jenis_reklas.replace(/_/g, ' ') + ')' : '')">
@@ -65,12 +40,41 @@
                                 </span>
                             </template>
 
-                            {{-- Badge Mutasi Keluar ke OPD --}}
+                            {{-- 3. Mutasi Masuk (dari Luar OPD) --}}
+                            <template x-if="!selectedAstapDetail?.is_mutasi_keluar_full && !selectedAstapDetail?.is_mutasi_keluar_partial && !selectedAstapDetail?.mutasi_keluar && selectedAstapDetail?.jenis_reklas !== 'MUTASI_EKSTERNAL' && (selectedAstapDetail?.sumber_dana === 'mutasi_eksternal' || selectedAstapDetail?.sumber_dana === 'pelimpahan' || selectedAstapDetail?.sumber_dana === 'pelimpahan_skpd' || selectedAstapDetail?.sumber_dana === 'mutasi_masuk' || selectedAstapDetail?.sumber_dana === 'mutasi')">
+                                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 bg-purple-500/20 text-purple-300 border-purple-500/30">
+                                    📥 MUTASI MASUK
+                                </span>
+                            </template>
+
+                            {{-- 3. Mutasi Keluar ke OPD --}}
                             <template x-if="selectedAstapDetail?.jenis_reklas === 'MUTASI_EKSTERNAL' || !!selectedAstapDetail?.mutasi_keluar">
                                 <span class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-lg text-[10px] font-black border uppercase tracking-wider shrink-0 bg-cyan-500/25 text-cyan-300 border-cyan-400/50 shadow-md shadow-cyan-500/20"
                                     :title="'Aset telah dimutasi keluar ke ' + (selectedAstapDetail?.mutasi_keluar?.opd_tujuan || selectedAstapDetail?.opd_tujuan || 'OPD Luar')">
                                     <span>🏛️</span>
                                     <span x-text="'MUTASI KELUAR KE ' + (selectedAstapDetail?.mutasi_keluar?.opd_tujuan || selectedAstapDetail?.opd_tujuan || 'OPD LUAR').toUpperCase()"></span>
+                                </span>
+                            </template>
+
+                            {{-- 4. Dan Lain-Lain: Hibah --}}
+                            <template x-if="selectedAstapDetail?.sumber_dana === 'hibah' || selectedAstapDetail?.sumber_dana_raw === 'hibah' || selectedAstapDetail?.jenis_reklas === 'HIBAH_MASUK'">
+                                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 bg-amber-400/20 text-amber-300 border-amber-400/30">
+                                    🎁 HIBAH
+                                </span>
+                            </template>
+
+                            {{-- 4. Dan Lain-Lain: Belanja Barang (Perbekalan) --}}
+                            <template x-if="selectedAstapDetail?.sumber_dana === 'belanja_barang' || selectedAstapDetail?.sumber_dana === 'belanja_rekening'">
+                                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 bg-indigo-500/20 text-indigo-300 border-indigo-500/30">
+                                    📦 BELANJA BARANG (PERBEKALAN)
+                                </span>
+                            </template>
+
+                            {{-- 4. Dan Lain-Lain: Kemitraan Pihak Ketiga --}}
+                            <template x-if="selectedAstapDetail?.sumber_dana === 'kemitraan' || selectedAstapDetail?.sumber_dana_raw === 'kemitraan' || selectedAstapDetail?.category === 'KEMITRAAN' || !!selectedAstapDetail?.kemitraan">
+                                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 shadow-sm"
+                                    :class="(selectedAstapDetail?.is_bmd_dimanfaatkan || selectedAstapDetail?.kemitraan?.tipe_kemitraan === 'dimanfaatkan') ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40 shadow-cyan-500/10' : 'bg-teal-500/20 text-teal-300 border-teal-400/40 shadow-teal-500/10'"
+                                    x-text="(selectedAstapDetail?.is_bmd_dimanfaatkan || selectedAstapDetail?.kemitraan?.tipe_kemitraan === 'dimanfaatkan') ? '🏛️ BMD DIMANFAATKAN' : '🤝 KEMITRAAN PIHAK KETIGA'">
                                 </span>
                             </template>
 
@@ -1326,12 +1330,18 @@
 
                                                         @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
                                                         <!-- 2. Tombol Mutasi Keluar OPD Khusus Unit Ini -->
-                                                        <template x-if="reg.status !== 'Mutasi Keluar OPD' && selectedAstapDetail?.jenis_reklas !== 'MUTASI_EKSTERNAL' && reg.status !== 'Kemitraan' && selectedAstapDetail?.sumber_dana !== 'kemitraan' && selectedAstapDetail?.category !== 'KEMITRAAN'">
+                                                        <template x-if="reg.status !== 'Mutasi Keluar OPD' && selectedAstapDetail?.jenis_reklas !== 'MUTASI_EKSTERNAL' && !selectedAstapDetail?.is_mutasi_keluar_full && reg.status !== 'Kemitraan' && selectedAstapDetail?.sumber_dana !== 'kemitraan' && selectedAstapDetail?.category !== 'KEMITRAAN'">
                                                             <button type="button" @click.stop="if (isItemLocked(selectedAstapDetail)) { showLockedWarning(selectedAstapDetail); } else { showDetailModal = false; openReklas(selectedAstapDetail, reg); }"
                                                                     title="Mutasi Keluar Antar-OPD Khusus Register NIBAR Ini"
                                                                     class="p-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 hover:text-cyan-200 transition-all cursor-pointer shadow-sm active:scale-95">
                                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
                                                             </button>
+                                                        </template>
+                                                        <template x-if="reg.status === 'Mutasi Keluar OPD' || selectedAstapDetail?.jenis_reklas === 'MUTASI_EKSTERNAL' || !!selectedAstapDetail?.is_mutasi_keluar_full">
+                                                            <span class="p-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-500 cursor-not-allowed text-xs inline-flex items-center justify-center select-none"
+                                                                  title="Unit ini telah dimutasi keluar ke OPD lain dan tidak dapat dimutasi lagi">
+                                                                🔒
+                                                            </span>
                                                         </template>
 
                                                         <!-- 3. Tombol Ubah Kondisi Barang (Modal Khusus) -->
