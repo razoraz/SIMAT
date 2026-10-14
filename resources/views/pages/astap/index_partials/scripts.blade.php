@@ -11890,7 +11890,8 @@
                                 setTimeout(() => {
                                     const url = new URL(window.location.href);
                                     url.searchParams.delete('open_reklas');
-                                    window.location.href = url.toString();
+                                    url.searchParams.delete('search');
+                                    window.location.href = url.pathname + (url.search ? url.search : '');
                                 }, delay);
                             };
 
@@ -13737,11 +13738,12 @@
                                 this.openReklas(target);
                             }, 350);
                         }
-                        // Bersihkan parameter open_reklas dari URL browser agar saat reload tidak membuka modal lagi
+                        // Bersihkan parameter open_reklas dan search dari URL browser agar saat reload tidak mengunci modal atau filter
                         try {
                             const cleanUrl = new URL(window.location.href);
                             cleanUrl.searchParams.delete('open_reklas');
-                            window.history.replaceState({}, document.title, cleanUrl.toString());
+                            cleanUrl.searchParams.delete('search');
+                            window.history.replaceState({}, document.title, cleanUrl.pathname + (cleanUrl.search ? cleanUrl.search : ''));
                         } catch(e) {}
                     }
 
