@@ -74,7 +74,7 @@
                                             <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[9px] font-black whitespace-nowrap leading-none shrink-0 bg-cyan-500/25 text-cyan-300 border border-cyan-400/50 shadow-sm shadow-cyan-500/20 tracking-wider"
                                                 :title="'Aset telah dimutasi keluar ke ' + (item.mutasi_keluar?.opd_tujuan || item.opd_tujuan || 'OPD Luar')">
                                                 <span>🏛️</span>
-                                                <span x-text="'MUTASI KELUAR (' + (item.mutasi_keluar?.opd_tujuan || item.opd_tujuan || 'OPD LUAR') + ')'"></span>
+                                                <span>MUTASI KELUAR</span>
                                             </span>
                                         </template>
 

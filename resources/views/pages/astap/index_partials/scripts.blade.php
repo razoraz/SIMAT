@@ -11817,29 +11817,37 @@
                                     ? resJson.is_full_transfer
                                     : (this.getReklasMutasiRemainingVolume() <= 0);
 
-                                if (isFull) {
-                                    const idxInList = this.astaps.findIndex(a => a.id === it.id);
-                                    if (idxInList !== -1) {
-                                        this.astaps.splice(idxInList, 1);
-                                    }
-                                } else {
-                                    // Mutasi parsial: perbarui status register yang dipilih di array lokal
-                                    if (it.registers && Array.isArray(it.registers)) {
-                                        it.registers.forEach(r => {
-                                            if (this.reklasSelectedNibarIds.includes(r.id)) {
-                                                r.status = 'Mutasi Keluar OPD';
-                                                r.ruang_pemegang = this.reklasSkpdTujuan || 'OPD Luar';
-                                                r.opd_tujuan = this.reklasSkpdTujuan || 'OPD Luar';
-                                            }
-                                        });
-                                    }
-                                    it.is_mutasi_keluar_partial = true;
-                                    it.mutasi_keluar_count = (it.mutasi_keluar_count || 0) + this.reklasSelectedNibarIds.length;
-                                    it.active_regs_count = Math.max(0, (it.active_regs_count || (it.registers ? it.registers.length : 1)) - this.reklasSelectedNibarIds.length);
-                                    it.opd_tujuan = this.reklasSkpdTujuan;
-                                    if (resJson.mutasi_keluar) {
-                                        it.mutasi_keluar = resJson.mutasi_keluar;
-                                    }
+                                if (it.registers && Array.isArray(it.registers)) {
+                                    it.registers.forEach(r => {
+                                        if (isFull || this.reklasSelectedNibarIds.includes(r.id)) {
+                                            r.status = 'Mutasi Keluar OPD';
+                                            r.ruang_pemegang = this.reklasSkpdTujuan || 'OPD Luar';
+                                            r.opd_tujuan = this.reklasSkpdTujuan || 'OPD Luar';
+                                        }
+                                    });
+                                }
+
+                                it.is_mutasi_keluar_full = isFull;
+                                it.is_mutasi_keluar_partial = !isFull;
+                                it.jenis_reklas = 'MUTASI_EKSTERNAL';
+                                it.opd_tujuan = this.reklasSkpdTujuan;
+                                it.active_regs_count = isFull ? 0 : Math.max(0, (it.active_regs_count || (it.registers ? it.registers.length : 1)) - this.reklasSelectedNibarIds.length);
+                                it.mutasi_keluar_count = isFull ? (it.jumlah_volume || 1) : ((it.mutasi_keluar_count || 0) + this.reklasSelectedNibarIds.length);
+                                if (resJson.mutasi_keluar) {
+                                    it.mutasi_keluar = resJson.mutasi_keluar;
+                                }
+
+                                const idxInList = this.astaps.findIndex(a => a.id === it.id);
+                                if (idxInList !== -1) {
+                                    Object.assign(this.astaps[idxInList], {
+                                        is_mutasi_keluar_full: isFull,
+                                        is_mutasi_keluar_partial: !isFull,
+                                        jenis_reklas: 'MUTASI_EKSTERNAL',
+                                        opd_tujuan: it.opd_tujuan,
+                                        active_regs_count: it.active_regs_count,
+                                        mutasi_keluar_count: it.mutasi_keluar_count,
+                                        mutasi_keluar: it.mutasi_keluar
+                                    });
                                 }
                                 this.showReklasModal = false;
                                 this.showDetailModal = false;
@@ -11878,6 +11886,14 @@
                                 }
                             }
 
+                            const safeReload = (delay) => {
+                                setTimeout(() => {
+                                    const url = new URL(window.location.href);
+                                    url.searchParams.delete('open_reklas');
+                                    window.location.href = url.toString();
+                                }, delay);
+                            };
+
                             if (resJson.is_partial) {
                                 this.showToast('Reklasifikasi Parsial berhasil! ' + (resJson.split_volume || 1) + ' unit berhasil dialihkan ke ' + (resJson.tujuan_kib || 'Kemitraan') + ' dan sisa ' + (resJson.remaining_volume || 1) + ' unit tetap di ' + (resJson.asal_kib || 'KIB Asal') + '.', 'success');
                                 if (resJson.cetak_bast_url) {
@@ -11885,19 +11901,19 @@
                                         window.open(resJson.cetak_bast_url, '_blank');
                                     }, 700);
                                 }
-                                setTimeout(() => { window.location.reload(); }, 1400);
+                                safeReload(1400);
                             } else if (resJson.cetak_bast_mutasi_url) {
-                                this.showToast('Mutasi keluar antar-OPD berhasil! Aset telah dialihkan dan kini hanya dapat dilihat di Katalog Mutasi Eksternal Keluar.', 'success');
-                                setTimeout(() => {
-                                    window.open(resJson.cetak_bast_mutasi_url, '_blank');
-                                }, 700);
+                                this.showToast('Mutasi keluar antar-OPD berhasil! Aset telah dialihkan ke Katalog Mutasi Eksternal Keluar.', 'success');
+                                safeReload(1200);
                             } else if (resJson.cetak_bast_url) {
                                 this.showToast('Reklasifikasi ke Kemitraan berhasil! Draf resmi BAST dibuka di tab baru.', 'success');
                                 setTimeout(() => {
                                     window.open(resJson.cetak_bast_url, '_blank');
                                 }, 700);
+                                safeReload(1400);
                             } else {
                                 this.showToast(resJson.message || 'Reklasifikasi aset berhasil dicatat!', 'success');
+                                safeReload(1200);
                             }
                             this.showReklasModal = false;
                         } else {
@@ -13721,6 +13737,12 @@
                                 this.openReklas(target);
                             }, 350);
                         }
+                        // Bersihkan parameter open_reklas dari URL browser agar saat reload tidak membuka modal lagi
+                        try {
+                            const cleanUrl = new URL(window.location.href);
+                            cleanUrl.searchParams.delete('open_reklas');
+                            window.history.replaceState({}, document.title, cleanUrl.toString());
+                        } catch(e) {}
                     }
 
                     // Inisialisasi status Tutup Buku BMD (Rekon BPKAD)

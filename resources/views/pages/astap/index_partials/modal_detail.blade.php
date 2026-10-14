@@ -52,7 +52,7 @@
                                 <span class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-lg text-[10px] font-black border uppercase tracking-wider shrink-0 bg-cyan-500/25 text-cyan-300 border-cyan-400/50 shadow-md shadow-cyan-500/20"
                                     :title="'Aset telah dimutasi keluar ke ' + (selectedAstapDetail?.mutasi_keluar?.opd_tujuan || selectedAstapDetail?.opd_tujuan || 'OPD Luar')">
                                     <span>🏛️</span>
-                                    <span x-text="'MUTASI KELUAR KE ' + (selectedAstapDetail?.mutasi_keluar?.opd_tujuan || selectedAstapDetail?.opd_tujuan || 'OPD LUAR').toUpperCase()"></span>
+                                    <span>MUTASI KELUAR</span>
                                 </span>
                             </template>
 
