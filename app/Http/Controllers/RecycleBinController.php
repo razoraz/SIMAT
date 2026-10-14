@@ -91,60 +91,99 @@ class RecycleBinController extends Controller
         // 1B. DATA TERHAPUS: MUTASI EKSTERNAL (TRANSFER ANTAR-OPD / PELIMPAHAN SKPD)
         // =========================================================================
         $rawDeletedMutasiEksternals = \App\Models\MutasiEksternal::onlyDeleted()
-            ->with(['astap.registers', 'astap.jenisAstap', 'unit', 'user'])
+            ->with([
+                'astap.registers',
+                'astap.jenisAstap',
+                'unit',
+                'user',
+                'mutasiRegisters.register.astap.jenisAstap',
+                'mutasiRegisters.register.unit'
+            ])
             ->latest('deleted_at')
             ->latest('id')
             ->get();
 
         $deletedMutasiEksternals = $rawDeletedMutasiEksternals->map(function ($m) {
+            $isKeluar = ($m->tipe === 'keluar');
             $astap = $m->astap;
-            $nomorBamb = $m->nomor_bamb ?: ($astap?->bast_dokumen_nomor ?: 'BAMB-EXT-' . str_pad($m->id, 4, '0', STR_PAD_LEFT));
+            $nomorBamb = $m->nomor_bamb ?: ($astap?->bast_dokumen_nomor ?: ($isKeluar ? 'BAST-KELUAR-' . str_pad($m->id, 4, '0', STR_PAD_LEFT) : 'BAMB-EXT-' . str_pad($m->id, 4, '0', STR_PAD_LEFT)));
             $kode108 = $astap?->kode_108 ?: ($astap?->jenisAstap?->sub_sub_rincian_objek ?: ($astap?->jenisAstap?->jenis ?: '-'));
 
             $itemsMapped = [];
-            $registers = $astap?->registers ?? collect();
-            if ($registers->isNotEmpty()) {
-                foreach ($registers as $idx => $reg) {
+            if ($isKeluar && $m->mutasiRegisters && $m->mutasiRegisters->isNotEmpty()) {
+                foreach ($m->mutasiRegisters as $idx => $mr) {
+                    $reg = $mr->register;
+                    $ast = $reg?->astap ?: $astap;
+                    $kd108 = $ast?->kode_108 ?: ($ast?->jenisAstap?->sub_sub_rincian_objek ?: ($ast?->jenisAstap?->jenis ?: ($kode108 ?: '-')));
                     $itemsMapped[] = [
                         'no'          => $idx + 1,
-                        'nama_barang' => $astap->nama_barang,
-                        'nibar'       => $reg->nibar ?: '-',
-                        'kode_108'    => $kode108,
-                        'kondisi'     => $reg->kondisi ?: ($m->kondisi ?: 'Baik'),
+                        'nama_barang' => $ast?->nama_barang ?: 'Aset RSUD',
+                        'nibar'       => $reg?->nibar ?: '-',
+                        'kode_108'    => $kd108,
+                        'kondisi'     => $mr->kondisi ?: ($reg?->kondisi ?: ($m->kondisi ?: 'Baik')),
+                        'ruangan_asal'=> $reg?->unit?->nama ?: ($m->ruangan_tujuan ?: 'RSUD Dr. H. Koesnadi'),
                     ];
                 }
             } else {
-                $itemsMapped[] = [
-                    'no'          => 1,
-                    'nama_barang' => $astap?->nama_barang ?: 'Barang Mutasi Eksternal',
-                    'nibar'       => '-',
-                    'kode_108'    => $kode108,
-                    'kondisi'     => $m->kondisi ?: 'Baik',
-                ];
+                $registers = $astap?->registers ?? collect();
+                if ($registers->isNotEmpty()) {
+                    foreach ($registers as $idx => $reg) {
+                        $itemsMapped[] = [
+                            'no'          => $idx + 1,
+                            'nama_barang' => $astap->nama_barang,
+                            'nibar'       => $reg->nibar ?: '-',
+                            'kode_108'    => $kode108,
+                            'kondisi'     => $reg->kondisi ?: ($m->kondisi ?: 'Baik'),
+                        ];
+                    }
+                } else {
+                    $itemsMapped[] = [
+                        'no'          => 1,
+                        'nama_barang' => $astap?->nama_barang ?: ($isKeluar ? 'Aset Mutasi Keluar OPD' : 'Barang Pelimpahan Masuk'),
+                        'nibar'       => '-',
+                        'kode_108'    => $kode108,
+                        'kondisi'     => $m->kondisi ?: 'Baik',
+                    ];
+                }
             }
 
             $itemCount = count($itemsMapped);
             $deletedAt = $m->deleted_at ? Carbon::parse($m->deleted_at)->timezone('Asia/Jakarta') : null;
             $nilaiReal = (float) ($m->nilai_perolehan ?: ($astap?->total_realisasi ?: 0));
-            $firstRegister = $registers->first();
+            $firstNibar = $itemsMapped[0]['nibar'] ?? '-';
+
+            // Pihak Pengirim & Penerima disesuaikan dengan Arah Mutasi
+            $asalFormatted = $isKeluar 
+                ? ('RSUD Dr. H. Koesnadi' . ($m->unit?->nama ? ' (' . $m->unit->nama . ')' : ''))
+                : ($m->opd_asal ?: ($astap?->mutasi_asal ?: 'SKPD / Instansi Luar'));
+            $tujuanFormatted = $isKeluar 
+                ? ($m->opd_tujuan ?: 'SKPD / Instansi Luar')
+                : ($m->unit?->nama ?: ($m->ruangan_tujuan ?: 'RSUD Dr. H. Koesnadi'));
+            $pemohonFormatted = $isKeluar
+                ? ($m->pj_asal_nama ?: 'Pengurus Barang RSUD')
+                : ($m->pj_asal_nama ?: 'Pejabat OPD Pengirim');
+            $penerimaFormatted = $isKeluar
+                ? ($m->pj_tujuan_nama ?: 'Pejabat OPD Penerima')
+                : ($m->pj_tujuan_nama ?: 'Pengurus Barang RSUD');
+            $jenisFormatted = $m->jenis_mutasi ?: ($isKeluar ? 'Mutasi Keluar ke OPD' : 'Pelimpahan Masuk SKPD');
 
             return [
                 'id'                        => $m->id,
                 'astap_id'                  => $m->astap_id,
                 'kode'                      => $nomorBamb,
                 'nomor_bamb'                => $nomorBamb,
-                'jenis'                     => $m->jenis_mutasi ?: 'Transfer Antar-OPD',
+                'jenis'                     => $jenisFormatted,
                 'tipe'                      => $m->tipe ?: 'masuk',
-                'nama'                      => ($astap?->nama_barang ?: 'Barang Mutasi Eksternal') . ($itemCount > 1 ? " (+{$itemCount} unit)" : ''),
-                'kode_barang'               => $firstRegister?->nibar ?: ($kode108 ?: '-'),
+                'nama'                      => ($astap?->nama_barang ?: ($itemsMapped[0]['nama_barang'] ?? 'Aset Mutasi Eksternal')) . ($itemCount > 1 ? " (+{$itemCount} unit)" : ''),
+                'kode_barang'               => ($firstNibar !== '-' ? $firstNibar : ($kode108 ?: '-')),
                 'item_count'                => $itemCount,
                 'items'                     => $itemsMapped,
-                'asal'                      => $m->opd_asal ?: ($astap?->mutasi_asal ?: 'SKPD / Instansi Luar'),
-                'opd_asal'                  => $m->opd_asal ?: ($astap?->mutasi_asal ?: 'SKPD / Instansi Luar'),
-                'tujuan'                    => $m->unit?->nama ?: ($m->ruangan_tujuan ?: 'RSUD dr. H. Koesnadi'),
-                'ruangan_tujuan'            => $m->unit?->nama ?: ($m->ruangan_tujuan ?: 'RSUD dr. H. Koesnadi'),
-                'pemohon'                   => $m->pj_asal_nama ?: 'Pejabat OPD Pengirim',
-                'penerima_pj'               => $m->pj_tujuan_nama ?: 'Pengurus Barang RSUD',
+                'asal'                      => $asalFormatted,
+                'opd_asal'                  => $asalFormatted,
+                'tujuan'                    => $tujuanFormatted,
+                'ruangan_tujuan'            => $tujuanFormatted,
+                'pemohon'                   => $pemohonFormatted,
+                'penerima_pj'               => $penerimaFormatted,
                 'status_terakhir'           => $m->status ?: 'Disahkan (Selesai)',
                 'alasan_mutasi'             => $m->alasan_mutasi ?: '-',
                 'nilai_perolehan'           => $nilaiReal,
@@ -711,23 +750,59 @@ class RecycleBinController extends Controller
                 break;
 
             case 'mutasi_eksternal':
-                $mEksternal = \App\Models\MutasiEksternal::findOrFail($id);
-                $bamb = $mEksternal->nomor_bamb;
-                DB::transaction(function () use ($mEksternal) {
+                $mEksternal = \App\Models\MutasiEksternal::with(['astap.registers', 'mutasiRegisters.register'])->findOrFail($id);
+                $bamb = $mEksternal->nomor_bamb ?: ('ID #' . $mEksternal->id);
+                $isKeluar = ($mEksternal->tipe === 'keluar');
+                DB::transaction(function () use ($mEksternal, $isKeluar) {
                     $mEksternal->restoreData();
-                    if ($mEksternal->astap) {
-                        $mEksternal->astap->restoreData();
-                        $mEksternal->astap->registers()->update([
-                            'is_deleted'    => 0,
-                            'deleted_by'    => null,
-                            'deleted_by_id' => null,
-                            'deleted_at'    => null,
-                        ]);
-                        $mEksternal->astap->jumlah_volume = max(1, $mEksternal->astap->registers()->where('is_deleted', 0)->count());
-                        $mEksternal->astap->save();
+                    if ($isKeluar) {
+                        // Mutasi Keluar: Saat dipulihkan, tandai kembali aset RSUD sebagai aset yang diserahkan keluar
+                        if ($mEksternal->astap) {
+                            $mEksternal->astap->update([
+                                'is_reklas'     => 1,
+                                'jenis_reklas'  => 'MUTASI_EKSTERNAL',
+                                'kondisi'       => 'Mutasi Keluar OPD',
+                                'alamat_barang' => 'Mutasi Keluar: ' . ($mEksternal->opd_tujuan ?: 'OPD Luar'),
+                            ]);
+
+                            if ($mEksternal->mutasiRegisters && $mEksternal->mutasiRegisters->isNotEmpty()) {
+                                $regIds = $mEksternal->mutasiRegisters->pluck('astap_register_id')->filter()->toArray();
+                                \App\Models\AstapRegister::whereIn('id', $regIds)->update([
+                                    'status' => 'Mutasi Keluar OPD',
+                                ]);
+                            } else {
+                                $mEksternal->astap->registers()->update([
+                                    'status' => 'Mutasi Keluar OPD',
+                                ]);
+                            }
+
+                            // Pulihkan log transaksi reklasifikasi terkait jika ada yang terhapus
+                            \App\Models\AstapReklas::where('astap_id', $mEksternal->astap_id)
+                                ->where('jenis_reklas', 'MUTASI_EKSTERNAL')
+                                ->where('is_deleted', 1)
+                                ->update([
+                                    'is_deleted'    => 0,
+                                    'deleted_by'    => null,
+                                    'deleted_by_id' => null,
+                                    'deleted_at'    => null,
+                                ]);
+                        }
+                    } else {
+                        // Mutasi Masuk: Pulihkan aset pelimpahan SKPD ke katalog aktif RSUD
+                        if ($mEksternal->astap) {
+                            $mEksternal->astap->restoreData();
+                            $mEksternal->astap->registers()->update([
+                                'is_deleted'    => 0,
+                                'deleted_by'    => null,
+                                'deleted_by_id' => null,
+                                'deleted_at'    => null,
+                            ]);
+                            $mEksternal->astap->jumlah_volume = max(1, $mEksternal->astap->registers()->where('is_deleted', 0)->count());
+                            $mEksternal->astap->save();
+                        }
                     }
                 });
-                $msg = "Data Berita Acara Mutasi Eksternal {$bamb} beserta aset terkait berhasil dipulihkan ke katalog aktif.";
+                $msg = "Data Berita Acara Mutasi Eksternal {$bamb} (" . ($isKeluar ? 'Mutasi Keluar ke OPD' : 'Pelimpahan Masuk') . ") berhasil dipulihkan.";
                 break;
 
             case 'astap':
@@ -1118,20 +1193,53 @@ class RecycleBinController extends Controller
                 break;
 
             case 'mutasi_eksternal':
-                $items = \App\Models\MutasiEksternal::whereIn('id', $ids)->get();
+                $items = \App\Models\MutasiEksternal::with(['astap.registers', 'mutasiRegisters.register'])->whereIn('id', $ids)->get();
                 DB::transaction(function () use ($items, &$restoredCount) {
                     foreach ($items as $mEksternal) {
                         $mEksternal->restoreData();
-                        if ($mEksternal->astap) {
-                            $mEksternal->astap->restoreData();
-                            $mEksternal->astap->registers()->update([
-                                'is_deleted'    => 0,
-                                'deleted_by'    => null,
-                                'deleted_by_id' => null,
-                                'deleted_at'    => null,
-                            ]);
-                            $mEksternal->astap->jumlah_volume = max(1, $mEksternal->astap->registers()->where('is_deleted', 0)->count());
-                            $mEksternal->astap->save();
+                        $isKeluar = ($mEksternal->tipe === 'keluar');
+                        if ($isKeluar) {
+                            if ($mEksternal->astap) {
+                                $mEksternal->astap->update([
+                                    'is_reklas'     => 1,
+                                    'jenis_reklas'  => 'MUTASI_EKSTERNAL',
+                                    'kondisi'       => 'Mutasi Keluar OPD',
+                                    'alamat_barang' => 'Mutasi Keluar: ' . ($mEksternal->opd_tujuan ?: 'OPD Luar'),
+                                ]);
+
+                                if ($mEksternal->mutasiRegisters && $mEksternal->mutasiRegisters->isNotEmpty()) {
+                                    $regIds = $mEksternal->mutasiRegisters->pluck('astap_register_id')->filter()->toArray();
+                                    \App\Models\AstapRegister::whereIn('id', $regIds)->update([
+                                        'status' => 'Mutasi Keluar OPD',
+                                    ]);
+                                } else {
+                                    $mEksternal->astap->registers()->update([
+                                        'status' => 'Mutasi Keluar OPD',
+                                    ]);
+                                }
+
+                                \App\Models\AstapReklas::where('astap_id', $mEksternal->astap_id)
+                                    ->where('jenis_reklas', 'MUTASI_EKSTERNAL')
+                                    ->where('is_deleted', 1)
+                                    ->update([
+                                        'is_deleted'    => 0,
+                                        'deleted_by'    => null,
+                                        'deleted_by_id' => null,
+                                        'deleted_at'    => null,
+                                    ]);
+                            }
+                        } else {
+                            if ($mEksternal->astap) {
+                                $mEksternal->astap->restoreData();
+                                $mEksternal->astap->registers()->update([
+                                    'is_deleted'    => 0,
+                                    'deleted_by'    => null,
+                                    'deleted_by_id' => null,
+                                    'deleted_at'    => null,
+                                ]);
+                                $mEksternal->astap->jumlah_volume = max(1, $mEksternal->astap->registers()->where('is_deleted', 0)->count());
+                                $mEksternal->astap->save();
+                            }
                         }
                         $restoredCount++;
                     }
@@ -1462,16 +1570,28 @@ class RecycleBinController extends Controller
                 $items = \App\Models\MutasiEksternal::whereIn('id', $ids)->get();
                 DB::transaction(function () use ($items, &$deletedCount) {
                     foreach ($items as $mEksternal) {
-                        $astap = $mEksternal->astap;
-                        if ($astap) {
-                            $astap->registers()->delete();
-                            if ($astap->pelimpahanSkpd) {
-                                $astap->pelimpahanSkpd->delete();
-                            }
+                        $isKeluar = ($mEksternal->tipe === 'keluar');
+                        if ($isKeluar) {
+                            // Untuk mutasi keluar: JANGAN PERNAH hapus aset ASTAP RSUD!
+                            // Cukup hapus permanen riwayat pivot dan transaksi mutasi eksternal
+                            \App\Models\MutasiEksternalRegister::where('mutasi_eksternal_id', $mEksternal->id)->delete();
+                            \App\Models\AstapReklas::where('astap_id', $mEksternal->astap_id)
+                                ->where('jenis_reklas', 'MUTASI_EKSTERNAL')
+                                ->where('is_deleted', 1)
+                                ->delete();
                             $mEksternal->delete();
-                            $astap->delete();
                         } else {
-                            $mEksternal->delete();
+                            $astap = $mEksternal->astap;
+                            if ($astap) {
+                                $astap->registers()->delete();
+                                if ($astap->pelimpahanSkpd) {
+                                    $astap->pelimpahanSkpd->delete();
+                                }
+                                $mEksternal->delete();
+                                $astap->delete();
+                            } else {
+                                $mEksternal->delete();
+                            }
                         }
                         $deletedCount++;
                     }
@@ -1787,18 +1907,29 @@ class RecycleBinController extends Controller
 
             case 'mutasi_eksternal':
                 $mEksternal = \App\Models\MutasiEksternal::findOrFail($id);
-                $bamb = $mEksternal->nomor_bamb;
-                DB::transaction(function () use ($mEksternal) {
-                    $astap = $mEksternal->astap;
-                    if ($astap) {
-                        $astap->registers()->delete();
-                        if ($astap->pelimpahanSkpd) {
-                            $astap->pelimpahanSkpd->delete();
-                        }
+                $bamb = $mEksternal->nomor_bamb ?: ('ID #' . $mEksternal->id);
+                $isKeluar = ($mEksternal->tipe === 'keluar');
+                DB::transaction(function () use ($mEksternal, $isKeluar) {
+                    if ($isKeluar) {
+                        // Untuk mutasi keluar: JANGAN PERNAH hapus aset ASTAP RSUD!
+                        \App\Models\MutasiEksternalRegister::where('mutasi_eksternal_id', $mEksternal->id)->delete();
+                        \App\Models\AstapReklas::where('astap_id', $mEksternal->astap_id)
+                            ->where('jenis_reklas', 'MUTASI_EKSTERNAL')
+                            ->where('is_deleted', 1)
+                            ->delete();
                         $mEksternal->delete();
-                        $astap->delete();
                     } else {
-                        $mEksternal->delete();
+                        $astap = $mEksternal->astap;
+                        if ($astap) {
+                            $astap->registers()->delete();
+                            if ($astap->pelimpahanSkpd) {
+                                $astap->pelimpahanSkpd->delete();
+                            }
+                            $mEksternal->delete();
+                            $astap->delete();
+                        } else {
+                            $mEksternal->delete();
+                        }
                     }
                 });
                 $msg = "Data Berita Acara Mutasi Eksternal {$bamb} telah dihapus secara permanen dari database.";
