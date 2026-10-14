@@ -429,8 +429,8 @@ class KemitraanController extends Controller
                         'processed_at'       => now()->toDateTimeString(),
                         'processed_by'       => Auth::user()?->name ?? 'Admin',
                     ];
+                    $spec['kondisi'] = $validated['kondisi_akhir'];
                     $astap->spesifikasi_json = $spec;
-                    $astap->kondisi = $validated['kondisi_akhir'];
                     $astap->save();
                 }
             }
@@ -548,11 +548,11 @@ class KemitraanController extends Controller
                         'processed_at'         => now()->toDateTimeString(),
                         'processed_by'         => Auth::user()?->name ?? 'Admin',
                     ];
-                    $astap->spesifikasi_json = $spec;
-                    $astap->kondisi = $validated['kondisi_akhir'];
+                    $spec['kondisi'] = $validated['kondisi_akhir'];
                     if (!empty($validated['ruangan_tujuan_id'])) {
-                        $astap->unit_id = $validated['ruangan_tujuan_id'];
+                        $spec['unit_id'] = $validated['ruangan_tujuan_id'];
                     }
+                    $astap->spesifikasi_json = $spec;
                     $astap->save();
                 }
             }
