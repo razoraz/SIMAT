@@ -185,17 +185,12 @@
                                             class="w-full bg-slate-950 border border-slate-700/90 rounded-xl px-3 py-2.5 text-xs text-slate-100 font-mono focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:outline-none transition-all">
                                     </div>
                                     <div>
-                                        <div class="flex items-center justify-between gap-1 mb-1.5">
-                                            <label class="block text-slate-300 text-[11px] font-semibold truncate">
-                                                Tanggal Terbit Sertifikat
-                                            </label>
-                                            <span class="text-[9.5px] font-mono text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800/50 shrink-0">
-                                                Maks: Hari Ini
-                                            </span>
-                                        </div>
+                                        <label class="block text-slate-300 text-[11px] mb-1.5 font-semibold truncate" title="Tanggal Terbit Sertifikat">
+                                            Tanggal Terbit Sertifikat
+                                        </label>
                                         <input type="text" x-datepicker="{ maxDate: 'today' }" x-model="item.tanah_sertifikat_tgl"
                                             placeholder="dd/mm/yyyy"
-                                            class="w-full bg-slate-950 border border-slate-700/90 rounded-xl px-3 py-2.5 text-xs text-slate-100 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:outline-none transition-all">
+                                            class="w-full bg-slate-950 border border-slate-700/90 rounded-xl px-3 py-2.5 text-xs text-slate-100 font-mono focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:outline-none transition-all">
                                     </div>
                                 </div>
                             </div>

@@ -197,22 +197,20 @@
                                     </label>
                                     <select x-model="item.gedung_bertingkat"
                                         class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-semibold focus:border-amber-500 focus:outline-none transition-all">
-                                        <option value="Tidak">Tidak Bertingkat (1 Lantai)</option>
-                                        <option value="Bertingkat">Bertingkat (2 Lantai atau Lebih)</option>
+                                        <option value="Tidak">Tidak Bertingkat</option>
+                                        <option value="Bertingkat">Bertingkat</option>
                                     </select>
                                 </div>
 
                                 <!-- Beton / Tidak -->
                                 <div>
                                     <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
-                                        Konstruksi Beton / Rangka
+                                        Konstruksi Beton
                                     </label>
                                     <select x-model="item.gedung_beton"
                                         class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-semibold focus:border-amber-500 focus:outline-none transition-all">
-                                        <option value="Beton Bertulang">Beton Bertulang (Permanen)</option>
-                                        <option value="Rangka Baja">Rangka Baja / Pre-cast</option>
-                                        <option value="Semi Permanen">Semi Permanen</option>
-                                        <option value="Kayu / Lainnya">Kayu / Lainnya</option>
+                                        <option value="Beton">Beton</option>
+                                        <option value="Tidak">Tidak</option>
                                     </select>
                                 </div>
                             </div>
@@ -241,10 +239,10 @@
                                 </select>
                             </div>
 
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 items-start">
                                 <!-- Nomor PBG / IMB -->
                                 <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
+                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold truncate" title="Nomor PBG / IMB / SLF">
                                         Nomor PBG / IMB / SLF
                                     </label>
                                     <input type="text" x-model="item.gedung_dokumen_no"
@@ -254,15 +252,12 @@
 
                                 <!-- Tanggal PBG / IMB -->
                                 <div>
-                                    <div class="flex items-center justify-between mb-1">
-                                        <label class="block text-slate-400 text-[10px] font-semibold">
-                                            Tanggal Terbit PBG / IMB
-                                        </label>
-                                        <span class="text-[9px] font-mono text-cyan-400/80 bg-cyan-950/40 px-1.5 py-0.5 rounded border border-cyan-800/40">Maks: Hari Ini</span>
-                                    </div>
+                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold truncate" title="Tanggal Terbit PBG / IMB">
+                                        Tanggal Terbit PBG / IMB
+                                    </label>
                                     <input type="text" x-datepicker="{ maxDate: 'today' }" x-model="item.gedung_dokumen_tgl"
                                         placeholder="dd/mm/yyyy"
-                                        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white focus:border-cyan-500 focus:outline-none transition-all">
+                                        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-mono focus:border-cyan-500 focus:outline-none transition-all">
                                 </div>
                             </div>
                         </div>

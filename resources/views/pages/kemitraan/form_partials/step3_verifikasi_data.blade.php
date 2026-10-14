@@ -490,8 +490,8 @@
                                 <span class="font-bold text-white block" x-text="formData.gedung_bertingkat || (formData.gedung_items?.[0]?.gedung_bertingkat || 'Tidak')"></span>
                             </div>
                             <div>
-                                <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Konstruksi Beton / Rangka:</span>
-                                <span class="font-bold text-white block" x-text="formData.gedung_beton || (formData.gedung_items?.[0]?.gedung_beton || 'Beton Bertulang')"></span>
+                                <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Konstruksi Beton:</span>
+                                <span class="font-bold text-white block" x-text="formData.gedung_beton || (formData.gedung_items?.[0]?.gedung_beton || 'Beton')"></span>
                             </div>
                             <div>
                                 <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Luas Total Lantai:</span>

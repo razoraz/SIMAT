@@ -1776,10 +1776,16 @@
                     try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
                 }
                 spec = spec || {};
-                const targetTotal = (astap.registers && astap.registers.length > 0) ? astap.registers.length : (parseInt(astap.jumlah_volume) || 1);
                 if (Array.isArray(spec.tanah_items) && spec.tanah_items.length > 0) {
-                    const valid = spec.tanah_items.filter(t => t.tanah_luas_m2 || t.tanah_hak || t.tanah_sertifikat_no || (parseFloat(t.tanah_nilai_satuan) > 0));
+                    const valid = spec.tanah_items.filter(t => t.tanah_nama_barang || t.tanah_luas_m2 || t.tanah_hak || t.tanah_sertifikat_no || (parseFloat(t.tanah_nilai_satuan) > 0));
                     const toSync = valid.length > 0 ? valid : spec.tanah_items;
+                    const sumQty = toSync.reduce((s, it) => s + Math.max(1, parseInt(it.tanah_jumlah_bidang || it.tanah_jumlah_barang) || 1), 0);
+                    const targetTotal = Math.max(
+                        (astap.registers && astap.registers.length > 0) ? astap.registers.length : 0,
+                        parseInt(astap.jumlah_volume) || 0,
+                        sumQty,
+                        toSync.length
+                    );
                     return this.syncRepeaterItemsWithVolume(toSync, targetTotal, ['tanah_jumlah_bidang', 'tanah_jumlah_barang']);
                 }
 
@@ -1821,10 +1827,16 @@
                 if (typeof spec === 'string') {
                     try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
                 }
-                const targetTotal = (astap.registers && astap.registers.length > 0) ? astap.registers.length : (parseInt(astap.jumlah_volume) || 1);
                 if (spec && Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0) {
                     const valid = spec.mesin_items.filter(m => m.mesin_nama_barang || m.mesin_merk || m.mesin_type || m.mesin_no_pabrik || (parseFloat(m.mesin_nilai_satuan) > 0));
                     const toSync = valid.length > 0 ? valid : spec.mesin_items;
+                    const sumQty = toSync.reduce((s, it) => s + Math.max(1, parseInt(it.mesin_jumlah_barang) || 1), 0);
+                    const targetTotal = Math.max(
+                        (astap.registers && astap.registers.length > 0) ? astap.registers.length : 0,
+                        parseInt(astap.jumlah_volume) || 0,
+                        sumQty,
+                        toSync.length
+                    );
                     return this.syncRepeaterItemsWithVolume(toSync, targetTotal, ['mesin_jumlah_barang']);
                 }
                 return [];
@@ -1836,9 +1848,17 @@
                 if (typeof spec === 'string') {
                     try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
                 }
-                const targetTotal = (astap.registers && astap.registers.length > 0) ? astap.registers.length : (parseInt(astap.jumlah_volume) || 1);
                 if (spec && Array.isArray(spec.gedung_items) && spec.gedung_items.length > 0) {
-                    return this.syncRepeaterItemsWithVolume(spec.gedung_items, targetTotal, ['gedung_jumlah_bangunan']);
+                    const valid = spec.gedung_items.filter(g => g.gedung_nama_barang || g.gedung_luas_lantai || g.gedung_luas_m2 || (parseFloat(g.gedung_nilai_satuan) > 0));
+                    const toSync = valid.length > 0 ? valid : spec.gedung_items;
+                    const sumQty = toSync.reduce((s, it) => s + Math.max(1, parseInt(it.gedung_jumlah_bangunan) || 1), 0);
+                    const targetTotal = Math.max(
+                        (astap.registers && astap.registers.length > 0) ? astap.registers.length : 0,
+                        parseInt(astap.jumlah_volume) || 0,
+                        sumQty,
+                        toSync.length
+                    );
+                    return this.syncRepeaterItemsWithVolume(toSync, targetTotal, ['gedung_jumlah_bangunan']);
                 }
                 return [];
             },
@@ -1849,9 +1869,17 @@
                 if (typeof spec === 'string') {
                     try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
                 }
-                const targetTotal = (astap.registers && astap.registers.length > 0) ? astap.registers.length : (parseInt(astap.jumlah_volume) || 1);
                 if (spec && Array.isArray(spec.jaringan_items) && spec.jaringan_items.length > 0) {
-                    return this.syncRepeaterItemsWithVolume(spec.jaringan_items, targetTotal, ['jaringan_jumlah', 'jaringan_jumlah_barang']);
+                    const valid = spec.jaringan_items.filter(j => j.jaringan_nama_barang || j.jaringan_konstruksi || j.jaringan_panjang || (parseFloat(j.jaringan_nilai_satuan) > 0));
+                    const toSync = valid.length > 0 ? valid : spec.jaringan_items;
+                    const sumQty = toSync.reduce((s, it) => s + Math.max(1, parseInt(it.jaringan_jumlah || it.jaringan_jumlah_barang) || 1), 0);
+                    const targetTotal = Math.max(
+                        (astap.registers && astap.registers.length > 0) ? astap.registers.length : 0,
+                        parseInt(astap.jumlah_volume) || 0,
+                        sumQty,
+                        toSync.length
+                    );
+                    return this.syncRepeaterItemsWithVolume(toSync, targetTotal, ['jaringan_jumlah', 'jaringan_jumlah_barang']);
                 }
                 return [];
             },
@@ -1862,9 +1890,17 @@
                 if (typeof spec === 'string') {
                     try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
                 }
-                const targetTotal = (astap.registers && astap.registers.length > 0) ? astap.registers.length : (parseInt(astap.jumlah_volume) || 1);
                 if (spec && Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0) {
-                    return this.syncRepeaterItemsWithVolume(spec.lainnya_items, targetTotal, ['lainnya_jumlah', 'lainnya_jumlah_barang']);
+                    const valid = spec.lainnya_items.filter(l => l.lainnya_nama_barang || l.lainnya_judul || l.lainnya_pencipta || (parseFloat(l.lainnya_nilai_satuan) > 0));
+                    const toSync = valid.length > 0 ? valid : spec.lainnya_items;
+                    const sumQty = toSync.reduce((s, it) => s + Math.max(1, parseInt(it.lainnya_jumlah || it.lainnya_jumlah_barang) || 1), 0);
+                    const targetTotal = Math.max(
+                        (astap.registers && astap.registers.length > 0) ? astap.registers.length : 0,
+                        parseInt(astap.jumlah_volume) || 0,
+                        sumQty,
+                        toSync.length
+                    );
+                    return this.syncRepeaterItemsWithVolume(toSync, targetTotal, ['lainnya_jumlah', 'lainnya_jumlah_barang']);
                 }
                 // Fallback untuk data historis lama sebelum repeater multi-item KIB E
                 if (spec && (spec.judul || spec.pencipta || spec.nama_barang || (astap.nama_barang && astap.nama_barang.toLowerCase().includes('buku')))) {

@@ -908,8 +908,8 @@
                                                     </template>
                                                 </div>
                                                 <div class="flex items-center space-x-3 text-[10.5px] font-mono">
-                                                    <span class="text-slate-400">Luas: <strong class="text-cyan-300" x-text="(gItem.gedung_luas_m2 || 0) + ' M²'"></strong></span>
-                                                    <span class="text-emerald-400 font-bold" x-text="'Rp ' + Number(Number(gItem.gedung_nilai_perencanaan || 0) + Number(gItem.gedung_nilai_fisik || 0) + Number(gItem.gedung_nilai_pengawasan || 0)).toLocaleString('id-ID')"></span>
+                                                    <span class="text-slate-400">Luas: <strong class="text-cyan-300" x-text="(gItem.gedung_luas_lantai || gItem.gedung_luas_m2 || selectedAstapDetail.spesifikasi_json?.luas_lantai_m2) ? ((gItem.gedung_luas_lantai || gItem.gedung_luas_m2 || selectedAstapDetail.spesifikasi_json?.luas_lantai_m2) + ' M²') : '-'"></strong></span>
+                                                    <span class="text-emerald-400 font-bold" x-text="'Rp ' + Number(gItem.gedung_nilai_satuan || (Number(gItem.gedung_nilai_perencanaan || 0) + Number(gItem.gedung_nilai_fisik || 0) + Number(gItem.gedung_nilai_pengawasan || 0)) || gItem.nilai_satuan || 0).toLocaleString('id-ID')"></span>
                                                 </div>
                                             </div>
                                             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[10.5px]">
@@ -919,11 +919,11 @@
                                                 </div>
                                                 <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                                     <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🌱 Status Tanah</span>
-                                                    <span class="text-teal-300 font-semibold block truncate" x-text="gItem.gedung_status_tanah || 'Tanah Hak Pakai RSUD'"></span>
+                                                    <span class="text-teal-300 font-semibold block truncate" x-text="gItem.gedung_status_tanah || 'Tanah Milik RSUD'"></span>
                                                 </div>
                                                 <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                                     <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">💰 Komponen Nilai</span>
-                                                    <span class="text-slate-300 block text-[9.5px]" x-text="'Fisik: Rp ' + Number(gItem.gedung_nilai_fisik || 0).toLocaleString('id-ID')"></span>
+                                                    <span class="text-slate-300 block text-[9.5px]" x-text="gItem.gedung_nilai_fisik ? ('Fisik: Rp ' + Number(gItem.gedung_nilai_fisik).toLocaleString('id-ID')) : ('Taksiran: Rp ' + Number(gItem.gedung_nilai_satuan || gItem.nilai_satuan || 0).toLocaleString('id-ID'))"></span>
                                                 </div>
                                                 <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                                     <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">📍 Lokasi Fisik</span>
@@ -968,7 +968,7 @@
                                         </div>
                                         <div class="text-[11px] font-mono">
                                             <span class="text-slate-400">Total Taksiran: </span>
-                                            <strong class="text-emerald-400 font-bold" x-text="'Rp ' + Number(jItem.jaringan_nilai_fisik || selectedAstapDetail.nilai_aset || 0).toLocaleString('id-ID')"></strong>
+                                            <strong class="text-emerald-400 font-bold" x-text="'Rp ' + Number(jItem.jaringan_nilai_satuan || jItem.jaringan_nilai_fisik || selectedAstapDetail.nilai_aset || 0).toLocaleString('id-ID')"></strong>
                                         </div>
                                     </div>
                                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[10.5px]">
@@ -978,7 +978,7 @@
                                         </div>
                                         <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                             <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">📐 Dimensi / Luas</span>
-                                            <span class="text-cyan-300 font-mono font-bold block" x-text="(Number(jItem.jaringan_luas_m2 || selectedAstapDetail.spesifikasi_json?.luas_m2 || 0)).toLocaleString('id-ID') + ' m²'"></span>
+                                            <span class="text-cyan-300 font-mono font-bold block" x-text="(Number(jItem.jaringan_luas || jItem.jaringan_luas_m2 || selectedAstapDetail.spesifikasi_json?.luas_m2 || 0)).toLocaleString('id-ID') + ' m²'"></span>
                                         </div>
                                         <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                             <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🌱 Status Tanah</span>

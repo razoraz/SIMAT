@@ -221,7 +221,7 @@
                                     <select x-model="item.jaringan_beton"
                                         class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-semibold focus:border-amber-500 focus:outline-none transition-all">
                                         <option value="Beton">Beton</option>
-                                        <option value="Tidak">Bukan Beton</option>
+                                        <option value="Tidak">Tidak</option>
                                     </select>
                                 </div>
                             </div>
@@ -249,10 +249,10 @@
                                 <span class="text-[9px] px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 font-bold">Administrasi</span>
                             </div>
 
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 items-start">
                                 <!-- Nomor Dokumen -->
                                 <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
+                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold truncate" title="Nomor Dokumen / Kontrak Teknis">
                                         Nomor Dokumen / Kontrak Teknis
                                     </label>
                                     <input type="text" x-model="item.jaringan_dokumen_no"
@@ -262,15 +262,12 @@
 
                                 <!-- Tanggal Dokumen -->
                                 <div>
-                                    <div class="flex items-center justify-between mb-1">
-                                        <label class="block text-slate-400 text-[10px] font-semibold">
-                                            Tanggal Dokumen Kontrak
-                                        </label>
-                                        <span class="text-[9px] font-mono text-cyan-400/80 bg-cyan-950/40 px-1.5 py-0.5 rounded border border-cyan-800/40">Maks: Hari Ini</span>
-                                    </div>
+                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold truncate" title="Tanggal Dokumen Kontrak">
+                                        Tanggal Dokumen Kontrak
+                                    </label>
                                     <input type="text" x-datepicker="{ maxDate: 'today' }" x-model="item.jaringan_dokumen_tgl"
                                         placeholder="dd/mm/yyyy"
-                                        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white focus:border-cyan-500 focus:outline-none transition-all">
+                                        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-mono focus:border-cyan-500 focus:outline-none transition-all">
                                 </div>
                             </div>
 
