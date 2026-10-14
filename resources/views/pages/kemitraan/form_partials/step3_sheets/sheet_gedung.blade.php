@@ -214,6 +214,29 @@
                                     </select>
                                 </div>
                             </div>
+
+                            <!-- Status Bangunan (Baru / Lama) -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1 border-t border-slate-800/60">
+                                <div>
+                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold flex items-center justify-between">
+                                        <span>Status Fisik Bangunan</span>
+                                        <span class="text-[9.5px] text-amber-400 font-bold" x-text="item.gedung_is_baru === 'Lama' ? '🏛️ Bangunan Lama' : '✨ Bangunan Baru'"></span>
+                                    </label>
+                                    <select x-model="item.gedung_is_baru"
+                                        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-semibold focus:border-amber-500 focus:outline-none transition-all">
+                                        <option value="Lama">🏛️ Lama &mdash; Bangunan Eksisting / Sebelum Kemitraan</option>
+                                        <option value="Baru">✨ Baru &mdash; Dibangun Baru Saat Kemitraan</option>
+                                    </select>
+                                </div>
+                                <div x-show="item.gedung_is_baru === 'Lama'">
+                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
+                                        Tahun Pembangunan Fisik Awal
+                                    </label>
+                                    <input type="number" min="1950" max="2099" x-model="item.gedung_kapitalisasi_tahun_induk"
+                                        placeholder="Contoh: 2018"
+                                        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-mono focus:border-amber-500 focus:outline-none transition-all">
+                                </div>
+                            </div>
                         </div>
 
                         <!-- 2. Status Tanah & Dokumen PBG/IMB -->

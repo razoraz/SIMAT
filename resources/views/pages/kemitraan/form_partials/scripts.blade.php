@@ -687,12 +687,16 @@
                 gedung_status_tanah: 'Tanah Milik RSUD',
                 gedung_alamat: '',
                 gedung_fungsi: '',
+                gedung_is_baru: 'Lama',
+                gedung_kapitalisasi_tahun_induk: '',
                 gedung_items: [
                     {
                         gedung_kode_barang: '',
                         gedung_nama_barang: '',
                         isFilterOpen: false,
                         searchFilter: '',
+                        gedung_is_baru: 'Lama',
+                        gedung_kapitalisasi_tahun_induk: '',
                         gedung_luas_lantai: null,
                         gedung_kondisi: 'Baik',
                         gedung_bertingkat: 'Tidak',
@@ -717,12 +721,16 @@
                 jaringan_dokumen_no: '',
                 jaringan_dokumen_tgl: '',
                 jaringan_alamat: '',
+                jaringan_is_baru: 'Lama',
+                jaringan_kapitalisasi_tahun_induk: '',
                 jaringan_items: [
                     {
                         jaringan_kode_barang: '',
                         jaringan_nama_barang: '',
                         isFilterOpen: false,
                         searchFilter: '',
+                        jaringan_is_baru: 'Lama',
+                        jaringan_kapitalisasi_tahun_induk: '',
                         jaringan_konstruksi: '',
                         jaringan_panjang: null,
                         jaringan_lebar: null,
@@ -1151,13 +1159,19 @@
                     }];
                 }
                 if (Array.isArray(spec.gedung_items) && spec.gedung_items.length > 0) {
-                    this.formData.gedung_items = spec.gedung_items;
+                    this.formData.gedung_items = spec.gedung_items.map(g => ({
+                        ...g,
+                        gedung_is_baru: g.gedung_is_baru || 'Lama',
+                        gedung_kapitalisasi_tahun_induk: g.gedung_kapitalisasi_tahun_induk || ''
+                    }));
                 } else if (spec.gedung_nama_bangunan || spec.gedung_luas_lantai || spec.gedung_dokumen_no || (d.jenis_astap?.kode && (d.jenis_astap.kode.endsWith('.003') || d.jenis_astap.kode.startsWith('1.3.3')))) {
                     this.formData.gedung_items = [{
                         gedung_kode_barang: spec.gedung_kode_barang || d.jenis_astap?.kode || '',
                         gedung_nama_barang: spec.gedung_nama_bangunan || d.nama_barang || '',
                         isFilterOpen: false,
                         searchFilter: '',
+                        gedung_is_baru: spec.gedung_is_baru || 'Lama',
+                        gedung_kapitalisasi_tahun_induk: spec.gedung_kapitalisasi_tahun_induk || '',
                         gedung_luas_lantai: spec.gedung_luas_lantai || null,
                         gedung_kondisi: spec.kondisi || 'Baik',
                         gedung_bertingkat: spec.gedung_bertingkat || 'Tidak',
@@ -1173,13 +1187,19 @@
                     }];
                 }
                 if (Array.isArray(spec.jaringan_items) && spec.jaringan_items.length > 0) {
-                    this.formData.jaringan_items = spec.jaringan_items;
+                    this.formData.jaringan_items = spec.jaringan_items.map(j => ({
+                        ...j,
+                        jaringan_is_baru: j.jaringan_is_baru || 'Lama',
+                        jaringan_kapitalisasi_tahun_induk: j.jaringan_kapitalisasi_tahun_induk || ''
+                    }));
                 } else if (spec.jaringan_konstruksi || spec.jaringan_panjang || spec.jaringan_dokumen_no || (d.jenis_astap?.kode && (d.jenis_astap.kode.endsWith('.004') || d.jenis_astap.kode.startsWith('1.3.4')))) {
                     this.formData.jaringan_items = [{
                         jaringan_kode_barang: spec.jaringan_kode_barang || d.jenis_astap?.kode || '',
                         jaringan_nama_barang: spec.jaringan_nama_barang || d.nama_barang || '',
                         isFilterOpen: false,
                         searchFilter: '',
+                        jaringan_is_baru: spec.jaringan_is_baru || 'Lama',
+                        jaringan_kapitalisasi_tahun_induk: spec.jaringan_kapitalisasi_tahun_induk || '',
                         jaringan_konstruksi: spec.jaringan_konstruksi || '',
                         jaringan_panjang: spec.jaringan_panjang || null,
                         jaringan_lebar: spec.jaringan_lebar || null,
@@ -1565,6 +1585,8 @@
                     gedung_nama_barang: '',
                     isFilterOpen: false,
                     searchFilter: '',
+                    gedung_is_baru: 'Lama',
+                    gedung_kapitalisasi_tahun_induk: '',
                     gedung_luas_lantai: null,
                     gedung_kondisi: 'Baik',
                     gedung_bertingkat: 'Tidak',
@@ -1617,6 +1639,8 @@
                     jaringan_nama_barang: '',
                     isFilterOpen: false,
                     searchFilter: '',
+                    jaringan_is_baru: 'Lama',
+                    jaringan_kapitalisasi_tahun_induk: '',
                     jaringan_konstruksi: '',
                     jaringan_panjang: null,
                     jaringan_lebar: null,
@@ -2893,6 +2917,10 @@
 
                     specJson = {
                         kategori_kib: 'KIB C (Gedung & Bangunan)',
+                        is_baru: firstG.gedung_is_baru || this.formData.gedung_is_baru || 'Lama',
+                        gedung_is_baru: firstG.gedung_is_baru || this.formData.gedung_is_baru || 'Lama',
+                        kapitalisasi_tahun_induk: firstG.gedung_kapitalisasi_tahun_induk || this.formData.gedung_kapitalisasi_tahun_induk || '',
+                        gedung_kapitalisasi_tahun_induk: firstG.gedung_kapitalisasi_tahun_induk || this.formData.gedung_kapitalisasi_tahun_induk || '',
                         bertingkat: firstG.gedung_bertingkat || this.formData.gedung_bertingkat || 'Tidak',
                         beton: (firstG.gedung_beton === 'Tidak' || this.formData.gedung_beton === 'Tidak') ? 'Tidak' : 'Beton',
                         luas_lantai_m2: totalLuasLantai,
@@ -2910,6 +2938,10 @@
 
                     specJson = {
                         kategori_kib: 'KIB D (Jalan, Irigasi & Jaringan)',
+                        is_baru: firstJ.jaringan_is_baru || this.formData.jaringan_is_baru || 'Lama',
+                        jaringan_is_baru: firstJ.jaringan_is_baru || this.formData.jaringan_is_baru || 'Lama',
+                        kapitalisasi_tahun_induk: firstJ.jaringan_kapitalisasi_tahun_induk || this.formData.jaringan_kapitalisasi_tahun_induk || '',
+                        jaringan_kapitalisasi_tahun_induk: firstJ.jaringan_kapitalisasi_tahun_induk || this.formData.jaringan_kapitalisasi_tahun_induk || '',
                         konstruksi: firstJ.jaringan_konstruksi || this.formData.jaringan_konstruksi || '',
                         luas_m2: totalLuasJar,
                         panjang_m: parseFloat(firstJ.jaringan_panjang) || parseFloat(this.formData.jaringan_panjang) || 0,

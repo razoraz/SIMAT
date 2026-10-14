@@ -306,11 +306,17 @@
                     gedung_dokumen_tgl: '',
                     gedung_status_tanah: 'Tanah Pemda',
                     gedung_alamat: 'Kompleks RSUD Dr. H. Koesnandi',
+                    gedung_is_baru: 'Lama',
+                    gedung_kapitalisasi_tahun_induk: '',
+                    gedung_kapitalisasi_nilai_induk: '',
                     jaringan_konstruksi: 'Aspal / Beton',
                     jaringan_panjang_km: '',
                     jaringan_lebar_m: '',
                     jaringan_luas_m2: '',
                     jaringan_alamat: 'Kompleks RSUD',
+                    jaringan_is_baru: 'Lama',
+                    jaringan_kapitalisasi_tahun_induk: '',
+                    jaringan_kapitalisasi_nilai_induk: '',
                     lainnya_judul_pencipta: '',
                     lainnya_bahan: 'Kertas / Kanvas / Lainnya',
                     atb_nama_software: '',
@@ -926,6 +932,12 @@
                 this.formData.spekBaru.mesin_bahan = spec.bahan || 'Logam / Komponen Elektronik';
                 this.formData.spekBaru.mesin_no_polisi = spec.no_polisi || '';
 
+                const isFromKemitraan = (it.category === 'KEMITRAAN') 
+                    || (it.sumber_dana === 'kemitraan') 
+                    || (this.formData.asal_kib === 'KEMITRAAN')
+                    || (it.kode_108 && it.kode_108.startsWith('1.5.2'))
+                    || (it.kemitraan !== null && it.kemitraan !== undefined);
+
                 // KIB C - Gedung & Bangunan
                 this.formData.spekBaru.gedung_konstruksi_bertingkat = spec.konstruksi_bertingkat || spec.bertingkat || 'Bertingkat';
                 this.formData.spekBaru.gedung_konstruksi_beton = spec.konstruksi_beton || spec.beton || 'Beton';
@@ -934,6 +946,9 @@
                 this.formData.spekBaru.gedung_dokumen_tgl = spec.dokumen_tgl || '';
                 this.formData.spekBaru.gedung_status_tanah = spec.status_tanah || 'Tanah Pemda';
                 this.formData.spekBaru.gedung_alamat = defaultAlamat;
+                this.formData.spekBaru.gedung_is_baru = spec.gedung_is_baru || spec.is_baru || (isFromKemitraan ? 'Lama' : 'Baru');
+                this.formData.spekBaru.gedung_kapitalisasi_tahun_induk = spec.gedung_kapitalisasi_tahun_induk || spec.tahun_induk || it.tahun_perolehan || '';
+                this.formData.spekBaru.gedung_kapitalisasi_nilai_induk = spec.gedung_kapitalisasi_nilai_induk || spec.nilai_induk || '';
 
                 // KIB D - Jalan, Jaringan & Irigasi
                 this.formData.spekBaru.jaringan_konstruksi = spec.konstruksi || 'Aspal / Beton';
@@ -941,6 +956,9 @@
                 this.formData.spekBaru.jaringan_lebar_m = spec.lebar_m || '';
                 this.formData.spekBaru.jaringan_luas_m2 = spec.luas_m2 || '';
                 this.formData.spekBaru.jaringan_alamat = defaultAlamat;
+                this.formData.spekBaru.jaringan_is_baru = spec.jaringan_is_baru || spec.is_baru || (isFromKemitraan ? 'Lama' : 'Baru');
+                this.formData.spekBaru.jaringan_kapitalisasi_tahun_induk = spec.jaringan_kapitalisasi_tahun_induk || spec.tahun_induk || it.tahun_perolehan || '';
+                this.formData.spekBaru.jaringan_kapitalisasi_nilai_induk = spec.jaringan_kapitalisasi_nilai_induk || spec.nilai_induk || '';
 
                 // KIB E - Lainnya
                 this.formData.spekBaru.lainnya_judul_pencipta = spec.judul_pencipta || it.nama_barang || '';

@@ -1123,17 +1123,33 @@ class ReklasifikasiController extends Controller
                 } elseif ($targetKib === 'KIB C') {
                     $gedungItems = [];
                     $totalLuas = 0;
+                    $isFromKemitraan = in_array($asalKibAset, ['KEMITRAAN', '1.5.2'], true)
+                        || ($astap->category === 'KEMITRAAN')
+                        || ($astap->sumber_dana === 'kemitraan')
+                        || str_starts_with((string) $astap->kode_108, '1.5.2')
+                        || ($astap->kemitraan !== null);
+                    $defaultIsBaru = $isFromKemitraan ? 'Lama' : 'Baru';
+
+                    $oldGedungList = $specLama['gedung_items'] ?? [];
                     foreach ($unitItems as $uIdx => $uItem) {
+                        $oldG = $oldGedungList[$uIdx] ?? ($oldGedungList[0] ?? []);
+                        $isBaruVal = $uItem['gedung_is_baru'] ?? ($rawNew['gedung_is_baru'] ?? ($oldG['gedung_is_baru'] ?? $defaultIsBaru));
+                        $tahunInduk = $uItem['gedung_kapitalisasi_tahun_induk'] ?? ($rawNew['gedung_kapitalisasi_tahun_induk'] ?? ($oldG['gedung_kapitalisasi_tahun_induk'] ?? ($specLama['tahun_induk'] ?? ($astap->tahun_perolehan ?: null))));
+                        $nilaiInduk = (float) ($uItem['gedung_kapitalisasi_nilai_induk'] ?? ($rawNew['gedung_kapitalisasi_nilai_induk'] ?? ($oldG['gedung_kapitalisasi_nilai_induk'] ?? ($specLama['nilai_induk'] ?? 0))));
+
                         $g = [
                             'gedung_nama_bangunan'        => $astap->nama_barang,
-                            'gedung_konstruksi_bertingkat'=> $uItem['gedung_konstruksi_bertingkat'] ?? ($rawNew['gedung_konstruksi_bertingkat'] ?? 'Bertingkat'),
-                            'gedung_konstruksi_beton'     => $uItem['gedung_konstruksi_beton'] ?? ($rawNew['gedung_konstruksi_beton'] ?? 'Beton'),
-                            'gedung_luas_lantai_m2'       => (float) ($uItem['gedung_luas_lantai_m2'] ?? ($rawNew['gedung_luas_lantai_m2'] ?? 0)),
-                            'gedung_alamat'               => $uItem['gedung_alamat'] ?? ($rawNew['gedung_alamat'] ?? ($astap->alamat_barang ?: 'Kompleks RSUD Dr. H. Koesnandi')),
-                            'gedung_dokumen_tgl'          => $uItem['gedung_dokumen_tgl'] ?? ($rawNew['gedung_dokumen_tgl'] ?? null),
-                            'gedung_dokumen_nomor'        => $uItem['gedung_dokumen_nomor'] ?? ($rawNew['gedung_dokumen_nomor'] ?? null),
-                            'gedung_status_tanah'         => $uItem['gedung_status_tanah'] ?? ($rawNew['gedung_status_tanah'] ?? 'Tanah Pemda'),
-                            'gedung_kondisi'              => 'Baik',
+                            'gedung_konstruksi_bertingkat'=> $uItem['gedung_konstruksi_bertingkat'] ?? ($rawNew['gedung_konstruksi_bertingkat'] ?? ($oldG['gedung_konstruksi_bertingkat'] ?? ($oldG['bertingkat'] ?? ($specLama['konstruksi_bertingkat'] ?? 'Bertingkat')))),
+                            'gedung_konstruksi_beton'     => $uItem['gedung_konstruksi_beton'] ?? ($rawNew['gedung_konstruksi_beton'] ?? ($oldG['gedung_konstruksi_beton'] ?? ($oldG['beton'] ?? ($specLama['konstruksi_beton'] ?? 'Beton')))),
+                            'gedung_luas_lantai_m2'       => (float) ($uItem['gedung_luas_lantai_m2'] ?? ($rawNew['gedung_luas_lantai_m2'] ?? ($oldG['gedung_luas_lantai_m2'] ?? ($specLama['luas_lantai_m2'] ?? 0)))),
+                            'gedung_alamat'               => $uItem['gedung_alamat'] ?? ($rawNew['gedung_alamat'] ?? ($oldG['gedung_alamat'] ?? ($astap->alamat_barang ?: 'Kompleks RSUD Dr. H. Koesnandi'))),
+                            'gedung_dokumen_tgl'          => $uItem['gedung_dokumen_tgl'] ?? ($rawNew['gedung_dokumen_tgl'] ?? ($oldG['gedung_dokumen_tgl'] ?? ($specLama['dokumen_tgl'] ?? null))),
+                            'gedung_dokumen_nomor'        => $uItem['gedung_dokumen_nomor'] ?? ($rawNew['gedung_dokumen_nomor'] ?? ($oldG['gedung_dokumen_nomor'] ?? ($specLama['dokumen_nomor'] ?? null))),
+                            'gedung_status_tanah'         => $uItem['gedung_status_tanah'] ?? ($rawNew['gedung_status_tanah'] ?? ($oldG['gedung_status_tanah'] ?? ($specLama['status_tanah'] ?? 'Tanah Pemda'))),
+                            'gedung_kondisi'              => $uItem['gedung_kondisi'] ?? ($rawNew['gedung_kondisi'] ?? ($oldG['gedung_kondisi'] ?? 'Baik')),
+                            'gedung_is_baru'              => $isBaruVal,
+                            'gedung_kapitalisasi_tahun_induk' => $tahunInduk,
+                            'gedung_kapitalisasi_nilai_induk' => $nilaiInduk,
                             'gedung_nilai_fisik'          => $unitPrice,
                         ];
                         $gedungItems[] = $g;
@@ -1146,24 +1162,44 @@ class ReklasifikasiController extends Controller
                     $newSpec['konstruksi_beton']      = $gedungItems[0]['gedung_konstruksi_beton'] ?? 'Beton';
                     $newSpec['dokumen_nomor']         = $gedungItems[0]['gedung_dokumen_nomor'] ?? null;
                     $newSpec['dokumen_tgl']           = $gedungItems[0]['gedung_dokumen_tgl'] ?? null;
+                    $newSpec['gedung_is_baru']        = $gedungItems[0]['gedung_is_baru'] ?? $defaultIsBaru;
+                    $newSpec['is_baru']               = $gedungItems[0]['gedung_is_baru'] ?? $defaultIsBaru;
+                    $newSpec['gedung_kapitalisasi_tahun_induk'] = $gedungItems[0]['gedung_kapitalisasi_tahun_induk'] ?? null;
+                    $newSpec['gedung_kapitalisasi_nilai_induk'] = $gedungItems[0]['gedung_kapitalisasi_nilai_induk'] ?? 0;
                     $astap->satuan                    = 'Gedung / Unit';
                     $astap->alamat_barang             = $gedungItems[0]['gedung_alamat'] ?? ($astap->alamat_barang ?: 'Kompleks RSUD Dr. H. Koesnandi');
 
                 } elseif ($targetKib === 'KIB D') {
                     $jaringanItems = [];
                     $totalLuas = 0;
+                    $isFromKemitraan = in_array($asalKibAset, ['KEMITRAAN', '1.5.2'], true)
+                        || ($astap->category === 'KEMITRAAN')
+                        || ($astap->sumber_dana === 'kemitraan')
+                        || str_starts_with((string) $astap->kode_108, '1.5.2')
+                        || ($astap->kemitraan !== null);
+                    $defaultIsBaru = $isFromKemitraan ? 'Lama' : 'Baru';
+
+                    $oldJaringanList = $specLama['jaringan_items'] ?? [];
                     foreach ($unitItems as $uIdx => $uItem) {
+                        $oldJ = $oldJaringanList[$uIdx] ?? ($oldJaringanList[0] ?? []);
+                        $isBaruVal = $uItem['jaringan_is_baru'] ?? ($rawNew['jaringan_is_baru'] ?? ($oldJ['jaringan_is_baru'] ?? $defaultIsBaru));
+                        $tahunInduk = $uItem['jaringan_kapitalisasi_tahun_induk'] ?? ($rawNew['jaringan_kapitalisasi_tahun_induk'] ?? ($oldJ['jaringan_kapitalisasi_tahun_induk'] ?? ($specLama['tahun_induk'] ?? ($astap->tahun_perolehan ?: null))));
+                        $nilaiInduk = (float) ($uItem['jaringan_kapitalisasi_nilai_induk'] ?? ($rawNew['jaringan_kapitalisasi_nilai_induk'] ?? ($oldJ['jaringan_kapitalisasi_nilai_induk'] ?? ($specLama['nilai_induk'] ?? 0))));
+
                         $j = [
                             'jaringan_nama'          => $astap->nama_barang,
-                            'jaringan_konstruksi'    => $uItem['jaringan_konstruksi'] ?? ($rawNew['jaringan_konstruksi'] ?? 'Aspal / Beton'),
-                            'jaringan_panjang_km'    => $uItem['jaringan_panjang_km'] ?? ($rawNew['jaringan_panjang_km'] ?? null),
-                            'jaringan_lebar_m'       => $uItem['jaringan_lebar_m'] ?? ($rawNew['jaringan_lebar_m'] ?? null),
-                            'jaringan_luas_m2'       => (float) ($uItem['jaringan_luas_m2'] ?? ($rawNew['jaringan_luas_m2'] ?? 0)),
-                            'jaringan_alamat'        => $uItem['jaringan_alamat'] ?? ($rawNew['jaringan_alamat'] ?? ($astap->alamat_barang ?: 'Kompleks RSUD')),
-                            'jaringan_dokumen_nomor' => $uItem['jaringan_dokumen_nomor'] ?? ($rawNew['jaringan_dokumen_nomor'] ?? null),
-                            'jaringan_dokumen_tgl'   => $uItem['jaringan_dokumen_tgl'] ?? ($rawNew['jaringan_dokumen_tgl'] ?? null),
+                            'jaringan_konstruksi'    => $uItem['jaringan_konstruksi'] ?? ($rawNew['jaringan_konstruksi'] ?? ($oldJ['jaringan_konstruksi'] ?? ($specLama['konstruksi'] ?? 'Aspal / Beton'))),
+                            'jaringan_panjang_km'    => $uItem['jaringan_panjang_km'] ?? ($rawNew['jaringan_panjang_km'] ?? ($oldJ['jaringan_panjang_km'] ?? null)),
+                            'jaringan_lebar_m'       => $uItem['jaringan_lebar_m'] ?? ($rawNew['jaringan_lebar_m'] ?? ($oldJ['jaringan_lebar_m'] ?? null)),
+                            'jaringan_luas_m2'       => (float) ($uItem['jaringan_luas_m2'] ?? ($rawNew['jaringan_luas_m2'] ?? ($oldJ['jaringan_luas_m2'] ?? ($specLama['luas_m2'] ?? 0)))),
+                            'jaringan_alamat'        => $uItem['jaringan_alamat'] ?? ($rawNew['jaringan_alamat'] ?? ($oldJ['jaringan_alamat'] ?? ($astap->alamat_barang ?: 'Kompleks RSUD'))),
+                            'jaringan_dokumen_nomor' => $uItem['jaringan_dokumen_nomor'] ?? ($rawNew['jaringan_dokumen_nomor'] ?? ($oldJ['jaringan_dokumen_nomor'] ?? ($specLama['dokumen_nomor'] ?? null))),
+                            'jaringan_dokumen_tgl'   => $uItem['jaringan_dokumen_tgl'] ?? ($rawNew['jaringan_dokumen_tgl'] ?? ($oldJ['jaringan_dokumen_tgl'] ?? ($specLama['dokumen_tgl'] ?? null))),
                             'jaringan_status_tanah'  => 'Tanah Pemda',
-                            'jaringan_kondisi'       => 'Baik',
+                            'jaringan_kondisi'       => $uItem['jaringan_kondisi'] ?? ($rawNew['jaringan_kondisi'] ?? ($oldJ['jaringan_kondisi'] ?? 'Baik')),
+                            'jaringan_is_baru'       => $isBaruVal,
+                            'jaringan_kapitalisasi_tahun_induk' => $tahunInduk,
+                            'jaringan_kapitalisasi_nilai_induk' => $nilaiInduk,
                             'jaringan_nilai_fisik'   => $unitPrice,
                         ];
                         $jaringanItems[] = $j;
@@ -1172,6 +1208,10 @@ class ReklasifikasiController extends Controller
 
                     $newSpec['jaringan_items']       = $jaringanItems;
                     $newSpec['konstruksi']           = $jaringanItems[0]['jaringan_konstruksi'] ?? 'Aspal / Beton';
+                    $newSpec['jaringan_is_baru']     = $jaringanItems[0]['jaringan_is_baru'] ?? $defaultIsBaru;
+                    $newSpec['is_baru']              = $jaringanItems[0]['jaringan_is_baru'] ?? $defaultIsBaru;
+                    $newSpec['jaringan_kapitalisasi_tahun_induk'] = $jaringanItems[0]['jaringan_kapitalisasi_tahun_induk'] ?? null;
+                    $newSpec['jaringan_kapitalisasi_nilai_induk'] = $jaringanItems[0]['jaringan_kapitalisasi_nilai_induk'] ?? 0;
                     $astap->satuan                   = 'Ruas / Titik';
                     $astap->alamat_barang            = $jaringanItems[0]['jaringan_alamat'] ?? ($astap->alamat_barang ?: 'Kompleks RSUD');
 
@@ -1512,6 +1552,45 @@ class ReklasifikasiController extends Controller
 
             if ($specBaru === null) {
                 $specBaru = $astap->spesifikasi_json;
+            }
+
+            // Fallback audit: Jika tujuan adalah KIB C atau KIB D dari Kemitraan, pastikan status fisik otomatis Lama
+            $isFromKemitraanOrigin = in_array($asalKibAset, ['KEMITRAAN', '1.5.2'], true)
+                || ($astap->category === 'KEMITRAAN')
+                || ($astap->sumber_dana === 'kemitraan')
+                || str_starts_with((string) $astap->kode_108, '1.5.2')
+                || ($astap->kemitraan !== null);
+
+            if ($isFromKemitraanOrigin && is_array($specBaru)) {
+                if ($targetKib === 'KIB C') {
+                    if (empty($specBaru['gedung_is_baru'])) {
+                        $specBaru['gedung_is_baru'] = 'Lama';
+                        $specBaru['is_baru'] = 'Lama';
+                    }
+                    if (!empty($specBaru['gedung_items']) && is_array($specBaru['gedung_items'])) {
+                        foreach ($specBaru['gedung_items'] as &$gItemLoop) {
+                            if (is_array($gItemLoop) && empty($gItemLoop['gedung_is_baru'])) {
+                                $gItemLoop['gedung_is_baru'] = 'Lama';
+                            }
+                        }
+                        unset($gItemLoop);
+                    }
+                    $astap->spesifikasi_json = $specBaru;
+                } elseif ($targetKib === 'KIB D') {
+                    if (empty($specBaru['jaringan_is_baru'])) {
+                        $specBaru['jaringan_is_baru'] = 'Lama';
+                        $specBaru['is_baru'] = 'Lama';
+                    }
+                    if (!empty($specBaru['jaringan_items']) && is_array($specBaru['jaringan_items'])) {
+                        foreach ($specBaru['jaringan_items'] as &$jItemLoop) {
+                            if (is_array($jItemLoop) && empty($jItemLoop['jaringan_is_baru'])) {
+                                $jItemLoop['jaringan_is_baru'] = 'Lama';
+                            }
+                        }
+                        unset($jItemLoop);
+                    }
+                    $astap->spesifikasi_json = $specBaru;
+                }
             }
 
             // Pastikan fallback nama dan kode asal/tujuan jika masih kosong
@@ -1894,6 +1973,11 @@ class ReklasifikasiController extends Controller
                     }
                     \App\Models\AstapKemitraan::where('objek_astap_id', $astap->id)
                         ->update(['status_konsesi' => 'Selesai / Reklasifikasi']);
+
+                    // Kembalikan status register fisik menjadi Tersedia (bukan lagi terikat operasional kemitraan)
+                    $astap->registers()->where('status', 'Kemitraan')->update([
+                        'status' => 'Tersedia'
+                    ]);
                 }
             }
 

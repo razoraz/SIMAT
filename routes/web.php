@@ -2269,15 +2269,37 @@ Route::middleware('auth')->group(function () {
 
                 if ($kibCategory === 'KIB C' && $request->has('gedung_items') && is_array($request->input('gedung_items')) && count($request->input('gedung_items')) > 0) {
                     $gItems = $request->input('gedung_items');
+                    foreach ($gItems as &$gi) {
+                        $gi['gedung_is_baru'] = $gi['gedung_is_baru'] ?? 'Lama';
+                        $gi['is_baru'] = $gi['is_baru'] ?? $gi['gedung_is_baru'];
+                    }
+                    unset($gi);
                     $firstG = $gItems[0];
                     $astapPayload['spesifikasi_json']['gedung_items'] = $gItems;
+                    $astapPayload['spesifikasi_json']['gedung_is_baru'] = $firstG['gedung_is_baru'] ?? 'Lama';
+                    $astapPayload['spesifikasi_json']['is_baru'] = $astapPayload['spesifikasi_json']['gedung_is_baru'];
+                    if (!empty($firstG['gedung_kapitalisasi_tahun_induk'])) {
+                        $astapPayload['spesifikasi_json']['gedung_kapitalisasi_tahun_induk'] = $firstG['gedung_kapitalisasi_tahun_induk'];
+                        $astapPayload['spesifikasi_json']['kapitalisasi_tahun_induk'] = $firstG['gedung_kapitalisasi_tahun_induk'];
+                    }
                     if (!empty($firstG['gedung_kode_barang'])) $astapPayload['spesifikasi_json']['gedung_kode_barang'] = $firstG['gedung_kode_barang'];
                 }
 
                 if ($kibCategory === 'KIB D' && $request->has('jaringan_items') && is_array($request->input('jaringan_items')) && count($request->input('jaringan_items')) > 0) {
                     $jItems = $request->input('jaringan_items');
+                    foreach ($jItems as &$ji) {
+                        $ji['jaringan_is_baru'] = $ji['jaringan_is_baru'] ?? 'Lama';
+                        $ji['is_baru'] = $ji['is_baru'] ?? $ji['jaringan_is_baru'];
+                    }
+                    unset($ji);
                     $firstJ = $jItems[0];
                     $astapPayload['spesifikasi_json']['jaringan_items'] = $jItems;
+                    $astapPayload['spesifikasi_json']['jaringan_is_baru'] = $firstJ['jaringan_is_baru'] ?? 'Lama';
+                    $astapPayload['spesifikasi_json']['is_baru'] = $astapPayload['spesifikasi_json']['jaringan_is_baru'];
+                    if (!empty($firstJ['jaringan_kapitalisasi_tahun_induk'])) {
+                        $astapPayload['spesifikasi_json']['jaringan_kapitalisasi_tahun_induk'] = $firstJ['jaringan_kapitalisasi_tahun_induk'];
+                        $astapPayload['spesifikasi_json']['kapitalisasi_tahun_induk'] = $firstJ['jaringan_kapitalisasi_tahun_induk'];
+                    }
                     if (!empty($firstJ['jaringan_kode_barang'])) $astapPayload['spesifikasi_json']['jaringan_kode_barang'] = $firstJ['jaringan_kode_barang'];
                 }
 
@@ -3033,15 +3055,37 @@ Route::middleware('auth')->group(function () {
 
                 if ($kibCategory === 'KIB C' && $request->has('gedung_items') && is_array($request->input('gedung_items')) && count($request->input('gedung_items')) > 0) {
                     $gItems = $request->input('gedung_items');
+                    foreach ($gItems as &$gi) {
+                        $gi['gedung_is_baru'] = $gi['gedung_is_baru'] ?? 'Lama';
+                        $gi['is_baru'] = $gi['is_baru'] ?? $gi['gedung_is_baru'];
+                    }
+                    unset($gi);
                     $firstG = $gItems[0];
                     $specJson['gedung_items'] = $gItems;
+                    $specJson['gedung_is_baru'] = $firstG['gedung_is_baru'] ?? 'Lama';
+                    $specJson['is_baru'] = $specJson['gedung_is_baru'];
+                    if (!empty($firstG['gedung_kapitalisasi_tahun_induk'])) {
+                        $specJson['gedung_kapitalisasi_tahun_induk'] = $firstG['gedung_kapitalisasi_tahun_induk'];
+                        $specJson['kapitalisasi_tahun_induk'] = $firstG['gedung_kapitalisasi_tahun_induk'];
+                    }
                     if (!empty($firstG['gedung_kode_barang'])) $specJson['gedung_kode_barang'] = $firstG['gedung_kode_barang'];
                 }
 
                 if ($kibCategory === 'KIB D' && $request->has('jaringan_items') && is_array($request->input('jaringan_items')) && count($request->input('jaringan_items')) > 0) {
                     $jItems = $request->input('jaringan_items');
+                    foreach ($jItems as &$ji) {
+                        $ji['jaringan_is_baru'] = $ji['jaringan_is_baru'] ?? 'Lama';
+                        $ji['is_baru'] = $ji['is_baru'] ?? $ji['jaringan_is_baru'];
+                    }
+                    unset($ji);
                     $firstJ = $jItems[0];
                     $specJson['jaringan_items'] = $jItems;
+                    $specJson['jaringan_is_baru'] = $firstJ['jaringan_is_baru'] ?? 'Lama';
+                    $specJson['is_baru'] = $specJson['jaringan_is_baru'];
+                    if (!empty($firstJ['jaringan_kapitalisasi_tahun_induk'])) {
+                        $specJson['jaringan_kapitalisasi_tahun_induk'] = $firstJ['jaringan_kapitalisasi_tahun_induk'];
+                        $specJson['kapitalisasi_tahun_induk'] = $firstJ['jaringan_kapitalisasi_tahun_induk'];
+                    }
                     if (!empty($firstJ['jaringan_kode_barang'])) $specJson['jaringan_kode_barang'] = $firstJ['jaringan_kode_barang'];
                 }
 

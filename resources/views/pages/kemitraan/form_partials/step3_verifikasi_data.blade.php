@@ -460,7 +460,11 @@
                                             </div>
                                             <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-slate-800 text-blue-300 border border-slate-700 shrink-0" x-text="(gItem.gedung_jumlah_bangunan || 1) + ' ' + (gItem.gedung_satuan || 'Gedung')"></span>
                                         </div>
-                                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px] text-slate-300 pt-1 border-t border-slate-800/60">
+                                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] text-slate-300 pt-1 border-t border-slate-800/60">
+                                            <div>
+                                                <span class="text-[9.5px] text-slate-500 block uppercase">Status Fisik:</span>
+                                                <span class="font-bold text-xs" :class="(gItem.gedung_is_baru === 'Baru') ? 'text-amber-400' : 'text-blue-300'" x-text="(gItem.gedung_is_baru || 'Lama') + (gItem.gedung_kapitalisasi_tahun_induk ? ' (' + gItem.gedung_kapitalisasi_tahun_induk + ')' : '')"></span>
+                                            </div>
                                             <div>
                                                 <span class="text-[9.5px] text-slate-500 block uppercase">Luas Lantai:</span>
                                                 <span class="font-semibold text-blue-300 block" x-text="(gItem.gedung_luas_lantai || 0) + ' m²'"></span>
@@ -473,7 +477,7 @@
                                                 <span class="text-[9.5px] text-slate-500 block uppercase">Kondisi:</span>
                                                 <span class="font-bold block text-emerald-400" x-text="gItem.gedung_kondisi || 'Baik'"></span>
                                             </div>
-                                            <div class="col-span-2 sm:col-span-3 flex items-center justify-between pt-1 border-t border-slate-900 text-xs">
+                                            <div class="col-span-2 sm:col-span-4 flex items-center justify-between pt-1 border-t border-slate-900 text-xs">
                                                 <span class="text-slate-400 text-[10px]">Taksiran Nilai:</span>
                                                 <span class="font-mono font-bold text-emerald-400" x-text="'Rp ' + formatRupiah(getGedungSubtotal(gItem))"></span>
                                             </div>
@@ -485,6 +489,10 @@
                     </template>
                     <template x-if="!formData.gedung_items || formData.gedung_items.length <= 1">
                         <div class="grid grid-cols-2 gap-3 text-xs">
+                            <div>
+                                <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Status Fisik Bangunan:</span>
+                                <span class="font-bold block" :class="((formData.gedung_is_baru || formData.gedung_items?.[0]?.gedung_is_baru) === 'Baru') ? 'text-amber-400' : 'text-blue-300'" x-text="(formData.gedung_is_baru || formData.gedung_items?.[0]?.gedung_is_baru || 'Lama') + ((formData.gedung_kapitalisasi_tahun_induk || formData.gedung_items?.[0]?.gedung_kapitalisasi_tahun_induk) ? (' (' + (formData.gedung_kapitalisasi_tahun_induk || formData.gedung_items?.[0]?.gedung_kapitalisasi_tahun_induk) + ')') : '')"></span>
+                            </div>
                             <div>
                                 <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Konstruksi Bertingkat:</span>
                                 <span class="font-bold text-white block" x-text="formData.gedung_bertingkat || (formData.gedung_items?.[0]?.gedung_bertingkat || 'Tidak')"></span>
@@ -533,7 +541,11 @@
                                             </div>
                                             <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-slate-800 text-teal-300 border border-slate-700 shrink-0" x-text="(jItem.jaringan_jumlah || 1) + ' ' + (jItem.jaringan_satuan || 'Ruas')"></span>
                                         </div>
-                                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] text-slate-300 pt-1 border-t border-slate-800/60">
+                                        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 text-[11px] text-slate-300 pt-1 border-t border-slate-800/60">
+                                            <div>
+                                                <span class="text-[9.5px] text-slate-500 block uppercase">Status Fisik:</span>
+                                                <span class="font-bold text-xs" :class="(jItem.jaringan_is_baru === 'Baru') ? 'text-amber-400' : 'text-teal-300'" x-text="(jItem.jaringan_is_baru || 'Lama') + (jItem.jaringan_kapitalisasi_tahun_induk ? ' (' + jItem.jaringan_kapitalisasi_tahun_induk + ')' : '')"></span>
+                                            </div>
                                             <div class="col-span-2">
                                                 <span class="text-[9.5px] text-slate-500 block uppercase">Konstruksi:</span>
                                                 <span class="font-semibold text-teal-300 block" x-text="(jItem.jaringan_konstruksi || '-') + ' • ' + (jItem.jaringan_beton || 'Beton') + ' (' + (jItem.jaringan_bertingkat === 'Bertingkat' ? 'Bertingkat' : 'Tidak Bertingkat') + ')'"></span>
@@ -546,7 +558,7 @@
                                                 <span class="text-[9.5px] text-slate-500 block uppercase">Kondisi:</span>
                                                 <span class="font-bold block text-emerald-400" x-text="jItem.jaringan_kondisi || 'Baik'"></span>
                                             </div>
-                                            <div class="col-span-2 sm:col-span-4 flex flex-wrap items-center justify-between pt-1 border-t border-slate-800/40 text-[10.5px]">
+                                            <div class="col-span-2 sm:col-span-5 flex flex-wrap items-center justify-between pt-1 border-t border-slate-800/40 text-[10.5px]">
                                                 <span class="text-slate-400" x-show="jItem.jaringan_status_tanah" x-text="'Tanah: ' + jItem.jaringan_status_tanah"></span>
                                                 <span class="text-slate-400" x-show="jItem.jaringan_keterangan" x-text="'Ket: ' + jItem.jaringan_keterangan"></span>
                                                 <span class="font-mono font-bold text-emerald-400 ml-auto" x-text="'Subtotal: Rp ' + formatRupiah(getJaringanSubtotal(jItem))"></span>
@@ -559,6 +571,10 @@
                     </template>
                     <template x-if="!formData.jaringan_items || formData.jaringan_items.length <= 1">
                         <div class="grid grid-cols-2 gap-3 text-xs">
+                            <div class="col-span-2">
+                                <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Status Fisik Jaringan:</span>
+                                <span class="font-bold block" :class="((formData.jaringan_is_baru || formData.jaringan_items?.[0]?.jaringan_is_baru) === 'Baru') ? 'text-amber-400' : 'text-teal-300'" x-text="(formData.jaringan_is_baru || formData.jaringan_items?.[0]?.jaringan_is_baru || 'Lama') + ((formData.jaringan_kapitalisasi_tahun_induk || formData.jaringan_items?.[0]?.jaringan_kapitalisasi_tahun_induk) ? (' (' + (formData.jaringan_kapitalisasi_tahun_induk || formData.jaringan_items?.[0]?.jaringan_kapitalisasi_tahun_induk) + ')') : '')"></span>
+                            </div>
                             <div class="col-span-2">
                                 <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Konstruksi Jaringan / Jalan:</span>
                                 <span class="font-bold text-teal-300 block" x-text="(formData.jaringan_konstruksi || formData.jaringan_items?.[0]?.jaringan_konstruksi || '-') + ' • ' + (formData.jaringan_items?.[0]?.jaringan_beton || 'Beton') + ' (' + ((formData.jaringan_items?.[0]?.jaringan_bertingkat === 'Bertingkat') ? 'Bertingkat' : 'Tidak Bertingkat') + ')'"></span>
