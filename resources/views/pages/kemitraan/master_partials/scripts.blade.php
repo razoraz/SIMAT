@@ -322,37 +322,92 @@
 
             detectKemitraanPhysicalType(item) {
                 const it = item || this.selectedAstapReklas;
-                const kode = this.reklasSubSubRincianKode || this.reklasSubRincianKode || this.reklasTujuanKode || (it?.kode_barang || '');
-                const nama = ((this.reklasSubSubRincianNama || '') + ' ' + (this.reklasSubRincianNama || '') + ' ' + (it?.nama_barang || '')).toLowerCase();
+                const kem = it?.kemitraan || {};
 
-                if (kode) {
-                    if (kode.endsWith('.001') || kode.endsWith('.01') || kode.includes('.01.01.001') || kode.startsWith('1.3.1')) return 'tanah';
-                    if (kode.endsWith('.002') || kode.endsWith('.02') || kode.includes('.01.01.002') || kode.startsWith('1.3.2')) return 'mesin';
-                    if (kode.endsWith('.003') || kode.endsWith('.03') || kode.includes('.01.01.003') || kode.startsWith('1.3.3')) return 'gedung';
-                    if (kode.endsWith('.004') || kode.endsWith('.04') || kode.includes('.01.01.004') || kode.startsWith('1.3.4')) return 'jaringan';
-                    if (kode.endsWith('.005') || kode.endsWith('.05') || kode.includes('.01.01.005') || kode.startsWith('1.3.5')) return 'lainnya';
+                // 1. PRIORITAS TERTINGGI: Periksa spesifikasi_json (kategori_kib & repeater items)
+                let spec = it?.spesifikasi_json;
+                if (typeof spec === 'string') {
+                    try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
+                }
+                spec = (spec && typeof spec === 'object') ? spec : {};
+
+                const kibSpec = String(spec.kategori_kib || '').toUpperCase();
+                if (kibSpec.includes('KIB C') || kibSpec.includes('GEDUNG') || kibSpec.includes('BANGUNAN')) return 'gedung';
+                if (kibSpec.includes('KIB B') || kibSpec.includes('MESIN') || kibSpec.includes('PERALATAN')) return 'mesin';
+                if (kibSpec.includes('KIB A') || kibSpec.includes('TANAH')) return 'tanah';
+                if (kibSpec.includes('KIB D') || kibSpec.includes('JARINGAN') || kibSpec.includes('JALAN') || kibSpec.includes('IRIGASI')) return 'jaringan';
+                if (kibSpec.includes('KIB E') || kibSpec.includes('LAINNYA') || kibSpec.includes('BUKU')) return 'lainnya';
+
+                if (Array.isArray(spec.gedung_items) && spec.gedung_items.length > 0 && spec.gedung_items.some(g => g.gedung_nama_barang || g.gedung_luas_m2 || g.gedung_luas_lantai || g.gedung_bertingkat || (parseFloat(g.gedung_nilai_satuan) > 0))) return 'gedung';
+                if (Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0 && spec.mesin_items.some(m => m.mesin_nama_barang || m.mesin_merk || m.mesin_type || m.mesin_no_pabrik || (parseFloat(m.mesin_nilai_satuan) > 0))) return 'mesin';
+                if (Array.isArray(spec.tanah_items) && spec.tanah_items.length > 0 && spec.tanah_items.some(t => t.tanah_nama_barang || t.tanah_luas_m2 || t.tanah_hak || t.tanah_sertifikat_no || (parseFloat(t.tanah_nilai_satuan) > 0))) return 'tanah';
+                if (Array.isArray(spec.jaringan_items) && spec.jaringan_items.length > 0 && spec.jaringan_items.some(j => j.jaringan_nama_barang || j.jaringan_konstruksi || (parseFloat(j.jaringan_nilai_satuan) > 0))) return 'jaringan';
+                if (Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0 && spec.lainnya_items.some(l => l.lainnya_nama_barang || l.lainnya_judul || (parseFloat(l.lainnya_nilai_satuan) > 0))) return 'lainnya';
+
+                // 2. PRIORITAS KEDUA: Sub-Sub 108 / Sub-Rincian yang aktif dipilih di modal
+                const subSubKd = this.reklasSubSubRincianKode || '';
+                const subSubNm = (this.reklasSubSubRincianNama || '').toLowerCase();
+                if (subSubKd) {
+                    if (subSubKd.endsWith('.001') || subSubKd.endsWith('.01') || subSubKd.includes('.01.01.001') || subSubKd.startsWith('1.3.1')) return 'tanah';
+                    if (subSubKd.endsWith('.003') || subSubKd.endsWith('.03') || subSubKd.includes('.01.01.003') || subSubKd.startsWith('1.3.3')) return 'gedung';
+                    if (subSubKd.endsWith('.004') || subSubKd.endsWith('.04') || subSubKd.includes('.01.01.004') || subSubKd.startsWith('1.3.4')) return 'jaringan';
+                    if (subSubKd.endsWith('.005') || subSubKd.endsWith('.05') || subSubKd.includes('.01.01.005') || subSubKd.startsWith('1.3.5')) return 'lainnya';
+                    if (subSubKd.endsWith('.002') || subSubKd.endsWith('.02') || subSubKd.includes('.01.01.002') || subSubKd.startsWith('1.3.2')) return 'mesin';
+                }
+                if (subSubNm) {
+                    if (subSubNm.includes('tanah') || subSubNm.includes('lahan')) return 'tanah';
+                    if (subSubNm.includes('gedung') || subSubNm.includes('bangunan')) return 'gedung';
+                    if (subSubNm.includes('jalan') || subSubNm.includes('jaringan') || subSubNm.includes('irigasi') || subSubNm.includes('pipa')) return 'jaringan';
+                    if (subSubNm.includes('lainnya') || subSubNm.includes('buku') || subSubNm.includes('seni')) return 'lainnya';
+                    if (subSubNm.includes('peralatan') || subSubNm.includes('mesin') || subSubNm.includes('alat') || subSubNm.includes('kendaraan') || subSubNm.includes('alkes')) return 'mesin';
                 }
 
-                if (nama.includes('tanah') || nama.includes('lahan') || nama.includes('kavling')) return 'tanah';
-                if (nama.includes('gedung') || nama.includes('bangunan') || nama.includes('ruang') || nama.includes('paviliun') || nama.includes('rumah')) return 'gedung';
-                if (nama.includes('jalan') || nama.includes('irigasi') || nama.includes('jaringan') || nama.includes('pipa') || nama.includes('saluran') || nama.includes('kabel')) return 'jaringan';
-                if (nama.includes('lainnya') || nama.includes('buku') || nama.includes('seni') || nama.includes('hewan') || nama.includes('tanaman')) return 'lainnya';
-                if (nama.includes('mesin') || nama.includes('alat') || nama.includes('kendaraan') || nama.includes('peralatan') || nama.includes('alkes')) return 'mesin';
-
-                if (it) {
-                    let spec = it.spesifikasi_json;
-                    if (typeof spec === 'string') { try { spec = JSON.parse(spec); } catch(e){} }
-                    if (spec && typeof spec === 'object') {
-                        if (Array.isArray(spec.tanah_items) && spec.tanah_items.length > 0) return 'tanah';
-                        if (Array.isArray(spec.gedung_items) && spec.gedung_items.length > 0) return 'gedung';
-                        if (Array.isArray(spec.jaringan_items) && spec.jaringan_items.length > 0) return 'jaringan';
-                        if (Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0) return 'lainnya';
-                        if (Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0) return 'mesin';
-                        if (spec.luas_m2 || spec.hak_tanah || spec.sertifikat_no) return 'tanah';
-                        if (spec.konstruksi_bertingkat || spec.luas_lantai_m2) return 'gedung';
-                        if (spec.merk || spec.type || spec.no_pabrik) return 'mesin';
-                    }
+                // 3. PRIORITAS KETIGA: Kode 108 Aset Asal / Sub-Sub Rincian Akun Kemitraan (1.5.2)
+                const asalKode = String(it?.kode_barang || it?.kode_108 || kem?.kode_108 || it?.jenis_aset_kode || it?.jenis_astap?.sub_sub_rincian_objek || '').trim();
+                if (asalKode) {
+                    if (asalKode.endsWith('.001') || asalKode.includes('.01.01.01.001') || asalKode.includes('.01.01.001') || asalKode.startsWith('1.3.1')) return 'tanah';
+                    if (asalKode.endsWith('.003') || asalKode.includes('.01.01.01.003') || asalKode.includes('.01.01.003') || asalKode.startsWith('1.3.3')) return 'gedung';
+                    if (asalKode.endsWith('.004') || asalKode.includes('.01.01.01.004') || asalKode.includes('.01.01.004') || asalKode.startsWith('1.3.4')) return 'jaringan';
+                    if (asalKode.endsWith('.005') || asalKode.includes('.01.01.01.005') || asalKode.includes('.01.01.005') || asalKode.startsWith('1.3.5')) return 'lainnya';
+                    if (asalKode.endsWith('.002') || asalKode.includes('.01.01.01.002') || asalKode.includes('.01.01.002') || asalKode.startsWith('1.3.2')) return 'mesin';
                 }
+
+                // 4. PRIORITAS KEEMPAT: Uraian Sub-Sub Rincian 108 Aset Asal
+                const uraianSub = String(it?.jenis_astap?.uraian_sub_sub_rincian || it?.jenis_astap?.uraian_sub_rincian || kem?.jenis_astap?.uraian_sub_sub_rincian || '').toLowerCase();
+                if (uraianSub.includes('tanah')) return 'tanah';
+                if (uraianSub.includes('gedung') || uraianSub.includes('bangunan')) return 'gedung';
+                if (uraianSub.includes('jalan') || uraianSub.includes('jaringan') || uraianSub.includes('irigasi')) return 'jaringan';
+                if (uraianSub.includes('lainnya') || uraianSub.includes('buku') || uraianSub.includes('seni')) return 'lainnya';
+                if (uraianSub.includes('mesin') || uraianSub.includes('peralatan') || uraianSub.includes('alat')) return 'mesin';
+
+                // 5. PRIORITAS KELIMA: Satuan Barang
+                const satuan = String(it?.satuan || kem?.satuan || '').toLowerCase().trim();
+                if (satuan.includes('gedung') || satuan.includes('bangunan') || satuan.includes('ruang') || satuan.includes('lantai')) return 'gedung';
+                if (satuan.includes('bidang') || satuan.includes('persil') || satuan.includes('hektar') || satuan.includes('are')) return 'tanah';
+                if (satuan.includes('km') || satuan.includes('meter') || satuan.includes('ruas')) return 'jaringan';
+
+                // 6. PRIORITAS KEENAM: Nama Barang / Keterangan
+                const asalNama = String(it?.nama_barang || kem?.keterangan || '').toLowerCase();
+                if (asalNama.includes('tanah') || asalNama.includes('lahan') || asalNama.includes('kavling')) return 'tanah';
+                if (asalNama.includes('gedung') || asalNama.includes('bangunan') || asalNama.includes('rumah potong') || asalNama.includes('ruang') || asalNama.includes('paviliun') || asalNama.includes('rumah') || asalNama.includes('gudang') || asalNama.includes('instalasi') || asalNama.includes('kantor') || asalNama.includes('aula') || asalNama.includes('rph')) return 'gedung';
+                if (asalNama.includes('jalan') || asalNama.includes('irigasi') || asalNama.includes('jaringan') || asalNama.includes('pipa') || asalNama.includes('saluran') || asalNama.includes('kabel') || asalNama.includes('drainase') || asalNama.includes('aspal')) return 'jaringan';
+                if (asalNama.includes('buku') || asalNama.includes('seni') || asalNama.includes('hewan') || asalNama.includes('tanaman') || asalNama.includes('software') || asalNama.includes('aplikasi')) return 'lainnya';
+                if (asalNama.includes('mesin') || asalNama.includes('alat') || asalNama.includes('kendaraan') || asalNama.includes('peralatan') || asalNama.includes('alkes') || asalNama.includes('analyzer') || asalNama.includes('centrifuge') || asalNama.includes('ventilator') || asalNama.includes('komputer') || asalNama.includes('printer') || asalNama.includes('server') || asalNama.includes('genset') || asalNama.includes('pompa')) return 'mesin';
+
+                // 7. PRIORITAS KETUJUH: Atribut spesifikasi individu
+                if (spec.konstruksi_bertingkat || spec.luas_lantai_m2 || spec.luas_m2_gedung || spec.bertingkat || spec.beton) return 'gedung';
+                if (spec.merk || spec.type || spec.no_pabrik || spec.no_rangka || spec.no_mesin || spec.ukuran_cc) return 'mesin';
+                if (spec.luas_m2 || spec.hak_tanah || spec.sertifikat_no || spec.tanah_hak) return 'tanah';
+                if (spec.panjang_km || spec.lebar_m) return 'jaringan';
+
+                // 8. Asal KIB jika ada
+                const asalKib = String(it?.asal_kib || kem?.asal_kib || '').toUpperCase().trim();
+                if (asalKib === 'KIB C') return 'gedung';
+                if (asalKib === 'KIB B') return 'mesin';
+                if (asalKib === 'KIB A') return 'tanah';
+                if (asalKib === 'KIB D') return 'jaringan';
+                if (asalKib === 'KIB E') return 'lainnya';
+
                 return 'mesin';
             },
 
@@ -3106,72 +3161,91 @@
 
             detectKemitraanPhysicalType(item) {
                 const it = item || this.selectedAstapReklas;
+                const kem = it?.kemitraan || {};
 
-                // 1. PRIORITAS UTAMA: Lihat Gambar 3 (SUB-SUB 108 / IDENTITAS BARANG yang dipilih)
+                // 1. PRIORITAS TERTINGGI: Periksa spesifikasi_json (kategori_kib & repeater items)
+                let spec = it?.spesifikasi_json;
+                if (typeof spec === 'string') {
+                    try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
+                }
+                spec = (spec && typeof spec === 'object') ? spec : {};
+
+                const kibSpec = String(spec.kategori_kib || '').toUpperCase();
+                if (kibSpec.includes('KIB C') || kibSpec.includes('GEDUNG') || kibSpec.includes('BANGUNAN')) return 'gedung';
+                if (kibSpec.includes('KIB B') || kibSpec.includes('MESIN') || kibSpec.includes('PERALATAN')) return 'mesin';
+                if (kibSpec.includes('KIB A') || kibSpec.includes('TANAH')) return 'tanah';
+                if (kibSpec.includes('KIB D') || kibSpec.includes('JARINGAN') || kibSpec.includes('JALAN') || kibSpec.includes('IRIGASI')) return 'jaringan';
+                if (kibSpec.includes('KIB E') || kibSpec.includes('LAINNYA') || kibSpec.includes('BUKU')) return 'lainnya';
+
+                if (Array.isArray(spec.gedung_items) && spec.gedung_items.length > 0 && spec.gedung_items.some(g => g.gedung_nama_barang || g.gedung_luas_m2 || g.gedung_luas_lantai || g.gedung_bertingkat || (parseFloat(g.gedung_nilai_satuan) > 0))) return 'gedung';
+                if (Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0 && spec.mesin_items.some(m => m.mesin_nama_barang || m.mesin_merk || m.mesin_type || m.mesin_no_pabrik || (parseFloat(m.mesin_nilai_satuan) > 0))) return 'mesin';
+                if (Array.isArray(spec.tanah_items) && spec.tanah_items.length > 0 && spec.tanah_items.some(t => t.tanah_nama_barang || t.tanah_luas_m2 || t.tanah_hak || t.tanah_sertifikat_no || (parseFloat(t.tanah_nilai_satuan) > 0))) return 'tanah';
+                if (Array.isArray(spec.jaringan_items) && spec.jaringan_items.length > 0 && spec.jaringan_items.some(j => j.jaringan_nama_barang || j.jaringan_konstruksi || (parseFloat(j.jaringan_nilai_satuan) > 0))) return 'jaringan';
+                if (Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0 && spec.lainnya_items.some(l => l.lainnya_nama_barang || l.lainnya_judul || (parseFloat(l.lainnya_nilai_satuan) > 0))) return 'lainnya';
+
+                // 2. PRIORITAS KEDUA: Sub-Sub 108 / Sub-Rincian yang aktif dipilih di modal
                 const subSubKd = this.reklasSubSubRincianKode || '';
                 const subSubNm = (this.reklasSubSubRincianNama || '').toLowerCase();
                 if (subSubKd) {
-                    if (subSubKd.endsWith('.001') || subSubKd.endsWith('.01') || subSubKd.includes('.01.01.001')) return 'tanah';
-                    if (subSubKd.endsWith('.002') || subSubKd.endsWith('.02') || subSubKd.includes('.01.01.002')) return 'mesin';
-                    if (subSubKd.endsWith('.003') || subSubKd.endsWith('.03') || subSubKd.includes('.01.01.003')) return 'gedung';
-                    if (subSubKd.endsWith('.004') || subSubKd.endsWith('.04') || subSubKd.includes('.01.01.004')) return 'jaringan';
-                    if (subSubKd.endsWith('.005') || subSubKd.endsWith('.05') || subSubKd.includes('.01.01.005')) return 'lainnya';
+                    if (subSubKd.endsWith('.001') || subSubKd.endsWith('.01') || subSubKd.includes('.01.01.001') || subSubKd.startsWith('1.3.1')) return 'tanah';
+                    if (subSubKd.endsWith('.003') || subSubKd.endsWith('.03') || subSubKd.includes('.01.01.003') || subSubKd.startsWith('1.3.3')) return 'gedung';
+                    if (subSubKd.endsWith('.004') || subSubKd.endsWith('.04') || subSubKd.includes('.01.01.004') || subSubKd.startsWith('1.3.4')) return 'jaringan';
+                    if (subSubKd.endsWith('.005') || subSubKd.endsWith('.05') || subSubKd.includes('.01.01.005') || subSubKd.startsWith('1.3.5')) return 'lainnya';
+                    if (subSubKd.endsWith('.002') || subSubKd.endsWith('.02') || subSubKd.includes('.01.01.002') || subSubKd.startsWith('1.3.2')) return 'mesin';
                 }
                 if (subSubNm) {
                     if (subSubNm.includes('tanah') || subSubNm.includes('lahan')) return 'tanah';
                     if (subSubNm.includes('gedung') || subSubNm.includes('bangunan')) return 'gedung';
                     if (subSubNm.includes('jalan') || subSubNm.includes('jaringan') || subSubNm.includes('irigasi') || subSubNm.includes('pipa')) return 'jaringan';
-                    if (subSubNm.includes('peralatan') || subSubNm.includes('mesin') || subSubNm.includes('alat') || subSubNm.includes('kendaraan') || subSubNm.includes('alkes')) return 'mesin';
                     if (subSubNm.includes('lainnya') || subSubNm.includes('buku') || subSubNm.includes('seni')) return 'lainnya';
+                    if (subSubNm.includes('peralatan') || subSubNm.includes('mesin') || subSubNm.includes('alat') || subSubNm.includes('kendaraan') || subSubNm.includes('alkes')) return 'mesin';
                 }
 
-                // 2. PRIORITAS KEDUA: Lihat Sub-Rincian 108 (Nomor 2)
-                const subNm = (this.reklasSubRincianNama || '').toLowerCase();
-                const subKd = this.reklasSubRincianKode || '';
-                if (subKd) {
-                    if (subKd.endsWith('.01') || subKd.includes('.01.01')) {
-                        if (subNm.includes('tanah')) return 'tanah';
-                        if (subNm.includes('gedung') || subNm.includes('bangunan')) return 'gedung';
-                        if (subNm.includes('jalan') || subNm.includes('jaringan')) return 'jaringan';
-                        if (subNm.includes('peralatan') || subNm.includes('mesin')) return 'mesin';
-                    }
+                // 3. PRIORITAS KETIGA: Kode 108 Aset Asal / Sub-Sub Rincian Akun Kemitraan (1.5.2)
+                const asalKode = String(it?.kode_barang || it?.kode_108 || kem?.kode_108 || it?.jenis_aset_kode || it?.jenis_astap?.sub_sub_rincian_objek || '').trim();
+                if (asalKode) {
+                    if (asalKode.endsWith('.001') || asalKode.includes('.01.01.01.001') || asalKode.includes('.01.01.001') || asalKode.startsWith('1.3.1')) return 'tanah';
+                    if (asalKode.endsWith('.003') || asalKode.includes('.01.01.01.003') || asalKode.includes('.01.01.003') || asalKode.startsWith('1.3.3')) return 'gedung';
+                    if (asalKode.endsWith('.004') || asalKode.includes('.01.01.01.004') || asalKode.includes('.01.01.004') || asalKode.startsWith('1.3.4')) return 'jaringan';
+                    if (asalKode.endsWith('.005') || asalKode.includes('.01.01.01.005') || asalKode.includes('.01.01.005') || asalKode.startsWith('1.3.5')) return 'lainnya';
+                    if (asalKode.endsWith('.002') || asalKode.includes('.01.01.01.002') || asalKode.includes('.01.01.002') || asalKode.startsWith('1.3.2')) return 'mesin';
                 }
-                if (subNm.includes('tanah')) return 'tanah';
-                if (subNm.includes('gedung') || subNm.includes('bangunan')) return 'gedung';
-                if (subNm.includes('jalan') || subNm.includes('jaringan')) return 'jaringan';
-                if (subNm.includes('peralatan') || subNm.includes('mesin')) return 'mesin';
 
-                // 3. PRIORITAS KETIGA: Lihat Data Aset Asal (Nama Barang / Kode Asal)
-                const asalNama = (it?.nama_barang || '').toLowerCase();
-                const asalKode = (it?.kode_barang || it?.jenis_aset_kode || '');
+                // 4. PRIORITAS KEEMPAT: Uraian Sub-Sub Rincian 108 Aset Asal
+                const uraianSub = String(it?.jenis_astap?.uraian_sub_sub_rincian || it?.jenis_astap?.uraian_sub_rincian || kem?.jenis_astap?.uraian_sub_sub_rincian || '').toLowerCase();
+                if (uraianSub.includes('tanah')) return 'tanah';
+                if (uraianSub.includes('gedung') || uraianSub.includes('bangunan')) return 'gedung';
+                if (uraianSub.includes('jalan') || uraianSub.includes('jaringan') || uraianSub.includes('irigasi')) return 'jaringan';
+                if (uraianSub.includes('lainnya') || uraianSub.includes('buku') || uraianSub.includes('seni')) return 'lainnya';
+                if (uraianSub.includes('mesin') || uraianSub.includes('peralatan') || uraianSub.includes('alat')) return 'mesin';
 
-                if (asalKode.startsWith('1.3.1') || asalKode.endsWith('.001')) return 'tanah';
-                if (asalKode.startsWith('1.3.3') || asalKode.endsWith('.003')) return 'gedung';
-                if (asalKode.startsWith('1.3.4') || asalKode.endsWith('.004')) return 'jaringan';
-                if (asalKode.startsWith('1.3.5') || asalKode.endsWith('.005')) return 'lainnya';
-                if (asalKode.startsWith('1.3.2') || asalKode.endsWith('.002')) return 'mesin';
+                // 5. PRIORITAS KELIMA: Satuan Barang
+                const satuan = String(it?.satuan || kem?.satuan || '').toLowerCase().trim();
+                if (satuan.includes('gedung') || satuan.includes('bangunan') || satuan.includes('ruang') || satuan.includes('lantai')) return 'gedung';
+                if (satuan.includes('bidang') || satuan.includes('persil') || satuan.includes('hektar') || satuan.includes('are')) return 'tanah';
+                if (satuan.includes('km') || satuan.includes('meter') || satuan.includes('ruas')) return 'jaringan';
 
+                // 6. PRIORITAS KEENAM: Nama Barang / Keterangan
+                const asalNama = String(it?.nama_barang || kem?.keterangan || '').toLowerCase();
                 if (asalNama.includes('tanah') || asalNama.includes('lahan') || asalNama.includes('kavling')) return 'tanah';
-                if (asalNama.includes('gedung') || asalNama.includes('bangunan') || asalNama.includes('ruang') || asalNama.includes('paviliun') || asalNama.includes('rumah')) return 'gedung';
-                if (asalNama.includes('jalan') || asalNama.includes('irigasi') || asalNama.includes('jaringan') || asalNama.includes('pipa') || asalNama.includes('saluran') || asalNama.includes('kabel')) return 'jaringan';
-                if (asalNama.includes('lainnya') || asalNama.includes('buku') || asalNama.includes('seni') || asalNama.includes('hewan') || asalNama.includes('tanaman')) return 'lainnya';
-                if (asalNama.includes('mesin') || asalNama.includes('alat') || asalNama.includes('kendaraan') || asalNama.includes('peralatan') || asalNama.includes('alkes')) return 'mesin';
+                if (asalNama.includes('gedung') || asalNama.includes('bangunan') || asalNama.includes('rumah potong') || asalNama.includes('ruang') || asalNama.includes('paviliun') || asalNama.includes('rumah') || asalNama.includes('gudang') || asalNama.includes('instalasi') || asalNama.includes('kantor') || asalNama.includes('aula') || asalNama.includes('rph')) return 'gedung';
+                if (asalNama.includes('jalan') || asalNama.includes('irigasi') || asalNama.includes('jaringan') || asalNama.includes('pipa') || asalNama.includes('saluran') || asalNama.includes('kabel') || asalNama.includes('drainase') || asalNama.includes('aspal')) return 'jaringan';
+                if (asalNama.includes('buku') || asalNama.includes('seni') || asalNama.includes('hewan') || asalNama.includes('tanaman') || asalNama.includes('software') || asalNama.includes('aplikasi')) return 'lainnya';
+                if (asalNama.includes('mesin') || asalNama.includes('alat') || asalNama.includes('kendaraan') || asalNama.includes('peralatan') || asalNama.includes('alkes') || asalNama.includes('analyzer') || asalNama.includes('centrifuge') || asalNama.includes('ventilator') || asalNama.includes('komputer') || asalNama.includes('printer') || asalNama.includes('server') || asalNama.includes('genset') || asalNama.includes('pompa')) return 'mesin';
 
-                // 4. PRIORITAS KEEMPAT: Spesifikasi JSON lama jika ada
-                if (it) {
-                    let spec = it.spesifikasi_json;
-                    if (typeof spec === 'string') { try { spec = JSON.parse(spec); } catch(e){} }
-                    if (spec && typeof spec === 'object') {
-                        if (Array.isArray(spec.tanah_items) && spec.tanah_items.length > 0) return 'tanah';
-                        if (Array.isArray(spec.gedung_items) && spec.gedung_items.length > 0) return 'gedung';
-                        if (Array.isArray(spec.jaringan_items) && spec.jaringan_items.length > 0) return 'jaringan';
-                        if (Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0) return 'lainnya';
-                        if (Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0) return 'mesin';
-                        if (spec.luas_m2 || spec.hak_tanah || spec.sertifikat_no) return 'tanah';
-                        if (spec.konstruksi_bertingkat || spec.luas_lantai_m2) return 'gedung';
-                        if (spec.merk || spec.type || spec.no_pabrik) return 'mesin';
-                    }
-                }
+                // 7. PRIORITAS KETUJUH: Atribut spesifikasi individu
+                if (spec.konstruksi_bertingkat || spec.luas_lantai_m2 || spec.luas_m2_gedung || spec.bertingkat || spec.beton) return 'gedung';
+                if (spec.merk || spec.type || spec.no_pabrik || spec.no_rangka || spec.no_mesin || spec.ukuran_cc) return 'mesin';
+                if (spec.luas_m2 || spec.hak_tanah || spec.sertifikat_no || spec.tanah_hak) return 'tanah';
+                if (spec.panjang_km || spec.lebar_m) return 'jaringan';
+
+                // 8. Asal KIB jika ada
+                const asalKib = String(it?.asal_kib || kem?.asal_kib || '').toUpperCase().trim();
+                if (asalKib === 'KIB C') return 'gedung';
+                if (asalKib === 'KIB B') return 'mesin';
+                if (asalKib === 'KIB A') return 'tanah';
+                if (asalKib === 'KIB D') return 'jaringan';
+                if (asalKib === 'KIB E') return 'lainnya';
 
                 return 'mesin';
             },
@@ -3376,6 +3450,16 @@
                 this.reklasTujuanNama = this.reklasSubSubRincianNama || this.reklasSubRincianNama || '';
                 if (this.reklasTujuanKib === 'KEMITRAAN') {
                     this.reklasKemitraanTipeFisik = this.detectKemitraanPhysicalType();
+                } else if (this.reklasTujuanKib === 'KIB C') {
+                    this.reklasKemitraanTipeFisik = 'gedung';
+                } else if (this.reklasTujuanKib === 'KIB B') {
+                    this.reklasKemitraanTipeFisik = 'mesin';
+                } else if (this.reklasTujuanKib === 'KIB A') {
+                    this.reklasKemitraanTipeFisik = 'tanah';
+                } else if (this.reklasTujuanKib === 'KIB D') {
+                    this.reklasKemitraanTipeFisik = 'jaringan';
+                } else if (this.reklasTujuanKib === 'KIB E') {
+                    this.reklasKemitraanTipeFisik = 'lainnya';
                 }
                 this.initReklasSpekBaru();
             },
@@ -3662,10 +3746,45 @@
                 item.tahun_perolehan = kemitraanRow?.tahun || item.tahun_perolehan || new Date().getFullYear();
 
                 this.selectedAstapReklas = item;
+
+                // Reset field pemilihan rincian rekening terlebih dahulu agar tidak membaca sisa modal sebelumnya
+                this.reklasTujuanKode = '';
+                this.reklasTujuanNama = '';
+                this.reklasSubRincianKode = '';
+                this.reklasSubRincianNama = '';
+                this.reklasSubSubRincianKode = '';
+                this.reklasSubSubRincianNama = '';
+                this.searchReklasSubRincian = '';
+                this.isReklasSubRincianOpen = false;
+                this.searchReklasSubSubRincian = '';
+                this.isReklasSubSubRincianOpen = false;
+
                 const isActive = this.isKemitraanAktif();
                 this.reklasJenis = 'pindah_kib';
-                this.reklasTujuanKib = isActive ? 'KEMITRAAN' : (item.asal_kib || kemitraanRow?.asal_kib || 'KIB B');
-                this.reklasKemitraanTipeFisik = this.detectKemitraanPhysicalType(item);
+
+                // Otomatisasi KIB Tujuan & Tipe Fisik Berdasarkan Karakteristik Aset Kemitraan:
+                // Bangunan / Gedung -> otomatis KIB C (Gedung & Bangunan)
+                // Mesin / Alat / Alkes -> otomatis KIB B (Peralatan & Mesin)
+                // Tanah -> otomatis KIB A (Tanah)
+                // Jalan / Jaringan -> otomatis KIB D (Jalan, Jaringan & Irigasi)
+                // Lainnya -> otomatis KIB E (Aset Tetap Lainnya)
+                const physicalType = this.detectKemitraanPhysicalType(item);
+                this.reklasKemitraanTipeFisik = physicalType;
+
+                let autoTargetKib = 'KIB B';
+                if (physicalType === 'gedung') {
+                    autoTargetKib = 'KIB C';
+                } else if (physicalType === 'mesin') {
+                    autoTargetKib = 'KIB B';
+                } else if (physicalType === 'tanah') {
+                    autoTargetKib = 'KIB A';
+                } else if (physicalType === 'jaringan') {
+                    autoTargetKib = 'KIB D';
+                } else if (physicalType === 'lainnya') {
+                    autoTargetKib = 'KIB E';
+                }
+
+                this.reklasTujuanKib = isActive ? 'KEMITRAAN' : autoTargetKib;
 
                 this.reklasTipeKoreksiNilai = 'kurang';
                 this.reklasNominalKoreksi = 0;
@@ -3679,14 +3798,51 @@
                 }
                 if (!spec || typeof spec !== 'object') spec = {};
 
-                if (Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0) {
-                    this.reklasExtracomItems = spec.mesin_items.map((m, idx) => ({
+                let rawRepeaterItems = [];
+                if (Array.isArray(spec.gedung_items) && spec.gedung_items.length > 0) {
+                    rawRepeaterItems = spec.gedung_items.map((g, idx) => ({
+                        nama_barang: g.gedung_nama_barang || item.nama_barang || ('Gedung #' + (idx + 1)),
+                        jumlah_volume: parseInt(g.gedung_jumlah_bangunan) || 1,
+                        satuan: g.gedung_satuan || item.satuan || 'Gedung',
+                        harga_satuan: parseFloat(g.gedung_nilai_satuan || item.harga_satuan || 0),
+                        kode_barang: g.gedung_kode_barang || item.kode_barang || '',
+                    }));
+                } else if (Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0) {
+                    rawRepeaterItems = spec.mesin_items.map((m, idx) => ({
                         nama_barang: m.mesin_nama_barang || item.nama_barang || ('Barang #' + (idx + 1)),
                         jumlah_volume: parseInt(m.mesin_jumlah_barang) || 1,
                         satuan: m.mesin_satuan || item.satuan || 'Unit',
                         harga_satuan: parseFloat(m.mesin_nilai_satuan || m.mesin_harga_satuan || item.harga_satuan || 0),
                         kode_barang: m.mesin_kode_barang || item.kode_barang || '',
                     }));
+                } else if (Array.isArray(spec.tanah_items) && spec.tanah_items.length > 0) {
+                    rawRepeaterItems = spec.tanah_items.map((t, idx) => ({
+                        nama_barang: t.tanah_nama_barang || item.nama_barang || ('Bidang Tanah #' + (idx + 1)),
+                        jumlah_volume: parseInt(t.tanah_jumlah_bidang) || 1,
+                        satuan: t.tanah_satuan || item.satuan || 'Bidang',
+                        harga_satuan: parseFloat(t.tanah_nilai_satuan || item.harga_satuan || 0),
+                        kode_barang: t.tanah_kode_barang || item.kode_barang || '',
+                    }));
+                } else if (Array.isArray(spec.jaringan_items) && spec.jaringan_items.length > 0) {
+                    rawRepeaterItems = spec.jaringan_items.map((j, idx) => ({
+                        nama_barang: j.jaringan_nama_barang || item.nama_barang || ('Jaringan #' + (idx + 1)),
+                        jumlah_volume: parseInt(j.jaringan_jumlah) || 1,
+                        satuan: j.jaringan_satuan || item.satuan || 'Ruas',
+                        harga_satuan: parseFloat(j.jaringan_nilai_satuan || item.harga_satuan || 0),
+                        kode_barang: j.jaringan_kode_barang || item.kode_barang || '',
+                    }));
+                } else if (Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0) {
+                    rawRepeaterItems = spec.lainnya_items.map((l, idx) => ({
+                        nama_barang: l.lainnya_nama_barang || item.nama_barang || ('Aset Lain #' + (idx + 1)),
+                        jumlah_volume: parseInt(l.lainnya_jumlah) || 1,
+                        satuan: l.lainnya_satuan || item.satuan || 'Buah',
+                        harga_satuan: parseFloat(l.lainnya_nilai_satuan || item.harga_satuan || 0),
+                        kode_barang: l.lainnya_kode_barang || item.kode_barang || '',
+                    }));
+                }
+
+                if (rawRepeaterItems.length > 0) {
+                    this.reklasExtracomItems = rawRepeaterItems;
                 } else {
                     const fallbackVol = parseInt(item.jumlah_volume) || 1;
                     const fallbackHarga = fallbackVol > 0 ? (item.total_realisasi_num / fallbackVol) : item.total_realisasi_num;
@@ -3704,16 +3860,6 @@
                 if (item.bast_dokumen_nomor && item.bast_dokumen_nomor !== kemitraanRow?.nomor_pks) docs.push('BAST: ' + item.bast_dokumen_nomor);
                 this.reklasNomorBa = docs.join(' | ');
 
-                this.reklasTujuanKode = '';
-                this.reklasTujuanNama = '';
-                this.reklasSubRincianKode = '';
-                this.reklasSubRincianNama = '';
-                this.reklasSubSubRincianKode = '';
-                this.reklasSubSubRincianNama = '';
-                this.searchReklasSubRincian = '';
-                this.isReklasSubRincianOpen = false;
-                this.searchReklasSubSubRincian = '';
-                this.isReklasSubSubRincianOpen = false;
                 this.reklasTanggal = new Date().toLocaleDateString('en-CA');
                 this.reklasAlasan = isActive 
                     ? 'Penyesuaian / koreksi sub-rincian rekening 108 pemanfaatan kemitraan (Akun 1.5.2)' 
