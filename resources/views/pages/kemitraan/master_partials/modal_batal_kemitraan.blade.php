@@ -99,15 +99,30 @@
                 </div>
 
                 <!-- Footer Buttons -->
-                <div class="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-800">
+                <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-800">
                     <button type="button" @click="closeModalBatalKemitraan()"
-                            class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs transition-all cursor-pointer">
+                            class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs transition-all active:scale-95 cursor-pointer border border-slate-700/70">
                         Batal
                     </button>
-                    <button type="submit" :disabled="isSubmittingBatal || !batalForm.alasan_batal.trim()"
-                            class="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-rose-500 hover:from-rose-500 hover:to-rose-400 text-white font-black text-xs shadow-lg shadow-rose-600/30 transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer">
-                        <span x-show="!isSubmittingBatal">🚫 Ya, Batalkan Kemitraan</span>
-                        <span x-show="isSubmittingBatal">Memproses...</span>
+                    <button type="button" @click="submitBatalKemitraan()" 
+                            :disabled="isSubmittingBatal || !(batalForm.alasan_batal && batalForm.alasan_batal.trim())"
+                            style="background: linear-gradient(135deg, #e11d48, #be123c) !important;"
+                            class="px-5 py-2.5 rounded-xl text-white font-black text-xs shadow-lg shadow-rose-600/40 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer border border-rose-400/40">
+                        <template x-if="!isSubmittingBatal">
+                            <span class="flex items-center gap-1.5">
+                                <span class="text-sm">🚫</span>
+                                <span>Ya, Batalkan Kemitraan</span>
+                            </span>
+                        </template>
+                        <template x-if="isSubmittingBatal">
+                            <span class="flex items-center gap-2">
+                                <svg class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span>Memproses Pembatalan...</span>
+                            </span>
+                        </template>
                     </button>
                 </div>
             </form>

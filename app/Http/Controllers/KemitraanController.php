@@ -657,12 +657,31 @@ class KemitraanController extends Controller
     {
         $kemitraan = AstapKemitraan::find($id);
         if (!$kemitraan) {
-            $kemitraan = AstapKemitraan::where('astap_id', $id)->firstOrFail();
+            $kemitraan = AstapKemitraan::where('astap_id', $id)
+                ->orWhere('objek_astap_id', $id)
+                ->first();
         }
 
-        $request->validate([
+        if (!$kemitraan) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data kerja sama kemitraan tidak ditemukan (ID: ' . $id . ').'
+            ], 404);
+        }
+
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
             'alasan_batal' => 'required|string|max:1000'
+        ], [
+            'alasan_batal.required' => 'Alasan pembatalan kemitraan wajib diisi.',
+            'alasan_batal.max'      => 'Alasan pembatalan maksimal 1000 karakter.'
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first()
+            ], 422);
+        }
 
         return DB::transaction(function () use ($kemitraan, $request) {
             $alasan = trim($request->input('alasan_batal'));
@@ -749,7 +768,16 @@ class KemitraanController extends Controller
     {
         $kemitraan = AstapKemitraan::find($id);
         if (!$kemitraan) {
-            $kemitraan = AstapKemitraan::where('astap_id', $id)->firstOrFail();
+            $kemitraan = AstapKemitraan::where('astap_id', $id)
+                ->orWhere('objek_astap_id', $id)
+                ->first();
+        }
+
+        if (!$kemitraan) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data kerja sama kemitraan tidak ditemukan (ID: ' . $id . ').'
+            ], 404);
         }
 
         return DB::transaction(function () use ($kemitraan, $request) {

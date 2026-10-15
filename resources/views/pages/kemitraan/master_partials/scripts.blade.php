@@ -285,6 +285,33 @@
             reklasNilaiRealisasiBaru: 0,
             reklasNilaiAnggaran: 0,
             reklasNoDokumenKoreksi: '',
+            reklasDokumenTglKoreksi: new Date().toLocaleDateString('en-CA'),
+            reklasSubKoreksi: 'biasa',
+            reklasTipeHibah: 'keluar',
+            reklasNomorBastHibah: '',
+            reklasTanggalBastHibah: new Date().toLocaleDateString('en-CA'),
+            reklasPihakHibah: '',
+            reklasNomorBastMutasi: '',
+            reklasTanggalBastMutasi: new Date().toLocaleDateString('en-CA'),
+            reklasSkpdTujuan: '',
+            reklasPejabatOpdTujuan: '',
+            reklasNipPejabatOpdTujuan: '',
+            reklasJabatanOpdTujuan: 'Pengurus Barang / Pengelola Aset OPD',
+            reklasPjAsalNama: 'BUDI HARTONO, S.Sos',
+            reklasPjAsalNip: '19760229 200801 1 010',
+            reklasPjAsalJabatan: 'Pengurus Barang Pengguna',
+            reklasAlamatInstansi: '',
+            reklasNomorSkDasar: '',
+            reklasSelectedNibarIds: [],
+            reklasRegisterKondisiMap: {},
+            skpdDirectory: window.dbSkpdDirectory || {},
+            skpdList: window.dbSkpdAsals || [],
+            dbPejabats: window.dbPejabats || [],
+            isSkpdDropdownOpen: false,
+            isPejabatTujuanDropdownOpen: false,
+            isPejabatAsalDropdownOpen: false,
+            selectedDokumenFile: null,
+            reklasKdpProgresAwal: 0,
             isSubmittingReklas: false,
             reklasKemitraanTipeFisik: 'mesin', // 'tanah' | 'mesin' | 'gedung' | 'jaringan' | 'lainnya'
 
@@ -820,7 +847,7 @@
                         }
                         return kemitraan?.dokumen_path || spec.dokumen_path || null;
                     })(),
-                    is_dimanfaatkan: Boolean(isDimanfaatkan || kemitraan?.is_reklas_pending),
+                    is_dimanfaatkan: Boolean(isDimanfaatkan || (kemitraan && kemitraan.tipe_kemitraan === 'dimanfaatkan') || kemitraan?.is_reklas_pending),
 
                     // Relasi Objek Aset BMD RSUD (untuk aset yang ditambahkan mitra)
                     objek_astap_id: kemitraan?.objek_astap_id || spec.objek_astap_id || null,
@@ -2935,6 +2962,57 @@
                 return !this.isCurrentAstapKdp();
             },
 
+            isCurrentAstapMutasiKeluarFull() {
+                if (!this.selectedAstapReklas) return false;
+                const it = this.selectedAstapReklas;
+                if (it.jenis_reklas === 'MUTASI_EKSTERNAL' || it.is_mutasi_keluar_full) return true;
+                if (it.mutasi_keluar && !it.is_mutasi_keluar_partial) return true;
+                if (it.registers && Array.isArray(it.registers) && it.registers.length > 0) {
+                    const activeCount = it.registers.filter(r => r.status !== 'Mutasi Keluar OPD').length;
+                    if (activeCount === 0) return true;
+                }
+                return false;
+            },
+
+            selectSkpdTujuan(skpd) {
+                if (!skpd) return;
+                this.reklasSkpdTujuan = typeof skpd === 'string' ? skpd : (skpd.nama || skpd.skpd || '');
+                this.isSkpdDropdownOpen = false;
+            },
+
+            selectPejabatTujuan(p) {
+                if (!p) return;
+                this.reklasPejabatOpdTujuan = p.nama || '';
+                this.reklasNipPejabatOpdTujuan = p.nip || '';
+                if (p.jabatan) this.reklasJabatanOpdTujuan = p.jabatan;
+                this.isPejabatTujuanDropdownOpen = false;
+            },
+
+            selectPejabatAsal(p) {
+                if (!p) return;
+                this.reklasPjAsalNama = p.nama || '';
+                this.reklasPjAsalNip = p.nip || '';
+                this.reklasPjAsalJabatan = p.jabatan || '';
+                this.isPejabatAsalDropdownOpen = false;
+            },
+
+            handleDokumenFile(e) {
+                const file = e.target.files && e.target.files[0];
+                if (!file) return;
+                if (file.size > 10 * 1024 * 1024) {
+                    this.showToast('Ukuran file dokumen melebihi 10MB!', 'error');
+                    e.target.value = '';
+                    return;
+                }
+                this.selectedDokumenFile = file;
+            },
+
+            clearDokumenFile() {
+                this.selectedDokumenFile = null;
+                const el = document.getElementById('astap_reklas_dokumen_file_input');
+                if (el) el.value = '';
+            },
+
             getReklasNilaiBaru() {
                 if (!this.selectedAstapReklas) return 0;
                 if (this.reklasJenis === 'koreksi_nilai') {
@@ -3959,9 +4037,19 @@
             openModalBatalKemitraan(row) {
                 if (!row) return;
 
-                const kemitraanId = row.kemitraan_id || (row.kemitraan ? row.kemitraan.id : row.id);
+                const kemitraanId = row.kemitraan_id 
+                    || (row.kemitraan && row.kemitraan.id ? row.kemitraan.id : null) 
+                    || row.id 
+                    || row.astap_id 
+                    || (row.raw && row.raw.id ? row.raw.id : null);
+
                 const rawRow = (row.raw_row && Object.keys(row.raw_row).length > 0) ? row.raw_row : (row.kemitraan || row);
-                const isDimanfaatkan = Boolean(row.is_dimanfaatkan ?? rawRow.is_dimanfaatkan ?? (rawRow.tipe_kemitraan === 'dimanfaatkan'));
+                const isDimanfaatkan = Boolean(
+                    row.is_dimanfaatkan || 
+                    (row.kemitraan && row.kemitraan.tipe_kemitraan === 'dimanfaatkan') || 
+                    (rawRow && rawRow.tipe_kemitraan === 'dimanfaatkan') || 
+                    (row.tipe_kemitraan === 'dimanfaatkan')
+                );
                 const namaBarang = row.nama_barang || row.astap?.nama_barang || rawRow.nama_barang || 'Aset Kemitraan';
                 const nomorPks = row.nomor_pks || rawRow.nomor_pks || '-';
                 const mitraNama = row.mitra_nama || rawRow.mitra_nama || rawRow.penyedia_nama || 'Mitra Rekanan';
@@ -3989,14 +4077,19 @@
             },
 
             async submitBatalKemitraan() {
-                if (!this.batalData.id) return;
-                if (!this.batalForm.alasan_batal || !this.batalForm.alasan_batal.trim()) {
+                if (!this.batalData.id) {
+                    this.showToast('ID data kemitraan tidak valid atau tidak ditemukan.', 'error');
+                    console.error('submitBatalKemitraan: batalData.id is missing', this.batalData);
+                    return;
+                }
+                const alasan = (this.batalForm.alasan_batal || '').trim();
+                if (!alasan) {
                     this.showToast('Harap masukkan alasan pembatalan kemitraan.', 'warning');
                     return;
                 }
 
                 this.isSubmittingBatal = true;
-                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
 
                 try {
                     const res = await fetch(`/master-data/kemitraan/${this.batalData.id}/batalkan`, {
@@ -4007,7 +4100,7 @@
                             'X-CSRF-TOKEN': token
                         },
                         body: JSON.stringify({
-                            alasan_batal: this.batalForm.alasan_batal.trim()
+                            alasan_batal: alasan
                         })
                     });
 
@@ -4018,7 +4111,7 @@
                         this.showToast(resJson.message || 'Status kemitraan berhasil dibatalkan!', 'success');
                         setTimeout(() => {
                             window.location.reload();
-                        }, 1200);
+                        }, 1000);
                     } else {
                         this.showToast('Gagal membatalkan kemitraan: ' + (resJson.message || 'Terjadi kesalahan sistem.'), 'error');
                     }
@@ -4032,7 +4125,9 @@
 
             batalPembatalanKemitraan(detail) {
                 if (!detail) return;
-                const kemitraanId = detail.kemitraan_id || detail.id;
+                const kemitraanId = detail.kemitraan_id 
+                    || (detail.kemitraan && detail.kemitraan.id ? detail.kemitraan.id : null) 
+                    || detail.id;
                 const namaAset = detail.nama_barang || 'Aset Kemitraan';
                 const noPks = detail.nomor_pks || '-';
 

@@ -276,30 +276,32 @@
                             <label class="relative flex items-center p-3.5 rounded-2xl border transition-all select-none"
                                    style="gap: 12px;"
                                    :class="{
-                                       'opacity-40 cursor-not-allowed bg-slate-950/30 border-slate-800': isKemitraanAktif() || isCurrentAstapMutasiKeluarFull(),
-                                       'cursor-pointer bg-teal-500/10 border-teal-500/50 shadow-sm shadow-teal-500/10': !isKemitraanAktif() && !isCurrentAstapMutasiKeluarFull() && reklasJenis === 'mutasi_eksternal',
-                                       'cursor-pointer bg-slate-950/60 border-slate-800 hover:border-slate-700': !isKemitraanAktif() && !isCurrentAstapMutasiKeluarFull() && reklasJenis !== 'mutasi_eksternal'
+                                       'opacity-40 cursor-not-allowed bg-slate-950/30 border-slate-800': isKemitraanAktif() || (typeof isCurrentAstapMutasiKeluarFull === 'function' && isCurrentAstapMutasiKeluarFull()),
+                                       'cursor-pointer bg-teal-500/10 border-teal-500/50 shadow-sm shadow-teal-500/10': !isKemitraanAktif() && !(typeof isCurrentAstapMutasiKeluarFull === 'function' && isCurrentAstapMutasiKeluarFull()) && reklasJenis === 'mutasi_eksternal',
+                                       'cursor-pointer bg-slate-950/60 border-slate-800 hover:border-slate-700': !isKemitraanAktif() && !(typeof isCurrentAstapMutasiKeluarFull === 'function' && isCurrentAstapMutasiKeluarFull()) && reklasJenis !== 'mutasi_eksternal'
                                    }">
-                                <input type="radio" name="reklas_jenis" value="mutasi_eksternal" x-model="reklasJenis" :disabled="isKemitraanAktif() || isCurrentAstapMutasiKeluarFull()" class="hidden" style="display: none;">
+                                <input type="radio" name="reklas_jenis" value="mutasi_eksternal" x-model="reklasJenis" :disabled="isKemitraanAktif() || (typeof isCurrentAstapMutasiKeluarFull === 'function' && isCurrentAstapMutasiKeluarFull())" class="hidden" style="display: none;">
                                 <div class="flex items-center justify-center rounded-full border shrink-0 transition-all"
                                      style="width: 18px; height: 18px; min-width: 18px; margin-right: 6px;"
                                      :class="{
-                                         'border-teal-400 bg-teal-500/20': !isKemitraanAktif() && !isCurrentAstapMutasiKeluarFull() && reklasJenis === 'mutasi_eksternal',
-                                         'border-slate-700 bg-slate-900': isKemitraanAktif() || isCurrentAstapMutasiKeluarFull() || reklasJenis !== 'mutasi_eksternal'
+                                         'border-teal-400 bg-teal-500/20': !isKemitraanAktif() && !(typeof isCurrentAstapMutasiKeluarFull === 'function' && isCurrentAstapMutasiKeluarFull()) && reklasJenis === 'mutasi_eksternal',
+                                         'border-slate-700 bg-slate-900': isKemitraanAktif() || (typeof isCurrentAstapMutasiKeluarFull === 'function' && isCurrentAstapMutasiKeluarFull()) || reklasJenis !== 'mutasi_eksternal'
                                      }">
-                                    <div x-show="!isKemitraanAktif() && !isCurrentAstapMutasiKeluarFull() && reklasJenis === 'mutasi_eksternal'" class="rounded-full bg-teal-400" style="width: 8px; height: 8px;"></div>
+                                    <div x-show="!isKemitraanAktif() && !(typeof isCurrentAstapMutasiKeluarFull === 'function' && isCurrentAstapMutasiKeluarFull()) && reklasJenis === 'mutasi_eksternal'" class="rounded-full bg-teal-400" style="width: 8px; height: 8px;"></div>
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-center space-x-2">
-                                        <span class="font-bold text-xs" :class="(!isKemitraanAktif() && !isCurrentAstapMutasiKeluarFull() && reklasJenis === 'mutasi_eksternal') ? 'text-teal-300' : ((isKemitraanAktif() || isCurrentAstapMutasiKeluarFull()) ? 'text-slate-500' : 'text-white')">Mutasi Eksternal Antar-OPD</span>
+                                        <span class="font-bold text-xs" :class="(!isKemitraanAktif() && !(typeof isCurrentAstapMutasiKeluarFull === 'function' && isCurrentAstapMutasiKeluarFull()) && reklasJenis === 'mutasi_eksternal') ? 'text-teal-300' : ((isKemitraanAktif() || (typeof isCurrentAstapMutasiKeluarFull === 'function' && isCurrentAstapMutasiKeluarFull())) ? 'text-slate-500' : 'text-white')">Mutasi Eksternal Antar-OPD</span>
                                         <template x-if="isKemitraanAktif()">
                                             <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">PKS Aktif</span>
                                         </template>
-                                        <template x-if="isCurrentAstapMutasiKeluarFull()">
+                                        <template x-if="typeof isCurrentAstapMutasiKeluarFull === 'function' && isCurrentAstapMutasiKeluarFull()">
                                             <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">Sudah Keluar OPD</span>
                                         </template>
                                     </div>
-                                    <div class="text-[10px] text-slate-400 mt-0.5" x-text="isKemitraanAktif() ? 'Terkunci: Aset sedang dalam kemitraan aktif' : (isCurrentAstapMutasiKeluarFull() ? 'Terkunci: Aset telah dimutasi keluar ke OPD lain dan tidak dapat dimutasi lagi' : 'Pengalihan barang RSUD ke dinas/SKPD lain di lingkungan Pemkab')"></div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5" x-text="isKemitraanAktif() ? 'Terkunci: Aset sedang dalam kemitraan aktif' : ((typeof isCurrentAstapMutasiKeluarFull === 'function' && isCurrentAstapMutasiKeluarFull()) ? 'Terkunci: Aset telah dimutasi keluar ke OPD lain dan tidak dapat dimutasi lagi' : 'Pengalihan barang RSUD ke dinas/SKPD lain di lingkungan Pemkab')">
+                                        Pengalihan barang RSUD ke dinas/SKPD lain di lingkungan Pemkab
+                                    </div>
                                 </div>
                             </label>
                         </div>
@@ -2449,7 +2451,7 @@
                         Batal
                     </button>
                     <button type="button" @click="submitReklas()"
-                        :disabled="isSubmittingReklas || (reklasJenis === 'mutasi_eksternal' && isCurrentAstapMutasiKeluarFull())"
+                        :disabled="isSubmittingReklas || (reklasJenis === 'mutasi_eksternal' && (typeof isCurrentAstapMutasiKeluarFull === 'function' && isCurrentAstapMutasiKeluarFull()))"
                         class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 border border-indigo-500/50 hover:border-indigo-400 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 cursor-pointer">
                         <template x-if="isSubmittingReklas">
                             <svg class="animate-spin w-4 h-4 text-white shrink-0" fill="none" viewBox="0 0 24 24">
