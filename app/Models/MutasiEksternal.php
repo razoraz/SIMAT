@@ -22,6 +22,7 @@ class MutasiEksternal extends Model
         'signed'               => 'boolean',
         'is_deleted'           => 'integer',
         'deleted_at'           => 'datetime',
+        'dibatalkan_at'        => 'datetime',
     ];
 
     /**
@@ -63,6 +64,16 @@ class MutasiEksternal extends Model
     public function scopeKeluar($query)
     {
         return $query->where('tipe', 'keluar');
+    }
+
+    public function scopeDisahkan($query)
+    {
+        return $query->where('status', '!=', 'Dibatalkan');
+    }
+
+    public function scopeDibatalkan($query)
+    {
+        return $query->where('status', 'Dibatalkan');
     }
 
     // ─── Relations ──────────────────────────────────────────────────────────

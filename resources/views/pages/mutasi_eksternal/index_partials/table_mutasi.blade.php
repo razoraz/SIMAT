@@ -12,6 +12,7 @@
                     <th class="px-3 py-3.5 text-center whitespace-nowrap w-32 bg-slate-950">Volume / Kuantitas</th>
                     <th class="px-3 py-3.5 text-center whitespace-nowrap w-36 bg-slate-950">Nilai Perolehan</th>
                     <th class="px-3 py-3.5 text-center whitespace-nowrap w-28 bg-slate-950">Kondisi</th>
+                    <th class="px-3.5 py-3.5 text-center whitespace-nowrap w-36 bg-slate-950">Status</th>
                     <th class="px-3 py-3.5 text-center whitespace-nowrap w-[230px] min-w-[230px] bg-slate-950 border-l border-slate-800 shrink-0" style="position: sticky; right: 0; z-index: 20; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">Aksi</th>
                 </tr>
             </thead>
@@ -103,6 +104,20 @@
                             </div>
                         </td>
 
+                        <!-- Status Mutasi -->
+                        <td class="px-3 py-3 text-center whitespace-nowrap w-36">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10.5px] font-extrabold border shadow-sm select-none"
+                                :class="(item.status || '').toLowerCase().includes('batal') 
+                                    ? 'bg-rose-500/15 text-rose-300 border-rose-500/30' 
+                                    : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'">
+                                <span class="w-1.5 h-1.5 rounded-full"
+                                    :class="(item.status || '').toLowerCase().includes('batal') 
+                                        ? 'bg-rose-400' 
+                                        : 'bg-emerald-400 animate-pulse'"></span>
+                                <span x-text="(item.status || '').toLowerCase().includes('batal') ? 'Dibatalkan' : 'Disahkan (Selesai)'"></span>
+                            </span>
+                        </td>
+
                         <!-- Aksi (Detail, Reklas, Ubah, Hapus) -->
                         <td class="px-3 py-3 text-center whitespace-nowrap border-l border-slate-800/80 w-[230px] min-w-[230px] shrink-0" style="position: sticky; right: 0; z-index: 2; background-color: #0f172a !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
                             <div class="flex items-center justify-center gap-1.5">
@@ -138,7 +153,7 @@
                 <!-- 1. Empty State jika BELUM ADA DATA di database sama sekali -->
                 <template x-if="countMasuk === 0">
                     <tr>
-                        <td colspan="7" class="text-center py-16 text-slate-400">
+                        <td colspan="8" class="text-center py-16 text-slate-400">
                             <div class="flex flex-col items-center justify-center space-y-4 max-w-md mx-auto">
                                 <div class="w-16 h-16 rounded-3xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-3xl shadow-inner text-indigo-400">
                                     📥
@@ -157,7 +172,7 @@
                 <!-- 2. Empty State jika ada data tetapi tidak cocok dengan filter / kata kunci pencarian -->
                 <template x-if="countMasuk > 0 && filteredMutasis.length === 0">
                     <tr>
-                        <td colspan="7" class="text-center align-middle py-28 text-slate-400">
+                        <td colspan="8" class="text-center align-middle py-28 text-slate-400">
                             <div class="flex flex-col items-center justify-center space-y-2 py-4">
                                 <p class="text-sm font-semibold text-slate-300">Tidak ada data aset yang cocok dengan filter atau pencarian Anda.</p>
                                 <p class="text-xs text-slate-500">Coba ubah kata kunci atau reset filter.</p>

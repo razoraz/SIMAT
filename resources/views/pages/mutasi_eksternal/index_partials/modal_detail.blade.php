@@ -40,12 +40,10 @@
 
                     <!-- Status BAST Badge -->
                     <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0"
-                        :class="{
-                            'bg-emerald-500/20 text-emerald-300 border-emerald-500/40': ((selectedAstapDetail || selectedMutasi)?.status || '').includes('Selesai') || ((selectedAstapDetail || selectedMutasi)?.status || '').includes('Disahkan'),
-                            'bg-cyan-500/20 text-cyan-300 border-cyan-500/40':         ((selectedAstapDetail || selectedMutasi)?.status || '').includes('Peminjaman'),
-                            'bg-amber-500/20 text-amber-300 border-amber-500/40':     ((selectedAstapDetail || selectedMutasi)?.status || '').includes('Menunggu')
-                        }"
-                        x-text="(selectedAstapDetail || selectedMutasi)?.status || 'Disahkan (Selesai)'"></span>
+                        :class="((selectedAstapDetail || selectedMutasi)?.status || '').toLowerCase().includes('batal')
+                            ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                            : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'"
+                        x-text="((selectedAstapDetail || selectedMutasi)?.status || '').toLowerCase().includes('batal') ? '✕ Dibatalkan' : '✓ Disahkan (Selesai)'"></span>
 
                     <!-- Kode Barang 108 -->
                     <span class="px-2.5 py-0.5 rounded-lg bg-slate-950 border border-slate-800 text-cyan-400 font-mono font-bold text-[11px] truncate max-w-full"
@@ -89,6 +87,33 @@
 
         <template x-if="selectedAstapDetail || selectedMutasi">
             <div class="space-y-4 text-xs text-slate-300">
+
+                <!-- 1. BANNER STATUS DIBATALKAN (JIKA DIBATALKAN) -->
+                <template x-if="((selectedAstapDetail || selectedMutasi)?.status || '').toLowerCase().includes('batal')">
+                    <div class="p-4 rounded-2xl bg-rose-950/40 border border-rose-500/40 text-rose-200 shadow-lg shadow-rose-950/30 space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-rose-400 animate-pulse"></span>
+                                <span class="font-extrabold text-xs uppercase tracking-wider text-rose-300">🚫 Transaksi Mutasi Eksternal Ini Telah Dibatalkan</span>
+                            </div>
+                            <span class="px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-300 font-mono text-[10px] font-bold border border-rose-500/30 uppercase">Status: Dibatalkan</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] pt-1 border-t border-rose-500/20">
+                            <div>
+                                <span class="text-rose-400 block text-[10px] uppercase font-bold">Dibatalkan Oleh:</span>
+                                <span class="font-bold text-white" x-text="(selectedAstapDetail || selectedMutasi)?.dibatalkan_by || 'Petugas SIMAT'"></span>
+                            </div>
+                            <div>
+                                <span class="text-rose-400 block text-[10px] uppercase font-bold">Waktu Pembatalan:</span>
+                                <span class="font-mono text-white" x-text="(selectedAstapDetail || selectedMutasi)?.dibatalkan_at || '-'"></span>
+                            </div>
+                        </div>
+                        <div class="pt-1 border-t border-rose-500/20">
+                            <span class="text-rose-400 block text-[10px] uppercase font-bold">Alasan Pembatalan:</span>
+                            <p class="text-slate-200 italic text-xs leading-relaxed" x-text="(selectedAstapDetail || selectedMutasi)?.alasan_batal || '-'"></p>
+                        </div>
+                    </div>
+                </template>
 
                 <!-- 2. TOP 4 METRIC KPI CARDS (RESPONSIVE GRID PERSIS ASTAP) -->
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
@@ -694,12 +719,32 @@
         </template>
 
         <!-- 9. FOOTER MODAL ACTIONS -->
-        <div class="pt-4 border-t border-slate-800 flex items-center justify-between">
+        <div class="pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2">
             <button type="button" @click="showDetailModal = false"
                 class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-extrabold text-xs transition-all shadow-md active:scale-95 cursor-pointer">
                 Tutup Detail
             </button>
             <div class="flex items-center space-x-2">
+                @if(in_array(auth()->user()?->role, ['master_admin', 'admin']))
+                    {{-- Jika Belum Dibatalkan: Tombol Batalkan Mutasi --}}
+                    <template x-if="!((selectedAstapDetail || selectedMutasi)?.status || '').toLowerCase().includes('batal')">
+                        <button type="button" @click="openBatalModal(selectedAstapDetail || selectedMutasi)"
+                            class="px-4 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 hover:border-rose-400 font-extrabold text-xs transition-all shadow-md flex items-center space-x-1.5 active:scale-95 cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <span>Batalkan Mutasi</span>
+                        </button>
+                    </template>
+
+                    {{-- Jika Sudah Dibatalkan: Tombol Sahkan Kembali --}}
+                    <template x-if="((selectedAstapDetail || selectedMutasi)?.status || '').toLowerCase().includes('batal')">
+                        <button type="button" @click="sahkanMutasi(selectedAstapDetail || selectedMutasi)"
+                            class="px-4 py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 hover:border-emerald-400 font-extrabold text-xs transition-all shadow-md flex items-center space-x-1.5 active:scale-95 cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <span>Sahkan Kembali</span>
+                        </button>
+                    </template>
+                @endif
+
                 <button type="button" @click="openPrintModal(selectedAstapDetail || selectedMutasi)"
                     class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-400 hover:to-indigo-500 text-white font-extrabold text-xs shadow-lg shadow-purple-500/25 transition-all flex items-center space-x-2 active:scale-95 cursor-pointer">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>

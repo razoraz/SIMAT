@@ -1672,6 +1672,8 @@ Route::middleware('auth')->group(function () {
             Route::match(['put', 'post'], '/astap/update-mutasi-eksternal/{id}', [\App\Http\Controllers\MutasiEksternalController::class, 'update'])->name('astap.update_mutasi_eksternal');
 
             Route::delete('/mutasi-eksternal/{id}', [\App\Http\Controllers\MutasiEksternalController::class, 'destroy'])->name('mutasi.eksternal.destroy');
+            Route::post('/mutasi-eksternal/{id}/batalkan', [\App\Http\Controllers\MutasiEksternalController::class, 'batalkan'])->name('mutasi.eksternal.batalkan');
+            Route::post('/mutasi-eksternal/{id}/sahkan', [\App\Http\Controllers\MutasiEksternalController::class, 'sahkan'])->name('mutasi.eksternal.sahkan');
             Route::get('/mutasi-eksternal/{id}', [\App\Http\Controllers\MutasiEksternalController::class, 'show'])->name('mutasi.eksternal.show');
             Route::get('/mutasi-eksternal/{id}/cetak', [\App\Http\Controllers\MutasiEksternalController::class, 'cetak'])->name('mutasi.eksternal.cetak');
 

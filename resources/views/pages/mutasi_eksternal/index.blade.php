@@ -30,6 +30,9 @@
         <!-- MODAL KONFIRMASI HAPUS (SOFT-DELETE) -->
         @include('pages.mutasi_eksternal.index_partials.modal_delete')
 
+        <!-- MODAL KONFIRMASI PEMBATALAN TRANSAKSI MUTASI EKSTERNAL -->
+        @include('pages.mutasi_eksternal.index_partials.modal_batal')
+
         <!-- MODAL KONFIRMASI TINDAKAN (CUSTOM BESPOKE MODAL) -->
         @include('pages.mutasi_eksternal.index_partials.modal_confirm')
 

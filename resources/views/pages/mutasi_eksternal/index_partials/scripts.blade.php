@@ -19,6 +19,12 @@
             deleteAlasan: '',
             isDeleting: false,
 
+            // Modal Pembatalan Mutasi State
+            showBatalModal: false,
+            itemToBatal: null,
+            batalAlasan: '',
+            isCancelling: false,
+
             // Global Custom Confirmation Modal State
             showConfirmModal: false,
             confirmData: {
@@ -91,11 +97,10 @@
                     // Filter Status BAST
                     const itemStatus = (item.status || '').toLowerCase();
                     if (this.statusFilter === 'selesai') {
-                        if (!itemStatus.includes('selesai') && !itemStatus.includes('disahkan')) return false;
-                    } else if (this.statusFilter === 'pinjam_aktif') {
-                        if (!itemStatus.includes('peminjaman')) return false;
-                    } else if (this.statusFilter === 'menunggu_verifikasi') {
-                        if (!itemStatus.includes('menunggu')) return false;
+                        if (itemStatus.includes('batal')) return false;
+                        if (!itemStatus.includes('selesai') && !itemStatus.includes('disahkan') && itemStatus) return false;
+                    } else if (this.statusFilter === 'dibatalkan') {
+                        if (!itemStatus.includes('batal')) return false;
                     }
 
                     // Search Query (Nama Barang, Kode 108, NIBAR, Tahun, No BAST, OPD)
@@ -141,11 +146,14 @@
             },
 
             get countSelesai() {
-                return this.currentDirectionItems.filter(m => (m.status || '').toLowerCase().includes('selesai') || (m.status || '').toLowerCase().includes('disahkan')).length;
+                return this.currentDirectionItems.filter(m => {
+                    const st = (m.status || '').toLowerCase();
+                    return !st.includes('batal') && (st.includes('selesai') || st.includes('disahkan') || !st);
+                }).length;
             },
 
-            get countMenunggu() {
-                return this.currentDirectionItems.filter(m => (m.status || '').toLowerCase().includes('menunggu')).length;
+            get countDibatalkan() {
+                return this.currentDirectionItems.filter(m => (m.status || '').toLowerCase().includes('batal')).length;
             },
 
             formatRupiah(val) {
@@ -1078,6 +1086,149 @@
                     console.error('Delete error:', err);
                     alert('❌ Terjadi kesalahan jaringan saat mencoba menghapus data.');
                 }
+            },
+
+            openBatalModal(item) {
+                if (!item) return;
+                this.itemToBatal = item;
+                this.batalAlasan = '';
+                this.showBatalModal = true;
+            },
+
+            async executeBatal() {
+                if (!this.itemToBatal || this.isCancelling) return;
+                const reason = (this.batalAlasan || '').trim();
+                if (!reason) {
+                    this.showToast('Mohon isi alasan pembatalan mutasi eksternal.', 'error');
+                    return;
+                }
+
+                this.isCancelling = true;
+                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+                const id = this.itemToBatal.mutasi_id || this.itemToBatal.id;
+                const targetUrl = "{{ url('/mutasi-eksternal') }}/" + id + "/batalkan";
+
+                try {
+                    const res = await fetch(targetUrl, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': token,
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({
+                            alasan_batal: reason
+                        })
+                    });
+
+                    const data = await res.json();
+                    this.isCancelling = false;
+
+                    if (res.ok && data.success) {
+                        const targetAstapId = this.itemToBatal.id;
+                        const targetMutasiId = this.itemToBatal.mutasi_id;
+
+                        // Update mutasiEksternals list reactively
+                        this.mutasiEksternals = this.mutasiEksternals.map(m => {
+                            if (Number(m.id) === Number(targetAstapId) || (targetMutasiId && Number(m.mutasi_id) === Number(targetMutasiId))) {
+                                return {
+                                    ...m,
+                                    status: 'Dibatalkan',
+                                    alasan_batal: reason,
+                                    dibatalkan_by: data.dibatalkan_by,
+                                    dibatalkan_at: data.dibatalkan_at
+                                };
+                            }
+                            return m;
+                        });
+
+                        // Update open detail modal reactively if matching
+                        const curDetail = this.selectedAstapDetail || this.selectedMutasi;
+                        if (curDetail && (Number(curDetail.id) === Number(targetAstapId) || (targetMutasiId && Number(curDetail.mutasi_id) === Number(targetMutasiId)))) {
+                            curDetail.status = 'Dibatalkan';
+                            curDetail.alasan_batal = reason;
+                            curDetail.dibatalkan_by = data.dibatalkan_by;
+                            curDetail.dibatalkan_at = data.dibatalkan_at;
+                        }
+
+                        this.showBatalModal = false;
+                        this.itemToBatal = null;
+                        this.showToast(data.message || 'Transaksi Mutasi Eksternal berhasil dibatalkan.', 'success');
+                    } else {
+                        this.showToast(data.message || 'Gagal membatalkan transaksi mutasi eksternal.', 'error');
+                    }
+                } catch (err) {
+                    this.isCancelling = false;
+                    console.error('Batal error:', err);
+                    this.showToast('Terjadi kesalahan jaringan saat membatalkan transaksi.', 'error');
+                }
+            },
+
+            sahkanMutasi(item) {
+                if (!item) return;
+                const id = item.mutasi_id || item.id;
+                const namaAset = item.nama_barang || item.nama || 'Aset';
+
+                this.askConfirmation({
+                    title: '✓ Konfirmasi Sahkan Kembali Mutasi Eksternal',
+                    message: 'Apakah Anda yakin ingin mengesahkan kembali dokumen mutasi eksternal ini? Status dokumen akan kembali aktif menjadi "Disahkan (Selesai)".',
+                    itemName: namaAset + ' (' + (item.kode || item.mutasi_nomor_bamb || 'BAST') + ')',
+                    type: 'warning',
+                    btnText: '✓ Ya, Sahkan Kembali',
+                    onConfirm: async () => {
+                        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+                        const targetUrl = "{{ url('/mutasi-eksternal') }}/" + id + "/sahkan";
+
+                        try {
+                            const res = await fetch(targetUrl, {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRF-TOKEN': token,
+                                    'Accept': 'application/json',
+                                    'Content-Type': 'application/json',
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                }
+                            });
+
+                            const data = await res.json();
+                            if (res.ok && data.success) {
+                                const targetAstapId = item.id;
+                                const targetMutasiId = item.mutasi_id;
+
+                                // Update mutasiEksternals list reactively
+                                this.mutasiEksternals = this.mutasiEksternals.map(m => {
+                                    if (Number(m.id) === Number(targetAstapId) || (targetMutasiId && Number(m.mutasi_id) === Number(targetMutasiId))) {
+                                        return {
+                                            ...m,
+                                            status: 'Disahkan (Selesai)',
+                                            alasan_batal: null,
+                                            dibatalkan_by: null,
+                                            dibatalkan_at: null
+                                        };
+                                    }
+                                    return m;
+                                });
+
+                                // Update open detail modal reactively if matching
+                                const curDetail = this.selectedAstapDetail || this.selectedMutasi;
+                                if (curDetail && (Number(curDetail.id) === Number(targetAstapId) || (targetMutasiId && Number(curDetail.mutasi_id) === Number(targetMutasiId)))) {
+                                    curDetail.status = 'Disahkan (Selesai)';
+                                    curDetail.alasan_batal = null;
+                                    curDetail.dibatalkan_by = null;
+                                    curDetail.dibatalkan_at = null;
+                                }
+
+                                this.showToast(data.message || 'Transaksi Mutasi Eksternal berhasil disahkan kembali.', 'success');
+                            } else {
+                                this.showToast(data.message || 'Gagal mengesahkan kembali mutasi eksternal.', 'error');
+                            }
+                        } catch (err) {
+                            console.error('Sahkan error:', err);
+                            this.showToast('Terjadi kesalahan jaringan saat mengesahkan transaksi.', 'error');
+                        }
+                    }
+                });
             }
         };
     }

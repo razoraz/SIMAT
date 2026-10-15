@@ -85,19 +85,18 @@
                     x-text="countSelesai"></span>
             </button>
 
-            {{-- Button Menunggu Verifikasi --}}
-            <template x-if="countMenunggu > 0">
-                <button type="button" @click="statusFilter = 'menunggu_verifikasi'"
-                    :class="statusFilter === 'menunggu_verifikasi' 
-                        ? 'bg-amber-600 text-white shadow-sm shadow-amber-600/25 border-amber-500/50' 
-                        : 'bg-slate-900/80 text-slate-400 hover:text-amber-300 hover:bg-slate-800/80 border-slate-800/80'"
-                    class="px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-all duration-200 flex items-center space-x-1.5 cursor-pointer shrink-0 active:scale-[0.98]">
-                    <span>⏳ Menunggu Verifikasi</span>
-                    <span class="px-1.5 py-0.5 text-[10px] font-mono font-bold rounded-md transition-all duration-200"
-                        :class="statusFilter === 'menunggu_verifikasi' ? 'bg-amber-950/60 border border-amber-400/30 text-amber-100' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'"
-                        x-text="countMenunggu"></span>
-                </button>
-            </template>
+            {{-- Button Dibatalkan --}}
+            <button type="button" @click="statusFilter = 'dibatalkan'"
+                :class="statusFilter === 'dibatalkan' 
+                    ? 'bg-rose-600 text-white shadow-sm shadow-rose-600/25 border-rose-500/50' 
+                    : 'bg-slate-900/80 text-slate-400 hover:text-rose-300 hover:bg-slate-800/80 border-slate-800/80'"
+                class="px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-all duration-200 flex items-center space-x-1.5 cursor-pointer shrink-0 active:scale-[0.98]">
+                <span class="text-xs">✕</span>
+                <span>Dibatalkan</span>
+                <span class="px-1.5 py-0.5 text-[10px] font-mono font-bold rounded-md transition-all duration-200"
+                    :class="statusFilter === 'dibatalkan' ? 'bg-rose-950/60 border border-rose-400/30 text-rose-100' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'"
+                    x-text="countDibatalkan"></span>
+            </button>
         </div>
 
         <!-- 3. Filter Kategori KIB & Search Input Row -->
