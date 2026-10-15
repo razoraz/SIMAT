@@ -1041,10 +1041,48 @@
                     </span>
                 </div>
 
-                <div class="p-2.5 rounded-xl bg-cyan-950/20 border border-cyan-500/20 text-[11px] text-cyan-200/90 leading-relaxed flex items-center gap-2">
-                    <span>💡</span>
-                    <span>Aset dialihkan ke kelompok <strong class="text-white" x-text="formData.tujuan_kib"></strong>. Rincian spesifikasi lama otomatis diarsip ke riwayat audit, dan form di bawah menyesuaikan register &amp; KIR sesuai format <strong class="text-white" x-text="formData.tujuan_kib"></strong>.</span>
-                </div>
+                <!-- Banner Umpan Balik Cerdas: Deteksi Kesamaan Kelompok Fisik -->
+                <template x-if="isReklasSamePhysicalType()">
+                    <div class="p-3.5 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-200 text-xs leading-relaxed flex items-start gap-3 shadow-lg shadow-emerald-950/30">
+                        <div class="w-7 h-7 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center shrink-0 text-emerald-300 font-extrabold text-sm mt-0.5 shadow-inner">
+                            ✓
+                        </div>
+                        <div class="space-y-1 flex-1">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="font-extrabold text-white text-xs uppercase tracking-wide">
+                                    Wujud Fisik Sama (<span class="text-emerald-300 font-mono" x-text="getPhysicalTypeLabel(getTargetPhysicalType()) || formData.tujuan_kib"></span>)
+                                </span>
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm animate-pulse">
+                                    ✨ Spesifikasi Otomatis Dipertahankan (Tidak Perlu Isi Ulang)
+                                </span>
+                            </div>
+                            <p class="text-emerald-200/90 text-[11px] leading-relaxed">
+                                Aset tetap berada dalam kategori wujud fisik yang sama. Seluruh rincian spesifikasi sebelumnya (luas, nomor &amp; tanggal dokumen legalitas, jenis konstruksi, status tanah, serta lokasi) telah <strong>disalin otomatis</strong> ke formulir di bawah. Anda tidak perlu repot mengetik ulang, silakan langsung lanjutkan atau sesuaikan jika ada perubahan kecil.
+                            </p>
+                        </div>
+                    </div>
+                </template>
+
+                <template x-if="!isReklasSamePhysicalType()">
+                    <div class="p-3.5 rounded-2xl bg-amber-950/40 border border-amber-500/40 text-amber-200 text-xs leading-relaxed flex items-start gap-3 shadow-lg shadow-amber-950/30">
+                        <div class="w-7 h-7 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center shrink-0 text-amber-300 font-extrabold text-sm mt-0.5 shadow-inner">
+                            ⚠️
+                        </div>
+                        <div class="space-y-1 flex-1">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="font-extrabold text-white text-xs uppercase tracking-wide">
+                                    Perubahan Kelompok Fisik (<span class="text-slate-300" x-text="getPhysicalTypeLabel(getSourcePhysicalType()) || 'Asal'"></span> ➔ <span class="text-amber-300 font-mono" x-text="getPhysicalTypeLabel(getTargetPhysicalType()) || formData.tujuan_kib"></span>)
+                                </span>
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm">
+                                    Wajib Isi Spesifikasi Baru
+                                </span>
+                            </div>
+                            <p class="text-amber-200/90 text-[11px] leading-relaxed">
+                                Aset dialihkan ke kelompok fisik yang berbeda, sehingga atribut fisik lama diarsipkan ke riwayat audit. Silakan lengkapi formulir spesifikasi teknis baru di bawah ini agar pencatatan buku inventaris &amp; KIR terbit sesuai format fisik tujuan.
+                            </p>
+                        </div>
+                    </div>
+                </template>
 
                 <!-- Form Spesifik: KIB A - Tanah -->
                 <template x-if="formData.tujuan_kib === 'KIB A'">
@@ -1156,12 +1194,11 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Konstruksi Beton / Baja:</label>
+                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Konstruksi Beton:</label>
                                 <select x-model="formData.spekBaru.gedung_konstruksi_beton"
                                         class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                    <option value="Beton">Konstruksi Beton Bertulang</option>
-                                    <option value="Baja">Konstruksi Baja</option>
-                                    <option value="Kayu">Konstruksi Kayu</option>
+                                    <option value="Beton">Beton</option>
+                                    <option value="Tidak">Tidak</option>
                                 </select>
                             </div>
                             <div>

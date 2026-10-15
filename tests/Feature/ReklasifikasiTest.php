@@ -1708,6 +1708,187 @@ class ReklasifikasiTest extends TestCase
         $kemitraan->refresh();
         $this->assertEquals('Selesai / Reklasifikasi', $kemitraan->status_konsesi);
     }
+
+    public function test_reklas_kemitraan_gedung_to_kib_c_retains_specifications_without_manual_refill()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        JenisAstap::firstOrCreate(
+            ['sub_sub_rincian_objek' => '1.3.3.01.01.01.001'],
+            [
+                'jenis' => '1.3.3',
+                'sub_rincian_objek' => '1.3.3.01.01',
+                'uraian_sub_rincian' => 'Gedung dan Bangunan',
+                'uraian_sub_sub_rincian' => 'Bangunan Gedung Kantor RSUD',
+                'nama_jenis' => 'Gedung dan Bangunan',
+            ]
+        );
+
+        $astap = Astap::create([
+            'nama_barang' => 'Gedung Paviliun Melati Kemitraan',
+            'tahun_perolehan' => 2026,
+            'category' => 'KEMITRAAN',
+            'jumlah_volume' => 1,
+            'harga_satuan' => 750000000,
+            'total_realisasi' => 750000000,
+            'jumlah_anggaran' => 0,
+            'sumber_dana' => 'kemitraan',
+            'user_id' => $admin->id,
+            'spesifikasi_json' => [
+                'kategori_kib' => 'KIB C',
+                'gedung_items' => [
+                    [
+                        'gedung_nama_barang' => 'Bangunan Rawat Inap Paviliun Melati',
+                        'gedung_luas_lantai' => 850.5,
+                        'gedung_kondisi' => 'Baik',
+                        'gedung_bertingkat' => 'Bertingkat',
+                        'gedung_beton' => 'Beton',
+                        'gedung_status_tanah' => 'Tanah Milik RSUD',
+                        'gedung_dokumen_no' => 'PBG-3511/RSUD/2026',
+                        'gedung_dokumen_tgl' => '2026-01-10',
+                        'gedung_alamat' => 'Kompleks RSUD Dr. H. Koesnandi - Blok Paviliun',
+                    ]
+                ],
+            ],
+        ]);
+
+        $kemitraan = \App\Models\AstapKemitraan::create([
+            'astap_id' => $astap->id,
+            'mitra_nama' => 'PT Mitra Sarana Sehat',
+            'nomor_pks' => 'PKS/MELATI/2026/001',
+            'tanggal_pks' => '2021-01-01',
+            'tanggal_mulai' => '2021-01-01',
+            'tanggal_selesai' => '2026-01-01',
+            'skema_kemitraan' => 'BGS',
+            'status_konsesi' => 'Konsesi Berakhir',
+            'nilai_aset' => 750000000,
+            'jumlah_volume' => 1,
+            'user_id' => $admin->id,
+        ]);
+
+        // Reklasifikasi ke KIB C tanpa perlu input ulang spesifikasi (Otomatis Dipertahankan)
+        $response = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'KOREKSI_REKENING',
+            'asal_kib' => 'KEMITRAAN',
+            'tujuan_kib' => 'KIB C',
+            'tujuan_kode' => '1.3.3.01.01.01.001',
+            'tujuan_nama' => 'Bangunan Gedung Kantor RSUD',
+            'nilai_reklas' => 750000000,
+            'tanggal_reklas' => '2026-03-25',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'alasan_reklas' => 'Masa konsesi berakhir, otomatis dipertahankan spesifikasi fisik gedung',
+            'spesifikasi_baru' => [], // Kosong: menguji apakah sistem otomatis mempertahankan 100% data lama
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson(['success' => true]);
+
+        $astap->refresh();
+        $this->assertEquals('KIB C', $astap->category);
+
+        $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : json_decode($astap->spesifikasi_json, true);
+        $this->assertEquals(850.5, (float) ($spec['luas_lantai_m2'] ?? 0));
+        $this->assertEquals('PBG-3511/RSUD/2026', $spec['dokumen_nomor'] ?? null);
+        $this->assertEquals('Bertingkat', $spec['konstruksi_bertingkat'] ?? null);
+        $this->assertEquals('Beton', $spec['konstruksi_beton'] ?? null);
+        $this->assertEquals('Lama', $spec['gedung_is_baru'] ?? null);
+
+        $this->assertNotEmpty($spec['gedung_items']);
+        $g0 = $spec['gedung_items'][0];
+        $this->assertEquals(850.5, (float) ($g0['gedung_luas_lantai_m2'] ?? 0));
+        $this->assertEquals('PBG-3511/RSUD/2026', $g0['gedung_dokumen_nomor'] ?? null);
+        $this->assertEquals('Bertingkat', $g0['gedung_konstruksi_bertingkat'] ?? null);
+        $this->assertEquals('Beton', $g0['gedung_konstruksi_beton'] ?? null);
+        $this->assertEquals('Lama', $g0['gedung_is_baru'] ?? null);
+    }
+
+    public function test_reklas_kemitraan_gedung_to_kib_b_requires_and_saves_new_mesin_specifications()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        JenisAstap::firstOrCreate(
+            ['sub_sub_rincian_objek' => '1.3.2.05.01.01.001'],
+            [
+                'jenis' => '1.3.2',
+                'sub_rincian_objek' => '1.3.2.05.01',
+                'uraian_sub_rincian' => 'Alat Kedokteran',
+                'uraian_sub_sub_rincian' => 'Alat Kedokteran Umum',
+                'nama_jenis' => 'Peralatan dan Mesin',
+            ]
+        );
+
+        $astap = Astap::create([
+            'nama_barang' => 'Gedung Kemitraan Eksistensi',
+            'tahun_perolehan' => 2026,
+            'category' => 'KEMITRAAN',
+            'jumlah_volume' => 1,
+            'harga_satuan' => 300000000,
+            'total_realisasi' => 300000000,
+            'jumlah_anggaran' => 0,
+            'sumber_dana' => 'kemitraan',
+            'user_id' => $admin->id,
+            'spesifikasi_json' => [
+                'kategori_kib' => 'KIB C',
+                'gedung_items' => [
+                    [
+                        'gedung_nama_barang' => 'Bangunan Lama',
+                        'gedung_luas_lantai' => 200,
+                    ]
+                ],
+            ],
+        ]);
+
+        \App\Models\AstapKemitraan::create([
+            'astap_id' => $astap->id,
+            'mitra_nama' => 'PT Rekanan Sejahtera',
+            'nomor_pks' => 'PKS/RS/2026/009',
+            'tanggal_pks' => '2021-01-01',
+            'tanggal_mulai' => '2021-01-01',
+            'tanggal_selesai' => '2026-01-01',
+            'skema_kemitraan' => 'KSO',
+            'status_konsesi' => 'Konsesi Berakhir',
+            'nilai_aset' => 300000000,
+            'jumlah_volume' => 1,
+            'user_id' => $admin->id,
+        ]);
+
+        // Reklasifikasi ke KIB B (Peralatan & Mesin) dengan mengisi spesifikasi baru
+        $response = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'KOREKSI_REKENING',
+            'asal_kib' => 'KEMITRAAN',
+            'tujuan_kib' => 'KIB B',
+            'tujuan_kode' => '1.3.2.05.01.01.001',
+            'tujuan_nama' => 'Alat Kedokteran Umum',
+            'nilai_reklas' => 300000000,
+            'tanggal_reklas' => '2026-03-25',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'alasan_reklas' => 'Reklas ke kelompok fisik berbeda KIB B dengan spesifikasi teknis baru',
+            'spesifikasi_baru' => [
+                'mesin_merk' => 'General Electric',
+                'mesin_type' => 'Optima CT520',
+                'mesin_no_pabrik' => 'SN-CT-99201',
+                'mesin_bahan' => 'Logam & Elektronik',
+            ],
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson(['success' => true]);
+
+        $astap->refresh();
+        $this->assertEquals('KIB B', $astap->category);
+
+        $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : json_decode($astap->spesifikasi_json, true);
+        $this->assertEquals('General Electric', $spec['merk'] ?? null);
+        $this->assertEquals('Optima CT520', $spec['type'] ?? null);
+        $this->assertEquals('SN-CT-99201', $spec['no_pabrik'] ?? null);
+        $this->assertNotEmpty($spec['mesin_items']);
+        $this->assertEquals('General Electric', $spec['mesin_items'][0]['mesin_merk'] ?? null);
+        $this->assertEquals('SN-CT-99201', $spec['mesin_items'][0]['mesin_no_pabrik'] ?? null);
+    }
 }
 
 

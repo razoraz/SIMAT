@@ -365,17 +365,23 @@ class ReklasifikasiController extends Controller
 
 
 
+        $astap = Astap::findOrFail($validated['astap_id']);
+        $existingKem = $astap->kemitraan ?? \App\Models\AstapKemitraan::where(function($q) use ($astap) {
+            $q->where('astap_id', $astap->id)->orWhere('objek_astap_id', $astap->id);
+        })->where('is_deleted', 0)->first();
+        $specLamaData = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?? []);
+
         // Validasi Mandatory Form Kemitraan Pihak Ketiga (Akun 1.5.2)
         if (($validated['tujuan_kib'] ?? null) === 'KEMITRAAN') {
             $spek = $request->input('spesifikasi_baru', []);
             $firstItem = (!empty($spek['items']) && is_array($spek['items']) && !empty($spek['items'][0])) ? $spek['items'][0] : $spek;
 
-            $mitraNama = trim((string) ($firstItem['kemitraan_mitra'] ?? ($spek['kemitraan_mitra'] ?? '')));
-            $pimpinan = trim((string) ($firstItem['kemitraan_pimpinan'] ?? ($spek['kemitraan_pimpinan'] ?? '')));
-            $pksNo = trim((string) ($firstItem['kemitraan_perjanjian_no'] ?? ($spek['kemitraan_perjanjian_no'] ?? '')));
-            $pksTgl = trim((string) ($firstItem['kemitraan_tanggal_pks'] ?? ($spek['kemitraan_tanggal_pks'] ?? '')));
-            $tglMulai = trim((string) ($firstItem['kemitraan_tanggal_mulai'] ?? ($spek['kemitraan_tanggal_mulai'] ?? '')));
-            $tglSelesai = trim((string) ($firstItem['kemitraan_tanggal_selesai'] ?? ($spek['kemitraan_tanggal_selesai'] ?? '')));
+            $mitraNama = trim((string) ($firstItem['kemitraan_mitra'] ?? ($spek['kemitraan_mitra'] ?? ($existingKem->mitra_nama ?? ($specLamaData['kemitraan_mitra'] ?? ($specLamaData['mitra'] ?? ''))))));
+            $pimpinan = trim((string) ($firstItem['kemitraan_pimpinan'] ?? ($spek['kemitraan_pimpinan'] ?? ($existingKem->mitra_pimpinan ?? ($specLamaData['kemitraan_pimpinan'] ?? ($specLamaData['pimpinan'] ?? 'Mitra'))))));
+            $pksNo = trim((string) ($firstItem['kemitraan_perjanjian_no'] ?? ($spek['kemitraan_perjanjian_no'] ?? ($existingKem->nomor_pks ?? ($specLamaData['kemitraan_perjanjian_no'] ?? ($specLamaData['nomor_pks'] ?? ''))))));
+            $pksTgl = trim((string) ($firstItem['kemitraan_tanggal_pks'] ?? ($spek['kemitraan_tanggal_pks'] ?? ($existingKem->tanggal_pks ?? ($specLamaData['kemitraan_tanggal_pks'] ?? ($specLamaData['tanggal_pks'] ?? ''))))));
+            $tglMulai = trim((string) ($firstItem['kemitraan_tanggal_mulai'] ?? ($spek['kemitraan_tanggal_mulai'] ?? ($existingKem->tanggal_mulai ?? ($existingKem->tanggal_pks ?? ($specLamaData['kemitraan_tanggal_mulai'] ?? ($specLamaData['tanggal_mulai'] ?? '')))))));
+            $tglSelesai = trim((string) ($firstItem['kemitraan_tanggal_selesai'] ?? ($spek['kemitraan_tanggal_selesai'] ?? ($existingKem->tanggal_selesai ?? ($specLamaData['kemitraan_tanggal_selesai'] ?? ($specLamaData['tanggal_selesai'] ?? ''))))));
 
             if (empty($mitraNama)) {
                 return response()->json([
@@ -401,13 +407,13 @@ class ReklasifikasiController extends Controller
                     'message' => 'Tanggal Penandatanganan PKS wajib dipilih untuk reklasifikasi ke Kemitraan.',
                 ], 422);
             }
-            if (empty($tglMulai)) {
+            if (empty($tglMulai) && empty($existingKem)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Tanggal Mulai Berlaku Konsesi wajib dipilih untuk reklasifikasi ke Kemitraan.',
                 ], 422);
             }
-            if (empty($tglSelesai)) {
+            if (empty($tglSelesai) && empty($existingKem)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Tanggal Berakhir Konsesi wajib dipilih untuk reklasifikasi ke Kemitraan.',
@@ -420,8 +426,6 @@ class ReklasifikasiController extends Controller
                 ], 422);
             }
         }
-
-        $astap = Astap::findOrFail($validated['astap_id']);
 
         // Proteksi Validasi: Aset atau unit yang sudah dimutasi keluar ke OPD lain tidak dapat dimutasi lagi
         if ($validated['jenis_reklas'] === 'MUTASI_EKSTERNAL') {
@@ -1139,14 +1143,14 @@ class ReklasifikasiController extends Controller
 
                         $g = [
                             'gedung_nama_bangunan'        => $astap->nama_barang,
-                            'gedung_konstruksi_bertingkat'=> $uItem['gedung_konstruksi_bertingkat'] ?? ($rawNew['gedung_konstruksi_bertingkat'] ?? ($oldG['gedung_konstruksi_bertingkat'] ?? ($oldG['bertingkat'] ?? ($specLama['konstruksi_bertingkat'] ?? 'Bertingkat')))),
-                            'gedung_konstruksi_beton'     => $uItem['gedung_konstruksi_beton'] ?? ($rawNew['gedung_konstruksi_beton'] ?? ($oldG['gedung_konstruksi_beton'] ?? ($oldG['beton'] ?? ($specLama['konstruksi_beton'] ?? 'Beton')))),
-                            'gedung_luas_lantai_m2'       => (float) ($uItem['gedung_luas_lantai_m2'] ?? ($rawNew['gedung_luas_lantai_m2'] ?? ($oldG['gedung_luas_lantai_m2'] ?? ($specLama['luas_lantai_m2'] ?? 0)))),
-                            'gedung_alamat'               => $uItem['gedung_alamat'] ?? ($rawNew['gedung_alamat'] ?? ($oldG['gedung_alamat'] ?? ($astap->alamat_barang ?: 'Kompleks RSUD Dr. H. Koesnandi'))),
-                            'gedung_dokumen_tgl'          => $uItem['gedung_dokumen_tgl'] ?? ($rawNew['gedung_dokumen_tgl'] ?? ($oldG['gedung_dokumen_tgl'] ?? ($specLama['dokumen_tgl'] ?? null))),
-                            'gedung_dokumen_nomor'        => $uItem['gedung_dokumen_nomor'] ?? ($rawNew['gedung_dokumen_nomor'] ?? ($oldG['gedung_dokumen_nomor'] ?? ($specLama['dokumen_nomor'] ?? null))),
-                            'gedung_status_tanah'         => $uItem['gedung_status_tanah'] ?? ($rawNew['gedung_status_tanah'] ?? ($oldG['gedung_status_tanah'] ?? ($specLama['status_tanah'] ?? 'Tanah Pemda'))),
-                            'gedung_kondisi'              => $uItem['gedung_kondisi'] ?? ($rawNew['gedung_kondisi'] ?? ($oldG['gedung_kondisi'] ?? 'Baik')),
+                            'gedung_konstruksi_bertingkat'=> $uItem['gedung_konstruksi_bertingkat'] ?? ($rawNew['gedung_konstruksi_bertingkat'] ?? ($oldG['gedung_konstruksi_bertingkat'] ?? ($oldG['gedung_bertingkat'] ?? ($oldG['bertingkat'] ?? ($specLama['konstruksi_bertingkat'] ?? 'Bertingkat'))))),
+                            'gedung_konstruksi_beton'     => $uItem['gedung_konstruksi_beton'] ?? ($rawNew['gedung_konstruksi_beton'] ?? ($oldG['gedung_konstruksi_beton'] ?? ($oldG['gedung_beton'] ?? ($oldG['beton'] ?? ($specLama['konstruksi_beton'] ?? 'Beton'))))),
+                            'gedung_luas_lantai_m2'       => (float) ($uItem['gedung_luas_lantai_m2'] ?? ($rawNew['gedung_luas_lantai_m2'] ?? ($oldG['gedung_luas_lantai_m2'] ?? ($oldG['gedung_luas_lantai'] ?? ($oldG['luas_lantai'] ?? ($oldG['gedung_luas_m2'] ?? ($specLama['luas_lantai_m2'] ?? ($specLama['gedung_luas_lantai'] ?? 0)))))))),
+                            'gedung_alamat'               => $uItem['gedung_alamat'] ?? ($rawNew['gedung_alamat'] ?? ($oldG['gedung_alamat'] ?? ($oldG['alamat'] ?? ($astap->alamat_barang ?: 'Kompleks RSUD Dr. H. Koesnandi')))),
+                            'gedung_dokumen_tgl'          => $uItem['gedung_dokumen_tgl'] ?? ($rawNew['gedung_dokumen_tgl'] ?? ($oldG['gedung_dokumen_tgl'] ?? ($oldG['gedung_dokumen_tanggal'] ?? ($oldG['dokumen_tgl'] ?? ($specLama['dokumen_tgl'] ?? null))))),
+                            'gedung_dokumen_nomor'        => $uItem['gedung_dokumen_nomor'] ?? ($rawNew['gedung_dokumen_nomor'] ?? ($oldG['gedung_dokumen_nomor'] ?? ($oldG['gedung_dokumen_no'] ?? ($oldG['dokumen_nomor'] ?? ($specLama['dokumen_nomor'] ?? null))))),
+                            'gedung_status_tanah'         => $uItem['gedung_status_tanah'] ?? ($rawNew['gedung_status_tanah'] ?? ($oldG['gedung_status_tanah'] ?? ($oldG['status_tanah'] ?? ($specLama['status_tanah'] ?? 'Tanah Pemda')))),
+                            'gedung_kondisi'              => $uItem['gedung_kondisi'] ?? ($rawNew['gedung_kondisi'] ?? ($oldG['gedung_kondisi'] ?? ($oldG['kondisi'] ?? 'Baik'))),
                             'gedung_is_baru'              => $isBaruVal,
                             'gedung_kapitalisasi_tahun_induk' => $tahunInduk,
                             'gedung_kapitalisasi_nilai_induk' => $nilaiInduk,
@@ -1335,14 +1339,14 @@ class ReklasifikasiController extends Controller
                             $oldG = $oldGedungList[$uIdx] ?? ($oldGedungList[0] ?? []);
                             $g = [
                                 'gedung_nama_bangunan'        => $astap->nama_barang,
-                                'gedung_konstruksi_bertingkat'=> $uItem['gedung_konstruksi_bertingkat'] ?? ($rawNew['gedung_konstruksi_bertingkat'] ?? ($oldG['gedung_konstruksi_bertingkat'] ?? 'Bertingkat')),
-                                'gedung_konstruksi_beton'     => $uItem['gedung_konstruksi_beton'] ?? ($rawNew['gedung_konstruksi_beton'] ?? ($oldG['gedung_konstruksi_beton'] ?? 'Beton')),
-                                'gedung_luas_lantai_m2'       => (float) ($uItem['gedung_luas_lantai_m2'] ?? ($rawNew['gedung_luas_lantai_m2'] ?? ($oldG['gedung_luas_lantai_m2'] ?? 0))),
-                                'gedung_alamat'               => $uItem['gedung_alamat'] ?? ($rawNew['gedung_alamat'] ?? ($oldG['gedung_alamat'] ?? ($astap->alamat_barang ?: 'Kompleks RSUD Dr. H. Koesnandi'))),
-                                'gedung_dokumen_tgl'          => $uItem['gedung_dokumen_tgl'] ?? ($rawNew['gedung_dokumen_tgl'] ?? ($oldG['gedung_dokumen_tgl'] ?? null)),
-                                'gedung_dokumen_nomor'        => $uItem['gedung_dokumen_nomor'] ?? ($rawNew['gedung_dokumen_nomor'] ?? ($oldG['gedung_dokumen_nomor'] ?? null)),
-                                'gedung_status_tanah'         => $uItem['gedung_status_tanah'] ?? ($rawNew['gedung_status_tanah'] ?? ($oldG['gedung_status_tanah'] ?? 'Tanah Pemda')),
-                                'gedung_kondisi'              => $oldG['gedung_kondisi'] ?? 'Baik',
+                                'gedung_konstruksi_bertingkat'=> $uItem['gedung_konstruksi_bertingkat'] ?? ($rawNew['gedung_konstruksi_bertingkat'] ?? ($oldG['gedung_konstruksi_bertingkat'] ?? ($oldG['gedung_bertingkat'] ?? ($oldG['bertingkat'] ?? ($specLama['konstruksi_bertingkat'] ?? 'Bertingkat'))))),
+                                'gedung_konstruksi_beton'     => $uItem['gedung_konstruksi_beton'] ?? ($rawNew['gedung_konstruksi_beton'] ?? ($oldG['gedung_konstruksi_beton'] ?? ($oldG['gedung_beton'] ?? ($oldG['beton'] ?? ($specLama['konstruksi_beton'] ?? 'Beton'))))),
+                                'gedung_luas_lantai_m2'       => (float) ($uItem['gedung_luas_lantai_m2'] ?? ($rawNew['gedung_luas_lantai_m2'] ?? ($oldG['gedung_luas_lantai_m2'] ?? ($oldG['gedung_luas_lantai'] ?? ($oldG['luas_lantai'] ?? ($oldG['gedung_luas_m2'] ?? ($specLama['luas_lantai_m2'] ?? ($specLama['gedung_luas_lantai'] ?? 0)))))))),
+                                'gedung_alamat'               => $uItem['gedung_alamat'] ?? ($rawNew['gedung_alamat'] ?? ($oldG['gedung_alamat'] ?? ($oldG['alamat'] ?? ($astap->alamat_barang ?: 'Kompleks RSUD Dr. H. Koesnandi')))),
+                                'gedung_dokumen_tgl'          => $uItem['gedung_dokumen_tgl'] ?? ($rawNew['gedung_dokumen_tgl'] ?? ($oldG['gedung_dokumen_tgl'] ?? ($oldG['gedung_dokumen_tanggal'] ?? ($oldG['dokumen_tgl'] ?? ($specLama['dokumen_tgl'] ?? null))))),
+                                'gedung_dokumen_nomor'        => $uItem['gedung_dokumen_nomor'] ?? ($rawNew['gedung_dokumen_nomor'] ?? ($oldG['gedung_dokumen_nomor'] ?? ($oldG['gedung_dokumen_no'] ?? ($oldG['dokumen_nomor'] ?? ($specLama['dokumen_nomor'] ?? null))))),
+                                'gedung_status_tanah'         => $uItem['gedung_status_tanah'] ?? ($rawNew['gedung_status_tanah'] ?? ($oldG['gedung_status_tanah'] ?? ($oldG['status_tanah'] ?? ($specLama['status_tanah'] ?? 'Tanah Pemda')))),
+                                'gedung_kondisi'              => $uItem['gedung_kondisi'] ?? ($rawNew['gedung_kondisi'] ?? ($oldG['gedung_kondisi'] ?? ($oldG['kondisi'] ?? 'Baik'))),
                                 'gedung_nilai_fisik'          => $unitPrice,
                             ];
                             $gedungItems[] = $g;
@@ -1867,7 +1871,7 @@ class ReklasifikasiController extends Controller
                         'nilai_aset'       => $nilaiReklasSplit,
                         'tahun'            => (int) ($validated['tahun'] ?? date('Y')),
                         'triwulan'         => (string) ($validated['triwulan'] ?? 1),
-                        'keterangan'       => ($validated['keterangan'] ? ($validated['keterangan'] . ' | ') : '')
+                        'keterangan'       => (!empty($validated['keterangan']) ? ($validated['keterangan'] . ' | ') : '')
                             . (!empty($spec['harga_sewa']) ? ('Tarif Sewa: Rp ' . number_format((float) $spec['harga_sewa'], 0, ',', '.') . ' (' . ($spec['periode_sewa'] ?? 'Per Tahun') . ')') : (!empty($spec['nilai_kontribusi']) ? ('Nilai Kontribusi: Rp ' . number_format((float) $spec['nilai_kontribusi'], 0, ',', '.') . ($spec['keterangan_kontribusi'] ? ' - ' . $spec['keterangan_kontribusi'] : '')) : ($targetAstap->keterangan_tambahan ?? ''))),
                         'user_id'          => Auth::id(),
                     ];
@@ -1942,7 +1946,7 @@ class ReklasifikasiController extends Controller
                         'nilai_aset'       => (float) $astap->total_realisasi,
                         'tahun'            => (int) ($validated['tahun'] ?? date('Y')),
                         'triwulan'         => (string) ($validated['triwulan'] ?? 1),
-                        'keterangan'       => ($validated['keterangan'] ? ($validated['keterangan'] . ' | ') : '')
+                        'keterangan'       => (!empty($validated['keterangan']) ? ($validated['keterangan'] . ' | ') : '')
                             . (!empty($spec['harga_sewa']) ? ('Tarif Sewa: Rp ' . number_format((float) $spec['harga_sewa'], 0, ',', '.') . ' (' . ($spec['periode_sewa'] ?? 'Per Tahun') . ')') : (!empty($spec['nilai_kontribusi']) ? ('Nilai Kontribusi: Rp ' . number_format((float) $spec['nilai_kontribusi'], 0, ',', '.') . ($spec['keterangan_kontribusi'] ? ' - ' . $spec['keterangan_kontribusi'] : '')) : ($astap->keterangan_tambahan ?? ''))),
                         'user_id'          => Auth::id(),
                     ];
