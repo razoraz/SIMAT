@@ -491,7 +491,7 @@
                                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] text-slate-300 pt-1 border-t border-slate-800/60">
                                             <div>
                                                 <span class="text-[9.5px] text-slate-500 block uppercase">Status Fisik:</span>
-                                                <span class="font-bold text-xs" :class="(gItem.gedung_is_baru === 'Baru') ? 'text-amber-400' : 'text-blue-300'" x-text="(gItem.gedung_is_baru || 'Lama') + (gItem.gedung_kapitalisasi_tahun_induk ? ' (' + gItem.gedung_kapitalisasi_tahun_induk + ')' : '')"></span>
+                                                <span class="font-bold text-xs" :class="(gItem.gedung_is_baru === 'Baru') ? 'text-amber-400' : 'text-blue-300'" x-text="(gItem.gedung_is_baru === 'Baru') ? '✨ Bangunan Baru' : '🏛️ Bangunan Lama'"></span>
                                             </div>
                                             <div>
                                                 <span class="text-[9.5px] text-slate-500 block uppercase">Luas Lantai:</span>
@@ -519,7 +519,7 @@
                         <div class="grid grid-cols-2 gap-3 text-xs">
                             <div>
                                 <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Status Fisik Bangunan:</span>
-                                <span class="font-bold block" :class="((formData.gedung_is_baru || formData.gedung_items?.[0]?.gedung_is_baru) === 'Baru') ? 'text-amber-400' : 'text-blue-300'" x-text="(formData.gedung_is_baru || formData.gedung_items?.[0]?.gedung_is_baru || 'Lama') + ((formData.gedung_kapitalisasi_tahun_induk || formData.gedung_items?.[0]?.gedung_kapitalisasi_tahun_induk) ? (' (' + (formData.gedung_kapitalisasi_tahun_induk || formData.gedung_items?.[0]?.gedung_kapitalisasi_tahun_induk) + ')') : '')"></span>
+                                <span class="font-bold block" :class="((formData.gedung_is_baru || formData.gedung_items?.[0]?.gedung_is_baru) === 'Baru') ? 'text-amber-400' : 'text-blue-300'" x-text="((formData.gedung_is_baru || formData.gedung_items?.[0]?.gedung_is_baru) === 'Baru') ? '✨ Bangunan Baru' : '🏛️ Bangunan Lama'"></span>
                             </div>
                             <div>
                                 <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Konstruksi Bertingkat:</span>
@@ -572,7 +572,7 @@
                                         <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 text-[11px] text-slate-300 pt-1 border-t border-slate-800/60">
                                             <div>
                                                 <span class="text-[9.5px] text-slate-500 block uppercase">Status Fisik:</span>
-                                                <span class="font-bold text-xs" :class="(jItem.jaringan_is_baru === 'Baru') ? 'text-amber-400' : 'text-teal-300'" x-text="(jItem.jaringan_is_baru || 'Lama') + (jItem.jaringan_kapitalisasi_tahun_induk ? ' (' + jItem.jaringan_kapitalisasi_tahun_induk + ')' : '')"></span>
+                                                <span class="font-bold text-xs" :class="(jItem.jaringan_is_baru === 'Baru') ? 'text-amber-400' : 'text-teal-300'" x-text="(jItem.jaringan_is_baru === 'Baru') ? '✨ Jaringan Baru' : '🌐 Jaringan Lama'"></span>
                                             </div>
                                             <div class="col-span-2">
                                                 <span class="text-[9.5px] text-slate-500 block uppercase">Konstruksi:</span>
@@ -601,7 +601,7 @@
                         <div class="grid grid-cols-2 gap-3 text-xs">
                             <div class="col-span-2">
                                 <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Status Fisik Jaringan:</span>
-                                <span class="font-bold block" :class="((formData.jaringan_is_baru || formData.jaringan_items?.[0]?.jaringan_is_baru) === 'Baru') ? 'text-amber-400' : 'text-teal-300'" x-text="(formData.jaringan_is_baru || formData.jaringan_items?.[0]?.jaringan_is_baru || 'Lama') + ((formData.jaringan_kapitalisasi_tahun_induk || formData.jaringan_items?.[0]?.jaringan_kapitalisasi_tahun_induk) ? (' (' + (formData.jaringan_kapitalisasi_tahun_induk || formData.jaringan_items?.[0]?.jaringan_kapitalisasi_tahun_induk) + ')') : '')"></span>
+                                <span class="font-bold block" :class="((formData.jaringan_is_baru || formData.jaringan_items?.[0]?.jaringan_is_baru) === 'Baru') ? 'text-amber-400' : 'text-teal-300'" x-text="((formData.jaringan_is_baru || formData.jaringan_items?.[0]?.jaringan_is_baru) === 'Baru') ? '✨ Jaringan Baru' : '🌐 Jaringan Lama'"></span>
                             </div>
                             <div class="col-span-2">
                                 <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Konstruksi Jaringan / Jalan:</span>

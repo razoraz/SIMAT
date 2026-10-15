@@ -249,26 +249,16 @@
                             </div>
 
                             <!-- Status Jaringan (Baru / Lama) -->
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 border-t border-slate-800/60">
-                                <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold flex items-center justify-between">
-                                        <span>Status Fisik Jaringan</span>
-                                        <span class="text-[9.5px] text-teal-400 font-bold" x-text="item.jaringan_is_baru === 'Lama' ? '🌐 Jaringan Lama' : '✨ Jaringan Baru'"></span>
-                                    </label>
-                                    <select x-model="item.jaringan_is_baru"
-                                        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-semibold focus:border-teal-500 focus:outline-none transition-all">
-                                        <option value="Lama">🌐 Lama &mdash; Jaringan Eksisting / Sebelum Kemitraan</option>
-                                        <option value="Baru">✨ Baru &mdash; Dipasang / Dibangun Baru Saat Kemitraan</option>
-                                    </select>
-                                </div>
-                                <div x-show="item.jaringan_is_baru === 'Lama'">
-                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
-                                        Tahun Pemasangan Fisik Awal
-                                    </label>
-                                    <input type="number" min="1950" max="2099" x-model="item.jaringan_kapitalisasi_tahun_induk"
-                                        placeholder="Contoh: 2019"
-                                        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-mono focus:border-teal-500 focus:outline-none transition-all">
-                                </div>
+                            <div class="pt-2 border-t border-slate-800/60">
+                                 <label class="block text-slate-400 text-[10px] mb-1 font-semibold flex items-center justify-between">
+                                     <span>Status Fisik Jaringan</span>
+                                     <span class="text-[9.5px] text-teal-400 font-bold" x-text="item.jaringan_is_baru === 'Lama' ? '🌐 Jaringan Lama (Eksisting)' : '✨ Jaringan Baru'"></span>
+                                 </label>
+                                 <select x-model="item.jaringan_is_baru"
+                                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-semibold focus:border-teal-500 focus:outline-none transition-all">
+                                     <option value="Lama">🌐 Lama &mdash; Jaringan Eksisting / Sebelum Kemitraan</option>
+                                     <option value="Baru">✨ Baru &mdash; Dipasang / Dibangun Baru Saat Kemitraan</option>
+                                 </select>
                             </div>
                         </div>
 

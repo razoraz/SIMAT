@@ -1138,8 +1138,8 @@ class ReklasifikasiController extends Controller
                     foreach ($unitItems as $uIdx => $uItem) {
                         $oldG = $oldGedungList[$uIdx] ?? ($oldGedungList[0] ?? []);
                         $isBaruVal = $uItem['gedung_is_baru'] ?? ($rawNew['gedung_is_baru'] ?? ($oldG['gedung_is_baru'] ?? $defaultIsBaru));
-                        $tahunInduk = $uItem['gedung_kapitalisasi_tahun_induk'] ?? ($rawNew['gedung_kapitalisasi_tahun_induk'] ?? ($oldG['gedung_kapitalisasi_tahun_induk'] ?? ($specLama['tahun_induk'] ?? ($astap->tahun_perolehan ?: null))));
-                        $nilaiInduk = (float) ($uItem['gedung_kapitalisasi_nilai_induk'] ?? ($rawNew['gedung_kapitalisasi_nilai_induk'] ?? ($oldG['gedung_kapitalisasi_nilai_induk'] ?? ($specLama['nilai_induk'] ?? 0))));
+                        $tahunInduk = ($isBaruVal === 'Baru') ? null : ($uItem['gedung_kapitalisasi_tahun_induk'] ?? ($rawNew['gedung_kapitalisasi_tahun_induk'] ?? ($oldG['gedung_kapitalisasi_tahun_induk'] ?? ($specLama['tahun_induk'] ?? null))));
+                        $nilaiInduk = ($isBaruVal === 'Baru') ? 0 : (float) ($uItem['gedung_kapitalisasi_nilai_induk'] ?? ($rawNew['gedung_kapitalisasi_nilai_induk'] ?? ($oldG['gedung_kapitalisasi_nilai_induk'] ?? ($specLama['nilai_induk'] ?? 0))));
 
                         $g = [
                             'gedung_nama_bangunan'        => $astap->nama_barang,
@@ -1187,8 +1187,8 @@ class ReklasifikasiController extends Controller
                     foreach ($unitItems as $uIdx => $uItem) {
                         $oldJ = $oldJaringanList[$uIdx] ?? ($oldJaringanList[0] ?? []);
                         $isBaruVal = $uItem['jaringan_is_baru'] ?? ($rawNew['jaringan_is_baru'] ?? ($oldJ['jaringan_is_baru'] ?? $defaultIsBaru));
-                        $tahunInduk = $uItem['jaringan_kapitalisasi_tahun_induk'] ?? ($rawNew['jaringan_kapitalisasi_tahun_induk'] ?? ($oldJ['jaringan_kapitalisasi_tahun_induk'] ?? ($specLama['tahun_induk'] ?? ($astap->tahun_perolehan ?: null))));
-                        $nilaiInduk = (float) ($uItem['jaringan_kapitalisasi_nilai_induk'] ?? ($rawNew['jaringan_kapitalisasi_nilai_induk'] ?? ($oldJ['jaringan_kapitalisasi_nilai_induk'] ?? ($specLama['nilai_induk'] ?? 0))));
+                        $tahunInduk = ($isBaruVal === 'Baru') ? null : ($uItem['jaringan_kapitalisasi_tahun_induk'] ?? ($rawNew['jaringan_kapitalisasi_tahun_induk'] ?? ($oldJ['jaringan_kapitalisasi_tahun_induk'] ?? ($specLama['tahun_induk'] ?? null))));
+                        $nilaiInduk = ($isBaruVal === 'Baru') ? 0 : (float) ($uItem['jaringan_kapitalisasi_nilai_induk'] ?? ($rawNew['jaringan_kapitalisasi_nilai_induk'] ?? ($oldJ['jaringan_kapitalisasi_nilai_induk'] ?? ($specLama['nilai_induk'] ?? 0))));
 
                         $j = [
                             'jaringan_nama'          => $astap->nama_barang,

@@ -960,8 +960,8 @@
                 this.formData.spekBaru.gedung_status_tanah = gItem.gedung_status_tanah || spec.gedung_status_tanah || spec.status_tanah || 'Tanah Pemda';
                 this.formData.spekBaru.gedung_alamat = gItem.gedung_alamat || defaultAlamat;
                 this.formData.spekBaru.gedung_is_baru = gItem.gedung_is_baru || spec.gedung_is_baru || spec.is_baru || (isFromKemitraan ? 'Lama' : 'Baru');
-                this.formData.spekBaru.gedung_kapitalisasi_tahun_induk = gItem.gedung_kapitalisasi_tahun_induk || spec.gedung_kapitalisasi_tahun_induk || spec.tahun_induk || it.tahun_perolehan || '';
-                this.formData.spekBaru.gedung_kapitalisasi_nilai_induk = gItem.gedung_kapitalisasi_nilai_induk || spec.gedung_kapitalisasi_nilai_induk || spec.nilai_induk || '';
+                this.formData.spekBaru.gedung_kapitalisasi_tahun_induk = (this.formData.spekBaru.gedung_is_baru === 'Baru') ? '' : (gItem.gedung_kapitalisasi_tahun_induk || spec.gedung_kapitalisasi_tahun_induk || spec.tahun_induk || '');
+                this.formData.spekBaru.gedung_kapitalisasi_nilai_induk = (this.formData.spekBaru.gedung_is_baru === 'Baru') ? '' : (gItem.gedung_kapitalisasi_nilai_induk || spec.gedung_kapitalisasi_nilai_induk || spec.nilai_induk || '');
 
                 // KIB D - Jalan, Jaringan & Irigasi
                 this.formData.spekBaru.jaringan_konstruksi = spec.konstruksi || 'Aspal / Beton';
@@ -970,8 +970,8 @@
                 this.formData.spekBaru.jaringan_luas_m2 = spec.luas_m2 || '';
                 this.formData.spekBaru.jaringan_alamat = defaultAlamat;
                 this.formData.spekBaru.jaringan_is_baru = spec.jaringan_is_baru || spec.is_baru || (isFromKemitraan ? 'Lama' : 'Baru');
-                this.formData.spekBaru.jaringan_kapitalisasi_tahun_induk = spec.jaringan_kapitalisasi_tahun_induk || spec.tahun_induk || it.tahun_perolehan || '';
-                this.formData.spekBaru.jaringan_kapitalisasi_nilai_induk = spec.jaringan_kapitalisasi_nilai_induk || spec.nilai_induk || '';
+                this.formData.spekBaru.jaringan_kapitalisasi_tahun_induk = (this.formData.spekBaru.jaringan_is_baru === 'Baru') ? '' : (spec.jaringan_kapitalisasi_tahun_induk || spec.tahun_induk || '');
+                this.formData.spekBaru.jaringan_kapitalisasi_nilai_induk = (this.formData.spekBaru.jaringan_is_baru === 'Baru') ? '' : (spec.jaringan_kapitalisasi_nilai_induk || spec.nilai_induk || '');
 
                 // KIB E - Lainnya
                 this.formData.spekBaru.lainnya_judul_pencipta = spec.judul_pencipta || it.nama_barang || '';

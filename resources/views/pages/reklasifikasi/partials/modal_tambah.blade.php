@@ -1180,11 +1180,6 @@
                                     <option value="Baru">✨ Bangunan Baru (Pembangunan Perdana)</option>
                                 </select>
                             </div>
-                            <div x-show="formData.spekBaru.gedung_is_baru === 'Lama'">
-                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Tahun Pembangunan / Fisik Awal:</label>
-                                <input type="number" min="1950" max="2099" x-model="formData.spekBaru.gedung_kapitalisasi_tahun_induk" placeholder="Contoh: 2018"
-                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none">
-                            </div>
                             <div>
                                 <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Konstruksi Bertingkat:</label>
                                 <select x-model="formData.spekBaru.gedung_konstruksi_bertingkat"
@@ -1248,11 +1243,6 @@
                                     <option value="Lama">🌐 Jaringan / Ruas Lama (Eksisting / Pasca-Kemitraan)</option>
                                     <option value="Baru">✨ Jaringan Baru (Pemasangan / Pembangunan Perdana)</option>
                                 </select>
-                            </div>
-                            <div x-show="formData.spekBaru.jaringan_is_baru === 'Lama'">
-                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Tahun Pemasangan / Fisik Awal:</label>
-                                <input type="number" min="1950" max="2099" x-model="formData.spekBaru.jaringan_kapitalisasi_tahun_induk" placeholder="Contoh: 2019"
-                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none">
                             </div>
                             <div>
                                 <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Konstruksi Fisik Jaringan:</label>
