@@ -47,6 +47,9 @@
         <!-- MODAL KONFIRMASI SINKRONISASI EXTEND ASET MITRA (TABEL 2) -->
         @include('pages.kemitraan.master_partials.modal_confirm_extend_mitra')
 
+        <!-- MODAL PEMBATALAN KERJA SAMA KEMITRAAN (STATUS DIBATALKAN) -->
+        @include('pages.kemitraan.master_partials.modal_batal_kemitraan')
+
         <!-- FLOATING TOAST NOTIFICATION -->
         @include('pages.kemitraan.master_partials.toast')
     </div>

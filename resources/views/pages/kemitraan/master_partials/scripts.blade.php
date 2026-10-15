@@ -443,6 +443,7 @@
             showModalTerminasi: false,
             terminasiTab: 'kembalikan',
             isSubmittingTerminasi: false,
+            isDraggingTerminasi: false,
             terminasiData: {},
             terminasiForm: {
                 id: null,
@@ -3783,11 +3784,26 @@
             closeTerminasiModal() {
                 this.showModalTerminasi = false;
                 this.isSubmittingTerminasi = false;
+                this.isDraggingTerminasi = false;
+                this.removeTerminasiFile();
             },
 
             handleTerminasiFileChange(e) {
-                const file = e.target.files[0];
-                this.terminasiForm.berkas_ba_terminasi = file || null;
+                const file = e.target.files ? e.target.files[0] : null;
+                if (file) {
+                    if (file.size > 10 * 1024 * 1024) {
+                        this.showToast('Ukuran file maksimal 10MB.', 'warning');
+                        return;
+                    }
+                    this.terminasiForm.berkas_ba_terminasi = file;
+                }
+            },
+
+            removeTerminasiFile() {
+                this.terminasiForm.berkas_ba_terminasi = null;
+                if (this.$refs.fileInputTerminasi) {
+                    this.$refs.fileInputTerminasi.value = '';
+                }
             },
 
             async submitKembalikanForm() {

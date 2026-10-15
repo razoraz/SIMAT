@@ -651,6 +651,159 @@ class KemitraanController extends Controller
     }
 
     /**
+     * Batalkan Kerja Sama Kemitraan (Status Dibatalkan + Input Alasan Pembatalan)
+     */
+    public function batalkanKemitraan(Request $request, $id)
+    {
+        $kemitraan = AstapKemitraan::find($id);
+        if (!$kemitraan) {
+            $kemitraan = AstapKemitraan::where('astap_id', $id)->firstOrFail();
+        }
+
+        $request->validate([
+            'alasan_batal' => 'required|string|max:1000'
+        ]);
+
+        return DB::transaction(function () use ($kemitraan, $request) {
+            $alasan = trim($request->input('alasan_batal'));
+            $user = Auth::user();
+            $userName = $user ? ($user->name . ' (' . ucfirst($user->role ?? 'user') . ')') : 'Administrator';
+            $now = now();
+
+            $kemitraan->update([
+                'status_konsesi' => 'Dibatalkan',
+                'alasan_batal'   => $alasan,
+                'dibatalkan_at'  => $now,
+                'dibatalkan_by'  => $userName,
+            ]);
+
+            // Jika aset dimanfaatkan (BMD RSUD):
+            // Objek aset BMD dikembalikan statusnya ke Tersedia (KIB asalnya), riwayat kemitraan tetap tercatat
+            if ($kemitraan->tipe_kemitraan === 'dimanfaatkan') {
+                $targetAstapId = $kemitraan->objek_astap_id ?: $kemitraan->astap_id;
+                if ($targetAstapId) {
+                    AstapRegister::where('astap_id', $targetAstapId)
+                        ->update([
+                            'status' => 'Tersedia'
+                        ]);
+                }
+                if ($kemitraan->astap_id && $kemitraan->astap_id != $targetAstapId) {
+                    AstapRegister::where('astap_id', $kemitraan->astap_id)
+                        ->update([
+                            'status' => 'Tersedia'
+                        ]);
+                }
+
+                // Aset yang ditambahkan mitra yang tertaut pada objek pemanfaatan ini juga otomatis ikut dibatalkan
+                AstapKemitraan::where('objek_astap_id', $targetAstapId)
+                    ->where('id', '!=', $kemitraan->id)
+                    ->where('is_deleted', 0)
+                    ->where('status_konsesi', '!=', 'Dikembalikan ke Rekanan')
+                    ->update([
+                        'status_konsesi' => 'Dibatalkan',
+                        'alasan_batal'   => 'Dibatalkan otomatis mengikuti pembatalan objek pemanfaatan BMD RSUD: ' . $alasan,
+                        'dibatalkan_at'  => $now,
+                        'dibatalkan_by'  => $userName,
+                    ]);
+            } else {
+                // Untuk aset yang ditambahkan mitra:
+                if ($kemitraan->astap_id) {
+                    AstapRegister::where('astap_id', $kemitraan->astap_id)
+                        ->update([
+                            'status' => 'Dibatalkan'
+                        ]);
+                }
+            }
+
+            // Catat ke spesifikasi json astap sebagai riwayat audit
+            if ($kemitraan->astap) {
+                $astap = $kemitraan->astap;
+                $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json ?? '[]', true) ?: []);
+                $spec['pembatalan_kemitraan'] = [
+                    'status'        => 'Dibatalkan',
+                    'alasan'        => $alasan,
+                    'dibatalkan_at' => $now->toDateTimeString(),
+                    'dibatalkan_by' => $userName,
+                ];
+                $astap->spesifikasi_json = $spec;
+                $astap->save();
+            }
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "Kerja sama kemitraan PKS '{$kemitraan->nomor_pks}' berhasil dibatalkan.",
+                    'data'    => $kemitraan->fresh(['astap']),
+                ]);
+            }
+
+            return redirect()->route('master.kemitraan')
+                ->with('success', "Kerja sama kemitraan PKS '{$kemitraan->nomor_pks}' berhasil dibatalkan.");
+        });
+    }
+
+    /**
+     * Pulihkan Status Kemitraan yang Dibatalkan
+     */
+    public function batalPembatalanKemitraan(Request $request, $id)
+    {
+        $kemitraan = AstapKemitraan::find($id);
+        if (!$kemitraan) {
+            $kemitraan = AstapKemitraan::where('astap_id', $id)->firstOrFail();
+        }
+
+        return DB::transaction(function () use ($kemitraan, $request) {
+            $statusSemula = 'Konsesi Berakhir';
+            if (!empty($kemitraan->tanggal_selesai)) {
+                $tglAkhir = Carbon::parse($kemitraan->tanggal_selesai);
+                if ($tglAkhir->isFuture()) {
+                    $statusSemula = 'Aktif';
+                }
+            }
+
+            $kemitraan->update([
+                'status_konsesi' => $statusSemula,
+                'alasan_batal'   => null,
+                'dibatalkan_at'  => null,
+                'dibatalkan_by'  => null,
+            ]);
+
+            if ($kemitraan->tipe_kemitraan === 'dimanfaatkan') {
+                $targetAstapId = $kemitraan->objek_astap_id ?: $kemitraan->astap_id;
+                if ($targetAstapId) {
+                    AstapRegister::where('astap_id', $targetAstapId)->update(['status' => 'Kemitraan']);
+                }
+                if ($kemitraan->astap_id && $kemitraan->astap_id != $targetAstapId) {
+                    AstapRegister::where('astap_id', $kemitraan->astap_id)->update(['status' => 'Kemitraan']);
+                }
+            } else {
+                if ($kemitraan->astap_id) {
+                    AstapRegister::where('astap_id', $kemitraan->astap_id)->update(['status' => 'Kemitraan']);
+                }
+            }
+
+            if ($kemitraan->astap) {
+                $astap = $kemitraan->astap;
+                $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json ?? '[]', true) ?: []);
+                unset($spec['pembatalan_kemitraan']);
+                $astap->spesifikasi_json = $spec;
+                $astap->save();
+            }
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "Pembatalan kemitraan berhasil dicabut. Status dipulihkan ke '{$statusSemula}'.",
+                    'data'    => $kemitraan->fresh(['astap']),
+                ]);
+            }
+
+            return redirect()->route('master.kemitraan')
+                ->with('success', "Pembatalan kemitraan berhasil dicabut.");
+        });
+    }
+
+    /**
      * Perpanjang Masa Konsesi / Adendum PKS Kemitraan (Extend)
      */
     public function extendKonsesi(Request $request, $id)
