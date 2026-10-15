@@ -209,6 +209,8 @@
                         if (!rowStatus.includes('selesai')) return false;
                     } else if (targetStatus.includes('dihentikan')) {
                         if (!rowStatus.includes('dihentikan')) return false;
+                    } else if (targetStatus.includes('batal')) {
+                        if (!rowStatus.includes('batal')) return false;
                     } else if (rowStatus !== targetStatus) {
                         return false;
                     }
@@ -438,6 +440,14 @@
                 status_konsesi: 'Aktif'
             },
             isUpdatingStatus: false,
+
+            // State Pembatalan Kemitraan (Batal Status Kemitraan)
+            showModalBatal: false,
+            isSubmittingBatal: false,
+            batalData: {},
+            batalForm: {
+                alasan_batal: ''
+            },
 
             // State Terminasi Kemitraan (Pengembalian ke Mitra Rekanan)
             showModalTerminasi: false,
@@ -840,6 +850,11 @@
                     target_kib_reklas: kemitraan?.target_kib_reklas || spec?.terminasi?.target_kib || null,
                     target_kode_108: kemitraan?.target_kode_108 || spec?.terminasi?.target_kode_108 || null,
                     nilai_perolehan_rsud: kemitraan?.nilai_perolehan_rsud || spec?.terminasi?.nilai_perolehan_rsud || null,
+
+                    // Informasi Pembatalan Status Kemitraan
+                    alasan_batal: kemitraan?.alasan_batal || spec?.alasan_batal || null,
+                    dibatalkan_at: kemitraan?.dibatalkan_at || spec?.dibatalkan_at || null,
+                    dibatalkan_by: kemitraan?.dibatalkan_by || spec?.dibatalkan_by || null,
 
                     raw_row: kemitraan || {},
                     raw_astap: astap || {}
@@ -3542,18 +3557,20 @@
                 item.jenis_aset_nama = 'Akun 1.5.2 - Kemitraan dengan Pihak Ketiga';
                 item.status_konsesi = kemitraanRow?.status_konsesi || item.kemitraan?.status_konsesi || item.status_konsesi || 'Aktif';
 
-                if (item.status_konsesi === 'Dikembalikan ke Rekanan') {
+                if (item.status_konsesi === 'Dikembalikan ke Rekanan' || item.status_konsesi === 'Dibatalkan') {
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
                             icon: 'warning',
-                            title: 'Aset Telah Dikembalikan',
-                            text: 'Aset ini telah dikembalikan ke pihak rekanan dan bukan lagi objek aset di RSUD, sehingga tidak dapat direklasifikasi.',
+                            title: item.status_konsesi === 'Dibatalkan' ? 'Kemitraan Dibatalkan' : 'Aset Telah Dikembalikan',
+                            text: item.status_konsesi === 'Dibatalkan'
+                                ? 'Status kerja sama kemitraan aset ini telah dibatalkan, sehingga aset terkunci dari reklasifikasi.'
+                                : 'Aset ini telah dikembalikan ke pihak rekanan dan bukan lagi objek aset di RSUD, sehingga tidak dapat direklasifikasi.',
                             confirmButtonColor: '#06b6d4',
                             background: '#0f172a',
                             color: '#f8fafc',
                         });
                     } else {
-                        alert('Aset ini telah dikembalikan ke pihak rekanan dan tidak dapat direklasifikasi.');
+                        alert(item.status_konsesi === 'Dibatalkan' ? 'Status kemitraan dibatalkan dan tidak dapat direklasifikasi.' : 'Aset ini telah dikembalikan ke pihak rekanan dan tidak dapat direklasifikasi.');
                     }
                     return;
                 }
@@ -3930,6 +3947,127 @@
                             }
                         } catch (err) {
                             console.error('Batal kembalikan error:', err);
+                            this.showToast('Terjadi kesalahan jaringan: ' + err.message, 'error');
+                        }
+                    }
+                });
+            },
+
+            // =========================================================================
+            // METODE PEMBATALAN STATUS KEMITRAAN (STATUS DIBATALKAN)
+            // =========================================================================
+            openModalBatalKemitraan(row) {
+                if (!row) return;
+
+                const kemitraanId = row.kemitraan_id || (row.kemitraan ? row.kemitraan.id : row.id);
+                const rawRow = (row.raw_row && Object.keys(row.raw_row).length > 0) ? row.raw_row : (row.kemitraan || row);
+                const isDimanfaatkan = Boolean(row.is_dimanfaatkan ?? rawRow.is_dimanfaatkan ?? (rawRow.tipe_kemitraan === 'dimanfaatkan'));
+                const namaBarang = row.nama_barang || row.astap?.nama_barang || rawRow.nama_barang || 'Aset Kemitraan';
+                const nomorPks = row.nomor_pks || rawRow.nomor_pks || '-';
+                const mitraNama = row.mitra_nama || rawRow.mitra_nama || rawRow.penyedia_nama || 'Mitra Rekanan';
+
+                this.batalData = {
+                    id: kemitraanId,
+                    nama_barang: namaBarang,
+                    nomor_pks: nomorPks,
+                    mitra_nama: mitraNama,
+                    is_dimanfaatkan: isDimanfaatkan,
+                    raw: rawRow
+                };
+
+                this.batalForm = {
+                    alasan_batal: ''
+                };
+
+                this.showModalBatal = true;
+            },
+
+            closeModalBatalKemitraan() {
+                this.showModalBatal = false;
+                this.isSubmittingBatal = false;
+                this.batalForm.alasan_batal = '';
+            },
+
+            async submitBatalKemitraan() {
+                if (!this.batalData.id) return;
+                if (!this.batalForm.alasan_batal || !this.batalForm.alasan_batal.trim()) {
+                    this.showToast('Harap masukkan alasan pembatalan kemitraan.', 'warning');
+                    return;
+                }
+
+                this.isSubmittingBatal = true;
+                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+                try {
+                    const res = await fetch(`/master-data/kemitraan/${this.batalData.id}/batalkan`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': token
+                        },
+                        body: JSON.stringify({
+                            alasan_batal: this.batalForm.alasan_batal.trim()
+                        })
+                    });
+
+                    const resJson = await res.json();
+                    if (resJson.success) {
+                        this.showModalBatal = false;
+                        this.showDetailModal = false;
+                        this.showToast(resJson.message || 'Status kemitraan berhasil dibatalkan!', 'success');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1200);
+                    } else {
+                        this.showToast('Gagal membatalkan kemitraan: ' + (resJson.message || 'Terjadi kesalahan sistem.'), 'error');
+                    }
+                } catch (err) {
+                    console.error('Submit batal kemitraan error:', err);
+                    this.showToast('Terjadi kesalahan jaringan: ' + err.message, 'error');
+                } finally {
+                    this.isSubmittingBatal = false;
+                }
+            },
+
+            batalPembatalanKemitraan(detail) {
+                if (!detail) return;
+                const kemitraanId = detail.kemitraan_id || detail.id;
+                const namaAset = detail.nama_barang || 'Aset Kemitraan';
+                const noPks = detail.nomor_pks || '-';
+
+                this.askConfirmation({
+                    title: '↩️ Pulihkan Status Kemitraan?',
+                    message: `Anda akan membatalkan status pembatalan aset "${namaAset}".\n\nStatus kemitraan akan dipulihkan kembali ke "Aktif" dan operasional kerja sama dapat berjalan normal.`,
+                    itemName: `${namaAset} (PKS: ${noPks})`,
+                    type: 'danger',
+                    btnText: '↩️ Ya, Pulihkan Kemitraan',
+                    onConfirm: async () => {
+                        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        try {
+                            this.showToast('Sedang memulihkan status kemitraan...', 'info');
+
+                            const res = await fetch(`/master-data/kemitraan/${kemitraanId}/batal-pembatalan`, {
+                                method: 'POST',
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': token
+                                }
+                            });
+
+                            const resJson = await res.json();
+                            if (resJson.success) {
+                                this.showDetailModal = false;
+                                this.showToast(resJson.message || 'Status kemitraan berhasil dipulihkan!', 'success');
+                                setTimeout(() => {
+                                    window.location.reload();
+                                }, 1200);
+                            } else {
+                                this.showToast('Gagal memulihkan: ' + (resJson.message || 'Terjadi kesalahan sistem.'), 'error');
+                            }
+                        } catch (err) {
+                            console.error('Batal pembatalan error:', err);
                             this.showToast('Terjadi kesalahan jaringan: ' + err.message, 'error');
                         }
                     }

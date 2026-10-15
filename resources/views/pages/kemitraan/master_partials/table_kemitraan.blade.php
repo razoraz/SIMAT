@@ -242,12 +242,15 @@
         $statusLower = strtolower($status);
         $hasReklasDone = in_array($status, ['Selesai / Reklasifikasi']) || (!empty($astap?->is_reklas) && $astap->is_reklas == 1 && $row->skema_kemitraan !== 'Reklasifikasi') || ($status === 'Selesai' && $reklasHistory !== null);
         $isDikembalikan = in_array($status, ['Dikembalikan ke Rekanan', 'Ditarik Mitra', 'Dihentikan']) || str_contains($statusLower, 'kembali') || str_contains($statusLower, 'tarik');
+        $isDibatalkan = ($status === 'Dibatalkan') || str_contains($statusLower, 'batal');
 
         $siklus = 'kemitraan';
         if ($isDikembalikan) {
             $siklus = 'dikembalikan';
         } elseif ($hasReklasDone) {
             $siklus = 'milik_rsud';
+        } elseif ($isDibatalkan) {
+            $siklus = 'dibatalkan';
         } else {
             $siklus = 'kemitraan';
         }
@@ -743,9 +746,10 @@
                                         {{ $row->status_konsesi === 'Selesai / Reklasifikasi' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : '' }}
                                         {{ $row->status_konsesi === 'Selesai' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : '' }}
                                         {{ $row->status_konsesi === 'Dihentikan' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : '' }}
+                                        {{ $row->status_konsesi === 'Dibatalkan' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : '' }}
                                         {{ $row->status_konsesi === 'Siap Dikerjasamakan' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : '' }}
                                     ">
-                                        {{ $row->status_konsesi === 'Dikembalikan ke Rekanan' ? '📦 Dikembalikan' : ($row->status_konsesi === 'Selesai / Reklasifikasi' ? '🏛️ Milik RSUD' : ($row->status_konsesi === 'Selesai' ? 'Selesai' : ($row->status_konsesi === 'Konsesi Berakhir' ? 'Konsesi Berakhir' : $row->status_konsesi))) }}
+                                        {{ $row->status_konsesi === 'Dikembalikan ke Rekanan' ? '📦 Dikembalikan' : ($row->status_konsesi === 'Selesai / Reklasifikasi' ? '🏛️ Milik RSUD' : ($row->status_konsesi === 'Selesai' ? 'Selesai' : ($row->status_konsesi === 'Konsesi Berakhir' ? 'Konsesi Berakhir' : ($row->status_konsesi === 'Dibatalkan' ? '🚫 Dibatalkan' : $row->status_konsesi)))) }}
                                     </span>
                                     @if($row->is_extended || !empty($row->riwayat_adendum))
                                         <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-black uppercase tracking-wider bg-emerald-500/25 text-emerald-300 border border-emerald-400/50 shadow-sm shadow-emerald-500/20"
@@ -1137,8 +1141,9 @@
                                         {{ $row->status_konsesi === 'Selesai / Reklasifikasi' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : '' }}
                                         {{ $row->status_konsesi === 'Selesai' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : '' }}
                                         {{ $row->status_konsesi === 'Dihentikan' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : '' }}
+                                        {{ $row->status_konsesi === 'Dibatalkan' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : '' }}
                                     ">
-                                        {{ $row->status_konsesi === 'Dikembalikan ke Rekanan' ? '📦 Dikembalikan' : ($row->status_konsesi === 'Selesai / Reklasifikasi' ? '🏛️ Milik RSUD' : ($row->status_konsesi === 'Selesai' ? 'Selesai' : ($row->status_konsesi === 'Konsesi Berakhir' ? 'Konsesi Berakhir' : $row->status_konsesi))) }}
+                                        {{ $row->status_konsesi === 'Dikembalikan ke Rekanan' ? '📦 Dikembalikan' : ($row->status_konsesi === 'Selesai / Reklasifikasi' ? '🏛️ Milik RSUD' : ($row->status_konsesi === 'Selesai' ? 'Selesai' : ($row->status_konsesi === 'Konsesi Berakhir' ? 'Konsesi Berakhir' : ($row->status_konsesi === 'Dibatalkan' ? '🚫 Dibatalkan' : $row->status_konsesi)))) }}
                                     </span>
                                     @if($row->is_extended || !empty($row->riwayat_adendum))
                                         <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-black uppercase tracking-wider bg-emerald-500/25 text-emerald-300 border border-emerald-400/50 shadow-sm shadow-emerald-500/20"
@@ -1172,7 +1177,7 @@
                                     </button>
 
                                     @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
-                                    @if($row->status_konsesi !== 'Dikembalikan ke Rekanan')
+                                    @if($row->status_konsesi !== 'Dikembalikan ke Rekanan' && $row->status_konsesi !== 'Dibatalkan')
                                     <!-- 3. Tombol Reklas -->
                                     @if($row->status_konsesi === 'Konsesi Berakhir')
                                     <button type="button" @click="openReklas({{ json_encode($astap) }}, {{ json_encode($row) }})"
@@ -1440,8 +1445,9 @@
                                         {{ $row->status_konsesi === 'Selesai / Reklasifikasi' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : '' }}
                                         {{ $row->status_konsesi === 'Selesai' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : '' }}
                                         {{ $row->status_konsesi === 'Dihentikan' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : '' }}
+                                        {{ $row->status_konsesi === 'Dibatalkan' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : '' }}
                                     ">
-                                        {{ $row->status_konsesi === 'Dikembalikan ke Rekanan' ? '📦 Dikembalikan' : ($row->status_konsesi === 'Selesai / Reklasifikasi' ? '🏛️ Milik RSUD' : ($row->status_konsesi === 'Selesai' ? 'Selesai' : ($row->status_konsesi === 'Konsesi Berakhir' ? 'Konsesi Berakhir' : $row->status_konsesi))) }}
+                                        {{ $row->status_konsesi === 'Dikembalikan ke Rekanan' ? '📦 Dikembalikan' : ($row->status_konsesi === 'Selesai / Reklasifikasi' ? '🏛️ Milik RSUD' : ($row->status_konsesi === 'Selesai' ? 'Selesai' : ($row->status_konsesi === 'Konsesi Berakhir' ? 'Konsesi Berakhir' : ($row->status_konsesi === 'Dibatalkan' ? '🚫 Dibatalkan' : $row->status_konsesi)))) }}
                                     </span>
                                     @if($row->is_extended || !empty($row->riwayat_adendum))
                                         <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-black uppercase tracking-wider bg-emerald-500/25 text-emerald-300 border border-emerald-400/50 shadow-sm shadow-emerald-500/20"
@@ -1470,7 +1476,7 @@
                                     </button>
 
                                     @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
-                                    @if(!(!$isRowDimanfaatkan && $row->status_konsesi === 'Dikembalikan ke Rekanan'))
+                                    @if(!(!$isRowDimanfaatkan && ($row->status_konsesi === 'Dikembalikan ke Rekanan' || $row->status_konsesi === 'Dibatalkan')))
                                     @if($row->status_konsesi === 'Konsesi Berakhir')
                                     <button type="button" @click="openReklas({{ json_encode($astap) }}, {{ json_encode($row) }})"
                                         title="Masa konsesi berakhir! Reklasifikasi aset ini"

@@ -129,6 +129,7 @@
                         <option value="Selesai / Reklasifikasi" class="bg-slate-900 text-blue-300 py-1">🏛️ Sudah Jadi Milik RSUD</option>
                         <option value="Selesai" class="bg-slate-900 text-blue-300 py-1">🔵 Selesai</option>
                         <option value="Dihentikan" class="bg-slate-900 text-rose-300 py-1">🔴 Dihentikan</option>
+                        <option value="Dibatalkan" class="bg-slate-900 text-rose-400 py-1 font-bold">🚫 Dibatalkan</option>
                     </select>
                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-cyan-400">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
