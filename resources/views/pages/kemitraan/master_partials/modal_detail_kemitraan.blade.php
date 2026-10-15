@@ -1362,33 +1362,21 @@
                             </div>
                         </template>
 
-                        <!-- KONDISI B: DUA TOMBOL AKSI UTAMA JALUR 1 & JALUR 2 (SEMBUNYIKAN JIKA SUDAH DIKEMBALIKAN / RESMI RSUD) -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" x-show="selectedAstapDetail.status_konsesi !== 'Dikembalikan ke Rekanan' && selectedAstapDetail.status_konsesi !== 'Selesai / Reklasifikasi'">
-                            <!-- Jalur 1: Kembalikan ke Mitra -->
+                        <!-- TOMBOL AKSI PENGEMBALIAN KE MITRA (SEMBUNYIKAN JIKA SUDAH DIKEMBALIKAN / RESMI RSUD) -->
+                        <div x-show="selectedAstapDetail.status_konsesi !== 'Dikembalikan ke Rekanan' && selectedAstapDetail.status_konsesi !== 'Selesai / Reklasifikasi'">
                             <button type="button" @click="openTerminasiModal(selectedAstapDetail, 'kembalikan')"
-                                    class="p-3.5 rounded-2xl bg-gradient-to-br from-purple-950/40 via-slate-900 to-slate-950 border border-purple-500/30 hover:border-purple-400 text-left transition-all hover:scale-[1.01] hover:shadow-lg hover:shadow-purple-500/20 group cursor-pointer">
+                                    class="w-full p-4 rounded-2xl bg-gradient-to-br from-purple-950/40 via-slate-900 to-slate-950 border border-purple-500/30 hover:border-purple-400 text-left transition-all hover:scale-[1.005] hover:shadow-lg hover:shadow-purple-500/20 group cursor-pointer">
                                 <div class="flex items-center gap-2.5 mb-1.5">
                                     <span class="text-xl group-hover:scale-110 transition-transform">📦</span>
                                     <span class="text-xs font-extrabold text-purple-300 group-hover:text-purple-200">
-                                        Jalur 1: Kembalikan ke Mitra
+                                        Kembalikan Aset ke Mitra Rekanan
+                                    </span>
+                                    <span class="ml-auto text-[9.5px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 font-mono">
+                                        Masa Pakai Selesai
                                     </span>
                                 </div>
-                                <p class="text-[10px] text-slate-400 leading-relaxed">
-                                    Untuk aset titipan mitra (sewa/KSO) yang masa pakainya selesai dan dikembalikan ke pihak rekanan swasta.
-                                </p>
-                            </button>
-
-                            <!-- Jalur 2: Serah Terima Milik RSUD -->
-                            <button type="button" @click="openTerminasiModal(selectedAstapDetail, 'serah_terima')"
-                                    class="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-950/40 via-slate-900 to-slate-950 border border-emerald-500/30 hover:border-emerald-400 text-left transition-all hover:scale-[1.01] hover:shadow-lg hover:shadow-emerald-500/20 group cursor-pointer">
-                                <div class="flex items-center gap-2.5 mb-1.5">
-                                    <span class="text-xl group-hover:scale-110 transition-transform">🏛️</span>
-                                    <span class="text-xs font-extrabold text-emerald-300 group-hover:text-emerald-200">
-                                        Jalur 2: Serah Terima Jadi Milik RSUD
-                                    </span>
-                                </div>
-                                <p class="text-[10px] text-slate-400 leading-relaxed">
-                                    Untuk skema BGS/BSG atau hibah/alih kepemilikan sehingga aset resmi tercatat sebagai Aset Tetap Milik RSUD.
+                                <p class="text-[10.5px] text-slate-400 leading-relaxed">
+                                    Untuk aset titipan mitra (sewa/KSO) yang masa pakainya telah selesai dan dikembalikan secara resmi ke pihak rekanan swasta melalui Berita Acara (BAST).
                                 </p>
                             </button>
                         </div>

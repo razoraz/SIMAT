@@ -439,9 +439,9 @@
             },
             isUpdatingStatus: false,
 
-            // State Terminasi Kemitraan (Pengembalian ke Mitra / Serah Terima Milik RSUD)
+            // State Terminasi Kemitraan (Pengembalian ke Mitra Rekanan)
             showModalTerminasi: false,
-            terminasiTab: 'kembalikan', // 'kembalikan' | 'serah_terima'
+            terminasiTab: 'kembalikan',
             isSubmittingTerminasi: false,
             terminasiData: {},
             terminasiForm: {
@@ -455,11 +455,7 @@
                 pihak_penerima_nama: '',
                 pihak_penerima_jabatan: '',
                 catatan_terminasi: '',
-                berkas_ba_terminasi: null,
-                nilai_perolehan_rsud: '',
-                target_kib_reklas: 'KIB_B',
-                target_kode_108: '',
-                ruangan_tujuan_id: ''
+                berkas_ba_terminasi: null
             },
 
             // Modal Delete States
@@ -3759,36 +3755,19 @@
                     raw: rawRow
                 };
 
-                let initialTargetKib = 'KIB_B';
-                if ((this.terminasiData.category || '').toUpperCase().includes('C') || (this.terminasiData.category || '').toUpperCase().includes('GEDUNG')) {
-                    initialTargetKib = 'KIB_C';
-                } else if ((this.terminasiData.category || '').toUpperCase().includes('D') || (this.terminasiData.category || '').toUpperCase().includes('JARINGAN')) {
-                    initialTargetKib = 'KIB_D';
-                } else if ((this.terminasiData.category || '').toUpperCase().includes('E') || (this.terminasiData.category || '').toUpperCase().includes('LAINNYA')) {
-                    initialTargetKib = 'KIB_E';
-                }
-
-                this.terminasiTab = defaultTab;
+                this.terminasiTab = 'kembalikan';
                 this.terminasiForm = {
                     id: kemitraanId,
-                    nomor_ba_terminasi: defaultTab === 'kembalikan'
-                        ? `000.2.3.2/BAST-KMT-KEMBALI/${kemitraanId || '001'}/430.10.7/${currentYear}`
-                        : `000.2.3.2/BAST-KMT-MILIK/${kemitraanId || '001'}/430.10.7/${currentYear}`,
+                    nomor_ba_terminasi: `000.2.3.2/BAST-KMT-KEMBALI/${kemitraanId || '001'}/430.10.7/${currentYear}`,
                     tanggal_terminasi: todayStr,
                     tanggal_ba_terminasi: todayStr,
                     kondisi_akhir: row.kondisi || 'Baik',
-                    pihak_penyerah_nama: defaultTab === 'kembalikan' ? 'dr. YUS PRIYATNA ADRYANTO, Sp.P, FISR' : mitraPimpinan,
-                    pihak_penyerah_jabatan: defaultTab === 'kembalikan' ? 'Direktur RSUD Dr. H. Koesnandi' : 'Direktur / Penanggung Jawab Mitra',
-                    pihak_penerima_nama: defaultTab === 'kembalikan' ? mitraPimpinan : 'dr. YUS PRIYATNA ADRYANTO, Sp.P, FISR',
-                    pihak_penerima_jabatan: defaultTab === 'kembalikan' ? 'Direktur / Penanggung Jawab Mitra' : 'Direktur RSUD Dr. H. Koesnandi',
-                    catatan_terminasi: defaultTab === 'kembalikan'
-                        ? 'Pengembalian aset operasional kepada mitra rekanan sehubungan dengan selesainya masa konsesi kerja sama.'
-                        : 'Serah terima pengalihan kepemilikan aset kemitraan menjadi Barang Milik Daerah definitif RSUD Dr. H. Koesnandi.',
-                    berkas_ba_terminasi: null,
-                    nilai_perolehan_rsud: nilaiNominal > 0 ? this.formatRupiah(nilaiNominal) : '',
-                    target_kib_reklas: initialTargetKib,
-                    target_kode_108: '',
-                    ruangan_tujuan_id: ''
+                    pihak_penyerah_nama: 'dr. YUS PRIYATNA ADRYANTO, Sp.P, FISR',
+                    pihak_penyerah_jabatan: 'Direktur RSUD Dr. H. Koesnandi',
+                    pihak_penerima_nama: mitraPimpinan,
+                    pihak_penerima_jabatan: 'Direktur / Penanggung Jawab Mitra',
+                    catatan_terminasi: 'Pengembalian aset operasional kepada mitra rekanan sehubungan dengan selesainya masa konsesi kerja sama.',
+                    berkas_ba_terminasi: null
                 };
 
                 this.showModalTerminasi = true;
@@ -3804,15 +3783,6 @@
             closeTerminasiModal() {
                 this.showModalTerminasi = false;
                 this.isSubmittingTerminasi = false;
-            },
-
-            formatTerminasiNilai(e) {
-                let val = e.target.value.replace(/[^0-9]/g, '');
-                if (!val) {
-                    this.terminasiForm.nilai_perolehan_rsud = '';
-                    return;
-                }
-                this.terminasiForm.nilai_perolehan_rsud = new Intl.NumberFormat('id-ID').format(val);
             },
 
             handleTerminasiFileChange(e) {
@@ -3878,72 +3848,6 @@
                 }
             },
 
-            async submitSerahTerimaForm() {
-                if (!this.terminasiForm.nomor_ba_terminasi || !this.terminasiForm.tanggal_terminasi) {
-                    this.showToast('Harap lengkapi Nomor BAST dan Tanggal Serah Terima.', 'warning');
-                    return;
-                }
-                if (!this.terminasiForm.target_kib_reklas) {
-                    this.showToast('Harap pilih Target KIB Definitif RSUD.', 'warning');
-                    return;
-                }
-                if (!this.terminasiForm.pihak_penyerah_nama || !this.terminasiForm.pihak_penerima_nama) {
-                    this.showToast('Harap lengkapi nama pihak penyerah dan penerima.', 'warning');
-                    return;
-                }
-
-                this.isSubmittingTerminasi = true;
-                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
-
-                try {
-                    const fd = new FormData();
-                    fd.append('_token', token);
-                    fd.append('nomor_ba_terminasi', this.terminasiForm.nomor_ba_terminasi);
-                    fd.append('tanggal_terminasi', this.terminasiForm.tanggal_terminasi);
-                    fd.append('tanggal_ba_terminasi', this.terminasiForm.tanggal_ba_terminasi || this.terminasiForm.tanggal_terminasi);
-                    fd.append('kondisi_akhir', this.terminasiForm.kondisi_akhir || 'Baik');
-                    fd.append('pihak_penyerah_nama', this.terminasiForm.pihak_penyerah_nama);
-                    fd.append('pihak_penyerah_jabatan', this.terminasiForm.pihak_penyerah_jabatan || '');
-                    fd.append('pihak_penerima_nama', this.terminasiForm.pihak_penerima_nama);
-                    fd.append('pihak_penerima_jabatan', this.terminasiForm.pihak_penerima_jabatan || '');
-                    fd.append('target_kib_reklas', this.terminasiForm.target_kib_reklas);
-                    fd.append('target_kode_108', this.terminasiForm.target_kode_108 || '');
-                    fd.append('ruangan_tujuan_id', this.terminasiForm.ruangan_tujuan_id || '');
-                    fd.append('nilai_perolehan_rsud', (this.terminasiForm.nilai_perolehan_rsud || '').replace(/\./g, ''));
-                    fd.append('catatan_terminasi', this.terminasiForm.catatan_terminasi || '');
-
-                    if (this.terminasiForm.berkas_ba_terminasi instanceof File) {
-                        fd.append('berkas_ba_terminasi', this.terminasiForm.berkas_ba_terminasi);
-                    }
-
-                    const kemitraanId = this.terminasiData.id;
-                    const res = await fetch(`/master-data/kemitraan/${kemitraanId}/serah-terima-rsud`, {
-                        method: 'POST',
-                        headers: {
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': token
-                        },
-                        body: fd
-                    });
-
-                    const resJson = await res.json();
-                    if (resJson.success) {
-                        this.showToast(resJson.message || 'Aset kemitraan berhasil diserahterimakan menjadi milik definitif RSUD!', 'success');
-                        this.closeTerminasiModal();
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1200);
-                    } else {
-                        this.showToast('Gagal memproses serah terima: ' + (resJson.message || 'Terjadi kesalahan sistem.'), 'error');
-                    }
-                } catch (err) {
-                    console.error('Serah terima submit error:', err);
-                    this.showToast('Terjadi kesalahan jaringan: ' + err.message, 'error');
-                } finally {
-                    this.isSubmittingTerminasi = false;
-                }
-            },
-
             printTerminasiBast(tipe) {
                 const tData = this.terminasiData;
                 const fData = this.terminasiForm;
@@ -3972,112 +3876,48 @@
                 this.openPrintBast(rawRow, tipe);
             },
 
-            async batalDikembalikanKeMitra(detail) {
+            batalDikembalikanKeMitra(detail) {
                 if (!detail) return;
                 const kemitraanId = detail.kemitraan_id || detail.id;
                 const namaAset = detail.nama_barang || 'Aset Kemitraan';
                 const noPks = detail.nomor_pks || '-';
 
-                let confirmResult = false;
-                if (typeof Swal !== 'undefined') {
-                    const res = await Swal.fire({
-                        title: 'Batalkan Pengembalian?',
-                        html: `
-                            <div class="text-left text-xs text-slate-300 space-y-2">
-                                <p>Anda akan membatalkan status pengembalian untuk aset:</p>
-                                <p class="font-bold text-white bg-slate-800 p-2.5 rounded-xl border border-slate-700">
-                                    ${namaAset} <br>
-                                    <span class="text-[10px] text-cyan-400 font-mono">Nomor PKS: ${noPks}</span>
-                                </p>
-                                <p class="text-amber-300 leading-relaxed">
-                                    ⚠️ Riwayat Berita Acara (BA) Pengembalian akan di-reset dan status aset dipulihkan kembali sehingga aset dapat diedit atau direklasifikasi.
-                                </p>
-                            </div>
-                        `,
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonColor: '#e11d48',
-                        cancelButtonColor: '#334155',
-                        confirmButtonText: 'Ya, Batalkan Pengembalian',
-                        cancelButtonText: 'Tutup',
-                        reverseButtons: true,
-                        background: '#0f172a',
-                        color: '#f8fafc',
-                    });
-                    confirmResult = res.isConfirmed;
-                } else {
-                    confirmResult = confirm(`Batalkan status pengembalian aset "${namaAset}"?`);
-                }
+                this.askConfirmation({
+                    title: '↩️ Batalkan Pengembalian Aset?',
+                    message: `Anda akan membatalkan status pengembalian aset "${namaAset}".\n\nRiwayat Berita Acara (BA) Pengembalian akan di-reset dan status aset dipulihkan kembali ke "Konsesi Berakhir / Aktif" sehingga aset dapat diubah atau direklasifikasi.`,
+                    itemName: `${namaAset} (PKS: ${noPks})`,
+                    type: 'danger',
+                    btnText: '↩️ Ya, Batalkan Pengembalian',
+                    onConfirm: async () => {
+                        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        try {
+                            this.showToast('Sedang membatalkan status pengembalian aset...', 'info');
 
-                if (!confirmResult) return;
-
-                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
-
-                try {
-                    if (typeof Swal !== 'undefined') {
-                        Swal.fire({
-                            title: 'Memproses Pembatalan...',
-                            text: 'Mohon tunggu sebentar',
-                            allowOutsideClick: false,
-                            didOpen: () => Swal.showLoading(),
-                            background: '#0f172a',
-                            color: '#f8fafc',
-                        });
-                    }
-
-                    const res = await fetch(`/master-data/kemitraan/${kemitraanId}/batal-kembalikan`, {
-                        method: 'POST',
-                        headers: {
-                            'Accept': 'application/json',
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': token
-                        }
-                    });
-
-                    const resJson = await res.json();
-                    if (resJson.success) {
-                        if (typeof Swal !== 'undefined') {
-                            await Swal.fire({
-                                icon: 'success',
-                                title: 'Pengembalian Dibatalkan',
-                                text: resJson.message || 'Status aset berhasil dipulihkan.',
-                                confirmButtonColor: '#06b6d4',
-                                background: '#0f172a',
-                                color: '#f8fafc',
+                            const res = await fetch(`/master-data/kemitraan/${kemitraanId}/batal-kembalikan`, {
+                                method: 'POST',
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': token
+                                }
                             });
-                        } else {
-                            alert(resJson.message || 'Status aset berhasil dipulihkan.');
-                        }
-                        window.location.reload();
-                    } else {
-                        if (typeof Swal !== 'undefined') {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Gagal Membatalkan',
-                                text: resJson.message || 'Terjadi kesalahan sistem.',
-                                confirmButtonColor: '#06b6d4',
-                                background: '#0f172a',
-                                color: '#f8fafc',
-                            });
-                        } else {
-                            alert(resJson.message || 'Terjadi kesalahan sistem.');
+
+                            const resJson = await res.json();
+                            if (resJson.success) {
+                                this.showDetailModal = false;
+                                this.showToast(resJson.message || 'Status aset berhasil dipulihkan!', 'success');
+                                setTimeout(() => {
+                                    window.location.reload();
+                                }, 1200);
+                            } else {
+                                this.showToast('Gagal membatalkan: ' + (resJson.message || 'Terjadi kesalahan sistem.'), 'error');
+                            }
+                        } catch (err) {
+                            console.error('Batal kembalikan error:', err);
+                            this.showToast('Terjadi kesalahan jaringan: ' + err.message, 'error');
                         }
                     }
-                } catch (err) {
-                    console.error('Batal kembalikan error:', err);
-                    if (typeof Swal !== 'undefined') {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Kesalahan Jaringan',
-                            text: err.message,
-                            confirmButtonColor: '#06b6d4',
-                            background: '#0f172a',
-                            color: '#f8fafc',
-                        });
-                    } else {
-                        alert('Kesalahan jaringan: ' + err.message);
-                    }
-                }
+                });
             }
         };
     }
