@@ -2779,6 +2779,11 @@ Route::middleware('auth')->group(function () {
                     ]);
                 }
 
+                if ($astap?->kemitraan?->status_konsesi === 'Dikembalikan ke Rekanan') {
+                    return redirect()->route('master.kemitraan')
+                        ->with('error', "Aset kemitraan '{$astap->nama_barang}' telah dikembalikan ke rekanan dan tidak dapat diubah. Silakan batalkan status pengembalian terlebih dahulu jika ingin mengedit data.");
+                }
+
                 $spec = is_array($astap?->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap?->spesifikasi_json ?? '[]', true) ?: []);
                 $queryTipe = $request->query('tipe');
                 if ($queryTipe && in_array($queryTipe, ['ditambahkan', 'dimanfaatkan'])) {
@@ -2809,6 +2814,16 @@ Route::middleware('auth')->group(function () {
                 }
 
                 $astap = \App\Models\Astap::with(['registers', 'kemitraan'])->findOrFail($id);
+                if ($astap->kemitraan?->status_konsesi === 'Dikembalikan ke Rekanan') {
+                    if ($request->ajax() || $request->wantsJson()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => "Aset kemitraan '{$astap->nama_barang}' telah dikembalikan ke rekanan dan terkunci dari perubahan.",
+                        ], 422);
+                    }
+                    return redirect()->route('master.kemitraan')
+                        ->with('error', "Aset kemitraan '{$astap->nama_barang}' telah dikembalikan ke pihak rekanan dan terkunci dari perubahan.");
+                }
 
                 // Sanitasi input tanggal: tangani ISO string (misal 2026-09-29T17:00:00.000000Z) dari datepicker
                 $cleanDateInput = function($val) {
@@ -6852,6 +6867,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/master-data/kemitraan/extend-mitra-batch', [\App\Http\Controllers\KemitraanController::class, 'extendMitraBatch'])->name('master.kemitraan.extend_mitra_batch');
         Route::patch('/master-data/kemitraan/{id}', [\App\Http\Controllers\KemitraanController::class, 'update'])->name('master.kemitraan.update');
         Route::post('/master-data/kemitraan/{id}/kembalikan-ke-mitra', [\App\Http\Controllers\KemitraanController::class, 'kembalikanKeMitra'])->name('master.kemitraan.kembalikan');
+        Route::post('/master-data/kemitraan/{id}/batal-kembalikan', [\App\Http\Controllers\KemitraanController::class, 'batalKembalikanKeMitra'])->name('master.kemitraan.batal_kembalikan');
         Route::post('/master-data/kemitraan/{id}/serah-terima-rsud', [\App\Http\Controllers\KemitraanController::class, 'serahTerimaRsud'])->name('master.kemitraan.serah_terima');
         Route::delete('/master-data/kemitraan/{id}', [\App\Http\Controllers\KemitraanController::class, 'destroy'])->name('master.kemitraan.destroy');
     });

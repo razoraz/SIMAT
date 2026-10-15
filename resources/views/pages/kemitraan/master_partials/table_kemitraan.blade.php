@@ -1172,6 +1172,7 @@
                                     </button>
 
                                     @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
+                                    @if($row->status_konsesi !== 'Dikembalikan ke Rekanan')
                                     <!-- 3. Tombol Reklas -->
                                     @if($row->status_konsesi === 'Konsesi Berakhir')
                                     <button type="button" @click="openReklas({{ json_encode($astap) }}, {{ json_encode($row) }})"
@@ -1202,6 +1203,7 @@
                                         </svg>
                                         <span>Ubah</span>
                                     </a>
+                                    @endif
 
                                     <!-- 4. Tombol Hapus -->
                                     <button type="button" @click="confirmDelete({{ (int) ($row->id ?: ($astap?->kemitraan?->id ?: ($row->astap_id ?: ($astap?->id ?: 0)))) }}, '{{ addslashes($astap?->nama_barang ?: 'Aset Kemitraan') }}')"
@@ -1468,6 +1470,7 @@
                                     </button>
 
                                     @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
+                                    @if(!(!$isRowDimanfaatkan && $row->status_konsesi === 'Dikembalikan ke Rekanan'))
                                     @if($row->status_konsesi === 'Konsesi Berakhir')
                                     <button type="button" @click="openReklas({{ json_encode($astap) }}, {{ json_encode($row) }})"
                                         title="Masa konsesi berakhir! Reklasifikasi aset ini"
@@ -1480,10 +1483,11 @@
                                         Reklas
                                     </button>
                                     @endif
-                                    <a href="{{ route('astap.edit_kemitraan', ['id' => $astap?->id, 'tipe' => 'dimanfaatkan']) }}"
+                                    <a href="{{ route('astap.edit_kemitraan', ['id' => $astap?->id, 'tipe' => $isRowDimanfaatkan ? 'dimanfaatkan' : 'ditambahkan']) }}"
                                         class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 font-bold text-xs transition-all">
                                         Ubah
                                     </a>
+                                    @endif
                                     @php
                                         $rowLinkedDitambahkan = $isRowDimanfaatkan ? $getAsetDitambahkanForRow($row) : collect();
                                         $rowCountDitambahkan = $rowLinkedDitambahkan->count();

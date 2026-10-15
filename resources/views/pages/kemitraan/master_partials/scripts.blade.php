@@ -3544,6 +3544,23 @@
                 item.category = 'KEMITRAAN';
                 item.jenis_aset_nama = 'Akun 1.5.2 - Kemitraan dengan Pihak Ketiga';
                 item.status_konsesi = kemitraanRow?.status_konsesi || item.kemitraan?.status_konsesi || item.status_konsesi || 'Aktif';
+
+                if (item.status_konsesi === 'Dikembalikan ke Rekanan') {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Aset Telah Dikembalikan',
+                            text: 'Aset ini telah dikembalikan ke pihak rekanan dan bukan lagi objek aset di RSUD, sehingga tidak dapat direklasifikasi.',
+                            confirmButtonColor: '#06b6d4',
+                            background: '#0f172a',
+                            color: '#f8fafc',
+                        });
+                    } else {
+                        alert('Aset ini telah dikembalikan ke pihak rekanan dan tidak dapat direklasifikasi.');
+                    }
+                    return;
+                }
+
                 item.total_realisasi_num = parseFloat(kemitraanRow?.nilai_aset || item.total_realisasi || 0);
                 item.jumlah_realisasi = 'Rp ' + Number(item.total_realisasi_num).toLocaleString('id-ID');
                 item.jumlah_volume = parseInt(kemitraanRow?.jumlah_volume || item.jumlah_volume) || 1;
@@ -3953,6 +3970,114 @@
                 const rawRow = (detail.raw_row && Object.keys(detail.raw_row).length > 0) ? detail.raw_row : (detail.kemitraan || detail);
                 const tipe = detail.jenis_terminasi === 'serah_terima_rsud' ? 'serah_terima_rsud' : 'pengembalian';
                 this.openPrintBast(rawRow, tipe);
+            },
+
+            async batalDikembalikanKeMitra(detail) {
+                if (!detail) return;
+                const kemitraanId = detail.kemitraan_id || detail.id;
+                const namaAset = detail.nama_barang || 'Aset Kemitraan';
+                const noPks = detail.nomor_pks || '-';
+
+                let confirmResult = false;
+                if (typeof Swal !== 'undefined') {
+                    const res = await Swal.fire({
+                        title: 'Batalkan Pengembalian?',
+                        html: `
+                            <div class="text-left text-xs text-slate-300 space-y-2">
+                                <p>Anda akan membatalkan status pengembalian untuk aset:</p>
+                                <p class="font-bold text-white bg-slate-800 p-2.5 rounded-xl border border-slate-700">
+                                    ${namaAset} <br>
+                                    <span class="text-[10px] text-cyan-400 font-mono">Nomor PKS: ${noPks}</span>
+                                </p>
+                                <p class="text-amber-300 leading-relaxed">
+                                    ⚠️ Riwayat Berita Acara (BA) Pengembalian akan di-reset dan status aset dipulihkan kembali sehingga aset dapat diedit atau direklasifikasi.
+                                </p>
+                            </div>
+                        `,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#e11d48',
+                        cancelButtonColor: '#334155',
+                        confirmButtonText: 'Ya, Batalkan Pengembalian',
+                        cancelButtonText: 'Tutup',
+                        reverseButtons: true,
+                        background: '#0f172a',
+                        color: '#f8fafc',
+                    });
+                    confirmResult = res.isConfirmed;
+                } else {
+                    confirmResult = confirm(`Batalkan status pengembalian aset "${namaAset}"?`);
+                }
+
+                if (!confirmResult) return;
+
+                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+
+                try {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'Memproses Pembatalan...',
+                            text: 'Mohon tunggu sebentar',
+                            allowOutsideClick: false,
+                            didOpen: () => Swal.showLoading(),
+                            background: '#0f172a',
+                            color: '#f8fafc',
+                        });
+                    }
+
+                    const res = await fetch(`/master-data/kemitraan/${kemitraanId}/batal-kembalikan`, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': token
+                        }
+                    });
+
+                    const resJson = await res.json();
+                    if (resJson.success) {
+                        if (typeof Swal !== 'undefined') {
+                            await Swal.fire({
+                                icon: 'success',
+                                title: 'Pengembalian Dibatalkan',
+                                text: resJson.message || 'Status aset berhasil dipulihkan.',
+                                confirmButtonColor: '#06b6d4',
+                                background: '#0f172a',
+                                color: '#f8fafc',
+                            });
+                        } else {
+                            alert(resJson.message || 'Status aset berhasil dipulihkan.');
+                        }
+                        window.location.reload();
+                    } else {
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal Membatalkan',
+                                text: resJson.message || 'Terjadi kesalahan sistem.',
+                                confirmButtonColor: '#06b6d4',
+                                background: '#0f172a',
+                                color: '#f8fafc',
+                            });
+                        } else {
+                            alert(resJson.message || 'Terjadi kesalahan sistem.');
+                        }
+                    }
+                } catch (err) {
+                    console.error('Batal kembalikan error:', err);
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Kesalahan Jaringan',
+                            text: err.message,
+                            confirmButtonColor: '#06b6d4',
+                            background: '#0f172a',
+                            color: '#f8fafc',
+                        });
+                    } else {
+                        alert('Kesalahan jaringan: ' + err.message);
+                    }
+                }
             }
         };
     }

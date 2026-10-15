@@ -11,6 +11,7 @@ use App\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 
 class KemitraanController extends Controller
@@ -575,6 +576,77 @@ class KemitraanController extends Controller
 
             return redirect()->route('master.kemitraan')
                 ->with('success', "Aset kemitraan '{$kemitraan->nomor_pks}' berhasil diserahterimakan menjadi Milik RSUD.");
+        });
+    }
+
+    /**
+     * Batalkan Pengembalian Aset ke Mitra Rekanan (Reset Status Terminasi)
+     */
+    public function batalKembalikanKeMitra(Request $request, $id)
+    {
+        $kemitraan = AstapKemitraan::find($id);
+        if (!$kemitraan) {
+            $kemitraan = AstapKemitraan::where('astap_id', $id)->firstOrFail();
+        }
+
+        return DB::transaction(function () use ($kemitraan, $request) {
+            // Tentukan status kembalinya: apakah tanggal akhir masih di masa depan
+            $statusSemula = 'Konsesi Berakhir';
+            if (!empty($kemitraan->tanggal_akhir)) {
+                $tglAkhir = Carbon::parse($kemitraan->tanggal_akhir);
+                if ($tglAkhir->isFuture()) {
+                    $statusSemula = 'Aktif';
+                }
+            }
+
+            // Hapus file berkas BA terminasi jika ada di storage
+            if ($kemitraan->berkas_ba_terminasi && Storage::disk('public')->exists($kemitraan->berkas_ba_terminasi)) {
+                Storage::disk('public')->delete($kemitraan->berkas_ba_terminasi);
+            }
+
+            $kemitraan->update([
+                'status_konsesi'         => $statusSemula,
+                'jenis_terminasi'        => null,
+                'nomor_ba_terminasi'     => null,
+                'tanggal_terminasi'      => null,
+                'tanggal_ba_terminasi'   => null,
+                'berkas_ba_terminasi'    => null,
+                'kondisi_akhir'          => null,
+                'pihak_penyerah_nama'    => null,
+                'pihak_penyerah_jabatan' => null,
+                'pihak_penerima_nama'    => null,
+                'pihak_penerima_jabatan' => null,
+                'catatan_terminasi'      => null,
+                'is_transferred_to_rsud' => false,
+            ]);
+
+            // Sinkronisasi status register fisik aset
+            if ($kemitraan->astap_id) {
+                AstapRegister::where('astap_id', $kemitraan->astap_id)
+                    ->update([
+                        'status'         => 'Kemitraan',
+                        'ruang_pemegang' => 'Kemitraan (' . ($kemitraan->mitra_nama ?: 'Mitra Rekanan') . ')',
+                    ]);
+
+                if ($kemitraan->astap) {
+                    $astap = $kemitraan->astap;
+                    $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json ?? '[]', true) ?: []);
+                    unset($spec['terminasi']);
+                    $astap->spesifikasi_json = $spec;
+                    $astap->save();
+                }
+            }
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "Pengembalian aset kemitraan PKS '{$kemitraan->nomor_pks}' berhasil dibatalkan. Status aset dipulihkan menjadi '{$statusSemula}'.",
+                    'data'    => $kemitraan->fresh(['astap']),
+                ]);
+            }
+
+            return redirect()->route('master.kemitraan')
+                ->with('success', "Pengembalian aset kemitraan '{$kemitraan->nomor_pks}' berhasil dibatalkan.");
         });
     }
 
