@@ -90,7 +90,10 @@ class RecycleBinController extends Controller
         // =========================================================================
         // 1B. DATA TERHAPUS: MUTASI EKSTERNAL (TRANSFER ANTAR-OPD / PELIMPAHAN SKPD)
         // =========================================================================
-        $rawDeletedMutasiEksternals = \App\Models\MutasiEksternal::onlyDeleted()
+        $rawDeletedMutasiEksternals = \App\Models\MutasiEksternal::where(function ($q) {
+                $q->where('is_deleted', 1)
+                  ->orWhere('status', 'Dibatalkan');
+            })
             ->with([
                 'astap.registers',
                 'astap.jenisAstap',
@@ -100,6 +103,7 @@ class RecycleBinController extends Controller
                 'mutasiRegisters.register.unit'
             ])
             ->latest('deleted_at')
+            ->latest('dibatalkan_at')
             ->latest('id')
             ->get();
 
@@ -148,7 +152,11 @@ class RecycleBinController extends Controller
             }
 
             $itemCount = count($itemsMapped);
-            $deletedAt = $m->deleted_at ? Carbon::parse($m->deleted_at)->timezone('Asia/Jakarta') : null;
+            $isBatal = ($m->status === 'Dibatalkan');
+            $deletedAt = $m->deleted_at 
+                ? Carbon::parse($m->deleted_at)->timezone('Asia/Jakarta') 
+                : ($m->dibatalkan_at ? Carbon::parse($m->dibatalkan_at)->timezone('Asia/Jakarta') : null);
+            $deletedBy = $m->deleted_by ?: ($m->dibatalkan_by ?: 'Administrator');
             $nilaiReal = (float) ($m->nilai_perolehan ?: ($astap?->total_realisasi ?: 0));
             $firstNibar = $itemsMapped[0]['nibar'] ?? '-';
 
@@ -184,15 +192,17 @@ class RecycleBinController extends Controller
                 'ruangan_tujuan'            => $tujuanFormatted,
                 'pemohon'                   => $pemohonFormatted,
                 'penerima_pj'               => $penerimaFormatted,
-                'status_terakhir'           => $m->status ?: 'Disahkan (Selesai)',
+                'status_terakhir'           => $isBatal ? 'Dibatalkan' : ($m->status ?: 'Disahkan (Selesai)'),
+                'is_batal'                  => $isBatal,
+                'alasan_batal'              => $m->alasan_batal,
                 'alasan_mutasi'             => $m->alasan_mutasi ?: '-',
                 'nilai_perolehan'           => $nilaiReal,
                 'nilai_perolehan_formatted' => 'Rp ' . number_format($nilaiReal, 0, ',', '.'),
                 'dokumen_lampiran'          => $m->dokumen_lampiran,
                 'is_eksternal'              => true,
-                'deleted_by'                => $m->deleted_by ?: 'Administrator',
-                'deleted_at'                => $deletedAt ? $deletedAt->locale('id')->translatedFormat('d M Y, H:i') . ' WIB' : '-',
-                'deleted_at_relative'       => $deletedAt ? $deletedAt->locale('id')->diffForHumans() : '-',
+                'deleted_by'                => $deletedBy,
+                'deleted_at'                => $deletedAt ? $deletedAt->locale('id')->translatedFormat('d M Y, H:i') . ' WIB' : ($isBatal ? 'Dibatalkan' : '-'),
+                'deleted_at_relative'       => $deletedAt ? $deletedAt->locale('id')->diffForHumans() : ($isBatal ? 'Transaksi Dibatalkan' : '-'),
                 'deleted_at_raw'            => $deletedAt ? $deletedAt->toIso8601String() : null,
             ];
         });
@@ -201,7 +211,7 @@ class RecycleBinController extends Controller
         // 2. DATA TERHAPUS: MASTER ASTAP
         // =========================================================================
         $rawDeletedAstaps = Astap::onlyDeleted()
-            ->with(['jenisAstap', 'rekeningBelanja', 'registers.unit'])
+            ->with(['jenisAstap', 'rekeningBelanja', 'registers.unit', 'mutasiEksternals'])
             ->latest('deleted_at')
             ->latest('id')
             ->get();
@@ -210,6 +220,12 @@ class RecycleBinController extends Controller
             $regCount = $a->registers->count();
             $firstReg = $a->registers->first();
             $deletedAt = $a->deleted_at ? Carbon::parse($a->deleted_at)->timezone('Asia/Jakarta') : null;
+
+            $ket = (string) ($a->keterangan_tambahan ?? '');
+            $mutBatal = $a->mutasiEksternals ? $a->mutasiEksternals->firstWhere('status', 'Dibatalkan') : null;
+            $isBatal = str_contains(strtolower($ket), 'dibatalkan') || !empty($mutBatal);
+            $alasanBatal = $mutBatal?->alasan_batal 
+                ?: (str_contains(strtolower($ket), 'dibatalkan') ? preg_replace('/^.*?dibatalkan[:\s]*/i', '', $ket) : null);
 
             $registersMapped = $a->registers->map(function ($r, $idx) {
                 return [
@@ -236,6 +252,9 @@ class RecycleBinController extends Controller
                 'rekening'            => $a->rekeningBelanja?->nama_belanja ?: '-',
                 'item_count'          => $regCount,
                 'items'               => $registersMapped,
+                'is_batal'            => $isBatal,
+                'alasan_batal'        => $alasanBatal,
+                'status_terakhir'     => $isBatal ? 'Dibatalkan' : 'Terhapus',
                 'deleted_by'          => $a->deleted_by ?: 'Administrator',
                 'deleted_at'          => $deletedAt ? $deletedAt->locale('id')->translatedFormat('d M Y, H:i') . ' WIB' : '-',
                 'deleted_at_relative' => $deletedAt ? $deletedAt->locale('id')->diffForHumans() : '-',
@@ -1194,8 +1213,13 @@ class RecycleBinController extends Controller
 
             case 'mutasi_eksternal':
                 $items = \App\Models\MutasiEksternal::with(['astap.registers', 'mutasiRegisters.register'])->whereIn('id', $ids)->get();
-                DB::transaction(function () use ($items, &$restoredCount) {
+                $blockedBatalCount = 0;
+                DB::transaction(function () use ($items, &$restoredCount, &$blockedBatalCount) {
                     foreach ($items as $mEksternal) {
+                        if ($mEksternal->status === 'Dibatalkan') {
+                            $blockedBatalCount++;
+                            continue;
+                        }
                         $mEksternal->restoreData();
                         $isKeluar = ($mEksternal->tipe === 'keluar');
                         if ($isKeluar) {
@@ -1244,13 +1268,27 @@ class RecycleBinController extends Controller
                         $restoredCount++;
                     }
                 });
+                if ($blockedBatalCount > 0 && $restoredCount === 0) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Dokumen ini berstatus Dibatalkan dan tidak dapat disahkan atau dipulihkan kembali.'
+                    ], 422);
+                }
                 $msg = "Sebanyak {$restoredCount} transaksi mutasi eksternal berhasil dipulihkan ke status aktif.";
                 break;
 
             case 'astap':
-                $astaps = Astap::whereIn('id', $ids)->get();
-                DB::transaction(function () use ($astaps, &$restoredCount) {
+                $astaps = Astap::with('mutasiEksternals')->whereIn('id', $ids)->get();
+                $blockedBatalCount = 0;
+                DB::transaction(function () use ($astaps, &$restoredCount, &$blockedBatalCount) {
                     foreach ($astaps as $a) {
+                        $ket = (string) ($a->keterangan_tambahan ?? '');
+                        $hasCancelledMutasi = $a->mutasiEksternals ? $a->mutasiEksternals->contains('status', 'Dibatalkan') : false;
+                        if (str_contains(strtolower($ket), 'dibatalkan') || $hasCancelledMutasi) {
+                            $blockedBatalCount++;
+                            continue;
+                        }
+
                         $a->restoreData();
                         $a->registers()->update([
                             'is_deleted'    => 0,
@@ -1266,6 +1304,12 @@ class RecycleBinController extends Controller
                         $restoredCount++;
                     }
                 });
+                if ($blockedBatalCount > 0 && $restoredCount === 0) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Data aset ini bersumber dari transaksi yang telah Dibatalkan dan tidak dapat disahkan atau dipulihkan kembali.'
+                    ], 422);
+                }
                 $msg = "Sebanyak {$restoredCount} data Master ASTAP berhasil dipulihkan ke status aktif.";
                 break;
 

@@ -35,11 +35,19 @@
                         </div>
                         <div class="flex-1 text-xs space-y-1 min-w-0">
                             <div class="flex items-center justify-between gap-2 flex-wrap">
-                                <p class="font-extrabold text-rose-300 text-sm tracking-tight">Status Data: Terhapus Sementara</p>
-                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-900/60 border border-rose-700/50 text-rose-200 uppercase tracking-wider">Recycle Bin</span>
+                                <p class="font-extrabold text-rose-300 text-sm tracking-tight" x-text="selectedItem.is_batal ? 'Status Data: Transaksi Dibatalkan' : 'Status Data: Terhapus Sementara'"></p>
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                                      :class="selectedItem.is_batal ? 'bg-rose-500/20 border border-rose-500/40 text-rose-300' : 'bg-rose-900/60 border border-rose-700/50 text-rose-200'"
+                                      x-text="selectedItem.is_batal ? 'Dibatalkan' : 'Recycle Bin'"></span>
                             </div>
-                            <p class="text-slate-300">Dihapus oleh: <strong class="text-white font-bold" x-text="selectedItem.deleted_by"></strong></p>
-                            <p class="text-slate-400 text-[11px]">Waktu Penghapusan: <span class="font-mono text-slate-200 font-semibold" x-text="selectedItem.deleted_at"></span></p>
+                            <p class="text-slate-300"><span x-text="selectedItem.is_batal ? 'Dibatalkan oleh: ' : 'Dihapus oleh: '"></span><strong class="text-white font-bold" x-text="selectedItem.deleted_by"></strong></p>
+                            <p class="text-slate-400 text-[11px]"><span x-text="selectedItem.is_batal ? 'Waktu Pembatalan: ' : 'Waktu Penghapusan: '"></span><span class="font-mono text-slate-200 font-semibold" x-text="selectedItem.deleted_at"></span></p>
+                            <template x-if="selectedItem.is_batal && selectedItem.alasan_batal">
+                                <div class="mt-2 pt-2 border-t border-rose-500/20 text-[11px]">
+                                    <span class="text-rose-400 font-bold block uppercase text-[10px]">Alasan Pembatalan:</span>
+                                    <p class="text-slate-200 italic" x-text="selectedItem.alasan_batal"></p>
+                                </div>
+                            </template>
                         </div>
                     </div>
 

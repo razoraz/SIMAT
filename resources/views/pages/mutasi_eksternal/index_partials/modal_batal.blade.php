@@ -63,6 +63,11 @@
                             ℹ️ Seluruh register unit terkait yang berstatus <strong>Mutasi Keluar OPD</strong> akan otomatis dikembalikan ke inventaris aktif RSUD (Tersedia / Ditempatkan).
                         </div>
                     </template>
+                    <template x-if="itemToBatal.tipe !== 'keluar'">
+                        <div class="p-2 rounded-xl bg-indigo-950/40 border border-indigo-800/40 text-[10.5px] text-indigo-300">
+                            ℹ️ Karena serah terima dari OPD luar dibatalkan, data barang ini akan otomatis <strong>dinonaktifkan dari Master ASTAP RSUD</strong> (tersimpan di Recycle Bin).
+                        </div>
+                    </template>
                 </div>
             </template>
 

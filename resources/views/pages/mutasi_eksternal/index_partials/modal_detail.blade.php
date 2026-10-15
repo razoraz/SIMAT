@@ -735,13 +735,12 @@
                         </button>
                     </template>
 
-                    {{-- Jika Sudah Dibatalkan: Tombol Sahkan Kembali --}}
+                    {{-- Jika Sudah Dibatalkan: Indikator Status Dibatalkan --}}
                     <template x-if="((selectedAstapDetail || selectedMutasi)?.status || '').toLowerCase().includes('batal')">
-                        <button type="button" @click="sahkanMutasi(selectedAstapDetail || selectedMutasi)"
-                            class="px-4 py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 hover:border-emerald-400 font-extrabold text-xs transition-all shadow-md flex items-center space-x-1.5 active:scale-95 cursor-pointer">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                            <span>Sahkan Kembali</span>
-                        </button>
+                        <span class="inline-flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 font-extrabold text-xs select-none">
+                            <span class="w-2 h-2 rounded-full bg-rose-400"></span>
+                            <span>Status: Dibatalkan</span>
+                        </span>
                     </template>
                 @endif
 
