@@ -1329,22 +1329,7 @@
                                                         </button>
 
                                                         @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
-                                                        <!-- 2. Tombol Mutasi Keluar OPD Khusus Unit Ini -->
-                                                        <template x-if="reg.status !== 'Mutasi Keluar OPD' && selectedAstapDetail?.jenis_reklas !== 'MUTASI_EKSTERNAL' && !selectedAstapDetail?.is_mutasi_keluar_full && reg.status !== 'Kemitraan' && selectedAstapDetail?.sumber_dana !== 'kemitraan' && selectedAstapDetail?.category !== 'KEMITRAAN'">
-                                                            <button type="button" @click.stop="if (isItemLocked(selectedAstapDetail)) { showLockedWarning(selectedAstapDetail); } else { showDetailModal = false; openReklas(selectedAstapDetail, reg); }"
-                                                                    title="Mutasi Keluar Antar-OPD Khusus Register NIBAR Ini"
-                                                                    class="p-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 hover:text-cyan-200 transition-all cursor-pointer shadow-sm active:scale-95">
-                                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-                                                            </button>
-                                                        </template>
-                                                        <template x-if="reg.status === 'Mutasi Keluar OPD' || selectedAstapDetail?.jenis_reklas === 'MUTASI_EKSTERNAL' || !!selectedAstapDetail?.is_mutasi_keluar_full">
-                                                            <span class="p-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-500 cursor-not-allowed text-xs inline-flex items-center justify-center select-none"
-                                                                  title="Unit ini telah dimutasi keluar ke OPD lain dan tidak dapat dimutasi lagi">
-                                                                🔒
-                                                            </span>
-                                                        </template>
-
-                                                        <!-- 3. Tombol Ubah Kondisi Barang (Modal Khusus) -->
+                                                        <!-- 2. Tombol Ubah Kondisi Barang (Modal Khusus) -->
                                                         <button type="button" @click.stop="openEditKondisiModal(reg)" title="Ubah Kondisi Aset Ini"
                                                                 class="p-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 hover:text-amber-300 transition-all cursor-pointer shadow-sm active:scale-95">
                                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 0L20.586 7a2 2 0 010 2.828l-8.586 8.586z"/></svg>
