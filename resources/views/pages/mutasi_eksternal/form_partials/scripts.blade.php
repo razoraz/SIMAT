@@ -475,6 +475,7 @@
                     tanah_jumlah_barang: 1,
                     tanah_satuan: 'Bidang',
                     tanah_luas_m2: '',
+                    tanah_batas: '',
                     tanah_alamat: this.formData.alamat_barang || '',
                     tanah_nilai_satuan: 0,
                     tanah_nilai_fisik: 0
@@ -995,6 +996,36 @@
                 if (opt.id) {
                     this.formData.jenis_astap_id = opt.id;
                 }
+                this.syncTotalsFromItems();
+            },
+
+            // Bersihkan pilihan jenis 108 pada item dan buka dropdown rekomendasi
+            clearItem108(item, type) {
+                if (!item) return;
+                if (type === 'tanah') {
+                    item.tanah_kode_barang = '';
+                    item.tanah_nama_barang = '';
+                    item.searchFilter = '';
+                } else if (type === 'mesin') {
+                    item.mesin_kode_barang = '';
+                    item.mesin_nama_barang = '';
+                    item.searchFilter = '';
+                } else if (type === 'gedung') {
+                    item.gedung_kode_barang = '';
+                    item.gedung_nama_barang = '';
+                    item.gedung_nama_bangunan = '';
+                    item.searchFilter = '';
+                } else if (type === 'jaringan') {
+                    item.jaringan_kode_barang = '';
+                    item.jaringan_nama_barang = '';
+                    item.searchFilter = '';
+                } else if (type === 'lainnya') {
+                    item.lainnya_kode_barang = '';
+                    item.lainnya_nama_barang = '';
+                    item.lainnya_judul = '';
+                    item.searchFilter = '';
+                }
+                item.isFilterOpen = true;
                 this.syncTotalsFromItems();
             },
 
@@ -1895,6 +1926,7 @@
                             tanah_jumlah_bidang: init.jumlah_volume || 1,
                             tanah_satuan: init.satuan || 'Bidang',
                             tanah_luas_m2: init.tanah_luas_m2 || '',
+                            tanah_batas: init.tanah_batas || (init.spesifikasi_json?.batas || ''),
                             tanah_alamat: init.tanah_alamat || init.alamat_barang || 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1',
                             tanah_nilai_satuan: init.jumlah_volume > 0 ? Math.round(init.total_realisasi / init.jumlah_volume) : init.total_realisasi,
                             tanah_nilai_fisik: init.total_realisasi || 0
