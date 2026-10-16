@@ -1003,6 +1003,11 @@ class MutasiEksternalController extends Controller
     public function edit(Request $request, $id)
     {
         $astap = Astap::with(['registers', 'jenisAstap', 'pelimpahanSkpd', 'mutasiEksternal', 'unit'])->findOrFail($id);
+
+        if ($astap->mutasiEksternal && $astap->mutasiEksternal->status === 'Dibatalkan') {
+            return redirect()->route('mutasi.eksternal')->with('error', 'Dokumen Mutasi Eksternal yang telah dibatalkan bersifat terkunci dan tidak dapat diubah.');
+        }
+
         $dbMaster108 = JenisAstap::getNested108();
         $dbUnits = Unit::orderBy('nama')->get();
         $dbPejabats = self::getDistinctPejabats();
@@ -1027,6 +1032,10 @@ class MutasiEksternalController extends Controller
     public function update(Request $request, $id)
     {
         $item = Astap::with(['registers', 'pelimpahanSkpd', 'mutasiEksternal'])->findOrFail($id);
+
+        if ($item->mutasiEksternal && $item->mutasiEksternal->status === 'Dibatalkan') {
+            return redirect()->route('mutasi.eksternal')->with('error', 'Dokumen Mutasi Eksternal yang telah dibatalkan bersifat terkunci dan tidak dapat diubah.');
+        }
 
         $data = $request->validate([
             'nama_barang'        => 'required|string|max:500',
@@ -1418,6 +1427,13 @@ class MutasiEksternalController extends Controller
 
         if (!$mutasi && !$astap) {
             return response()->json(['success' => false, 'message' => 'Data Mutasi Eksternal tidak ditemukan.'], 404);
+        }
+
+        if ($mutasi && $mutasi->status === 'Dibatalkan') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Dokumen ini berstatus Dibatalkan dan disimpan sebagai arsip pembatalan resmi, tidak dapat dihapus.'
+            ], 422);
         }
 
         DB::transaction(function () use ($mutasi, $astap, $deleterName, $user, $reason) {

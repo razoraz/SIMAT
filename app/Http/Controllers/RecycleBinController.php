@@ -90,10 +90,10 @@ class RecycleBinController extends Controller
         // =========================================================================
         // 1B. DATA TERHAPUS: MUTASI EKSTERNAL (TRANSFER ANTAR-OPD / PELIMPAHAN SKPD)
         // =========================================================================
-        $rawDeletedMutasiEksternals = \App\Models\MutasiEksternal::where(function ($q) {
-                $q->where('is_deleted', 1)
-                  ->orWhere('status', 'Dibatalkan');
-            })
+        // Sesuai Opsi 1: Dokumen yang dibatalkan tersimpan di modul Mutasi Eksternal
+        // dan tidak mengotori Recycle Bin. Recycle Bin hanya untuk data terhapus.
+        $rawDeletedMutasiEksternals = \App\Models\MutasiEksternal::onlyDeleted()
+            ->where('status', '!=', 'Dibatalkan')
             ->with([
                 'astap.registers',
                 'astap.jenisAstap',
@@ -103,7 +103,6 @@ class RecycleBinController extends Controller
                 'mutasiRegisters.register.unit'
             ])
             ->latest('deleted_at')
-            ->latest('dibatalkan_at')
             ->latest('id')
             ->get();
 
@@ -152,11 +151,7 @@ class RecycleBinController extends Controller
             }
 
             $itemCount = count($itemsMapped);
-            $isBatal = ($m->status === 'Dibatalkan');
-            $deletedAt = $m->deleted_at 
-                ? Carbon::parse($m->deleted_at)->timezone('Asia/Jakarta') 
-                : ($m->dibatalkan_at ? Carbon::parse($m->dibatalkan_at)->timezone('Asia/Jakarta') : null);
-            $deletedBy = $m->deleted_by ?: ($m->dibatalkan_by ?: 'Administrator');
+            $deletedAt = $m->deleted_at ? Carbon::parse($m->deleted_at)->timezone('Asia/Jakarta') : null;
             $nilaiReal = (float) ($m->nilai_perolehan ?: ($astap?->total_realisasi ?: 0));
             $firstNibar = $itemsMapped[0]['nibar'] ?? '-';
 
@@ -192,17 +187,17 @@ class RecycleBinController extends Controller
                 'ruangan_tujuan'            => $tujuanFormatted,
                 'pemohon'                   => $pemohonFormatted,
                 'penerima_pj'               => $penerimaFormatted,
-                'status_terakhir'           => $isBatal ? 'Dibatalkan' : ($m->status ?: 'Disahkan (Selesai)'),
-                'is_batal'                  => $isBatal,
-                'alasan_batal'              => $m->alasan_batal,
+                'status_terakhir'           => $m->status ?: 'Disahkan (Selesai)',
+                'is_batal'                  => false,
+                'alasan_batal'              => null,
                 'alasan_mutasi'             => $m->alasan_mutasi ?: '-',
                 'nilai_perolehan'           => $nilaiReal,
                 'nilai_perolehan_formatted' => 'Rp ' . number_format($nilaiReal, 0, ',', '.'),
                 'dokumen_lampiran'          => $m->dokumen_lampiran,
                 'is_eksternal'              => true,
-                'deleted_by'                => $deletedBy,
-                'deleted_at'                => $deletedAt ? $deletedAt->locale('id')->translatedFormat('d M Y, H:i') . ' WIB' : ($isBatal ? 'Dibatalkan' : '-'),
-                'deleted_at_relative'       => $deletedAt ? $deletedAt->locale('id')->diffForHumans() : ($isBatal ? 'Transaksi Dibatalkan' : '-'),
+                'deleted_by'                => $m->deleted_by ?: 'Administrator',
+                'deleted_at'                => $deletedAt ? $deletedAt->locale('id')->translatedFormat('d M Y, H:i') . ' WIB' : '-',
+                'deleted_at_relative'       => $deletedAt ? $deletedAt->locale('id')->diffForHumans() : '-',
                 'deleted_at_raw'            => $deletedAt ? $deletedAt->toIso8601String() : null,
             ];
         });
@@ -210,8 +205,17 @@ class RecycleBinController extends Controller
         // =========================================================================
         // 2. DATA TERHAPUS: MASTER ASTAP
         // =========================================================================
+        // Sesuai Opsi 1: Aset dari pelimpahan masuk yang dibatalkan tidak masuk Recycle Bin
+        // karena belum resmi menjadi aset RSUD dan riwayatnya sudah tercatat di Mutasi Eksternal.
         $rawDeletedAstaps = Astap::onlyDeleted()
-            ->with(['jenisAstap', 'rekeningBelanja', 'registers.unit', 'mutasiEksternals'])
+            ->whereDoesntHave('mutasiEksternals', function ($q) {
+                $q->where('status', 'Dibatalkan');
+            })
+            ->where(function ($q) {
+                $q->whereNull('keterangan_tambahan')
+                  ->orWhere('keterangan_tambahan', 'not like', '%Dibatalkan%');
+            })
+            ->with(['jenisAstap', 'rekeningBelanja', 'registers.unit'])
             ->latest('deleted_at')
             ->latest('id')
             ->get();
@@ -770,6 +774,12 @@ class RecycleBinController extends Controller
 
             case 'mutasi_eksternal':
                 $mEksternal = \App\Models\MutasiEksternal::with(['astap.registers', 'mutasiRegisters.register'])->findOrFail($id);
+                if ($mEksternal->status === 'Dibatalkan') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Dokumen Mutasi Eksternal ini berstatus Dibatalkan dan tidak dapat dipulihkan kembali ke status aktif.'
+                    ], 422);
+                }
                 $bamb = $mEksternal->nomor_bamb ?: ('ID #' . $mEksternal->id);
                 $isKeluar = ($mEksternal->tipe === 'keluar');
                 DB::transaction(function () use ($mEksternal, $isKeluar) {
@@ -825,7 +835,14 @@ class RecycleBinController extends Controller
                 break;
 
             case 'astap':
-                $astap = Astap::findOrFail($id);
+                $astap = Astap::with('mutasiEksternals')->findOrFail($id);
+                $hasCancelledMutasi = $astap->mutasiEksternals ? $astap->mutasiEksternals->contains('status', 'Dibatalkan') : false;
+                if ($hasCancelledMutasi || str_contains(strtolower((string) $astap->keterangan_tambahan), 'dibatalkan')) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Data Master ASTAP ini bersumber dari transaksi yang telah Dibatalkan dan tidak dapat dipulihkan kembali.'
+                    ], 422);
+                }
                 $nama = $astap->nama_barang ?: 'Aset ASTAP';
                 DB::transaction(function () use ($astap) {
                     $astap->restoreData();

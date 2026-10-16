@@ -66,14 +66,7 @@
                                             class="rounded border-slate-700 bg-slate-900 text-red-600 focus:ring-red-500 cursor-pointer">
                                     </td>
                                     <td class="px-4 py-4">
-                                        <div class="flex items-center space-x-1.5 flex-wrap gap-y-1">
-                                            <span class="font-bold text-white block text-sm" x-text="item.nama"></span>
-                                            <template x-if="item.is_batal">
-                                                <span class="px-2 py-0.5 rounded-md text-[9.5px] font-extrabold bg-rose-500/20 text-rose-300 border border-rose-500/30 inline-flex items-center gap-1 shrink-0">
-                                                    <span>✕</span> Dibatalkan
-                                                </span>
-                                            </template>
-                                        </div>
+                                        <span class="font-bold text-white block text-sm" x-text="item.nama"></span>
                                         <span class="text-[10px] text-emerald-400 font-mono" x-text="item.item_count + ' Register NIBAR Terkait'"></span>
                                     </td>
                                     <td class="px-4 py-4">
@@ -94,12 +87,7 @@
                                     </td>
                                     <td class="px-4 py-4">
                                         <span class="font-bold text-red-300 block" x-text="item.deleted_by"></span>
-                                        <template x-if="item.is_batal && item.alasan_batal">
-                                            <span class="text-[10px] text-rose-400/90 font-medium block truncate max-w-[180px]" :title="'Alasan: ' + item.alasan_batal" x-text="'Alasan: ' + item.alasan_batal"></span>
-                                        </template>
-                                        <template x-if="!item.is_batal || !item.alasan_batal">
-                                            <span class="text-[10px] text-slate-500">Label: 1 (Soft Delete)</span>
-                                        </template>
+                                        <span class="text-[10px] text-slate-500">Label: 1 (Soft Delete)</span>
                                     </td>
                                     <td class="px-4 py-4">
                                         <span class="font-mono text-slate-200 block text-[11px]" x-text="item.deleted_at"></span>
@@ -112,19 +100,11 @@
                                                 class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
                                                 <span>👁️ Detail</span>
                                             </button>
-                                            <template x-if="!item.is_batal">
-                                                <button type="button" @click="restoreSingle('astap', item)" title="Pulihkan Data ke Status Aktif (Label 0)"
-                                                    class="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
-                                                    <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                                    <span>Pulihkan</span>
-                                                </button>
-                                            </template>
-                                            <template x-if="item.is_batal">
-                                                <span title="Aset bersumber dari transaksi yang telah dibatalkan dan tidak dapat disahkan atau dipulihkan kembali"
-                                                    class="px-2.5 py-1.5 rounded-xl bg-slate-800/60 text-slate-500 border border-slate-700/50 font-bold text-xs inline-flex items-center space-x-1 cursor-not-allowed select-none">
-                                                    <span>🔒 Batal</span>
-                                                </span>
-                                            </template>
+                                            <button type="button" @click="restoreSingle('astap', item)" title="Pulihkan Data ke Status Aktif (Label 0)"
+                                                class="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
+                                                <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                                <span>Pulihkan</span>
+                                            </button>
                                             <button type="button" @click="forceDeleteSingle('astap', item)" title="Hapus Permanen dari Database"
                                                 class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
                                                 <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>

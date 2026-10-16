@@ -65,7 +65,7 @@
                     </template>
                     <template x-if="itemToBatal.tipe !== 'keluar'">
                         <div class="p-2 rounded-xl bg-indigo-950/40 border border-indigo-800/40 text-[10.5px] text-indigo-300">
-                            ℹ️ Karena serah terima dari OPD luar dibatalkan, data barang ini akan otomatis <strong>dinonaktifkan dari Master ASTAP RSUD</strong> (tersimpan di Recycle Bin).
+                            ℹ️ Karena serah terima dari OPD luar dibatalkan, pencatatan barang ini otomatis <strong>dikeluarkan dari inventaris Master ASTAP RSUD</strong> dan riwayat pembatalan BAST tersimpan permanen di menu Mutasi Eksternal.
                         </div>
                     </template>
                 </div>
