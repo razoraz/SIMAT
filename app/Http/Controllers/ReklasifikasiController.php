@@ -1822,6 +1822,14 @@ class ReklasifikasiController extends Controller
                 $astap->spesifikasi_json = $currOrigSpec;
                 $astap->save();
 
+                // Sinkronkan record kemitraan jika aset asal merupakan aset kemitraan
+                if ($astap->kemitraan) {
+                    $astap->kemitraan->update([
+                        'jumlah_volume' => $remainingVol,
+                        'nilai_aset'    => $sisaRealisasi,
+                    ]);
+                }
+
                 // Simpan audit log reklasifikasi untuk $targetAstap
                 $reklasData = [
                     'astap_id'                      => $targetAstap->id,

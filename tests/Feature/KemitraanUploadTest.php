@@ -247,5 +247,97 @@ class KemitraanUploadTest extends TestCase
             );
         }
     }
+
+    public function test_kemitraan_lifecycle_and_deletion_protections(): void
+    {
+        $admin = User::whereIn('role', ['admin', 'master_admin'])->first() ?? User::first();
+        $this->actingAs($admin);
+
+        $jenisAstap = JenisAstap::first();
+        $randSuffix = rand(100000, 999999);
+        $testNibar = "12013511020000002800002026152020100100{$randSuffix}";
+
+        // 1. Buat Aset Kemitraan dengan tanggal selesai di masa depan (misal +2 tahun)
+        $astap = Astap::create([
+            'nama_barang'          => 'Unit CT-Scan 128 Slice Siemens Testing Lifecycle ' . $randSuffix,
+            'jenis_astap_id'       => $jenisAstap->id,
+            'tahun_perolehan'      => 2026,
+            'jumlah_volume'        => 1,
+            'satuan'               => 'Unit',
+            'harga_satuan'         => 500000000,
+            'jumlah_realisasi'     => 500000000,
+            'total_realisasi'      => 500000000,
+            'sumber_dana'          => 'kemitraan',
+            'is_deleted'           => 0,
+        ]);
+
+        $reg = \App\Models\AstapRegister::create([
+            'astap_id'        => $astap->id,
+            'tahun_perolehan' => 2026,
+            'no_register_int' => $randSuffix,
+            'no_register'     => $testNibar,
+            'nibar'           => $testNibar,
+            'status'          => 'Kemitraan',
+            'kondisi'         => 'Baik',
+            'is_deleted'      => 0,
+        ]);
+
+        $kemitraan = AstapKemitraan::create([
+            'astap_id'        => $astap->id,
+            'mitra_nama'      => 'PT. Siemens Healthcare Indo',
+            'nomor_pks'       => '000.2.3.2/PKS-TEST-LIFECYCLE-' . $randSuffix,
+            'tanggal_pks'     => now()->toDateString(),
+            'tanggal_mulai'   => now()->toDateString(),
+            'tanggal_selesai' => now()->addYears(2)->toDateString(),
+            'status_konsesi'  => 'Aktif',
+            'jumlah_volume'   => 1,
+            'satuan'          => 'Unit',
+            'nilai_aset'      => 500000000,
+            'tipe_kemitraan'  => 'ditambahkan',
+            'is_deleted'      => 0,
+        ]);
+
+        try {
+            // Verifikasi Proteksi: Hapus ASTAP di master harus DIBLOKIR karena kemitraan masih aktif
+            $deleteRes = $this->deleteJson(route('astap.destroy', $astap->id));
+            $deleteRes->assertStatus(422);
+            $this->assertEquals(0, $astap->fresh()->is_deleted, 'Aset dengan kemitraan aktif tidak boleh terhapus');
+
+            // 2. Set status kemitraan menjadi 'Dikembalikan ke Rekanan' (terminasi)
+            $kemitraan->update([
+                'status_konsesi'     => 'Dikembalikan ke Rekanan',
+                'nomor_ba_terminasi' => 'BA-RET-999',
+                'tanggal_terminasi'  => now()->toDateString(),
+            ]);
+
+            // 3. Tes Batal Pengembalian ke Mitra (BUG-01 Fix Test)
+            // Karena tanggal_selesai masih di masa depan (+2 tahun), status harus kembali ke 'Aktif'
+            $batalRes = $this->postJson(route('master.kemitraan.batal_kembalikan', $kemitraan->id));
+            $batalRes->assertStatus(200);
+            $this->assertEquals('Aktif', $kemitraan->fresh()->status_konsesi, 'Status kemitraan harus pulih menjadi Aktif karena tanggal_selesai masih berlaku');
+
+            // 4. Ubah status menjadi 'Dikembalikan ke Rekanan' lagi, lalu tes soft-delete & restore
+            \App\Models\AstapKemitraan::where('id', $kemitraan->id)->update(['status_konsesi' => 'Dikembalikan ke Rekanan']);
+            $kmRecord = \App\Models\AstapKemitraan::find($kemitraan->id);
+            $this->assertEquals('Dikembalikan ke Rekanan', $kmRecord->status_konsesi);
+            $deleteSuccessRes = $this->deleteJson(route('astap.destroy', $astap->id));
+            $this->assertTrue($deleteSuccessRes->isOk(), $deleteSuccessRes->getContent());
+            $this->assertEquals(1, $astap->fresh()->is_deleted);
+            $this->assertEquals(1, $kemitraan->fresh()->is_deleted, 'Record kemitraan harus ikut ter-soft delete');
+
+            // 5. Pulihkan dari Recycle Bin
+            $restoreRes = $this->postJson(route('recycle_bin.restore', ['module' => 'astap', 'id' => $astap->id]));
+            $restoreRes->assertStatus(200);
+            $this->assertEquals(0, $astap->fresh()->is_deleted, 'Astap harus pulih');
+            $this->assertEquals(0, $kemitraan->fresh()->is_deleted, 'Kemitraan harus pulih bersama astap');
+        } finally {
+            // Bersihkan data tes
+            $reg->forceDelete();
+            $kemitraan->forceDelete();
+            $astap->forceDelete();
+            // Bersihkan sisa jika ada
+            \App\Models\AstapRegister::where('nibar', 'like', '%99991%')->delete();
+        }
+    }
 }
 

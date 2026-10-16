@@ -55,10 +55,10 @@ class KemitraanController extends Controller
             });
         }
 
-        // Sinkronisasi status konsesi: Jika tanggal_selesai sudah lewat, ubah status 'Aktif' menjadi 'Konsesi Berakhir' (Bulk update efisien)
+        // Sinkronisasi status konsesi: Jika tanggal_selesai sudah lewat, ubah status 'Aktif' / 'Perpanjangan' menjadi 'Konsesi Berakhir' (Bulk update efisien)
         $today = Carbon::today();
         AstapKemitraan::where('is_deleted', 0)
-            ->where('status_konsesi', 'Aktif')
+            ->whereIn('status_konsesi', ['Aktif', 'Perpanjangan'])
             ->whereNotNull('tanggal_selesai')
             ->where('tanggal_selesai', '<', $today)
             ->update(['status_konsesi' => 'Konsesi Berakhir']);
@@ -590,10 +590,10 @@ class KemitraanController extends Controller
         }
 
         return DB::transaction(function () use ($kemitraan, $request) {
-            // Tentukan status kembalinya: apakah tanggal akhir masih di masa depan
+            // Tentukan status kembalinya: apakah tanggal akhir/selesai masih di masa depan
             $statusSemula = 'Konsesi Berakhir';
-            if (!empty($kemitraan->tanggal_akhir)) {
-                $tglAkhir = Carbon::parse($kemitraan->tanggal_akhir);
+            if (!empty($kemitraan->tanggal_selesai)) {
+                $tglAkhir = Carbon::parse($kemitraan->tanggal_selesai);
                 if ($tglAkhir->isFuture()) {
                     $statusSemula = 'Aktif';
                 }

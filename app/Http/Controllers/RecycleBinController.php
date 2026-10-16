@@ -855,6 +855,16 @@ class RecycleBinController extends Controller
                     if ($astap->mutasiEksternal) {
                         $astap->mutasiEksternal->restoreData();
                     }
+                    // Pulihkan data kemitraan jika ada yang terhapus bersama astap
+                    \App\Models\AstapKemitraan::where('astap_id', $astap->id)
+                        ->where('is_deleted', 1)
+                        ->update([
+                            'is_deleted'    => 0,
+                            'deleted_by'    => null,
+                            'deleted_by_id' => null,
+                            'deleted_at'    => null,
+                            'alasan_hapus'  => null,
+                        ]);
                     // Sinkronkan jumlah volume paket dengan total register aktif
                     $astap->jumlah_volume = max(1, $astap->registers()->where('is_deleted', 0)->count());
                     $astap->save();

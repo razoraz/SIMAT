@@ -6496,10 +6496,12 @@ Route::middleware('auth')->group(function () {
             // Validasi Proteksi Penempatan Ruangan (Unit / Paviliun):
             // Aset yang masih ditempatkan di ruangan unit/paviliun tidak boleh dihapus langsung. Harus dimutasi terlebih dahulu.
             $unplacedNames = ['', '-', 'Belum Ditempatkan', 'Belum Ditempatkan / Di Gudang', 'Belum Ditempatkan / Di Gudang Aset', 'Gudang Aset', 'Gudang Perbekalan', 'Gudang Aset Utama / Belum Ditempatkan'];
-            $placedRegisters = $astap->registers->filter(function ($reg) use ($unplacedNames) {
+            $placedRegisters = $astap->registers->filter(function ($reg) use ($unplacedNames, $astap) {
                 if ($reg->is_deleted == 1) return false;
+                if ($astap->isKemitraan() || in_array($reg->status, ['Kemitraan', 'Dikembalikan ke Rekanan', 'Mutasi Keluar OPD'], true)) return false;
                 if (!empty($reg->unit_id)) return true;
                 $ruang = trim((string)($reg->ruang_pemegang ?: ($reg->unit?->nama ?? '')));
+                if (stripos($ruang, 'Dikembalikan ke Rekanan') !== false || stripos($ruang, 'Kemitraan') !== false) return false;
                 if ($ruang !== '' && !in_array($ruang, $unplacedNames, true)) {
                     return true;
                 }
@@ -6518,6 +6520,27 @@ Route::middleware('auth')->group(function () {
                     'action_url' => '/mutasi-aset',
                     'action_text' => 'Ajukan Mutasi Aset',
                     'message' => "Aset \"{$astap->nama_barang}\" saat ini belum dapat dihapus karena masih menampung {$count} barang inventaris/aset ({$nilaiFmt}) di database RSUD. Seluruh aset harus dipindahkan (mutasi) ke ruangan lain terlebih dahulu sampai ruangan ini kosong."
+                ], 422);
+            }
+
+            // Validasi Proteksi Kemitraan: Cegah penghapusan aset yang sedang aktif dalam perjanjian kemitraan / objek pemanfaatan
+            $activeKemitraan = \App\Models\AstapKemitraan::where('is_deleted', 0)
+                ->where(function ($q) use ($astap) {
+                    $q->where('astap_id', $astap->id)
+                      ->orWhere('objek_astap_id', $astap->id);
+                })
+                ->whereNotIn('status_konsesi', ['Dikembalikan ke Rekanan', 'Dibatalkan', 'Selesai / Reklasifikasi', 'Selesai'])
+                ->first();
+
+            if ($activeKemitraan) {
+                $isObjek = ($activeKemitraan->objek_astap_id == $astap->id && $activeKemitraan->astap_id != $astap->id);
+                $peran = $isObjek ? 'objek pemanfaatan aset mitra' : 'perjanjian kerja sama kemitraan aktif';
+                return response()->json([
+                    'success' => false,
+                    'is_blocked' => true,
+                    'action_url' => '/master/kemitraan',
+                    'action_text' => 'Buka Menu Kemitraan',
+                    'message' => "Aset \"{$astap->nama_barang}\" tidak dapat dihapus karena masih terikat sebagai {$peran} (Nomor PKS: {$activeKemitraan->nomor_pks}). Silakan selesaikan atau batalkan status kemitraannya terlebih dahulu di menu Kemitraan."
                 ], 422);
             }
 
@@ -6579,6 +6602,16 @@ Route::middleware('auth')->group(function () {
                 if ($astap->mutasiEksternal) {
                     $astap->mutasiEksternal->restoreData();
                 }
+                // Pulihkan data kemitraan terkait jika ada
+                \App\Models\AstapKemitraan::where('astap_id', $astap->id)
+                    ->where('is_deleted', 1)
+                    ->update([
+                        'is_deleted'    => 0,
+                        'deleted_by'    => null,
+                        'deleted_by_id' => null,
+                        'deleted_at'    => null,
+                        'alasan_hapus'  => null,
+                    ]);
                 $astap->jumlah_volume = max(1, $astap->registers()->where('is_deleted', 0)->count());
                 $astap->save();
             });

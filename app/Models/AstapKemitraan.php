@@ -90,6 +90,19 @@ class AstapKemitraan extends Model
     }
 
     /**
+     * Sinkronisasi status konsesi kadaluarsa secara massal (Aktif/Perpanjangan -> Konsesi Berakhir)
+     */
+    public static function syncExpiredStatus(): int
+    {
+        $today = Carbon::today();
+        return (int) self::where('is_deleted', 0)
+            ->whereIn('status_konsesi', ['Aktif', 'Perpanjangan'])
+            ->whereNotNull('tanggal_selesai')
+            ->where('tanggal_selesai', '<', $today)
+            ->update(['status_konsesi' => 'Konsesi Berakhir']);
+    }
+
+    /**
      * Ambil seluruh riwayat mitra / rekanan pihak ketiga unik beserta nama pimpinan dan alamat
      */
     public static function getDistinctMitras()
