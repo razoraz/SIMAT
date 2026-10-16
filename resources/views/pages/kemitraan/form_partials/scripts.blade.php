@@ -3007,16 +3007,14 @@
                         return false;
                     }
                     if (!this.formData.jumlah_volume || this.formData.jumlah_volume < 1) {
-                        const msg = 'Jumlah volume barang minimal 1 unit.';
+                        const msg = 'Jumlah volume barang minimal 1.';
                         this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
                         this.setStepError(2, msg);
                         return false;
                     }
+                    // Satuan ditiadakan dari ringkasan Step 2 agar fleksibel jika input 2 barang dengan beda satuan
                     if (!this.formData.satuan || !this.formData.satuan.trim()) {
-                        const msg = 'Mohon isi satuan barang (contoh: Unit, Set, Buah).';
-                        this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
-                        this.setStepError(2, msg);
-                        return false;
+                        this.formData.satuan = this.isTanah ? 'Bidang' : (this.isGedung ? 'Gedung' : (this.isJaringan ? 'Ruas' : 'Unit'));
                     }
                     if (!this.formData.total_realisasi || this.formData.total_realisasi <= 0) {
                         const msg = 'Mohon masukkan total taksiran nilai wajar aset kemitraan (Rp).';

@@ -238,106 +238,86 @@
             </template>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- 0. Nama Barang / Aset Fisik Kemitraan (Eksplisit Bukan Jenis Kemitraan) -->
-            <div class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2.5 shadow-md md:col-span-2">
-                <div class="flex items-center justify-between">
-                    <label class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                        <span>Nama Barang / Aset Fisik Kemitraan <span class="text-rose-400">*</span></span>
-                        <span class="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                            Wajib Nama Barang Asli (Bukan Jenis Kemitraan)
-                        </span>
-                    </label>
-                    <span class="text-[10px] font-mono text-slate-400" x-show="formData.nama_barang">
-                        <strong class="text-cyan-300 font-mono" x-text="(formData.nama_barang || '').length"></strong> karakter
+        <!-- Rekapitulasi Terpadu: Total Volume & Nilai Taksiran Aset -->
+        <div class="p-5 sm:p-6 rounded-2xl bg-slate-900/90 border space-y-4 shadow-xl transition-all"
+             :class="tipeKemitraan === 'dimanfaatkan' ? 'border-cyan-500/30' : 'border-emerald-500/30'">
+            
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-slate-100 uppercase tracking-wide">
+                        Rekapitulasi Volume &amp; Nilai Taksiran Aset
+                    </span>
+                    <span class="text-[10px] text-cyan-400 font-bold font-mono px-2.5 py-0.5 rounded-lg bg-cyan-950/80 border border-cyan-500/30 inline-flex items-center gap-1" x-show="isMultiItemActive">
+                        <span>🔒</span> Akumulasi Rincian
                     </span>
                 </div>
-                <div class="relative">
-                    <input type="text"
-                        x-model="formData.nama_barang"
-                        @input="syncNameToActiveItem()"
-                        required
-                        placeholder="Contoh: Lahan Parkir Paviliun / Hematology Analyzer XN-1000 / Gedung Rawat Inap Melati"
-                        class="w-full bg-slate-950 border border-slate-700 hover:border-emerald-400 focus:border-emerald-400 rounded-xl px-4 py-2.5 text-xs text-white font-bold focus:outline-none transition-all shadow-inner">
-                </div>
-                <p class="text-[11px] text-slate-400 leading-relaxed">
-                    💡 <strong>Penting:</strong> Tuliskan nama spesifik fisik barang/lahan yang sebenarnya. Jenis kemitraan (Sewa, KSP, KSO, dll.) sudah otomatis ditentukan oleh kode 108 pada pilihan di atas.
-                </p>
-            </div>
-
-            <!-- 1. Total Volume / Kuantitas Aset -->
-            <div class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2.5 shadow-md">
-                <div class="flex items-center justify-between">
-                    <label class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                        <span>Total Volume / Kuantitas Aset <span class="text-rose-400">*</span></span>
-                        <span class="text-[10px] text-cyan-400 font-bold font-mono" x-show="isMultiItemActive">🔒 Akumulasi Rincian</span>
-                    </label>
-                    <span class="text-xs font-mono text-cyan-300 font-extrabold" x-text="(formData.jumlah_volume || 0) + ' ' + (formData.satuan || 'Unit')"></span>
-                </div>
-
-                <div class="grid grid-cols-3 gap-2">
-                    <div class="col-span-2 relative">
-                        <input type="number" x-model.number="formData.jumlah_volume" :readonly="isMultiItemActive" required min="1"
-                            :class="isMultiItemActive ? 'bg-slate-950/70 border-slate-800 text-cyan-300 cursor-not-allowed' : 'bg-slate-950 border-slate-700 text-white'"
-                            class="w-full border focus:border-cyan-400 rounded-xl px-4 py-2.5 text-xs focus:outline-none font-bold font-mono">
-                    </div>
-                    <div>
-                        <input type="text" x-model="formData.satuan" required placeholder="Unit"
-                            :readonly="isMultiItemActive"
-                            :class="isMultiItemActive ? 'bg-slate-950/70 border-slate-800 text-slate-300 cursor-not-allowed' : 'bg-slate-950 border-slate-700 text-white'"
-                            class="w-full border focus:border-cyan-400 rounded-xl px-3 py-2.5 text-xs text-center font-bold focus:outline-none">
-                    </div>
-                </div>
-
-                <p class="text-[11px] text-slate-400 pt-1 leading-relaxed">
-                    <span x-show="isTanah">🌾 Volume dan satuan diisi langsung pada kartu <strong>Bidang Tanah (KIB A)</strong> di atas.</span>
-                    <span x-show="isMultiItemActive && !isTanah">💡 Total volume dihitung otomatis dari akumulasi rincian barang/unit di atas.</span>
-                    <span x-show="!isMultiItemActive">Kuantitas fisik unit aset yang dikerjasamakan dalam kemitraan.</span>
-                </p>
-            </div>
-
-            <!-- 2. Total Taksiran Nilai Wajar Aset (Rp) -->
-            <div class="p-5 rounded-2xl bg-slate-900/90 border space-y-2.5 shadow-md"
-                 :class="tipeKemitraan === 'dimanfaatkan' ? 'border-cyan-500/30' : 'border-emerald-500/30'">
-                <div class="flex items-center justify-between">
-                    <label class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                        <span x-show="tipeKemitraan === 'dimanfaatkan'">Total Nilai Kontrak Sewa / Pemanfaatan (Rp) <span class="text-rose-400">*</span></span>
-                        <span x-show="tipeKemitraan === 'ditambahkan'">Total Taksiran Nilai Investasi / Aset Baru Mitra (Rp) <span class="text-rose-400">*</span></span>
-                        <span class="text-[10px] text-emerald-400 font-bold font-mono" x-show="isMultiItemActive && formData.total_realisasi > 0">🔒 Akumulasi Otomatis</span>
-                    </label>
+                <div class="flex items-center gap-3">
                     <span class="text-xs font-mono font-extrabold"
                           :class="tipeKemitraan === 'dimanfaatkan' ? 'text-cyan-300' : 'text-emerald-300'"
-                          x-text="'Rp ' + formatRupiah(formData.total_realisasi)"></span>
+                          x-text="'Total: Rp ' + formatRupiah(formData.total_realisasi)"></span>
                 </div>
+            </div>
 
-                <div class="relative">
-                    <span class="absolute left-3.5 top-2.5 text-slate-400 text-xs font-bold font-mono">Rp</span>
-                    <input type="text"
-                        :value="formData.total_realisasi ? Number(formData.total_realisasi).toLocaleString('id-ID') : ''"
-                        :readonly="isMultiItemActive"
-                        @input="
-                            let raw = $event.target.value.replace(/\D/g, '');
-                            formData.total_realisasi = raw ? parseInt(raw, 10) : 0;
-                            $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
-                        "
-                        :class="isMultiItemActive ? 'bg-slate-950/70 border-slate-800 text-emerald-400 cursor-not-allowed' : 'bg-slate-950 border-slate-700 text-cyan-300'"
-                        placeholder="0"
-                        class="w-full border focus:border-cyan-400 rounded-xl px-4 py-2.5 pl-10 text-xs font-bold font-mono focus:outline-none">
-                </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
 
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between text-[11px] text-slate-400 pt-1">
-                    <p>
-                        <span x-show="isTanah">🌾 Taksiran nilai wajar tanah diisi langsung pada inputan <strong>Volume &amp; Taksiran Nilai Wajar Tanah</strong> pada kartu bidang tanah di atas.</span>
-                        <span x-show="isMultiItemActive && !isTanah && (isGedung || isJaringan)">💡 Total nilai wajar keseluruhan perolehan/appraisal (lump-sum per objek).</span>
-                        <span x-show="isMultiItemActive && !isTanah && (isMesin || isLainnya)">💡 Akumulasi otomatis dari taksiran nilai wajar barang di atas.</span>
-                        <span x-show="!isMultiItemActive">Sesuai klausul kontrak PKS atau taksiran appraisal.</span>
+                <!-- 1. Total Volume / Kuantitas Aset (Tanpa Kolom Satuan) -->
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-200 flex items-center justify-between">
+                        <span>Total Volume / Kuantitas Aset <span class="text-rose-400">*</span></span>
+                        <span class="text-[11px] font-mono text-cyan-400 font-extrabold" x-show="formData.jumlah_volume" x-text="formData.jumlah_volume + ' Item / Objek'"></span>
+                    </label>
+
+                    <div class="relative">
+                        <input type="number" x-model.number="formData.jumlah_volume" :readonly="isMultiItemActive" required min="1"
+                            :class="isMultiItemActive ? 'bg-slate-950/70 border-slate-800 text-cyan-300 cursor-not-allowed' : 'bg-slate-950 border-slate-700 text-white'"
+                            placeholder="1"
+                            class="w-full border focus:border-cyan-400 rounded-xl px-4 py-2.5 text-xs focus:outline-none font-bold font-mono">
+                    </div>
+
+                    <p class="text-[11px] text-slate-400 pt-0.5 leading-relaxed">
+                        <span x-show="isTanah">🌾 Volume diakumulasi otomatis dari jumlah <strong>Bidang Tanah (KIB A)</strong> di atas.</span>
+                        <span x-show="isMultiItemActive && !isTanah">💡 Total volume dihitung otomatis dari akumulasi seluruh item rincian di atas.</span>
+                        <span x-show="!isMultiItemActive">Jumlah total kuantitas unit fisik yang dikerjasamakan dalam kemitraan.</span>
                     </p>
-                    <template x-if="(isMesin || isLainnya) && formData.jumlah_volume > 1 && formData.total_realisasi > 0">
-                        <span class="text-cyan-400 font-mono font-semibold">
-                            Rata-rata: Rp <span x-text="formatRupiah(Math.round(formData.total_realisasi / formData.jumlah_volume))"></span>
-                        </span>
-                    </template>
                 </div>
+
+                <!-- 2. Total Taksiran Nilai Wajar / Kontrak Aset (Rp) -->
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-200 flex items-center justify-between">
+                        <span x-show="tipeKemitraan === 'dimanfaatkan'">Total Nilai Kontrak Sewa / Pemanfaatan (Rp) <span class="text-rose-400">*</span></span>
+                        <span x-show="tipeKemitraan === 'ditambahkan'">Total Taksiran Nilai Investasi Mitra (Rp) <span class="text-rose-400">*</span></span>
+                    </label>
+
+                    <div class="relative">
+                        <span class="absolute left-3.5 top-2.5 text-slate-400 text-xs font-bold font-mono">Rp</span>
+                        <input type="text"
+                            :value="formData.total_realisasi ? Number(formData.total_realisasi).toLocaleString('id-ID') : ''"
+                            :readonly="isMultiItemActive"
+                            @input="
+                                let raw = $event.target.value.replace(/\D/g, '');
+                                formData.total_realisasi = raw ? parseInt(raw, 10) : 0;
+                                $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                            "
+                            :class="isMultiItemActive ? 'bg-slate-950/70 border-slate-800 text-emerald-400 cursor-not-allowed' : 'bg-slate-950 border-slate-700 text-cyan-300'"
+                            placeholder="0"
+                            class="w-full border focus:border-cyan-400 rounded-xl px-4 py-2.5 pl-10 text-xs font-bold font-mono focus:outline-none">
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between text-[11px] text-slate-400 pt-0.5">
+                        <p>
+                            <span x-show="isTanah">🌾 Akumulasi taksiran nilai wajar seluruh bidang tanah di atas.</span>
+                            <span x-show="isMultiItemActive && !isTanah && (isGedung || isJaringan)">💡 Total nilai wajar keseluruhan perolehan/appraisal (lump-sum per objek).</span>
+                            <span x-show="isMultiItemActive && !isTanah && (isMesin || isLainnya)">💡 Akumulasi otomatis dari taksiran nilai wajar barang di atas.</span>
+                            <span x-show="!isMultiItemActive">Sesuai klausul kontrak PKS atau taksiran appraisal.</span>
+                        </p>
+                        <template x-if="(isMesin || isLainnya) && formData.jumlah_volume > 1 && formData.total_realisasi > 0">
+                            <span class="text-cyan-400 font-mono font-semibold whitespace-nowrap mt-1 sm:mt-0">
+                                Rata-rata: Rp <span x-text="formatRupiah(Math.round(formData.total_realisasi / formData.jumlah_volume))"></span> / item
+                            </span>
+                        </template>
+                    </div>
+                </div>
+
             </div>
         </div>
 

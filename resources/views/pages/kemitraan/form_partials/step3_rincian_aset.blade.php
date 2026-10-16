@@ -35,7 +35,7 @@
             <div class="p-3.5 rounded-2xl bg-slate-950 border border-emerald-500/40 bg-emerald-950/10 shadow-inner">
                 <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block mb-1">3. TOTAL TAKSIRAN NILAI WAJAR</span>
                 <div class="text-sm sm:text-base font-black font-mono text-emerald-300 truncate" x-text="'Rp ' + formatRupiah(formData.total_realisasi)"></div>
-                <span class="text-[10px] text-slate-400 mt-1 block truncate" x-text="'Volume: ' + formData.jumlah_volume + ' ' + (formData.satuan || 'Unit')"></span>
+                <span class="text-[10px] text-slate-400 mt-1 block truncate" x-text="'Volume: ' + formData.jumlah_volume + ' Item / Objek'"></span>
             </div>
         </div>
     </div>
@@ -141,8 +141,8 @@
                 <span class="font-mono text-white truncate block mt-0.5" x-text="formData.nomor_pks || '-'"></span>
             </div>
             <div class="p-3 rounded-2xl bg-slate-950/70 border border-slate-800">
-                <span class="text-slate-500 block text-[10px] font-semibold">Volume &amp; Satuan:</span>
-                <span class="font-bold text-white block mt-0.5" x-text="(formData.jumlah_volume || 0) + ' ' + (formData.satuan || 'Unit')"></span>
+                <span class="text-slate-500 block text-[10px] font-semibold">Total Volume:</span>
+                <span class="font-bold text-white block mt-0.5 font-mono" x-text="(formData.jumlah_volume || 0) + ' Item / Objek'"></span>
             </div>
             <div class="p-3 rounded-2xl bg-slate-950/70 border border-cyan-500/30 bg-cyan-950/20">
                 <span class="text-cyan-400 block text-[10px] font-semibold">Total Nilai Wajar:</span>

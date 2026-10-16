@@ -80,12 +80,12 @@
                 <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider"
                       x-text="tipeKemitraan === 'dimanfaatkan' ? '3. ESTIMASI SEWA / WAJAR' : '3. NILAI PENGADAAN MITRA'"></span>
                 <span class="text-[9px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-mono">
-                    <span x-text="formData.jumlah_volume"></span> <span x-text="formData.satuan"></span>
+                    <span x-text="(formData.jumlah_volume || 0) + ' Item'"></span>
                 </span>
             </div>
             <div class="text-xs sm:text-sm font-black font-mono text-emerald-400 truncate" x-text="'Rp ' + formatRupiah(formData.total_realisasi)"></div>
             <div class="text-[10.5px] text-slate-400 truncate">
-                Taksiran per <span x-text="formData.satuan || 'Unit'"></span>: Rp <span x-text="formatRupiah(Math.round(formData.total_realisasi / (formData.jumlah_volume || 1)))"></span>
+                Taksiran per item: Rp <span x-text="formatRupiah(Math.round(formData.total_realisasi / (formData.jumlah_volume || 1)))"></span>
             </div>
         </div>
     </div>
@@ -254,11 +254,11 @@
                 </div>
                 <div>
                     <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Jumlah Volume Fisik:</span>
-                    <span class="font-mono font-bold text-white text-xs block" x-text="(formData.jumlah_volume || 0) + ' ' + (formData.satuan || 'Unit')"></span>
+                    <span class="font-mono font-bold text-white text-xs block" x-text="(formData.jumlah_volume || 0) + ' Item / Objek'"></span>
                 </div>
                 <div>
-                    <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Satuan Barang:</span>
-                    <span class="font-semibold text-slate-200 block" x-text="formData.satuan || 'Unit'"></span>
+                    <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Rincian Satuan Aset:</span>
+                    <span class="font-semibold text-slate-200 block text-xs" x-text="isMultiItemActive ? 'Sesuai rincian tiap aset' : (formData.satuan || 'Unit')"></span>
                 </div>
                 <div class="col-span-2 p-4 rounded-2xl border relative overflow-hidden transition-all shadow-inner space-y-2.5"
                      :class="tipeKemitraan === 'dimanfaatkan' ? 'bg-gradient-to-br from-cyan-950/30 via-slate-950 to-slate-900/90 border-cyan-500/30' : 'bg-gradient-to-br from-emerald-950/30 via-slate-950 to-slate-900/90 border-emerald-500/30'">
@@ -281,12 +281,12 @@
                             </span>
                             <span x-show="(isMesin || isLainnya) && (formData.jumlah_volume || 1) > 1" 
                                   class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold whitespace-nowrap bg-slate-950 text-slate-300 border border-slate-700 shadow-sm" 
-                                  x-text="'@ Rp ' + formatRupiah(Math.round(formData.total_realisasi / (formData.jumlah_volume || 1))) + ' / ' + (formData.satuan || 'Unit')">
+                                  x-text="'@ Rp ' + formatRupiah(Math.round(formData.total_realisasi / (formData.jumlah_volume || 1))) + ' / item'">
                             </span>
                             <span x-show="(isMesin || isLainnya) && (formData.jumlah_volume || 1) <= 1" 
                                   class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold whitespace-nowrap shadow-sm border"
                                   :class="tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-950/90 text-cyan-300 border-cyan-500/40' : 'bg-emerald-950/90 text-emerald-300 border-emerald-500/40'">
-                                <span>📦</span> 1 <span x-text="formData.satuan || 'Unit'"></span>
+                                <span>📦</span> 1 Item
                             </span>
                         </div>
                     </div>

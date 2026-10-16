@@ -1992,6 +1992,10 @@ Route::middleware('auth')->group(function () {
                     $request->merge($dateMerges);
                 }
 
+                if (!$request->filled('satuan')) {
+                    $request->merge(['satuan' => 'Unit']);
+                }
+
                 $data = $request->validate([
                     'nama_barang'          => 'required|string|max:500',
                     'jenis_astap_id'       => 'required|integer|exists:jenis_astaps,id',
@@ -2847,6 +2851,10 @@ Route::middleware('auth')->group(function () {
                 }
                 if (!empty($dateMerges)) {
                     $request->merge($dateMerges);
+                }
+
+                if (!$request->filled('satuan')) {
+                    $request->merge(['satuan' => 'Unit']);
                 }
 
                 $data = $request->validate([
