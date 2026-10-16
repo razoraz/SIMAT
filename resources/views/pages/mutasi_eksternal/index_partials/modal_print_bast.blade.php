@@ -239,7 +239,7 @@
 
                     <!-- KLAUSUL PERNYATAAN PENYERAHAN -->
                     <p class="text-justify mb-2.5 text-[9.5pt] sm:text-[10pt] leading-[1.5] text-black">
-                        PIHAK KESATU menyerahkan kepada PIHAK KEDUA, dan PIHAK KEDUA menerima dari PIHAK KESATU Barang Milik Daerah (BMD) hasil pelimpahan / mutasi eksternal antar-OPD dengan rincian sebagai berikut :
+                        PIHAK KESATU menyerahkan kepada PIHAK KEDUA, dan PIHAK KEDUA menerima dari PIHAK KESATU Barang Milik Daerah (BMD) hasil mutasi eksternal antar-OPD dengan rincian sebagai berikut :
                     </p>
 
                     <!-- TABEL RESMI BARANG MILIK DAERAH (BMD) -->
@@ -329,7 +329,7 @@
                                 <div class="my-1 flex items-center justify-center" style="height: 55px; min-height: 55px;">
                                     <template x-if="printDoc.signed !== false">
                                         <div style="padding:4px; border:1.5px solid #16a34a; background:#f0fdf4; border-radius:5px; display:inline-flex; align-items:center; gap:6px; text-align:left;">
-                                            <img :src="getQrCodeSvg(window.location.origin + '/validasi-tte/' + (printDoc.qr_hash || printDoc.nomor_bast || 'BSRE-PELIMPAHAN-BMD'))" alt="QR TTE" style="width:36px; height:36px; flex-shrink:0;">
+                                            <img :src="getQrCodeSvg(window.location.origin + '/validasi-tte/' + (printDoc.qr_hash || printDoc.nomor_bast || 'BSRE-MUTASI-EKSTERNAL'))" alt="QR TTE" style="width:36px; height:36px; flex-shrink:0;">
                                             <div style="font-size:7.5px; line-height:1.35; color:#1e293b;">
                                                 <div style="font-weight:700; color:#14532d;">DITANDATANGANI ELEKTRONIK</div>
                                                 <div style="color:#374151;">Pengurus Barang Pengguna</div>

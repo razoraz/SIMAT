@@ -142,7 +142,7 @@ class RecycleBinController extends Controller
                 } else {
                     $itemsMapped[] = [
                         'no'          => 1,
-                        'nama_barang' => $astap?->nama_barang ?: ($isKeluar ? 'Aset Mutasi Keluar OPD' : 'Barang Pelimpahan Masuk'),
+                        'nama_barang' => $astap?->nama_barang ?: ($isKeluar ? 'Aset Mutasi Keluar OPD' : 'Aset Mutasi Masuk OPD'),
                         'nibar'       => '-',
                         'kode_108'    => $kode108,
                         'kondisi'     => $m->kondisi ?: 'Baik',
@@ -168,7 +168,7 @@ class RecycleBinController extends Controller
             $penerimaFormatted = $isKeluar
                 ? ($m->pj_tujuan_nama ?: 'Pejabat OPD Penerima')
                 : ($m->pj_tujuan_nama ?: 'Pengurus Barang RSUD');
-            $jenisFormatted = $m->jenis_mutasi ?: ($isKeluar ? 'Mutasi Keluar ke OPD' : 'Pelimpahan Masuk SKPD');
+            $jenisFormatted = $m->jenis_mutasi ?: ($isKeluar ? 'Mutasi Keluar OPD' : 'Mutasi Masuk OPD');
 
             return [
                 'id'                        => $m->id,
@@ -831,7 +831,7 @@ class RecycleBinController extends Controller
                         }
                     }
                 });
-                $msg = "Data Berita Acara Mutasi Eksternal {$bamb} (" . ($isKeluar ? 'Mutasi Keluar ke OPD' : 'Pelimpahan Masuk') . ") berhasil dipulihkan.";
+                $msg = "Data Berita Acara Mutasi Eksternal {$bamb} (" . ($isKeluar ? 'Mutasi Keluar OPD' : 'Mutasi Masuk OPD') . ") berhasil dipulihkan.";
                 break;
 
             case 'astap':
@@ -1645,9 +1645,6 @@ class RecycleBinController extends Controller
                             $astap = $mEksternal->astap;
                             if ($astap) {
                                 $astap->registers()->delete();
-                                if ($astap->pelimpahanSkpd) {
-                                    $astap->pelimpahanSkpd->delete();
-                                }
                                 $mEksternal->delete();
                                 $astap->delete();
                             } else {
@@ -1983,9 +1980,6 @@ class RecycleBinController extends Controller
                         $astap = $mEksternal->astap;
                         if ($astap) {
                             $astap->registers()->delete();
-                            if ($astap->pelimpahanSkpd) {
-                                $astap->pelimpahanSkpd->delete();
-                            }
                             $mEksternal->delete();
                             $astap->delete();
                         } else {

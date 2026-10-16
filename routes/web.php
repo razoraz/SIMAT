@@ -84,12 +84,12 @@ Route::get('/validasi-tte/{hash}', function ($hash) {
         $tgl = $mts->tgl_persetujuan_admin ?: ($mts->tanggal_mutasi ? date('d/m/Y', strtotime($mts->tanggal_mutasi)) . ' WIB' : date('d/m/Y H:i') . ' WIB');
     }
 
-    // 4. Cek tabel Mutasi Eksternal (Pelimpahan BMD / Transfer OPD)
+    // 4. Cek tabel Mutasi Eksternal (Transfer OPD)
     $ext = \App\Models\MutasiEksternal::where(function($q) use ($hash) {
         $q->where('qr_hash', $hash)->orWhere('nomor_bamb', $hash);
     })->where('is_deleted', 0)->first();
     if ($ext) {
-        $judul = 'Berita Acara Serah Terima (BAST) Pelimpahan BMD';
+        $judul = $ext->tipe === 'keluar' ? 'Berita Acara Serah Terima (BAST) Mutasi Keluar OPD' : 'Berita Acara Serah Terima (BAST) Mutasi Masuk OPD';
         $nomor = $ext->nomor_bamb ?: ('BAST-EXT-' . $ext->id);
         if ($ext->tipe === 'keluar') {
             $nama = $ext->pj_asal_nama ?: 'dr. H. Yus Priyatna, Sp.P';
@@ -292,7 +292,7 @@ Route::middleware('auth')->group(function () {
                 'unit',
                 'belanjaModal',
                 'belanjaBarang',
-                'pelimpahanSkpd',
+                'mutasiEksternalMasuk',
                 'hibahDetail',
                 'reklas' => function($q) {
                     $q->orderBy('id', 'desc');
@@ -497,10 +497,10 @@ Route::middleware('auth')->group(function () {
                     'hibah_nomor_bast' => $a->hibah_nomor_bast ?? '',
                     'hibah_tanggal_bast' => $fmtDate($a->hibah_tanggal_bast, ''),
                     'hibah_keterangan' => $a->hibah_keterangan ?? '',
-                    'mutasi_asal' => $a->pelimpahanSkpd?->skpd_asal ?: ($a->mutasi_asal ?: ($spec['skpd_asal'] ?? ($spec['mutasi_asal'] ?? ''))),
-                    'mutasi_nomor_bamb' => $a->pelimpahanSkpd?->nomor_bamb ?: ($a->mutasi_nomor_bamb ?: ($spec['nomor_bamb'] ?? ($spec['mutasi_nomor_bamb'] ?? ''))),
-                    'mutasi_tanggal' => $fmtDate($a->pelimpahanSkpd?->tanggal_bamb ?: $a->mutasi_tanggal, $spec['tanggal_bamb'] ?? ($spec['mutasi_tanggal'] ?? '')),
-                    'mutasi_keterangan' => $a->pelimpahanSkpd?->keterangan ?: ($a->mutasi_keterangan ?: ($spec['mutasi_keterangan'] ?? '')),
+                    'mutasi_asal' => $a->mutasiEksternalMasuk?->opd_asal ?: ($a->mutasi_asal ?: ($spec['skpd_asal'] ?? ($spec['mutasi_asal'] ?? ''))),
+                    'mutasi_nomor_bamb' => $a->mutasiEksternalMasuk?->nomor_bamb ?: ($a->mutasi_nomor_bamb ?: ($spec['nomor_bamb'] ?? ($spec['mutasi_nomor_bamb'] ?? ''))),
+                    'mutasi_tanggal' => $fmtDate($a->mutasiEksternalMasuk?->tanggal_mutasi ?: $a->mutasi_tanggal, $spec['tanggal_bamb'] ?? ($spec['mutasi_tanggal'] ?? '')),
+                    'mutasi_keterangan' => $a->mutasiEksternalMasuk?->alasan_mutasi ?: ($a->mutasi_keterangan ?: ($spec['mutasi_keterangan'] ?? '')),
                     'rekening_penyedia' => $a->belanjaBarang?->nama_toko ?: ($spec['rekening_penyedia'] ?? ($a->penyedia_nama ?: '')),
                     'rekening_nomor_faktur' => $a->belanjaBarang?->nomor_faktur ?: ($spec['rekening_nomor_faktur'] ?? ($a->faktur_nomor ?: '')),
                     'rekening_tanggal_faktur' => $fmtDate($a->belanjaBarang?->tanggal_faktur, $spec['rekening_tanggal_faktur'] ?? ''),
@@ -886,7 +886,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/astap/register-mutasi/{id}', function ($id) {
         $reg = \App\Models\AstapRegister::with([
             'astap.jenisAstap',
-            'astap.pelimpahanSkpd',
+            'astap.mutasiEksternalMasuk',
             'mutasis' => function($q) {
                 $q->where('status', 'Disetujui Admin (Selesai)')
                   ->orderBy('tanggal_mutasi', 'desc')
@@ -918,7 +918,7 @@ Route::middleware('auth')->group(function () {
             ];
         })->values();
 
-        // 2. Mutasi Eksternal (Pelimpahan Antar-OPD Pemkab Bondowoso)
+        // 2. Mutasi Eksternal (Antar-OPD Pemkab Bondowoso)
         $rawEksternal = \App\Models\MutasiEksternal::where('astap_id', $reg->astap_id)
             ->where('is_deleted', 0)
             ->orderBy('tanggal_mutasi', 'desc')
@@ -934,8 +934,8 @@ Route::middleware('auth')->group(function () {
                 'opd_asal'           => $me->opd_asal ?: 'RSUD Dr. H. Koesnandi',
                 'opd_tujuan'         => $me->opd_tujuan ?: 'SKPD Pemkab Bondowoso',
                 'nilai_perolehan'    => 'Rp ' . number_format((float) ($me->nilai_perolehan ?: ($reg->astap?->total_realisasi ?? 0)), 0, ',', '.'),
-                'alasan_mutasi'      => $me->alasan_mutasi ?: ($me->keterangan ?: 'Pelimpahan aset antar perangkat daerah (SKPD)'),
-                'status'             => $me->status ?: ($me->signed ? 'Telah Ditandatangani Elektronik (BSrE)' : 'Selesai Dilimpahkan'),
+                'alasan_mutasi'      => $me->alasan_mutasi ?: ($me->keterangan ?: 'Mutasi aset antar perangkat daerah (OPD)'),
+                'status'             => $me->status ?: ($me->signed ? 'Telah Ditandatangani Elektronik (BSrE)' : 'Selesai Dimutasi'),
                 'pj_asal_nama'       => $me->pj_asal_nama ?: '-',
                 'pj_tujuan_nama'     => $me->pj_tujuan_nama ?: '-',
                 'dokumen_lampiran'   => $me->dokumen_lampiran ? asset('storage/' . $me->dokumen_lampiran) : null,
@@ -943,19 +943,19 @@ Route::middleware('auth')->group(function () {
             ];
         })->values();
 
-        // Fallback jika ada data pelimpahan di tabel ekstensi tapi belum tercatat di MutasiEksternal
-        if ($mutasisEksternal->isEmpty() && $reg->astap && $reg->astap->isPelimpahanSkpd() && $reg->astap->pelimpahanSkpd) {
-            $ps = $reg->astap->pelimpahanSkpd;
+        // Fallback jika ada data mutasi masuk di master tapi belum tercatat di MutasiEksternal
+        if ($mutasisEksternal->isEmpty() && $reg->astap && $reg->astap->isMutasiMasuk() && $reg->astap->mutasiEksternalMasuk) {
+            $ps = $reg->astap->mutasiEksternalMasuk;
             $mutasisEksternal->push([
                 'id'                 => 0,
-                'nomor_bast'         => $ps->nomor_bamb ?: 'BAMB-PELIMPAHAN',
-                'tanggal_mutasi'     => $ps->tanggal_bamb ? \Carbon\Carbon::parse($ps->tanggal_bamb)->format('d M Y') : '-',
-                'tanggal_mutasi_raw' => $ps->tanggal_bamb ? \Carbon\Carbon::parse($ps->tanggal_bamb)->format('Y-m-d') : '',
+                'nomor_bast'         => $ps->nomor_bamb ?: 'BAMB-MUTASI-MASUK',
+                'tanggal_mutasi'     => $ps->tanggal_mutasi ? \Carbon\Carbon::parse($ps->tanggal_mutasi)->format('d M Y') : '-',
+                'tanggal_mutasi_raw' => $ps->tanggal_mutasi ? \Carbon\Carbon::parse($ps->tanggal_mutasi)->format('Y-m-d') : '',
                 'tipe'               => 'masuk',
-                'opd_asal'           => $ps->skpd_asal ?: 'SKPD Pemberi Pelimpahan',
-                'opd_tujuan'         => 'RSUD Dr. H. Koesnandi',
+                'opd_asal'           => $ps->opd_asal ?: 'OPD Pengirim',
+                'opd_tujuan'         => 'RSUD Dr. H. Koesnadi',
                 'nilai_perolehan'    => 'Rp ' . number_format((float) ($reg->astap->total_realisasi ?? 0), 0, ',', '.'),
-                'alasan_mutasi'      => $ps->keterangan ?: 'Pelimpahan aset masuk dari SKPD Pemkab Bondowoso',
+                'alasan_mutasi'      => $ps->alasan_mutasi ?: 'Mutasi masuk aset dari OPD Pemkab Bondowoso',
                 'status'             => 'Tercatat di SIMAT',
                 'pj_asal_nama'       => '-',
                 'pj_tujuan_nama'     => 'Pengurus Barang RSUD',
@@ -1656,7 +1656,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/astap/create-rekening', fn() => redirect()->route('astap.create_belanja_barang'))->name('astap.create_rekening');
             Route::post('/astap/store-rekening', [\App\Http\Controllers\BelanjaBarangController::class, 'store'])->name('astap.store_rekening');
 
-            // ─── Mutasi Eksternal (Pelimpahan SKPD / Antar-OPD) ───────────────
+            // ─── Mutasi Eksternal (Transfer Antar-OPD / Masuk & Keluar) ───────────────
             Route::get('/astap/create-mutasi-eksternal', [\App\Http\Controllers\MutasiEksternalController::class, 'create'])->name('astap.create_mutasi_eksternal');
             Route::get('/astap/create-mutasi-masuk', function () {
                 return redirect()->route('astap.create_mutasi_eksternal', request()->all());

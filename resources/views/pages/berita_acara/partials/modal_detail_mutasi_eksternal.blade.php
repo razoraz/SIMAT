@@ -10,7 +10,7 @@
                             🌐
                         </div>
                         <div>
-                            <span class="text-[10px] font-bold text-cyan-400 uppercase tracking-wider block">Rincian BAST Mutasi Eksternal (Pelimpahan BMD)</span>
+                            <span class="text-[10px] font-bold text-cyan-400 uppercase tracking-wider block">Rincian BAST Mutasi Eksternal (Antar-OPD)</span>
                             <h3 class="text-lg font-extrabold text-white" x-text="selectedDetailMutasiEksternal ? (selectedDetailMutasiEksternal.nomor_bast || selectedDetailMutasiEksternal.kode) : ''"></h3>
                         </div>
                     </div>
@@ -35,7 +35,7 @@
                                     <span class="text-[10px] text-slate-400 font-semibold block uppercase">Tipe Mutasi:</span>
                                     <span class="px-2.5 py-0.5 rounded-lg text-xs font-bold"
                                           :class="selectedDetailMutasiEksternal.tipe === 'keluar' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'"
-                                          x-text="selectedDetailMutasiEksternal.tipe === 'keluar' ? '📤 Mutasi Keluar' : '📥 Pelimpahan Masuk'"></span>
+                                          x-text="selectedDetailMutasiEksternal.tipe === 'keluar' ? '📤 Mutasi Keluar OPD' : '📥 Mutasi Masuk OPD'"></span>
                                 </div>
                             </div>
 
@@ -115,7 +115,7 @@
                         <!-- Catatan / Keterangan Alasan Mutasi & Dokumen Lampiran -->
                         <div class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-2">
                             <div>
-                                <span class="text-[10px] text-slate-400 font-bold uppercase block">Keterangan / Alasan Pelimpahan:</span>
+                                <span class="text-[10px] text-slate-400 font-bold uppercase block">Keterangan / Alasan Mutasi Eksternal:</span>
                                 <p class="text-slate-300 italic text-[11px] mt-0.5" x-text="selectedDetailMutasiEksternal.alasan_mutasi || 'Tidak ada catatan tambahan.'"></p>
                             </div>
 

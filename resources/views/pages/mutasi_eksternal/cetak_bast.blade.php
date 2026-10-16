@@ -222,7 +222,7 @@
 
         <!-- KLAUSUL PERNYATAAN PENYERAHAN -->
         <p class="text-justify mb-2.5 text-[9.5pt] sm:text-[10pt] leading-[1.5] text-black">
-            PIHAK KESATU menyerahkan kepada PIHAK KEDUA, dan PIHAK KEDUA menerima dari PIHAK KESATU Barang Milik Daerah (BMD) hasil pelimpahan / mutasi eksternal antar-OPD dengan rincian sebagai berikut :
+            PIHAK KESATU menyerahkan kepada PIHAK KEDUA, dan PIHAK KEDUA menerima dari PIHAK KESATU Barang Milik Daerah (BMD) hasil mutasi eksternal antar-OPD dengan rincian sebagai berikut :
         </p>
 
         <!-- TABEL RESMI BARANG MILIK DAERAH (BMD) DENGAN FORMAT PERSIS SEPERTI BAST LAINNYA -->

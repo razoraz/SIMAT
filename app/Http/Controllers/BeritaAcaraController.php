@@ -565,7 +565,7 @@ class BeritaAcaraController extends Controller
         }
 
         // =========================================================================
-        // 4. DATA MUTASI EKSTERNAL (TRANSFER ANTAR-OPD / PELIMPAHAN SKPD)
+        // 4. DATA MUTASI EKSTERNAL (TRANSFER ANTAR-OPD / MUTASI MASUK & KELUAR)
         // =========================================================================
         $mutasiEksternals = MutasiEksternal::with(['astap.registers', 'astap.jenisAstap', 'unit', 'user'])
             ->where('is_deleted', 0)
@@ -623,7 +623,7 @@ class BeritaAcaraController extends Controller
                 ];
             }
 
-            $firstItemNama = $astap?->nama_barang ?: 'Barang Pelimpahan BMD';
+            $firstItemNama = $astap?->nama_barang ?: 'Aset Mutasi Masuk OPD';
             $itemCount = count($itemsData);
             $namaLabel = $firstItemNama . ($itemCount > 1 ? " (+{$itemCount} unit)" : '');
 
@@ -646,13 +646,13 @@ class BeritaAcaraController extends Controller
                 'tanggal_mutasi'         => $tgl->format('Y-m-d'),
                 'jenis_mutasi'           => $m->jenis_mutasi ?: 'Transfer Antar-OPD',
                 'tipe'                   => $m->tipe ?: 'masuk',
-                'tipe_label'             => $m->tipe === 'keluar' ? 'Mutasi Keluar' : 'Pelimpahan Masuk',
+                'tipe_label'             => $m->tipe === 'keluar' ? 'Mutasi Keluar OPD' : 'Mutasi Masuk OPD',
                 'nama'                   => $namaLabel,
                 'nama_barang'            => $firstItemNama,
                 'kode_barang'            => $kode108,
                 'kode_108'               => $kode108,
                 'nibar'                  => $itemsData[0]['nibar'] ?? '-',
-                'spesifikasi'            => $astap?->keterangan_tambahan ?: ($astap?->satuan . ' Pelimpahan ' . $tahunStr),
+                'spesifikasi'            => $astap?->keterangan_tambahan ?: ($astap?->satuan . ' Mutasi Masuk ' . $tahunStr),
                 'qty'                    => $volTotal,
                 'vol'                    => $volTotal,
                 'satuan'                 => $m->satuan ?: ($astap?->satuan ?: 'Unit'),
@@ -674,7 +674,7 @@ class BeritaAcaraController extends Controller
                 'direktur_nama'          => 'dr. DIAN ARISANDI, M.Kes',
                 'direktur_nip'           => '19730514 200212 2 003',
                 'nomor_sk_dasar'         => $m->nomor_sk_dasar ?: ('SK-BUPATI-BONDOWOSO/' . $tahunStr),
-                'alasan_mutasi'          => $m->alasan_mutasi ?: 'Pelimpahan aset barang milik daerah dari SKPD/Dinas luar ke RSUD dr. H. Koesnandi.',
+                'alasan_mutasi'          => $m->alasan_mutasi ?: 'Mutasi masuk aset barang milik daerah dari OPD luar ke RSUD dr. H. Koesnandi.',
                 'status'                 => $isSigned ? 'Telah Ditandatangani BSrE' : ($m->status ?: 'Draft'),
                 'signed'                 => $isSigned,
                 'tgl_signed'             => $m->tgl_signed ?: ($isSigned ? ($m->updated_at ? $m->updated_at->format('d/m/Y H:i') . ' WIB' : $tgl->format('d/m/Y H:i') . ' WIB') : '-'),
@@ -869,12 +869,12 @@ class BeritaAcaraController extends Controller
             $tgl = $mts->tgl_persetujuan_admin ?: ($mts->tanggal_mutasi ? date('d/m/Y', strtotime($mts->tanggal_mutasi)) . ' WIB' : date('d/m/Y H:i') . ' WIB');
         }
 
-        // 4. Cek tabel Mutasi Eksternal (Pelimpahan BMD / Transfer OPD)
+        // 4. Cek tabel Mutasi Eksternal (Transfer Antar-OPD)
         $ext = \App\Models\MutasiEksternal::where(function($q) use ($hash) {
             $q->where('qr_hash', $hash)->orWhere('nomor_bamb', $hash);
         })->where('is_deleted', 0)->first();
         if ($ext) {
-            $judul = 'Berita Acara Serah Terima (BAST) Pelimpahan BMD';
+            $judul = $ext->tipe === 'keluar' ? 'Berita Acara Serah Terima (BAST) Mutasi Keluar OPD' : 'Berita Acara Serah Terima (BAST) Mutasi Masuk OPD';
             $nomor = $ext->nomor_bamb ?: ('BAST-EXT-' . $ext->id);
             if ($ext->tipe === 'keluar') {
                 $nama = $ext->pj_asal_nama ?: 'dr. H. Yus Priyatna, Sp.P';

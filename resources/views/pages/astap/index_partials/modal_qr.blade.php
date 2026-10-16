@@ -208,7 +208,7 @@
                             </div>
                             <div>
                                 <h3 class="text-base font-extrabold text-white leading-tight">Riwayat Mutasi &amp; Status Unit Barang</h3>
-                                <p class="text-[11px] text-slate-400 mt-0.5">Histori komprehensif: Mutasi Internal Ruangan, Pelimpahan Antar-OPD, &amp; Reklasifikasi Aset</p>
+                                <p class="text-[11px] text-slate-400 mt-0.5">Histori komprehensif: Mutasi Internal Ruangan, Mutasi Antar-OPD, &amp; Reklasifikasi Aset</p>
                             </div>
                         </div>
                         <button type="button" @click.stop="showRiwayatModal = false" class="text-slate-500 hover:text-white text-xl font-bold p-1 cursor-pointer">&times;</button>
@@ -331,7 +331,7 @@
                                                                       'bg-indigo-500/20 text-indigo-300 border-indigo-500/40': item.kategori === 'Internal',
                                                                       'bg-cyan-500/20 text-cyan-300 border-cyan-500/40': item.kategori === 'Eksternal',
                                                                       'bg-emerald-500/20 text-emerald-300 border-emerald-500/40': item.kategori === 'Reklasifikasi'
-                                                                  }" x-text="item.kategori === 'Internal' ? '🏢 Mutasi Ruangan' : (item.kategori === 'Eksternal' ? '🏛️ Pelimpahan OPD' : '🔄 Reklasifikasi')"></span>
+                                                                  }" x-text="item.kategori === 'Internal' ? '🏢 Mutasi Ruangan' : (item.kategori === 'Eksternal' ? '🏛️ Mutasi Antar-OPD' : '🔄 Reklasifikasi')"></span>
                                                             <span class="text-[10px] font-mono text-slate-400" x-text="'(' + (item.nomor_bamb || item.nomor_bast || item.nomor_ba || '-') + ')'"></span>
                                                         </div>
 
@@ -497,15 +497,15 @@
                             </div>
 
                             <!-- ========================================================= -->
-                            <!-- TAB 3: MUTASI EKSTERNAL (PELIMPAHAN ANTAR-OPD)            -->
+                            <!-- TAB 3: MUTASI EKSTERNAL (ANTAR-OPD)                      -->
                             <!-- ========================================================= -->
                             <div x-show="!isLoadingRiwayat && riwayatActiveTab === 'eksternal'" class="space-y-3">
                                 <template x-if="!selectedRiwayatMutasisEksternal || selectedRiwayatMutasisEksternal.length === 0">
                                     <div class="p-8 text-center rounded-2xl border border-dashed border-cyan-500/30 space-y-2" style="background-color: #020617;">
                                         <span class="text-3xl block">🏛️</span>
-                                        <h4 class="text-sm font-bold text-slate-200">Belum Ada Pelimpahan Eksternal</h4>
+                                        <h4 class="text-sm font-bold text-slate-200">Belum Ada Mutasi Antar-OPD</h4>
                                         <p class="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
-                                            Unit register ini belum pernah dilimpahkan (mutasi eksternal keluar/masuk) antar-OPD di lingkungan Pemerintah Kabupaten Bondowoso.
+                                            Unit register ini belum pernah dimutasi (mutasi eksternal keluar/masuk) antar-OPD di lingkungan Pemerintah Kabupaten Bondowoso.
                                         </p>
                                     </div>
                                 </template>
@@ -524,7 +524,7 @@
                                                             </span>
                                                             <span class="px-2 py-0.5 rounded text-[9.5px] font-bold border"
                                                                   :class="me.tipe === 'masuk' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30'"
-                                                                  x-text="me.tipe === 'masuk' ? '📥 Pelimpahan Masuk' : '📤 Pelimpahan Keluar'"></span>
+                                                                  x-text="me.tipe === 'masuk' ? '📥 Mutasi Masuk OPD' : '📤 Mutasi Keluar OPD'"></span>
                                                             <span class="text-[10px] font-mono text-slate-400" x-text="'(' + (me.nomor_bast || 'BAST') + ')'"></span>
                                                         </div>
                                                         <span class="px-2 py-0.5 rounded-lg text-[10px] font-extrabold bg-slate-900 text-cyan-300 border border-slate-700" x-text="me.status || 'Tercatat'"></span>
@@ -544,7 +544,7 @@
 
                                                     <div class="p-2.5 bg-slate-900/90 rounded-xl border border-slate-800 text-xs space-y-1">
                                                         <div class="flex items-center justify-between">
-                                                            <span class="text-[10px] font-bold text-slate-400 uppercase">Nilai Aset Pelimpahan:</span>
+                                                            <span class="text-[10px] font-bold text-slate-400 uppercase">Nilai Aset Mutasi:</span>
                                                             <span class="font-mono font-bold text-white text-xs" x-text="me.nilai_perolehan"></span>
                                                         </div>
                                                         <p class="text-[11px] text-slate-300 italic pt-1 border-t border-slate-800/80" x-text="'Alasan: ' + (me.alasan_mutasi || '-')"></p>

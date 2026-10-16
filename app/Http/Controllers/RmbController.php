@@ -179,7 +179,7 @@ class RmbController extends Controller
         // 1. Ambil Seluruh Data ASTAP untuk tahun berjalan
         $astapQuery = Astap::where('is_deleted', 0)
             ->where('tahun_perolehan', $tahun)
-            ->with(['jenisAstap', 'belanjaModal', 'belanjaBarang', 'pelimpahanSkpd']);
+            ->with(['jenisAstap', 'belanjaModal', 'belanjaBarang', 'mutasiEksternalMasuk']);
 
         if ($triwulan !== 'all') {
             $tw = (int) $triwulan;

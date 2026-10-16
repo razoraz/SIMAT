@@ -1687,7 +1687,7 @@
 
                 // Siapkan payload spesifikasi JSON
                 let specJson = {
-                    sumber_dana: 'pelimpahan_skpd',
+                    sumber_dana: 'mutasi_eksternal',
                     skpd_asal: this.formData.mutasi_asal,
                     nomor_bamb: this.formData.mutasi_nomor_bamb,
                     tanggal_bamb: this.formData.mutasi_tanggal,
@@ -1822,14 +1822,14 @@
                     this.isSubmitting = false;
 
                     if (res.ok && result.success) {
-                        this.showToast('Berhasil Disimpan', result.message || 'Data pelimpahan BMD berhasil disimpan ke SIMAT-RK.', 'success');
+                        this.showToast('Berhasil Disimpan', result.message || 'Data mutasi masuk BMD berhasil disimpan ke SIMAT-RK.', 'success');
                         setTimeout(() => {
                             window.location.href = result.redirect || "{{ route('mutasi.eksternal') }}";
                         }, 1200);
                     } else {
                         const errMsg = (result.errors && Object.keys(result.errors).length > 0)
                             ? Object.values(result.errors).flat().join('\n')
-                            : (result.message || 'Gagal menyimpan data pelimpahan.');
+                            : (result.message || 'Gagal menyimpan data mutasi masuk.');
                         this.showToast('Gagal Menyimpan', errMsg, 'error');
                     }
                 } catch (err) {

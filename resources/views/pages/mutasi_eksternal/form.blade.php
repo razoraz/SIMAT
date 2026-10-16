@@ -11,9 +11,9 @@
     if ($isEdit) {
         $firstReg = $astap->registers ? $astap->registers->first() : null;
         $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (is_string($astap->spesifikasi_json) ? (json_decode($astap->spesifikasi_json, true) ?: []) : []);
-        $me = $astap->mutasiEksternal;
+        $me = $astap->mutasiEksternalMasuk ?: $astap->mutasiEksternal;
         
-        $rawTgl = $me?->tanggal_mutasi ?: ($astap->pelimpahanSkpd?->tanggal_bamb ?: ($astap->mutasi_tanggal ?: ($astap->bast_dokumen_tanggal ?: ($spec['tanggal_bamb'] ?? null))));
+        $rawTgl = $me?->tanggal_mutasi ?: ($astap->mutasi_tanggal ?: ($astap->bast_dokumen_tanggal ?: ($spec['tanggal_bamb'] ?? null)));
         $mutasiTanggal = date('Y-m-d');
         if ($rawTgl) {
             try {
@@ -29,11 +29,11 @@
             'sumber_dana' => 'mutasi_eksternal',
             'tahun_perolehan' => (int) ($astap->tahun_perolehan ?: date('Y')),
             'triwulan' => $astap->triwulan ?: 'TW I',
-            'mutasi_asal' => $me?->opd_asal ?: ($astap->pelimpahanSkpd?->skpd_asal ?: ($astap->mutasi_asal ?: ($spec['skpd_asal'] ?? ''))),
-            'mutasi_nomor_bamb' => $me?->nomor_bamb ?: ($astap->pelimpahanSkpd?->nomor_bamb ?: ($astap->mutasi_nomor_bamb ?: ($astap->bast_dokumen_nomor ?: ($spec['nomor_bamb'] ?? '')))),
+            'mutasi_asal' => $me?->opd_asal ?: ($astap->mutasi_asal ?: ($spec['skpd_asal'] ?? '')),
+            'mutasi_nomor_bamb' => $me?->nomor_bamb ?: ($astap->mutasi_nomor_bamb ?: ($astap->bast_dokumen_nomor ?: ($spec['nomor_bamb'] ?? ''))),
             'mutasi_tanggal' => $mutasiTanggal,
-            'total_realisasi' => (float) ($me?->nilai_perolehan ?: ($astap->total_realisasi ?: ($astap->pelimpahanSkpd?->nilai_perolehan ?: 0))),
-            'mutasi_keterangan' => $me?->alasan_mutasi ?: ($astap->pelimpahanSkpd?->keterangan ?: ($astap->mutasi_keterangan ?: ($astap->keterangan_tambahan ?: ($spec['keterangan'] ?? '')))),
+            'total_realisasi' => (float) ($me?->nilai_perolehan ?: ($astap->total_realisasi ?: 0)),
+            'mutasi_keterangan' => $me?->alasan_mutasi ?: ($astap->mutasi_keterangan ?: ($astap->keterangan_tambahan ?: ($spec['keterangan'] ?? ''))),
             'nomor_sk_dasar' => $me?->nomor_sk_dasar ?: ($spec['nomor_sk_dasar'] ?? ''),
             'alamat_instansi' => $me?->alamat_instansi ?: ($spec['alamat_instansi'] ?? ''),
             'pj_asal_nama' => $me?->pj_asal_nama ?: ($spec['pj_asal_nama'] ?? ''),

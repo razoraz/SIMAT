@@ -63,12 +63,12 @@
                                             <span class="font-mono font-bold text-cyan-300 text-sm sm:text-base block mt-0.5" x-text="selectedItem.kode"></span>
                                             <template x-if="selectedItem.tipe === 'keluar'">
                                                 <span class="px-2 py-0.5 rounded text-[9.5px] font-bold bg-amber-500/15 border border-amber-500/40 text-amber-300 inline-flex items-center gap-1 mt-1 shadow-sm">
-                                                    <span>📤</span> Mutasi Keluar ke OPD
+                                                    <span>📤</span> Mutasi Keluar OPD
                                                 </span>
                                             </template>
                                             <template x-if="selectedItem.tipe !== 'keluar'">
                                                 <span class="px-2 py-0.5 rounded text-[9.5px] font-bold bg-cyan-500/15 border border-cyan-500/40 text-cyan-300 inline-flex items-center gap-1 mt-1 shadow-sm">
-                                                    <span>📥</span> Pelimpahan Masuk SKPD
+                                                    <span>📥</span> Mutasi Masuk OPD
                                                 </span>
                                             </template>
                                         </div>
@@ -90,7 +90,7 @@
                                             <span class="text-slate-400 text-[11px] block" x-text="'PJ: ' + (selectedItem.penerima_pj || '-')"></span>
                                         </div>
                                         <div class="sm:col-span-2 pt-2 border-t border-slate-800/80">
-                                            <span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider block" x-text="selectedItem.tipe === 'keluar' ? 'Alasan Mutasi Keluar ke OPD:' : 'Alasan / Catatan Pelimpahan Masuk:'"></span>
+                                            <span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider block" x-text="selectedItem.tipe === 'keluar' ? 'Alasan Mutasi Keluar OPD:' : 'Alasan / Catatan Mutasi Masuk OPD:'"></span>
                                             <span class="text-xs text-slate-300 italic block mt-0.5" x-text="selectedItem.alasan_mutasi || '-'"></span>
                                         </div>
                                     </div>

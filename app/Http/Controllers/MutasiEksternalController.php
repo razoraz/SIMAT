@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Astap;
-use App\Models\AstapPelimpahanSkpd;
 use App\Models\AstapRegister;
 use App\Models\JenisAstap;
 use App\Models\MutasiEksternal;
@@ -43,7 +42,7 @@ class MutasiEksternalController extends Controller
      */
     public static function extractUnitsFromSpec(
         array $specJson,
-        string $fallbackNama = 'Barang Pelimpahan',
+        string $fallbackNama = 'Aset Mutasi Masuk',
         string $fallbackKondisi = 'Baik',
         ?string $fallbackRuang = null,
         ?int $fallbackUnitId = null
@@ -582,7 +581,7 @@ class MutasiEksternalController extends Controller
                 'tgl'                       => $tglFormatted,
                 'tgl_raw'                   => (string) $tglRaw,
                 'status'                    => $m->status ?: 'Disahkan (Selesai)',
-                'alasan_mutasi'             => $m->alasan_mutasi ?: ($isKeluar ? 'Pemindahtanganan / transfer aset RSUD Dr. H. Koesnadi ke SKPD luar.' : 'Pelimpahan aset barang milik daerah dari SKPD/Dinas luar ke RSUD dr. H. Koesnadi.'),
+                'alasan_mutasi'             => $m->alasan_mutasi ?: ($isKeluar ? 'Pemindahtanganan / transfer aset RSUD Dr. H. Koesnadi ke SKPD luar.' : 'Mutasi masuk aset barang milik daerah dari SKPD/Dinas luar ke RSUD dr. H. Koesnadi.'),
                 'alasan_batal'              => $m->alasan_batal,
                 'dibatalkan_at'             => $m->dibatalkan_at ? $m->dibatalkan_at->format('d/m/Y H:i') : null,
                 'dibatalkan_by'             => $m->dibatalkan_by,
@@ -916,18 +915,7 @@ class MutasiEksternalController extends Controller
                 'is_deleted'          => 0,
             ]);
 
-            // 3. Simpan ke extension table legacy astap_pelimpahan_skpds
-            AstapPelimpahanSkpd::create([
-                'astap_id'        => $item->id,
-                'skpd_asal'       => $data['mutasi_asal'],
-                'alamat_instansi' => $request->input('alamat_instansi'),
-                'nomor_bamb'      => $data['mutasi_nomor_bamb'],
-                'tanggal_bamb'    => $data['mutasi_tanggal'],
-                'nilai_perolehan' => $totalRealisasi,
-                'keterangan'      => $data['mutasi_keterangan'] ?? null,
-            ]);
-
-            // 4. Generate nomor register unik NIBAR 45 digit untuk setiap unit aset dengan kondisi dan ruang masing-masing
+            // 3. Generate nomor register unik NIBAR 45 digit untuk setiap unit aset dengan kondisi dan ruang masing-masing
             $ja = JenisAstap::find($data['jenis_astap_id']);
             $kode108Raw = $ja ? ($ja->sub_sub_rincian_objek ?: $ja->jenis) : '1.3.2.00.00.00';
             $kode108Clean = str_pad(substr(str_replace('.', '', $kode108Raw), 0, 12), 12, '0', STR_PAD_RIGHT);
@@ -1002,7 +990,7 @@ class MutasiEksternalController extends Controller
      */
     public function edit(Request $request, $id)
     {
-        $astap = Astap::with(['registers', 'jenisAstap', 'pelimpahanSkpd', 'mutasiEksternal', 'unit'])->findOrFail($id);
+        $astap = Astap::with(['registers', 'jenisAstap', 'mutasiEksternalMasuk', 'mutasiEksternal', 'unit'])->findOrFail($id);
 
         if ($astap->mutasiEksternal && $astap->mutasiEksternal->status === 'Dibatalkan') {
             return redirect()->route('mutasi.eksternal')->with('error', 'Dokumen Mutasi Eksternal yang telah dibatalkan bersifat terkunci dan tidak dapat diubah.');
@@ -1031,7 +1019,7 @@ class MutasiEksternalController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $item = Astap::with(['registers', 'pelimpahanSkpd', 'mutasiEksternal'])->findOrFail($id);
+        $item = Astap::with(['registers', 'mutasiEksternalMasuk', 'mutasiEksternal'])->findOrFail($id);
 
         if ($item->mutasiEksternal && $item->mutasiEksternal->status === 'Dibatalkan') {
             return redirect()->route('mutasi.eksternal')->with('error', 'Dokumen Mutasi Eksternal yang telah dibatalkan bersifat terkunci dan tidak dapat diubah.');
@@ -1317,29 +1305,7 @@ class MutasiEksternalController extends Controller
                 ]
             );
 
-            // 3. Update / Create AstapPelimpahanSkpd (legacy table)
-            if ($item->pelimpahanSkpd) {
-                $item->pelimpahanSkpd->update([
-                    'skpd_asal'       => $data['mutasi_asal'],
-                    'alamat_instansi' => $request->input('alamat_instansi'),
-                    'nomor_bamb'      => $data['mutasi_nomor_bamb'],
-                    'tanggal_bamb'    => $data['mutasi_tanggal'],
-                    'nilai_perolehan' => $totalRealisasi,
-                    'keterangan'      => $data['mutasi_keterangan'] ?? null,
-                ]);
-            } else {
-                AstapPelimpahanSkpd::create([
-                    'astap_id'        => $item->id,
-                    'skpd_asal'       => $data['mutasi_asal'],
-                    'alamat_instansi' => $request->input('alamat_instansi'),
-                    'nomor_bamb'      => $data['mutasi_nomor_bamb'],
-                    'tanggal_bamb'    => $data['mutasi_tanggal'],
-                    'nilai_perolehan' => $totalRealisasi,
-                    'keterangan'      => $data['mutasi_keterangan'] ?? null,
-                ]);
-            }
-
-            // 4. Update seluruh register aset yang ada secara presisi per unit
+            // 3. Update seluruh register aset yang ada secara presisi per unit
             $existingRegs = AstapRegister::where('astap_id', $item->id)->orderBy('id')->get();
             foreach ($existingRegs as $idx => $reg) {
                 $uKondisi = $units[$idx]['kondisi'] ?? $dominantKondisi;
@@ -1726,19 +1692,19 @@ class MutasiEksternalController extends Controller
         $legacyAstaps = Astap::where('is_deleted', 0)
             ->whereIn('sumber_dana', ['mutasi_eksternal', 'pelimpahan_skpd', 'mutasi_masuk'])
             ->whereDoesntHave('mutasiEksternal')
-            ->with(['pelimpahanSkpd', 'unit'])
+            ->with(['unit'])
             ->get();
 
         foreach ($legacyAstaps as $a) {
-            $nomorBamb = $a->pelimpahanSkpd?->nomor_bamb 
-                ?: ($a->mutasi_nomor_bamb ?: ($a->bast_dokumen_nomor ?: 'BAMB-SKPD-' . str_pad($a->id, 4, '0', STR_PAD_LEFT)));
+            $nomorBamb = $a->mutasi_nomor_bamb 
+                ?: ($a->bast_dokumen_nomor ?: 'BAMB-SKPD-' . str_pad($a->id, 4, '0', STR_PAD_LEFT));
             
-            $tgl = $a->pelimpahanSkpd?->tanggal_bamb 
-                ?: ($a->mutasi_tanggal ?: ($a->bast_dokumen_tanggal ?: ($a->created_at ? $a->created_at->format('Y-m-d') : date('Y-m-d'))));
+            $tgl = $a->mutasi_tanggal 
+                ?: ($a->bast_dokumen_tanggal ?: ($a->created_at ? $a->created_at->format('Y-m-d') : date('Y-m-d')));
 
-            $opdAsal = $a->pelimpahanSkpd?->skpd_asal ?: ($a->mutasi_asal ?: 'SKPD / Instansi Luar');
+            $opdAsal = $a->mutasi_asal ?: 'SKPD / Instansi Luar';
             $ruangNama = $a->unit?->nama ?: ($a->alamat_barang ?: 'Gudang/Ruangan RSUD');
-            $nilaiReal = (float) ($a->pelimpahanSkpd?->nilai_perolehan ?: ($a->total_realisasi ?: 0));
+            $nilaiReal = (float) ($a->total_realisasi ?: 0);
 
             MutasiEksternal::create([
                 'astap_id'            => $a->id,
@@ -1747,7 +1713,7 @@ class MutasiEksternalController extends Controller
                 'jenis_mutasi'        => 'Transfer Antar-OPD',
                 'tipe'                => 'masuk',
                 'opd_asal'            => $opdAsal,
-                'alamat_instansi'     => $a->pelimpahanSkpd?->alamat_instansi ?: ($a->spesifikasi_json['alamat_instansi'] ?? null),
+                'alamat_instansi'     => $a->spesifikasi_json['alamat_instansi'] ?? null,
                 'opd_tujuan'          => 'RSUD dr. H. Koesnadi (' . $ruangNama . ')',
                 'unit_id'             => $a->unit_id,
                 'ruangan_tujuan'      => $ruangNama,
@@ -1763,7 +1729,7 @@ class MutasiEksternalController extends Controller
                 'satuan'              => $a->satuan ?: 'Unit',
                 'nilai_perolehan'     => $nilaiReal,
                 'kondisi'             => 'Baik',
-                'alasan_mutasi'       => $a->pelimpahanSkpd?->keterangan ?: ($a->mutasi_keterangan ?: 'Pelimpahan aset barang milik daerah.'),
+                'alasan_mutasi'       => $a->mutasi_keterangan ?: 'Mutasi masuk aset barang milik daerah.',
                 'user_id'             => $a->user_id,
                 'is_deleted'          => 0,
             ]);

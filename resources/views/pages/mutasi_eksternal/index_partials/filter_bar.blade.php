@@ -14,7 +14,7 @@
                     <svg class="w-4 h-4 shrink-0 transition-colors duration-200" :class="activeDirection === 'masuk' ? 'text-indigo-200' : 'text-slate-400 group-hover:text-slate-300'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                     </svg>
-                    <span>Mutasi Masuk (Transfer Antar-OPD)</span>
+                    <span>Mutasi Masuk OPD</span>
                     <span class="px-2 py-0.5 text-[10px] font-mono font-bold rounded-lg transition-all duration-200"
                         :class="activeDirection === 'masuk' ? 'bg-indigo-950/60 border border-indigo-400/30 text-indigo-100 shadow-sm' : 'bg-slate-900 text-slate-400 border border-slate-800 group-hover:text-slate-300'"
                         x-text="countMasuk"></span>
@@ -29,7 +29,7 @@
                     <svg class="w-4 h-4 shrink-0 transition-colors duration-200" :class="activeDirection === 'keluar' ? 'text-cyan-200' : 'text-slate-400 group-hover:text-slate-300'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
                     </svg>
-                    <span>Mutasi Keluar (Transfer ke OPD)</span>
+                    <span>Mutasi Keluar OPD</span>
                     <span class="px-2 py-0.5 text-[10px] font-mono font-bold rounded-lg transition-all duration-200"
                         :class="activeDirection === 'keluar' ? 'bg-cyan-950/60 border border-cyan-400/30 text-cyan-100 shadow-sm' : 'bg-slate-900 text-slate-400 border border-slate-800 group-hover:text-slate-300'"
                         x-text="countKeluar"></span>

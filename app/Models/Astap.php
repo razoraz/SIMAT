@@ -217,19 +217,19 @@ class Astap extends Model
         return $this->sumber_dana === 'hibah';
     }
 
-    public function isPelimpahanSkpd(): bool
+    public function isMutasiMasuk(): bool
     {
         return in_array($this->sumber_dana, ['mutasi_eksternal', 'pelimpahan_skpd', 'pelimpahan', 'mutasi_masuk'], true);
     }
 
-    public function isMutasiMasuk(): bool
+    public function isPelimpahanSkpd(): bool
     {
-        return $this->isPelimpahanSkpd();
+        return $this->isMutasiMasuk();
     }
 
     public function isMutasiEksternal(): bool
     {
-        return $this->isPelimpahanSkpd() || $this->mutasiEksternals()->exists() || $this->jenis_reklas === 'MUTASI_EKSTERNAL';
+        return $this->isMutasiMasuk() || $this->mutasiEksternals()->exists() || $this->jenis_reklas === 'MUTASI_EKSTERNAL';
     }
 
     public function isKemitraan(): bool
@@ -267,9 +267,17 @@ class Astap extends Model
         return $this->hasOne(AstapBelanjaBarang::class, 'astap_id');
     }
 
+    public function mutasiEksternalMasuk()
+    {
+        return $this->hasOne(MutasiEksternal::class, 'astap_id')->where('tipe', 'masuk')->where('is_deleted', 0)->latestOfMany();
+    }
+
+    /**
+     * @deprecated Gunakan mutasiEksternalMasuk() atau mutasiEksternals()
+     */
     public function pelimpahanSkpd()
     {
-        return $this->hasOne(AstapPelimpahanSkpd::class, 'astap_id');
+        return $this->mutasiEksternalMasuk();
     }
 
     public function mutasiEksternal()
@@ -385,12 +393,12 @@ class Astap extends Model
 
     public function getBastDokumenNomorAttribute($val = null)
     {
-        return $val ?? ($this->pendingExtensionAttributes['bast_dokumen_nomor'] ?? ($this->belanjaModal?->bast_dokumen_nomor ?? ($this->hibahDetail?->nomor_bast ?? ($this->pelimpahanSkpd?->nomor_bamb ?? null))));
+        return $val ?? ($this->pendingExtensionAttributes['bast_dokumen_nomor'] ?? ($this->belanjaModal?->bast_dokumen_nomor ?? ($this->hibahDetail?->nomor_bast ?? ($this->mutasiEksternalMasuk?->nomor_bamb ?? null))));
     }
 
     public function getBastDokumenTanggalAttribute($val = null)
     {
-        $d = $val ?? ($this->pendingExtensionAttributes['bast_dokumen_tanggal'] ?? ($this->belanjaModal?->getRawOriginal('bast_dokumen_tanggal') ?? ($this->hibahDetail?->tanggal_bast ?? ($this->pelimpahanSkpd?->tanggal_bamb ?? null))));
+        $d = $val ?? ($this->pendingExtensionAttributes['bast_dokumen_tanggal'] ?? ($this->belanjaModal?->getRawOriginal('bast_dokumen_tanggal') ?? ($this->hibahDetail?->tanggal_bast ?? ($this->mutasiEksternalMasuk?->tanggal_bamb ?? null))));
         return $d ? substr((string)$d, 0, 10) : null;
     }
 
@@ -426,22 +434,23 @@ class Astap extends Model
 
     public function getMutasiAsalAttribute($val = null)
     {
-        return $val ?? ($this->pendingExtensionAttributes['mutasi_asal'] ?? ($this->pelimpahanSkpd?->skpd_asal ?? null));
+        return $val ?? ($this->pendingExtensionAttributes['mutasi_asal'] ?? ($this->mutasiEksternalMasuk?->opd_asal ?? ($this->mutasiEksternal?->opd_asal ?? null)));
     }
 
     public function getMutasiNomorBambAttribute($val = null)
     {
-        return $val ?? ($this->pendingExtensionAttributes['mutasi_nomor_bamb'] ?? ($this->pelimpahanSkpd?->nomor_bamb ?? null));
+        return $val ?? ($this->pendingExtensionAttributes['mutasi_nomor_bamb'] ?? ($this->mutasiEksternalMasuk?->nomor_bamb ?? ($this->mutasiEksternal?->nomor_bamb ?? null)));
     }
 
     public function getMutasiTanggalAttribute($val = null)
     {
-        return $val ?? ($this->pendingExtensionAttributes['mutasi_tanggal'] ?? ($this->pelimpahanSkpd?->tanggal_bamb ?? null));
+        $d = $val ?? ($this->pendingExtensionAttributes['mutasi_tanggal'] ?? ($this->mutasiEksternalMasuk?->tanggal_mutasi ?? ($this->mutasiEksternal?->tanggal_mutasi ?? null)));
+        return $d ? ($d instanceof \Carbon\Carbon ? $d->format('Y-m-d') : substr((string)$d, 0, 10)) : null;
     }
 
     public function getMutasiKeteranganAttribute($val = null)
     {
-        return $val ?? ($this->pendingExtensionAttributes['mutasi_keterangan'] ?? ($this->pelimpahanSkpd?->keterangan ?? null));
+        return $val ?? ($this->pendingExtensionAttributes['mutasi_keterangan'] ?? ($this->mutasiEksternalMasuk?->alasan_mutasi ?? ($this->mutasiEksternal?->alasan_mutasi ?? null)));
     }
 
     // ─── Relations via Extension Table ─────────────────────────────

@@ -70,8 +70,8 @@
                         <!-- Filter Tipe Masuk / Keluar -->
                         <select x-model="mutasiEksternalTipeFilter" class="bg-slate-950 border border-slate-800 rounded-2xl px-3 py-2.5 text-xs text-cyan-300 font-bold focus:outline-none focus:border-cyan-500">
                             <option value="all">🌐 Semua Tipe Transfer</option>
-                            <option value="masuk">📥 Pelimpahan Masuk (Dari OPD Luar)</option>
-                            <option value="keluar">📤 Mutasi Keluar (Ke OPD Luar)</option>
+                            <option value="masuk">📥 Mutasi Masuk OPD (Dari Luar)</option>
+                            <option value="keluar">📤 Mutasi Keluar OPD (Ke Luar)</option>
                         </select>
 
                         <!-- Filter Status TTD Mutasi Eksternal -->
@@ -173,7 +173,7 @@
                         <thead class="text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800" style="position: sticky; top: 0; z-index: 20; background-color: #020617;">
                             <tr>
                                 <th class="px-4 py-3.5 text-center w-12">No</th>
-                                <th class="px-4 py-3.5 text-left">Nomor BAST Pelimpahan</th>
+                                <th class="px-4 py-3.5 text-left">Nomor BAST Mutasi Antar-OPD</th>
                                 <th class="px-4 py-3.5 text-left">Nama Barang & Nilai Perolehan</th>
                                 <th class="px-4 py-3.5 text-left">Pihak 1 (OPD Pengirim)</th>
                                 <th class="px-4 py-3.5 text-left">Pihak 2 (Penerima RSUD)</th>
@@ -254,7 +254,7 @@
                                         <a :href="'/mutasi-eksternal/' + (item.mutasi_id || item.id) + '/cetak?returnTo=' + encodeURIComponent('/berita-acara?tab=mutasi&scope=eksternal')"
                                             target="_blank"
                                             class="px-2.5 py-1.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer"
-                                            title="Cetak Berita Acara Serah Terima (BAST) Pelimpahan BMD">
+                                            title="Cetak Berita Acara Serah Terima (BAST) Mutasi Masuk BMD">
                                             <span>🖨️ Cetak</span>
                                         </a>
                                     </td>
@@ -262,7 +262,7 @@
                             </template>
                             <tr x-show="filteredMutasiEksternalList.length === 0">
                                 <td colspan="8" class="py-8 text-center text-slate-500">
-                                    Tidak ada data Berita Acara Mutasi Eksternal (Pelimpahan BMD) yang cocok dengan filter pencarian.
+                                    Tidak ada data Berita Acara Mutasi Eksternal yang cocok dengan filter pencarian.
                                 </td>
                             </tr>
                         </tbody>

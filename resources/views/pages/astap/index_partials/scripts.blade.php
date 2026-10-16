@@ -12234,11 +12234,11 @@
                         }).length;
                     }
 
-                    // KHUSUS PELIMPAHAN / MUTASI ANTAR-OPD
-                    if (sDana === 'pelimpahan' || sDana === 'mutasi' || sDana === 'pelimpahan_skpd') {
+                    // KHUSUS MUTASI MASUK / TRANSFER ANTAR-OPD
+                    if (sDana === 'mutasi_eksternal' || sDana === 'pelimpahan' || sDana === 'mutasi' || sDana === 'pelimpahan_skpd' || sDana === 'mutasi_masuk') {
                         return (this.astaps || []).filter(item => {
-                            const isPelimpahan = item.sumber_dana === 'pelimpahan' || item.sumber_dana === 'pelimpahan_skpd' || item.sumber_dana === 'mutasi_masuk' || item.sumber_dana_raw === 'pelimpahan_skpd' || item.sumber_dana_raw === 'mutasi_masuk';
-                            if (!isPelimpahan) return false;
+                            const isMutasiMasuk = item.sumber_dana === 'mutasi_eksternal' || item.sumber_dana === 'pelimpahan' || item.sumber_dana === 'pelimpahan_skpd' || item.sumber_dana === 'mutasi_masuk' || item.sumber_dana_raw === 'mutasi_eksternal' || item.sumber_dana_raw === 'pelimpahan_skpd' || item.sumber_dana_raw === 'mutasi_masuk';
+                            if (!isMutasiMasuk) return false;
                             const matchYear = fYear === 'all' || String(item.tahun_perolehan) === String(fYear);
                             return matchYear && isTwMatch(item.triwulan, fTw);
                         }).length;
@@ -12313,7 +12313,7 @@
                             return;
                         }
 
-                        if (this.exportSumberDana === 'pelimpahan' || this.exportSumberDana === 'mutasi') {
+                        if (this.exportSumberDana === 'mutasi_eksternal' || this.exportSumberDana === 'pelimpahan' || this.exportSumberDana === 'mutasi') {
                             this.isSubmittingExport = false;
                             this.showExportModal = false;
                             window.location.href = "{{ route('mutasi.eksternal') }}";

@@ -168,7 +168,7 @@
                                 : 'bg-slate-900/60 border border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'"
                             class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer active:scale-95">
                             <span class="text-teal-400">📥</span>
-                            <span>Pelimpahan Masuk SKPD</span>
+                            <span>Mutasi Masuk OPD</span>
                             <span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-black"
                                 :class="mutasiEksternalFilter === 'masuk' ? 'bg-teal-400 text-slate-950' : 'bg-slate-800 text-slate-400'"
                                 x-text="countMutasiEksternalMasuk">0</span>
@@ -182,7 +182,7 @@
                                 : 'bg-slate-900/60 border border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'"
                             class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer active:scale-95">
                             <span class="text-amber-400">📤</span>
-                            <span>Mutasi Keluar ke OPD</span>
+                            <span>Mutasi Keluar OPD</span>
                             <span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-black"
                                 :class="mutasiEksternalFilter === 'keluar' ? 'bg-amber-400 text-slate-950' : 'bg-slate-800 text-slate-400'"
                                 x-text="countMutasiEksternalKeluar">0</span>
@@ -197,7 +197,7 @@
                             <span class="text-slate-400">Menampilkan seluruh arsip transfer antar-OPD</span>
                         </template>
                         <template x-if="mutasiEksternalFilter === 'masuk'">
-                            <span class="text-teal-300">Menampilkan perolehan aset masuk dari SKPD/OPD luar</span>
+                            <span class="text-teal-300">Menampilkan aset mutasi masuk dari OPD/Dinas luar</span>
                         </template>
                         <template x-if="mutasiEksternalFilter === 'keluar'">
                             <span class="text-amber-300">Menampilkan aset RSUD yang diserahkan/dimutasi ke OPD luar</span>
@@ -236,12 +236,12 @@
                                             <span class="font-mono font-bold text-cyan-300 block" x-text="item.kode"></span>
                                             <template x-if="item.tipe === 'keluar'">
                                                 <span class="px-2 py-0.5 rounded text-[9.5px] font-bold bg-amber-500/15 border border-amber-500/40 text-amber-300 inline-flex items-center gap-1 mt-1 shadow-sm">
-                                                    <span>📤</span> Mutasi Keluar ke OPD
+                                                    <span>📤</span> Mutasi Keluar OPD
                                                 </span>
                                             </template>
                                             <template x-if="item.tipe !== 'keluar'">
                                                 <span class="px-2 py-0.5 rounded text-[9.5px] font-bold bg-cyan-500/15 border border-cyan-500/40 text-cyan-300 inline-flex items-center gap-1 mt-1 shadow-sm">
-                                                    <span>📥</span> Pelimpahan Masuk SKPD
+                                                    <span>📥</span> Mutasi Masuk OPD
                                                 </span>
                                             </template>
                                         </td>

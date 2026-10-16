@@ -3616,7 +3616,7 @@ class AstapController extends Controller
      */
     public function destroy($id)
     {
-        $astap = \App\Models\Astap::with(['registers', 'mutasiEksternal', 'pelimpahanSkpd'])->find($id);
+        $astap = \App\Models\Astap::with(['registers', 'mutasiEksternals'])->find($id);
         if ($astap) {
             $user = Auth::user();
             $deleterName = $user ? ($user->name . ' (' . ucfirst($user->role ?? 'user') . ')') : 'Administrator';
@@ -3633,9 +3633,9 @@ class AstapController extends Controller
                     'deleted_at'    => now(),
                 ]);
 
-                // 2. Jika merupakan aset terkait mutasi eksternal, soft delete transaksinya
-                if ($astap->mutasiEksternal) {
-                    $astap->mutasiEksternal->update([
+                // 2. Jika merupakan aset terkait mutasi eksternal (masuk/keluar), soft delete transaksinya
+                if ($astap->mutasiEksternals()->exists()) {
+                    $astap->mutasiEksternals()->update([
                         'is_deleted'    => 1,
                         'deleted_by'    => $deleterName,
                         'deleted_by_id' => $user?->id,
@@ -3643,17 +3643,7 @@ class AstapController extends Controller
                     ]);
                 }
 
-                // 3. Jika ada transaksi pelimpahan SKPD
-                if ($astap->pelimpahanSkpd) {
-                    $astap->pelimpahanSkpd->update([
-                        'is_deleted'    => 1,
-                        'deleted_by'    => $deleterName,
-                        'deleted_by_id' => $user?->id,
-                        'deleted_at'    => now(),
-                    ]);
-                }
-
-                // 4. Soft delete paket induk ASTAP
+                // 3. Soft delete paket induk ASTAP
                 $astap->softDelete('Dihapus dari modul Master ASTAP');
             });
 

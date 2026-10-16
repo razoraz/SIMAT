@@ -2,26 +2,16 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @deprecated Tabel legacy 'astap_pelimpahan_skpds' telah digabungkan ke 'mutasi_eksternals' (tipe = 'masuk').
+ * Gunakan model MutasiEksternal untuk seluruh transaksi mutasi antar-OPD (masuk/keluar).
+ */
 class AstapPelimpahanSkpd extends Model
 {
-    use HasFactory;
-
-    protected $table = 'astap_pelimpahan_skpds';
-
+    protected $table = 'mutasi_eksternals';
     protected $guarded = ['id'];
-
-    protected $casts = [
-        'tanggal_bamb'    => 'date:d/m/Y',
-        'nilai_perolehan' => 'decimal:2',
-    ];
-
-    public function setTanggalBambAttribute($value)
-    {
-        $this->attributes['tanggal_bamb'] = Astap::parseDateInput($value);
-    }
 
     public function astap()
     {

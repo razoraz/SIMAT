@@ -117,4 +117,22 @@ class MutasiEksternal extends Model
     {
         return $this->astap?->registers ?? collect();
     }
+
+    /**
+     * Backward-compatibility alias attributes for legacy code
+     */
+    public function getSkpdAsalAttribute()
+    {
+        return $this->opd_asal;
+    }
+
+    public function getTanggalBambAttribute()
+    {
+        return $this->tanggal_mutasi ? $this->tanggal_mutasi->format('Y-m-d') : null;
+    }
+
+    public function getKeteranganAttribute()
+    {
+        return $this->alasan_mutasi;
+    }
 }
