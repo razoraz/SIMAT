@@ -92,6 +92,7 @@
                     'tanah_sertifikat_tgl' => $spec['sertifikat_tgl'] ?? '',
                     'tanah_penggunaan'     => $spec['penggunaan'] ?? '',
                     'tanah_luas_m2'        => $spec['luas_m2'] ?? '',
+                    'tanah_batas'          => $spec['batas'] ?? ($spec['tanah_batas'] ?? ''),
                     'tanah_alamat'         => $astap->alamat_barang ?: '',
                     'ruang_pemegang'       => $reg->ruang_pemegang ?: ($me?->ruangan_tujuan ?: ''),
                 ];
