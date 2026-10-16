@@ -1133,17 +1133,42 @@
                 if (Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0) {
                     this.formData.mesin_items = spec.mesin_items.map(m => ({
                         ...m,
+                        mesin_kode_barang: m.mesin_kode_barang || d.jenis_astap?.kode || '',
+                        mesin_nama_barang: m.mesin_nama_barang || m.nama_barang || spec.mesin_nama_barang || d.nama_barang || '',
                         is_extracom: Boolean(m.is_extracom)
                     }));
+                } else if (d.nama_barang || spec.merk || (d.jenis_astap?.kode && (d.jenis_astap.kode.endsWith('.002') || d.jenis_astap.kode.startsWith('1.3.2')))) {
+                    this.formData.mesin_items = [{
+                        mesin_kode_barang: spec.mesin_kode_barang || d.jenis_astap?.kode || '',
+                        mesin_nama_barang: spec.mesin_nama_barang || d.nama_barang || '',
+                        isFilterOpen: false,
+                        searchFilter: '',
+                        mesin_merk: spec.merk || '',
+                        mesin_type: spec.type || '',
+                        mesin_no_pabrik: spec.no_pabrik || '',
+                        mesin_bahan: spec.bahan || '',
+                        mesin_ukuran: spec.ukuran || '',
+                        mesin_tahun_pembuatan: spec.tahun_pembuatan || null,
+                        mesin_kondisi: spec.kondisi || 'Baik',
+                        mesin_jumlah_barang: d.jumlah_volume || 1,
+                        mesin_satuan: d.satuan || 'Unit',
+                        mesin_nilai_satuan: Number(d.total_realisasi || 0),
+                        is_extracom: Boolean(d.is_extracomtable || spec.is_extracomtable)
+                    }];
                 }
+
                 if (Array.isArray(spec.tanah_items) && spec.tanah_items.length > 0) {
                     this.formData.tanah_items = spec.tanah_items.map(t => ({
                         ...t,
+                        tanah_kode_barang: t.tanah_kode_barang || d.jenis_astap?.kode || '',
+                        tanah_nama_barang: t.tanah_nama_barang || t.nama_barang || spec.tanah_nama_barang || d.nama_barang || t.tanah_penggunaan || '',
                         tanah_nilai_satuan: Number(t.tanah_nilai_satuan || t.tanah_nilai_fisik || (spec.tanah_items.length === 1 ? d.total_realisasi : 0) || 0),
                         tanah_jumlah_barang: parseInt(t.tanah_jumlah_barang || t.tanah_jumlah_bidang || 1),
-                        tanah_satuan: t.tanah_satuan || d.satuan || 'Bidang'
+                        tanah_satuan: t.tanah_satuan || d.satuan || 'Bidang',
+                        tanah_penggunaan: t.tanah_penggunaan || spec.penggunaan || '',
+                        tanah_batas: t.tanah_batas || spec.batas_wilayah || ''
                     }));
-                } else if (spec.luas_m2 || spec.hak_tanah || spec.sertifikat_no || (d.jenis_astap?.kode && (d.jenis_astap.kode.endsWith('.001') || d.jenis_astap.kode.startsWith('1.3.1')))) {
+                } else if (spec.luas_m2 || spec.hak_tanah || spec.sertifikat_no || d.nama_barang || (d.jenis_astap?.kode && (d.jenis_astap.kode.endsWith('.001') || d.jenis_astap.kode.startsWith('1.3.1')))) {
                     this.formData.tanah_items = [{
                         tanah_kode_barang: d.jenis_astap?.kode || '',
                         tanah_nama_barang: d.nama_barang || '',
@@ -1162,16 +1187,21 @@
                         tanah_nilai_satuan: Number(d.total_realisasi || 0)
                     }];
                 }
+
                 if (Array.isArray(spec.gedung_items) && spec.gedung_items.length > 0) {
                     this.formData.gedung_items = spec.gedung_items.map(g => ({
                         ...g,
+                        gedung_kode_barang: g.gedung_kode_barang || d.jenis_astap?.kode || '',
+                        gedung_nama_barang: g.gedung_nama_barang || g.gedung_nama_bangunan || g.nama_barang || spec.gedung_nama_bangunan || d.nama_barang || '',
+                        gedung_nama_bangunan: g.gedung_nama_bangunan || g.gedung_nama_barang || spec.gedung_nama_bangunan || d.nama_barang || '',
                         gedung_is_baru: g.gedung_is_baru || 'Lama',
                         gedung_kapitalisasi_tahun_induk: g.gedung_kapitalisasi_tahun_induk || ''
                     }));
-                } else if (spec.gedung_nama_bangunan || spec.gedung_luas_lantai || spec.gedung_dokumen_no || (d.jenis_astap?.kode && (d.jenis_astap.kode.endsWith('.003') || d.jenis_astap.kode.startsWith('1.3.3')))) {
+                } else if (spec.gedung_nama_bangunan || spec.gedung_luas_lantai || spec.gedung_dokumen_no || d.nama_barang || (d.jenis_astap?.kode && (d.jenis_astap.kode.endsWith('.003') || d.jenis_astap.kode.startsWith('1.3.3')))) {
                     this.formData.gedung_items = [{
                         gedung_kode_barang: spec.gedung_kode_barang || d.jenis_astap?.kode || '',
                         gedung_nama_barang: spec.gedung_nama_bangunan || d.nama_barang || '',
+                        gedung_nama_bangunan: spec.gedung_nama_bangunan || d.nama_barang || '',
                         isFilterOpen: false,
                         searchFilter: '',
                         gedung_is_baru: spec.gedung_is_baru || 'Lama',
@@ -1190,13 +1220,16 @@
                         gedung_nilai_satuan: Number(d.total_realisasi || 0)
                     }];
                 }
+
                 if (Array.isArray(spec.jaringan_items) && spec.jaringan_items.length > 0) {
                     this.formData.jaringan_items = spec.jaringan_items.map(j => ({
                         ...j,
+                        jaringan_kode_barang: j.jaringan_kode_barang || d.jenis_astap?.kode || '',
+                        jaringan_nama_barang: j.jaringan_nama_barang || j.nama_barang || spec.jaringan_nama_barang || d.nama_barang || '',
                         jaringan_is_baru: j.jaringan_is_baru || 'Lama',
                         jaringan_kapitalisasi_tahun_induk: j.jaringan_kapitalisasi_tahun_induk || ''
                     }));
-                } else if (spec.jaringan_konstruksi || spec.jaringan_panjang || spec.jaringan_dokumen_no || (d.jenis_astap?.kode && (d.jenis_astap.kode.endsWith('.004') || d.jenis_astap.kode.startsWith('1.3.4')))) {
+                } else if (spec.jaringan_konstruksi || spec.jaringan_panjang || spec.jaringan_dokumen_no || d.nama_barang || (d.jenis_astap?.kode && (d.jenis_astap.kode.endsWith('.004') || d.jenis_astap.kode.startsWith('1.3.4')))) {
                     this.formData.jaringan_items = [{
                         jaringan_kode_barang: spec.jaringan_kode_barang || d.jenis_astap?.kode || '',
                         jaringan_nama_barang: spec.jaringan_nama_barang || d.nama_barang || '',
@@ -1222,11 +1255,25 @@
                         jaringan_keterangan: spec.jaringan_keterangan || ''
                     }];
                 }
+
                 if (Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0) {
                     this.formData.lainnya_items = spec.lainnya_items.map(l => ({
                         ...l,
+                        lainnya_kode_barang: l.lainnya_kode_barang || d.jenis_astap?.kode || '',
+                        lainnya_nama_barang: l.lainnya_nama_barang || l.lainnya_judul || l.nama_barang || spec.lainnya_nama_barang || d.nama_barang || '',
                         is_extracom: Boolean(l.is_extracom)
                     }));
+                } else if (d.nama_barang || (d.jenis_astap?.kode && (d.jenis_astap.kode.endsWith('.005') || d.jenis_astap.kode.startsWith('1.3.5')))) {
+                    this.formData.lainnya_items = [{
+                        lainnya_kode_barang: d.jenis_astap?.kode || '',
+                        lainnya_nama_barang: d.nama_barang || '',
+                        isFilterOpen: false,
+                        searchFilter: '',
+                        is_extracom: Boolean(d.is_extracomtable || spec.is_extracomtable),
+                        lainnya_jumlah_barang: d.jumlah_volume || 1,
+                        lainnya_satuan: d.satuan || 'Unit',
+                        lainnya_nilai_satuan: Number(d.total_realisasi || 0)
+                    }];
                 }
 
                 // Rehidrasi Sub-Sub 108
@@ -1246,6 +1293,19 @@
                     if (targetSubSub) {
                         this.selectedSubSub = targetSubSub;
                     }
+                }
+
+                // Pastikan formData.nama_barang tetap terisi dari d.nama_barang jika kosong
+                if (!this.formData.nama_barang && d.nama_barang) {
+                    this.formData.nama_barang = d.nama_barang;
+                }
+
+                // Sinkronisasikan nama barang ke item fisik lembar aktif
+                this.syncNameToActiveItem();
+
+                // Jika mode pemanfaatan BMD terkunci, sinkronisasikan detail fisik
+                if (this.tipeKemitraan === 'dimanfaatkan') {
+                    this.syncStep3WithLockedObjek();
                 }
 
                 this.syncTotalsFromItems();
@@ -1472,10 +1532,16 @@
                 if (!this.formData.mesin_items) {
                     this.formData.mesin_items = [];
                 }
+                const defaultName = (this.tipeKemitraan === 'dimanfaatkan') 
+                    ? (this.formData.objek_aset_terpilih?.nama_barang || this.formData.nama_barang || '') 
+                    : (this.formData.nama_barang || '');
+                const defaultKode = (this.tipeKemitraan === 'dimanfaatkan')
+                    ? (this.selectedSubSub?.kode || '1.5.2.01.01.01.002')
+                    : (this.selectedSubSub?.kode || '');
                 this.formData.mesin_items.push({
                     is_extracom: Boolean(this.formData.is_extracomtable),
-                    mesin_kode_barang: '',
-                    mesin_nama_barang: '',
+                    mesin_kode_barang: defaultKode,
+                    mesin_nama_barang: defaultName,
                     isFilterOpen: false,
                     searchFilter: '',
                     mesin_merk: '',
@@ -1527,9 +1593,15 @@
                 if (!this.formData.tanah_items) {
                     this.formData.tanah_items = [];
                 }
+                const defaultName = (this.tipeKemitraan === 'dimanfaatkan') 
+                    ? (this.formData.objek_aset_terpilih?.nama_barang || this.formData.nama_barang || '') 
+                    : (this.formData.nama_barang || '');
+                const defaultKode = (this.tipeKemitraan === 'dimanfaatkan')
+                    ? (this.selectedSubSub?.kode || '1.5.2.01.01.01.001')
+                    : (this.selectedSubSub?.kode || '');
                 this.formData.tanah_items.push({
-                    tanah_kode_barang: '',
-                    tanah_nama_barang: '',
+                    tanah_kode_barang: defaultKode,
+                    tanah_nama_barang: defaultName,
                     isFilterOpen: false,
                     searchFilter: '',
                     tanah_luas_m2: null,
@@ -1584,9 +1656,16 @@
                 if (!this.formData.gedung_items) {
                     this.formData.gedung_items = [];
                 }
+                const defaultName = (this.tipeKemitraan === 'dimanfaatkan') 
+                    ? (this.formData.objek_aset_terpilih?.nama_barang || this.formData.nama_barang || '') 
+                    : (this.formData.nama_barang || '');
+                const defaultKode = (this.tipeKemitraan === 'dimanfaatkan')
+                    ? (this.selectedSubSub?.kode || '1.5.2.01.01.01.003')
+                    : (this.selectedSubSub?.kode || '');
                 this.formData.gedung_items.push({
-                    gedung_kode_barang: '',
-                    gedung_nama_barang: '',
+                    gedung_kode_barang: defaultKode,
+                    gedung_nama_barang: defaultName,
+                    gedung_nama_bangunan: defaultName,
                     isFilterOpen: false,
                     searchFilter: '',
                     gedung_is_baru: 'Lama',
@@ -1638,9 +1717,15 @@
                 if (!this.formData.jaringan_items) {
                     this.formData.jaringan_items = [];
                 }
+                const defaultName = (this.tipeKemitraan === 'dimanfaatkan') 
+                    ? (this.formData.objek_aset_terpilih?.nama_barang || this.formData.nama_barang || '') 
+                    : (this.formData.nama_barang || '');
+                const defaultKode = (this.tipeKemitraan === 'dimanfaatkan')
+                    ? (this.selectedSubSub?.kode || '1.5.2.01.01.01.004')
+                    : (this.selectedSubSub?.kode || '');
                 this.formData.jaringan_items.push({
-                    jaringan_kode_barang: '',
-                    jaringan_nama_barang: '',
+                    jaringan_kode_barang: defaultKode,
+                    jaringan_nama_barang: defaultName,
                     isFilterOpen: false,
                     searchFilter: '',
                     jaringan_is_baru: 'Lama',
@@ -1696,11 +1781,17 @@
                 if (!this.formData.lainnya_items) {
                     this.formData.lainnya_items = [];
                 }
+                const defaultName = (this.tipeKemitraan === 'dimanfaatkan') 
+                    ? (this.formData.objek_aset_terpilih?.nama_barang || this.formData.nama_barang || '') 
+                    : (this.formData.nama_barang || '');
+                const defaultKode = (this.tipeKemitraan === 'dimanfaatkan')
+                    ? (this.selectedSubSub?.kode || '1.5.2.01.01.01.005')
+                    : (this.selectedSubSub?.kode || '');
                 this.formData.lainnya_items.push({
                     is_extracom: Boolean(this.formData.is_extracomtable),
                     kib_e_type: 'buku',
-                    lainnya_kode_barang: '',
-                    lainnya_nama_barang: '',
+                    lainnya_kode_barang: defaultKode,
+                    lainnya_nama_barang: defaultName,
                     isFilterOpen: false,
                     searchFilter: '',
                     lainnya_judul: '',
@@ -1868,28 +1959,41 @@
             // Sinkronisasi Nama Barang Fisik Utama ke Lembar Spesifikasi Sheet Terpilih
             syncNameToActiveItem() {
                 const val = (this.formData.nama_barang || '').trim();
-                if (!val) {
-                    if (this.isTanah && this.formData.tanah_items?.[0]) this.formData.tanah_items[0].tanah_nama_barang = '';
-                    else if (this.isMesin && this.formData.mesin_items?.[0]) this.formData.mesin_items[0].mesin_nama_barang = '';
-                    else if (this.isGedung && this.formData.gedung_items?.[0]) {
-                        this.formData.gedung_items[0].gedung_nama_barang = '';
-                        this.formData.gedung_items[0].gedung_nama_bangunan = '';
-                    }
-                    else if (this.isJaringan && this.formData.jaringan_items?.[0]) this.formData.jaringan_items[0].jaringan_nama_barang = '';
-                    else if (this.isLainnya && this.formData.lainnya_items?.[0]) this.formData.lainnya_items[0].lainnya_nama_barang = '';
-                    return;
-                }
-                if (this.isTanah && this.formData.tanah_items?.[0]) {
-                    this.formData.tanah_items[0].tanah_nama_barang = val;
-                } else if (this.isMesin && this.formData.mesin_items?.[0]) {
-                    this.formData.mesin_items[0].mesin_nama_barang = val;
-                } else if (this.isGedung && this.formData.gedung_items?.[0]) {
-                    this.formData.gedung_items[0].gedung_nama_barang = val;
-                    this.formData.gedung_items[0].gedung_nama_bangunan = val;
-                } else if (this.isJaringan && this.formData.jaringan_items?.[0]) {
-                    this.formData.jaringan_items[0].jaringan_nama_barang = val;
-                } else if (this.isLainnya && this.formData.lainnya_items?.[0]) {
-                    this.formData.lainnya_items[0].lainnya_nama_barang = val;
+                if (!val) return;
+
+                if (this.isTanah && this.formData.tanah_items) {
+                    this.formData.tanah_items.forEach((t) => {
+                        if (!t.tanah_nama_barang || this.isJenisKemitraan(t.tanah_nama_barang)) {
+                            t.tanah_nama_barang = val;
+                        }
+                    });
+                } else if (this.isMesin && this.formData.mesin_items) {
+                    this.formData.mesin_items.forEach((m) => {
+                        if (!m.mesin_nama_barang || this.isJenisKemitraan(m.mesin_nama_barang)) {
+                            m.mesin_nama_barang = val;
+                        }
+                    });
+                } else if (this.isGedung && this.formData.gedung_items) {
+                    this.formData.gedung_items.forEach((g) => {
+                        if (!g.gedung_nama_barang || this.isJenisKemitraan(g.gedung_nama_barang)) {
+                            g.gedung_nama_barang = val;
+                        }
+                        if (!g.gedung_nama_bangunan) {
+                            g.gedung_nama_bangunan = val;
+                        }
+                    });
+                } else if (this.isJaringan && this.formData.jaringan_items) {
+                    this.formData.jaringan_items.forEach((j) => {
+                        if (!j.jaringan_nama_barang || this.isJenisKemitraan(j.jaringan_nama_barang)) {
+                            j.jaringan_nama_barang = val;
+                        }
+                    });
+                } else if (this.isLainnya && this.formData.lainnya_items) {
+                    this.formData.lainnya_items.forEach((l) => {
+                        if (!l.lainnya_nama_barang || this.isJenisKemitraan(l.lainnya_nama_barang)) {
+                            l.lainnya_nama_barang = val;
+                        }
+                    });
                 }
             },
 
@@ -1905,12 +2009,25 @@
                         if (first.mesin_nama_barang && !this.isJenisKemitraan(first.mesin_nama_barang)) {
                             this.formData.nama_barang = first.mesin_nama_barang;
                         } else if (!first.mesin_nama_barang) {
-                            this.formData.nama_barang = '';
+                            if (this.formData.nama_barang && !this.isJenisKemitraan(this.formData.nama_barang)) {
+                                first.mesin_nama_barang = this.formData.nama_barang;
+                            } else {
+                                this.formData.nama_barang = '';
+                            }
                         }
                         this.formData.satuan = first.mesin_satuan || 'Unit';
                     } else {
                         const names = this.formData.mesin_items.map(m => m.mesin_nama_barang || (m.mesin_merk ? m.mesin_merk + ' ' + m.mesin_type : '')).filter(n => n && !this.isJenisKemitraan(n));
-                        this.formData.nama_barang = names.length > 0 ? names.join(', ') : '';
+                        const uniqueNames = [...new Set(names)];
+                        if (uniqueNames.length > 0) {
+                            this.formData.nama_barang = uniqueNames.join(', ');
+                        } else if (this.formData.nama_barang && !this.isJenisKemitraan(this.formData.nama_barang)) {
+                            this.formData.mesin_items.forEach(m => {
+                                if (!m.mesin_nama_barang) m.mesin_nama_barang = this.formData.nama_barang;
+                            });
+                        } else {
+                            this.formData.nama_barang = '';
+                        }
                         this.formData.satuan = 'Unit';
                     }
 
@@ -1946,12 +2063,25 @@
                         if (first.tanah_nama_barang && !this.isJenisKemitraan(first.tanah_nama_barang)) {
                             this.formData.nama_barang = first.tanah_nama_barang;
                         } else if (!first.tanah_nama_barang) {
-                            this.formData.nama_barang = '';
+                            if (this.formData.nama_barang && !this.isJenisKemitraan(this.formData.nama_barang)) {
+                                first.tanah_nama_barang = this.formData.nama_barang;
+                            } else {
+                                this.formData.nama_barang = '';
+                            }
                         }
                         this.formData.satuan = first.tanah_satuan || 'Bidang';
                     } else {
                         const names = this.formData.tanah_items.map(t => t.tanah_nama_barang).filter(n => n && !this.isJenisKemitraan(n));
-                        this.formData.nama_barang = names.length > 0 ? names.join(', ') : '';
+                        const uniqueNames = [...new Set(names)];
+                        if (uniqueNames.length > 0) {
+                            this.formData.nama_barang = uniqueNames.join(', ');
+                        } else if (this.formData.nama_barang && !this.isJenisKemitraan(this.formData.nama_barang)) {
+                            this.formData.tanah_items.forEach(t => {
+                                if (!t.tanah_nama_barang) t.tanah_nama_barang = this.formData.nama_barang;
+                            });
+                        } else {
+                            this.formData.nama_barang = '';
+                        }
                         this.formData.satuan = 'Bidang';
                     }
                     if (first) {
@@ -1974,12 +2104,29 @@
                         if (first.gedung_nama_barang && !this.isJenisKemitraan(first.gedung_nama_barang)) {
                             this.formData.nama_barang = first.gedung_nama_barang;
                         } else if (!first.gedung_nama_barang) {
-                            this.formData.nama_barang = '';
+                            if (this.formData.nama_barang && !this.isJenisKemitraan(this.formData.nama_barang)) {
+                                first.gedung_nama_barang = this.formData.nama_barang;
+                                first.gedung_nama_bangunan = this.formData.nama_barang;
+                            } else {
+                                this.formData.nama_barang = '';
+                            }
                         }
                         this.formData.satuan = first.gedung_satuan || 'Gedung';
                     } else {
-                        const names = this.formData.gedung_items.map(g => g.gedung_nama_barang).filter(n => n && !this.isJenisKemitraan(n));
-                        this.formData.nama_barang = names.length > 0 ? names.join(', ') : '';
+                        const names = this.formData.gedung_items.map(g => g.gedung_nama_barang || g.gedung_nama_bangunan).filter(n => n && !this.isJenisKemitraan(n));
+                        const uniqueNames = [...new Set(names)];
+                        if (uniqueNames.length > 0) {
+                            this.formData.nama_barang = uniqueNames.join(', ');
+                        } else if (this.formData.nama_barang && !this.isJenisKemitraan(this.formData.nama_barang)) {
+                            this.formData.gedung_items.forEach(g => {
+                                if (!g.gedung_nama_barang) {
+                                    g.gedung_nama_barang = this.formData.nama_barang;
+                                    g.gedung_nama_bangunan = this.formData.nama_barang;
+                                }
+                            });
+                        } else {
+                            this.formData.nama_barang = '';
+                        }
                         this.formData.satuan = 'Gedung';
                     }
                     if (first) {
@@ -2002,12 +2149,25 @@
                         if (first.jaringan_nama_barang && !this.isJenisKemitraan(first.jaringan_nama_barang)) {
                             this.formData.nama_barang = first.jaringan_nama_barang;
                         } else if (!first.jaringan_nama_barang) {
-                            this.formData.nama_barang = '';
+                            if (this.formData.nama_barang && !this.isJenisKemitraan(this.formData.nama_barang)) {
+                                first.jaringan_nama_barang = this.formData.nama_barang;
+                            } else {
+                                this.formData.nama_barang = '';
+                            }
                         }
                         this.formData.satuan = first.jaringan_satuan || 'Ruas';
                     } else {
                         const names = this.formData.jaringan_items.map(j => j.jaringan_nama_barang).filter(n => n && !this.isJenisKemitraan(n));
-                        this.formData.nama_barang = names.length > 0 ? names.join(', ') : '';
+                        const uniqueNames = [...new Set(names)];
+                        if (uniqueNames.length > 0) {
+                            this.formData.nama_barang = uniqueNames.join(', ');
+                        } else if (this.formData.nama_barang && !this.isJenisKemitraan(this.formData.nama_barang)) {
+                            this.formData.jaringan_items.forEach(j => {
+                                if (!j.jaringan_nama_barang) j.jaringan_nama_barang = this.formData.nama_barang;
+                            });
+                        } else {
+                            this.formData.nama_barang = '';
+                        }
                         this.formData.satuan = 'Ruas';
                     }
                     if (first) {
@@ -2030,12 +2190,25 @@
                         if (nLain && !this.isJenisKemitraan(nLain)) {
                             this.formData.nama_barang = nLain;
                         } else if (!nLain) {
-                            this.formData.nama_barang = '';
+                            if (this.formData.nama_barang && !this.isJenisKemitraan(this.formData.nama_barang)) {
+                                first.lainnya_nama_barang = this.formData.nama_barang;
+                            } else {
+                                this.formData.nama_barang = '';
+                            }
                         }
                         this.formData.satuan = first.lainnya_satuan || 'Buah';
                     } else {
                         const names = this.formData.lainnya_items.map(l => l.lainnya_nama_barang || l.lainnya_judul).filter(n => n && !this.isJenisKemitraan(n));
-                        this.formData.nama_barang = names.length > 0 ? names.join(', ') : '';
+                        const uniqueNames = [...new Set(names)];
+                        if (uniqueNames.length > 0) {
+                            this.formData.nama_barang = uniqueNames.join(', ');
+                        } else if (this.formData.nama_barang && !this.isJenisKemitraan(this.formData.nama_barang)) {
+                            this.formData.lainnya_items.forEach(l => {
+                                if (!l.lainnya_nama_barang) l.lainnya_nama_barang = this.formData.nama_barang;
+                            });
+                        } else {
+                            this.formData.nama_barang = '';
+                        }
                         this.formData.satuan = 'Unit';
                     }
                     if (first) {
@@ -2221,31 +2394,47 @@
                 }
 
                 if (this.isTanah && this.formData.tanah_items && this.formData.tanah_items.length > 0) {
-                    if (subSubKode) this.formData.tanah_items[0].tanah_kode_barang = subSubKode;
-                    if (objNama) this.formData.tanah_items[0].tanah_nama_barang = objNama;
-                    if (obj?.luas && !this.formData.tanah_items[0].tanah_luas_m2) this.formData.tanah_items[0].tanah_luas_m2 = parseFloat(obj.luas) || obj.luas;
-                    if (obj?.sertifikat && !this.formData.tanah_items[0].tanah_sertifikat_no) this.formData.tanah_items[0].tanah_sertifikat_no = obj.sertifikat;
-                    if (obj?.alamat_barang && !this.formData.tanah_items[0].tanah_alamat) this.formData.tanah_items[0].tanah_alamat = obj.alamat_barang;
+                    this.formData.tanah_items.forEach((t) => {
+                        if (subSubKode) t.tanah_kode_barang = subSubKode;
+                        if (objNama) t.tanah_nama_barang = objNama;
+                        if (obj?.luas && !t.tanah_luas_m2) t.tanah_luas_m2 = parseFloat(obj.luas) || obj.luas;
+                        if (obj?.sertifikat && !t.tanah_sertifikat_no) t.tanah_sertifikat_no = obj.sertifikat;
+                        if (obj?.alamat_barang && !t.tanah_alamat) t.tanah_alamat = obj.alamat_barang;
+                        if ((obj?.penggunaan || obj?.spesifikasi_json?.penggunaan) && !t.tanah_penggunaan) {
+                            t.tanah_penggunaan = obj.penggunaan || obj.spesifikasi_json.penggunaan;
+                        }
+                        if ((obj?.batas_wilayah || obj?.spesifikasi_json?.batas_wilayah) && !t.tanah_batas) {
+                            t.tanah_batas = obj.batas_wilayah || obj.spesifikasi_json.batas_wilayah;
+                        }
+                    });
                 } else if (this.isGedung && this.formData.gedung_items && this.formData.gedung_items.length > 0) {
-                    if (subSubKode) this.formData.gedung_items[0].gedung_kode_barang = subSubKode;
-                    if (objNama) {
-                        this.formData.gedung_items[0].gedung_nama_barang = objNama;
-                        this.formData.gedung_items[0].gedung_nama_bangunan = objNama;
-                    }
-                    if (obj?.luas && !this.formData.gedung_items[0].gedung_luas_lantai_m2) this.formData.gedung_items[0].gedung_luas_lantai_m2 = parseFloat(obj.luas) || obj.luas;
-                    if (obj?.alamat_barang && !this.formData.gedung_items[0].gedung_lokasi) this.formData.gedung_items[0].gedung_lokasi = obj.alamat_barang;
+                    this.formData.gedung_items.forEach((g) => {
+                        if (subSubKode) g.gedung_kode_barang = subSubKode;
+                        if (objNama) {
+                            g.gedung_nama_barang = objNama;
+                            g.gedung_nama_bangunan = objNama;
+                        }
+                        if (obj?.luas && !g.gedung_luas_lantai_m2) g.gedung_luas_lantai_m2 = parseFloat(obj.luas) || obj.luas;
+                        if (obj?.alamat_barang && !g.gedung_lokasi) g.gedung_lokasi = obj.alamat_barang;
+                    });
                 } else if (this.isMesin && this.formData.mesin_items && this.formData.mesin_items.length > 0) {
-                    if (subSubKode) this.formData.mesin_items[0].mesin_kode_barang = subSubKode;
-                    if (objNama) this.formData.mesin_items[0].mesin_nama_barang = objNama;
-                    if (obj?.merk && !this.formData.mesin_items[0].merk) this.formData.mesin_items[0].merk = obj.merk;
+                    this.formData.mesin_items.forEach((m) => {
+                        if (subSubKode) m.mesin_kode_barang = subSubKode;
+                        if (objNama) m.mesin_nama_barang = objNama;
+                        if (obj?.merk && !m.merk) m.merk = obj.merk;
+                    });
                 } else if (this.isJaringan && this.formData.jaringan_items && this.formData.jaringan_items.length > 0) {
-                    if (subSubKode) this.formData.jaringan_items[0].jaringan_kode_barang = subSubKode;
-                    if (objNama) this.formData.jaringan_items[0].jaringan_nama_barang = objNama;
-                    if (obj?.luas && !this.formData.jaringan_items[0].jaringan_luas_m2) this.formData.jaringan_items[0].jaringan_luas_m2 = parseFloat(obj.luas) || obj.luas;
-                    if (obj?.alamat_barang && !this.formData.jaringan_items[0].jaringan_lokasi) this.formData.jaringan_items[0].jaringan_lokasi = obj.alamat_barang;
+                    this.formData.jaringan_items.forEach((j) => {
+                        if (subSubKode) j.jaringan_kode_barang = subSubKode;
+                        if (objNama) j.jaringan_nama_barang = objNama;
+                        if (obj?.luas && !j.jaringan_luas_m2) j.jaringan_luas_m2 = parseFloat(obj.luas) || obj.luas;
+                        if (obj?.alamat_barang && !j.jaringan_lokasi) j.jaringan_lokasi = obj.alamat_barang;
+                    });
                 } else if (this.isLainnya && this.formData.lainnya_items && this.formData.lainnya_items.length > 0) {
-                    if (subSubKode) this.formData.lainnya_items[0].lainnya_kode_barang = subSubKode;
-                    if (objNama) this.formData.lainnya_items[0].lainnya_nama_barang = objNama;
+                    this.formData.lainnya_items.forEach((l) => {
+                        if (subSubKode) l.lainnya_kode_barang = subSubKode;
+                        if (objNama) l.lainnya_nama_barang = objNama;
+                    });
                 }
             },
 

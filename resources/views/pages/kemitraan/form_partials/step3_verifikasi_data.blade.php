@@ -346,9 +346,15 @@
                                                 <span class="font-semibold text-cyan-300 block truncate" x-text="(tItem.tanah_hak || 'Hak Pakai') + (tItem.tanah_sertifikat_no ? ' • ' + tItem.tanah_sertifikat_no : '')"></span>
                                             </div>
                                             <div>
-                                                <span class="text-[9.5px] text-slate-500 block uppercase">Keterangan:</span>
+                                                <span class="text-[9.5px] text-slate-500 block uppercase">Penggunaan Lahan:</span>
                                                 <span class="text-slate-300 block truncate" x-text="tItem.tanah_penggunaan || '-'"></span>
                                             </div>
+                                            <template x-if="tItem.tanah_batas">
+                                                <div class="col-span-2 pt-1 border-t border-slate-800/40">
+                                                    <span class="text-[9.5px] text-slate-500 block uppercase">Batas Wilayah / Zonasi:</span>
+                                                    <span class="text-slate-300 block text-[11px]" x-text="tItem.tanah_batas"></span>
+                                                </div>
+                                            </template>
                                             <div class="col-span-2 flex items-center justify-between pt-1 border-t border-slate-900 text-xs">
                                                 <span class="text-slate-400 text-[10px]">Taksiran Nilai:</span>
                                                 <span class="font-mono font-bold text-emerald-400" x-text="'Rp ' + formatRupiah(tItem.tanah_nilai_satuan || 0)"></span>
@@ -374,9 +380,15 @@
                                 <span class="font-mono text-cyan-300 block" x-text="(formData.tanah_sertifikat_no || formData.tanah_items?.[0]?.tanah_sertifikat_no || '-') + ((formData.tanah_sertifikat_tgl || formData.tanah_items?.[0]?.tanah_sertifikat_tgl) ? (' (Tgl: ' + (formData.tanah_sertifikat_tgl || formData.tanah_items?.[0]?.tanah_sertifikat_tgl) + ')') : '')"></span>
                             </div>
                             <div class="col-span-2">
-                                <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Keterangan:</span>
+                                <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Penggunaan Lahan:</span>
                                 <span class="font-semibold text-white block" x-text="formData.tanah_penggunaan || formData.tanah_items?.[0]?.tanah_penggunaan || '-'"></span>
                             </div>
+                            <template x-if="formData.tanah_batas || formData.tanah_items?.[0]?.tanah_batas">
+                                <div class="col-span-2">
+                                    <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Batas Wilayah / Zonasi:</span>
+                                    <span class="text-slate-300 block text-[11px]" x-text="formData.tanah_batas || formData.tanah_items?.[0]?.tanah_batas"></span>
+                                </div>
+                            </template>
                             <div class="col-span-2">
                                 <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Letak / Alamat Lahan:</span>
                                 <span class="text-slate-300 block text-[11px]" x-text="formData.tanah_alamat || formData.tanah_items?.[0]?.tanah_alamat || formData.alamat_barang || '-'"></span>

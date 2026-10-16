@@ -12,15 +12,15 @@
          x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0">
     
-    <div class="border border-slate-800 rounded-3xl max-w-4xl w-full p-4 sm:p-6 md:p-8 shadow-2xl overflow-y-auto max-h-[90vh] space-y-5 my-auto"
-         style="background-color: #0f172a;">
+    <div class="border border-slate-800 rounded-3xl max-w-5xl w-full p-4 sm:p-6 md:p-8 shadow-2xl overflow-y-auto max-h-[90vh] space-y-5 my-auto bg-slate-900">
         
         <!-- Modal Header -->
         <div class="flex items-start justify-between pb-4 border-b border-slate-800 gap-4">
-            <div class="space-y-1.5 min-w-0 flex-1">
+            <div class="space-y-2 min-w-0 flex-1">
+                <!-- Badges & Chips Row -->
                 <div class="flex flex-wrap items-center gap-2">
                     <!-- Kategori KIB Badge -->
-                    <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0"
+                    <span class="px-2.5 py-1 rounded-lg text-[10.5px] font-black border uppercase tracking-wider shrink-0"
                         :class="{
                             'bg-amber-500/20 text-amber-300 border-amber-500/30': getEffectiveKibCategory(selectedAstapDetail) === 'KIB A',
                             'bg-cyan-500/20 text-cyan-300 border-cyan-500/30':     getEffectiveKibCategory(selectedAstapDetail) === 'KIB B',
@@ -31,13 +31,30 @@
                         x-text="getEffectiveKibCategory(selectedAstapDetail)"></span>
 
                     <!-- Badge Kemitraan Akun 1.5.2 -->
-                    <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 bg-cyan-500/20 text-cyan-300 border-cyan-500/30">
+                    <span class="px-2.5 py-1 rounded-lg text-[10.5px] font-black border uppercase tracking-wider shrink-0 bg-cyan-500/20 text-cyan-300 border-cyan-500/30 shadow-sm">
                         🤝 KEMITRAAN AKUN 1.5.2
                     </span>
 
+                    <!-- Badge Objek Pemanfaatan BMD RSUD -->
+                    <template x-if="selectedAstapDetail?.is_dimanfaatkan">
+                        <span class="px-2.5 py-1 rounded-lg text-[10.5px] font-black border uppercase tracking-wider shrink-0 bg-sky-500/20 text-sky-300 border-sky-500/40 shadow-sm flex items-center gap-1.5">
+                            <span>🏛️</span>
+                            <span>OBJEK PEMANFAATAN BMD</span>
+                        </span>
+                    </template>
+
+                    <!-- Badge Aset Ditambahkan Mitra jika objek pemanfaatan memiliki barang mitra -->
+                    <template x-if="selectedAstapDetail?.is_dimanfaatkan && getAsetDitambahkanMitraForDetail(selectedAstapDetail).length > 0">
+                        <span class="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-[10.5px] font-black border uppercase tracking-wider shrink-0 bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-sm shadow-emerald-500/10"
+                            :title="'Objek kerjasama ini memuat ' + getAsetDitambahkanMitraForDetail(selectedAstapDetail).length + ' aset yang ditambahkan/didatangkan oleh mitra rekanan'">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                            <span x-text="'📦 +' + getAsetDitambahkanMitraForDetail(selectedAstapDetail).length + ' ASET MITRA'"></span>
+                        </span>
+                    </template>
+
                     <!-- Badge Reklasifikasi jika ada riwayat reklas -->
                     <template x-if="selectedAstapDetail?.has_reklas || selectedAstapDetail?.is_reklas || (selectedAstapDetail?.reklas_count && selectedAstapDetail?.reklas_count > 0)">
-                        <span class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 bg-indigo-500/20 text-indigo-300 border-indigo-500/30 shadow-sm"
+                        <span class="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-[10.5px] font-black border uppercase tracking-wider shrink-0 bg-indigo-500/20 text-indigo-300 border-indigo-500/30 shadow-sm"
                             :title="'Aset ini memiliki riwayat Reklasifikasi' + (selectedAstapDetail?.jenis_reklas ? ' (' + selectedAstapDetail.jenis_reklas.replace(/_/g, ' ') + ')' : '')">
                             <svg class="w-3 h-3 shrink-0 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
@@ -46,39 +63,51 @@
                         </span>
                     </template>
 
-                    <!-- Badge Aset Ditambahkan Mitra jika ada item ditambahkan -->
-                    <template x-if="selectedAstapDetail?.is_dimanfaatkan && getAsetDitambahkanMitraForDetail(selectedAstapDetail).length > 0">
-                        <span class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-sm shadow-emerald-500/10"
-                            :title="'Objek kerjasama ini memuat ' + getAsetDitambahkanMitraForDetail(selectedAstapDetail).length + ' aset yang ditambahkan/didatangkan oleh mitra rekanan'">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                            <span x-text="'📦 +' + getAsetDitambahkanMitraForDetail(selectedAstapDetail).length + ' ASET MITRA'"></span>
-                        </span>
-                    </template>
-
                     <!-- Kode 108 / NIBAR -->
-                    <span class="px-2.5 py-0.5 rounded-lg bg-slate-950 border border-slate-800 text-cyan-400 font-mono font-bold text-[11px] truncate max-w-full"
+                    <span class="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-cyan-400 font-mono font-bold text-[11px] truncate max-w-full shadow-inner"
                         x-text="'Kode: ' + (selectedAstapDetail?.kode_barang || '-')"></span>
 
                     <!-- Tanggal PKS -->
-                    <span class="px-2.5 py-0.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 font-mono text-[11px] flex items-center space-x-1.5 shrink-0">
-                        <span class="text-slate-400">📅 Tanggal PKS:</span>
+                    <span class="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 font-mono text-[11px] flex items-center space-x-1.5 shrink-0 shadow-inner">
+                        <span class="text-slate-400">📅 PKS:</span>
                         <span class="text-cyan-300 font-bold" x-text="formatTanggalIndo(selectedAstapDetail?.tanggal_pks || selectedAstapDetail?.created_at)"></span>
                     </span>
 
                     <!-- Status Kondisi Keseluruhan -->
                     <template x-if="selectedAstapDetail">
-                        <span class="px-2.5 py-0.5 rounded-lg border text-[11px] font-semibold flex items-center space-x-1.5 shrink-0"
+                        <span class="px-2.5 py-1 rounded-lg border text-[11px] font-bold flex items-center space-x-1.5 shrink-0 shadow-sm"
                               :class="getKondisiStats(selectedAstapDetail).badge_class">
                             <span class="w-1.5 h-1.5 rounded-full" :class="getKondisiStats(selectedAstapDetail).dot_class"></span>
                             <span x-text="'Kondisi: ' + getKondisiStats(selectedAstapDetail).text"></span>
                         </span>
                     </template>
                 </div>
-                <h3 class="text-base sm:text-lg md:text-xl font-extrabold text-white leading-snug break-words" x-text="selectedAstapDetail ? selectedAstapDetail.nama_barang : ''"></h3>
+
+                <!-- Title & Meta Subtitle -->
+                <div class="pt-1 space-y-1">
+                    <h3 class="text-lg sm:text-xl md:text-2xl font-black text-white leading-tight tracking-tight break-words" x-text="selectedAstapDetail ? selectedAstapDetail.nama_barang : ''"></h3>
+                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
+                        <span class="text-cyan-400 font-semibold" x-text="selectedAstapDetail?.jenis_aset_nama || 'Aset Kemitraan (Akun 1.5.2)'"></span>
+                        <template x-if="selectedAstapDetail?.alamat_barang">
+                            <div class="flex items-center gap-1 text-slate-300">
+                                <span class="text-slate-600">•</span>
+                                <span class="text-teal-400">📍</span>
+                                <span class="truncate max-w-md" x-text="selectedAstapDetail.alamat_barang"></span>
+                            </div>
+                        </template>
+                        <template x-if="selectedAstapDetail?.penyedia_nama && selectedAstapDetail.penyedia_nama !== '-'">
+                            <div class="flex items-center gap-1 text-slate-300">
+                                <span class="text-slate-600">•</span>
+                                <span class="text-slate-400">Mitra:</span>
+                                <span class="text-amber-300 font-bold" x-text="selectedAstapDetail.penyedia_nama"></span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
             </div>
 
             <!-- Tombol Close -->
-            <button type="button" @click="showDetailModal = false" class="w-8 h-8 rounded-full bg-slate-800/80 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 border border-transparent hover:border-rose-500/30 flex items-center justify-center transition-all shrink-0 cursor-pointer">
+            <button type="button" @click="showDetailModal = false" class="w-9 h-9 rounded-2xl bg-slate-800/80 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 border border-slate-700/60 hover:border-rose-500/30 flex items-center justify-center transition-all shrink-0 cursor-pointer shadow-sm active:scale-95">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
@@ -88,120 +117,176 @@
 
                 <!-- Top 4 Metric KPI Cards (Fully Responsive Grid) -->
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
-                    <div class="p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80 min-w-0">
-                        <span class="text-slate-400 text-[10px] uppercase font-bold block mb-1 truncate">🏷️ Jenis PMDN 108</span>
-                        <span class="text-white font-bold text-xs sm:text-sm leading-tight block truncate" :title="selectedAstapDetail.jenis_aset_nama" x-text="selectedAstapDetail.jenis_aset_nama"></span>
+                    <div class="p-3.5 rounded-2xl bg-gradient-to-b from-slate-950/90 to-slate-900/90 border border-slate-800/80 hover:border-slate-700/80 transition-all shadow-md min-w-0 flex flex-col justify-between">
+                        <span class="text-slate-400 text-[10px] uppercase font-extrabold tracking-wider block mb-1">🏷️ Klasifikasi PMDN 108</span>
+                        <span class="text-white font-bold text-xs sm:text-[13px] leading-snug break-words line-clamp-2 block" :title="selectedAstapDetail.jenis_aset_nama" x-text="selectedAstapDetail.jenis_aset_nama"></span>
                     </div>
-                    <div class="p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80 min-w-0">
-                        <span class="text-slate-400 text-[10px] uppercase font-bold block mb-1 truncate">📅 Tahun &amp; Triwulan</span>
-                        <span class="text-cyan-300 font-extrabold font-mono text-xs sm:text-sm block" x-text="selectedAstapDetail.tahun_perolehan + ' • ' + selectedAstapDetail.triwulan"></span>
+                    <div class="p-3.5 rounded-2xl bg-gradient-to-b from-slate-950/90 to-slate-900/90 border border-slate-800/80 hover:border-slate-700/80 transition-all shadow-md min-w-0 flex flex-col justify-between">
+                        <span class="text-slate-400 text-[10px] uppercase font-extrabold tracking-wider block mb-1">📅 Periode Pembukuan</span>
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <span class="text-cyan-300 font-black font-mono text-sm sm:text-base tracking-tight" x-text="selectedAstapDetail.tahun_perolehan"></span>
+                            <span class="text-slate-500 font-mono text-xs">•</span>
+                            <span class="px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 font-mono font-bold text-[11px]" x-text="'TW ' + (selectedAstapDetail.triwulan ? String(selectedAstapDetail.triwulan).replace(/[^0-9]/g, '') || selectedAstapDetail.triwulan : '1')"></span>
+                        </div>
                     </div>
-                    <div class="p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80 min-w-0">
-                        <span class="text-slate-400 text-[10px] uppercase font-bold block mb-1 truncate">📏 Volume / Satuan</span>
-                        <span class="text-teal-300 font-extrabold font-mono text-xs sm:text-sm block truncate" x-text="selectedAstapDetail.volume_satuan"></span>
+                    <div class="p-3.5 rounded-2xl bg-gradient-to-b from-slate-950/90 to-slate-900/90 border border-slate-800/80 hover:border-slate-700/80 transition-all shadow-md min-w-0 flex flex-col justify-between">
+                        <span class="text-slate-400 text-[10px] uppercase font-extrabold tracking-wider block mb-1">📏 Volume Fisik</span>
+                        <span class="text-teal-300 font-black font-mono text-sm sm:text-base block truncate tracking-tight" x-text="selectedAstapDetail.volume_satuan"></span>
                     </div>
-                    <div class="p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80 min-w-0">
-                        <span class="text-slate-400 text-[10px] uppercase font-bold block mb-1 truncate">💰 Taksiran Nilai Wajar</span>
-                        <span class="text-emerald-400 font-extrabold font-mono text-xs sm:text-sm block truncate" x-text="selectedAstapDetail.jumlah_realisasi"></span>
+                    <div class="p-3.5 rounded-2xl bg-gradient-to-b from-slate-950/90 to-slate-900/90 border border-slate-800/80 hover:border-slate-700/80 transition-all shadow-md min-w-0 flex flex-col justify-between">
+                        <span class="text-slate-400 text-[10px] uppercase font-extrabold tracking-wider block mb-1">💰 Taksiran Nilai Wajar</span>
+                        <span class="text-emerald-400 font-black font-mono text-sm sm:text-base block truncate tracking-tight drop-shadow-sm" x-text="selectedAstapDetail.jumlah_realisasi"></span>
                     </div>
                 </div>
 
                 <!-- DOKUMEN LEGALITAS PKS & KONSESI KERJASAMA -->
-                <div class="p-4 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 space-y-3">
-                    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-cyan-500/20 pb-2">
-                        <div class="flex items-center space-x-2 text-cyan-300 font-extrabold text-xs uppercase tracking-wider">
-                            <span>📜 Dokumen Perjanjian Kerja Sama (PKS) &amp; Masa Konsesi</span>
-                           <div class="flex items-center gap-2 flex-wrap">
+                <div class="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950/25 border border-cyan-500/30 space-y-4 shadow-xl">
+                    <!-- Header Section PKS -->
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-cyan-500/20 gap-3">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-9 h-9 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center justify-center text-lg shrink-0 shadow-inner">
+                                📜
+                            </div>
+                            <div>
+                                <h4 class="text-xs sm:text-sm font-black uppercase tracking-wider text-cyan-300">
+                                    Dokumen Perjanjian Kerja Sama (PKS) &amp; Masa Konsesi
+                                </h4>
+                                <p class="text-[11px] text-slate-400 mt-0.5">
+                                    Dasar hukum legalitas perikatan dan batas waktu pemanfaatan Barang Milik Daerah.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Status Konsesi & Tombol Aksi -->
+                        <div class="flex items-center gap-2 flex-wrap shrink-0">
+                            <!-- Status Konsesi Badge -->
+                            <span class="px-2.5 py-1 rounded-xl text-[10.5px] font-extrabold border inline-flex items-center gap-1.5 shadow-sm"
+                                  :class="{
+                                      'bg-emerald-500/20 text-emerald-300 border-emerald-500/40': selectedAstapDetail.status_konsesi === 'Aktif',
+                                      'bg-amber-500/20 text-amber-300 border-amber-500/40': selectedAstapDetail.status_konsesi === 'Konsesi Berakhir',
+                                      'bg-purple-500/20 text-purple-300 border-purple-500/40': selectedAstapDetail.status_konsesi === 'Dikembalikan ke Rekanan',
+                                      'bg-blue-500/20 text-blue-300 border-blue-500/40': selectedAstapDetail.status_konsesi === 'Selesai' || selectedAstapDetail.status_konsesi === 'Selesai / Reklasifikasi',
+                                      'bg-rose-500/20 text-rose-300 border-rose-500/40': selectedAstapDetail.status_konsesi === 'Dihentikan' || selectedAstapDetail.status_konsesi === 'Dibatalkan'
+                                  }">
+                                <span class="w-1.5 h-1.5 rounded-full"
+                                      :class="{
+                                          'bg-emerald-400 animate-pulse': selectedAstapDetail.status_konsesi === 'Aktif',
+                                          'bg-amber-400': selectedAstapDetail.status_konsesi === 'Konsesi Berakhir',
+                                          'bg-purple-400': selectedAstapDetail.status_konsesi === 'Dikembalikan ke Rekanan',
+                                          'bg-blue-400': selectedAstapDetail.status_konsesi === 'Selesai' || selectedAstapDetail.status_konsesi === 'Selesai / Reklasifikasi',
+                                          'bg-rose-400': selectedAstapDetail.status_konsesi === 'Dihentikan' || selectedAstapDetail.status_konsesi === 'Dibatalkan'
+                                      }"></span>
+                                <span x-text="'Status: ' + (selectedAstapDetail.status_konsesi === 'Dikembalikan ke Rekanan' ? 'Dikembalikan ke Rekanan' : ((selectedAstapDetail.status_konsesi === 'Selesai' || selectedAstapDetail.status_konsesi === 'Selesai / Reklasifikasi') ? 'Sudah Jadi Milik RSUD' : (selectedAstapDetail.status_konsesi === 'Dibatalkan' ? 'Dibatalkan' : selectedAstapDetail.status_konsesi)))"></span>
+                            </span>
+
+                            <!-- Countdown Sisa Hari -->
+                            <template x-if="selectedAstapDetail.sisa_hari_konsesi !== null && selectedAstapDetail.sisa_hari_konsesi !== undefined">
+                                <span class="px-2.5 py-1 rounded-xl text-[10.5px] font-mono font-bold shadow-sm"
+                                      :class="{
+                                          'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30': selectedAstapDetail.sisa_hari_konsesi > 60,
+                                          'bg-amber-500/15 text-amber-300 border border-amber-500/30': selectedAstapDetail.sisa_hari_konsesi > 0 && selectedAstapDetail.sisa_hari_konsesi <= 60,
+                                          'bg-rose-500/15 text-rose-300 border border-rose-500/30': selectedAstapDetail.sisa_hari_konsesi <= 0
+                                      }"
+                                      x-text="selectedAstapDetail.sisa_hari_konsesi > 0 ? ('⏱️ Sisa ' + selectedAstapDetail.sisa_hari_konsesi + ' Hari') : '🛑 Konsesi Berakhir'"></span>
+                            </template>
+
+                            <!-- Adendum Badge -->
+                            <template x-if="selectedAstapDetail.is_extended || (selectedAstapDetail.riwayat_adendum && selectedAstapDetail.riwayat_adendum.length > 0)">
+                                <span class="px-2.5 py-1 rounded-xl text-[10.5px] font-mono font-black uppercase tracking-wider bg-emerald-500/25 text-emerald-300 border border-emerald-400/50 shadow-sm flex items-center gap-1"
+                                      title="Kontrak PKS telah diperpanjang (Adendum)">
+                                    <span>🔄</span>
+                                    <span x-text="'ADENDUM #' + (selectedAstapDetail.jumlah_extend || (selectedAstapDetail.riwayat_adendum ? selectedAstapDetail.riwayat_adendum.length : 1))"></span>
+                                </span>
+                            </template>
+
+                            <!-- Tombol Perpanjang PKS (Extend) -->
                             <template x-if="selectedAstapDetail && (selectedAstapDetail.kemitraan_id || selectedAstapDetail.id)">
                                 <template x-if="selectedAstapDetail.status_konsesi !== 'Dikembalikan ke Rekanan' && selectedAstapDetail.status_konsesi !== 'Selesai' && selectedAstapDetail.status_konsesi !== 'Selesai / Reklasifikasi' && selectedAstapDetail.status_konsesi !== 'Dihentikan' && selectedAstapDetail.status_konsesi !== 'Dibatalkan'">
                                     <button type="button" @click="openExtendModalFromDetail()"
-                                        class="px-2.5 py-1 rounded-xl text-[10.5px] font-extrabold bg-gradient-to-r from-emerald-600/30 to-teal-600/30 hover:from-emerald-600/50 hover:to-teal-600/50 text-emerald-200 border border-emerald-500/40 flex items-center gap-1.5 transition-all active:scale-95 shadow-sm cursor-pointer"
+                                        class="px-3 py-1.5 rounded-xl text-[10.5px] font-extrabold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white border border-emerald-400/40 flex items-center gap-1.5 transition-all active:scale-95 shadow-md shadow-emerald-500/20 cursor-pointer"
                                         title="Perpanjang Masa Konsesi (Buat Adendum PKS)">
                                         <span>🔄</span>
                                         <span>Perpanjang PKS (Extend)</span>
                                     </button>
                                 </template>
                             </template>
-
-                            <span class="px-2.5 py-0.5 rounded-lg text-[10.5px] font-bold border"
-                                  :class="{
-                                      'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': selectedAstapDetail.status_konsesi === 'Aktif',
-                                      'bg-amber-500/20 text-amber-300 border-amber-500/30': selectedAstapDetail.status_konsesi === 'Konsesi Berakhir',
-                                      'bg-purple-500/20 text-purple-300 border-purple-500/30': selectedAstapDetail.status_konsesi === 'Dikembalikan ke Rekanan',
-                                      'bg-blue-500/20 text-blue-300 border-blue-500/30': selectedAstapDetail.status_konsesi === 'Selesai' || selectedAstapDetail.status_konsesi === 'Selesai / Reklasifikasi',
-                                      'bg-rose-500/20 text-rose-300 border-rose-500/30': selectedAstapDetail.status_konsesi === 'Dihentikan' || selectedAstapDetail.status_konsesi === 'Dibatalkan'
-                                  }"
-                                  x-text="'Status: ' + (selectedAstapDetail.status_konsesi === 'Dikembalikan ke Rekanan' ? 'Dikembalikan ke Rekanan' : ((selectedAstapDetail.status_konsesi === 'Selesai' || selectedAstapDetail.status_konsesi === 'Selesai / Reklasifikasi') ? 'Sudah Jadi Milik RSUD' : (selectedAstapDetail.status_konsesi === 'Dibatalkan' ? 'Dibatalkan' : selectedAstapDetail.status_konsesi)))"></span>etail.status_konsesi))"></span>
-
-                            <template x-if="selectedAstapDetail.sisa_hari_konsesi !== null && selectedAstapDetail.sisa_hari_konsesi !== undefined">
-                                <span class="px-2 py-0.5 rounded-lg text-[10.5px] font-mono font-bold"
-                                      :class="{
-                                          'bg-emerald-500/15 text-emerald-300': selectedAstapDetail.sisa_hari_konsesi > 60,
-                                          'bg-amber-500/15 text-amber-300': selectedAstapDetail.sisa_hari_konsesi > 0 && selectedAstapDetail.sisa_hari_konsesi <= 60,
-                                          'bg-rose-500/15 text-rose-300': selectedAstapDetail.sisa_hari_konsesi <= 0
-                                      }"
-                                      x-text="selectedAstapDetail.sisa_hari_konsesi > 0 ? ('⏱️ Sisa ' + selectedAstapDetail.sisa_hari_konsesi + ' Hari') : '🛑 Konsesi Berakhir'"></span>
-                            </template>
-                            <template x-if="selectedAstapDetail.is_extended || (selectedAstapDetail.riwayat_adendum && selectedAstapDetail.riwayat_adendum.length > 0)">
-                                <span class="px-2 py-0.5 rounded-lg text-[10.5px] font-mono font-black uppercase tracking-wider bg-emerald-500/25 text-emerald-300 border border-emerald-400/50 shadow-sm flex items-center gap-1"
-                                      title="Kontrak PKS telah diperpanjang (Adendum)">
-                                    <span>🔄</span>
-                                    <span x-text="'ADENDUM #' + (selectedAstapDetail.jumlah_extend || (selectedAstapDetail.riwayat_adendum ? selectedAstapDetail.riwayat_adendum.length : 1))"></span>
-                                </span>
-                            </template>
                         </div>
                     </div>
 
-                    <!-- 4 Kolom Rincian PKS -->
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs pt-1">
-                        <div>
-                            <span class="text-slate-400 block text-[10px] uppercase font-bold">Nomor PKS:</span>
-                            <span class="font-mono text-cyan-300 font-bold text-sm block truncate" :title="selectedAstapDetail.nomor_pks" x-text="selectedAstapDetail.nomor_pks || '-'"></span>
+                    <!-- 4 Kolom Rincian PKS (Grid Cards) -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3 text-xs">
+                        <div class="p-3 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                            <span class="text-slate-400 block text-[10px] uppercase font-extrabold tracking-wider mb-1">Nomor PKS:</span>
+                            <div class="flex items-center justify-between gap-1">
+                                <span class="font-mono text-cyan-300 font-bold text-xs sm:text-sm block truncate select-all" :title="selectedAstapDetail.nomor_pks" x-text="selectedAstapDetail.nomor_pks || '-'"></span>
+                                <template x-if="selectedAstapDetail.nomor_pks && selectedAstapDetail.nomor_pks !== '-'">
+                                    <button type="button" @click.stop="navigator.clipboard.writeText(selectedAstapDetail.nomor_pks); showToast('Nomor PKS berhasil disalin!', 'success')"
+                                            class="p-1 rounded text-slate-500 hover:text-cyan-300 hover:bg-slate-800 transition-colors cursor-pointer" title="Salin Nomor PKS">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/></svg>
+                                    </button>
+                                </template>
+                            </div>
                         </div>
-                        <div>
-                            <span class="text-slate-400 block text-[10px] uppercase font-bold">Tanggal PKS:</span>
-                            <span class="text-white font-semibold block" x-text="formatTanggalIndo(selectedAstapDetail.tanggal_pks)"></span>
+
+                        <div class="p-3 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                            <span class="text-slate-400 block text-[10px] uppercase font-extrabold tracking-wider mb-1">Tanggal PKS:</span>
+                            <span class="text-white font-bold text-xs sm:text-sm block" x-text="formatTanggalIndo(selectedAstapDetail.tanggal_pks) || '-'"></span>
                         </div>
-                        <div>
-                            <span class="text-slate-400 block text-[10px] uppercase font-bold">Skema Kemitraan:</span>
-                            <span class="font-extrabold text-cyan-300 block" x-text="selectedAstapDetail.skema_kemitraan || 'Sewa'"></span>
+
+                        <div class="p-3 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                            <span class="text-slate-400 block text-[10px] uppercase font-extrabold tracking-wider mb-1">Skema Kemitraan:</span>
+                            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-xs font-black"
+                                  :class="{
+                                      'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40': selectedAstapDetail.skema_kemitraan === 'Sewa' || !selectedAstapDetail.skema_kemitraan,
+                                      'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40': selectedAstapDetail.skema_kemitraan === 'KSP',
+                                      'bg-purple-500/20 text-purple-300 border border-purple-500/40': selectedAstapDetail.skema_kemitraan === 'BGS/BSG',
+                                      'bg-amber-500/20 text-amber-300 border border-amber-500/40': selectedAstapDetail.skema_kemitraan === 'KSPI'
+                                  }"
+                                  x-text="selectedAstapDetail.skema_kemitraan || 'Sewa'"></span>
                         </div>
-                        <div>
-                            <span class="text-slate-400 block text-[10px] uppercase font-bold">Masa Konsesi / Kerjasama:</span>
-                            <span class="text-slate-200 font-medium block" x-text="(formatTanggalIndo(selectedAstapDetail.tanggal_mulai) || '?') + ' s.d. ' + (formatTanggalIndo(selectedAstapDetail.tanggal_selesai) || '?')"></span>
+
+                        <div class="p-3 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                            <span class="text-slate-400 block text-[10px] uppercase font-extrabold tracking-wider mb-1">Masa Konsesi / Kerjasama:</span>
+                            <span class="text-slate-200 font-mono font-bold text-[11px] sm:text-xs block leading-tight" x-text="(formatTanggalIndo(selectedAstapDetail.tanggal_mulai) || '?') + ' s.d. ' + (formatTanggalIndo(selectedAstapDetail.tanggal_selesai) || '?')"></span>
                         </div>
                     </div>
 
                     <!-- Highlight Finansial / Nilai Sewa atau Kontribusi Pemanfaatan BMD -->
                     <template x-if="selectedAstapDetail.harga_sewa || selectedAstapDetail.nilai_kontribusi || selectedAstapDetail.spesifikasi_json?.harga_sewa || selectedAstapDetail.spesifikasi_json?.kemitraan_harga_sewa">
-                        <div class="p-3 rounded-xl bg-gradient-to-r from-cyan-950/40 to-slate-950/80 border border-cyan-500/30 flex items-center justify-between text-xs shadow-inner">
-                            <div class="flex items-center gap-2.5">
-                                <span class="p-1.5 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-sm">💰</span>
+                        <div class="p-3.5 rounded-xl bg-gradient-to-r from-cyan-950/50 via-slate-950 to-slate-950/90 border border-cyan-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-inner">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center justify-center text-lg shrink-0">
+                                    💰
+                                </div>
                                 <div>
-                                    <span class="text-[10px] font-bold uppercase tracking-wider text-cyan-300 block"
-                                          x-text="(selectedAstapDetail.skema_kemitraan === 'Sewa' || !selectedAstapDetail.skema_kemitraan) ? 'Tarif / Nilai Harga Sewa Pemanfaatan BMD:' : 'Nilai Kontribusi / Bagi Hasil:'"></span>
-                                    <span class="text-[10.5px] text-slate-400 font-medium"
-                                          x-text="(selectedAstapDetail.skema_kemitraan === 'Sewa' || !selectedAstapDetail.skema_kemitraan) ? ('Satuan Waktu: ' + (selectedAstapDetail.periode_sewa || selectedAstapDetail.spesifikasi_json?.periode_sewa || 'Per Tahun')) : (selectedAstapDetail.keterangan_kontribusi || selectedAstapDetail.spesifikasi_json?.keterangan_kontribusi || 'Kerja Sama Pemanfaatan')"></span>
+                                    <span class="text-[10px] font-black uppercase tracking-wider text-cyan-400 block"
+                                          x-text="(selectedAstapDetail.skema_kemitraan === 'Sewa' || !selectedAstapDetail.skema_kemitraan) ? 'Tarif / Nilai Harga Sewa Pemanfaatan BMD' : 'Nilai Kontribusi / Bagi Hasil Pemanfaatan'"></span>
+                                    <div class="flex items-center gap-2 mt-0.5">
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-900 border border-slate-800 text-slate-300"
+                                              x-text="'Siklus Pembayaran: ' + (selectedAstapDetail.periode_sewa || selectedAstapDetail.spesifikasi_json?.periode_sewa || 'Per Tahun')"></span>
+                                        <template x-if="selectedAstapDetail.keterangan_kontribusi || selectedAstapDetail.spesifikasi_json?.keterangan_kontribusi">
+                                            <span class="text-[10.5px] text-slate-400 italic" x-text="selectedAstapDetail.keterangan_kontribusi || selectedAstapDetail.spesifikasi_json?.keterangan_kontribusi"></span>
+                                        </template>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="text-right">
-                                <span class="text-sm font-mono font-extrabold text-cyan-300 block"
+                            <div class="text-left sm:text-right shrink-0">
+                                <span class="text-base sm:text-lg font-mono font-black text-cyan-300 block tracking-tight"
                                       x-text="'Rp ' + Number(selectedAstapDetail.harga_sewa || selectedAstapDetail.nilai_kontribusi || selectedAstapDetail.spesifikasi_json?.harga_sewa || selectedAstapDetail.spesifikasi_json?.kemitraan_harga_sewa || 0).toLocaleString('id-ID')"></span>
-                                <span class="text-[9.5px] text-cyan-400/80 font-mono font-semibold"
+                                <span class="text-[10px] text-cyan-400/80 font-mono font-semibold"
                                       x-text="(selectedAstapDetail.skema_kemitraan === 'Sewa' || !selectedAstapDetail.skema_kemitraan) ? ('/ ' + (selectedAstapDetail.periode_sewa || selectedAstapDetail.spesifikasi_json?.periode_sewa || 'Tahun')) : 'Pemanfaatan BMD'"></span>
                             </div>
                         </div>
                     </template>
 
-
                     <!-- KARTU DOKUMEN BAST & KONTRAK KERJASAMA (PRATINJAU, GANTI & HAPUS) - FULL WIDTH -->
-                    <div class="w-full pt-3 border-t border-cyan-500/20" style="width: 100%;">
+                    <div class="w-full pt-3 border-t border-cyan-500/20">
                         <!-- Input File Tersembunyi untuk Ubah / Upload Dokumen BAST -->
                         <input type="file" id="fileInputDokumenDetail" @change="handleUploadDokumenDetail" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx" class="hidden">
 
                         <div class="w-full p-3.5 sm:p-4 rounded-2xl bg-slate-950/90 border border-cyan-500/30 shadow-md">
                             <div class="flex flex-col md:flex-row md:items-center justify-between gap-3.5">
-                                <div class="flex items-center space-x-3.5 min-w-0 flex-1">
+                                <div class="flex items-start sm:items-center space-x-3.5 min-w-0 flex-1">
                                     <!-- Thumbnail / Ikon Dokumen -->
                                     <div class="relative shrink-0">
                                         <template x-if="isDokumenImage(selectedAstapDetail?.dokumen_path)">
@@ -236,29 +321,31 @@
                                                 </span>
                                             </template>
                                             <template x-if="!selectedAstapDetail?.dokumen_path">
-                                                <span class="px-2 py-0.5 rounded text-[9.5px] font-semibold bg-slate-800 text-slate-400 border border-slate-700/80">
+                                                <span class="px-2 py-0.5 rounded text-[9.5px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">
                                                     Belum Ada Arsip Scan (Menyusul)
                                                 </span>
                                             </template>
                                         </div>
-                                        <div class="text-xs font-bold text-white truncate mt-1"
-                                             :title="selectedAstapDetail?.dokumen_path ? selectedAstapDetail.dokumen_path.split('/').pop() : ''"
-                                             x-text="selectedAstapDetail?.dokumen_path ? selectedAstapDetail.dokumen_path.split('/').pop() : 'Unggah hasil scan berkas setelah selesai ditandatangani basah & distempel oleh Direktur RSUD dan Pihak Mitra.'">
+
+                                        <!-- Title or Filename -->
+                                        <div class="text-xs font-bold text-white mt-1 break-words"
+                                             x-text="selectedAstapDetail?.dokumen_path ? selectedAstapDetail.dokumen_path.split('/').pop() : 'Berkas Scan PKS / BAST Belum Dilampirkan'">
                                         </div>
-                                        <div class="text-[10.5px] text-slate-400 mt-0.5">
+
+                                        <!-- Subtext / Helper description -->
+                                        <div class="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
                                             <template x-if="selectedAstapDetail?.dokumen_path">
-                                                <span>Format: <strong class="font-mono text-cyan-300 uppercase" x-text="selectedAstapDetail.dokumen_path.split('.').pop()"></strong> · Maks. 10 MB (Arsip Legalitas Resmi)</span>
+                                                <span>Format: <strong class="font-mono text-cyan-300 uppercase" x-text="selectedAstapDetail.dokumen_path.split('.').pop()"></strong> · Berkas arsip legalitas resmi kemitraan RSUD.</span>
                                             </template>
                                             <template x-if="!selectedAstapDetail?.dokumen_path">
-                                                <span class="text-slate-400">Format: PDF atau Gambar Scan JPG/PNG (Maks 10 MB). Sifatnya opsional dan dapat dilengkapi kapan saja.</span>
+                                                <span>Unggah berkas setelah selesai ditandatangani basah & distempel resmi oleh Direktur RSUD dan Pihak Mitra. Format: PDF, JPG, PNG (Maks 10 MB).</span>
                                             </template>
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- Tombol Aksi Dokumen: Tampilkan, Ganti, Hapus -->
+                                <!-- Action buttons -->
                                 <div class="flex items-center flex-wrap gap-2 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-800/80">
-                                    <!-- Indikator Loading -->
                                     <template x-if="isUploadingDokumen || isDeletingDokumen">
                                         <span class="px-3 py-1.5 rounded-xl bg-cyan-950/80 text-cyan-300 text-xs font-bold border border-cyan-500/40 flex items-center gap-1.5 animate-pulse">
                                             <svg class="animate-spin h-3.5 w-3.5 text-cyan-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -271,7 +358,6 @@
 
                                     <template x-if="!isUploadingDokumen && !isDeletingDokumen && selectedAstapDetail?.dokumen_path">
                                         <div class="flex items-center gap-2 flex-wrap">
-                                            <!-- 1. Tombol Tampilkan Berkas (Pratinjau) -->
                                             <button type="button" @click="openDokumenPreview(selectedAstapDetail.dokumen_path, selectedAstapDetail.nama_barang)"
                                                 title="Tampilkan / Pratinjau Berkas BAST"
                                                 class="px-3.5 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-xs font-extrabold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer">
@@ -282,7 +368,6 @@
                                                 <span>Tampilkan Berkas</span>
                                             </button>
 
-                                            <!-- 2. Tombol Ganti Berkas -->
                                             <button type="button" @click="triggerUploadDokumenDetail()"
                                                 title="Ganti Berkas BAST dengan Dokumen Baru"
                                                 class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer">
@@ -292,7 +377,6 @@
                                                 <span>Ganti Berkas</span>
                                             </button>
 
-                                            <!-- 3. Tombol Hapus Berkas -->
                                             <button type="button" @click="deleteDokumenDetail()"
                                                 title="Hapus Berkas Dokumen BAST ini"
                                                 class="px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer">
@@ -304,7 +388,6 @@
                                         </div>
                                     </template>
 
-                                    <!-- Jika Belum Ada Berkas: Tombol Unggah -->
                                     <template x-if="!isUploadingDokumen && !isDeletingDokumen && !selectedAstapDetail?.dokumen_path">
                                         <button type="button" @click="triggerUploadDokumenDetail()"
                                             class="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-extrabold text-xs transition-all flex items-center gap-1.5 shadow-md shadow-cyan-500/20 active:scale-95 cursor-pointer">
@@ -1062,57 +1145,73 @@
                 </div>
 
                 <!-- PIHAK REKANAN MITRA & PEJABAT PEMBUAT KOMITMEN (PPK RSUD) -->
-                <div class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3">
-                    <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                        <h4 class="text-xs font-extrabold text-teal-400 uppercase tracking-wider flex items-center space-x-1.5">
+                <div class="p-4 sm:p-5 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3.5">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                        <h4 class="text-xs font-extrabold text-teal-400 uppercase tracking-wider flex items-center space-x-2">
                             <span>🏢 Pihak Rekanan (Mitra) &amp; Pejabat Pembuat Komitmen (PPK RSUD)</span>
                         </h4>
                         <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">Legalitas Para Pihak</span>
                     </div>
 
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 text-[11px]">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3.5 text-[11px]">
                         <!-- Card Pihak Mitra Rekanan -->
-                        <div class="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800/90 space-y-2.5">
-                            <span class="text-[10.5px] font-extrabold text-cyan-400 uppercase tracking-wider block flex items-center space-x-1">
+                        <div class="p-4 rounded-xl bg-slate-900/70 border border-slate-800/90 space-y-3">
+                            <span class="text-[10.5px] font-extrabold text-cyan-400 uppercase tracking-wider block flex items-center space-x-1.5">
                                 <span>🏢 Informasi Mitra Pihak Ketiga</span>
                             </span>
-                            <div class="space-y-1.5 divide-y divide-slate-800/60">
-                                <div class="flex items-center justify-between pt-1">
-                                    <span class="text-slate-400">Nama Perusahaan / Rekanan:</span>
-                                    <strong class="text-white font-bold truncate max-w-[55%]" :title="selectedAstapDetail.penyedia_nama" x-text="selectedAstapDetail.penyedia_nama || '-'"></strong>
+                            <div class="space-y-2 divide-y divide-slate-800/60">
+                                <div class="flex items-start justify-between gap-2 pt-1">
+                                    <span class="text-slate-400 shrink-0">Nama Rekanan / Instansi:</span>
+                                    <strong class="text-white font-bold text-right" :title="selectedAstapDetail.penyedia_nama" x-text="selectedAstapDetail.penyedia_nama || '-'"></strong>
                                 </div>
-                                <div class="flex items-center justify-between pt-1.5">
-                                    <span class="text-slate-400">Pejabat Mitra / Direktur:</span>
-                                    <strong class="text-cyan-300 font-bold truncate max-w-[55%]" :title="selectedAstapDetail.penyedia_pemilik" x-text="selectedAstapDetail.penyedia_pemilik || '-'"></strong>
+                                <div class="flex items-start justify-between gap-2 pt-2">
+                                    <span class="text-slate-400 shrink-0">Pejabat Mitra / Direktur:</span>
+                                    <strong class="text-cyan-300 font-bold text-right" :title="selectedAstapDetail.penyedia_pemilik" x-text="selectedAstapDetail.penyedia_pemilik || '-'"></strong>
                                 </div>
-                                <div class="flex items-center justify-between pt-1.5">
-                                    <span class="text-slate-400">No. HP / Kontak Aktif:</span>
-                                    <span class="text-amber-400 font-mono font-bold truncate max-w-[55%]" x-text="selectedAstapDetail.penyedia_telepon || '-'"></span>
+                                <div class="flex items-center justify-between gap-2 pt-2">
+                                    <span class="text-slate-400 shrink-0">No. HP / Kontak Aktif:</span>
+                                    <div class="flex items-center gap-1">
+                                        <span class="text-amber-400 font-mono font-bold select-all" x-text="selectedAstapDetail.penyedia_telepon || '-'"></span>
+                                        <template x-if="selectedAstapDetail.penyedia_telepon && selectedAstapDetail.penyedia_telepon !== '-'">
+                                            <button type="button" @click.stop="navigator.clipboard.writeText(selectedAstapDetail.penyedia_telepon); showToast('Kontak mitra disalin!', 'success')"
+                                                    class="p-0.5 text-slate-500 hover:text-amber-300 transition-colors cursor-pointer" title="Salin Kontak">
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/></svg>
+                                            </button>
+                                        </template>
+                                    </div>
                                 </div>
-                                <div class="flex items-start justify-between pt-1.5">
+                                <div class="flex items-start justify-between gap-2 pt-2">
                                     <span class="text-slate-400 shrink-0">Alamat Domisili:</span>
-                                    <span class="text-teal-300 font-medium text-right truncate max-w-[55%]" :title="selectedAstapDetail.penyedia_alamat" x-text="selectedAstapDetail.penyedia_alamat || '-'"></span>
+                                    <span class="text-teal-300 font-medium text-right leading-relaxed" :title="selectedAstapDetail.penyedia_alamat" x-text="selectedAstapDetail.penyedia_alamat || '-'"></span>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Card Pejabat Pembuat Komitmen (Kolom 24 & Kolom 25) -->
-                        <div class="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800/90 space-y-2.5">
-                            <span class="text-[10.5px] font-extrabold text-amber-400 uppercase tracking-wider block flex items-center space-x-1">
+                        <div class="p-4 rounded-xl bg-slate-900/70 border border-slate-800/90 space-y-3">
+                            <span class="text-[10.5px] font-extrabold text-amber-400 uppercase tracking-wider block flex items-center space-x-1.5">
                                 <span>👔 Pejabat Pembuat Komitmen (PPK RSUD)</span>
                             </span>
-                            <div class="space-y-1.5 divide-y divide-slate-800/60">
-                                <div class="flex items-center justify-between pt-1">
-                                    <span class="text-slate-400">Nama PPK (Kolom 24):</span>
-                                    <strong class="text-white font-bold truncate max-w-[55%]" :title="selectedAstapDetail.ppk_nama" x-text="selectedAstapDetail.ppk_nama || '-'"></strong>
+                            <div class="space-y-2 divide-y divide-slate-800/60">
+                                <div class="flex items-start justify-between gap-2 pt-1">
+                                    <span class="text-slate-400 shrink-0">Nama PPK (Kolom 24):</span>
+                                    <strong class="text-white font-bold text-right" :title="selectedAstapDetail.ppk_nama" x-text="selectedAstapDetail.ppk_nama || '-'"></strong>
                                 </div>
-                                <div class="flex items-center justify-between pt-1.5">
-                                    <span class="text-slate-400">NIP PPK (Kolom 25):</span>
-                                    <span class="text-cyan-300 font-mono font-bold truncate max-w-[55%]" x-text="selectedAstapDetail.ppk_nip || '-'"></span>
+                                <div class="flex items-center justify-between gap-2 pt-2">
+                                    <span class="text-slate-400 shrink-0">NIP PPK (Kolom 25):</span>
+                                    <div class="flex items-center gap-1">
+                                        <span class="text-cyan-300 font-mono font-bold select-all" x-text="selectedAstapDetail.ppk_nip || '-'"></span>
+                                        <template x-if="selectedAstapDetail.ppk_nip && selectedAstapDetail.ppk_nip !== '-'">
+                                            <button type="button" @click.stop="navigator.clipboard.writeText(selectedAstapDetail.ppk_nip); showToast('NIP PPK disalin!', 'success')"
+                                                    class="p-0.5 text-slate-500 hover:text-cyan-300 transition-colors cursor-pointer" title="Salin NIP">
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/></svg>
+                                            </button>
+                                        </template>
+                                    </div>
                                 </div>
-                                <div class="flex items-start justify-between pt-1.5">
+                                <div class="flex items-start justify-between gap-2 pt-2">
                                     <span class="text-slate-400 shrink-0">Keterangan / Catatan PKS:</span>
-                                    <span class="text-slate-300 italic text-right truncate max-w-[55%]" :title="selectedAstapDetail.keterangan" x-text="selectedAstapDetail.keterangan || '-'"></span>
+                                    <span class="text-slate-300 italic text-right leading-relaxed" :title="selectedAstapDetail.keterangan" x-text="selectedAstapDetail.keterangan || '-'"></span>
                                 </div>
                             </div>
                         </div>

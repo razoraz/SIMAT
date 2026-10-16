@@ -82,6 +82,7 @@
                             </div>
                             <input type="text"
                                    x-model="item.tanah_nama_barang"
+                                   x-init="if (!item.tanah_nama_barang && (formData.objek_aset_terpilih?.nama_barang || formData.nama_barang)) { item.tanah_nama_barang = formData.objek_aset_terpilih?.nama_barang || formData.nama_barang; }"
                                    :readonly="Boolean(formData.objek_aset_terpilih?.nama_barang)"
                                    @input="syncTotalsFromItems()"
                                    placeholder="Contoh: Tanah Bangunan Rumah Negara Golongan I / Lahan Parkir Paviliun..."
@@ -241,47 +242,30 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-300 text-[11px] mb-1.5 font-semibold">
-                                            Status Kesiapan Fisik
+                                            Penggunaan Lahan
                                         </label>
-                                        <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-center gap-2 h-[42px]">
-                                            <template x-if="item.tanah_kondisi === 'Baik' || !item.tanah_kondisi">
-                                                <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-300">
-                                                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                                                    <span>Siap Bangun &amp; Operasional</span>
-                                                </span>
-                                            </template>
-                                            <template x-if="item.tanah_kondisi === 'Kurang Baik'">
-                                                <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-amber-300">
-                                                    <span class="w-2 h-2 rounded-full bg-amber-400"></span>
-                                                    <span>Perlu Pematangan / Cut &amp; Fill</span>
-                                                </span>
-                                            </template>
-                                            <template x-if="item.tanah_kondisi === 'Rusak Berat'">
-                                                <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-rose-300">
-                                                    <span class="w-2 h-2 rounded-full bg-rose-400"></span>
-                                                    <span>Perlu Reklamasi / Kajian Khusus</span>
-                                                </span>
-                                            </template>
-                                        </div>
+                                        <input type="text" x-model="item.tanah_penggunaan"
+                                            placeholder="Contoh: Bangunan Rumah Sakit &amp; Fasilitas / Lahan Parkir..."
+                                            class="w-full bg-slate-950 border border-slate-700/90 hover:border-cyan-400 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 font-medium focus:outline-none transition-all shadow-inner">
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- 3. Keterangan / Catatan Khusus Tanah -->
+                        <!-- 3. Batas Wilayah & Catatan Khusus Tanah -->
                         <div class="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-slate-700/80 space-y-2 shadow-lg flex flex-col justify-between transition-all">
                             <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
                                 <label class="block text-slate-300 font-bold text-[11px] uppercase tracking-wider flex items-center space-x-1.5">
-                                    <span class="text-sm">📝</span>
-                                    <span>Keterangan / Catatan Khusus Tanah:</span>
+                                    <span class="text-sm">🧭</span>
+                                    <span>Batas Wilayah &amp; Catatan Khusus Lahan:</span>
                                 </label>
-                                <span class="text-[9.5px] px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-bold">Catatan Tambahan</span>
+                                <span class="text-[9.5px] px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-bold">Zonasi &amp; Batas</span>
                             </div>
                             <div>
-                                <input type="text" x-model="item.tanah_penggunaan"
-                                    placeholder="Contoh: Area Parkir Terpadu / Gedung Paviliun / Keterangan Legalitas Lahan"
-                                    class="w-full bg-slate-950 border border-slate-700/90 hover:border-slate-600 focus:border-emerald-500 rounded-xl px-3.5 py-2.5 text-xs text-white font-medium focus:outline-none transition-all shadow-inner">
-                                <span class="text-[10px] text-slate-400 mt-1 block">Rincian peruntukan lahan, pemanfaatan blok, atau catatan zonasi.</span>
+                                <input type="text" x-model="item.tanah_batas"
+                                    placeholder="Contoh: Utara: Jl. Piere Tendean, Selatan: Pemukiman, Barat: Sungai, Timur: Jl. Raya"
+                                    class="w-full bg-slate-950 border border-slate-700/90 hover:border-cyan-400 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 font-medium focus:outline-none transition-all shadow-inner">
+                                <span class="text-[10px] text-slate-400 mt-1 block">Rincian batas fisik persil tanah, patok koordinat, atau batas zonasi RSUD.</span>
                             </div>
                         </div>
 

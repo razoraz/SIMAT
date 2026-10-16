@@ -84,6 +84,7 @@
                             </div>
                             <input type="text"
                                    x-model="item.gedung_nama_barang"
+                                   x-init="if (!item.gedung_nama_barang && (formData.objek_aset_terpilih?.nama_barang || formData.nama_barang)) { item.gedung_nama_barang = formData.objek_aset_terpilih?.nama_barang || formData.nama_barang; item.gedung_nama_bangunan = item.gedung_nama_barang; }"
                                    :readonly="Boolean(formData.objek_aset_terpilih?.nama_barang)"
                                    @input="syncTotalsFromItems()"
                                    placeholder="Contoh: Gedung Rawat Inap Paviliun Melati / Bangunan Kantin &amp; Pujasera RSUD..."

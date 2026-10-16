@@ -90,6 +90,7 @@
                             </div>
                             <input type="text"
                                    x-model="item.mesin_nama_barang"
+                                   x-init="if (!item.mesin_nama_barang && (formData.objek_aset_terpilih?.nama_barang || formData.nama_barang)) { item.mesin_nama_barang = formData.objek_aset_terpilih?.nama_barang || formData.nama_barang; }"
                                    :readonly="Boolean(formData.objek_aset_terpilih?.nama_barang)"
                                    @input="syncTotalsFromItems()"
                                    placeholder="Contoh: Mesin Analyzer Laboratorium Kimia Klinik / Peralatan Radiologi..."

@@ -84,6 +84,7 @@
                             </div>
                             <input type="text"
                                    x-model="item.jaringan_nama_barang"
+                                   x-init="if (!item.jaringan_nama_barang && (formData.objek_aset_terpilih?.nama_barang || formData.nama_barang)) { item.jaringan_nama_barang = formData.objek_aset_terpilih?.nama_barang || formData.nama_barang; }"
                                    :readonly="Boolean(formData.objek_aset_terpilih?.nama_barang)"
                                    @input="syncTotalsFromItems()"
                                    placeholder="Contoh: Jaringan Fiber Optic / Instalasi Pipa Gas Medis RSUD..."
