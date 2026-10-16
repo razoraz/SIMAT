@@ -28,7 +28,7 @@
             isSkpdDropdownOpen: false,
             isPejabatDropdownOpen: false,
 
-            activeKibCategory: 'mesin',
+            activeKibCategory: 'tanah',
 
             // Form Data State
             formData: {
@@ -58,7 +58,7 @@
                 jenis_astap_id: '',
                 nama_barang: '',
                 jumlah_volume: 1,
-                satuan: 'Unit',
+                satuan: 'Bidang',
                 total_realisasi: 0,
                 unit_id: '',
                 kondisi: 'Baik',
@@ -1870,6 +1870,8 @@
                         else if (kd.startsWith('1.3.5')) this.activeKibCategory = 'lainnya';
                     } else if (this.formData.tanah_items && this.formData.tanah_items.length > 0) {
                         this.activeKibCategory = 'tanah';
+                    } else if (this.formData.mesin_items && this.formData.mesin_items.length > 0) {
+                        this.activeKibCategory = 'mesin';
                     } else if (this.formData.gedung_items && this.formData.gedung_items.length > 0) {
                         this.activeKibCategory = 'gedung';
                     } else if (this.formData.jaringan_items && this.formData.jaringan_items.length > 0) {
@@ -1877,7 +1879,7 @@
                     } else if (this.formData.lainnya_items && this.formData.lainnya_items.length > 0) {
                         this.activeKibCategory = 'lainnya';
                     } else {
-                        this.activeKibCategory = 'mesin';
+                        this.activeKibCategory = 'tanah';
                     }
 
                     // Pastikan lembar repeater KIB aktif memiliki data (fallback dari flat specs legacy)
@@ -2045,8 +2047,8 @@
                         });
                     }
                 } else {
-                    // Default seed for new form
-                    this.selectKibCategory('mesin', true);
+                    // Default seed for new form: KIB A (Tanah)
+                    this.selectKibCategory('tanah', true);
                 }
 
                 // Hitung otomatis triwulan dan tahun perolehan dari tanggal dokumen
