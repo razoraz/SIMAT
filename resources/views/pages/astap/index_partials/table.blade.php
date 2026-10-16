@@ -92,28 +92,42 @@
                                             </span>
                                         </template>
 
-                                        {{-- 4. Dan Lain-Lain: Kemitraan BMD Dimanfaatkan vs Aset Mitra --}}
+                                        {{-- 4. Dan Lain-Lain: Kemitraan BMD Dimanfaatkan vs Aset Mitra vs Milik RSUD (Pasca Reklas) --}}
                                         <template x-if="item.sumber_dana === 'kemitraan' || item.sumber_dana_raw === 'kemitraan' || !!item.kemitraan">
-                                            <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[9px] font-black whitespace-nowrap leading-none shrink-0 shadow-sm tracking-wider"
-                                                  :class="(item.is_bmd_dimanfaatkan || item.kemitraan?.tipe_kemitraan === 'dimanfaatkan') 
-                                                      ? 'bg-cyan-500/25 text-cyan-300 border border-cyan-500/50 shadow-cyan-500/10' 
-                                                      : 'bg-teal-500/25 text-teal-300 border border-teal-500/50 shadow-teal-500/10'"
-                                                  :title="(item.is_bmd_dimanfaatkan || item.kemitraan?.tipe_kemitraan === 'dimanfaatkan') 
-                                                      ? 'Objek Barang Milik Daerah (BMD) RSUD yang sedang dimanfaatkan oleh pihak ketiga' 
-                                                      : 'Aset baru yang diadakan / diinvestasikan oleh mitra pihak ketiga'">
-                                                <span x-text="(item.is_bmd_dimanfaatkan || item.kemitraan?.tipe_kemitraan === 'dimanfaatkan') ? '🏛️' : '🤝'"></span>
-                                                <span x-text="(item.is_bmd_dimanfaatkan || item.kemitraan?.tipe_kemitraan === 'dimanfaatkan') ? 'BMD DIMANFAATKAN' : 'ASET MITRA'"></span>
+                                            <span>
+                                                {{-- Jika Kemitraan sudah direklasifikasi balik / Selesai: Ganti menjadi Badge MILIK RSUD --}}
+                                                <template x-if="item.is_kemitraan_reklas || item.kemitraan?.status_konsesi === 'Selesai / Reklasifikasi' || item.kemitraan?.status_konsesi === 'Selesai'">
+                                                    <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[9px] font-black whitespace-nowrap leading-none shrink-0 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm shadow-emerald-500/10 tracking-wider"
+                                                          title="Aset kemitraan telah selesai masa konsesi dan direklasifikasi kembali menjadi milik RSUD">
+                                                        <span>🏛️</span><span>MILIK RSUD</span>
+                                                    </span>
+                                                </template>
+                                                {{-- Jika Kemitraan masih aktif (belum direklas) --}}
+                                                <template x-if="!(item.is_kemitraan_reklas || item.kemitraan?.status_konsesi === 'Selesai / Reklasifikasi' || item.kemitraan?.status_konsesi === 'Selesai')">
+                                                    <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[9px] font-black whitespace-nowrap leading-none shrink-0 shadow-sm tracking-wider"
+                                                          :class="(item.is_bmd_dimanfaatkan || item.kemitraan?.tipe_kemitraan === 'dimanfaatkan') 
+                                                              ? 'bg-cyan-500/25 text-cyan-300 border border-cyan-500/50 shadow-cyan-500/10' 
+                                                              : 'bg-teal-500/25 text-teal-300 border border-teal-500/50 shadow-teal-500/10'"
+                                                          :title="(item.is_bmd_dimanfaatkan || item.kemitraan?.tipe_kemitraan === 'dimanfaatkan') 
+                                                              ? 'Objek Barang Milik Daerah (BMD) RSUD yang sedang dimanfaatkan oleh pihak ketiga' 
+                                                              : 'Aset baru yang diadakan / diinvestasikan oleh mitra pihak ketiga'">
+                                                        <span x-text="(item.is_bmd_dimanfaatkan || item.kemitraan?.tipe_kemitraan === 'dimanfaatkan') ? '🏛️' : '🤝'"></span>
+                                                        <span x-text="(item.is_bmd_dimanfaatkan || item.kemitraan?.tipe_kemitraan === 'dimanfaatkan') ? 'BMD DIMANFAATKAN' : 'ASET MITRA'"></span>
+                                                    </span>
+                                                </template>
                                             </span>
                                         </template>
 
-                                        {{-- Pill Nama Mitra & Skema Konsesi --}}
+                                        {{-- Pill Nama Mitra & Skema Konsesi (Hapus badge Sewa jika sudah direklas) --}}
                                         <template x-if="(item.sumber_dana === 'kemitraan' || item.sumber_dana_raw === 'kemitraan' || !!item.kemitraan) && item.kemitraan?.mitra_nama">
                                             <span class="inline-flex items-center space-x-1.5 px-2 py-0.5 rounded-md text-[9px] font-semibold bg-slate-900/90 text-cyan-200 border border-cyan-500/30 leading-none shrink-0 shadow-sm"
-                                                  :title="'Mitra Rekanan: ' + item.kemitraan.mitra_nama + ' | Skema: ' + (item.kemitraan.skema_kemitraan || 'Kerjasama')">
+                                                  :title="'Mitra Rekanan: ' + item.kemitraan.mitra_nama + ((item.is_kemitraan_reklas || item.kemitraan?.status_konsesi === 'Selesai / Reklasifikasi' || item.kemitraan?.status_konsesi === 'Selesai') ? ' (Eks Mitra)' : ' | Skema: ' + (item.kemitraan.skema_kemitraan || 'Kerjasama'))">
                                                 <span class="text-[8.5px]">🏢</span>
                                                 <span class="truncate max-w-[130px]" x-text="item.kemitraan.mitra_nama"></span>
-                                                <span class="text-[8px] px-1 py-0.2 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/40 font-mono font-bold uppercase"
-                                                      x-text="item.kemitraan.skema_kemitraan || 'Kerjasama'"></span>
+                                                <template x-if="!(item.is_kemitraan_reklas || item.kemitraan?.status_konsesi === 'Selesai / Reklasifikasi' || item.kemitraan?.status_konsesi === 'Selesai')">
+                                                    <span class="text-[8px] px-1 py-0.2 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/40 font-mono font-bold uppercase"
+                                                          x-text="item.kemitraan.skema_kemitraan || 'Kerjasama'"></span>
+                                                </template>
                                             </span>
                                         </template>
 

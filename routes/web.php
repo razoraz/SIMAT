@@ -382,17 +382,27 @@ Route::middleware('auth')->group(function () {
                 // Klasifikasi Pemanfaatan BMD RSUD vs Aset Baru Ditambahkan Mitra
                 $isKemitraanAset = $a->isKemitraan() || $a->sumber_dana === 'kemitraan' || !empty($a->kemitraan);
                 $isBmdDimanfaatkan = false;
+                $isKemitraanReklas = false;
                 if ($isKemitraanAset) {
-                    $explicitTipe = $a->kemitraan?->tipe_kemitraan ?: ($spec['tipe_kemitraan'] ?? null);
-                    if ($explicitTipe === 'ditambahkan') {
+                    $statusKonsesi = $a->kemitraan?->status_konsesi;
+                    $isReklasSelesai = ($statusKonsesi === 'Selesai / Reklasifikasi' || $statusKonsesi === 'Selesai')
+                        || ($latestReklas && $latestReklas->asal_kib === 'KEMITRAAN' && $latestReklas->tujuan_kib !== 'KEMITRAAN');
+
+                    if ($isReklasSelesai) {
+                        $isKemitraanReklas = true;
                         $isBmdDimanfaatkan = false;
-                    } elseif ($explicitTipe === 'dimanfaatkan') {
-                        $isBmdDimanfaatkan = true;
-                    } elseif ($a->is_reklas || $hasEverReklas || $a->jenis_reklas === 'KOREKSI_REKENING' || ($latestReklas && $latestReklas->tujuan_kib === 'KEMITRAAN') || !empty($spec['split_parent_id']) || !empty($a->kemitraan?->objek_astap_id)) {
-                        $isBmdDimanfaatkan = true;
                     } else {
-                        $nb = strtolower($a->nama_barang ?? '');
-                        $isBmdDimanfaatkan = str_starts_with($nb, 'sewa ') || str_contains($nb, 'pemanfaatan');
+                        $explicitTipe = $a->kemitraan?->tipe_kemitraan ?: ($spec['tipe_kemitraan'] ?? null);
+                        if ($explicitTipe === 'ditambahkan') {
+                            $isBmdDimanfaatkan = false;
+                        } elseif ($explicitTipe === 'dimanfaatkan') {
+                            $isBmdDimanfaatkan = true;
+                        } elseif ($a->is_reklas || $hasEverReklas || $a->jenis_reklas === 'KOREKSI_REKENING' || ($latestReklas && $latestReklas->tujuan_kib === 'KEMITRAAN') || !empty($spec['split_parent_id']) || !empty($a->kemitraan?->objek_astap_id)) {
+                            $isBmdDimanfaatkan = true;
+                        } else {
+                            $nb = strtolower($a->nama_barang ?? '');
+                            $isBmdDimanfaatkan = str_starts_with($nb, 'sewa ') || str_contains($nb, 'pemanfaatan');
+                        }
                     }
                 }
 
@@ -442,6 +452,7 @@ Route::middleware('auth')->group(function () {
                     'reklas_count' => $reklasCount,
                     'jenis_reklas' => $a->jenis_reklas ?: ($latestReklas?->jenis_reklas),
                     'is_bmd_dimanfaatkan' => $isBmdDimanfaatkan,
+                    'is_kemitraan_reklas' => $isKemitraanReklas,
                     'is_mutasi_keluar_full' => $isFullMutasiKeluar,
                     'is_mutasi_keluar_partial' => $isPartialMutasiKeluar,
                     'mutasi_keluar_count' => $mutatedRegsCount,

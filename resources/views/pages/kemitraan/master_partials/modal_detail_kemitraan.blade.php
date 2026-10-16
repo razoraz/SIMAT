@@ -30,13 +30,20 @@
                         }"
                         x-text="getEffectiveKibCategory(selectedAstapDetail)"></span>
 
-                    <!-- Badge Kemitraan Akun 1.5.2 -->
-                    <span class="px-2.5 py-1 rounded-lg text-[10.5px] font-black border uppercase tracking-wider shrink-0 bg-cyan-500/20 text-cyan-300 border-cyan-500/30 shadow-sm">
-                        🤝 KEMITRAAN AKUN 1.5.2
-                    </span>
+                    <!-- Badge Kemitraan Akun 1.5.2 vs Milik RSUD Pasca Reklas -->
+                    <template x-if="!(selectedAstapDetail?.has_reklas || selectedAstapDetail?.is_reklas || selectedAstapDetail?.status_konsesi === 'Selesai / Reklasifikasi' || selectedAstapDetail?.status_konsesi === 'Selesai')">
+                        <span class="px-2.5 py-1 rounded-lg text-[10.5px] font-black border uppercase tracking-wider shrink-0 bg-cyan-500/20 text-cyan-300 border-cyan-500/30 shadow-sm">
+                            🤝 KEMITRAAN AKUN 1.5.2
+                        </span>
+                    </template>
+                    <template x-if="selectedAstapDetail?.has_reklas || selectedAstapDetail?.is_reklas || selectedAstapDetail?.status_konsesi === 'Selesai / Reklasifikasi' || selectedAstapDetail?.status_konsesi === 'Selesai'">
+                        <span class="px-2.5 py-1 rounded-lg text-[10.5px] font-black border uppercase tracking-wider shrink-0 bg-emerald-500/20 text-emerald-300 border-emerald-500/30 shadow-sm">
+                            🏛️ MILIK RSUD
+                        </span>
+                    </template>
 
-                    <!-- Badge Objek Pemanfaatan BMD RSUD -->
-                    <template x-if="selectedAstapDetail?.is_dimanfaatkan">
+                    <!-- Badge Objek Pemanfaatan BMD RSUD (Hanya jika belum direklas balik) -->
+                    <template x-if="selectedAstapDetail?.is_dimanfaatkan && !(selectedAstapDetail?.has_reklas || selectedAstapDetail?.is_reklas || selectedAstapDetail?.status_konsesi === 'Selesai / Reklasifikasi' || selectedAstapDetail?.status_konsesi === 'Selesai')">
                         <span class="px-2.5 py-1 rounded-lg text-[10.5px] font-black border uppercase tracking-wider shrink-0 bg-sky-500/20 text-sky-300 border-sky-500/40 shadow-sm flex items-center gap-1.5">
                             <span>🏛️</span>
                             <span>OBJEK PEMANFAATAN BMD</span>

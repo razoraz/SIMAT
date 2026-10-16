@@ -576,6 +576,14 @@
                                     'nomor_pks' => $it->nomor_pks ?: '-'
                                 ];
                             })->values()->toArray();
+
+                            $isReklasRow = ($astap?->is_reklas) 
+                                || ($astap?->reklas && $astap->reklas->isNotEmpty()) 
+                                || ($objekAsetBmd?->is_reklas) 
+                                || ($objekAsetBmd?->reklas && $objekAsetBmd->reklas->isNotEmpty()) 
+                                || ($row->status_konsesi === 'Selesai / Reklasifikasi') 
+                                || ($row->skema_kemitraan === 'Reklasifikasi') 
+                                || ($hasReklasDone ?? false);
                         @endphp
                         <tr x-show="matchKemitraan({{ json_encode($dimanfaatkanMetaList[$idx] ?? []) }})" class="hover:bg-cyan-950/20 transition-colors group">
                             <!-- 1. Nomor -->
@@ -599,9 +607,11 @@
                                     </div>
                                 @else
                                     <div class="flex items-center gap-2 mb-1 flex-wrap">
-                                        <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                                            {{ $row->skema_kemitraan ?: 'Sewa' }}
-                                        </span>
+                                        @if(!$isReklasRow)
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                                                {{ $row->skema_kemitraan ?: 'Sewa' }}
+                                            </span>
+                                        @endif
                                         @if($countDitambahkan > 0)
                                             <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[9.5px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm shadow-emerald-500/20"
                                                 title="Objek pemanfaatan ini memuat {{ $countDitambahkan }} aset yang ditambahkan/didatangkan oleh mitra rekanan (Total: Rp {{ number_format($totalNilaiDitambahkan, 0, ',', '.') }})">
@@ -617,7 +627,7 @@
                                                 <span>🔄 SIAP REKLAS BALIK</span>
                                             </span>
                                         @endif
-                                        @if(($astap?->is_reklas) || ($astap?->reklas && $astap->reklas->isNotEmpty()) || ($objekAsetBmd?->is_reklas) || ($objekAsetBmd?->reklas && $objekAsetBmd->reklas->isNotEmpty()))
+                                        @if($isReklasRow)
                                             <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-indigo-500/25 text-indigo-300 border border-indigo-400/50 shadow-sm shadow-indigo-500/20"
                                                 title="Aset ini memiliki riwayat Reklasifikasi">
                                                 <svg class="w-2.5 h-2.5 shrink-0 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -995,6 +1005,11 @@
                             $merk = $spec['merk'] ?? ($spec['mesin_merk'] ?? null);
                             $type = $spec['type'] ?? ($spec['mesin_type'] ?? null);
                             $targetPrintId = $row->id ?: ($row->astap_id ?: ($astap?->id ?: null));
+
+                            $isReklasRowDitambahkan = ($astap?->is_reklas) 
+                                || ($astap?->reklas && $astap->reklas->isNotEmpty()) 
+                                || ($row->status_konsesi === 'Selesai / Reklasifikasi') 
+                                || ($row->skema_kemitraan === 'Reklasifikasi');
                         @endphp
                         <tr x-show="matchKemitraan({{ json_encode($ditambahkanMetaList[$idx] ?? []) }})" class="hover:bg-emerald-950/20 transition-colors group">
                             <!-- 1. Nomor -->
@@ -1005,16 +1020,18 @@
                             <!-- 2. Dokumen PKS & Rekanan -->
                             <td class="py-4 px-4">
                                 <div class="flex items-center gap-2 mb-1 flex-wrap">
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                                        {{ $row->skema_kemitraan ?: 'Sewa' }}
-                                    </span>
+                                    @if(!$isReklasRowDitambahkan)
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                            {{ $row->skema_kemitraan ?: 'Sewa' }}
+                                        </span>
+                                    @endif
                                     @if($row->status_konsesi === 'Konsesi Berakhir')
                                         <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-emerald-500/25 text-emerald-300 border border-emerald-400/50 shadow-sm shadow-emerald-500/20 animate-pulse"
                                             title="Masa konsesi telah berakhir. Aset siap direklasifikasi masuk ke Aset Tetap RSUD.">
                                             <span>🔄 SIAP REKLAS KE ASET TETAP</span>
                                         </span>
                                     @endif
-                                    @if(($astap?->is_reklas) || ($astap?->reklas && $astap->reklas->isNotEmpty()))
+                                    @if($isReklasRowDitambahkan)
                                         <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-indigo-500/25 text-indigo-300 border border-indigo-400/50 shadow-sm shadow-indigo-500/20"
                                             title="Aset ini memiliki riwayat Reklasifikasi">
                                             <svg class="w-2.5 h-2.5 shrink-0 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">

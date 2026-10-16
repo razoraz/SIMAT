@@ -70,11 +70,19 @@
                                 </span>
                             </template>
 
-                            {{-- 4. Dan Lain-Lain: Kemitraan Pihak Ketiga --}}
+                            {{-- 4. Dan Lain-Lain: Kemitraan Pihak Ketiga vs Milik RSUD --}}
                             <template x-if="selectedAstapDetail?.sumber_dana === 'kemitraan' || selectedAstapDetail?.sumber_dana_raw === 'kemitraan' || selectedAstapDetail?.category === 'KEMITRAAN' || !!selectedAstapDetail?.kemitraan">
                                 <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 shadow-sm"
-                                    :class="(selectedAstapDetail?.is_bmd_dimanfaatkan || selectedAstapDetail?.kemitraan?.tipe_kemitraan === 'dimanfaatkan') ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40 shadow-cyan-500/10' : 'bg-teal-500/20 text-teal-300 border-teal-400/40 shadow-teal-500/10'"
-                                    x-text="(selectedAstapDetail?.is_bmd_dimanfaatkan || selectedAstapDetail?.kemitraan?.tipe_kemitraan === 'dimanfaatkan') ? '🏛️ BMD DIMANFAATKAN' : '🤝 KEMITRAAN PIHAK KETIGA'">
+                                    :class="(selectedAstapDetail?.is_kemitraan_reklas || selectedAstapDetail?.kemitraan?.status_konsesi === 'Selesai / Reklasifikasi' || selectedAstapDetail?.kemitraan?.status_konsesi === 'Selesai') 
+                                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40 shadow-emerald-500/10' 
+                                        : ((selectedAstapDetail?.is_bmd_dimanfaatkan || selectedAstapDetail?.kemitraan?.tipe_kemitraan === 'dimanfaatkan') 
+                                            ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40 shadow-cyan-500/10' 
+                                            : 'bg-teal-500/20 text-teal-300 border-teal-400/40 shadow-teal-500/10')"
+                                    x-text="(selectedAstapDetail?.is_kemitraan_reklas || selectedAstapDetail?.kemitraan?.status_konsesi === 'Selesai / Reklasifikasi' || selectedAstapDetail?.kemitraan?.status_konsesi === 'Selesai') 
+                                        ? '🏛️ MILIK RSUD' 
+                                        : ((selectedAstapDetail?.is_bmd_dimanfaatkan || selectedAstapDetail?.kemitraan?.tipe_kemitraan === 'dimanfaatkan') 
+                                            ? '🏛️ BMD DIMANFAATKAN' 
+                                            : '🤝 KEMITRAAN PIHAK KETIGA')">
                                 </span>
                             </template>
 
@@ -255,8 +263,12 @@
                                     <span x-text="(selectedAstapDetail?.is_bmd_dimanfaatkan || selectedAstapDetail?.kemitraan?.tipe_kemitraan === 'dimanfaatkan') ? '🏛️ Dokumen Perjanjian Kerja Sama (PKS) Pemanfaatan BMD RSUD' : '🤝 Dokumen Perjanjian Kerja Sama (PKS) Kemitraan Pihak Ketiga'"></span>
                                 </div>
                                 <span class="px-2 py-0.5 rounded-lg text-[9.5px] font-black uppercase tracking-wider border shadow-sm"
-                                      :class="(selectedAstapDetail?.is_bmd_dimanfaatkan || selectedAstapDetail?.kemitraan?.tipe_kemitraan === 'dimanfaatkan') ? 'bg-cyan-500/20 text-cyan-200 border-cyan-400/40' : 'bg-teal-500/20 text-teal-200 border-teal-400/40'"
-                                      x-text="(selectedAstapDetail?.is_bmd_dimanfaatkan || selectedAstapDetail?.kemitraan?.tipe_kemitraan === 'dimanfaatkan') ? 'BMD DIMANFAATKAN' : 'ASET MITRA'">
+                                      :class="(selectedAstapDetail?.is_kemitraan_reklas || selectedAstapDetail?.kemitraan?.status_konsesi === 'Selesai / Reklasifikasi' || selectedAstapDetail?.kemitraan?.status_konsesi === 'Selesai') 
+                                          ? 'bg-emerald-500/20 text-emerald-200 border-emerald-400/40' 
+                                          : ((selectedAstapDetail?.is_bmd_dimanfaatkan || selectedAstapDetail?.kemitraan?.tipe_kemitraan === 'dimanfaatkan') ? 'bg-cyan-500/20 text-cyan-200 border-cyan-400/40' : 'bg-teal-500/20 text-teal-200 border-teal-400/40')"
+                                      x-text="(selectedAstapDetail?.is_kemitraan_reklas || selectedAstapDetail?.kemitraan?.status_konsesi === 'Selesai / Reklasifikasi' || selectedAstapDetail?.kemitraan?.status_konsesi === 'Selesai') 
+                                          ? 'MILIK RSUD' 
+                                          : ((selectedAstapDetail?.is_bmd_dimanfaatkan || selectedAstapDetail?.kemitraan?.tipe_kemitraan === 'dimanfaatkan') ? 'BMD DIMANFAATKAN' : 'ASET MITRA')">
                                 </span>
                             </div>
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
@@ -276,7 +288,7 @@
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1 border-t border-cyan-500/20">
                                 <div>
                                     <span class="text-slate-400 block text-[10px] uppercase font-bold">Skema Pemanfaatan:</span>
-                                    <span class="text-cyan-300 font-bold" x-text="selectedAstapDetail?.kemitraan?.skema_kemitraan || selectedAstapDetail?.spesifikasi_json?.skema_kemitraan || 'Sewa'"></span>
+                                    <span class="text-cyan-300 font-bold" x-text="(selectedAstapDetail?.is_kemitraan_reklas || selectedAstapDetail?.kemitraan?.status_konsesi === 'Selesai / Reklasifikasi' || selectedAstapDetail?.kemitraan?.status_konsesi === 'Selesai') ? 'Reklasifikasi (Milik RSUD)' : (selectedAstapDetail?.kemitraan?.skema_kemitraan || selectedAstapDetail?.spesifikasi_json?.skema_kemitraan || 'Sewa')"></span>
                                 </div>
                                 <div>
                                     <span class="text-slate-400 block text-[10px] uppercase font-bold">Masa Berlaku PKS:</span>
@@ -284,8 +296,9 @@
                                 </div>
                                 <div>
                                     <span class="text-slate-400 block text-[10px] uppercase font-bold">Status Konsesi:</span>
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
-                                          x-text="selectedAstapDetail?.kemitraan?.status_konsesi || 'Aktif'">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                          :class="(selectedAstapDetail?.is_kemitraan_reklas || selectedAstapDetail?.kemitraan?.status_konsesi === 'Selesai / Reklasifikasi' || selectedAstapDetail?.kemitraan?.status_konsesi === 'Selesai') ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'"
+                                          x-text="(selectedAstapDetail?.is_kemitraan_reklas || selectedAstapDetail?.kemitraan?.status_konsesi === 'Selesai / Reklasifikasi') ? '🏛️ Milik RSUD' : (selectedAstapDetail?.kemitraan?.status_konsesi || 'Aktif')">
                                     </span>
                                 </div>
                             </div>
@@ -1224,8 +1237,16 @@
                                                     </template>
                                                     <template x-if="(reg.status === 'Kemitraan' || selectedAstapDetail?.sumber_dana === 'kemitraan' || selectedAstapDetail?.category === 'KEMITRAAN' || !!selectedAstapDetail?.kemitraan) && reg.status !== 'Mutasi Keluar OPD' && selectedAstapDetail?.jenis_reklas !== 'MUTASI_EKSTERNAL'">
                                                         <span class="px-2.5 py-1 rounded-xl text-[9.5px] font-black uppercase tracking-wider border shadow-sm"
-                                                              :class="(selectedAstapDetail?.is_bmd_dimanfaatkan || selectedAstapDetail?.kemitraan?.tipe_kemitraan === 'dimanfaatkan') ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 shadow-cyan-500/10' : 'bg-teal-500/20 text-teal-300 border-teal-500/40 shadow-teal-500/10'"
-                                                              x-text="(selectedAstapDetail?.is_bmd_dimanfaatkan || selectedAstapDetail?.kemitraan?.tipe_kemitraan === 'dimanfaatkan') ? '🏛️ BMD DIMANFAATKAN' : '🤝 KEMITRAAN'">
+                                                              :class="(selectedAstapDetail?.is_kemitraan_reklas || selectedAstapDetail?.kemitraan?.status_konsesi === 'Selesai / Reklasifikasi' || selectedAstapDetail?.kemitraan?.status_konsesi === 'Selesai') 
+                                                                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-emerald-500/10' 
+                                                                  : ((selectedAstapDetail?.is_bmd_dimanfaatkan || selectedAstapDetail?.kemitraan?.tipe_kemitraan === 'dimanfaatkan') 
+                                                                      ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 shadow-cyan-500/10' 
+                                                                      : 'bg-teal-500/20 text-teal-300 border-teal-500/40 shadow-teal-500/10')"
+                                                              x-text="(selectedAstapDetail?.is_kemitraan_reklas || selectedAstapDetail?.kemitraan?.status_konsesi === 'Selesai / Reklasifikasi' || selectedAstapDetail?.kemitraan?.status_konsesi === 'Selesai') 
+                                                                  ? '🏛️ MILIK RSUD' 
+                                                                  : ((selectedAstapDetail?.is_bmd_dimanfaatkan || selectedAstapDetail?.kemitraan?.tipe_kemitraan === 'dimanfaatkan') 
+                                                                      ? '🏛️ BMD DIMANFAATKAN' 
+                                                                      : '🤝 KEMITRAAN')">
                                                         </span>
                                                     </template>
                                                     <template x-if="reg.status !== 'Mutasi Keluar OPD' && selectedAstapDetail?.jenis_reklas !== 'MUTASI_EKSTERNAL' && reg.status !== 'Kemitraan' && selectedAstapDetail?.sumber_dana !== 'kemitraan' && selectedAstapDetail?.category !== 'KEMITRAAN' && !selectedAstapDetail?.kemitraan">
