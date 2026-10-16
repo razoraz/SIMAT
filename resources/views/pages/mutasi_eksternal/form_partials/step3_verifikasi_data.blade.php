@@ -413,7 +413,7 @@
                     </div>
                     <div>
                         <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Konstruksi:</span>
-                        <span class="text-white block" x-text="firstGedungItem?.gedung_beton || 'Beton Bertulang'"></span>
+                        <span class="text-white block" x-text="firstGedungItem?.gedung_beton || 'Beton'"></span>
                     </div>
                     <div>
                         <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Letak / Alamat Fisik:</span>
@@ -435,7 +435,7 @@
                     </div>
                     <div>
                         <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Konstruksi:</span>
-                        <span class="text-white block" x-text="firstJaringanItem?.jaringan_beton || 'Beton Bertulang'"></span>
+                        <span class="text-white block" x-text="firstJaringanItem?.jaringan_beton || 'Beton'"></span>
                     </div>
                     <div>
                         <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Letak / Alamat Fisik:</span>

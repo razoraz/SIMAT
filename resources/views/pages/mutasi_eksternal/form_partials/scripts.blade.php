@@ -1055,7 +1055,7 @@
 
             get totalLuasGedung() {
                 if (!this.formData.gedung_items) return 0;
-                return this.formData.gedung_items.reduce((s, it) => s + (parseFloat(it.gedung_luas_m2) || 0), 0);
+                return this.formData.gedung_items.reduce((s, it) => s + (parseFloat(it.gedung_luas_m2 || it.gedung_luas_lantai) || 0), 0);
             },
 
             get totalLuasJaringan() {

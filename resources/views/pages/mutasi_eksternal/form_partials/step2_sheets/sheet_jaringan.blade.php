@@ -175,14 +175,11 @@
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Jenis Konstruksi / Bahan</label>
+                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Konstruksi Beton</label>
                                     <select x-model="item.jaringan_beton"
                                         class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-semibold focus:border-teal-500 focus:outline-none transition-all">
-                                        <option value="Beton">Beton Bertulang</option>
-                                        <option value="Aspal">Aspal Hotmix</option>
-                                        <option value="Pipa / HDPE">Pipa HDPE / Besi Air Medis</option>
-                                        <option value="Kabel / FO">Kabel Listrik / Fiber Optik IT</option>
-                                        <option value="Bukan Beton">Bukan Beton / Lainnya</option>
+                                        <option value="Beton">Beton</option>
+                                        <option value="Bukan Beton">Bukan Beton</option>
                                     </select>
                                 </div>
                             </div>
