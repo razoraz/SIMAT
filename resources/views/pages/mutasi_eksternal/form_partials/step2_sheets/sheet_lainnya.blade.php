@@ -265,31 +265,15 @@
                                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:border-amber-500 focus:outline-none transition-all">
                             </div>
                             <div>
-                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Pengarang / Pencipta</label>
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Pengarang / Penerbit, Pencipta</label>
                                 <input type="text" x-model="item.lainnya_pencipta"
-                                    placeholder="Prof. Dr. Friedrich Paulsen"
+                                    placeholder="Contoh: Prof. Dr. Friedrich Paulsen / EGC Penerbit Buku Kedokteran"
                                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-500 focus:outline-none transition-all">
                             </div>
                             <div>
-                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Penerbit / Spesifikasi</label>
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Spesifikasi Buku / Literatur</label>
                                 <input type="text" x-model="item.lainnya_spesifikasi"
-                                    placeholder="EGC Penerbit Buku Kedokteran"
-                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-500 focus:outline-none transition-all">
-                            </div>
-                            <div>
-                                <div class="flex items-center justify-between mb-1">
-                                    <label class="text-slate-400 text-[10px] font-semibold">Tahun Terbit</label>
-                                    <span class="text-[9px] text-slate-500 font-mono">Maks: {{ date('Y') }}</span>
-                                </div>
-                                <input type="number" min="1950" :max="new Date().getFullYear()" x-model.number="item.lainnya_tahun"
-                                    @input="if(item.lainnya_tahun > {{ date('Y') }}) item.lainnya_tahun = {{ date('Y') }};"
-                                    placeholder="Contoh: {{ date('Y') }}"
-                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono focus:border-amber-500 focus:outline-none transition-all">
-                            </div>
-                            <div>
-                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Jumlah Halaman / Dimensi</label>
-                                <input type="text" x-model="item.lainnya_ukuran"
-                                    placeholder="840 Halaman / 21 x 29.7 cm"
+                                    placeholder="Contoh: Edisi Revisi 2026 / Hardcover Lux / Cetakan Khusus"
                                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-500 focus:outline-none transition-all">
                             </div>
                         </div>
