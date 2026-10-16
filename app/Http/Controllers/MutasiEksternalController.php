@@ -385,9 +385,9 @@ class MutasiEksternalController extends Controller
     /**
      * Dapatkan daftar unik pejabat penyerah (Pihak Pertama) yang pernah tercatat.
      */
-    public static function getDistinctPejabatPenyerahs()
+    public static function getDistinctPejabatPenyerahs(?array $directory = null)
     {
-        $directory = self::getSkpdDirectory();
+        $directory = $directory ?? self::getSkpdDirectory();
         $list = [];
 
         foreach ($directory as $skpd => $item) {
@@ -619,7 +619,7 @@ class MutasiEksternalController extends Controller
         $dbPejabats = self::getDistinctPejabats();
         $dbSkpdDirectory = self::getSkpdDirectory();
         $dbSkpdAsals = array_values(array_unique(array_keys($dbSkpdDirectory)));
-        $dbPejabatPenyerahs = self::getDistinctPejabatPenyerahs();
+        $dbPejabatPenyerahs = self::getDistinctPejabatPenyerahs($dbSkpdDirectory);
 
         return view('pages.mutasi_eksternal.form', compact(
             'dbMaster108', 
@@ -1013,7 +1013,7 @@ class MutasiEksternalController extends Controller
         $dbPejabats = self::getDistinctPejabats();
         $dbSkpdDirectory = self::getSkpdDirectory();
         $dbSkpdAsals = array_values(array_unique(array_keys($dbSkpdDirectory)));
-        $dbPejabatPenyerahs = self::getDistinctPejabatPenyerahs();
+        $dbPejabatPenyerahs = self::getDistinctPejabatPenyerahs($dbSkpdDirectory);
 
         return view('pages.mutasi_eksternal.form', compact(
             'astap', 
@@ -1713,6 +1713,16 @@ class MutasiEksternalController extends Controller
      */
     private function syncLegacyAstapPelimpahan(): void
     {
+        // Guard check: hanya jalankan jika ada data legacy pelimpahan yang belum masuk ke mutasi_eksternals
+        $hasLegacy = Astap::where('is_deleted', 0)
+            ->whereIn('sumber_dana', ['mutasi_eksternal', 'pelimpahan_skpd', 'mutasi_masuk'])
+            ->whereDoesntHave('mutasiEksternal')
+            ->exists();
+
+        if (!$hasLegacy) {
+            return;
+        }
+
         $legacyAstaps = Astap::where('is_deleted', 0)
             ->whereIn('sumber_dana', ['mutasi_eksternal', 'pelimpahan_skpd', 'mutasi_masuk'])
             ->whereDoesntHave('mutasiEksternal')
@@ -1765,21 +1775,31 @@ class MutasiEksternalController extends Controller
      */
     private function syncReklasMutasiKeluar(): void
     {
-        $reklasKeluars = \App\Models\AstapReklas::where('jenis_reklas', 'MUTASI_EKSTERNAL')
+        // 1. Ambil daftar astap_id mutasi keluar yang sudah ada di database
+        $existingKeluarAstapIds = MutasiEksternal::where('tipe', 'keluar')
             ->where('is_deleted', 0)
-            ->with(['astap.registers', 'astap.unit'])
-            ->get();
+            ->pluck('astap_id')
+            ->filter()
+            ->all();
+
+        // 2. Query HANYA reklasifikasi mutasi keluar yang belum pernah disinkronkan (bebas N+1 query)
+        $unsyncedQuery = \App\Models\AstapReklas::where('jenis_reklas', 'MUTASI_EKSTERNAL')
+            ->where('is_deleted', 0);
+
+        if (!empty($existingKeluarAstapIds)) {
+            $unsyncedQuery->whereNotIn('astap_id', $existingKeluarAstapIds);
+        }
+
+        // Jika semua sudah tersinkronkan, keluar instan (< 1 milidetik)
+        if (!$unsyncedQuery->exists()) {
+            return;
+        }
+
+        $reklasKeluars = $unsyncedQuery->with(['astap.registers', 'astap.unit'])->get();
 
         foreach ($reklasKeluars as $rk) {
             $astap = $rk->astap;
             if (!$astap) continue;
-
-            $exists = MutasiEksternal::where('astap_id', $astap->id)
-                ->where('tipe', 'keluar')
-                ->where('is_deleted', 0)
-                ->exists();
-
-            if (!$exists) {
                 $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?? []);
                 $mutInfo = $spec['mutasi_info'] ?? [];
 
@@ -1856,4 +1876,3 @@ class MutasiEksternalController extends Controller
             }
         }
     }
-}
