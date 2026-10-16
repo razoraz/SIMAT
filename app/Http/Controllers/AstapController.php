@@ -3616,8 +3616,31 @@ class AstapController extends Controller
      */
     public function destroy($id)
     {
-        $astap = \App\Models\Astap::with(['registers', 'mutasiEksternals'])->find($id);
+        $astap = \App\Models\Astap::with(['registers', 'mutasiEksternals', 'kemitraan'])->find($id);
         if ($astap) {
+            // Proteksi Kemitraan: Cegah penghapusan aset yang sedang aktif dalam perjanjian kemitraan / objek pemanfaatan
+            $activeKemitraan = \App\Models\AstapKemitraan::where('is_deleted', 0)
+                ->where(function ($q) use ($astap) {
+                    $q->where('astap_id', $astap->id)
+                      ->orWhere('objek_astap_id', $astap->id);
+                })
+                ->whereNotIn('status_konsesi', ['Dikembalikan ke Rekanan', 'Dibatalkan', 'Selesai / Reklasifikasi', 'Selesai'])
+                ->first();
+
+            if ($activeKemitraan) {
+                $isObjek = ($activeKemitraan->objek_astap_id == $astap->id && $activeKemitraan->astap_id != $astap->id);
+                $peran = $isObjek ? 'objek pemanfaatan aset mitra' : 'perjanjian kerja sama kemitraan aktif';
+                $pesan = "Aset '{$astap->nama_barang}' tidak dapat dihapus karena masih terikat sebagai {$peran} (Nomor PKS: {$activeKemitraan->nomor_pks}). Silakan selesaikan atau batalkan status kemitraannya terlebih dahulu di menu Kemitraan.";
+
+                if (request()->ajax() || request()->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $pesan,
+                    ], 422);
+                }
+                return redirect()->back()->with('error', $pesan);
+            }
+
             $user = Auth::user();
             $deleterName = $user ? ($user->name . ' (' . ucfirst($user->role ?? 'user') . ')') : 'Administrator';
             $namaBarang = $astap->nama_barang ?? 'Aset Tetap';
@@ -3643,7 +3666,18 @@ class AstapController extends Controller
                     ]);
                 }
 
-                // 3. Soft delete paket induk ASTAP
+                // 3. Jika ada data kemitraan non-aktif terkait, soft delete agar tidak jadi zombie record
+                \App\Models\AstapKemitraan::where('astap_id', $astap->id)
+                    ->where('is_deleted', 0)
+                    ->update([
+                        'is_deleted'    => 1,
+                        'deleted_by'    => $deleterName,
+                        'deleted_by_id' => $user?->id,
+                        'deleted_at'    => now(),
+                        'alasan_hapus'  => 'Dihapus bersamaan dengan Master ASTAP',
+                    ]);
+
+                // 4. Soft delete paket induk ASTAP
                 $astap->softDelete('Dihapus dari modul Master ASTAP');
             });
 
