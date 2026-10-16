@@ -44,12 +44,12 @@
                                 <div @click="selectDocType('spk')" 
                                      :class="formData.doc_type === 'spk' ? 'border-cyan-500 bg-cyan-950/30 ring-1 ring-cyan-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
                                      class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center space-x-1.5">
-                                            <input type="radio" name="doc_type_radio_e" value="spk" :checked="formData.doc_type === 'spk'" @change="selectDocType('spk')" class="text-cyan-500 focus:ring-cyan-500">
-                                            <span class="text-[11px] font-extrabold text-cyan-400">📄 SPK (Kontrak)</span>
+                                    <div class="flex items-center justify-between gap-2">
+                                        <div class="flex items-center space-x-1.5 min-w-0">
+                                            <input type="radio" name="doc_type_radio_e" value="spk" :checked="formData.doc_type === 'spk'" @change="selectDocType('spk')" class="text-cyan-500 focus:ring-cyan-500 shrink-0">
+                                            <span class="text-[11px] font-extrabold text-cyan-400 truncate">📄 SPK (Kontrak)</span>
                                         </div>
-                                        <span x-show="formData.doc_type === 'spk'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40">✓ Terpilih</span>
+                                        <span x-show="formData.doc_type === 'spk'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40 shrink-0 whitespace-nowrap">✓ Terpilih</span>
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor SPK</label>
@@ -69,12 +69,12 @@
                                 <div @click="selectDocType('surat_pesanan')" 
                                      :class="formData.doc_type === 'surat_pesanan' ? 'border-purple-500 bg-purple-950/30 ring-1 ring-purple-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
                                      class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center space-x-1.5">
-                                            <input type="radio" name="doc_type_radio_e" value="surat_pesanan" :checked="formData.doc_type === 'surat_pesanan'" @change="selectDocType('surat_pesanan')" class="text-purple-500 focus:ring-purple-500">
-                                            <span class="text-[11px] font-extrabold text-purple-400">📦 Surat Pesanan</span>
+                                    <div class="flex items-center justify-between gap-2">
+                                        <div class="flex items-center space-x-1.5 min-w-0">
+                                            <input type="radio" name="doc_type_radio_e" value="surat_pesanan" :checked="formData.doc_type === 'surat_pesanan'" @change="selectDocType('surat_pesanan')" class="text-purple-500 focus:ring-purple-500 shrink-0">
+                                            <span class="text-[11px] font-extrabold text-purple-400 truncate">📦 Surat Pesanan</span>
                                         </div>
-                                        <span x-show="formData.doc_type === 'surat_pesanan'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-300 font-bold border border-purple-500/40">✓ Terpilih</span>
+                                        <span x-show="formData.doc_type === 'surat_pesanan'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-300 font-bold border border-purple-500/40 shrink-0 whitespace-nowrap">✓ Terpilih</span>
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor Surat Pesanan</label>
@@ -94,12 +94,12 @@
                                 <div @click="selectDocType('kwitansi')" 
                                      :class="formData.doc_type === 'kwitansi' ? 'border-amber-500 bg-amber-950/30 ring-1 ring-amber-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
                                      class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center space-x-1.5">
-                                            <input type="radio" name="doc_type_radio_e" value="kwitansi" :checked="formData.doc_type === 'kwitansi'" @change="selectDocType('kwitansi')" class="text-amber-500 focus:ring-amber-500">
-                                            <span class="text-[11px] font-extrabold text-amber-400">🧾 Kwitansi</span>
+                                    <div class="flex items-center justify-between gap-2">
+                                        <div class="flex items-center space-x-1.5 min-w-0">
+                                            <input type="radio" name="doc_type_radio_e" value="kwitansi" :checked="formData.doc_type === 'kwitansi'" @change="selectDocType('kwitansi')" class="text-amber-500 focus:ring-amber-500 shrink-0">
+                                            <span class="text-[11px] font-extrabold text-amber-400 truncate">🧾 Kwitansi</span>
                                         </div>
-                                        <span x-show="formData.doc_type === 'kwitansi'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40">✓ Terpilih</span>
+                                        <span x-show="formData.doc_type === 'kwitansi'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40 shrink-0 whitespace-nowrap">✓ Terpilih</span>
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor Kwitansi</label>
@@ -119,12 +119,12 @@
                                 <div @click="selectDocType('faktur')" 
                                      :class="formData.doc_type === 'faktur' ? 'border-emerald-500 bg-emerald-950/30 ring-1 ring-emerald-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
                                      class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center space-x-1.5">
-                                            <input type="radio" name="doc_type_radio_e" value="faktur" :checked="formData.doc_type === 'faktur'" @change="selectDocType('faktur')" class="text-emerald-500 focus:ring-emerald-500">
-                                            <span class="text-[11px] font-extrabold text-emerald-400">📑 Invoice / Faktur</span>
+                                    <div class="flex items-center justify-between gap-2">
+                                        <div class="flex items-center space-x-1.5 min-w-0">
+                                            <input type="radio" name="doc_type_radio_e" value="faktur" :checked="formData.doc_type === 'faktur'" @change="selectDocType('faktur')" class="text-emerald-500 focus:ring-emerald-500 shrink-0">
+                                            <span class="text-[11px] font-extrabold text-emerald-400 truncate">📑 Invoice / Faktur</span>
                                         </div>
-                                        <span x-show="formData.doc_type === 'faktur'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40">✓ Terpilih</span>
+                                        <span x-show="formData.doc_type === 'faktur'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40 shrink-0 whitespace-nowrap">✓ Terpilih</span>
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor Invoice</label>
@@ -193,74 +193,95 @@
                                       x-text="formData.kib_e_default_type === 'kesenian' ? '🎨 Kesenian & Budaya Terpilih' : (formData.kib_e_default_type === 'hewan_tumbuhan' ? '🌿 Hewan & Tumbuhan Terpilih' : '📚 Buku Perpustakaan Terpilih')">
                                 </span>
                             </div>
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-4">
 
                                 <!-- Opsi 1: Buku Perpustakaan -->
                                 <div @click="formData.kib_e_default_type = 'buku'; syncLainnyaFieldsToMain();"
                                      :class="(formData.kib_e_default_type || 'buku') === 'buku' ? 'border-amber-500 bg-amber-950/40 ring-1 ring-amber-500 shadow-lg shadow-amber-500/10' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-amber-500/50'"
-                                     class="p-4 rounded-2xl border transition-all cursor-pointer space-y-2 relative group">
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center space-x-2.5">
-                                            <input type="radio" name="kib_e_default_type_radio" value="buku"
-                                                   :checked="(formData.kib_e_default_type || 'buku') === 'buku'"
-                                                   @change="formData.kib_e_default_type = 'buku'; syncLainnyaFieldsToMain();"
-                                                   class="text-amber-500 focus:ring-amber-500">
-                                            <span class="text-sm font-extrabold text-amber-400">📚 Buku Perpustakaan</span>
+                                     class="p-4 sm:p-4.5 rounded-2xl border transition-all cursor-pointer space-y-3 relative group flex flex-col justify-between">
+                                    <div class="space-y-2.5">
+                                        <div class="flex items-start justify-between gap-3 border-b border-slate-800/70 pb-2.5">
+                                            <div class="flex items-start gap-2.5 min-w-0">
+                                                <input type="radio" name="kib_e_default_type_radio" value="buku"
+                                                       :checked="(formData.kib_e_default_type || 'buku') === 'buku'"
+                                                       @change="formData.kib_e_default_type = 'buku'; syncLainnyaFieldsToMain();"
+                                                       class="w-4 h-4 mt-0.5 text-amber-500 focus:ring-amber-500/30 bg-slate-950 border-slate-700 shrink-0 cursor-pointer">
+                                                <div class="min-w-0">
+                                                    <span class="text-xs sm:text-[13px] font-extrabold text-amber-400 block leading-tight">📚 Buku Perpustakaan</span>
+                                                </div>
+                                            </div>
+                                            <span x-show="(formData.kib_e_default_type || 'buku') === 'buku'"
+                                                  class="text-[9.5px] px-2.5 py-0.5 rounded-full bg-amber-500/25 text-amber-200 font-bold border border-amber-500/40 shrink-0 whitespace-nowrap shadow-sm flex items-center gap-1">
+                                                <span>✓</span>
+                                                <span>Terpilih</span>
+                                            </span>
                                         </div>
-                                        <span x-show="(formData.kib_e_default_type || 'buku') === 'buku'"
-                                              class="text-[9px] px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40">✓ Terpilih</span>
+                                        <p class="text-[11px] text-slate-400 leading-relaxed">Buku, jurnal ilmiah kedokteran, literatur medis, dan arsip pustaka rumah sakit. Kolom: Judul, Pencipta, Spesifikasi.</p>
                                     </div>
-                                    <p class="text-[11px] text-slate-400 leading-relaxed">Buku, jurnal ilmiah kedokteran, literatur medis, dan arsip pustaka rumah sakit. Kolom: Judul, Pencipta, Spesifikasi.</p>
-                                    <div class="flex flex-wrap gap-1 mt-1">
-                                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-400 border border-amber-700/30">📖 Judul Buku</span>
-                                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-400 border border-amber-700/30">✍️ Pencipta</span>
-                                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-400 border border-amber-700/30">📋 Spesifikasi</span>
+                                    <div class="flex flex-wrap gap-1.5 pt-1">
+                                        <span class="text-[9.5px] px-2 py-0.5 rounded-md bg-amber-950/60 text-amber-400 border border-amber-700/30 font-medium">📖 Judul Buku</span>
+                                        <span class="text-[9.5px] px-2 py-0.5 rounded-md bg-amber-950/60 text-amber-400 border border-amber-700/30 font-medium">✍️ Pencipta</span>
+                                        <span class="text-[9.5px] px-2 py-0.5 rounded-md bg-amber-950/60 text-amber-400 border border-amber-700/30 font-medium">📋 Spesifikasi</span>
                                     </div>
                                 </div>
 
                                 <!-- Opsi 2: Kesenian & Kebudayaan -->
                                 <div @click="formData.kib_e_default_type = 'kesenian'; syncLainnyaFieldsToMain();"
                                      :class="formData.kib_e_default_type === 'kesenian' ? 'border-purple-500 bg-purple-950/40 ring-1 ring-purple-500 shadow-lg shadow-purple-500/10' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-purple-500/50'"
-                                     class="p-4 rounded-2xl border transition-all cursor-pointer space-y-2 relative group">
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center space-x-2.5">
-                                            <input type="radio" name="kib_e_default_type_radio" value="kesenian"
-                                                   :checked="formData.kib_e_default_type === 'kesenian'"
-                                                   @change="formData.kib_e_default_type = 'kesenian'; syncLainnyaFieldsToMain();"
-                                                   class="text-purple-500 focus:ring-purple-500">
-                                            <span class="text-sm font-extrabold text-purple-400">🎨 Kesenian & Kebudayaan</span>
+                                     class="p-4 sm:p-4.5 rounded-2xl border transition-all cursor-pointer space-y-3 relative group flex flex-col justify-between">
+                                    <div class="space-y-2.5">
+                                        <div class="flex items-start justify-between gap-3 border-b border-slate-800/70 pb-2.5">
+                                            <div class="flex items-start gap-2.5 min-w-0">
+                                                <input type="radio" name="kib_e_default_type_radio" value="kesenian"
+                                                       :checked="formData.kib_e_default_type === 'kesenian'"
+                                                       @change="formData.kib_e_default_type = 'kesenian'; syncLainnyaFieldsToMain();"
+                                                       class="w-4 h-4 mt-0.5 text-purple-500 focus:ring-purple-500/30 bg-slate-950 border-slate-700 shrink-0 cursor-pointer">
+                                                <div class="min-w-0">
+                                                    <span class="text-xs sm:text-[13px] font-extrabold text-purple-400 block leading-tight">🎨 Kesenian &amp; Kebudayaan</span>
+                                                </div>
+                                            </div>
+                                            <span x-show="formData.kib_e_default_type === 'kesenian'"
+                                                  class="text-[9.5px] px-2.5 py-0.5 rounded-full bg-purple-500/25 text-purple-200 font-bold border border-purple-500/40 shrink-0 whitespace-nowrap shadow-sm flex items-center gap-1">
+                                                <span>✓</span>
+                                                <span>Terpilih</span>
+                                            </span>
                                         </div>
-                                        <span x-show="formData.kib_e_default_type === 'kesenian'"
-                                              class="text-[9px] px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 font-bold border border-purple-500/40">✓ Terpilih</span>
+                                        <p class="text-[11px] text-slate-400 leading-relaxed">Lukisan, patung, ornamen dekoratif, dan benda seni atau budaya bersejarah milik rumah sakit. Kolom: Asal Daerah, Pencipta, Spesifikasi, Bahan, Ukuran.</p>
                                     </div>
-                                    <p class="text-[11px] text-slate-400 leading-relaxed">Lukisan, patung, ornamen dekoratif, dan benda seni atau budaya bersejarah milik rumah sakit. Kolom: Asal Daerah, Pencipta, Spesifikasi, Bahan, Ukuran.</p>
-                                    <div class="flex flex-wrap gap-1 mt-1">
-                                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-purple-950/60 text-purple-400 border border-purple-700/30">🗺️ Asal Daerah</span>
-                                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-purple-950/60 text-purple-400 border border-purple-700/30">🎭 Pencipta</span>
-                                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-purple-950/60 text-purple-400 border border-purple-700/30">🧱 Bahan</span>
-                                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-purple-950/60 text-purple-400 border border-purple-700/30">📐 Ukuran</span>
+                                    <div class="flex flex-wrap gap-1.5 pt-1">
+                                        <span class="text-[9.5px] px-2 py-0.5 rounded-md bg-purple-950/60 text-purple-400 border border-purple-700/30 font-medium">🗺️ Asal Daerah</span>
+                                        <span class="text-[9.5px] px-2 py-0.5 rounded-md bg-purple-950/60 text-purple-400 border border-purple-700/30 font-medium">🎭 Pencipta</span>
+                                        <span class="text-[9.5px] px-2 py-0.5 rounded-md bg-purple-950/60 text-purple-400 border border-purple-700/30 font-medium">🧱 Bahan</span>
+                                        <span class="text-[9.5px] px-2 py-0.5 rounded-md bg-purple-950/60 text-purple-400 border border-purple-700/30 font-medium">📐 Ukuran</span>
                                     </div>
                                 </div>
 
                                 <!-- Opsi 3: Hewan & Tumbuhan -->
                                 <div @click="formData.kib_e_default_type = 'hewan_tumbuhan'; syncLainnyaFieldsToMain();"
                                      :class="formData.kib_e_default_type === 'hewan_tumbuhan' ? 'border-emerald-500 bg-emerald-950/40 ring-1 ring-emerald-500 shadow-lg shadow-emerald-500/10' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-emerald-500/50'"
-                                     class="p-4 rounded-2xl border transition-all cursor-pointer space-y-2 relative group">
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center space-x-2.5">
-                                            <input type="radio" name="kib_e_default_type_radio" value="hewan_tumbuhan"
-                                                   :checked="formData.kib_e_default_type === 'hewan_tumbuhan'"
-                                                   @change="formData.kib_e_default_type = 'hewan_tumbuhan'; syncLainnyaFieldsToMain();"
-                                                   class="text-emerald-500 focus:ring-emerald-500">
-                                            <span class="text-sm font-extrabold text-emerald-400">🌿 Hewan & Tumbuhan</span>
+                                     class="p-4 sm:p-4.5 rounded-2xl border transition-all cursor-pointer space-y-3 relative group flex flex-col justify-between">
+                                    <div class="space-y-2.5">
+                                        <div class="flex items-start justify-between gap-3 border-b border-slate-800/70 pb-2.5">
+                                            <div class="flex items-start gap-2.5 min-w-0">
+                                                <input type="radio" name="kib_e_default_type_radio" value="hewan_tumbuhan"
+                                                       :checked="formData.kib_e_default_type === 'hewan_tumbuhan'"
+                                                       @change="formData.kib_e_default_type = 'hewan_tumbuhan'; syncLainnyaFieldsToMain();"
+                                                       class="w-4 h-4 mt-0.5 text-emerald-500 focus:ring-emerald-500/30 bg-slate-950 border-slate-700 shrink-0 cursor-pointer">
+                                                <div class="min-w-0">
+                                                    <span class="text-xs sm:text-[13px] font-extrabold text-emerald-400 block leading-tight">🌿 Hewan &amp; Tumbuhan</span>
+                                                </div>
+                                            </div>
+                                            <span x-show="formData.kib_e_default_type === 'hewan_tumbuhan'"
+                                                  class="text-[9.5px] px-2.5 py-0.5 rounded-full bg-emerald-500/25 text-emerald-200 font-bold border border-emerald-500/40 shrink-0 whitespace-nowrap shadow-sm flex items-center gap-1">
+                                                <span>✓</span>
+                                                <span>Terpilih</span>
+                                            </span>
                                         </div>
-                                        <span x-show="formData.kib_e_default_type === 'hewan_tumbuhan'"
-                                              class="text-[9px] px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40">✓ Terpilih</span>
+                                        <p class="text-[11px] text-slate-400 leading-relaxed">Tanaman taman, pohon peneduh, hewan ternak, dan hewan peliharaan yang merupakan aset tetap milik rumah sakit. Kolom: Judul/Jenis, Spesifikasi.</p>
                                     </div>
-                                    <p class="text-[11px] text-slate-400 leading-relaxed">Tanaman taman, pohon peneduh, hewan ternak, dan hewan peliharaan yang merupakan aset tetap milik rumah sakit. Kolom: Judul/Jenis, Spesifikasi.</p>
-                                    <div class="flex flex-wrap gap-1 mt-1">
-                                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-700/30">🐄 Jenis Hewan</span>
-                                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-700/30">🌳 Spesifikasi</span>
+                                    <div class="flex flex-wrap gap-1.5 pt-1">
+                                        <span class="text-[9.5px] px-2 py-0.5 rounded-md bg-emerald-950/60 text-emerald-400 border border-emerald-700/30 font-medium">🐄 Jenis Hewan</span>
+                                        <span class="text-[9.5px] px-2 py-0.5 rounded-md bg-emerald-950/60 text-emerald-400 border border-emerald-700/30 font-medium">🌳 Spesifikasi</span>
                                     </div>
                                 </div>
 
