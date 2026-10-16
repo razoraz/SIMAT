@@ -513,6 +513,16 @@ class Astap extends Model
         return $this->hasOne(AstapKemitraan::class, 'astap_id');
     }
 
+    public function kemitraans()
+    {
+        return $this->hasMany(AstapKemitraan::class, 'astap_id');
+    }
+
+    public function objekKemitraans()
+    {
+        return $this->hasMany(AstapKemitraan::class, 'objek_astap_id');
+    }
+
     public function getKode108Attribute(): string
     {
         return $this->jenisAstap ? ($this->jenisAstap->sub_sub_rincian_objek ?? '') : '';
