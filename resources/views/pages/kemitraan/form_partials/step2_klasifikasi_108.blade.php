@@ -62,7 +62,7 @@
                               :class="isMilikRsud ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20' : (tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-500/10 text-cyan-300 border-cyan-500/20' : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20')">Permendagri 108</span>
                         <span class="px-2 py-0.5 rounded-full bg-slate-800 text-[10px] font-bold border border-slate-700 font-mono"
                               :class="isMilikRsud ? 'text-emerald-400' : (tipeKemitraan === 'dimanfaatkan' ? 'text-cyan-400' : 'text-emerald-400')"
-                              x-text="activeSkemaKode"></span>
+                              x-text="isMilikRsud ? 'KIB A — E' : activeSkemaKode"></span>
 
                         <span x-show="isMilikRsud" class="px-2.5 py-0.5 rounded-full bg-emerald-950/60 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold font-mono inline-flex items-center gap-1 shadow-sm">
                             <span>🏛️</span> Reklasifikasi Milik RSUD &mdash; Bebas Ubah Klasifikasi 108 &amp; Rincian Fisik
@@ -103,7 +103,7 @@
                     :class="[
                         isSubSubCardLocked(item) 
                             ? 'opacity-25 cursor-not-allowed pointer-events-none border-dashed border-slate-800/80 bg-slate-950/30 select-none grayscale'
-                            : (selectedSubSub?.id === item.id 
+                            : (isSubSubSelected(item) 
                                 ? (isMilikRsud || tipeKemitraan === 'ditambahkan' ? 'bg-emerald-500/20 border-emerald-400 text-white shadow-xl shadow-emerald-500/20 ring-2 ring-emerald-400 cursor-default' : 'bg-cyan-500/20 border-cyan-400 text-white shadow-xl shadow-cyan-500/20 ring-2 ring-cyan-400 cursor-default') 
                                 : 'bg-slate-950/70 border-slate-800 text-slate-300 hover:border-emerald-500/50 hover:bg-slate-850 hover:-translate-y-0.5 cursor-pointer')
                     ]">
@@ -111,13 +111,13 @@
                     <!-- Top Row: Icon & Status Badge -->
                     <div class="flex items-center justify-between gap-1.5">
                         <div class="w-8 h-8 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-center text-lg shrink-0 shadow-inner"
-                             :class="selectedSubSub?.id === item.id ? (isMilikRsud || tipeKemitraan === 'ditambahkan' ? 'border-emerald-400/50 bg-emerald-950/60' : 'border-cyan-400/50 bg-cyan-950/60') : ''">
-                             <span x-text="getSubSubIcon(item.kode)"></span>
+                             :class="isSubSubSelected(item) ? (isMilikRsud || tipeKemitraan === 'ditambahkan' ? 'border-emerald-400/50 bg-emerald-950/60' : 'border-cyan-400/50 bg-cyan-950/60') : ''">
+                             <span x-text="item.icon || getSubSubIcon(item.kode)"></span>
                         </div>
                         <div class="shrink-0 flex items-center">
                             <span x-show="isSubSubCardLocked(item)" class="text-[9px] px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-slate-500 font-mono font-bold tracking-tight">🔒 Non-KIB</span>
-                            <span x-show="selectedSubSub?.id === item.id && lockedKibFromData && !isMilikRsud" class="text-[9px] px-2 py-0.5 rounded-full bg-cyan-950 border border-cyan-500/50 text-cyan-300 font-mono font-extrabold shadow-sm shadow-cyan-500/10">🔒 Terkunci</span>
-                            <span x-show="selectedSubSub?.id === item.id && (!lockedKibFromData || isMilikRsud)" class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-500/50 text-emerald-300 font-mono font-extrabold shadow-sm">✓ Terpilih</span>
+                            <span x-show="isSubSubSelected(item) && lockedKibFromData && !isMilikRsud" class="text-[9px] px-2 py-0.5 rounded-full bg-cyan-950 border border-cyan-500/50 text-cyan-300 font-mono font-extrabold shadow-sm shadow-cyan-500/10">🔒 Terkunci</span>
+                            <span x-show="isSubSubSelected(item) && (!lockedKibFromData || isMilikRsud)" class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-500/50 text-emerald-300 font-mono font-extrabold shadow-sm">✓ Terpilih</span>
                         </div>
                     </div>
 
@@ -125,25 +125,25 @@
                     <div class="min-w-0 flex-1 space-y-1 pt-0.5">
                         <div>
                             <span class="font-mono text-[10px] font-extrabold tracking-tight block truncate"
-                                  :class="isSubSubCardLocked(item) ? 'text-slate-600' : (tipeKemitraan === 'dimanfaatkan' ? 'text-cyan-400 group-hover:text-cyan-300' : 'text-emerald-400 group-hover:text-emerald-300')"
+                                  :class="isSubSubCardLocked(item) ? 'text-slate-600' : (tipeKemitraan === 'dimanfaatkan' && !isMilikRsud ? 'text-cyan-400 group-hover:text-cyan-300' : 'text-emerald-400 group-hover:text-emerald-300')"
                                   x-text="item.kode"></span>
                         </div>
                         <div>
                             <span class="block text-xs font-bold truncate leading-tight"
                                   :class="isSubSubCardLocked(item) ? 'text-slate-500' : 'text-slate-100 group-hover:text-white'"
-                                  x-text="getSubSubShortLabel(item.kode, item.nama)"></span>
+                                  x-text="item.nama || getSubSubShortLabel(item.kode, item.nama)"></span>
                             <span class="block text-[10px] line-clamp-2 mt-0.5 leading-snug"
                                   :class="isSubSubCardLocked(item) ? 'text-slate-600 italic' : 'text-slate-400'"
-                                  x-text="isSubSubCardLocked(item) ? 'Terkunci (Aset BMD bukan kategori ini)' : item.nama"></span>
+                                  x-text="item.deskripsi || (isSubSubCardLocked(item) ? 'Terkunci (Aset BMD bukan kategori ini)' : item.nama)"></span>
                         </div>
                     </div>
 
                     <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between">
-                        <span class="text-[9px] font-mono text-slate-500" x-text="'ID: ' + item.id"></span>
+                        <span class="text-[9px] font-mono text-slate-500" x-text="typeof item.id === 'number' ? ('ID: ' + item.id) : (isMilikRsud ? 'Milik RSUD' : '')"></span>
                         <div class="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] transition-colors font-bold"
-                            :class="isSubSubCardLocked(item) ? 'bg-slate-900 text-slate-600' : (selectedSubSub?.id === item.id ? (tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-400 text-slate-950 font-black shadow-md shadow-cyan-400/30' : 'bg-emerald-400 text-slate-950 font-black shadow-md shadow-emerald-400/30') : 'bg-slate-800 text-slate-400 group-hover:bg-cyan-400 group-hover:text-slate-950')">
-                            <span x-show="selectedSubSub?.id === item.id">✓</span>
-                            <span x-show="selectedSubSub?.id !== item.id && !isSubSubCardLocked(item)">&rarr;</span>
+                            :class="isSubSubCardLocked(item) ? 'bg-slate-900 text-slate-600' : (isSubSubSelected(item) ? (tipeKemitraan === 'dimanfaatkan' && !isMilikRsud ? 'bg-cyan-400 text-slate-950 font-black shadow-md shadow-cyan-400/30' : 'bg-emerald-400 text-slate-950 font-black shadow-md shadow-emerald-400/30') : 'bg-slate-800 text-slate-400 group-hover:bg-emerald-400 group-hover:text-slate-950')">
+                            <span x-show="isSubSubSelected(item)">✓</span>
+                            <span x-show="!isSubSubSelected(item) && !isSubSubCardLocked(item)">&rarr;</span>
                             <span x-show="isSubSubCardLocked(item)">✕</span>
                         </div>
                     </div>
@@ -292,8 +292,9 @@
                 <!-- 2. Total Taksiran Nilai Wajar / Kontrak Aset (Rp) -->
                 <div class="space-y-2">
                     <label class="text-xs font-bold text-slate-200 flex items-center justify-between">
-                        <span x-show="tipeKemitraan === 'dimanfaatkan'">Total Nilai Kontrak Sewa / Pemanfaatan (Rp) <span class="text-rose-400">*</span></span>
-                        <span x-show="tipeKemitraan === 'ditambahkan'">Total Taksiran Nilai Investasi Mitra (Rp) <span class="text-rose-400">*</span></span>
+                        <span x-show="isMilikRsud">Total Nilai Perolehan / Taksiran Aset Milik RSUD (Rp) <span class="text-rose-400">*</span></span>
+                        <span x-show="!isMilikRsud && tipeKemitraan === 'dimanfaatkan'">Total Nilai Kontrak Sewa / Pemanfaatan (Rp) <span class="text-rose-400">*</span></span>
+                        <span x-show="!isMilikRsud && tipeKemitraan === 'ditambahkan'">Total Taksiran Nilai Investasi Mitra (Rp) <span class="text-rose-400">*</span></span>
                     </label>
 
                     <div class="relative">

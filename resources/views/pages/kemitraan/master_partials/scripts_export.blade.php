@@ -118,6 +118,31 @@
         return 'SEMUA SKEMA KEMITRAAN (AKUN 1.5.2)';
     }
 
+    function getSafeSpec(it) {
+        if (!it) return {};
+        let spec = it.spesifikasi_json || {};
+        if (typeof spec === 'string') {
+            try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
+        }
+        return spec || {};
+    }
+
+    function getItemKemitraanType(item) {
+        if (!item) return 'DITAMBAHKAN';
+        const k = item.kemitraan || {};
+        const reklas = Array.isArray(item.reklas) ? item.reklas : (item.reklas ? [item.reklas] : []);
+        const hasReklasToRsud = reklas.some(r => r.tujuan_kode && (String(r.tujuan_kode).startsWith('1.3')));
+        const statusKonsesi = String(k.status_konsesi || item.status_konsesi || '').toLowerCase();
+        
+        if (item.is_reklas || hasReklasToRsud || statusKonsesi.includes('selesai') || statusKonsesi.includes('reklasifikasi') || statusKonsesi.includes('berakhir')) {
+            return 'MILIK_RSUD'; // Aset Milik RSUD (Eks-Kemitraan / Selesai Konsesi)
+        }
+        if (k.tipe_kemitraan === 'dimanfaatkan' || item.tipe_kemitraan === 'dimanfaatkan') {
+            return 'DIMANFAATKAN'; // Aset BMD RSUD yang Dimanfaatkan / Disewakan ke Mitra
+        }
+        return 'DITAMBAHKAN'; // Aset yang Ditambahkan Mitra (Konsesi Aktif)
+    }
+
     function getKibSignatureMerges(signStartRow, numCols, rightStartCol, leftStartCol = 1, leftEndCol = null, rightEndCol = null) {
         const lS = leftStartCol;
         const lE = leftEndCol !== null ? leftEndCol : Math.min(lS + 5, rightStartCol - 2);
@@ -183,6 +208,17 @@
         };
 
         for (let r = 0; r < rowCount; r++) {
+            const firstCellRef = getColName(0) + (r + 1);
+            const firstCellVal = ws[firstCellRef] ? String(ws[firstCellRef].v || '').trim() : '';
+
+            const isTitle = (r < titleRowCount);
+            const isBanner = firstCellVal.startsWith('BAGIAN');
+            const isHeader = (firstCellVal === 'NO');
+            const isTotal = firstCellVal.startsWith('JUMLAH') || firstCellVal.startsWith('TOTAL');
+            const isSign = (r >= signStartRow);
+
+            if (isSign) continue;
+
             for (let c = 0; c < colCount; c++) {
                 const cellRef = getColName(c) + (r + 1);
                 if (!ws[cellRef]) ws[cellRef] = { v: "", t: "s" };
@@ -196,34 +232,39 @@
                 let fontSize = 9.5;
                 let numFmt = null;
 
-                if (r < titleRowCount) {
+                if (isTitle) {
                     fill = "FFFFFF";
                     fontColor = "0F172A";
                     bold = true;
                     fontSize = (r === 0 || r === 1) ? 12 : 11;
                     align = "center";
                     border = null;
-                } else if (r === titleRowCount) {
-                    fill = "0891B2"; // Cyan / Teal Deep Header
+                } else if (isBanner) {
+                    fill = "0E7490"; // Deep Cyan/Teal Banner
                     fontColor = "FFFFFF";
                     bold = true;
                     fontSize = 10;
+                    align = "left";
+                    border = thinBorder;
+                } else if (isHeader) {
+                    fill = "0891B2"; // Cyan Header
+                    fontColor = "FFFFFF";
+                    bold = true;
+                    fontSize = 9.5;
                     align = "center";
                     border = thinBorder;
-                } else if (r === totalRowIdx) {
-                    fill = "A5F3FC"; // Soft Cyan total row
+                } else if (isTotal) {
+                    fill = "A5F3FC"; // Soft Cyan Total
                     fontColor = "0F172A";
                     bold = true;
                     fontSize = 10;
                     border = doubleBottomBorder;
-                    if (c === 0) align = "center";
+                    if (c === 0) align = "left";
                     else if (c === 4) align = "center";
                     else if (c === 5) {
                         align = "right";
                         numFmt = "Rp #,##0.00";
                     } else align = "left";
-                } else if (r >= signStartRow) {
-                    continue;
                 } else {
                     fill = (r % 2 === 0) ? "FFFFFF" : "F0FDFA";
                     if (c === 0) align = "center";
@@ -247,7 +288,101 @@
                     fill: { fgColor: { rgb: fill } },
                     border: border
                 };
-                if (numFmt) cell.z = numFmt;
+                if (numFmt && typeof cell.v === 'number') cell.z = numFmt;
+            }
+        }
+    }
+
+    function applyTransisiSheetStyling(ws, rowCount, colCount, titleRowCount = 5, totalRowIdx = 6, signStartRow = 8) {
+        const thinBorder = {
+            top: { style: "thin", color: { rgb: "64748B" } },
+            bottom: { style: "thin", color: { rgb: "64748B" } },
+            left: { style: "thin", color: { rgb: "64748B" } },
+            right: { style: "thin", color: { rgb: "64748B" } }
+        };
+
+        const doubleBottomBorder = {
+            top: { style: "thin", color: { rgb: "0F172A" } },
+            bottom: { style: "double", color: { rgb: "0F172A" } },
+            left: { style: "thin", color: { rgb: "64748B" } },
+            right: { style: "thin", color: { rgb: "64748B" } }
+        };
+
+        for (let r = 0; r < rowCount; r++) {
+            if (r >= signStartRow) continue;
+
+            const isTitle = (r < titleRowCount);
+            const isHeader = (r === titleRowCount);
+            const isTotal = (r === totalRowIdx);
+
+            for (let c = 0; c < colCount; c++) {
+                const cellRef = getColName(c) + (r + 1);
+                if (!ws[cellRef]) ws[cellRef] = { v: "", t: "s" };
+
+                const cell = ws[cellRef];
+                let fill = "FFFFFF";
+                let fontColor = "0F172A";
+                let bold = false;
+                let align = "center";
+                let border = thinBorder;
+                let fontSize = 9.5;
+                let numFmt = null;
+
+                if (isTitle) {
+                    fill = "FFFFFF";
+                    fontColor = "0F172A";
+                    bold = true;
+                    fontSize = (r === 0 || r === 1) ? 12 : 11;
+                    align = "center";
+                    border = null;
+                } else if (isHeader) {
+                    fill = "047857"; // Emerald Deep Header for Milik RSUD Transition
+                    fontColor = "FFFFFF";
+                    bold = true;
+                    fontSize = 9.5;
+                    align = "center";
+                    border = thinBorder;
+                } else if (isTotal) {
+                    fill = "A7F3D0"; // Soft Emerald Total
+                    fontColor = "064E3B";
+                    bold = true;
+                    fontSize = 10;
+                    border = doubleBottomBorder;
+                    if (c === 0) align = "left";
+                    else if (c === 11) align = "center";
+                    else if (c === 12) {
+                        align = "right";
+                        numFmt = "Rp #,##0.00";
+                    } else align = "left";
+                } else {
+                    fill = (r % 2 === 0) ? "FFFFFF" : "ECFDF5";
+                    if (c === 0) align = "center";
+                    else if (c === 1) { align = "left"; bold = true; }
+                    else if (c === 2) align = "center";
+                    else if (c === 3) align = "left";
+                    else if (c === 4) { align = "left"; bold = true; }
+                    else if (c === 5) align = "center";
+                    else if (c === 6) { align = "center"; bold = true; }
+                    else if (c === 7) align = "center";
+                    else if (c === 8) { align = "center"; bold = true; fill = "FEF3C7"; } // Gold badge for RSUD 1.3
+                    else if (c === 9) { align = "left"; bold = true; }
+                    else if (c === 10) { align = "center"; bold = true; fill = "D1FAE5"; } // Emerald badge for RSUD year
+                    else if (c === 11) align = "center";
+                    else if (c === 12) {
+                        align = "right";
+                        bold = true;
+                        fill = "E0F2FE";
+                        numFmt = "Rp #,##0.00";
+                    } else align = "left";
+                }
+
+                cell.s = {
+                    font: { name: "Calibri", sz: fontSize, bold: bold, color: { rgb: fontColor } },
+                    alignment: { horizontal: align, vertical: "center", wrapText: true },
+                    fill: { fgColor: { rgb: fill } },
+                    border: border
+                };
+                if (numFmt && typeof cell.v === 'number') cell.z = numFmt;
             }
         }
     }
@@ -288,8 +423,12 @@
             const isKemitraan = item.sumber_dana === 'kemitraan' || !!item.kemitraan;
             if (!isKemitraan) return false;
 
-            const itemYear = (item.kemitraan && item.kemitraan.tahun) || item.tahun_perolehan;
-            const matchYear = filterYear === 'all' || String(itemYear) === String(filterYear);
+            const itemKYear = (item.kemitraan && item.kemitraan.tahun);
+            const itemAYear = item.tahun_perolehan;
+            const reklasYears = (Array.isArray(item.reklas) ? item.reklas : (item.reklas ? [item.reklas] : [])).map(r => r.tahun);
+            const allItemYears = [itemKYear, itemAYear, ...reklasYears].filter(Boolean).map(String);
+
+            const matchYear = filterYear === 'all' || allItemYears.includes(String(filterYear));
 
             const itemTw = (item.kemitraan && item.kemitraan.triwulan) || item.triwulan || 'TWI';
             const matchTw = isTwMatch(itemTw, filterTw);
@@ -303,7 +442,7 @@
             }
 
             let matchCat = true;
-            if (filterCat !== 'all' && filterCat !== 'REKAP') {
+            if (filterCat !== 'all' && filterCat !== 'REKAP' && filterCat !== 'TRANSISI') {
                 const spec = getSafeSpec(item);
                 const isItemExtracom = !!item.is_extracomtable || 
                                        (item.category && item.category.toUpperCase() === 'EXTRACOM') || 
@@ -429,13 +568,56 @@
         const grandTotalVal = sumA.totalVal + sumB.totalVal + sumC.totalVal + sumD.totalVal + sumE.totalVal + sumExtracom.totalVal;
         const grandTotalUnits = sumA.totalUnits + sumB.totalUnits + sumC.totalUnits + sumD.totalUnits + sumE.totalUnits + sumExtracom.totalUnits;
 
+        // Akumulasi Aliran Status Kepemilikan Kemitraan
+        let sumDimanfaatkan = { totalVal: 0, totalUnits: 0, count: 0 };
+        let sumDitambahkan = { totalVal: 0, totalUnits: 0, count: 0 };
+        let sumMilikRsud = { totalVal: 0, totalUnits: 0, count: 0 };
+
+        filteredKemitraans.forEach(it => {
+            const type = getItemKemitraanType(it);
+            const val = (it.kemitraan && typeof it.kemitraan.nilai_aset === 'number')
+                ? it.kemitraan.nilai_aset
+                : (parseFloat(it.total_realisasi_num) || parseFloat(it.total_realisasi) || 0);
+            const vol = (it.kemitraan && it.kemitraan.jumlah_volume)
+                ? it.kemitraan.jumlah_volume
+                : (parseInt(it.jumlah_volume) || 1);
+
+            if (type === 'DIMANFAATKAN') {
+                sumDimanfaatkan.totalVal += val;
+                sumDimanfaatkan.totalUnits += vol;
+                sumDimanfaatkan.count++;
+            } else if (type === 'MILIK_RSUD') {
+                sumMilikRsud.totalVal += val;
+                sumMilikRsud.totalUnits += vol;
+                sumMilikRsud.count++;
+            } else {
+                sumDitambahkan.totalVal += val;
+                sumDitambahkan.totalUnits += vol;
+                sumDitambahkan.count++;
+            }
+        });
+
+        // Filter Daftar Aset Transisi Pengalihan Status Antar Tahun
+        const transitionItems = rawAstaps.filter(it => {
+            const isKemitraan = it.sumber_dana === 'kemitraan' || !!it.kemitraan;
+            if (!isKemitraan) return false;
+            const type = getItemKemitraanType(it);
+            const hasReklas = Array.isArray(it.reklas) && it.reklas.length > 0;
+            return type === 'MILIK_RSUD' || hasReklas;
+        });
+
         // 1. REKAPITULASI KEMITRAAN (Sheet 1)
         const rekapData = [
             ["PEMERINTAH KABUPATEN BONDOWOSO"],
             ["RUMAH SAKIT UMUM DAERAH dr. H. KOESNANDI"],
-            ["BUKU REKAPITULASI ASET KEMITRAAN DENGAN PIHAK KETIGA (AKUN 1.5.2)"],
+            ["BUKU REKAPITULASI ASET KEMITRAAN & STATUS KEPEMILIKAN BMD (AKUN 1.5.2 & MILIK RSUD)"],
             [`SKEMA: ${skemaLabel} · PERIODE: ${twLabel} TAHUN ANGGARAN ${yearLabel}`],
             [""],
+            // --- BAGIAN I: KLASIFIKASI KIB ---
+            [
+                "BAGIAN I: REKAPITULASI MENURUT KLASIFIKASI KIB / AKUN 108 (AKUN 1.5.2)",
+                "", "", "", "", "", ""
+            ],
             [
                 "NO",
                 "KLASIFIKASI KIB / AKUN 108 KEMITRAAN",
@@ -486,8 +668,100 @@
                 grandTotalUnits + " Unit Total",
                 grandTotalVal,
                 "Rekapitulasi " + twLabel + " " + yearLabel
+            ],
+            [""],
+            // --- BAGIAN II: ALIRAN HAK & KEPEMILIKAN ---
+            [
+                "BAGIAN II: REKAPITULASI BERDASARKAN ALIRAN HAK STATUS KEPEMILIKAN ASET",
+                "", "", "", "", "", ""
+            ],
+            [
+                "NO",
+                "STATUS KEPEMILIKAN / ALIRAN KEMITRAAN",
+                "DASAR KONSESI & PERUNTUKAN",
+                "DASAR AKUNTANSI BMD",
+                "JUMLAH UNIT",
+                "TOTAL NILAI BUKU / TAKSIRAN (Rp)",
+                "KETERANGAN / INDIKATOR"
+            ],
+            [
+                "A",
+                "ASET BMD YANG DIMANFAATKAN (DISEWAKAN / KSP)",
+                "Aset Tanah/Gedung RSUD disewakan/KSP ke Rekanan",
+                "Akun 1.5.2 (Aset Lain-Lain)",
+                sumDimanfaatkan.totalUnits + " Unit",
+                sumDimanfaatkan.totalVal,
+                sumDimanfaatkan.count > 0 ? "BMD Milik RSUD dalam Penggunaan Pihak Ketiga" : "Nihil"
+            ],
+            [
+                "B",
+                "ASET YANG DITAMBAHKAN MITRA (KONSESI AKTIF)",
+                "Investasi Alkes/Gedung Baru oleh Rekanan",
+                "Akun 1.5.2 (Hak Konsesi Mitra)",
+                sumDitambahkan.totalUnits + " Unit",
+                sumDitambahkan.totalVal,
+                sumDitambahkan.count > 0 ? "Aset Pihak Ketiga Selama Masa PKS Berjalan" : "Nihil"
+            ],
+            [
+                "C",
+                "ASET MILIK RSUD (EKS-KEMITRAAN / REKLASIFIKASI DEFINITIF)",
+                "Konsesi Selesai / Diserahkan Menjadi Hak Milik RSUD",
+                "Akun 1.3 (Aset Tetap Definitif)",
+                sumMilikRsud.totalUnits + " Unit",
+                sumMilikRsud.totalVal,
+                sumMilikRsud.count > 0 ? "Sah Beralih Menjadi Aset Tetap Milik RSUD" : "Nihil"
+            ],
+            [
+                "TOTAL KONSOLIDASI SELURUH ALIRAN KEMITRAAN", "", "", "",
+                (sumDimanfaatkan.totalUnits + sumDitambahkan.totalUnits + sumMilikRsud.totalUnits) + " Unit Total",
+                (sumDimanfaatkan.totalVal + sumDitambahkan.totalVal + sumMilikRsud.totalVal),
+                "Rekapitulasi Konsolidasi " + yearLabel
+            ],
+            [""],
+            // --- BAGIAN III: TABEL TRANSISI PERPINDAHAN TAHUN ---
+            [
+                "BAGIAN III: RINGKASAN RIWAYAT TRANSISI & PENGALIHAN ASET KE MILIK RSUD (PERPINDAHAN TAHUN)",
+                "", "", "", "", "", ""
+            ],
+            [
+                "NO",
+                "NAMA ASET / OBJEK BARANG",
+                "NOMOR PKS & REKANAN MITRA",
+                "TAHUN & STATUS ASAL (MITRA)",
+                "TAHUN BERALIH KE RSUD",
+                "NILAI ASET PENGALIHAN (Rp)",
+                "RIWAYAT TRANSISI STATUS KEPEMILIKAN"
             ]
         ];
+
+        const bag1TotalRowIdx = 13;
+        const bag2TotalRowIdx = 20;
+
+        if (transitionItems.length === 0) {
+            rekapData.push([
+                "-", "Tidak ada aset dalam proses transisi pengalihan ke RSUD pada periode ini", "-", "-", "-", 0, "-"
+            ]);
+        } else {
+            transitionItems.forEach((tIt, idx) => {
+                const k = tIt.kemitraan || {};
+                const reklas = (Array.isArray(tIt.reklas) && tIt.reklas.length > 0) ? tIt.reklas[0] : (tIt.reklas || {});
+                const kYear = k.tahun || (reklas.spesifikasi_lama?.kemitraan?.tahun) || tIt.tahun_perolehan || '-';
+                const rYear = reklas.tahun || tIt.tahun_perolehan || '-';
+                const pks = k.nomor_pks || tIt.bast_dokumen_nomor || '-';
+                const mitra = k.mitra_nama || tIt.penyedia_nama || 'PT. Mitra Rekanan';
+                const val = typeof reklas.nilai_reklas === 'number' ? reklas.nilai_reklas : (typeof k.nilai_aset === 'number' ? k.nilai_aset : (parseFloat(tIt.total_realisasi_num) || parseFloat(tIt.total_realisasi) || 0));
+                
+                rekapData.push([
+                    String(idx + 1),
+                    tIt.nama_barang || '-',
+                    `${pks} (${mitra})`,
+                    `Tahun ${kYear} (Aset Mitra - 1.5.2)`,
+                    `Tahun ${rYear} (Milik RSUD - 1.3)`,
+                    val,
+                    `Tahun ${kYear} aset milik mitra ➔ Tahun ${rYear} dipindah sah ke milik RSUD`
+                ]);
+            });
+        }
 
         const rekapSignStart = rekapData.length;
         const rekapSigns = buildKemitraanSignRows(7, 4, 1);
@@ -496,30 +770,31 @@
         const wsRekap = XLSX.utils.aoa_to_sheet(rekapData);
 
         wsRekap['!cols'] = [
-            { wch: 6 }, { wch: 42 }, { wch: 22 }, { wch: 38 }, { wch: 20 }, { wch: 28 }, { wch: 36 }
+            { wch: 6 }, { wch: 44 }, { wch: 28 }, { wch: 34 }, { wch: 22 }, { wch: 28 }, { wch: 48 }
         ];
         wsRekap['!merges'] = [
             { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
             { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },
             { s: { r: 2, c: 0 }, e: { r: 2, c: 6 } },
             { s: { r: 3, c: 0 }, e: { r: 3, c: 6 } },
-            { s: { r: 12, c: 0 }, e: { r: 12, c: 3 } },
+            // Banner Bagian I
+            { s: { r: 5, c: 0 }, e: { r: 5, c: 6 } },
+            // Total Bagian I
+            { s: { r: bag1TotalRowIdx, c: 0 }, e: { r: bag1TotalRowIdx, c: 3 } },
+            // Banner Bagian II
+            { s: { r: 15, c: 0 }, e: { r: 15, c: 6 } },
+            // Total Bagian II
+            { s: { r: bag2TotalRowIdx, c: 0 }, e: { r: bag2TotalRowIdx, c: 3 } },
+            // Banner Bagian III
+            { s: { r: 22, c: 0 }, e: { r: 22, c: 6 } },
             ...getKibSignatureMerges(rekapSignStart, 7, 4, 1, 2, 6)
         ];
 
-        applyRekapSheetStyling(wsRekap, rekapData.length, 7, 5, 12, rekapSignStart);
+        applyRekapSheetStyling(wsRekap, rekapData.length, 7, 5, bag1TotalRowIdx, rekapSignStart);
         applySignatureBlockStyling(wsRekap, rekapSignStart, 7);
 
         if (filterCat === 'all' || filterCat === 'REKAP') {
             XLSX.utils.book_append_sheet(wb, wsRekap, filterCat === 'all' ? "1. Rekapitulasi" : "Rekapitulasi Kemitraan");
-        }
-
-        function getSafeSpec(it) {
-            let spec = it.spesifikasi_json || {};
-            if (typeof spec === 'string') {
-                try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
-            }
-            return spec || {};
         }
 
         function getKemitraanKibTitleRows(kibCategoryName, yearLabel, filterTw, skemaLabel) {
@@ -549,7 +824,14 @@
             const mitraAlamat = k.mitra_alamat || spec.mitra_alamat || item.penyedia_alamat || '-';
             const ppkNama = (item.ppk_nama && item.ppk_nama !== '-') ? item.ppk_nama : ((spec.ppk_nama && spec.ppk_nama !== '-') ? spec.ppk_nama : 'BUDI HARTONO, S.Sos');
             const ppkNip = (item.ppk_nip && item.ppk_nip !== '-') ? item.ppk_nip : ((spec.ppk_nip && spec.ppk_nip !== '-') ? spec.ppk_nip : '19760229 200801 1 010');
-            const ket = (k.keterangan && k.keterangan !== '-') ? k.keterangan : (item.keterangan_tambahan && item.keterangan_tambahan !== '-' ? item.keterangan_tambahan : (k.status_konsesi ? ('Konsesi: ' + k.status_konsesi) : '-'));
+            
+            const type = getItemKemitraanType(item);
+            let badge = '[DITAMBAHKAN MITRA]';
+            if (type === 'MILIK_RSUD') badge = '[MILIK RSUD (EKS-KEMITRAAN)]';
+            else if (type === 'DIMANFAATKAN') badge = '[BMD RSUD DIMANFAATKAN]';
+
+            const rawKet = (k.keterangan && k.keterangan !== '-') ? k.keterangan : (item.keterangan_tambahan && item.keterangan_tambahan !== '-' ? item.keterangan_tambahan : (k.status_konsesi ? ('Konsesi: ' + k.status_konsesi) : ''));
+            const ket = rawKet ? `${badge} ${rawKet}` : badge;
 
             return [
                 mitraNama,
@@ -2391,10 +2673,144 @@
             XLSX.utils.book_append_sheet(wb, wsExtracom, filterCat === 'all' ? "7. Extracom" : "Extracom - Barang Ekstrakomtabel");
         }
 
+        // =========================================================================
+        // 8. TRANSISI MILIK RSUD (Sheet 8)
+        // =========================================================================
+        const transisiTitleRows = [
+            ["PEMERINTAH KABUPATEN BONDOWOSO"],
+            ["RUMAH SAKIT UMUM DAERAH dr. H. KOESNANDI"],
+            ["BUKU MUTASI TRANSISI ASET KEMITRAAN KE MILIK RSUD (EKS-KEMITRAAN / REKLASIFIKASI DEFINITIF)"],
+            [`SKEMA ASAL: ${skemaLabel} · PERIODE: ${twLabel} TAHUN ANGGARAN ${yearLabel}`],
+            [""]
+        ];
+
+        const transisiHeaderRow = [
+            "NO",
+            "NAMA ASET / OBJEK BARANG",
+            "KODE 108 ASAL (1.5.2 KEMITRAAN)",
+            "NAMA KLASIFIKASI ASAL",
+            "MITRA / REKANAN PENYEDIA",
+            "NOMOR & TGL DOKUMEN PKS",
+            "TAHUN ASAL (MILIK MITRA)",
+            "STATUS KONSESI ASAL",
+            "KODE 108 DEFINITIF (1.3 MILIK RSUD)",
+            "NAMA KLASIFIKASI DEFINITIF RSUD",
+            "TAHUN BERALIH KE RSUD",
+            "VOLUME / JUMLAH",
+            "NILAI ASET / BERALIH (Rp)",
+            "KETERANGAN / DASAR PENGALIHAN STATUS"
+        ];
+
+        const transisiRows = [
+            ...transisiTitleRows,
+            transisiHeaderRow
+        ];
+
+        let totalTransisiVal = 0;
+        let totalTransisiUnit = 0;
+
+        const allTransitionAssets = rawAstaps.filter(it => {
+            const isKemitraan = it.sumber_dana === 'kemitraan' || !!it.kemitraan;
+            if (!isKemitraan) return false;
+            const type = getItemKemitraanType(it);
+            const hasReklas = Array.isArray(it.reklas) && it.reklas.length > 0;
+            return type === 'MILIK_RSUD' || hasReklas;
+        });
+
+        if (allTransitionAssets.length === 0) {
+            transisiRows.push([
+                "-", "Tidak ada aset kemitraan yang beralih/direklasifikasi menjadi Milik RSUD pada periode ini", "-", "-", "-", "-", "-", "-", "-", "-", "-", 0, 0, "-"
+            ]);
+        } else {
+            allTransitionAssets.forEach((tIt, idx) => {
+                const k = tIt.kemitraan || {};
+                const reklas = (Array.isArray(tIt.reklas) && tIt.reklas.length > 0) ? tIt.reklas[0] : (tIt.reklas || {});
+                const kYear = k.tahun || (reklas.spesifikasi_lama?.kemitraan?.tahun) || tIt.tahun_perolehan || '-';
+                const rYear = reklas.tahun || tIt.tahun_perolehan || '-';
+                const pks = k.nomor_pks || tIt.bast_dokumen_nomor || '-';
+                const pksTgl = formatAstapDate(k.tanggal_pks || tIt.bast_dokumen_tanggal);
+                const mitra = k.mitra_nama || tIt.penyedia_nama || 'PT. Mitra Rekanan';
+                const asalKode = reklas.asal_kode || '1.5.2.01.01.01.003';
+                const asalNama = reklas.asal_nama || (k.skema_kemitraan ? `Sewa / ${k.skema_kemitraan}` : 'Aset Kemitraan');
+                const tujuanKode = reklas.tujuan_kode || tIt.kode_barang || '1.3.3.01.01.01.001';
+                const tujuanNama = reklas.tujuan_nama || tIt.nama_barang || 'Aset Tetap Milik RSUD';
+                const qty = parseInt(k.jumlah_volume) || parseInt(tIt.jumlah_volume) || 1;
+                const satuan = tIt.satuan || k.satuan || 'Unit';
+                const val = typeof reklas.nilai_reklas === 'number' ? reklas.nilai_reklas : (typeof k.nilai_aset === 'number' ? k.nilai_aset : (parseFloat(tIt.total_realisasi_num) || parseFloat(tIt.total_realisasi) || 0));
+                const alasan = reklas.alasan_reklas || 'Masa konsesi berakhir, diserahkan & direklasifikasi definitif menjadi Milik RSUD';
+
+                totalTransisiVal += val;
+                totalTransisiUnit += qty;
+
+                transisiRows.push([
+                    String(idx + 1),
+                    tIt.nama_barang || '-',
+                    asalKode,
+                    asalNama,
+                    mitra,
+                    `${pks} (${pksTgl})`,
+                    `Tahun ${kYear}`,
+                    k.status_konsesi || 'Selesai / Reklasifikasi',
+                    tujuanKode,
+                    tujuanNama,
+                    `Tahun ${rYear}`,
+                    `${qty} ${satuan}`,
+                    val,
+                    `Tahun ${kYear} milik mitra ➔ Tahun ${rYear} beralih sah milik RSUD (${alasan})`
+                ]);
+            });
+        }
+
+        // Total row Transisi
+        const transisiFooterRow = Array(14).fill("");
+        transisiFooterRow[0] = "JUMLAH TOTAL ASET TRANSISI MILIK RSUD";
+        transisiFooterRow[11] = totalTransisiUnit + " Unit";
+        transisiFooterRow[12] = totalTransisiVal;
+        transisiFooterRow[13] = "Rekapitulasi Transisi Aset";
+        transisiRows.push(transisiFooterRow);
+
+        const transisiSignStartRow = transisiRows.length;
+        const transisiSignRows = buildKemitraanSignRows(14, 10, 1);
+        transisiSignRows.forEach(r => transisiRows.push(r));
+
+        const wsTransisi = XLSX.utils.aoa_to_sheet(transisiRows);
+        wsTransisi['!cols'] = [
+            { wch: 6 },  // NO
+            { wch: 34 }, // NAMA
+            { wch: 24 }, // KODE ASAL
+            { wch: 28 }, // NAMA ASAL
+            { wch: 26 }, // MITRA
+            { wch: 28 }, // PKS
+            { wch: 16 }, // TAHUN ASAL
+            { wch: 22 }, // STATUS ASAL
+            { wch: 24 }, // KODE TUJUAN
+            { wch: 32 }, // NAMA TUJUAN
+            { wch: 18 }, // TAHUN TUJUAN
+            { wch: 16 }, // VOLUME
+            { wch: 24 }, // NILAI RP
+            { wch: 48 }  // KETERANGAN
+        ];
+
+        wsTransisi['!merges'] = [
+            { s: { r: 0, c: 0 }, e: { r: 0, c: 13 } },
+            { s: { r: 1, c: 0 }, e: { r: 1, c: 13 } },
+            { s: { r: 2, c: 0 }, e: { r: 2, c: 13 } },
+            { s: { r: 3, c: 0 }, e: { r: 3, c: 13 } },
+            { s: { r: transisiRows.length - 10, c: 0 }, e: { r: transisiRows.length - 10, c: 10 } },
+            ...getKibSignatureMerges(transisiSignStartRow, 14, 10, 1, 4, 13)
+        ];
+
+        applyTransisiSheetStyling(wsTransisi, transisiRows.length, 14, 5, transisiRows.length - 10, transisiSignStartRow);
+        applySignatureBlockStyling(wsTransisi, transisiSignStartRow, 14);
+
+        if (filterCat === 'all' || filterCat === 'TRANSISI') {
+            XLSX.utils.book_append_sheet(wb, wsTransisi, filterCat === 'all' ? "8. Transisi Milik RSUD" : "Transisi Milik RSUD");
+        }
+
         // Simpan File Excel
         const twSlug = filterTw === 'all' ? 'TAHUNAN' : filterTw.replace(/[\s_]/g, '');
         const skemaSlug = filterSkema === 'all' ? 'SEMUA_SKEMA' : filterSkema.toUpperCase();
-        const catSlug = filterCat === 'all' ? 'LENGKAP_7SHEET' : filterCat.replace(/[\s_]/g, '');
+        const catSlug = filterCat === 'all' ? 'LENGKAP_8SHEET' : filterCat.replace(/[\s_]/g, '');
         const fileName = `BUKU_ASET_KEMITRAAN_AKUN_152_RSDK_${skemaSlug}_${catSlug}_${yearLabel}_${twSlug}.xlsx`;
 
         XLSX.writeFile(wb, fileName);

@@ -139,7 +139,7 @@ class KemitraanController extends Controller
         $dbMaster108 = JenisAstap::getNested108();
 
         // Ambil data Astap kemitraan lengkap untuk kebutuhan Engine Ekspor Excel Multi-Sheet (Client-Side)
-        $kemitraanAstaps = Astap::with(['registers.unit', 'kemitraan', 'jenisAstap', 'unit'])
+        $kemitraanAstaps = Astap::with(['registers.unit', 'kemitraan', 'jenisAstap', 'unit', 'reklas.jenisTujuan', 'reklas.jenisAsal'])
             ->where('is_deleted', 0)
             ->where(function ($q) {
                 $q->where('sumber_dana', 'kemitraan')

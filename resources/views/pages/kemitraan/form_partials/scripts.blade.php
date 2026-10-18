@@ -50,6 +50,7 @@
 
             // Mode Produksi: Lock KIB aktif secara ketat sesuai data aset BMD yang dimanfaatkan (kecuali aset sudah Milik RSUD)
             isKibLockActive: true,
+            forcedObjekType: null,
 
             setTipeKemitraan(t) {
                 if (this.tipeKemitraan === t) return;
@@ -1067,7 +1068,9 @@
             // Hidrasi form input dari data eksisting saat mode Ubah Aset Kemitraan
             hydrateFromEditData(d) {
                 if (!d) return;
-                const kemitraan = d.kemitraan || {};
+                const reklasItem = (Array.isArray(d.reklas) && d.reklas.length > 0) ? d.reklas[0] : (d.reklas || null);
+                const specLama = (reklasItem && typeof reklasItem.spesifikasi_lama === 'object') ? reklasItem.spesifikasi_lama : {};
+                const kemitraan = d.kemitraan || specLama.kemitraan || {};
                 const spec = (typeof d.spesifikasi_json === 'object' && d.spesifikasi_json !== null) 
                     ? d.spesifikasi_json 
                     : (typeof d.spesifikasi_json === 'string' ? (JSON.parse(d.spesifikasi_json) || {}) : {});
@@ -1082,6 +1085,8 @@
                     this.tipeKemitraan = spec.tipe_kemitraan;
                 } else if (kemitraan.tipe_kemitraan && ['dimanfaatkan', 'ditambahkan'].includes(kemitraan.tipe_kemitraan)) {
                     this.tipeKemitraan = kemitraan.tipe_kemitraan;
+                } else if (specLama.tipe_kemitraan && ['dimanfaatkan', 'ditambahkan'].includes(specLama.tipe_kemitraan)) {
+                    this.tipeKemitraan = specLama.tipe_kemitraan;
                 } else if (d.is_reklas) {
                     this.tipeKemitraan = 'dimanfaatkan';
                 } else {
@@ -1089,17 +1094,17 @@
                 }
 
                 // Step 1: Legalitas PKS & Mitra
-                this.formData.mitra_nama = kemitraan.mitra_nama || spec.mitra_nama || '';
-                this.formData.mitra_pimpinan = kemitraan.mitra_pimpinan || spec.mitra_pimpinan || '';
-                this.formData.mitra_alamat = kemitraan.mitra_alamat || spec.mitra_alamat || '';
-                this.formData.nomor_pks = kemitraan.nomor_pks || d.bast_dokumen_nomor || spec.nomor_pks || '';
-                this.formData.tanggal_pks = this.cleanDateString(kemitraan.tanggal_pks || d.bast_dokumen_tanggal || spec.tanggal_pks || '');
-                this.formData.skema_kemitraan = kemitraan.skema_kemitraan || spec.skema_kemitraan || 'Sewa';
-                this.formData.tanggal_mulai = this.cleanDateString(kemitraan.tanggal_mulai || spec.tanggal_mulai || '');
-                this.formData.tanggal_selesai = this.cleanDateString(kemitraan.tanggal_selesai || spec.tanggal_selesai || '');
-                this.formData.tahun_perolehan = d.tahun_perolehan || kemitraan.tahun || {{ date('Y') }};
-                this.formData.triwulan = d.triwulan || kemitraan.triwulan || 'TW I';
-                this.formData.kemitraan_keterangan = d.keterangan_tambahan || kemitraan.keterangan || spec.keterangan || '';
+                this.formData.mitra_nama = kemitraan.mitra_nama || specLama.mitra_nama || spec.mitra_nama || '';
+                this.formData.mitra_pimpinan = kemitraan.mitra_pimpinan || specLama.mitra_pimpinan || spec.mitra_pimpinan || '';
+                this.formData.mitra_alamat = kemitraan.mitra_alamat || specLama.mitra_alamat || spec.mitra_alamat || '';
+                this.formData.nomor_pks = kemitraan.nomor_pks || specLama.nomor_pks || d.bast_dokumen_nomor || spec.nomor_pks || '';
+                this.formData.tanggal_pks = this.cleanDateString(kemitraan.tanggal_pks || specLama.tanggal_pks || d.bast_dokumen_tanggal || spec.tanggal_pks || '');
+                this.formData.skema_kemitraan = kemitraan.skema_kemitraan || specLama.skema_kemitraan || spec.skema_kemitraan || 'Sewa';
+                this.formData.tanggal_mulai = this.cleanDateString(kemitraan.tanggal_mulai || specLama.tanggal_mulai || spec.tanggal_mulai || '');
+                this.formData.tanggal_selesai = this.cleanDateString(kemitraan.tanggal_selesai || specLama.tanggal_selesai || spec.tanggal_selesai || '');
+                this.formData.tahun_perolehan = d.tahun_perolehan || kemitraan.tahun || specLama.tahun || {{ date('Y') }};
+                this.formData.triwulan = d.triwulan || kemitraan.triwulan || specLama.triwulan || 'TW I';
+                this.formData.kemitraan_keterangan = d.keterangan_tambahan || kemitraan.keterangan || specLama.keterangan || spec.keterangan || '';
                 this.formData.dokumen_path = kemitraan.dokumen_path || spec.dokumen_path || '';
 
                 // Objek Aset Terkait RSUD yang Dikerjasamakan
@@ -1129,7 +1134,8 @@
                 this.formData.jenis_astap_id = d.jenis_astap_id || null;
                 this.formData.jumlah_volume = d.jumlah_volume || 1;
                 this.formData.satuan = d.satuan || 'Unit';
-                this.formData.total_realisasi = Number(d.total_realisasi || 0);
+                this.formData.total_realisasi = Number(d.total_realisasi || kemitraan.nilai_aset || specLama.nilai_aset || 0);
+                this.formData.nilai_aset = Number(kemitraan.nilai_aset || d.total_realisasi || specLama.nilai_aset || 0);
 
                 // Step 3: Rincian Fisik, Ruangan & PPK
                 this.formData.unit_id = d.unit_id || '';
@@ -1145,6 +1151,9 @@
                         ...m,
                         mesin_kode_barang: m.mesin_kode_barang || d.jenis_astap?.kode || '',
                         mesin_nama_barang: m.mesin_nama_barang || m.nama_barang || spec.mesin_nama_barang || d.nama_barang || '',
+                        mesin_nilai_satuan: Number(m.mesin_nilai_satuan || m.mesin_nilai_fisik || m.mesin_harga_satuan || (spec.mesin_items.length > 0 ? Math.round((d.total_realisasi || kemitraan.nilai_aset || 0) / spec.mesin_items.length) : 0) || 0),
+                        mesin_jumlah_barang: parseInt(m.mesin_jumlah_barang || m.jumlah || 1),
+                        mesin_satuan: m.mesin_satuan || d.satuan || 'Unit',
                         is_extracom: Boolean(m.is_extracom)
                     }));
                 } else if (d.nama_barang || spec.merk || (d.jenis_astap?.kode && (d.jenis_astap.kode.endsWith('.002') || d.jenis_astap.kode.startsWith('1.3.2')))) {
@@ -1162,7 +1171,7 @@
                         mesin_kondisi: spec.kondisi || 'Baik',
                         mesin_jumlah_barang: d.jumlah_volume || 1,
                         mesin_satuan: d.satuan || 'Unit',
-                        mesin_nilai_satuan: Number(d.total_realisasi || 0),
+                        mesin_nilai_satuan: Number(spec.mesin_nilai_satuan || spec.mesin_nilai_fisik || d.total_realisasi || kemitraan.nilai_aset || 0),
                         is_extracom: Boolean(d.is_extracomtable || spec.is_extracomtable)
                     }];
                 }
@@ -1172,7 +1181,7 @@
                         ...t,
                         tanah_kode_barang: t.tanah_kode_barang || d.jenis_astap?.kode || '',
                         tanah_nama_barang: t.tanah_nama_barang || t.nama_barang || spec.tanah_nama_barang || d.nama_barang || t.tanah_penggunaan || '',
-                        tanah_nilai_satuan: Number(t.tanah_nilai_satuan || t.tanah_nilai_fisik || (spec.tanah_items.length === 1 ? d.total_realisasi : 0) || 0),
+                        tanah_nilai_satuan: Number(t.tanah_nilai_satuan || t.tanah_nilai_fisik || (spec.tanah_items.length > 0 ? Math.round((d.total_realisasi || kemitraan.nilai_aset || 0) / spec.tanah_items.length) : 0) || 0),
                         tanah_jumlah_barang: parseInt(t.tanah_jumlah_barang || t.tanah_jumlah_bidang || 1),
                         tanah_satuan: t.tanah_satuan || d.satuan || 'Bidang',
                         tanah_penggunaan: t.tanah_penggunaan || spec.penggunaan || '',
@@ -1194,7 +1203,7 @@
                         tanah_alamat: d.alamat_barang || '',
                         tanah_jumlah_barang: d.jumlah_volume || 1,
                         tanah_satuan: d.satuan || 'Bidang',
-                        tanah_nilai_satuan: Number(d.total_realisasi || 0)
+                        tanah_nilai_satuan: Number(spec.tanah_nilai_satuan || spec.tanah_nilai_fisik || d.total_realisasi || kemitraan.nilai_aset || 0)
                     }];
                 }
 
@@ -1204,6 +1213,18 @@
                         gedung_kode_barang: g.gedung_kode_barang || d.jenis_astap?.kode || '',
                         gedung_nama_barang: g.gedung_nama_barang || g.gedung_nama_bangunan || g.nama_barang || spec.gedung_nama_bangunan || d.nama_barang || '',
                         gedung_nama_bangunan: g.gedung_nama_bangunan || g.gedung_nama_barang || spec.gedung_nama_bangunan || d.nama_barang || '',
+                        gedung_nilai_satuan: Number(g.gedung_nilai_satuan || g.gedung_nilai_fisik || (spec.gedung_items.length > 0 ? Math.round((d.total_realisasi || kemitraan.nilai_aset || 0) / spec.gedung_items.length) : 0) || 0),
+                        gedung_jumlah_bangunan: parseInt(g.gedung_jumlah_bangunan || 1),
+                        gedung_satuan: g.gedung_satuan || d.satuan || 'Gedung',
+                        gedung_luas_lantai: g.gedung_luas_lantai || g.gedung_luas_lantai_m2 || spec.luas_lantai_m2 || null,
+                        gedung_bertingkat: g.gedung_bertingkat || (g.gedung_konstruksi_bertingkat && String(g.gedung_konstruksi_bertingkat).toLowerCase().includes('tidak') ? 'Tidak' : (g.gedung_konstruksi_bertingkat ? 'Bertingkat' : (spec.konstruksi_bertingkat || 'Tidak'))),
+                        gedung_beton: g.gedung_beton || (g.gedung_konstruksi_beton && String(g.gedung_konstruksi_beton).toLowerCase().includes('tidak') ? 'Tidak' : (g.gedung_konstruksi_beton ? 'Beton' : (spec.konstruksi_beton || 'Beton'))),
+                        gedung_status_tanah: g.gedung_status_tanah || spec.status_tanah || 'Tanah Milik RSUD',
+                        gedung_dokumen_no: g.gedung_dokumen_no || g.gedung_dokumen_nomor || spec.dokumen_nomor || (kemitraan ? kemitraan.nomor_pks : '') || '',
+                        gedung_dokumen_tgl: g.gedung_dokumen_tgl || spec.dokumen_tgl || (kemitraan ? kemitraan.tanggal_mulai : '') || '',
+                        gedung_alamat: g.gedung_alamat || d.alamat_barang || '',
+                        gedung_fungsi: g.gedung_fungsi || spec.fungsi || '',
+                        gedung_kondisi: g.gedung_kondisi || spec.kondisi || 'Baik',
                         gedung_is_baru: g.gedung_is_baru || 'Lama',
                         gedung_kapitalisasi_tahun_induk: g.gedung_kapitalisasi_tahun_induk || ''
                     }));
@@ -1216,18 +1237,18 @@
                         searchFilter: '',
                         gedung_is_baru: spec.gedung_is_baru || 'Lama',
                         gedung_kapitalisasi_tahun_induk: spec.gedung_kapitalisasi_tahun_induk || '',
-                        gedung_luas_lantai: spec.gedung_luas_lantai || null,
+                        gedung_luas_lantai: spec.gedung_luas_lantai || spec.luas_lantai_m2 || null,
                         gedung_kondisi: spec.kondisi || 'Baik',
-                        gedung_bertingkat: spec.gedung_bertingkat || 'Tidak',
-                        gedung_beton: (spec.gedung_beton === 'Tidak' ? 'Tidak' : 'Beton'),
-                        gedung_status_tanah: spec.gedung_status_tanah || 'Tanah Milik RSUD',
-                        gedung_dokumen_no: spec.gedung_dokumen_no || '',
-                        gedung_dokumen_tgl: spec.gedung_dokumen_tgl || '',
+                        gedung_bertingkat: spec.gedung_bertingkat || (spec.konstruksi_bertingkat && String(spec.konstruksi_bertingkat).toLowerCase().includes('tidak') ? 'Tidak' : (spec.konstruksi_bertingkat ? 'Bertingkat' : 'Tidak')),
+                        gedung_beton: spec.gedung_beton || (spec.konstruksi_beton && String(spec.konstruksi_beton).toLowerCase().includes('tidak') ? 'Tidak' : 'Beton'),
+                        gedung_status_tanah: spec.gedung_status_tanah || spec.status_tanah || 'Tanah Milik RSUD',
+                        gedung_dokumen_no: spec.gedung_dokumen_no || spec.dokumen_nomor || (kemitraan ? kemitraan.nomor_pks : '') || '',
+                        gedung_dokumen_tgl: spec.gedung_dokumen_tgl || spec.dokumen_tgl || (kemitraan ? kemitraan.tanggal_mulai : '') || '',
                         gedung_alamat: d.alamat_barang || '',
-                        gedung_fungsi: spec.gedung_fungsi || '',
+                        gedung_fungsi: spec.gedung_fungsi || spec.fungsi || '',
                         gedung_jumlah_bangunan: d.jumlah_volume || 1,
                         gedung_satuan: d.satuan || 'Gedung',
-                        gedung_nilai_satuan: Number(d.total_realisasi || 0)
+                        gedung_nilai_satuan: Number(spec.gedung_nilai_satuan || spec.gedung_nilai_fisik || d.total_realisasi || kemitraan.nilai_aset || 0)
                     }];
                 }
 
@@ -1236,8 +1257,24 @@
                         ...j,
                         jaringan_kode_barang: j.jaringan_kode_barang || d.jenis_astap?.kode || '',
                         jaringan_nama_barang: j.jaringan_nama_barang || j.nama_barang || spec.jaringan_nama_barang || d.nama_barang || '',
+                        jaringan_nilai_satuan: Number(j.jaringan_nilai_satuan || j.jaringan_nilai_fisik || (spec.jaringan_items.length > 0 ? Math.round((d.total_realisasi || kemitraan.nilai_aset || 0) / spec.jaringan_items.length) : 0) || 0),
+                        jaringan_jumlah: parseInt(j.jaringan_jumlah || 1),
+                        jaringan_satuan: j.jaringan_satuan || d.satuan || 'Ruas',
                         jaringan_is_baru: j.jaringan_is_baru || 'Lama',
-                        jaringan_kapitalisasi_tahun_induk: j.jaringan_kapitalisasi_tahun_induk || ''
+                        jaringan_kapitalisasi_tahun_induk: j.jaringan_kapitalisasi_tahun_induk || '',
+                        jaringan_konstruksi: j.jaringan_konstruksi || '',
+                        jaringan_panjang: j.jaringan_panjang || null,
+                        jaringan_lebar: j.jaringan_lebar || null,
+                        jaringan_luas: j.jaringan_luas || null,
+                        jaringan_bertingkat: j.jaringan_bertingkat || 'Tidak',
+                        jaringan_beton: j.jaringan_beton || 'Beton',
+                        jaringan_kondisi: j.jaringan_kondisi || spec.kondisi || 'Baik',
+                        jaringan_dokumen_no: j.jaringan_dokumen_no || j.jaringan_dokumen_nomor || spec.dokumen_nomor || (kemitraan ? kemitraan.nomor_pks : '') || '',
+                        jaringan_dokumen_tgl: j.jaringan_dokumen_tgl || spec.dokumen_tgl || (kemitraan ? kemitraan.tanggal_mulai : '') || '',
+                        jaringan_status_tanah: j.jaringan_status_tanah || 'Tanah Hak Pakai RSUD',
+                        jaringan_kode_aset_tanah: j.jaringan_kode_aset_tanah || spec.jaringan_kode_aset_tanah || '',
+                        jaringan_alamat: j.jaringan_alamat || d.alamat_barang || '',
+                        jaringan_keterangan: j.jaringan_keterangan || spec.jaringan_keterangan || ''
                     }));
                 } else if (spec.jaringan_konstruksi || spec.jaringan_panjang || spec.jaringan_dokumen_no || d.nama_barang || (d.jenis_astap?.kode && (d.jenis_astap.kode.endsWith('.004') || d.jenis_astap.kode.startsWith('1.3.4')))) {
                     this.formData.jaringan_items = [{
@@ -1254,14 +1291,14 @@
                         jaringan_bertingkat: spec.jaringan_bertingkat || 'Tidak',
                         jaringan_beton: spec.jaringan_beton || 'Beton',
                         jaringan_kondisi: spec.kondisi || 'Baik',
-                        jaringan_dokumen_no: spec.jaringan_dokumen_no || '',
-                        jaringan_dokumen_tgl: spec.jaringan_dokumen_tgl || '',
+                        jaringan_dokumen_no: spec.jaringan_dokumen_no || spec.dokumen_nomor || (kemitraan ? kemitraan.nomor_pks : '') || '',
+                        jaringan_dokumen_tgl: spec.jaringan_dokumen_tgl || spec.dokumen_tgl || (kemitraan ? kemitraan.tanggal_mulai : '') || '',
                         jaringan_status_tanah: spec.jaringan_status_tanah || 'Tanah Hak Pakai RSUD',
                         jaringan_kode_aset_tanah: spec.jaringan_kode_aset_tanah || '',
                         jaringan_alamat: d.alamat_barang || '',
                         jaringan_jumlah: d.jumlah_volume || 1,
                         jaringan_satuan: d.satuan || 'Ruas',
-                        jaringan_nilai_satuan: Number(d.total_realisasi || 0),
+                        jaringan_nilai_satuan: Number(spec.jaringan_nilai_satuan || spec.jaringan_nilai_fisik || d.total_realisasi || kemitraan.nilai_aset || 0),
                         jaringan_keterangan: spec.jaringan_keterangan || ''
                     }];
                 }
@@ -1271,6 +1308,9 @@
                         ...l,
                         lainnya_kode_barang: l.lainnya_kode_barang || d.jenis_astap?.kode || '',
                         lainnya_nama_barang: l.lainnya_nama_barang || l.lainnya_judul || l.nama_barang || spec.lainnya_nama_barang || d.nama_barang || '',
+                        lainnya_nilai_satuan: Number(l.lainnya_nilai_satuan || l.lainnya_nilai_fisik || (spec.lainnya_items.length > 0 ? Math.round((d.total_realisasi || kemitraan.nilai_aset || 0) / spec.lainnya_items.length) : 0) || 0),
+                        lainnya_jumlah: parseInt(l.lainnya_jumlah || l.lainnya_jumlah_barang || 1),
+                        lainnya_satuan: l.lainnya_satuan || d.satuan || 'Buah',
                         is_extracom: Boolean(l.is_extracom)
                     }));
                 } else if (d.nama_barang || (d.jenis_astap?.kode && (d.jenis_astap.kode.endsWith('.005') || d.jenis_astap.kode.startsWith('1.3.5')))) {
@@ -1281,8 +1321,9 @@
                         searchFilter: '',
                         is_extracom: Boolean(d.is_extracomtable || spec.is_extracomtable),
                         lainnya_jumlah_barang: d.jumlah_volume || 1,
+                        lainnya_jumlah: d.jumlah_volume || 1,
                         lainnya_satuan: d.satuan || 'Unit',
-                        lainnya_nilai_satuan: Number(d.total_realisasi || 0)
+                        lainnya_nilai_satuan: Number(spec.lainnya_nilai_satuan || spec.lainnya_nilai_fisik || d.total_realisasi || kemitraan.nilai_aset || 0)
                     }];
                 }
 
@@ -1332,21 +1373,54 @@
             },
 
             get selectedObjekType() {
+                // 0. Manual override jika pengguna memilih kartu KIB di Langkah 2
+                if (this.forcedObjekType) return this.forcedObjekType;
+
                 const kode = this.selectedKode108;
                 const nama = ((this.selectedSubSub?.nama || '') + ' ' + (this.formData.nama_barang || '')).toLowerCase();
 
-                // 1. Berdasarkan Kode 108 Permendagri:
-                // Akun 1.5.2 Kemitraan: .001 (Tanah), .002 (Mesin/Alat), .003 (Gedung), .004 (Jaringan), .005 (Lainnya)
-                // Akun 1.3 Belanja Modal: 1.3.1 (Tanah), 1.3.2 (Mesin), 1.3.3 (Gedung), 1.3.4 (Jaringan), 1.3.5 (Lainnya)
-                if (kode) {
-                    if (kode.endsWith('.001') || kode.startsWith('1.3.1')) return 'tanah';
-                    if (kode.endsWith('.002') || kode.startsWith('1.3.2')) return 'mesin';
-                    if (kode.endsWith('.003') || kode.startsWith('1.3.3')) return 'gedung';
-                    if (kode.endsWith('.004') || kode.startsWith('1.3.4')) return 'jaringan';
-                    if (kode.endsWith('.005') || kode.startsWith('1.3.5')) return 'lainnya';
+                // 1. Kategori KIB dari data aset yang diedit (window.editAstapData)
+                if (window.editAstapData) {
+                    const cat = (window.editAstapData.category || '').toUpperCase();
+                    if (cat.includes('KIB A') || cat === 'A' || cat.includes('TANAH')) return 'tanah';
+                    if (cat.includes('KIB B') || cat === 'B' || cat.includes('MESIN') || cat.includes('ALAT')) return 'mesin';
+                    if (cat.includes('KIB C') || cat === 'C' || cat.includes('GEDUNG') || cat.includes('BANGUNAN')) return 'gedung';
+                    if (cat.includes('KIB D') || cat === 'D' || cat.includes('JARINGAN') || cat.includes('JALAN')) return 'jaringan';
+                    if (cat.includes('KIB E') || cat === 'E' || cat.includes('LAINNYA')) return 'lainnya';
+
+                    const spec = (typeof window.editAstapData.spesifikasi_json === 'object' && window.editAstapData.spesifikasi_json !== null) 
+                        ? window.editAstapData.spesifikasi_json 
+                        : (typeof window.editAstapData.spesifikasi_json === 'string' ? (JSON.parse(window.editAstapData.spesifikasi_json) || {}) : {});
+                    if (spec.kategori_kib) {
+                        const sk = String(spec.kategori_kib).toUpperCase();
+                        if (sk.includes('KIB A') || sk.includes('TANAH')) return 'tanah';
+                        if (sk.includes('KIB B') || sk.includes('MESIN')) return 'mesin';
+                        if (sk.includes('KIB C') || sk.includes('GEDUNG')) return 'gedung';
+                        if (sk.includes('KIB D') || sk.includes('JARINGAN')) return 'jaringan';
+                        if (sk.includes('KIB E') || sk.includes('LAINNYA')) return 'lainnya';
+                    }
                 }
 
-                // 2. Berdasarkan kecocokan teks nama
+                // 2. Berdasarkan Kode 108 Permendagri:
+                // Akun 1.3 Belanja Modal / Milik RSUD: 1.3.1 (Tanah), 1.3.2 (Mesin), 1.3.3 (Gedung), 1.3.4 (Jaringan), 1.3.5 (Lainnya)
+                if (kode) {
+                    if (kode.startsWith('1.3.1')) return 'tanah';
+                    if (kode.startsWith('1.3.2')) return 'mesin';
+                    if (kode.startsWith('1.3.3')) return 'gedung';
+                    if (kode.startsWith('1.3.4')) return 'jaringan';
+                    if (kode.startsWith('1.3.5')) return 'lainnya';
+
+                    // Akun 1.5.2 Kemitraan: .001 (Tanah), .002 (Mesin/Alat), .003 (Gedung), .004 (Jaringan), .005 (Lainnya)
+                    if (kode.startsWith('1.5.2')) {
+                        if (kode.endsWith('.001')) return 'tanah';
+                        if (kode.endsWith('.002')) return 'mesin';
+                        if (kode.endsWith('.003')) return 'gedung';
+                        if (kode.endsWith('.004')) return 'jaringan';
+                        if (kode.endsWith('.005')) return 'lainnya';
+                    }
+                }
+
+                // 3. Berdasarkan kecocokan teks nama
                 if (nama.includes('tanah') || nama.includes('lahan') || nama.includes('kavling')) return 'tanah';
                 if (nama.includes('gedung') || nama.includes('bangunan') || nama.includes('ruang') || nama.includes('paviliun') || nama.includes('rumah')) return 'gedung';
                 if (nama.includes('jalan') || nama.includes('irigasi') || nama.includes('jaringan') || nama.includes('pipa') || nama.includes('saluran') || nama.includes('kabel')) return 'jaringan';
@@ -1581,7 +1655,9 @@
             },
 
             getMesinSubtotal(item) {
-                return (Number(item.mesin_jumlah_barang || 1) * Number(item.mesin_nilai_satuan || 0));
+                if (!item) return 0;
+                const unitVal = Number(item.mesin_nilai_satuan || item.mesin_nilai_fisik || item.mesin_harga_satuan || 0);
+                return (Number(item.mesin_jumlah_barang || 1) * unitVal);
             },
 
             get totalNilaiMesin() {
@@ -1704,8 +1780,14 @@
             },
 
             getGedungSubtotal(item) {
+                if (!item) return 0;
                 // Untuk aset gedung & bangunan (KIB C), taksiran nilai wajar adalah nilai keseluruhan per bangunan (lump-sum)
-                return Number(item.gedung_nilai_satuan || 0);
+                const direct = Number(item.gedung_nilai_satuan || item.gedung_nilai_fisik || 0);
+                if (direct > 0) return direct;
+                if (this.formData?.gedung_items?.length === 1 && Number(this.formData?.total_realisasi || 0) > 0) {
+                    return Number(this.formData.total_realisasi);
+                }
+                return 0;
             },
 
             get totalNilaiGedung() {
@@ -1768,8 +1850,14 @@
             },
 
             getJaringanSubtotal(item) {
+                if (!item) return 0;
                 // Untuk aset jalan, irigasi & jaringan (KIB D), taksiran nilai wajar adalah nilai keseluruhan per ruas/jaringan (lump-sum)
-                return Number(item.jaringan_nilai_satuan || 0);
+                const direct = Number(item.jaringan_nilai_satuan || item.jaringan_nilai_fisik || 0);
+                if (direct > 0) return direct;
+                if (this.formData?.jaringan_items?.length === 1 && Number(this.formData?.total_realisasi || 0) > 0) {
+                    return Number(this.formData.total_realisasi);
+                }
+                return 0;
             },
 
             get totalNilaiJaringan() {
@@ -1829,7 +1917,9 @@
             },
 
             getLainnyaSubtotal(item) {
-                return (Number(item.lainnya_jumlah || 1) * Number(item.lainnya_nilai_satuan || 0));
+                if (!item) return 0;
+                const unitVal = Number(item.lainnya_nilai_satuan || item.lainnya_nilai_fisik || 0);
+                return (Number(item.lainnya_jumlah || item.lainnya_jumlah_barang || 1) * unitVal);
             },
 
             getKibEPrefix(item) {
@@ -2264,6 +2354,16 @@
 
             // Getter: Daftar 5 Sub-Sub Rincian Objek Permendagri 108 sesuai skema aktif
             get currentSubSubRecommendations() {
+                if (this.isMilikRsud) {
+                    return [
+                        { id: 'kib_a', type: 'tanah', kode: '1.3.1 (KIB A)', nama: 'Tanah', deskripsi: 'Tanah & Lahan Milik RSUD', icon: '🌾' },
+                        { id: 'kib_b', type: 'mesin', kode: '1.3.2 (KIB B)', nama: 'Peralatan & Mesin', deskripsi: 'Alat Medis, Operasional & Kendaraan', icon: '⚙️' },
+                        { id: 'kib_c', type: 'gedung', kode: '1.3.3 (KIB C)', nama: 'Gedung & Bangunan', deskripsi: 'Bangunan Gedung, Ruang & Paviliun', icon: '🏢' },
+                        { id: 'kib_d', type: 'jaringan', kode: '1.3.4 (KIB D)', nama: 'Jalan, Irigasi & Jaringan', deskripsi: 'Instalasi Air, Listrik, Gas & Jaringan', icon: '🛣️' },
+                        { id: 'kib_e', type: 'lainnya', kode: '1.3.5 (KIB E)', nama: 'Aset Tetap Lainnya', deskripsi: 'Buku, Kesenian, Koleksi & Lainnya', icon: '📦' }
+                    ];
+                }
+
                 const prefix = this.activeSkemaKode;
                 let items = this.flat108.filter(it => it.kode && it.kode.startsWith(prefix));
                 
@@ -2455,23 +2555,32 @@
             // Helper Icon per Kategori Objek
             getSubSubIcon(kode) {
                 if (!kode) return '📦';
-                if (kode.endsWith('.001')) return '🏞️'; // Tanah
-                if (kode.endsWith('.002')) return '⚙️'; // Peralatan dan Mesin
-                if (kode.endsWith('.003')) return '🏢'; // Gedung dan Bangunan
-                if (kode.endsWith('.004')) return '🌐'; // Jalan, Irigasi dan Jaringan
-                if (kode.endsWith('.005')) return '📦'; // Aset Tetap Lainnya
+                if (kode.includes('1.3.1') || (kode.startsWith('1.5.2') && kode.endsWith('.001'))) return '🏞️'; // Tanah
+                if (kode.includes('1.3.2') || (kode.startsWith('1.5.2') && kode.endsWith('.002'))) return '⚙️'; // Peralatan dan Mesin
+                if (kode.includes('1.3.3') || (kode.startsWith('1.5.2') && kode.endsWith('.003'))) return '🏢'; // Gedung dan Bangunan
+                if (kode.includes('1.3.4') || (kode.startsWith('1.5.2') && kode.endsWith('.004'))) return '🌐'; // Jalan, Irigasi dan Jaringan
+                if (kode.includes('1.3.5') || (kode.startsWith('1.5.2') && kode.endsWith('.005'))) return '📦'; // Aset Tetap Lainnya
                 return '📑';
             },
 
             // Helper Nama Pendek Objek
             getSubSubShortLabel(kode, rawNama) {
                 if (!kode) return rawNama || 'Objek Aset';
-                if (kode.endsWith('.001')) return 'Tanah';
-                if (kode.endsWith('.002')) return 'Peralatan & Mesin';
-                if (kode.endsWith('.003')) return 'Gedung & Bangunan';
-                if (kode.endsWith('.004')) return 'Jalan, Irigasi & Jaringan';
-                if (kode.endsWith('.005')) return 'Aset Tetap Lainnya';
+                if (kode.includes('1.3.1') || (kode.startsWith('1.5.2') && kode.endsWith('.001'))) return 'Tanah';
+                if (kode.includes('1.3.2') || (kode.startsWith('1.5.2') && kode.endsWith('.002'))) return 'Peralatan & Mesin';
+                if (kode.includes('1.3.3') || (kode.startsWith('1.5.2') && kode.endsWith('.003'))) return 'Gedung & Bangunan';
+                if (kode.includes('1.3.4') || (kode.startsWith('1.5.2') && kode.endsWith('.004'))) return 'Jalan, Irigasi & Jaringan';
+                if (kode.includes('1.3.5') || (kode.startsWith('1.5.2') && kode.endsWith('.005'))) return 'Aset Tetap Lainnya';
                 return rawNama;
+            },
+
+            // Helper: Cek apakah kartu objek / KIB sedang terpilih
+            isSubSubSelected(item) {
+                if (!item) return false;
+                if (this.isMilikRsud) {
+                    return this.selectedObjekType === item.type;
+                }
+                return this.selectedSubSub?.id === item.id || (this.selectedSubSub?.kode && this.selectedSubSub.kode === item.kode);
             },
 
             // Ganti Skema Kemitraan dari Langkah 2
@@ -2485,6 +2594,12 @@
             selectSubSubItem(item) {
                 if (this.isSubSubCardLocked(item)) {
                     this.showToast('Objek Terkunci', `Kategori ini terkunci karena data aset yang dimanfaatkan adalah KIB ${this.lockedKibFromData}.`, 'warning');
+                    return;
+                }
+                if (this.isMilikRsud) {
+                    this.forcedObjekType = item.type;
+                    this.showToast('Kategori Objek Terpilih', `Menampilkan formulir klasifikasi KIB untuk ${item.nama}`, 'success');
+                    this.syncTotalsFromItems();
                     return;
                 }
                 this.selectFromSearch(item);
@@ -2775,6 +2890,11 @@
                 this.clearStepError(s);
 
                 if (s === 1) {
+                    // Jika aset berstatus Milik RSUD, Langkah 1 adalah wadah informasi rekam jejak legalitas asal murni (Read-only)
+                    if (this.isMilikRsud) {
+                        return true;
+                    }
+
                     // Validasi khusus mode Pemanfaatan BMD RSUD vs Penambahan Aset Mitra
                     // Mode 'dimanfaatkan': tidak lagi wajib memilih objek BMD eksisting (Gambar 1 dihapus)
                     if (this.tipeKemitraan === 'ditambahkan') {
@@ -3294,8 +3414,8 @@
                                 : 'Pencatatan Aset Baru Ditambahkan Mitra berhasil disimpan ke SIMAT-RK.'));
                         this.showToast('Berhasil Disimpan!', successMsg, 'success');
                         setTimeout(() => {
-                            // Redirect ke Data ASTAP jika aset milik RSUD, atau ke master kemitraan jika kemitraan aktif
-                            window.location.href = json.redirect || (this.isMilikRsud ? '{{ route('astap.index') }}' : '{{ route('master.kemitraan') }}');
+                            // Redirect ke Data ASTAP jika aset milik RSUD / dibuka dari ASTAP, atau ke master kemitraan jika kemitraan aktif
+                            window.location.href = json.redirect || window.backUrl || (this.isMilikRsud ? '{{ route('astap.index') }}' : '{{ route('master.kemitraan') }}');
                         }, 1200);
                     } else {
                         // Parse server-side validation errors dan petakan ke step yang relevan

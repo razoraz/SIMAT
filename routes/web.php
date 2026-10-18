@@ -3469,12 +3469,14 @@ Route::middleware('auth')->group(function () {
                     }
                 });
 
-                $isMilikRsud = ($astap?->is_reklas)
+                $isFromAstap = $request->input('from') === 'astap' || $request->query('from') === 'astap';
+                $isMilikRsud = $isFromAstap
+                    || ($astap?->is_reklas)
                     || ($astap?->kemitraan?->status_konsesi === 'Selesai / Reklasifikasi')
                     || ($astap?->kemitraan?->status_konsesi === 'Selesai')
                     || ($astap?->reklas && $astap->reklas->isNotEmpty());
 
-                $targetRoute = $isMilikRsud ? route('astap.index') : route('master.kemitraan');
+                $targetRoute = ($isMilikRsud || $isFromAstap) ? route('astap.index') : route('master.kemitraan');
 
                 $succMessage = $isMilikRsud 
                     ? 'Perubahan Data Aset Milik RSUD (Eks-Kemitraan) "' . $astap->nama_barang . '" berhasil disimpan!' 
@@ -3523,7 +3525,7 @@ Route::middleware('auth')->group(function () {
                     || \App\Models\AstapKemitraan::where('objek_astap_id', $id)->where('is_deleted', 0)->exists()
                     || ($astap->is_reklas && \App\Models\AstapKemitraan::where('astap_id', $id)->exists())
                 ) {
-                    return redirect()->route('astap.edit_kemitraan', ['id' => $id]);
+                    return redirect()->route('astap.edit_kemitraan', ['id' => $id, 'from' => request('from', 'astap')]);
                 }
                 $rawMaster108 = \App\Models\JenisAstap::getNested108();
                 $dbMaster108 = array_values(array_filter($rawMaster108, function ($j) {

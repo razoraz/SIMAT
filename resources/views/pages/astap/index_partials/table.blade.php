@@ -118,16 +118,14 @@
                                             </span>
                                         </template>
 
-                                        {{-- Pill Nama Mitra & Skema Konsesi (Hapus badge Sewa jika sudah direklas) --}}
-                                        <template x-if="(item.sumber_dana === 'kemitraan' || item.sumber_dana_raw === 'kemitraan' || !!item.kemitraan) && item.kemitraan?.mitra_nama">
+                                        {{-- Pill Nama Mitra & Skema Konsesi (Hanya tampil jika kemitraan masih aktif, disembunyikan jika sudah Milik RSUD) --}}
+                                        <template x-if="(item.sumber_dana === 'kemitraan' || item.sumber_dana_raw === 'kemitraan' || !!item.kemitraan) && item.kemitraan?.mitra_nama && !(item.is_kemitraan_reklas || item.kemitraan?.status_konsesi === 'Selesai / Reklasifikasi' || item.kemitraan?.status_konsesi === 'Selesai')">
                                             <span class="inline-flex items-center space-x-1.5 px-2 py-0.5 rounded-md text-[9px] font-semibold bg-slate-900/90 text-cyan-200 border border-cyan-500/30 leading-none shrink-0 shadow-sm"
-                                                  :title="'Mitra Rekanan: ' + item.kemitraan.mitra_nama + ((item.is_kemitraan_reklas || item.kemitraan?.status_konsesi === 'Selesai / Reklasifikasi' || item.kemitraan?.status_konsesi === 'Selesai') ? ' (Eks Mitra)' : ' | Skema: ' + (item.kemitraan.skema_kemitraan || 'Kerjasama'))">
+                                                  :title="'Mitra Rekanan: ' + item.kemitraan.mitra_nama + ' | Skema: ' + (item.kemitraan.skema_kemitraan || 'Kerjasama')">
                                                 <span class="text-[8.5px]">🏢</span>
                                                 <span class="truncate max-w-[130px]" x-text="item.kemitraan.mitra_nama"></span>
-                                                <template x-if="!(item.is_kemitraan_reklas || item.kemitraan?.status_konsesi === 'Selesai / Reklasifikasi' || item.kemitraan?.status_konsesi === 'Selesai')">
-                                                    <span class="text-[8px] px-1 py-0.2 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/40 font-mono font-bold uppercase"
-                                                          x-text="item.kemitraan.skema_kemitraan || 'Kerjasama'"></span>
-                                                </template>
+                                                <span class="text-[8px] px-1 py-0.2 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/40 font-mono font-bold uppercase"
+                                                      x-text="item.kemitraan.skema_kemitraan || 'Kerjasama'"></span>
                                             </span>
                                         </template>
 
@@ -248,7 +246,7 @@
                                         </button>
 
                                         <!-- 3. Tombol Ubah (Form Edit) -->
-                                        <a :href="isItemLocked(item) ? '#' : ('/astap/' + item.id + '/edit')"
+                                        <a :href="isItemLocked(item) ? '#' : ('/astap/' + item.id + '/edit?from=astap')"
                                             @click="if (isItemLocked(item)) { $event.preventDefault(); showLockedWarning(item); }"
                                             :title="isItemLocked(item) ? 'Periode Terkunci (Tutup Buku BPKAD)' : 'Ubah Data ASTAP (Form Lengkap)'"
                                             class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl font-bold text-xs transition-all duration-200 shadow-sm leading-none"

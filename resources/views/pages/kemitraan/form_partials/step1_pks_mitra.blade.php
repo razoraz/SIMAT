@@ -40,62 +40,218 @@
     <!-- ========================================================================= -->
     <!-- SHOWCASE WADAH INFORMASI REKANAN MITRA (MODE MILIK RSUD / REKLASIFIKASI)  -->
     <!-- ========================================================================= -->
+    <!-- ========================================================================= -->
+    <!-- WADAH INFORMASI REKANAN MITRA & LEGALITAS ASAL (MODE MILIK RSUD)         -->
+    <!-- 100% PURE READ-ONLY SHOWCASE CONTAINER - TIDAK BISA DIUBAH PENGGUNA      -->
+    <!-- ========================================================================= -->
     <template x-if="isMilikRsud">
-        <div class="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-emerald-950/50 via-slate-900/95 to-slate-950/90 border border-emerald-500/40 shadow-xl space-y-3 relative overflow-hidden">
-            <div class="flex items-start justify-between gap-3 flex-wrap sm:flex-nowrap pb-3 border-b border-slate-800">
-                <div class="flex items-center gap-3.5 min-w-0">
-                    <div class="w-10 h-10 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-xl shrink-0 shadow-inner">
-                        🏛️
+        <div class="space-y-4">
+            <!-- Header Kartu Legalitas -->
+            <div class="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-emerald-950/60 via-slate-900/95 to-slate-950/90 border border-emerald-500/40 shadow-2xl space-y-4 relative overflow-hidden">
+                <div class="absolute -right-10 -bottom-10 w-44 h-44 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none"></div>
+
+                <div class="flex items-start justify-between gap-3 flex-wrap sm:flex-nowrap pb-4 border-b border-slate-800">
+                    <div class="flex items-center gap-3.5 min-w-0">
+                        <div class="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-2xl shrink-0 shadow-inner">
+                            🏛️
+                        </div>
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <h3 class="text-sm sm:text-base font-extrabold text-white">
+                                    Wadah Informasi Rekanan Mitra &amp; Legalitas Asal
+                                </h3>
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono tracking-wider">
+                                    🏛️ MILIK RSUD
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+                                Aset ini telah sah tercatat sebagai <strong>Aset Tetap Milik RSUD Dr. H. Koesnandi</strong> (Konsesi Selesai / Hasil Reklasifikasi). Data di bawah merupakan rekam jejak legalitas asal dari mitra yang bersifat tetap.
+                            </p>
+                        </div>
                     </div>
-                    <div class="min-w-0">
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <h3 class="text-xs sm:text-sm font-extrabold text-white">
-                                Wadah Informasi Rekanan Mitra &amp; Asal-Usul Kemitraan
-                            </h3>
-                            <span class="px-2.5 py-0.5 rounded-full text-[9.5px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono tracking-wider">
-                                🏛️ MILIK RSUD
+                    <div class="shrink-0 flex items-center gap-2">
+                        <span class="px-3.5 py-1.5 rounded-xl bg-slate-950 text-emerald-400 text-xs font-bold border border-emerald-500/30 font-mono flex items-center gap-2 shadow-sm">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                            <span>Status: Konsesi Selesai</span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Grid 4 Kartu Rincian Legalitas Asal -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                    <!-- Kartu 1: Rekanan Mitra -->
+                    <div class="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800/80 space-y-1 shadow-sm">
+                        <span class="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1.5">
+                            <span>🤝</span>
+                            <span>Rekanan Mitra Asal</span>
+                        </span>
+                        <span class="font-extrabold text-sm text-emerald-300 block truncate" x-text="formData.mitra_nama || '-'"></span>
+                        <div class="text-[11px] text-slate-400 pt-1 border-t border-slate-800/60 mt-1 space-y-0.5">
+                            <div class="truncate" x-show="formData.mitra_pimpinan">
+                                <span class="text-slate-500">Pimpinan:</span> <span class="text-slate-300 font-semibold" x-text="formData.mitra_pimpinan"></span>
+                            </div>
+                            <div class="truncate" x-show="formData.mitra_alamat">
+                                <span class="text-slate-500">Alamat:</span> <span class="text-slate-300" x-text="formData.mitra_alamat"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Kartu 2: Dokumen PKS -->
+                    <div class="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800/80 space-y-1 shadow-sm">
+                        <span class="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1.5">
+                            <span>📜</span>
+                            <span>Nomor &amp; Tanggal PKS</span>
+                        </span>
+                        <span class="font-mono font-extrabold text-sm text-cyan-300 block truncate" x-text="formData.nomor_pks || '-'"></span>
+                        <div class="text-[11px] text-slate-400 pt-1 border-t border-slate-800/60 mt-1 space-y-0.5">
+                            <div>
+                                <span class="text-slate-500">Tgl PKS:</span> <span class="font-mono text-slate-300" x-text="formatTanggalIndo(formData.tanggal_pks) || formData.tanggal_pks || '-'"></span>
+                            </div>
+                            <div>
+                                <span class="text-slate-500">Tahun:</span> <span class="font-mono text-slate-300" x-text="formData.tahun_perolehan || '-'"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Kartu 3: Masa Konsesi & Skema -->
+                    <div class="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800/80 space-y-1 shadow-sm">
+                        <span class="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1.5">
+                            <span>⏳</span>
+                            <span>Periode Konsesi Asal</span>
+                        </span>
+                        <span class="font-bold text-xs text-white block truncate" x-text="(formatTanggalIndo(formData.tanggal_mulai) || '-') + ' s/d ' + (formatTanggalIndo(formData.tanggal_selesai) || '-')"></span>
+                        <div class="text-[11px] text-slate-400 pt-1 border-t border-slate-800/60 mt-1 space-y-0.5">
+                            <div>
+                                <span class="text-slate-500">Skema:</span> <span class="text-emerald-400 font-semibold" x-text="formData.skema_kemitraan || 'Kemitraan Pihak Ketiga'"></span>
+                            </div>
+                            <div class="truncate" x-show="durasiKonsesiText">
+                                <span class="text-slate-500">Durasi:</span> <span class="text-slate-300 font-mono" x-text="durasiKonsesiText"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Kartu 4: Berkas & Status Konsesi -->
+                    <div class="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800/80 space-y-1 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <span class="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1.5">
+                                <span>📁</span>
+                                <span>Arsip Berkas PKS / BAST</span>
+                            </span>
+                            <div class="pt-1">
+                                <template x-if="formData.dokumen_path">
+                                    <a :href="'/storage/' + formData.dokumen_path" target="_blank"
+                                       class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 transition-all font-mono text-[11px] font-bold">
+                                        <span>📄</span>
+                                        <span>Buka Dokumen</span>
+                                        <span>↗</span>
+                                    </a>
+                                </template>
+                                <template x-if="!formData.dokumen_path">
+                                    <span class="text-[11px] text-slate-500 italic block">Arsip fisik tersimpan di Bagian Aset</span>
+                                </template>
+                            </div>
+                        </div>
+                        <div class="pt-1 border-t border-slate-800/60 mt-1">
+                            <span class="text-[9.5px] font-mono text-emerald-400/90 font-bold">Status: Aset Tetap RSUD</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Panel Rincian Objek Sewa & Legalitas Asal (Bespoke Structured Card) -->
+                <div class="p-4 sm:p-5 rounded-2xl bg-slate-950/90 border border-slate-800/90 space-y-3.5 shadow-xl relative overflow-hidden">
+                    <!-- Header Objek & Badge Status -->
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-slate-800/80">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <span class="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center text-base shrink-0 shadow-inner">
+                                🏷️
+                            </span>
+                            <div class="min-w-0">
+                                <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
+                                    Objek BMD yang Disewakan / Dimanfaatkan:
+                                </span>
+                                <h4 class="text-sm sm:text-base font-extrabold text-amber-300 tracking-wide truncate"
+                                    x-text="formData.objek_aset_terpilih?.nama_barang || formData.nama_barang || 'Objek Aset BMD RSUD'">
+                                </h4>
+                            </div>
+                        </div>
+
+                        <!-- Badges Kanan: Skema & KIB -->
+                        <div class="flex items-center gap-2 shrink-0 flex-wrap">
+                            <span class="px-2.5 py-1 rounded-xl text-[10px] font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-mono flex items-center gap-1.5 shadow-sm">
+                                <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                                <span x-text="(formData.skema_kemitraan || 'Sewa') + ' BMD RSUD'"></span>
+                            </span>
+                            <template x-if="window.editAstapData?.category || lockedKibFromData">
+                                <span class="px-2.5 py-1 rounded-xl text-[10px] font-bold bg-slate-900 text-slate-300 border border-slate-700 font-mono shadow-sm"
+                                      x-text="window.editAstapData?.category || ('KIB ' + lockedKibFromData)">
+                                </span>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Grid 4 Mini-Cards Metadata Objek (Terpisah & Rapi Tanpa Menempel) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs">
+                        <!-- Box 1: Nilai Kontrak Sewa / Taksiran -->
+                        <div class="p-2.5 rounded-xl bg-slate-900/70 border border-slate-800/70 space-y-0.5">
+                            <span class="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1">
+                                <span>💰</span>
+                                <span x-text="isMilikRsud ? 'Nilai Asal PKS / Taksiran' : (tipeKemitraan === 'dimanfaatkan' ? 'Nilai Kontrak Sewa' : 'Nilai Taksiran Aset')">Nilai Kontrak Sewa</span>
+                            </span>
+                            <span class="font-mono font-extrabold text-xs text-emerald-400 block truncate"
+                                  x-text="(formData.total_realisasi > 0 ? ('Rp ' + formatRupiah(formData.total_realisasi)) : (formData.nilai_aset > 0 ? ('Rp ' + formatRupiah(formData.nilai_aset)) : '-'))">
                             </span>
                         </div>
-                        <p class="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
-                            Aset ini merupakan hasil <strong>reklasifikasi kemitraan yang telah sah menjadi Milik RSUD Dr. H. Koesnandi</strong>.
-                            Langkah 1 berfungsi mencatat identitas mitra asal &amp; nomor PKS, sedangkan Langkah 2 dan 3 terbuka penuh untuk koreksi klasifikasi kode 108 dan spesifikasi fisik.
-                        </p>
+
+                        <!-- Box 2: Peruntukan / Catatan Sewa -->
+                        <div class="p-2.5 rounded-xl bg-slate-900/70 border border-slate-800/70 space-y-0.5">
+                            <span class="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1">
+                                <span>📝</span>
+                                <span>Peruntukan / Catatan</span>
+                            </span>
+                            <span class="text-xs text-slate-200 font-semibold block truncate"
+                                  :title="formData.kemitraan_keterangan || (formData.gedung_items && formData.gedung_items[0]?.gedung_fungsi) || '-'"
+                                  x-text="formData.kemitraan_keterangan || (formData.gedung_items && formData.gedung_items[0]?.gedung_fungsi) || '-'">
+                            </span>
+                        </div>
+
+                        <!-- Box 3: Lokasi Fisik Objek -->
+                        <div class="p-2.5 rounded-xl bg-slate-900/70 border border-slate-800/70 space-y-0.5">
+                            <span class="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1">
+                                <span>📍</span>
+                                <span>Lokasi Objek</span>
+                            </span>
+                            <span class="text-xs text-slate-300 block truncate"
+                                  :title="formData.alamat_barang || (formData.gedung_items && formData.gedung_items[0]?.gedung_alamat) || '-'"
+                                  x-text="formData.alamat_barang || (formData.gedung_items && formData.gedung_items[0]?.gedung_alamat) || '-'">
+                            </span>
+                        </div>
+
+                        <!-- Box 4: Pemanfaat / Rekanan -->
+                        <div class="p-2.5 rounded-xl bg-slate-900/70 border border-slate-800/70 space-y-0.5">
+                            <span class="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1">
+                                <span>🏢</span>
+                                <span x-text="isMilikRsud ? 'Mitra Rekanan Asal' : 'Pemanfaatan Oleh'">Pemanfaatan Oleh</span>
+                            </span>
+                            <span class="text-xs text-emerald-300 font-bold block truncate"
+                                  :title="formData.mitra_nama || '-'"
+                                  x-text="formData.mitra_nama || '-'">
+                            </span>
+                        </div>
                     </div>
-                </div>
-                <div class="shrink-0 flex items-center gap-2">
-                    <span class="px-3 py-1 rounded-xl bg-slate-950 text-emerald-400 text-xs font-bold border border-emerald-500/30 font-mono flex items-center gap-1.5 shadow-sm">
-                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                        <span>Konsesi: Selesai / Milik RSUD</span>
-                    </span>
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
-                <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800">
-                    <span class="text-[10px] uppercase font-bold text-slate-400 block">🤝 Rekanan Mitra Asal</span>
-                    <span class="font-bold text-emerald-300 block truncate" x-text="formData.mitra_nama || '-'"></span>
-                </div>
-                <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800">
-                    <span class="text-[10px] uppercase font-bold text-slate-400 block">📜 Dokumen PKS Asal</span>
-                    <span class="font-mono font-bold text-slate-200 block truncate" x-text="formData.nomor_pks || '-'"></span>
-                </div>
-                <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800">
-                    <span class="text-[10px] uppercase font-bold text-slate-400 block">⚖️ Status Konsesi</span>
-                    <span class="font-bold text-cyan-300 block">Selesai &rarr; Aset Tetap RSUD</span>
                 </div>
             </div>
         </div>
     </template>
 
-    <!-- Bagian PKS & Mitra Pihak Ketiga -->
-    <div class="p-6 rounded-3xl bg-slate-950/80 border space-y-5 shadow-xl transition-all"
-         :class="isMilikRsud ? 'border-emerald-500/40' : (tipeKemitraan === 'dimanfaatkan' ? 'border-cyan-500/30' : 'border-emerald-500/30')">
+    <!-- Bagian PKS & Mitra Pihak Ketiga (Hanya Muncul Jika Kemitraan Aktif Biasa / Bukan Milik RSUD) -->
+    <div x-show="!isMilikRsud"
+         class="p-6 rounded-3xl bg-slate-950/80 border space-y-5 shadow-xl transition-all"
+         :class="tipeKemitraan === 'dimanfaatkan' ? 'border-cyan-500/30' : 'border-emerald-500/30'">
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
             <span class="text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5"
-                  :class="isMilikRsud ? 'text-emerald-400' : (tipeKemitraan === 'dimanfaatkan' ? 'text-cyan-400' : 'text-emerald-400')">
-                <span x-show="isMilikRsud">🤝 Identitas Rekanan Mitra Asal &amp; Dokumen PKS</span>
-                <span x-show="!isMilikRsud && tipeKemitraan === 'dimanfaatkan'">🤝 Identitas Pihak Ketiga &amp; Dokumen PKS Pemanfaatan</span>
-                <span x-show="!isMilikRsud && tipeKemitraan === 'ditambahkan'">🤝 Identitas Mitra Penyedia &amp; Dokumen PKS Kemitraan</span>
+                  :class="tipeKemitraan === 'dimanfaatkan' ? 'text-cyan-400' : 'text-emerald-400'">
+                <span x-show="tipeKemitraan === 'dimanfaatkan'">🤝 Identitas Pihak Ketiga &amp; Dokumen PKS Pemanfaatan</span>
+                <span x-show="tipeKemitraan === 'ditambahkan'">🤝 Identitas Mitra Penyedia &amp; Dokumen PKS Kemitraan</span>
                 <span class="text-rose-400">*</span>
             </span>
             <span class="text-[10px] font-bold px-2 py-0.5 rounded-lg border font-mono"

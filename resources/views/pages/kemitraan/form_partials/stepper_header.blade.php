@@ -7,7 +7,7 @@
     <div class="flex items-center justify-between p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-slate-900/90 border transition-all duration-300 shadow-xl"
          :class="tipeKemitraan === 'dimanfaatkan' ? 'border-cyan-500/30' : 'border-emerald-500/30'">
         <div class="flex items-center space-x-3.5 sm:space-x-4">
-            <a href="{{ isset($astap) ? ($isMilikRsud ? route('astap.index') : route('master.kemitraan')) : route('astap.pilih_jenis') }}"
+            <a href="{{ $backUrl ?? (isset($astap) ? (($isFromAstap ?? false) || $isMilikRsud ? route('astap.index') : route('master.kemitraan')) : route('astap.pilih_jenis')) }}"
                class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center transition-all shadow-sm shrink-0"
                :class="isMilikRsud ? 'hover:border-emerald-500/50 text-slate-400 hover:text-emerald-400' : (tipeKemitraan === 'dimanfaatkan' ? 'hover:border-cyan-500/50 text-slate-400 hover:text-cyan-400' : 'hover:border-emerald-500/50 text-slate-400 hover:text-emerald-400')">
                 <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>

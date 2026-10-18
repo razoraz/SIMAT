@@ -1,16 +1,19 @@
 @php
     $isEdit = isset($astap) && $astap;
+    $isFromAstap = request('from') === 'astap' || request()->query('from') === 'astap';
     $isMilikRsud = $isEdit && (
-        ($astap->is_reklas)
+        $isFromAstap
+        || ($astap->is_reklas)
         || ($astap->kemitraan?->status_konsesi === 'Selesai / Reklasifikasi')
         || ($astap->kemitraan?->status_konsesi === 'Selesai')
         || ($astap->reklas && $astap->reklas->isNotEmpty())
     );
+    $backUrl = ($isFromAstap || $isMilikRsud) ? route('astap.index') : route('master.kemitraan');
     $pageTitle = $isMilikRsud 
         ? 'Ubah Data Aset Milik RSUD (Eks-Kemitraan)' 
         : ($isEdit ? 'Ubah Data Aset Kemitraan (KSO)' : 'Pencatatan Aset Kemitraan (KSO)');
-    $pageBreadcrumb = $isMilikRsud
-        ? 'Master Aset / Data Aset Tetap (ASTAP) / Ubah Aset Milik RSUD'
+    $pageBreadcrumb = ($isFromAstap || $isMilikRsud)
+        ? 'Master Utama / Data ASTAP / Ubah Data Aset Milik RSUD'
         : ($isEdit ? 'Master Aset / Kelola Kemitraan Aset / Ubah Aset Kemitraan' : 'Master Aset / Kelola Kemitraan Aset / Tambah Aset Kemitraan');
 @endphp
 
@@ -21,6 +24,8 @@
     <script>
         window.editAstapData = @json($astap ?? null);
         window.isMilikRsud = @json($isMilikRsud);
+        window.isFromAstap = @json($isFromAstap);
+        window.backUrl = @json($backUrl);
         window.dbObjekAsetKemitraan = @json($dbObjekAsetKemitraan ?? []);
         window.initialTipeKemitraan = @json($tipe ?? request()->query('tipe', 'dimanfaatkan'));
     </script>

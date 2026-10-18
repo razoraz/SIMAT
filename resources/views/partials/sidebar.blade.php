@@ -47,13 +47,14 @@
 
         <!-- Section 1: Master Utama (Dropdown) -->
         @php
+            $isFromAstap = request('from') === 'astap' || request()->query('from') === 'astap';
             $isFormMasterAset = request()->routeIs('astap.create_kemitraan')
-                || request()->routeIs('astap.edit_kemitraan')
+                || (request()->routeIs('astap.edit_kemitraan') && !$isFromAstap)
                 || request()->routeIs('astap.create_hibah')
                 || request()->routeIs('astap.create-hibah')
-                || request()->routeIs('astap.edit_hibah')
+                || (request()->routeIs('astap.edit_hibah') && !$isFromAstap)
                 || request()->routeIs('astap.create_belanja_barang')
-                || request()->routeIs('astap.edit_belanja_barang')
+                || (request()->routeIs('astap.edit_belanja_barang') && !$isFromAstap)
                 || request()->routeIs('astap.create_mutasi*')
                 || request()->routeIs('astap.edit_mutasi*');
 
@@ -103,7 +104,7 @@
                 <!-- Data ASTAP / Katalog ASTAP -->
                 @if ($role === 'sub_admin' || $user->canAccess('astap'))
                     <a href="{{ route('astap.index') }}" @click="if (isMobile) sidebarOpen = false"
-                        class="flex items-center space-x-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 {{ (request()->routeIs('astap.index') || (request()->routeIs('astap.create*') && !$isFormMasterAset) || request()->routeIs('astap.pilih_jenis') || (request()->routeIs('astap.edit*') && !$isFormMasterAset && request('from') !== 'eksternal' && !request()->routeIs('astap.edit_mutasi*'))) ? 'bg-gradient-to-r from-emerald-600/20 to-teal-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
+                        class="flex items-center space-x-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 {{ (request()->routeIs('astap.index') || (request()->routeIs('astap.create*') && !$isFormMasterAset) || request()->routeIs('astap.pilih_jenis') || (request()->routeIs('astap.edit*') && !$isFormMasterAset && request('from') !== 'eksternal' && !request()->routeIs('astap.edit_mutasi*')) || $isFromAstap) ? 'bg-gradient-to-r from-emerald-600/20 to-teal-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
                         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
@@ -166,7 +167,7 @@
                     || request()->routeIs('astap.edit_hibah')
                     || request()->routeIs('master.kemitraan*')
                     || request()->routeIs('astap.create_kemitraan')
-                    || request()->routeIs('astap.edit_kemitraan')
+                    || (request()->routeIs('astap.edit_kemitraan') && !$isFromAstap)
                     || request()->routeIs('master.belanja_barang*')
                     || request()->routeIs('astap.create_belanja_barang')
                     || request()->routeIs('astap.edit_belanja_barang');
@@ -283,7 +284,7 @@
                     <!-- Kelola Kemitraan Aset (KSO / KSP / Sewa Akun 1.5.2) -->
                     @if ($user->canAccess('astap') || $user->canAccess('master_data') || $role === 'admin' || $role === 'master_admin')
                         <a href="{{ route('master.kemitraan') }}" @click="if (isMobile) sidebarOpen = false"
-                            class="flex items-center space-x-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 {{ request()->routeIs('master.kemitraan*') || request()->routeIs('astap.create_kemitraan') || request()->routeIs('astap.edit_kemitraan') ? 'bg-gradient-to-r from-emerald-600/20 to-teal-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
+                            class="flex items-center space-x-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 {{ request()->routeIs('master.kemitraan*') || request()->routeIs('astap.create_kemitraan') || (request()->routeIs('astap.edit_kemitraan') && !$isFromAstap) ? 'bg-gradient-to-r from-emerald-600/20 to-teal-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
                             <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
