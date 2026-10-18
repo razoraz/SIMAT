@@ -1,15 +1,26 @@
 @php
     $isEdit = isset($astap) && $astap;
-    $pageTitle = $isEdit ? 'Ubah Data Aset Kemitraan (KSO)' : 'Pencatatan Aset Kemitraan (KSO)';
-    $pageBreadcrumb = $isEdit ? 'Master Aset / Kelola Kemitraan Aset / Ubah Aset Kemitraan' : 'Master Aset / Kelola Kemitraan Aset / Tambah Aset Kemitraan';
+    $isMilikRsud = $isEdit && (
+        ($astap->is_reklas)
+        || ($astap->kemitraan?->status_konsesi === 'Selesai / Reklasifikasi')
+        || ($astap->kemitraan?->status_konsesi === 'Selesai')
+        || ($astap->reklas && $astap->reklas->isNotEmpty())
+    );
+    $pageTitle = $isMilikRsud 
+        ? 'Ubah Data Aset Milik RSUD (Eks-Kemitraan)' 
+        : ($isEdit ? 'Ubah Data Aset Kemitraan (KSO)' : 'Pencatatan Aset Kemitraan (KSO)');
+    $pageBreadcrumb = $isMilikRsud
+        ? 'Master Aset / Data Aset Tetap (ASTAP) / Ubah Aset Milik RSUD'
+        : ($isEdit ? 'Master Aset / Kelola Kemitraan Aset / Ubah Aset Kemitraan' : 'Master Aset / Kelola Kemitraan Aset / Tambah Aset Kemitraan');
 @endphp
 
-<x-layout :title="($isEdit ? 'Form Ubah Aset Kemitraan Pihak Ketiga (KSO)' : 'Form Input Aset Kemitraan Pihak Ketiga (KSO)') . ' - SIMAT-RK'">
+<x-layout :title="($pageTitle) . ' - SIMAT-RK'">
     @section('page-title', $pageTitle)
     @section('breadcrumb', $pageBreadcrumb)
 
     <script>
         window.editAstapData = @json($astap ?? null);
+        window.isMilikRsud = @json($isMilikRsud);
         window.dbObjekAsetKemitraan = @json($dbObjekAsetKemitraan ?? []);
         window.initialTipeKemitraan = @json($tipe ?? request()->query('tipe', 'dimanfaatkan'));
     </script>

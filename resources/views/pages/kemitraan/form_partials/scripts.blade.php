@@ -38,7 +38,17 @@
                 return 'dimanfaatkan';
             })(),
 
-            // Mode Produksi: Lock KIB aktif secara ketat sesuai data aset BMD yang dimanfaatkan
+            // Flag status kepemilikan aset sudah menjadi Milik RSUD (Reklasifikasi)
+            isMilikRsud: Boolean(
+                window.isMilikRsud || 
+                (window.editAstapData && (
+                    window.editAstapData.is_reklas || 
+                    (window.editAstapData.kemitraan && ['Selesai / Reklasifikasi', 'Selesai'].includes(window.editAstapData.kemitraan.status_konsesi)) ||
+                    (Array.isArray(window.editAstapData.reklas) && window.editAstapData.reklas.length > 0)
+                ))
+            ),
+
+            // Mode Produksi: Lock KIB aktif secara ketat sesuai data aset BMD yang dimanfaatkan (kecuali aset sudah Milik RSUD)
             isKibLockActive: true,
 
             setTipeKemitraan(t) {
@@ -1303,8 +1313,8 @@
                 // Sinkronisasikan nama barang ke item fisik lembar aktif
                 this.syncNameToActiveItem();
 
-                // Jika mode pemanfaatan BMD terkunci, sinkronisasikan detail fisik
-                if (this.tipeKemitraan === 'dimanfaatkan') {
+                // Jika mode pemanfaatan BMD terkunci (bukan aset milik RSUD), sinkronisasikan detail fisik
+                if (this.tipeKemitraan === 'dimanfaatkan' && !this.isMilikRsud) {
                     this.syncStep3WithLockedObjek();
                 }
 
@@ -2302,6 +2312,7 @@
 
             // Getter: Mendeteksi kategori KIB aset yang dimanfaatkan mitra (dari Objek BMD Langkah 1 atau Mode Reklas/Edit)
             get lockedKibFromData() {
+                if (this.isMilikRsud) return null; // Jika aset sudah Milik RSUD, jangan kunci KIB (bebas ubah/pilih)
                 if (this.tipeKemitraan !== 'dimanfaatkan') return null;
 
                 // 1. Cek dari Objek BMD terpilih di Langkah 1
@@ -2355,6 +2366,7 @@
 
             // Cek apakah kartu sub-sub tertentu terkunci (disabled) karena tidak cocok dengan KIB aset yang dimanfaatkan
             isSubSubCardLocked(item) {
+                if (this.isMilikRsud) return false; // Aset milik RSUD bebas ubah klasifikasi 108
                 if (!this.isKibLockActive) return false;
                 if (this.tipeKemitraan !== 'dimanfaatkan') return false;
                 const lockedKib = this.lockedKibFromData;
@@ -2367,6 +2379,7 @@
 
             // Auto-select kartu yang cocok dengan KIB aset yang dimanfaatkan
             autoSelectLockedSubSub() {
+                if (this.isMilikRsud) return;
                 if (!this.isKibLockActive) return;
                 if (this.tipeKemitraan !== 'dimanfaatkan') return;
                 const lockedKib = this.lockedKibFromData;
@@ -2384,6 +2397,7 @@
 
             // Sinkronisasi data aset BMD terkunci ke sheet fisik Langkah 3
             syncStep3WithLockedObjek() {
+                if (this.isMilikRsud) return;
                 if (this.tipeKemitraan !== 'dimanfaatkan') return;
                 const obj = this.formData.objek_aset_terpilih;
                 const subSubKode = this.selectedSubSub?.kode;
@@ -3280,8 +3294,8 @@
                                 : 'Pencatatan Aset Baru Ditambahkan Mitra berhasil disimpan ke SIMAT-RK.'));
                         this.showToast('Berhasil Disimpan!', successMsg, 'success');
                         setTimeout(() => {
-                            // BUG-02 FIX: fallback redirect seharusnya ke master kemitraan, bukan astap.index
-                            window.location.href = json.redirect || '{{ route('master.kemitraan') }}';
+                            // Redirect ke Data ASTAP jika aset milik RSUD, atau ke master kemitraan jika kemitraan aktif
+                            window.location.href = json.redirect || (this.isMilikRsud ? '{{ route('astap.index') }}' : '{{ route('master.kemitraan') }}');
                         }, 1200);
                     } else {
                         // Parse server-side validation errors dan petakan ke step yang relevan

@@ -5,20 +5,23 @@
     
     <div>
         <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-bold mb-2 border transition-all"
-             :class="tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-400/10 text-cyan-300 border-cyan-400/20' : 'bg-emerald-400/10 text-emerald-300 border-emerald-400/20'">
-            <span x-show="tipeKemitraan === 'dimanfaatkan'">🏛️ LANGKAH 2 DARI 3: KLASIFIKASI 108 PEMANFAATAN BMD</span>
-            <span x-show="tipeKemitraan === 'ditambahkan'">📦 LANGKAH 2 DARI 3: KLASIFIKASI 108 &amp; SPESIFIKASI ALAT BARU MITRA</span>
+             :class="isMilikRsud ? 'bg-emerald-400/10 text-emerald-300 border-emerald-400/20' : (tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-400/10 text-cyan-300 border-cyan-400/20' : 'bg-emerald-400/10 text-emerald-300 border-emerald-400/20')">
+            <span x-show="isMilikRsud">🏛️ LANGKAH 2 DARI 3: KLASIFIKASI 108 &amp; TAKSIRAN NILAI ASET MILIK RSUD</span>
+            <span x-show="!isMilikRsud && tipeKemitraan === 'dimanfaatkan'">🏛️ LANGKAH 2 DARI 3: KLASIFIKASI 108 PEMANFAATAN BMD</span>
+            <span x-show="!isMilikRsud && tipeKemitraan === 'ditambahkan'">📦 LANGKAH 2 DARI 3: KLASIFIKASI 108 &amp; SPESIFIKASI ALAT BARU MITRA</span>
         </div>
         <h2 class="text-lg font-bold text-white flex items-center space-x-2">
             <span class="p-2 rounded-xl text-sm"
-                  :class="tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-400/10 text-cyan-400' : 'bg-emerald-400/10 text-emerald-400'"
-                  x-text="tipeKemitraan === 'dimanfaatkan' ? '🏛️' : '📦'"></span>
-            <span x-show="tipeKemitraan === 'dimanfaatkan'">Langkah 2: Klasifikasi 108 Pemanfaatan BMD &amp; Nilai Sewa</span>
-            <span x-show="tipeKemitraan === 'ditambahkan'">Langkah 2: Spesifikasi Teknis &amp; Taksiran Nilai Aset Baru Mitra</span>
+                  :class="isMilikRsud ? 'bg-emerald-400/10 text-emerald-400' : (tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-400/10 text-cyan-400' : 'bg-emerald-400/10 text-emerald-400')"
+                  x-text="isMilikRsud ? '🏛️' : (tipeKemitraan === 'dimanfaatkan' ? '🏛️' : '📦')"></span>
+            <span x-show="isMilikRsud">Langkah 2: Klasifikasi Kode 108 &amp; Nilai Taksiran Aset Milik RSUD</span>
+            <span x-show="!isMilikRsud && tipeKemitraan === 'dimanfaatkan'">Langkah 2: Klasifikasi 108 Pemanfaatan BMD &amp; Nilai Sewa</span>
+            <span x-show="!isMilikRsud && tipeKemitraan === 'ditambahkan'">Langkah 2: Spesifikasi Teknis &amp; Taksiran Nilai Aset Baru Mitra</span>
         </h2>
         <p class="text-xs text-slate-400 mt-1">
-            <span x-show="tipeKemitraan === 'dimanfaatkan'">Pilih sub-akun 1.5.2 Pemanfaatan BMD RSUD (Sewa Tanah/Gedung/Peralatan atau KSP) serta total tarif/nilai kontrak pemanfaatan.</span>
-            <span x-show="tipeKemitraan === 'ditambahkan'">Pilih klasifikasi akun 1.5.2 kemitraan, formulir rincian spesifikasi barang baru rekanan (alat medis, laboratorium, fasilitas KSO), serta taksiran nilai wajar perolehan aset.</span>
+            <span x-show="isMilikRsud">Sesuaikan klasifikasi kode barang 108 KIB (Tanah, Mesin/Alat, Gedung, Jaringan, Lainnya), rincian teknis fisik, serta taksiran nilai wajar aset milik RSUD.</span>
+            <span x-show="!isMilikRsud && tipeKemitraan === 'dimanfaatkan'">Pilih sub-akun 1.5.2 Pemanfaatan BMD RSUD (Sewa Tanah/Gedung/Peralatan atau KSP) serta total tarif/nilai kontrak pemanfaatan.</span>
+            <span x-show="!isMilikRsud && tipeKemitraan === 'ditambahkan'">Pilih klasifikasi akun 1.5.2 kemitraan, formulir rincian spesifikasi barang baru rekanan (alat medis, laboratorium, fasilitas KSO), serta taksiran nilai wajar perolehan aset.</span>
         </p>
     </div>
 
@@ -36,40 +39,45 @@
 
     <!-- Quick Action / Shortcut Akun 1.5.2 (Rekomendasi Sub-Sub Rincian Kemitraan) -->
     <div class="p-5 rounded-3xl bg-slate-900/80 border backdrop-blur-md shadow-xl space-y-4 relative overflow-hidden transition-all"
-         :class="tipeKemitraan === 'dimanfaatkan' ? 'border-cyan-500/30' : 'border-emerald-500/30'">
+         :class="isMilikRsud ? 'border-emerald-500/40' : (tipeKemitraan === 'dimanfaatkan' ? 'border-cyan-500/30' : 'border-emerald-500/30')">
         <!-- Subtle Glow Effect -->
         <div class="absolute -right-10 -bottom-10 w-44 h-44 rounded-full blur-2xl pointer-events-none"
-             :class="tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-500/5' : 'bg-emerald-500/5'"></div>
+             :class="isMilikRsud ? 'bg-emerald-500/10' : (tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-500/5' : 'bg-emerald-500/5')"></div>
 
         <!-- Header Card: Info Skema Aktif -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800/80">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-2xl bg-gradient-to-br flex items-center justify-center text-lg font-bold shrink-0 border shadow-inner"
-                     :class="tipeKemitraan === 'dimanfaatkan' ? 'from-cyan-400/20 to-cyan-600/10 text-cyan-400 border-cyan-500/30' : 'from-emerald-400/20 to-emerald-600/10 text-emerald-400 border-emerald-500/30'">
+                     :class="isMilikRsud ? 'from-emerald-400/20 to-emerald-600/10 text-emerald-400 border-emerald-500/30' : (tipeKemitraan === 'dimanfaatkan' ? 'from-cyan-400/20 to-cyan-600/10 text-cyan-400 border-cyan-500/30' : 'from-emerald-400/20 to-emerald-600/10 text-emerald-400 border-emerald-500/30')">
                     ⚡
                 </div>
                 <div>
                     <div class="flex items-center gap-2 flex-wrap">
                         <h3 class="text-xs font-extrabold text-white tracking-wide">
-                            <span x-show="tipeKemitraan === 'dimanfaatkan'">Pilih Objek Akun 1.5.2 Pemanfaatan BMD</span>
-                            <span x-show="tipeKemitraan === 'ditambahkan'">Pilih Objek Akun 1.5.2 Aset Baru Mitra</span>
+                            <span x-show="isMilikRsud">Pilih / Sesuaikan Objek Kategori KIB Milik RSUD</span>
+                            <span x-show="!isMilikRsud && tipeKemitraan === 'dimanfaatkan'">Pilih Objek Akun 1.5.2 Pemanfaatan BMD</span>
+                            <span x-show="!isMilikRsud && tipeKemitraan === 'ditambahkan'">Pilih Objek Akun 1.5.2 Aset Baru Mitra</span>
                         </h3>
                         <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border font-mono"
-                              :class="tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-500/10 text-cyan-300 border-cyan-500/20' : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'">Permendagri 108</span>
+                              :class="isMilikRsud ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20' : (tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-500/10 text-cyan-300 border-cyan-500/20' : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20')">Permendagri 108</span>
                         <span class="px-2 py-0.5 rounded-full bg-slate-800 text-[10px] font-bold border border-slate-700 font-mono"
-                              :class="tipeKemitraan === 'dimanfaatkan' ? 'text-cyan-400' : 'text-emerald-400'"
+                              :class="isMilikRsud ? 'text-emerald-400' : (tipeKemitraan === 'dimanfaatkan' ? 'text-cyan-400' : 'text-emerald-400')"
                               x-text="activeSkemaKode"></span>
 
-                        <span x-show="tipeKemitraan === 'dimanfaatkan' && lockedKibFromData" class="px-2.5 py-0.5 rounded-full bg-cyan-950/60 text-cyan-300 border border-cyan-500/40 text-[10px] font-bold font-mono inline-flex items-center gap-1 shadow-sm">
+                        <span x-show="isMilikRsud" class="px-2.5 py-0.5 rounded-full bg-emerald-950/60 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold font-mono inline-flex items-center gap-1 shadow-sm">
+                            <span>🏛️</span> Reklasifikasi Milik RSUD &mdash; Bebas Ubah Klasifikasi 108 &amp; Rincian Fisik
+                        </span>
+                        <span x-show="!isMilikRsud && tipeKemitraan === 'dimanfaatkan' && lockedKibFromData" class="px-2.5 py-0.5 rounded-full bg-cyan-950/60 text-cyan-300 border border-cyan-500/40 text-[10px] font-bold font-mono inline-flex items-center gap-1 shadow-sm">
                             <span>🔒</span> Objek Terkunci Sesuai Data Aset BMD (KIB <span x-text="lockedKibFromData"></span>)
                         </span>
                     </div>
                     <p class="text-[11px] text-slate-400 mt-0.5">
-                        <span x-show="tipeKemitraan === 'dimanfaatkan'">
+                        <span x-show="isMilikRsud">Aset telah sah menjadi Milik RSUD. Silakan pilih salah satu kategori KIB objek aset (Tanah, Peralatan &amp; Mesin, Gedung, Jaringan, Lainnya) yang sesuai untuk dimutakhirkan.</span>
+                        <span x-show="!isMilikRsud && tipeKemitraan === 'dimanfaatkan'">
                             <span x-show="lockedKibFromData">Kategori objek terkunci otomatis sesuai data aset BMD yang dimanfaatkan (KIB <span class="font-bold text-cyan-300" x-text="lockedKibFromData"></span>) &mdash; kartu lain dinonaktifkan.</span>
                             <span x-show="!lockedKibFromData">Pemanfaatan BMD Akun 1.5.2 &mdash; Silakan pilih 1 objek aset yang disewakan / dimanfaatkan di bawah:</span>
                         </span>
-                        <span x-show="tipeKemitraan === 'ditambahkan'">Skema Kemitraan: <span class="font-bold text-emerald-300" x-text="activeSkemaLabel"></span> &mdash; Klik salah satu kartu objek aset baru di bawah:</span>
+                        <span x-show="!isMilikRsud && tipeKemitraan === 'ditambahkan'">Skema Kemitraan: <span class="font-bold text-emerald-300" x-text="activeSkemaLabel"></span> &mdash; Klik salah satu kartu objek aset baru di bawah:</span>
                     </p>
                 </div>
             </div>
@@ -96,20 +104,20 @@
                         isSubSubCardLocked(item) 
                             ? 'opacity-25 cursor-not-allowed pointer-events-none border-dashed border-slate-800/80 bg-slate-950/30 select-none grayscale'
                             : (selectedSubSub?.id === item.id 
-                                ? (tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-500/20 border-cyan-400 text-white shadow-xl shadow-cyan-500/20 ring-2 ring-cyan-400 cursor-default' : 'bg-emerald-500/20 border-emerald-400 text-white shadow-xl shadow-emerald-500/20 ring-2 ring-emerald-400 cursor-default') 
-                                : 'bg-slate-950/70 border-slate-800 text-slate-300 hover:border-cyan-500/50 hover:bg-slate-850 hover:-translate-y-0.5 cursor-pointer')
+                                ? (isMilikRsud || tipeKemitraan === 'ditambahkan' ? 'bg-emerald-500/20 border-emerald-400 text-white shadow-xl shadow-emerald-500/20 ring-2 ring-emerald-400 cursor-default' : 'bg-cyan-500/20 border-cyan-400 text-white shadow-xl shadow-cyan-500/20 ring-2 ring-cyan-400 cursor-default') 
+                                : 'bg-slate-950/70 border-slate-800 text-slate-300 hover:border-emerald-500/50 hover:bg-slate-850 hover:-translate-y-0.5 cursor-pointer')
                     ]">
                     
                     <!-- Top Row: Icon & Status Badge -->
                     <div class="flex items-center justify-between gap-1.5">
                         <div class="w-8 h-8 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-center text-lg shrink-0 shadow-inner"
-                             :class="selectedSubSub?.id === item.id ? (tipeKemitraan === 'dimanfaatkan' ? 'border-cyan-400/50 bg-cyan-950/60' : 'border-emerald-400/50 bg-emerald-950/60') : ''">
+                             :class="selectedSubSub?.id === item.id ? (isMilikRsud || tipeKemitraan === 'ditambahkan' ? 'border-emerald-400/50 bg-emerald-950/60' : 'border-cyan-400/50 bg-cyan-950/60') : ''">
                              <span x-text="getSubSubIcon(item.kode)"></span>
                         </div>
                         <div class="shrink-0 flex items-center">
                             <span x-show="isSubSubCardLocked(item)" class="text-[9px] px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-slate-500 font-mono font-bold tracking-tight">🔒 Non-KIB</span>
-                            <span x-show="selectedSubSub?.id === item.id && lockedKibFromData" class="text-[9px] px-2 py-0.5 rounded-full bg-cyan-950 border border-cyan-500/50 text-cyan-300 font-mono font-extrabold shadow-sm shadow-cyan-500/10">🔒 Terkunci</span>
-                            <span x-show="selectedSubSub?.id === item.id && !lockedKibFromData" class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-500/50 text-emerald-300 font-mono font-extrabold shadow-sm">✓ Terpilih</span>
+                            <span x-show="selectedSubSub?.id === item.id && lockedKibFromData && !isMilikRsud" class="text-[9px] px-2 py-0.5 rounded-full bg-cyan-950 border border-cyan-500/50 text-cyan-300 font-mono font-extrabold shadow-sm shadow-cyan-500/10">🔒 Terkunci</span>
+                            <span x-show="selectedSubSub?.id === item.id && (!lockedKibFromData || isMilikRsud)" class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-500/50 text-emerald-300 font-mono font-extrabold shadow-sm">✓ Terpilih</span>
                         </div>
                     </div>
 

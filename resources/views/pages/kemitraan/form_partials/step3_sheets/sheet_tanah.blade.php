@@ -74,7 +74,7 @@
                                 <label class="block text-slate-300 text-[11px] font-semibold">
                                     Uraian / Nama Rincian Bidang Tanah yang Disewakan / Dimanfaatkan <span class="text-rose-400">*</span>
                                 </label>
-                                <template x-if="formData.objek_aset_terpilih?.nama_barang">
+                                <template x-if="!isMilikRsud && formData.objek_aset_terpilih?.nama_barang">
                                     <span class="text-[9.5px] text-cyan-300 font-mono font-bold bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-500/30">
                                         🔒 Terkunci Sesuai Objek BMD
                                     </span>
@@ -83,11 +83,11 @@
                             <input type="text"
                                    x-model="item.tanah_nama_barang"
                                    x-init="if (!item.tanah_nama_barang && (formData.objek_aset_terpilih?.nama_barang || formData.nama_barang)) { item.tanah_nama_barang = formData.objek_aset_terpilih?.nama_barang || formData.nama_barang; }"
-                                   :readonly="Boolean(formData.objek_aset_terpilih?.nama_barang)"
+                                   :readonly="!isMilikRsud && Boolean(formData.objek_aset_terpilih?.nama_barang)"
                                    @input="syncTotalsFromItems()"
                                    placeholder="Contoh: Tanah Bangunan Rumah Negara Golongan I / Lahan Parkir Paviliun..."
                                    class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold transition-all"
-                                   :class="formData.objek_aset_terpilih?.nama_barang ? 'text-cyan-300 bg-slate-900/80 border-cyan-500/30 cursor-not-allowed select-all' : 'text-white hover:border-cyan-400 focus:border-cyan-400 focus:outline-none'">
+                                   :class="(!isMilikRsud && formData.objek_aset_terpilih?.nama_barang) ? 'text-cyan-300 bg-slate-900/80 border-cyan-500/30 cursor-not-allowed select-all' : 'text-white hover:border-cyan-400 focus:border-cyan-400 focus:outline-none'">
                         </div>
                     </div>
 

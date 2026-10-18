@@ -7,24 +7,27 @@
     <div class="flex items-center justify-between p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-slate-900/90 border transition-all duration-300 shadow-xl"
          :class="tipeKemitraan === 'dimanfaatkan' ? 'border-cyan-500/30' : 'border-emerald-500/30'">
         <div class="flex items-center space-x-3.5 sm:space-x-4">
-            <a href="{{ isset($astap) ? route('master.kemitraan') : route('astap.pilih_jenis') }}"
+            <a href="{{ isset($astap) ? ($isMilikRsud ? route('astap.index') : route('master.kemitraan')) : route('astap.pilih_jenis') }}"
                class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center transition-all shadow-sm shrink-0"
-               :class="tipeKemitraan === 'dimanfaatkan' ? 'hover:border-cyan-500/50 text-slate-400 hover:text-cyan-400' : 'hover:border-emerald-500/50 text-slate-400 hover:text-emerald-400'">
+               :class="isMilikRsud ? 'hover:border-emerald-500/50 text-slate-400 hover:text-emerald-400' : (tipeKemitraan === 'dimanfaatkan' ? 'hover:border-cyan-500/50 text-slate-400 hover:text-cyan-400' : 'hover:border-emerald-500/50 text-slate-400 hover:text-emerald-400')">
                 <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
             </a>
             <div class="min-w-0 flex-1">
                 <div class="inline-flex items-center space-x-2 px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold mb-1 border transition-all"
-                     :class="tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-400/15 text-cyan-300 border-cyan-400/30' : 'bg-emerald-400/15 text-emerald-300 border-emerald-400/30'">
-                    <span x-show="tipeKemitraan === 'dimanfaatkan'">🏛️ {{ isset($astap) ? 'PERUBAHAN PEMANFAATAN BMD RSUD (AKUN 1.5.2)' : 'PENCATATAN PEMANFAATAN BMD MILIK RSUD KE MITRA (AKUN 1.5.2)' }}</span>
-                    <span x-show="tipeKemitraan === 'ditambahkan'">📦 {{ isset($astap) ? 'PERUBAHAN ASET DITAMBAHKAN MITRA (AKUN 1.5.2)' : 'PENCATATAN ASET BARU DITAMBAHKAN MITRA REKANAN (AKUN 1.5.2)' }}</span>
+                     :class="isMilikRsud ? 'bg-emerald-400/15 text-emerald-300 border-emerald-400/30' : (tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-400/15 text-cyan-300 border-cyan-400/30' : 'bg-emerald-400/15 text-emerald-300 border-emerald-400/30')">
+                    <span x-show="isMilikRsud">🏛️ PERUBAHAN DATA ASET MILIK RSUD (EKS-KEMITRAAN / REKLASIFIKASI)</span>
+                    <span x-show="!isMilikRsud && tipeKemitraan === 'dimanfaatkan'">🏛️ {{ isset($astap) ? 'PERUBAHAN PEMANFAATAN BMD RSUD (AKUN 1.5.2)' : 'PENCATATAN PEMANFAATAN BMD MILIK RSUD KE MITRA (AKUN 1.5.2)' }}</span>
+                    <span x-show="!isMilikRsud && tipeKemitraan === 'ditambahkan'">📦 {{ isset($astap) ? 'PERUBAHAN ASET DITAMBAHKAN MITRA (AKUN 1.5.2)' : 'PENCATATAN ASET BARU DITAMBAHKAN MITRA REKANAN (AKUN 1.5.2)' }}</span>
                 </div>
                 <h1 class="text-base sm:text-xl md:text-2xl font-extrabold text-white tracking-tight truncate">
-                    <span x-show="tipeKemitraan === 'dimanfaatkan'">{{ isset($astap) ? 'Ubah Data Pemanfaatan BMD RSUD' : 'Pencatatan Pemanfaatan BMD Milik RSUD ke Mitra' }}</span>
-                    <span x-show="tipeKemitraan === 'ditambahkan'">{{ isset($astap) ? 'Ubah Data Aset Ditambahkan Mitra' : 'Pencatatan Aset Baru yang Ditambahkan oleh Mitra' }}</span>
+                    <span x-show="isMilikRsud">Ubah Data Aset Milik RSUD (Eks-Kemitraan)</span>
+                    <span x-show="!isMilikRsud && tipeKemitraan === 'dimanfaatkan'">{{ isset($astap) ? 'Ubah Data Pemanfaatan BMD RSUD' : 'Pencatatan Pemanfaatan BMD Milik RSUD ke Mitra' }}</span>
+                    <span x-show="!isMilikRsud && tipeKemitraan === 'ditambahkan'">{{ isset($astap) ? 'Ubah Data Aset Ditambahkan Mitra' : 'Pencatatan Aset Baru yang Ditambahkan oleh Mitra' }}</span>
                 </h1>
                 <p class="text-xs text-slate-400 mt-0.5 hidden sm:block">
-                    <span x-show="tipeKemitraan === 'dimanfaatkan'">Pemanfaatan Barang Milik Daerah RSUD (Sewa Tanah, Gedung, Ruang Paviliun, atau KSP Alat) kepada pihak ketiga dengan penautan objek BMD.</span>
-                    <span x-show="tipeKemitraan === 'ditambahkan'">Pengadaan dan penambahan alat medis, laboratorium, mesin, atau fasilitas baru yang didatangkan oleh pihak ketiga (Mitra Rekanan Kerja Sama) untuk RSUD.</span>
+                    <span x-show="isMilikRsud">Perbarui data aset tetap yang telah diserahkan dan menjadi milik RSUD Dr. H. Koesnandi. Langkah 1 memuat identitas rekanan mitra &amp; nomor PKS asal, sedangkan Langkah 2 dan 3 terbuka bebas untuk koreksi klasifikasi 108 dan rincian fisik.</span>
+                    <span x-show="!isMilikRsud && tipeKemitraan === 'dimanfaatkan'">Pemanfaatan Barang Milik Daerah RSUD (Sewa Tanah, Gedung, Ruang Paviliun, atau KSP Alat) kepada pihak ketiga dengan penautan objek BMD.</span>
+                    <span x-show="!isMilikRsud && tipeKemitraan === 'ditambahkan'">Pengadaan dan penambahan alat medis, laboratorium, mesin, atau fasilitas baru yang didatangkan oleh pihak ketiga (Mitra Rekanan Kerja Sama) untuk RSUD.</span>
                 </p>
             </div>
         </div>
@@ -42,9 +45,9 @@
                          :class="stepErrors[1] 
                             ? 'bg-rose-500/20 text-rose-300 border border-rose-500/60 shadow-lg shadow-rose-500/20' 
                             : (currentStep === 1 
-                                ? (tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-500 text-slate-950 font-black shadow-lg shadow-cyan-500/30' : 'bg-emerald-500 text-slate-950 font-black shadow-lg shadow-emerald-500/30')
+                                ? (isMilikRsud || tipeKemitraan === 'ditambahkan' ? 'bg-emerald-500 text-slate-950 font-black shadow-lg shadow-emerald-500/30' : 'bg-cyan-500 text-slate-950 font-black shadow-lg shadow-cyan-500/30')
                                 : (currentStep > 1 
-                                    ? (tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40')
+                                    ? (isMilikRsud || tipeKemitraan === 'ditambahkan' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40')
                                     : 'bg-slate-950 text-slate-500 border border-slate-800'))">
                         <!-- Nomor / centang -->
                         <span x-show="!stepErrors[1] && currentStep <= 1">1</span>
@@ -53,14 +56,14 @@
                     </div>
                     <div class="min-w-0">
                         <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate"
-                              :class="stepErrors[1] ? 'text-rose-400' : (currentStep === 1 ? (tipeKemitraan === 'dimanfaatkan' ? 'text-cyan-400' : 'text-emerald-400') : 'text-slate-500')">Langkah 1</span>
+                              :class="stepErrors[1] ? 'text-rose-400' : (currentStep === 1 ? (isMilikRsud || tipeKemitraan === 'ditambahkan' ? 'text-emerald-400' : 'text-cyan-400') : 'text-slate-500')">Langkah 1</span>
                         <span class="text-[11px] sm:text-xs font-bold text-white block truncate"
-                              x-text="tipeKemitraan === 'dimanfaatkan' ? 'Objek BMD & PKS' : 'Mitra Penyedia & PKS'">
+                              x-text="isMilikRsud ? 'Info Rekanan & PKS' : (tipeKemitraan === 'dimanfaatkan' ? 'Objek BMD & PKS' : 'Mitra Penyedia & PKS')">
                         </span>
                     </div>
                 </div>
                 <div class="h-1 sm:h-1.5 rounded-full w-full transition-all"
-                     :class="stepErrors[1] ? 'bg-rose-500' : (currentStep >= 1 ? (tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-500' : 'bg-emerald-500') : 'bg-slate-950')"></div>
+                     :class="stepErrors[1] ? 'bg-rose-500' : (currentStep >= 1 ? (isMilikRsud || tipeKemitraan === 'ditambahkan' ? 'bg-emerald-500' : 'bg-cyan-500') : 'bg-slate-950')"></div>
             </button>
 
             <!-- Step 2 Tab -->
@@ -70,9 +73,9 @@
                          :class="stepErrors[2] 
                             ? 'bg-rose-500/20 text-rose-300 border border-rose-500/60 shadow-lg shadow-rose-500/20' 
                             : (currentStep === 2 
-                                ? (tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-500 text-slate-950 font-black shadow-lg shadow-cyan-500/30' : 'bg-emerald-500 text-slate-950 font-black shadow-lg shadow-emerald-500/30')
+                                ? (isMilikRsud || tipeKemitraan === 'ditambahkan' ? 'bg-emerald-500 text-slate-950 font-black shadow-lg shadow-emerald-500/30' : 'bg-cyan-500 text-slate-950 font-black shadow-lg shadow-cyan-500/30')
                                 : (currentStep > 2 
-                                    ? (tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40')
+                                    ? (isMilikRsud || tipeKemitraan === 'ditambahkan' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40')
                                     : 'bg-slate-950 text-slate-500 border border-slate-800'))">
                         <span x-show="!stepErrors[2] && currentStep <= 2">2</span>
                         <span x-show="!stepErrors[2] && currentStep > 2">✓</span>
@@ -80,14 +83,14 @@
                     </div>
                     <div class="min-w-0">
                         <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate"
-                              :class="stepErrors[2] ? 'text-rose-400' : (currentStep === 2 ? (tipeKemitraan === 'dimanfaatkan' ? 'text-cyan-400' : 'text-emerald-400') : 'text-slate-500')">Langkah 2</span>
+                              :class="stepErrors[2] ? 'text-rose-400' : (currentStep === 2 ? (isMilikRsud || tipeKemitraan === 'ditambahkan' ? 'text-emerald-400' : 'text-cyan-400') : 'text-slate-500')">Langkah 2</span>
                         <span class="text-[11px] sm:text-xs font-bold text-white block truncate"
-                              x-text="tipeKemitraan === 'dimanfaatkan' ? 'Klasifikasi 108 Pemanfaatan' : 'Spesifikasi Barang Baru'">
+                              x-text="isMilikRsud ? 'Klasifikasi 108 & Nilai' : (tipeKemitraan === 'dimanfaatkan' ? 'Klasifikasi 108 Pemanfaatan' : 'Spesifikasi Barang Baru')">
                         </span>
                     </div>
                 </div>
                 <div class="h-1 sm:h-1.5 rounded-full w-full transition-all"
-                     :class="stepErrors[2] ? 'bg-rose-500' : (currentStep >= 2 ? (tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-500' : 'bg-emerald-500') : 'bg-slate-950')"></div>
+                     :class="stepErrors[2] ? 'bg-rose-500' : (currentStep >= 2 ? (isMilikRsud || tipeKemitraan === 'ditambahkan' ? 'bg-emerald-500' : 'bg-cyan-500') : 'bg-slate-950')"></div>
             </button>
 
             <!-- Step 3 Tab -->
@@ -97,21 +100,21 @@
                          :class="stepErrors[3] 
                             ? 'bg-rose-500/20 text-rose-300 border border-rose-500/60 shadow-lg shadow-rose-500/20' 
                             : (currentStep === 3 
-                                ? (tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-500 text-slate-950 font-black shadow-lg shadow-cyan-500/30' : 'bg-emerald-500 text-slate-950 font-black shadow-lg shadow-emerald-500/30')
+                                ? (isMilikRsud || tipeKemitraan === 'ditambahkan' ? 'bg-emerald-500 text-slate-950 font-black shadow-lg shadow-emerald-500/30' : 'bg-cyan-500 text-slate-950 font-black shadow-lg shadow-cyan-500/30')
                                 : 'bg-slate-950 text-slate-500 border border-slate-800')">
                         <span x-show="!stepErrors[3]">3</span>
                         <span x-show="stepErrors[3]">!</span>
                     </div>
                     <div class="min-w-0">
                         <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate"
-                              :class="stepErrors[3] ? 'text-rose-400' : (currentStep === 3 ? (tipeKemitraan === 'dimanfaatkan' ? 'text-cyan-400' : 'text-emerald-400') : 'text-slate-500')">Langkah 3</span>
+                              :class="stepErrors[3] ? 'text-rose-400' : (currentStep === 3 ? (isMilikRsud || tipeKemitraan === 'ditambahkan' ? 'text-emerald-400' : 'text-cyan-400') : 'text-slate-500')">Langkah 3</span>
                         <span class="text-[11px] sm:text-xs font-bold text-white block truncate"
-                              x-text="tipeKemitraan === 'dimanfaatkan' ? 'Verifikasi Pemanfaatan' : 'Verifikasi Aset Baru'">
+                              x-text="isMilikRsud ? 'Verifikasi Data RSUD' : (tipeKemitraan === 'dimanfaatkan' ? 'Verifikasi Pemanfaatan' : 'Verifikasi Aset Baru')">
                         </span>
                     </div>
                 </div>
                 <div class="h-1 sm:h-1.5 rounded-full w-full transition-all"
-                     :class="stepErrors[3] ? 'bg-rose-500' : (currentStep >= 3 ? (tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-500' : 'bg-emerald-500') : 'bg-slate-950')"></div>
+                     :class="stepErrors[3] ? 'bg-rose-500' : (currentStep >= 3 ? (isMilikRsud || tipeKemitraan === 'ditambahkan' ? 'bg-emerald-500' : 'bg-cyan-500') : 'bg-slate-950')"></div>
             </button>
 
         </div>

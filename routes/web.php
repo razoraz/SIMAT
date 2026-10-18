@@ -2763,7 +2763,7 @@ Route::middleware('auth')->group(function () {
 
             // ─── Form Kemitraan Pihak Ketiga (Edit & Update) ─────────────────
             Route::get('/astap/{id}/edit-kemitraan', function (\Illuminate\Http\Request $request, $id) use ($getDistinctPenyedias, $getDistinctPejabats, $getDistinctMitras, $getObjekAsetKemitraans) {
-                $astap = \App\Models\Astap::with(['registers.unit', 'jenisAstap', 'kemitraan'])->findOrFail($id);
+                $astap = \App\Models\Astap::with(['registers.unit', 'jenisAstap', 'kemitraan', 'reklas'])->findOrFail($id);
                 $dbMaster108 = \App\Models\JenisAstap::getNested108();
                 $dbUnits = \App\Models\Unit::orderBy('nama')->get();
                 $dbPenyedias = $getDistinctPenyedias();
@@ -2831,7 +2831,7 @@ Route::middleware('auth')->group(function () {
                     }
                 }
 
-                $astap = \App\Models\Astap::with(['registers', 'kemitraan'])->findOrFail($id);
+                $astap = \App\Models\Astap::with(['registers', 'kemitraan', 'reklas'])->findOrFail($id);
                 if (in_array($astap->kemitraan?->status_konsesi, ['Dikembalikan ke Rekanan', 'Dibatalkan'])) {
                     $statusTxt = $astap->kemitraan->status_konsesi;
                     if ($request->ajax() || $request->wantsJson()) {
@@ -3469,7 +3469,16 @@ Route::middleware('auth')->group(function () {
                     }
                 });
 
-                $succMessage = 'Perubahan Aset Kemitraan "' . $astap->nama_barang . '" berhasil disimpan!';
+                $isMilikRsud = ($astap?->is_reklas)
+                    || ($astap?->kemitraan?->status_konsesi === 'Selesai / Reklasifikasi')
+                    || ($astap?->kemitraan?->status_konsesi === 'Selesai')
+                    || ($astap?->reklas && $astap->reklas->isNotEmpty());
+
+                $targetRoute = $isMilikRsud ? route('astap.index') : route('master.kemitraan');
+
+                $succMessage = $isMilikRsud 
+                    ? 'Perubahan Data Aset Milik RSUD (Eks-Kemitraan) "' . $astap->nama_barang . '" berhasil disimpan!' 
+                    : 'Perubahan Aset Kemitraan "' . $astap->nama_barang . '" berhasil disimpan!';
                 if ($linkedAsetMitrasCount > 0) {
                     $succMessage = 'Perubahan Objek Kemitraan "' . $astap->nama_barang . '" beserta ' . $linkedAsetMitrasCount . ' aset mitra terkait berhasil diperbarui otomatis!';
                 }
@@ -3478,11 +3487,11 @@ Route::middleware('auth')->group(function () {
                     return response()->json([
                         'success' => true,
                         'message' => $succMessage,
-                        'redirect' => route('master.kemitraan')
+                        'redirect' => $targetRoute
                     ]);
                 }
 
-                return redirect()->route('master.kemitraan')
+                return redirect()->to($targetRoute)
                     ->with('success', $succMessage);
             })->name('astap.update_kemitraan');
 
@@ -3504,11 +3513,16 @@ Route::middleware('auth')->group(function () {
             })->name('astap.create');
 
             Route::get('/astap/{id}/edit', function ($id) use ($getDistinctPenyedias, $getDistinctPejabats) {
-                $astap = \App\Models\Astap::with(['registers', 'jenisAstap', 'rekeningBelanja', 'jenisPengadaan', 'belanjaModal'])->findOrFail($id);
+                $astap = \App\Models\Astap::with(['registers', 'jenisAstap', 'rekeningBelanja', 'jenisPengadaan', 'belanjaModal', 'kemitraan', 'reklas'])->findOrFail($id);
                 if (in_array($astap->sumber_dana, ['mutasi_eksternal', 'pelimpahan_skpd', 'pelimpahan', 'mutasi_masuk'], true) || !empty($astap->mutasi_nomor_bamb) || !empty($astap->mutasi_asal)) {
                     return redirect()->route('astap.edit_mutasi_eksternal', ['id' => $id, 'from' => request('from', 'eksternal')]);
                 }
-                if ($astap->sumber_dana === 'kemitraan' || \App\Models\AstapKemitraan::where('astap_id', $id)->where('is_deleted', 0)->exists()) {
+                if ($astap->sumber_dana === 'kemitraan' 
+                    || !empty($astap->kemitraan)
+                    || \App\Models\AstapKemitraan::where('astap_id', $id)->where('is_deleted', 0)->exists()
+                    || \App\Models\AstapKemitraan::where('objek_astap_id', $id)->where('is_deleted', 0)->exists()
+                    || ($astap->is_reklas && \App\Models\AstapKemitraan::where('astap_id', $id)->exists())
+                ) {
                     return redirect()->route('astap.edit_kemitraan', ['id' => $id]);
                 }
                 $rawMaster108 = \App\Models\JenisAstap::getNested108();

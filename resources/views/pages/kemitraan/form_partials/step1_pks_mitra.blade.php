@@ -5,20 +5,23 @@
     
     <div>
         <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-bold mb-2 border transition-all"
-             :class="tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-400/10 text-cyan-300 border-cyan-400/20' : 'bg-emerald-400/10 text-emerald-300 border-emerald-400/20'">
-            <span x-show="tipeKemitraan === 'dimanfaatkan'">🏛️ LANGKAH 1 DARI 3: OBJEK BMD RSUD &amp; DOKUMEN PKS PEMANFAATAN</span>
-            <span x-show="tipeKemitraan === 'ditambahkan'">📦 LANGKAH 1 DARI 3: REKANAN PENYEDIA &amp; DOKUMEN PKS KEMITRAAN</span>
+             :class="isMilikRsud ? 'bg-emerald-400/10 text-emerald-300 border-emerald-400/20' : (tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-400/10 text-cyan-300 border-cyan-400/20' : 'bg-emerald-400/10 text-emerald-300 border-emerald-400/20')">
+            <span x-show="isMilikRsud">🏛️ LANGKAH 1 DARI 3: WADAH INFORMASI REKANAN MITRA &amp; DOKUMEN PKS ASAL</span>
+            <span x-show="!isMilikRsud && tipeKemitraan === 'dimanfaatkan'">🏛️ LANGKAH 1 DARI 3: OBJEK BMD RSUD &amp; DOKUMEN PKS PEMANFAATAN</span>
+            <span x-show="!isMilikRsud && tipeKemitraan === 'ditambahkan'">📦 LANGKAH 1 DARI 3: REKANAN PENYEDIA &amp; DOKUMEN PKS KEMITRAAN</span>
         </div>
         <h2 class="text-lg font-bold text-white flex items-center space-x-2">
             <span class="p-2 rounded-xl text-sm"
-                  :class="tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-400/10 text-cyan-400' : 'bg-emerald-400/10 text-emerald-400'"
-                  x-text="tipeKemitraan === 'dimanfaatkan' ? '🏛️' : '📦'"></span>
-            <span x-show="tipeKemitraan === 'dimanfaatkan'">Langkah 1: Objek BMD Milik RSUD &amp; Dokumen PKS Pemanfaatan</span>
-            <span x-show="tipeKemitraan === 'ditambahkan'">Langkah 1: Identitas Rekanan &amp; Dokumen PKS Kemitraan</span>
+                  :class="isMilikRsud ? 'bg-emerald-400/10 text-emerald-400' : (tipeKemitraan === 'dimanfaatkan' ? 'bg-cyan-400/10 text-cyan-400' : 'bg-emerald-400/10 text-emerald-400')"
+                  x-text="isMilikRsud ? '🏛️' : (tipeKemitraan === 'dimanfaatkan' ? '🏛️' : '📦')"></span>
+            <span x-show="isMilikRsud">Langkah 1: Identitas Rekanan Mitra &amp; Dokumen PKS Asal</span>
+            <span x-show="!isMilikRsud && tipeKemitraan === 'dimanfaatkan'">Langkah 1: Objek BMD Milik RSUD &amp; Dokumen PKS Pemanfaatan</span>
+            <span x-show="!isMilikRsud && tipeKemitraan === 'ditambahkan'">Langkah 1: Identitas Rekanan &amp; Dokumen PKS Kemitraan</span>
         </h2>
         <p class="text-xs text-slate-400 mt-1">
-            <span x-show="tipeKemitraan === 'dimanfaatkan'">Pilih objek aset milik RSUD (Semua KIB: KIB A s.d. E) yang disewakan / dimanfaatkan, kemudian lengkapi identitas pihak ketiga penyewa serta dokumen PKS.</span>
-            <span x-show="tipeKemitraan === 'ditambahkan'">Masukkan identitas rekanan mitra penyedia alat/fasilitas baru, nomor dan tanggal dokumen Perjanjian Kerja Sama (PKS), serta masa konsesi operasional di RSUD.</span>
+            <span x-show="isMilikRsud">Wadah informasi rekam jejak identitas rekanan mitra penyedia asal dan dokumen PKS. Status konsesi aset ini telah selesai dan sah menjadi Milik RSUD.</span>
+            <span x-show="!isMilikRsud && tipeKemitraan === 'dimanfaatkan'">Pilih objek aset milik RSUD (Semua KIB: KIB A s.d. E) yang disewakan / dimanfaatkan, kemudian lengkapi identitas pihak ketiga penyewa serta dokumen PKS.</span>
+            <span x-show="!isMilikRsud && tipeKemitraan === 'ditambahkan'">Masukkan identitas rekanan mitra penyedia alat/fasilitas baru, nomor dan tanggal dokumen Perjanjian Kerja Sama (PKS), serta masa konsesi operasional di RSUD.</span>
         </p>
     </div>
 
@@ -34,27 +37,79 @@
         </div>
     </template>
 
+    <!-- ========================================================================= -->
+    <!-- SHOWCASE WADAH INFORMASI REKANAN MITRA (MODE MILIK RSUD / REKLASIFIKASI)  -->
+    <!-- ========================================================================= -->
+    <template x-if="isMilikRsud">
+        <div class="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-emerald-950/50 via-slate-900/95 to-slate-950/90 border border-emerald-500/40 shadow-xl space-y-3 relative overflow-hidden">
+            <div class="flex items-start justify-between gap-3 flex-wrap sm:flex-nowrap pb-3 border-b border-slate-800">
+                <div class="flex items-center gap-3.5 min-w-0">
+                    <div class="w-10 h-10 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-xl shrink-0 shadow-inner">
+                        🏛️
+                    </div>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h3 class="text-xs sm:text-sm font-extrabold text-white">
+                                Wadah Informasi Rekanan Mitra &amp; Asal-Usul Kemitraan
+                            </h3>
+                            <span class="px-2.5 py-0.5 rounded-full text-[9.5px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono tracking-wider">
+                                🏛️ MILIK RSUD
+                            </span>
+                        </div>
+                        <p class="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
+                            Aset ini merupakan hasil <strong>reklasifikasi kemitraan yang telah sah menjadi Milik RSUD Dr. H. Koesnandi</strong>.
+                            Langkah 1 berfungsi mencatat identitas mitra asal &amp; nomor PKS, sedangkan Langkah 2 dan 3 terbuka penuh untuk koreksi klasifikasi kode 108 dan spesifikasi fisik.
+                        </p>
+                    </div>
+                </div>
+                <div class="shrink-0 flex items-center gap-2">
+                    <span class="px-3 py-1 rounded-xl bg-slate-950 text-emerald-400 text-xs font-bold border border-emerald-500/30 font-mono flex items-center gap-1.5 shadow-sm">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span>Konsesi: Selesai / Milik RSUD</span>
+                    </span>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800">
+                    <span class="text-[10px] uppercase font-bold text-slate-400 block">🤝 Rekanan Mitra Asal</span>
+                    <span class="font-bold text-emerald-300 block truncate" x-text="formData.mitra_nama || '-'"></span>
+                </div>
+                <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800">
+                    <span class="text-[10px] uppercase font-bold text-slate-400 block">📜 Dokumen PKS Asal</span>
+                    <span class="font-mono font-bold text-slate-200 block truncate" x-text="formData.nomor_pks || '-'"></span>
+                </div>
+                <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800">
+                    <span class="text-[10px] uppercase font-bold text-slate-400 block">⚖️ Status Konsesi</span>
+                    <span class="font-bold text-cyan-300 block">Selesai &rarr; Aset Tetap RSUD</span>
+                </div>
+            </div>
+        </div>
+    </template>
+
     <!-- Bagian PKS & Mitra Pihak Ketiga -->
     <div class="p-6 rounded-3xl bg-slate-950/80 border space-y-5 shadow-xl transition-all"
-         :class="tipeKemitraan === 'dimanfaatkan' ? 'border-cyan-500/30' : 'border-emerald-500/30'">
+         :class="isMilikRsud ? 'border-emerald-500/40' : (tipeKemitraan === 'dimanfaatkan' ? 'border-cyan-500/30' : 'border-emerald-500/30')">
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
             <span class="text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5"
-                  :class="tipeKemitraan === 'dimanfaatkan' ? 'text-cyan-400' : 'text-emerald-400'">
-                <span x-show="tipeKemitraan === 'dimanfaatkan'">🤝 Identitas Pihak Ketiga &amp; Dokumen PKS Pemanfaatan</span>
-                <span x-show="tipeKemitraan === 'ditambahkan'">🤝 Identitas Mitra Penyedia &amp; Dokumen PKS Kemitraan</span>
+                  :class="isMilikRsud ? 'text-emerald-400' : (tipeKemitraan === 'dimanfaatkan' ? 'text-cyan-400' : 'text-emerald-400')">
+                <span x-show="isMilikRsud">🤝 Identitas Rekanan Mitra Asal &amp; Dokumen PKS</span>
+                <span x-show="!isMilikRsud && tipeKemitraan === 'dimanfaatkan'">🤝 Identitas Pihak Ketiga &amp; Dokumen PKS Pemanfaatan</span>
+                <span x-show="!isMilikRsud && tipeKemitraan === 'ditambahkan'">🤝 Identitas Mitra Penyedia &amp; Dokumen PKS Kemitraan</span>
                 <span class="text-rose-400">*</span>
             </span>
             <span class="text-[10px] font-bold px-2 py-0.5 rounded-lg border font-mono"
-                  :class="tipeKemitraan === 'dimanfaatkan' ? 'text-cyan-300 bg-cyan-400/10 border-cyan-400/20' : 'text-emerald-300 bg-emerald-400/10 border-emerald-400/20'">
-                <span x-show="tipeKemitraan === 'dimanfaatkan'">Pemanfaatan BMD · Akun 1.5.2</span>
-                <span x-show="tipeKemitraan === 'ditambahkan'">Aset Baru Mitra · Akun 1.5.2</span>
+                  :class="isMilikRsud ? 'text-emerald-300 bg-emerald-400/10 border-emerald-400/20' : (tipeKemitraan === 'dimanfaatkan' ? 'text-cyan-300 bg-cyan-400/10 border-cyan-400/20' : 'text-emerald-300 bg-emerald-400/10 border-emerald-400/20')">
+                <span x-show="isMilikRsud">🏛️ Aset Milik RSUD · Eks-Kemitraan</span>
+                <span x-show="!isMilikRsud && tipeKemitraan === 'dimanfaatkan'">Pemanfaatan BMD · Akun 1.5.2</span>
+                <span x-show="!isMilikRsud && tipeKemitraan === 'ditambahkan'">Aset Baru Mitra · Akun 1.5.2</span>
             </span>
         </div>
 
         <!-- ========================================================================= -->
         <!-- BANNER INFO: PEMANFAATAN BMD RSUD (INFORMASI RINGKAS TANPA PENCARIAN)     -->
         <!-- ========================================================================= -->
-        <div x-show="tipeKemitraan === 'dimanfaatkan'"
+        <div x-show="!isMilikRsud && tipeKemitraan === 'dimanfaatkan'"
              x-transition:enter="transition ease-out duration-200"
              class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-cyan-950/40 via-slate-900/90 to-slate-950/90 border border-cyan-500/30 shadow-xl space-y-2 relative">
             <div class="flex items-center gap-3.5">
@@ -321,8 +376,23 @@
             </div>
         </div>
 
+        <!-- Banner Khusus Status Konsesi Milik RSUD (Eks-Kemitraan) -->
+        <div x-show="isMilikRsud" x-transition:enter="transition ease-out duration-150"
+             class="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-slate-900/90 to-slate-950/90 border border-emerald-500/40 flex items-center justify-between text-xs shadow-md">
+            <div class="flex items-center gap-3">
+                <span class="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-base font-bold shrink-0 shadow-inner">🏛️</span>
+                <div>
+                    <span class="font-extrabold text-white block">Status Konsesi: Selesai / Aset Tetap Milik RSUD</span>
+                    <span class="text-[11px] text-slate-300">Konsesi kemitraan telah berakhir dan aset telah diserahterimakan penuh menjadi Aset Tetap Milik RSUD Dr. H. Koesnandi.</span>
+                </div>
+            </div>
+            <span class="px-3 py-1 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold font-mono shrink-0 shadow-sm">
+                🏛️ Milik RSUD
+            </span>
+        </div>
+
         <!-- Bentuk Skema Kemitraan Sesuai Permendagri 108 Akun 1.5.2 (Hanya Untuk Pemanfaatan BMD Milik RSUD) -->
-        <div x-show="tipeKemitraan === 'dimanfaatkan'" x-transition:enter="transition ease-out duration-150">
+        <div x-show="!isMilikRsud && tipeKemitraan === 'dimanfaatkan'" x-transition:enter="transition ease-out duration-150">
             <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
                 <span>Bentuk Skema Kemitraan Sesuai Permendagri 108 / SAP <span class="text-rose-400">*</span></span>
                 <span class="text-[10px] font-mono text-cyan-400/90">Akun Neraca 1.5.2</span>
@@ -367,7 +437,7 @@
         </div>
 
         <!-- Banner Info Skema Otomatis Khusus Mode Aset Baru Mitra -->
-        <div x-show="tipeKemitraan === 'ditambahkan'" x-transition:enter="transition ease-out duration-150"
+        <div x-show="!isMilikRsud && tipeKemitraan === 'ditambahkan'" x-transition:enter="transition ease-out duration-150"
              class="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-slate-900/90 to-slate-950/90 border border-emerald-500/30 flex items-center justify-between text-xs">
             <div class="flex items-center gap-2.5">
                 <span class="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-sm font-bold shrink-0">🤝</span>
