@@ -1196,7 +1196,9 @@
                                         <tr>
                                             <th class="px-4 py-3 text-center whitespace-nowrap">NIBAR &amp; No. Register Resmi</th>
                                             <th class="px-3.5 py-3 text-center whitespace-nowrap">Status</th>
-                                            <th class="px-4 py-3 text-center whitespace-nowrap min-w-[200px]">Penempatan / Rekanan Mitra</th>
+                                            <th x-show="selectedAstapDetail?.sumber_dana === 'kemitraan' || selectedAstapDetail?.sumber_dana_raw === 'kemitraan' || !!selectedAstapDetail?.kemitraan"
+                                                class="px-4 py-3 text-center whitespace-nowrap min-w-[190px]">Rekanan &amp; Skema</th>
+                                            <th class="px-4 py-3 text-center whitespace-nowrap min-w-[200px]">Lokasi Penempatan</th>
                                             <th class="px-3.5 py-3 text-center whitespace-nowrap">Kondisi</th>
                                             <th class="px-3.5 py-3 text-center whitespace-nowrap">QR Code</th>
                                             <th class="px-3.5 py-3 text-center whitespace-nowrap">Aksi</th>
@@ -1241,12 +1243,12 @@
                                                                   ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-emerald-500/10' 
                                                                   : ((selectedAstapDetail?.is_bmd_dimanfaatkan || selectedAstapDetail?.kemitraan?.tipe_kemitraan === 'dimanfaatkan') 
                                                                       ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 shadow-cyan-500/10' 
-                                                                      : 'bg-teal-500/20 text-teal-300 border-teal-500/40 shadow-teal-500/10')"
+                                                                      : (reg.status === 'Dikembalikan ke Rekanan' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-amber-500/10' : 'bg-teal-500/20 text-teal-300 border-teal-500/40 shadow-teal-500/10'))"
                                                               x-text="(selectedAstapDetail?.is_kemitraan_reklas || selectedAstapDetail?.kemitraan?.status_konsesi === 'Selesai / Reklasifikasi' || selectedAstapDetail?.kemitraan?.status_konsesi === 'Selesai') 
                                                                   ? '🏛️ MILIK RSUD' 
                                                                   : ((selectedAstapDetail?.is_bmd_dimanfaatkan || selectedAstapDetail?.kemitraan?.tipe_kemitraan === 'dimanfaatkan') 
                                                                       ? '🏛️ BMD DIMANFAATKAN' 
-                                                                      : '🤝 KEMITRAAN')">
+                                                                      : (reg.status === 'Dikembalikan ke Rekanan' ? '📦 DIKEMBALIKAN' : '🤝 KEMITRAAN'))">
                                                         </span>
                                                     </template>
                                                     <template x-if="reg.status !== 'Mutasi Keluar OPD' && selectedAstapDetail?.jenis_reklas !== 'MUTASI_EKSTERNAL' && reg.status !== 'Kemitraan' && selectedAstapDetail?.sumber_dana !== 'kemitraan' && selectedAstapDetail?.category !== 'KEMITRAAN' && !selectedAstapDetail?.kemitraan">
@@ -1256,31 +1258,41 @@
                                                     </template>
                                                 </td>
 
-                                                <!-- 3. Penempatan / Rekanan Mitra -->
+                                                <!-- 3. Rekanan & Skema (KOLOM DEDIKASI KEMITRAAN) -->
+                                                <td x-show="selectedAstapDetail?.sumber_dana === 'kemitraan' || selectedAstapDetail?.sumber_dana_raw === 'kemitraan' || !!selectedAstapDetail?.kemitraan"
+                                                    class="px-4 py-3 text-center align-middle whitespace-nowrap">
+                                                    <div class="flex flex-col items-center justify-center gap-1 max-w-[210px] mx-auto">
+                                                        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-cyan-950/80 border border-cyan-500/40 text-cyan-200 font-bold text-[11px] shadow-sm max-w-full">
+                                                            <span class="text-xs shrink-0">🤝</span>
+                                                            <span class="truncate" :title="selectedAstapDetail?.kemitraan?.mitra_nama || selectedAstapDetail?.spesifikasi_json?.mitra_nama || 'Pihak Ketiga'"
+                                                                  x-text="selectedAstapDetail?.kemitraan?.mitra_nama || selectedAstapDetail?.spesifikasi_json?.mitra_nama || 'Pihak Ketiga'"></span>
+                                                        </div>
+                                                        <div class="flex items-center gap-1.5 flex-wrap justify-center">
+                                                            <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wide bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-sm"
+                                                                  x-text="'Skema: ' + (selectedAstapDetail?.kemitraan?.skema_kemitraan || selectedAstapDetail?.spesifikasi_json?.skema_kemitraan || 'Sewa')"></span>
+                                                            <template x-if="selectedAstapDetail?.spesifikasi_json?.harga_sewa || selectedAstapDetail?.kemitraan?.harga_sewa">
+                                                                <span class="px-1.5 py-0.5 rounded-full text-[8.5px] font-mono font-bold bg-slate-900 text-emerald-400 border border-emerald-500/30"
+                                                                      x-text="'Rp ' + Number(selectedAstapDetail?.spesifikasi_json?.harga_sewa || selectedAstapDetail?.kemitraan?.harga_sewa).toLocaleString('id-ID')"></span>
+                                                            </template>
+                                                        </div>
+                                                    </div>
+                                                </td>
+
+                                                <!-- 4. Lokasi Penempatan (MURNI LOKASI FISIK RUANGAN RSUD) -->
                                                 <td class="px-4 py-3 text-center align-middle">
-                                                    <!-- Kemitraan Pihak Ketiga / BMD Dimanfaatkan -->
-                                                    <template x-if="(reg.status !== 'Mutasi Keluar OPD' && selectedAstapDetail?.jenis_reklas !== 'MUTASI_EKSTERNAL') && (reg.status === 'Kemitraan' || selectedAstapDetail?.sumber_dana === 'kemitraan' || selectedAstapDetail?.category === 'KEMITRAAN' || !!selectedAstapDetail?.kemitraan || (reg.ruang_pemegang && reg.ruang_pemegang.toLowerCase().includes('kemitraan')))">
-                                                        <div class="flex flex-col items-center justify-center gap-1 max-w-[240px] mx-auto">
-                                                            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-cyan-950/80 border border-cyan-500/40 text-cyan-200 font-bold text-[11px] shadow-sm max-w-full">
-                                                                <span class="text-xs shrink-0">🤝</span>
-                                                                <span class="truncate" :title="selectedAstapDetail?.kemitraan?.mitra_nama || selectedAstapDetail?.spesifikasi_json?.mitra_nama || (reg.ruang_pemegang ? reg.ruang_pemegang.replace(/^Kemitraan:\s*/i, '') : 'Pihak Ketiga')"
-                                                                      x-text="selectedAstapDetail?.kemitraan?.mitra_nama || selectedAstapDetail?.spesifikasi_json?.mitra_nama || (reg.ruang_pemegang ? reg.ruang_pemegang.replace(/^Kemitraan:\s*/i, '') : 'Pihak Ketiga')"></span>
-                                                            </div>
-                                                            <div class="flex items-center gap-1.5 flex-wrap justify-center">
-                                                                <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wide bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
-                                                                      x-text="'Skema: ' + (selectedAstapDetail?.kemitraan?.skema_kemitraan || selectedAstapDetail?.spesifikasi_json?.skema_kemitraan || 'Sewa')"></span>
-                                                                <template x-if="selectedAstapDetail?.spesifikasi_json?.harga_sewa || selectedAstapDetail?.kemitraan?.harga_sewa">
-                                                                    <span class="px-1.5 py-0.5 rounded-full text-[8.5px] font-mono font-bold bg-slate-900 text-emerald-400 border border-emerald-500/30"
-                                                                          x-text="'Rp ' + Number(selectedAstapDetail?.spesifikasi_json?.harga_sewa || selectedAstapDetail?.kemitraan?.harga_sewa).toLocaleString('id-ID')"></span>
-                                                                </template>
-                                                            </div>
+                                                    <!-- 1. Jika Telah Dikembalikan ke Rekanan (Terminasi Kemitraan) -->
+                                                    <template x-if="reg.status === 'Dikembalikan ke Rekanan' || (reg.ruang_pemegang && reg.ruang_pemegang.toLowerCase().startsWith('telah dikembalikan'))">
+                                                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-950 border border-amber-500/40 text-amber-300 text-xs font-semibold shadow-sm max-w-[220px]"
+                                                             :title="reg.ruang_pemegang || 'Telah dikembalikan ke rekanan mitra'">
+                                                            <span class="text-amber-400 text-xs shrink-0">📦</span>
+                                                            <span class="truncate">Dikembalikan ke Mitra</span>
                                                         </div>
                                                     </template>
 
-                                                    <!-- Mutasi Keluar Antar-OPD -->
-                                                    <template x-if="reg.status === 'Mutasi Keluar OPD' || selectedAstapDetail?.jenis_reklas === 'MUTASI_EKSTERNAL'">
-                                                        <div class="flex flex-col items-center justify-center gap-1 max-w-[240px] mx-auto">
-                                                            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-cyan-950/80 border border-cyan-500/40 text-cyan-200 font-bold text-[11px] shadow-sm max-w-full">
+                                                    <!-- 2. Mutasi Keluar Antar-OPD -->
+                                                    <template x-if="reg.status !== 'Dikembalikan ke Rekanan' && (!reg.ruang_pemegang || !reg.ruang_pemegang.toLowerCase().startsWith('telah dikembalikan')) && (reg.status === 'Mutasi Keluar OPD' || selectedAstapDetail?.jenis_reklas === 'MUTASI_EKSTERNAL')">
+                                                        <div class="flex flex-col items-center justify-center gap-1 max-w-[220px] mx-auto">
+                                                            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-cyan-950/80 border border-cyan-500/40 text-cyan-200 font-bold text-xs shadow-sm max-w-full">
                                                                 <span class="text-xs shrink-0">🏛️</span>
                                                                 <span class="truncate" :title="reg.ruang_pemegang ? reg.ruang_pemegang.replace(/^Mutasi Keluar:\s*/i, '') : (selectedAstapDetail?.mutasi_keluar?.opd_tujuan || selectedAstapDetail?.opd_tujuan || 'OPD Luar')"
                                                                       x-text="reg.ruang_pemegang ? reg.ruang_pemegang.replace(/^Mutasi Keluar:\s*/i, '') : (selectedAstapDetail?.mutasi_keluar?.opd_tujuan || selectedAstapDetail?.opd_tujuan || 'OPD Luar')"></span>
@@ -1291,26 +1303,26 @@
                                                         </div>
                                                     </template>
 
-                                                    <!-- Penempatan Normal Ruangan -->
-                                                    <template x-if="reg.status !== 'Mutasi Keluar OPD' && selectedAstapDetail?.jenis_reklas !== 'MUTASI_EKSTERNAL' && reg.status !== 'Kemitraan' && selectedAstapDetail?.sumber_dana !== 'kemitraan' && selectedAstapDetail?.category !== 'KEMITRAAN' && !selectedAstapDetail?.kemitraan && (!reg.ruang_pemegang || !reg.ruang_pemegang.toLowerCase().includes('kemitraan'))">
+                                                    <!-- 3. Penempatan Normal Ruangan di RSUD (Bila sudah ditempatkan ke ruangan fisik & bukan teks default kemitraan) -->
+                                                    <template x-if="reg.status !== 'Dikembalikan ke Rekanan' && (!reg.ruang_pemegang || !reg.ruang_pemegang.toLowerCase().startsWith('telah dikembalikan')) && reg.status !== 'Mutasi Keluar OPD' && selectedAstapDetail?.jenis_reklas !== 'MUTASI_EKSTERNAL' && reg.ruang_pemegang && !reg.ruang_pemegang.toLowerCase().startsWith('kemitraan (') && reg.ruang_pemegang !== 'Belum Ditempatkan' && reg.ruang_pemegang !== '-'">
                                                         <div>
-                                                            <template x-if="reg.ruang_pemegang">
-                                                                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs font-semibold shadow-sm max-w-[220px]">
-                                                                    <span class="text-teal-400 text-xs shrink-0">📍</span>
-                                                                    <span class="truncate" :title="reg.ruang_pemegang" x-text="reg.ruang_pemegang"></span>
-                                                                </div>
-                                                            </template>
-                                                            <template x-if="!reg.ruang_pemegang">
-                                                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 font-bold text-[10px]">
-                                                                    <span>⚠️</span>
-                                                                    <span>Belum Ditempatkan</span>
-                                                                </span>
-                                                            </template>
+                                                            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs font-semibold shadow-sm max-w-[220px]">
+                                                                <span class="text-teal-400 text-xs shrink-0">📍</span>
+                                                                <span class="truncate" :title="reg.ruang_pemegang" x-text="reg.ruang_pemegang"></span>
+                                                            </div>
                                                         </div>
+                                                    </template>
+
+                                                    <!-- 4. Belum Ditempatkan / Masih di Gudang Aset -->
+                                                    <template x-if="reg.status !== 'Dikembalikan ke Rekanan' && (!reg.ruang_pemegang || !reg.ruang_pemegang.toLowerCase().startsWith('telah dikembalikan')) && reg.status !== 'Mutasi Keluar OPD' && selectedAstapDetail?.jenis_reklas !== 'MUTASI_EKSTERNAL' && (!reg.ruang_pemegang || reg.ruang_pemegang.toLowerCase().startsWith('kemitraan (') || reg.ruang_pemegang === 'Belum Ditempatkan' || reg.ruang_pemegang === '-')">
+                                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 font-bold text-[10px]">
+                                                            <span>⚠️</span>
+                                                            <span>Belum Ditempatkan</span>
+                                                        </span>
                                                     </template>
                                                 </td>
 
-                                                <!-- 4. Kondisi Fisik Murni (TIDAK DIGABUNG DENGAN STATUS!) -->
+                                                <!-- 5. Kondisi Fisik Murni (TIDAK DIGABUNG DENGAN STATUS!) -->
                                                 <td class="px-3.5 py-3 text-center whitespace-nowrap align-middle">
                                                     <span class="px-2.5 py-1 rounded-xl text-[10.5px] font-extrabold border inline-flex items-center gap-1.5 shadow-sm"
                                                           :class="{
@@ -1328,7 +1340,7 @@
                                                     </span>
                                                 </td>
 
-                                                <!-- 5. QR Code Download -->
+                                                <!-- 6. QR Code Download -->
                                                 <td class="px-3.5 py-3 text-center whitespace-nowrap align-middle">
                                                     <button type="button" @click.stop="downloadQrCodeNibar(reg, selectedAstapDetail)"
                                                         title="Pratinjau & Download QR NIBAR Aset Ini"
@@ -1340,7 +1352,7 @@
                                                     </button>
                                                 </td>
 
-                                                <!-- 6. Tombol Aksi -->
+                                                <!-- 7. Tombol Aksi -->
                                                 <td class="px-3.5 py-3 text-center whitespace-nowrap align-middle">
                                                     <div class="flex items-center justify-center gap-1.5">
                                                         <!-- 1. Tombol Cek Riwayat Aset (Mutasi) -->
@@ -1368,7 +1380,7 @@
                                         </template>
                                         <template x-if="filteredRegisters.length === 0">
                                             <tr>
-                                                <td colspan="6" class="px-3 py-6 text-center text-slate-500 italic text-xs">
+                                                <td :colspan="(selectedAstapDetail?.sumber_dana === 'kemitraan' || selectedAstapDetail?.sumber_dana_raw === 'kemitraan' || !!selectedAstapDetail?.kemitraan) ? 7 : 6" class="px-3 py-6 text-center text-slate-500 italic text-xs">
                                                     Tidak ditemukan rincian register NIBAR yang sesuai dengan filter pencarian.
                                                 </td>
                                             </tr>

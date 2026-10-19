@@ -322,16 +322,15 @@ class BelanjaBarangController extends Controller
     public function destroy(Request $request, $id)
     {
         $belanja = AstapBelanjaBarang::findOrFail($id);
-        $alasanHapus = $request->input('alasan_hapus', 'Dihapus dari Kelola Belanja Barang');
 
-        DB::transaction(function () use ($belanja, $alasanHapus) {
+        DB::transaction(function () use ($belanja) {
             $user = Auth::user();
             $deleterName = $user ? ($user->name . ' (' . ucfirst($user->role ?? 'user') . ')') : 'Administrator';
             $deleterId = $user?->id;
             $now = now();
 
             // 1. Soft delete catatan belanja barang
-            $belanja->softDelete($alasanHapus);
+            $belanja->softDelete();
 
             // 2. Soft delete paket aset induk dan register unitnya
             $astap = $belanja->astap;

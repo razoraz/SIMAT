@@ -2,16 +2,16 @@
 <template x-if="activeModule === 'astap'">
     <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6">
         <!-- SUB-TAB SWITCHER (Paket Pengadaan vs Unit Fisik NIBAR) -->
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-5 mb-5 border-b border-slate-800/80 gap-3">
-            <div class="flex items-center space-x-1.5 p-1 bg-slate-950/80 rounded-2xl border border-slate-800">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-5 mb-4 border-b border-slate-800/80 gap-3">
+            <div class="flex items-center space-x-1.5 p-1 bg-slate-950/80 rounded-2xl border border-slate-800 shrink-0">
                 <button type="button" @click="changeAstapSubTab('packet')"
                     :style="astapSubTab === 'packet' ? 'border-color: #3b82f6; box-shadow: 0 0 14px rgba(59, 130, 246, 0.35);' : ''"
                     :class="astapSubTab === 'packet' 
                         ? 'bg-blue-500/15 border border-blue-500 text-blue-300 shadow-lg' 
                         : 'border border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'"
-                    class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer">
+                    class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer whitespace-nowrap shrink-0">
                     <span>📦 Paket Pengadaan ASTAP</span>
-                    <span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-black transition-colors"
+                    <span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-black transition-colors shrink-0"
                         :class="astapSubTab === 'packet' ? 'bg-blue-500 text-white shadow-sm' : 'bg-slate-800 text-slate-400'"
                         x-text="astaps.length">0</span>
                 </button>
@@ -20,20 +20,108 @@
                     :class="astapSubTab === 'nibar' 
                         ? 'bg-cyan-500/15 border border-cyan-500 text-cyan-300 shadow-lg' 
                         : 'border border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'"
-                    class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer">
+                    class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer whitespace-nowrap shrink-0">
                     <span>🏷️ Unit Fisik NIBAR</span>
-                    <span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-black transition-colors"
+                    <span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-black transition-colors shrink-0"
                         :class="astapSubTab === 'nibar' ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'bg-slate-800 text-slate-400'"
                         x-text="nibars.length">0</span>
                 </button>
             </div>
-            <div class="text-xs text-slate-400 flex items-center gap-1.5">
+            <div class="text-xs text-slate-400 flex items-center gap-1.5 min-w-0">
                 <template x-if="astapSubTab === 'packet'">
-                    <span>📦 Paket pengadaan ASTAP yang terhapus utuh bersama seluruh unitnya.</span>
+                    <span>📦 Seluruh paket pengadaan ASTAP yang dinonaktifkan dari katalog operasional.</span>
                 </template>
                 <template x-if="astapSubTab === 'nibar'">
                     <span>🏷️ Register unit barang (NIBAR) yang dihapus satuan dari paket pengadaan aktif.</span>
                 </template>
+            </div>
+        </div>
+
+        <!-- FILTER SUMBER DANA (PILL SWITCHER) -->
+        <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-800/60 gap-3 flex-wrap">
+            <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5 mr-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                    Filter Sumber Dana:
+                </span>
+                
+                <!-- Semua -->
+                <button type="button" @click="setAstapSumberDanaFilter('all')"
+                    :class="astapSumberDanaFilter === 'all'
+                        ? 'bg-blue-500/20 border-blue-500 text-blue-300 shadow-md shadow-blue-500/10'
+                        : 'bg-slate-950/70 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-900'"
+                    class="px-3 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer">
+                    <span>Semua Sumber</span>
+                    <span class="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold"
+                        :class="astapSumberDanaFilter === 'all' ? 'bg-blue-500 text-white' : 'bg-slate-800 text-slate-400'"
+                        x-text="astapSubTab === 'packet' ? astaps.length : nibars.length">0</span>
+                </button>
+
+                <!-- Belanja Modal -->
+                <button type="button" @click="setAstapSumberDanaFilter('belanja_modal')"
+                    :class="astapSumberDanaFilter === 'belanja_modal'
+                        ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300 shadow-md shadow-emerald-500/10'
+                        : 'bg-slate-950/70 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-900'"
+                    class="px-3 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer">
+                    <span>🏛️ Belanja Modal</span>
+                    <span class="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold"
+                        :class="astapSumberDanaFilter === 'belanja_modal' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-400'"
+                        x-text="countAstapSumberDana('belanja_modal')">0</span>
+                </button>
+
+                <!-- Belanja Barang -->
+                <button type="button" @click="setAstapSumberDanaFilter('belanja_barang')"
+                    :class="astapSumberDanaFilter === 'belanja_barang'
+                        ? 'bg-indigo-500/20 border-indigo-500 text-indigo-300 shadow-md shadow-indigo-500/10'
+                        : 'bg-slate-950/70 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-900'"
+                    class="px-3 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer">
+                    <span>📦 Belanja Barang</span>
+                    <span class="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold"
+                        :class="astapSumberDanaFilter === 'belanja_barang' ? 'bg-indigo-500 text-white' : 'bg-slate-800 text-slate-400'"
+                        x-text="countAstapSumberDana('belanja_barang')">0</span>
+                </button>
+
+                <!-- Kemitraan (KSO) -->
+                <button type="button" @click="setAstapSumberDanaFilter('kemitraan')"
+                    :class="astapSumberDanaFilter === 'kemitraan'
+                        ? 'bg-cyan-500/20 border-cyan-500 text-cyan-300 shadow-md shadow-cyan-500/10'
+                        : 'bg-slate-950/70 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-900'"
+                    class="px-3 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer">
+                    <span>🤝 Kemitraan (KSO)</span>
+                    <span class="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold"
+                        :class="astapSumberDanaFilter === 'kemitraan' ? 'bg-cyan-500 text-slate-950' : 'bg-slate-800 text-slate-400'"
+                        x-text="countAstapSumberDana('kemitraan')">0</span>
+                </button>
+
+                <!-- Hibah -->
+                <button type="button" @click="setAstapSumberDanaFilter('hibah')"
+                    :class="astapSumberDanaFilter === 'hibah'
+                        ? 'bg-purple-500/20 border-purple-500 text-purple-300 shadow-md shadow-purple-500/10'
+                        : 'bg-slate-950/70 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-900'"
+                    class="px-3 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer">
+                    <span>🎁 Hibah</span>
+                    <span class="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold"
+                        :class="astapSumberDanaFilter === 'hibah' ? 'bg-purple-500 text-white' : 'bg-slate-800 text-slate-400'"
+                        x-text="countAstapSumberDana('hibah')">0</span>
+                </button>
+
+                <!-- Mutasi Eksternal -->
+                <button type="button" @click="setAstapSumberDanaFilter('mutasi')"
+                    :class="astapSumberDanaFilter === 'mutasi'
+                        ? 'bg-amber-500/20 border-amber-500 text-amber-300 shadow-md shadow-amber-500/10'
+                        : 'bg-slate-950/70 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-900'"
+                    class="px-3 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer">
+                    <span>🔄 Mutasi</span>
+                    <span class="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold"
+                        :class="astapSumberDanaFilter === 'mutasi' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'"
+                        x-text="countAstapSumberDana('mutasi')">0</span>
+                </button>
+            </div>
+
+            <!-- Info Filter Aktif -->
+            <div class="text-[11px] text-slate-400 flex items-center gap-1.5 font-mono">
+                <span>Menampilkan:</span>
+                <span class="font-bold text-white" x-text="filteredItems.length + ' item'"></span>
             </div>
         </div>
 
@@ -66,16 +154,32 @@
                                             class="rounded border-slate-700 bg-slate-900 text-red-600 focus:ring-red-500 cursor-pointer">
                                     </td>
                                     <td class="px-4 py-4">
+                                        <div class="flex items-center gap-1.5 flex-wrap mb-1">
+                                            <!-- Badge Sumber Dana -->
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold border inline-flex items-center gap-1"
+                                                :class="{
+                                                    'bg-cyan-500/15 border-cyan-500/30 text-cyan-300': item.sumber_dana === 'kemitraan',
+                                                    'bg-emerald-500/15 border-emerald-500/30 text-emerald-300': item.sumber_dana === 'belanja_modal',
+                                                    'bg-indigo-500/15 border-indigo-500/30 text-indigo-300': item.sumber_dana === 'belanja_barang',
+                                                    'bg-purple-500/15 border-purple-500/30 text-purple-300': item.sumber_dana === 'hibah',
+                                                    'bg-amber-500/15 border-amber-500/30 text-amber-300': item.sumber_dana === 'mutasi',
+                                                    'bg-slate-800 border-slate-700 text-slate-300': !['kemitraan', 'belanja_modal', 'belanja_barang', 'hibah', 'mutasi'].includes(item.sumber_dana)
+                                                }">
+                                                <span x-text="item.sumber_dana_icon || '📦'"></span>
+                                                <span x-text="item.sumber_dana_label || 'Aset Tetap'"></span>
+                                            </span>
+                                            <span class="px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-slate-800 text-slate-300" x-text="item.category"></span>
+                                        </div>
                                         <span class="font-bold text-white block text-sm" x-text="item.nama"></span>
                                         <span class="text-[10px] text-emerald-400 font-mono" x-text="item.item_count + ' Register NIBAR Terkait'"></span>
                                     </td>
                                     <td class="px-4 py-4">
                                         <span class="font-mono text-cyan-300 font-bold block" x-text="item.kode"></span>
-                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300" x-text="item.category"></span>
+                                        <span class="text-[10px] text-slate-400 block mt-0.5" x-text="item.rekening !== '-' ? item.rekening : item.category"></span>
                                     </td>
                                     <td class="px-4 py-4">
                                         <span class="font-bold text-slate-200 block" x-text="item.volume"></span>
-                                        <span class="text-[10px] text-slate-500" x-text="'Harga: ' + item.harga_satuan"></span>
+                                        <span class="text-[10px] text-slate-500 font-mono" x-text="'Harga: ' + item.harga_satuan"></span>
                                     </td>
                                     <td class="px-4 py-4">
                                         <span class="text-amber-300 font-bold block font-mono" x-text="item.total_realisasi"></span>
@@ -177,6 +281,21 @@
                                         <span class="text-[10px] font-mono text-slate-500" x-text="'No Reg: ' + item.no_register"></span>
                                     </td>
                                     <td class="px-4 py-4">
+                                        <div class="flex items-center gap-1.5 flex-wrap mb-1">
+                                            <!-- Badge Sumber Dana -->
+                                            <span class="px-2 py-0.5 rounded text-[9.5px] font-bold border inline-flex items-center gap-1"
+                                                :class="{
+                                                    'bg-cyan-500/15 border-cyan-500/30 text-cyan-300': item.sumber_dana === 'kemitraan',
+                                                    'bg-emerald-500/15 border-emerald-500/30 text-emerald-300': item.sumber_dana === 'belanja_modal',
+                                                    'bg-indigo-500/15 border-indigo-500/30 text-indigo-300': item.sumber_dana === 'belanja_barang',
+                                                    'bg-purple-500/15 border-purple-500/30 text-purple-300': item.sumber_dana === 'hibah',
+                                                    'bg-amber-500/15 border-amber-500/30 text-amber-300': item.sumber_dana === 'mutasi',
+                                                    'bg-slate-800 border-slate-700 text-slate-300': !['kemitraan', 'belanja_modal', 'belanja_barang', 'hibah', 'mutasi'].includes(item.sumber_dana)
+                                                }">
+                                                <span x-text="item.sumber_dana_icon || '📦'"></span>
+                                                <span x-text="item.sumber_dana_label || 'Aset Tetap'"></span>
+                                            </span>
+                                        </div>
                                         <span class="font-bold text-white block text-sm" x-text="item.nama_barang"></span>
                                         <div class="flex items-center space-x-1.5 mt-0.5">
                                             <span class="font-mono text-cyan-400 text-[11px]" x-text="item.kode_108"></span>

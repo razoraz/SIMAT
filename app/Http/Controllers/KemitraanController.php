@@ -1076,9 +1076,7 @@ class KemitraanController extends Controller
             }
         }
 
-        $alasanHapus = $request->input('alasan_hapus', 'Dihapus dari Kelola Kemitraan Aset');
-
-        DB::transaction(function () use ($kemitraan, $astap, $reklas, $id, $alasanHapus) {
+        DB::transaction(function () use ($kemitraan, $astap, $reklas, $id) {
             $user = Auth::user();
             $deleterName = $user ? ($user->name . ' (' . ucfirst($user->role ?? 'user') . ')') : 'Administrator';
             $deleterId = $user?->id;
@@ -1086,7 +1084,7 @@ class KemitraanController extends Controller
 
             // 1. Soft delete catatan kemitraan jika ada
             if ($kemitraan) {
-                $kemitraan->softDelete($alasanHapus);
+                $kemitraan->softDelete();
             } else if ($astap) {
                 // Jika baru berstatus reklasifikasi dan belum punya record kemitraan, buat record soft delete agar masuk recycle bin
                 AstapKemitraan::create([
@@ -1106,7 +1104,6 @@ class KemitraanController extends Controller
                     'deleted_at'       => $now,
                     'deleted_by'       => $deleterName,
                     'deleted_by_id'    => $deleterId,
-                    'alasan_hapus'     => $alasanHapus,
                 ]);
             }
 
@@ -1124,7 +1121,6 @@ class KemitraanController extends Controller
                     'deleted_by'    => $deleterName,
                     'deleted_by_id' => $deleterId,
                     'deleted_at'    => $now,
-                    'alasan_hapus'  => $alasanHapus,
                 ]);
 
                 // Soft delete seluruh riwayat reklasifikasi terkait aset ini yang mengarah ke 1.5.2
@@ -1133,7 +1129,6 @@ class KemitraanController extends Controller
                     'deleted_by'    => $deleterName,
                     'deleted_by_id' => $deleterId,
                     'deleted_at'    => $now,
-                    'alasan_hapus'  => $alasanHapus,
                 ]);
             }
 
@@ -1145,7 +1140,6 @@ class KemitraanController extends Controller
                         'deleted_by'    => $deleterName,
                         'deleted_by_id' => $deleterId,
                         'deleted_at'    => $now,
-                        'alasan_hapus'  => $alasanHapus,
                     ]);
                 }
             }
@@ -1157,7 +1151,7 @@ class KemitraanController extends Controller
                     ->where('is_deleted', 0)
                     ->get();
                 foreach ($linkedDitambahkan as $linked) {
-                    $linked->softDelete('Objek Aset Pemanfaatan Terkait Dihapus');
+                    $linked->softDelete();
                     if ($linked->astap) {
                         AstapRegister::where('astap_id', $linked->astap->id)->update([
                             'is_deleted'    => 1,
@@ -1170,7 +1164,6 @@ class KemitraanController extends Controller
                             'deleted_by'    => $deleterName,
                             'deleted_by_id' => $deleterId,
                             'deleted_at'    => $now,
-                            'alasan_hapus'  => 'Objek Aset Pemanfaatan Terkait Dihapus',
                         ]);
                     }
                 }

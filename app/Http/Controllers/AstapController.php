@@ -476,8 +476,8 @@ class AstapController extends Controller
                 'total_realisasi' => 'Rp ' . number_format($a->total_realisasi, 0, ',', '.'),
                 'total_realisasi_num' => (float) $a->total_realisasi,
                 'biaya_administrasi_proyek' => (float) $a->biaya_administrasi_proyek,
-                'alasan_hapus' => $a->alasan_hapus ?: ($a->keterangan_tambahan ?: ($spec['keterangan'] ?? '-')),
-                'keterangan' => $a->keterangan_tambahan ?: ($a->alasan_hapus ?: ($a->deleted_by ? 'Dihapus oleh ' . $a->deleted_by : '-')),
+                'alasan_hapus' => $a->keterangan_tambahan ?: ($spec['keterangan'] ?? 'Dipindahkan ke Tong Sampah'),
+                'keterangan' => $a->keterangan_tambahan ?: ($a->deleted_by ? 'Dihapus oleh ' . $a->deleted_by : '-'),
                 'bahan' => $spec['bahan'] ?? '-',
                 'asal_usul' => $spec['asal_usul'] ?? ($a->asal_usul ?: 'Pembelian BLUD'),
                 'kondisi' => $firstReg ? ($firstReg->kondisi ?: 'RB') : ($spec['kondisi'] ?? 'RB'),
@@ -3674,7 +3674,6 @@ class AstapController extends Controller
                         'deleted_by'    => $deleterName,
                         'deleted_by_id' => $user?->id,
                         'deleted_at'    => now(),
-                        'alasan_hapus'  => 'Dihapus bersamaan dengan Master ASTAP',
                     ]);
 
                 // 4. Soft delete paket induk ASTAP

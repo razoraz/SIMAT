@@ -5,22 +5,35 @@
     function recycleBinApp() {
         return {
             activeModule: '{{ $activeTab }}',
+            belanjaModals: {{ Js::from($deletedBelanjaModals ?? []) }},
+            belanjaModalNibars: {{ Js::from($deletedBelanjaModalNibars ?? []) }},
+            belanjaModalSubTab: 'packet',
             mutasiSubTab: 'internal',
             mutasis: {{ Js::from($deletedMutasis) }},
             mutasiEksternals: {{ Js::from($deletedMutasiEksternals ?? []) }},
+            mutasiEksternalNibars: {{ Js::from($deletedMutasiEksternalNibars ?? []) }},
+            mutasiEksternalMainTab: 'document', // 'document' (BAST) vs 'nibar' (Unit NIBAR)
+            mutasiEksternalFilter: 'all', // 'all', 'masuk', 'keluar'
             astaps: {{ Js::from($deletedAstaps) }},
             nibars: {{ Js::from($deletedNibars) }},
             distribusis: {{ Js::from($deletedDistribusis) }},
             units: {{ Js::from($deletedUnits) }},
             users: {{ Js::from($deletedUsers ?? []) }},
             hibahs: {{ Js::from($deletedHibahs ?? []) }},
+            hibahNibars: {{ Js::from($deletedHibahNibars ?? []) }},
+            hibahMainTab: 'document', // 'document' (BAST Hibah) vs 'nibar' (Unit NIBAR)
+            hibahTypeFilter: 'all', // 'all', 'masuk', 'keluar'
             kemitraans: {{ Js::from($deletedKemitraans ?? []) }},
+            kemitraanNibars: {{ Js::from($deletedKemitraanNibars ?? []) }},
+            kemitraanMainTab: 'packet', // 'packet' (Kontrak/PKS) vs 'nibar' (Unit NIBAR)
+            kemitraanSubTab: 'dimanfaatkan', // 'dimanfaatkan' vs 'ditambahkan'
             belanjaBarangs: {{ Js::from($deletedBelanjaBarangs ?? []) }},
+            belanjaBarangNibars: {{ Js::from($deletedBelanjaBarangNibars ?? []) }},
+            belanjaBarangMainTab: 'invoice', // 'invoice' (Faktur Belanja) vs 'nibar' (Unit NIBAR)
             reklas: {{ Js::from($deletedReklas ?? []) }},
             totalThisMonth: {{ (int) $totalThisMonth }},
             astapSubTab: 'packet',
-            kemitraanSubTab: 'dimanfaatkan',
-            mutasiEksternalFilter: 'all', // 'all', 'masuk', 'keluar'
+            astapSumberDanaFilter: 'all', // 'all', 'belanja_modal', 'kemitraan', 'hibah', 'mutasi'
 
             selectedIds: [],
             searchQuery: '',
@@ -38,8 +51,21 @@
                 this.selectedIds = [];
             },
 
+            setHibahTypeFilter(f) {
+                this.hibahTypeFilter = f;
+                this.selectedIds = [];
+            },
+
             changeTab(tab) {
                 this.activeModule = tab;
+                this.selectedIds = [];
+                this.searchQuery = '';
+                this.timeFilter = 'all';
+                this.astapSumberDanaFilter = 'all';
+            },
+
+            changeBelanjaModalSubTab(subTab) {
+                this.belanjaModalSubTab = subTab;
                 this.selectedIds = [];
                 this.searchQuery = '';
                 this.timeFilter = 'all';
@@ -52,8 +78,33 @@
                 this.timeFilter = 'all';
             },
 
+            changeMutasiEksternalMainTab(tab) {
+                this.mutasiEksternalMainTab = tab;
+                this.selectedIds = [];
+                this.searchQuery = '';
+                this.timeFilter = 'all';
+            },
+
             changeAstapSubTab(subTab) {
                 this.astapSubTab = subTab;
+                this.selectedIds = [];
+                this.searchQuery = '';
+                this.timeFilter = 'all';
+                this.astapSumberDanaFilter = 'all';
+            },
+
+            setAstapSumberDanaFilter(source) {
+                this.astapSumberDanaFilter = source;
+                this.selectedIds = [];
+            },
+
+            countAstapSumberDana(source) {
+                const list = this.astapSubTab === 'nibar' ? (this.nibars || []) : (this.astaps || []);
+                return list.filter(item => item.sumber_dana === source).length;
+            },
+
+            changeKemitraanMainTab(tab) {
+                this.kemitraanMainTab = tab;
                 this.selectedIds = [];
                 this.searchQuery = '';
                 this.timeFilter = 'all';
@@ -61,6 +112,20 @@
 
             changeKemitraanSubTab(subTab) {
                 this.kemitraanSubTab = subTab;
+                this.selectedIds = [];
+                this.searchQuery = '';
+                this.timeFilter = 'all';
+            },
+
+            changeHibahMainTab(tab) {
+                this.hibahMainTab = tab;
+                this.selectedIds = [];
+                this.searchQuery = '';
+                this.timeFilter = 'all';
+            },
+
+            changeBelanjaBarangMainTab(tab) {
+                this.belanjaBarangMainTab = tab;
                 this.selectedIds = [];
                 this.searchQuery = '';
                 this.timeFilter = 'all';
@@ -82,9 +147,32 @@
                 return (this.mutasiEksternals || []).filter(m => m.tipe === 'keluar').length;
             },
 
+            get countHibahMasuk() {
+                return (this.hibahs || []).filter(h => h.tipe_hibah === 'masuk').length;
+            },
+
+            get countHibahKeluar() {
+                return (this.hibahs || []).filter(h => h.tipe_hibah === 'keluar').length;
+            },
+
             get currentTargetModule() {
+                if (this.activeModule === 'belanja_modal') {
+                    return this.belanjaModalSubTab === 'nibar' ? 'belanja_modal_nibar' : 'belanja_modal';
+                }
                 if (this.activeModule === 'mutasi') {
-                    return this.mutasiSubTab === 'eksternal' ? 'mutasi_eksternal' : 'mutasi';
+                    if (this.mutasiSubTab === 'eksternal') {
+                        return this.mutasiEksternalMainTab === 'nibar' ? 'mutasi_eksternal_nibar' : 'mutasi_eksternal';
+                    }
+                    return 'mutasi';
+                }
+                if (this.activeModule === 'kemitraan') {
+                    return this.kemitraanMainTab === 'nibar' ? 'kemitraan_nibar' : 'kemitraan';
+                }
+                if (this.activeModule === 'hibah') {
+                    return this.hibahMainTab === 'nibar' ? 'hibah_nibar' : 'hibah';
+                }
+                if (this.activeModule === 'belanja_barang') {
+                    return this.belanjaBarangMainTab === 'nibar' ? 'belanja_barang_nibar' : 'belanja_barang';
                 }
                 if (this.activeModule === 'astap' && this.astapSubTab === 'nibar') {
                     return 'nibar';
@@ -93,35 +181,60 @@
             },
 
             get totalCount() {
-                return this.mutasis.length + this.mutasiEksternals.length + this.astaps.length + this.nibars.length + this.distribusis.length + this.units.length + this.users.length + this.hibahs.length + this.kemitraans.length + this.belanjaBarangs.length + this.reklas.length;
+                return (this.belanjaModals || []).length + (this.belanjaModalNibars || []).length 
+                    + this.mutasis.length + (this.mutasiEksternals || []).length + (this.mutasiEksternalNibars || []).length 
+                    + this.astaps.length + this.nibars.length 
+                    + this.distribusis.length 
+                    + this.units.length + this.users.length 
+                    + (this.hibahs || []).length + (this.hibahNibars || []).length 
+                    + (this.kemitraans || []).length + (this.kemitraanNibars || []).length 
+                    + (this.belanjaBarangs || []).length + (this.belanjaBarangNibars || []).length 
+                    + this.reklas.length;
             },
 
             getModuleCount(mod) {
-                if (mod === 'mutasi') return this.mutasis.length + this.mutasiEksternals.length;
+                if (mod === 'belanja_modal') return (this.belanjaModals || []).length + (this.belanjaModalNibars || []).length;
+                if (mod === 'mutasi') return this.mutasis.length + (this.mutasiEksternals || []).length + (this.mutasiEksternalNibars || []).length;
                 if (mod === 'astap') return this.astaps.length + this.nibars.length;
                 if (mod === 'distribusi') return this.distribusis.length;
                 if (mod === 'unit') return this.units.length;
                 if (mod === 'users') return this.users.length;
-                if (mod === 'hibah') return this.hibahs.length;
-                if (mod === 'kemitraan') return this.kemitraans.length;
-                if (mod === 'belanja_barang') return this.belanjaBarangs.length;
+                if (mod === 'hibah') return (this.hibahs || []).length + (this.hibahNibars || []).length;
+                if (mod === 'kemitraan') return (this.kemitraans || []).length + (this.kemitraanNibars || []).length;
+                if (mod === 'belanja_barang') return (this.belanjaBarangs || []).length + (this.belanjaBarangNibars || []).length;
                 if (mod === 'reklas') return this.reklas.length;
                 return 0;
             },
 
             get activeModuleName() {
+                if (this.activeModule === 'belanja_modal') {
+                    return this.belanjaModalSubTab === 'nibar' ? 'Register NIBAR Belanja Modal' : 'Paket Belanja Modal (Akun 5.2)';
+                }
                 if (this.activeModule === 'mutasi') {
-                    return this.mutasiSubTab === 'eksternal' ? 'Mutasi Eksternal (Antar-OPD)' : 'Mutasi Internal (Antar-Ruangan)';
+                    if (this.mutasiSubTab === 'eksternal') {
+                        return this.mutasiEksternalMainTab === 'nibar' ? 'Register NIBAR Mutasi Eksternal' : 'Mutasi Eksternal (Antar-OPD)';
+                    }
+                    return 'Mutasi Internal (Antar-Ruangan)';
                 }
                 if (this.activeModule === 'astap') {
                     return this.astapSubTab === 'nibar' ? 'Register NIBAR' : 'Paket Master ASTAP';
                 }
                 if (this.activeModule === 'kemitraan') {
+                    if (this.kemitraanMainTab === 'nibar') {
+                        return 'Register NIBAR Kemitraan (Akun 1.5.2)';
+                    }
                     return this.kemitraanSubTab === 'ditambahkan' 
                         ? 'Kemitraan (Aset Ditambahkan Mitra)' 
                         : 'Kemitraan (Aset Dimanfaatkan Mitra)';
                 }
+                if (this.activeModule === 'hibah') {
+                    return this.hibahMainTab === 'nibar' ? 'Register NIBAR Hibah' : 'Dokumen BAST Hibah Aset';
+                }
+                if (this.activeModule === 'belanja_barang') {
+                    return this.belanjaBarangMainTab === 'nibar' ? 'Register NIBAR Belanja Barang' : 'Faktur Belanja Barang (Akun 5.1.02)';
+                }
                 const map = {
+                    belanja_modal: 'Belanja Modal',
                     distribusi: 'Distribusi Aset',
                     unit: 'Unit & Paviliun',
                     users: 'Akun Pengguna',
@@ -134,10 +247,20 @@
             },
 
             get searchPlaceholder() {
+                if (this.activeModule === 'belanja_modal') {
+                    if (this.belanjaModalSubTab === 'nibar') {
+                        return 'Cari NIBAR / nama aset / kode 108 / ruangan / kondisi / SPK / penghapus...';
+                    }
+                    return 'Cari nama aset / kode 108 / rekening 5.2 / penyedia / SPK / SP2D / faktur / penghapus...';
+                }
                 if (this.activeModule === 'mutasi') {
-                    return this.mutasiSubTab === 'eksternal' 
-                        ? 'Cari BAST / OPD asal / ruangan tujuan / nama aset / penghapus...' 
-                        : 'Cari BAMB / nama aset / NIBAR / ruangan asal / tujuan / penghapus...';
+                    if (this.mutasiSubTab === 'eksternal') {
+                        if (this.mutasiEksternalMainTab === 'nibar') {
+                            return 'Cari NIBAR mutasi / nama aset / OPD asal / ruangan / penghapus...';
+                        }
+                        return 'Cari BAST / OPD asal / ruangan tujuan / nama aset / penghapus...';
+                    }
+                    return 'Cari BAMB / nama aset / NIBAR / ruangan asal / tujuan / penghapus...';
                 }
                 if (this.activeModule === 'astap') {
                     if (this.astapSubTab === 'nibar') {
@@ -146,6 +269,9 @@
                     return 'Cari nama aset / kode 108 / NIBAR / penyedia / SPK / penghapus...';
                 }
                 if (this.activeModule === 'kemitraan') {
+                    if (this.kemitraanMainTab === 'nibar') {
+                        return 'Cari NIBAR kemitraan / nama aset / rekanan mitra / nomor PKS / ruangan / penghapus...';
+                    }
                     return this.kemitraanSubTab === 'ditambahkan'
                         ? 'Cari nomor kontrak / rekanan mitra / nama alat & mesin / merk / tipe / penghapus...'
                         : 'Cari nomor PKS / rekanan mitra / objek aset BMD / skema / penghapus...';
@@ -153,15 +279,31 @@
                 if (this.activeModule === 'distribusi') return 'Cari kode distribusi / BAST / unit tujuan / tanggal / penghapus...';
                 if (this.activeModule === 'unit') return 'Cari kode unit / nama ruangan / kepala ruangan / NIP / penghapus...';
                 if (this.activeModule === 'users') return 'Cari nama pengguna / email / NIP / role / unit penugasan / penghapus...';
-                if (this.activeModule === 'hibah') return 'Cari nomor BAST / nama barang / pihak hibah / tahun / penghapus...';
-                if (this.activeModule === 'belanja_barang') return 'Cari nomor faktur / toko penyedia / nama barang / ruangan / penghapus...';
+                if (this.activeModule === 'hibah') {
+                    if (this.hibahMainTab === 'nibar') {
+                        return 'Cari NIBAR hibah / nama barang / pihak pemberi / ruangan / kondisi / penghapus...';
+                    }
+                    return 'Cari nomor BAST / nama barang / pihak hibah / tahun / penghapus...';
+                }
+                if (this.activeModule === 'belanja_barang') {
+                    if (this.belanjaBarangMainTab === 'nibar') {
+                        return 'Cari NIBAR barang / nama barang / nomor faktur / ruangan / penghapus...';
+                    }
+                    return 'Cari nomor faktur / toko penyedia / nama barang / ruangan / penghapus...';
+                }
                 if (this.activeModule === 'reklas') return 'Cari nomor BA / nama barang / KIB asal / tujuan / kode 108 / penghapus...';
                 return 'Cari data terhapus...';
             },
 
             get currentList() {
+                if (this.activeModule === 'belanja_modal') {
+                    return this.belanjaModalSubTab === 'nibar' ? (this.belanjaModalNibars || []) : (this.belanjaModals || []);
+                }
                 if (this.activeModule === 'mutasi') {
                     if (this.mutasiSubTab === 'eksternal') {
+                        if (this.mutasiEksternalMainTab === 'nibar') {
+                            return this.mutasiEksternalNibars || [];
+                        }
                         if (this.mutasiEksternalFilter === 'masuk') {
                             return (this.mutasiEksternals || []).filter(m => m.tipe !== 'keluar');
                         }
@@ -173,16 +315,36 @@
                     return this.mutasis || [];
                 }
                 if (this.activeModule === 'astap') {
-                    return this.astapSubTab === 'nibar' ? this.nibars : this.astaps;
+                    let list = this.astapSubTab === 'nibar' ? (this.nibars || []) : (this.astaps || []);
+                    if (this.astapSumberDanaFilter !== 'all') {
+                        list = list.filter(item => item.sumber_dana === this.astapSumberDanaFilter);
+                    }
+                    return list;
                 }
                 if (this.activeModule === 'distribusi') return this.distribusis;
                 if (this.activeModule === 'unit') return this.units;
                 if (this.activeModule === 'users') return this.users;
-                if (this.activeModule === 'hibah') return this.hibahs;
+                if (this.activeModule === 'hibah') {
+                    if (this.hibahMainTab === 'nibar') {
+                        return this.hibahNibars || [];
+                    }
+                    if (this.hibahTypeFilter === 'masuk') {
+                        return (this.hibahs || []).filter(h => h.tipe_hibah === 'masuk');
+                    }
+                    if (this.hibahTypeFilter === 'keluar') {
+                        return (this.hibahs || []).filter(h => h.tipe_hibah === 'keluar');
+                    }
+                    return this.hibahs || [];
+                }
                 if (this.activeModule === 'kemitraan') {
+                    if (this.kemitraanMainTab === 'nibar') {
+                        return this.kemitraanNibars || [];
+                    }
                     return this.kemitraanSubTab === 'ditambahkan' ? this.kemitraanDitambahkan : this.kemitraanDimanfaatkan;
                 }
-                if (this.activeModule === 'belanja_barang') return this.belanjaBarangs;
+                if (this.activeModule === 'belanja_barang') {
+                    return this.belanjaBarangMainTab === 'nibar' ? (this.belanjaBarangNibars || []) : (this.belanjaBarangs || []);
+                }
                 if (this.activeModule === 'reklas') return this.reklas;
                 return [];
             },
@@ -234,10 +396,32 @@
                 }
                 const idSet = new Set(ids.map(id => Number(id)));
 
-                if (targetMod === 'mutasi' || targetMod === 'mutasi_internal') {
+                if (targetMod === 'belanja_modal_nibar') {
+                    this.belanjaModalNibars = this.belanjaModalNibars.filter(i => !idSet.has(Number(i.id)));
+                    if (extra && extra.astap_id && extra.astap_restored) {
+                        this.belanjaModals = this.belanjaModals.filter(i => Number(i.id) !== Number(extra.astap_id));
+                    }
+                    if (extra && Array.isArray(extra.restored_parent_ids)) {
+                        const parentSet = new Set(extra.restored_parent_ids.map(Number));
+                        this.belanjaModals = this.belanjaModals.filter(i => !parentSet.has(Number(i.id)));
+                    }
+                } else if (targetMod === 'belanja_modal') {
+                    this.belanjaModals = this.belanjaModals.filter(i => !idSet.has(Number(i.id)));
+                    this.belanjaModalNibars = this.belanjaModalNibars.filter(n => !idSet.has(Number(n.astap_id)));
+                } else if (targetMod === 'mutasi' || targetMod === 'mutasi_internal') {
                     this.mutasis = this.mutasis.filter(i => !idSet.has(Number(i.id)));
+                } else if (targetMod === 'mutasi_eksternal_nibar') {
+                    this.mutasiEksternalNibars = this.mutasiEksternalNibars.filter(i => !idSet.has(Number(i.id)));
+                    if (extra && extra.astap_id && extra.astap_restored) {
+                        this.mutasiEksternals = this.mutasiEksternals.filter(i => Number(i.id) !== Number(extra.astap_id));
+                    }
+                    if (extra && Array.isArray(extra.restored_parent_ids)) {
+                        const parentSet = new Set(extra.restored_parent_ids.map(Number));
+                        this.mutasiEksternals = this.mutasiEksternals.filter(i => !parentSet.has(Number(i.id)));
+                    }
                 } else if (targetMod === 'mutasi_eksternal') {
                     this.mutasiEksternals = this.mutasiEksternals.filter(i => !idSet.has(Number(i.id)));
+                    this.mutasiEksternalNibars = this.mutasiEksternalNibars.filter(n => !idSet.has(Number(n.astap_id)));
                     // Jika ada astap_id terkait yang dipulihkan, singkirkan juga dari astaps & nibars
                     const astapIds = ids.map(id => {
                         const found = this.mutasiEksternals.find(m => Number(m.id) === Number(id));
@@ -267,8 +451,27 @@
                     this.units = this.units.filter(i => !idSet.has(Number(i.id)));
                 } else if (targetMod === 'users') {
                     this.users = this.users.filter(i => !idSet.has(Number(i.id)));
+                } else if (targetMod === 'hibah_nibar') {
+                    this.hibahNibars = this.hibahNibars.filter(i => !idSet.has(Number(i.id)));
+                    if (extra && extra.astap_id && extra.astap_restored) {
+                        this.hibahs = this.hibahs.filter(i => Number(i.id) !== Number(extra.astap_id));
+                    }
+                    if (extra && Array.isArray(extra.restored_parent_ids)) {
+                        const parentSet = new Set(extra.restored_parent_ids.map(Number));
+                        this.hibahs = this.hibahs.filter(i => !parentSet.has(Number(i.id)));
+                    }
                 } else if (targetMod === 'hibah') {
                     this.hibahs = this.hibahs.filter(i => !idSet.has(Number(i.id)));
+                    this.hibahNibars = this.hibahNibars.filter(n => !idSet.has(Number(n.astap_id)));
+                } else if (targetMod === 'kemitraan_nibar') {
+                    this.kemitraanNibars = this.kemitraanNibars.filter(i => !idSet.has(Number(i.id)));
+                    if (extra && extra.astap_id && extra.astap_restored) {
+                        this.kemitraans = this.kemitraans.filter(i => Number(i.id) !== Number(extra.astap_id));
+                    }
+                    if (extra && Array.isArray(extra.restored_parent_ids)) {
+                        const parentSet = new Set(extra.restored_parent_ids.map(Number));
+                        this.kemitraans = this.kemitraans.filter(i => !parentSet.has(Number(i.id)));
+                    }
                 } else if (targetMod === 'kemitraan') {
                     const allRemovedKemitraanIds = new Set(ids.map(Number));
                     if (extra && Array.isArray(extra.affected_kemitraan_ids)) {
@@ -286,9 +489,20 @@
                         const astapIdSet = new Set(astapIds);
                         this.astaps = this.astaps.filter(a => !astapIdSet.has(Number(a.id)));
                         this.nibars = this.nibars.filter(n => !astapIdSet.has(Number(n.astap_id)));
+                        this.kemitraanNibars = this.kemitraanNibars.filter(n => !astapIdSet.has(Number(n.astap_id)));
+                    }
+                } else if (targetMod === 'belanja_barang_nibar') {
+                    this.belanjaBarangNibars = this.belanjaBarangNibars.filter(i => !idSet.has(Number(i.id)));
+                    if (extra && extra.astap_id && extra.astap_restored) {
+                        this.belanjaBarangs = this.belanjaBarangs.filter(i => Number(i.id) !== Number(extra.astap_id));
+                    }
+                    if (extra && Array.isArray(extra.restored_parent_ids)) {
+                        const parentSet = new Set(extra.restored_parent_ids.map(Number));
+                        this.belanjaBarangs = this.belanjaBarangs.filter(i => !parentSet.has(Number(i.id)));
                     }
                 } else if (targetMod === 'belanja_barang') {
                     this.belanjaBarangs = this.belanjaBarangs.filter(i => !idSet.has(Number(i.id)));
+                    this.belanjaBarangNibars = this.belanjaBarangNibars.filter(n => !idSet.has(Number(n.astap_id)));
                     // Jika ada astap_id terkait yang dipulihkan, singkirkan juga dari astaps & nibars
                     const astapIds = ids.map(id => {
                         const found = this.belanjaBarangs.find(b => Number(b.id) === Number(id));
@@ -322,7 +536,11 @@
                 const bNomor = item.nibar || item.nomor_bast || item.kode || item.nama || 'Data';
                 let confirmMsg = `Apakah Anda yakin ingin mengembalikan ${bNomor} ke status aktif? Data akan kembali muncul di katalog operasional.`;
 
-                if (targetMod === 'nibar') {
+                if (targetMod === 'belanja_modal_nibar') {
+                    confirmMsg = `Apakah Anda yakin ingin mengembalikan register NIBAR ${bNomor} ke paket pengadaan Belanja Modal induk? Volume barang akan bertambah +1 unit.`;
+                } else if (targetMod === 'belanja_modal') {
+                    confirmMsg = `Apakah Anda yakin ingin memulihkan paket pengadaan Belanja Modal "${item.nama || bNomor}" ke status aktif? Seluruh register NIBAR dan data SPK/SP2D akan kembali ke katalog operasional.`;
+                } else if (targetMod === 'nibar') {
                     confirmMsg = `Apakah Anda yakin ingin mengembalikan register NIBAR ${bNomor} ke paket pengadaan aset induk? Volume barang akan bertambah +1 unit.`;
                 } else if (targetMod === 'kemitraan') {
                     if (item.is_ditambahkan) {
@@ -371,7 +589,7 @@
                 if (this.selectedIds.length === 0) return;
                 const count = this.selectedIds.length;
                 const targetMod = module || this.currentTargetModule;
-                const entityName = targetMod === 'nibar' ? 'register NIBAR' : 'data';
+                const entityName = (targetMod === 'nibar' || targetMod === 'belanja_modal_nibar') ? 'register NIBAR' : 'data';
                 const targetIds = [...this.selectedIds];
 
                 this.askConfirmation({
@@ -577,10 +795,12 @@
                 }
 
                 let bNomor = item.nibar || item.nomor_bast || item.kode || item.nama || 'Item';
-                let title = targetMod === 'nibar' ? 'Konfirmasi Hapus Permanen NIBAR' : 'Konfirmasi Hapus Permanen';
-                let message = targetMod === 'nibar'
+                let title = (targetMod === 'nibar' || targetMod === 'belanja_modal_nibar') ? 'Konfirmasi Hapus Permanen NIBAR' : 'Konfirmasi Hapus Permanen';
+                let message = (targetMod === 'nibar' || targetMod === 'belanja_modal_nibar')
                     ? `TINDAKAN BERBAHAYA: Register NIBAR "${bNomor}" akan dimusnahkan secara PERMANEN dari database RSUD. Tindakan ini TIDAK DAPAT DIBATALKAN!`
-                    : 'TINDAKAN BERBAHAYA: Data ini akan dihapus secara PERMANEN dari database dan seluruh relasinya akan hilang. Tindakan ini TIDAK DAPAT DIBATALKAN!';
+                    : (targetMod === 'belanja_modal'
+                        ? `TINDAKAN BERBAHAYA: Paket Belanja Modal "${bNomor}" beserta seluruh berkas SPK, SP2D, faktur, dan register NIBAR terkait akan dimusnahkan secara PERMANEN dari database. Tindakan ini TIDAK DAPAT DIBATALKAN!`
+                        : 'TINDAKAN BERBAHAYA: Data ini akan dihapus secara PERMANEN dari database dan seluruh relasinya akan hilang. Tindakan ini TIDAK DAPAT DIBATALKAN!');
                 let btnText = 'Hapus Permanen Sekarang';
 
                 this.askConfirmation({

@@ -328,7 +328,6 @@ class HibahController extends Controller
                 'deleted_at'    => now(),
                 'deleted_by'    => $deleterName,
                 'deleted_by_id' => $user?->id,
-                'alasan_hapus'  => $request->input('alasan_hapus') ?: 'Dihapus oleh ' . $deleterName,
             ]);
         });
 

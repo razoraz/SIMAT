@@ -2611,9 +2611,7 @@
                             'X-CSRF-TOKEN': csrf,
                             'Accept': 'application/json'
                         },
-                        body: JSON.stringify({
-                            alasan_hapus: this.deleteItem.alasan || 'Dihapus dari Kelola Kemitraan Aset'
-                        })
+                        body: JSON.stringify({})
                     });
 
                     const json = await res.json();

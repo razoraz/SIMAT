@@ -57,11 +57,6 @@ trait TrackableSoftDelete
             'deleted_at'    => now(),
         ];
 
-        // Jika model memiliki kolom alasan_hapus, simpan alasan
-        if ($reason && ($this->isFillable('alasan_hapus') || in_array('alasan_hapus', $this->getFillable()))) {
-            $payload['alasan_hapus'] = $reason;
-        }
-
         return $this->update($payload);
     }
 
@@ -76,10 +71,6 @@ trait TrackableSoftDelete
             'deleted_by_id' => null,
             'deleted_at'    => null,
         ];
-
-        if ($this->isFillable('alasan_hapus') || in_array('alasan_hapus', $this->getFillable())) {
-            $payload['alasan_hapus'] = null;
-        }
 
         return $this->update($payload);
     }

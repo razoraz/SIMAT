@@ -7,6 +7,9 @@
         {{-- 1. HEADER & EXECUTIVE STATS RIBBON, MODULE TABS, SEARCH & TIME FILTER --}}
         @include('pages.recycle_bin_partials.header_nav')
 
+        {{-- 1B. TAB CONTENT: BELANJA MODAL (AKUN 5.2 KASDA / BLUD APBD & REGISTER NIBAR) --}}
+        @include('pages.recycle_bin_partials.tab_belanja_modal')
+
         {{-- 2. TAB CONTENT: MUTASI ASET (INTERNAL & EKSTERNAL) --}}
         @include('pages.recycle_bin_partials.tab_mutasi')
 

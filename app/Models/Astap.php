@@ -100,6 +100,8 @@ class Astap extends Model
         'penyedia_alamat',
         'jenis_pengadaan_id',
         'rekening_belanja_id',
+        'category',
+        'kode_108',
     ];
 
     /**
@@ -530,6 +532,25 @@ class Astap extends Model
 
     public function getCategoryAttribute(): string
     {
+        $spec = is_array($this->spesifikasi_json) ? $this->spesifikasi_json : (json_decode($this->spesifikasi_json ?? '[]', true) ?: []);
+
+        // 1. Prioritaskan repeater spesifikasi fisik yang nyata
+        if (!empty($spec['gedung_items']) && is_array($spec['gedung_items']) && count($spec['gedung_items']) > 0) return 'KIB C';
+        if (!empty($spec['mesin_items']) && is_array($spec['mesin_items']) && count($spec['mesin_items']) > 0) return 'KIB B';
+        if (!empty($spec['jaringan_items']) && is_array($spec['jaringan_items']) && count($spec['jaringan_items']) > 0) return 'KIB D';
+        if (!empty($spec['lainnya_items']) && is_array($spec['lainnya_items']) && count($spec['lainnya_items']) > 0) return 'KIB E';
+        if (!empty($spec['tanah_items']) && is_array($spec['tanah_items']) && count($spec['tanah_items']) > 0) return 'KIB A';
+
+        // 2. Periksa deklarasi kategori_kib di spesifikasi_json
+        if (!empty($spec['kategori_kib'])) {
+            $kib = strtoupper((string) $spec['kategori_kib']);
+            if (str_contains($kib, 'KIB C') || str_contains($kib, 'GEDUNG') || str_contains($kib, 'BANGUNAN')) return 'KIB C';
+            if (str_contains($kib, 'KIB B') || str_contains($kib, 'MESIN') || str_contains($kib, 'PERALATAN')) return 'KIB B';
+            if (str_contains($kib, 'KIB A') || str_contains($kib, 'TANAH')) return 'KIB A';
+            if (str_contains($kib, 'KIB D') || str_contains($kib, 'JARINGAN') || str_contains($kib, 'JALAN')) return 'KIB D';
+            if (str_contains($kib, 'KIB E') || str_contains($kib, 'LAINNYA')) return 'KIB E';
+        }
+
         $jenisKode = $this->jenisAstap ? $this->jenisAstap->jenis : '';
 
         // KIB yang TIDAK PERNAH boleh menjadi EXTRACOM menurut Standar Akuntansi Pemerintahan (SAP)
@@ -543,25 +564,24 @@ class Astap extends Model
             $subSubKode = $this->jenisAstap ? ($this->jenisAstap->sub_sub_rincian_objek ?? '') : '';
             $fullKode = $this->kode_108 ?: $subSubKode;
             
-            // Cek akhiran kode sub-sub rincian:
+            // Cek kode sub-sub rincian:
             // 001 = Tanah, 002 = Peralatan & Mesin, 003 = Gedung & Bangunan, 004 = Jalan/Irigasi/Jaringan, 005 = Aset Tetap Lainnya
-            if (str_ends_with($fullKode, '.001') || str_contains($fullKode, '.01.001') || stripos($this->nama_barang, 'tanah') !== false) {
+            if (str_contains($fullKode, '.01.01.001') || str_contains($fullKode, '.01.02.001') || str_ends_with($fullKode, '.001') || stripos($this->nama_barang, 'tanah') !== false) {
                 return 'KIB A';
             }
-            if (str_ends_with($fullKode, '.002') || str_contains($fullKode, '.01.002') || stripos($this->nama_barang, 'mesin') !== false || stripos($this->nama_barang, 'peralatan') !== false) {
+            if (str_contains($fullKode, '.01.01.002') || str_contains($fullKode, '.01.02.002') || str_ends_with($fullKode, '.002') || stripos($this->nama_barang, 'mesin') !== false || stripos($this->nama_barang, 'peralatan') !== false) {
                 return 'KIB B';
             }
-            if (str_ends_with($fullKode, '.003') || str_contains($fullKode, '.01.003') || stripos($this->nama_barang, 'gedung') !== false || stripos($this->nama_barang, 'bangunan') !== false) {
+            if (str_contains($fullKode, '.01.01.003') || str_contains($fullKode, '.01.02.003') || str_ends_with($fullKode, '.003') || stripos($this->nama_barang, 'gedung') !== false || stripos($this->nama_barang, 'bangunan') !== false) {
                 return 'KIB C';
             }
-            if (str_ends_with($fullKode, '.004') || str_contains($fullKode, '.01.004') || stripos($this->nama_barang, 'jaringan') !== false || stripos($this->nama_barang, 'irigasi') !== false || stripos($this->nama_barang, 'jalan') !== false) {
+            if (str_contains($fullKode, '.01.01.004') || str_contains($fullKode, '.01.02.004') || str_ends_with($fullKode, '.004') || stripos($this->nama_barang, 'jaringan') !== false || stripos($this->nama_barang, 'irigasi') !== false || stripos($this->nama_barang, 'jalan') !== false) {
                 return 'KIB D';
             }
-            if (str_ends_with($fullKode, '.005') || str_contains($fullKode, '.01.005')) {
+            if (str_contains($fullKode, '.01.01.005') || str_contains($fullKode, '.01.02.005') || str_ends_with($fullKode, '.005')) {
                 return 'KIB E';
             }
             
-            // Default jika tidak spesifik: KIB B (Peralatan & Mesin)
             return 'KIB B';
         }
 

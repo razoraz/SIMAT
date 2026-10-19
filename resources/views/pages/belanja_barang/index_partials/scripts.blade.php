@@ -49,9 +49,7 @@
                             'X-CSRF-TOKEN': token,
                             'Accept': 'application/json'
                         },
-                        body: JSON.stringify({
-                            alasan_hapus: this.deleteReason || 'Dihapus dari Kelola Belanja Barang'
-                        })
+                        body: JSON.stringify({})
                     });
 
                     const data = await res.json();

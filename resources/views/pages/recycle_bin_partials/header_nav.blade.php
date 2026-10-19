@@ -4,6 +4,7 @@
         ['id' => 'unit', 'name' => 'Unit & Paviliun', 'icon' => '🏥', 'desc' => 'Ruangan, Paviliun & Lokasi Penempatan RSUD'],
         ['id' => 'distribusi', 'name' => 'Distribusi Aset', 'icon' => '🚚', 'desc' => 'Pengajuan & Dokumen BAST Distribusi Antar-Ruang'],
         ['id' => 'mutasi', 'name' => 'Mutasi Aset', 'icon' => '🔄', 'desc' => 'Mutasi Internal (Ruangan) & Eksternal (OPD)'],
+        ['id' => 'belanja_modal', 'name' => 'Belanja Modal', 'icon' => '🏛️', 'desc' => 'Paket Pengadaan Belanja Modal APBD/BLUD & NIBAR'],
         ['id' => 'hibah', 'name' => 'Hibah Aset', 'icon' => '🎁', 'desc' => 'Arsip BAST Hibah Masuk & Hibah Keluar'],
         ['id' => 'kemitraan', 'name' => 'Kemitraan Aset', 'icon' => '🤝', 'desc' => 'Kerja Sama Operasi (KSO) & PKS Akun 1.5.2'],
         ['id' => 'belanja_barang', 'name' => 'Belanja Barang', 'icon' => '🛒', 'desc' => 'Faktur Belanja & Perbekalan Akun 5.1.02'],
@@ -69,7 +70,7 @@
                     <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
                     Kategori Modul:
                 </span>
-                <span class="text-[10px] text-slate-500 font-mono">8 Kategori Tersedia</span>
+                <span class="text-[10px] text-slate-500 font-mono">{{ count($modulesList) }} Kategori Tersedia</span>
             </div>
 
             <!-- TRIGGER BUTTON -->
@@ -78,6 +79,7 @@
                 
                 <div class="flex items-center gap-2.5 min-w-0">
                     <div class="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-lg shrink-0 group-hover:scale-105 transition-transform shadow-inner">
+                        <span x-show="activeModule === 'belanja_modal'">🏛️</span>
                         <span x-show="activeModule === 'astap'">📦</span>
                         <span x-show="activeModule === 'unit'">🏥</span>
                         <span x-show="activeModule === 'distribusi'">🚚</span>
@@ -117,7 +119,7 @@
                 
                 <div class="p-2 pb-2 mb-2 border-b border-slate-800/80 flex items-center justify-between">
                     <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-slate-400">Pilih Kategori Inventaris</span>
-                    <span class="text-[10px] text-slate-500">9 Modul</span>
+                    <span class="text-[10px] text-slate-500">{{ count($modulesList) }} Modul</span>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-[360px] overflow-y-auto">

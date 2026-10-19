@@ -12547,7 +12547,10 @@
                         'belum ditempatkan / di gudang aset', 'gudang aset',
                         'gudang aset utama / belum ditempatkan', 'gudang perbekalan'
                     ];
-                    return !unplacedPlaceholders.includes(clean);
+                    if (unplacedPlaceholders.includes(clean)) return false;
+                    if (clean.startsWith('kemitraan (')) return false;
+                    if (clean.startsWith('telah dikembalikan')) return false;
+                    return true;
                 },
 
                 executeConfirmedAction() {
@@ -13690,9 +13693,9 @@
                         
                         let matchPenempatan = true;
                         if (this.detailPenempatanFilter === 'sudah') {
-                            matchPenempatan = !!reg.ruang_pemegang;
+                            matchPenempatan = this.isRegisterPlacedInUnit(reg);
                         } else if (this.detailPenempatanFilter === 'belum') {
-                            matchPenempatan = !reg.ruang_pemegang;
+                            matchPenempatan = !this.isRegisterPlacedInUnit(reg);
                         }
 
                         const matchQuery = !query || 
