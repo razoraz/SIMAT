@@ -2377,27 +2377,18 @@ Route::middleware('auth')->group(function () {
                     $item = \App\Models\Astap::create($astapPayload);
 
                     // Buat AstapRegister untuk setiap unit barang kemitraan
-                    // Pastikan nomor register NIBAR melanjutkan urutan jika tahun, triwulan, dan jenis barang sama
+                    // Pastikan nomor register NIBAR melanjutkan urutan jika tahun dan jenis barang sama (global tahunan)
                     $maxRegInt = \App\Models\AstapRegister::where('tahun_perolehan', $tahun)
                         ->whereHas('astap', function ($sq) use ($data) {
                             $sq->where('jenis_astap_id', $data['jenis_astap_id']);
-                            if (!empty($data['triwulan'])) {
-                                $sq->where('triwulan', $data['triwulan']);
-                            }
                         })
                         ->max('no_register_int') ?? 0;
 
                     $runningRegNum = (int) $maxRegInt;
 
-                    // Periksa juga nomor register dari NIBAR tersimpan dengan prefix (tahun + kode 108) yang sama pada triwulan ini
+                    // Periksa juga nomor register dari NIBAR tersimpan dengan prefix (tahun + kode 108) yang sama
                     $nibarPrefix = "1201351102000000280000{$tahun}{$kode108Clean}";
                     $latestNibar = \App\Models\AstapRegister::where('nibar', 'like', "{$nibarPrefix}%")
-                        ->whereHas('astap', function ($sq) use ($data) {
-                            $sq->where('jenis_astap_id', $data['jenis_astap_id']);
-                            if (!empty($data['triwulan'])) {
-                                $sq->where('triwulan', $data['triwulan']);
-                            }
-                        })
                         ->orderBy('nibar', 'desc')
                         ->value('nibar');
 
@@ -3413,20 +3404,11 @@ Route::middleware('auth')->group(function () {
                         $runningRegNum = (int) (\App\Models\AstapRegister::where('tahun_perolehan', $tahun)
                             ->whereHas('astap', function ($sq) use ($astap) {
                                 $sq->where('jenis_astap_id', $astap->jenis_astap_id);
-                                if (!empty($astap->triwulan)) {
-                                    $sq->where('triwulan', $astap->triwulan);
-                                }
                             })
                             ->max('no_register_int') ?? 0);
 
                         $nibarPrefix = "1201351102000000280000{$tahun}{$kode108Clean}";
                         $latestNibar = \App\Models\AstapRegister::where('nibar', 'like', "{$nibarPrefix}%")
-                            ->whereHas('astap', function ($sq) use ($astap) {
-                                $sq->where('jenis_astap_id', $astap->jenis_astap_id);
-                                if (!empty($astap->triwulan)) {
-                                    $sq->where('triwulan', $astap->triwulan);
-                                }
-                            })
                             ->orderBy('nibar', 'desc')
                             ->value('nibar');
 

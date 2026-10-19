@@ -989,7 +989,7 @@
                                             <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2">
                                                 <div class="flex items-center space-x-2">
                                                     <span class="px-2 py-0.5 rounded-lg bg-purple-500/20 text-purple-300 font-mono font-bold text-[10px] border border-purple-500/40" x-text="'Gedung #' + (gIdx + 1)"></span>
-                                                    <span class="text-xs font-bold text-white" x-text="gItem.gedung_nama_barang || selectedAstapDetail.nama_barang"></span>
+                                                    <span class="text-xs font-bold text-white" x-text="gItem.gedung_nama_barang || gItem.gedung_nama_bangunan || selectedAstapDetail.nama_barang"></span>
                                                     <template x-if="getRincianNibar(selectedAstapDetail, gIdx, 'gedung_items')">
                                                         <span class="text-[11px] text-cyan-400 font-mono font-bold"
                                                               :title="getRincianNibar(selectedAstapDetail, gIdx, 'gedung_items').tooltip"
@@ -997,14 +997,14 @@
                                                     </template>
                                                 </div>
                                                 <div class="flex items-center space-x-3 text-[10.5px] font-mono">
-                                                    <span class="text-slate-400">Luas: <strong class="text-cyan-300" x-text="(gItem.gedung_luas_lantai || gItem.gedung_luas_m2 || selectedAstapDetail.spesifikasi_json?.luas_lantai_m2) ? ((gItem.gedung_luas_lantai || gItem.gedung_luas_m2 || selectedAstapDetail.spesifikasi_json?.luas_lantai_m2) + ' M²') : '-'"></strong></span>
-                                                    <span class="text-emerald-400 font-bold" x-text="'Rp ' + Number(gItem.gedung_nilai_satuan || (Number(gItem.gedung_nilai_perencanaan || 0) + Number(gItem.gedung_nilai_fisik || 0) + Number(gItem.gedung_nilai_pengawasan || 0)) || gItem.nilai_satuan || 0).toLocaleString('id-ID')"></span>
+                                                    <span class="text-slate-400">Luas: <strong class="text-cyan-300" x-text="(gItem.gedung_luas_lantai_m2 || gItem.gedung_luas_lantai || gItem.gedung_luas_m2 || selectedAstapDetail.spesifikasi_json?.luas_lantai_m2) ? ((gItem.gedung_luas_lantai_m2 || gItem.gedung_luas_lantai || gItem.gedung_luas_m2 || selectedAstapDetail.spesifikasi_json?.luas_lantai_m2) + ' M²') : '-'"></strong></span>
+                                                    <span class="text-emerald-400 font-bold" x-text="'Rp ' + Number(gItem.gedung_nilai_satuan || gItem.gedung_nilai_fisik || (Number(gItem.gedung_nilai_perencanaan || 0) + Number(gItem.gedung_nilai_fisik || 0) + Number(gItem.gedung_nilai_pengawasan || 0)) || gItem.nilai_satuan || 0).toLocaleString('id-ID')"></span>
                                                 </div>
                                             </div>
                                             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[10.5px]">
                                                 <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                                     <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🏢 Konstruksi</span>
-                                                    <span class="text-purple-300 font-bold block" x-text="(gItem.gedung_bertingkat || 'Bertingkat') + ' • ' + (gItem.gedung_beton || 'Beton')"></span>
+                                                    <span class="text-purple-300 font-bold block" x-text="(gItem.gedung_konstruksi_bertingkat || gItem.gedung_bertingkat || 'Bertingkat') + ' • ' + (gItem.gedung_konstruksi_beton || gItem.gedung_beton || 'Beton')"></span>
                                                 </div>
                                                 <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                                     <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🌱 Status Tanah</span>

@@ -13043,6 +13043,20 @@
                         }
                     }
 
+                    // JIKA remainingQuota masih bersisa (misal repeater hanya 2 baris, tetapi jumlah volume/registers ada 3 unit):
+                    // Pad kartu tambahan menggunakan template item terakhir agar SEMUA unit register NIBAR memiliki kartu spesifikasi!
+                    if (remainingQuota > 0 && result.length > 0) {
+                        const lastTemplate = result[result.length - 1];
+                        while (remainingQuota > 0) {
+                            let newItem = JSON.parse(JSON.stringify(lastTemplate));
+                            for (let k of qtyKeys) {
+                                if (newItem[k] !== undefined) newItem[k] = 1;
+                            }
+                            result.push(newItem);
+                            remainingQuota -= 1;
+                        }
+                    }
+
                     return result;
                 },
 
@@ -13057,35 +13071,36 @@
                     if (typeof spec === 'string') {
                         try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
                     }
+                    spec = spec || {};
 
-                    // 1. Periksa kategori_kib dari spesifikasi_json
+                    // 1. Periksa isi repeater yang nyata (Prioritas tertinggi sesuai form fisik yang diinput!)
+                    if (spec?.gedung_items?.some(g => g.gedung_nama_barang || g.gedung_nama_bangunan || g.gedung_luas_m2 || g.gedung_luas_lantai || g.gedung_luas_lantai_m2 || g.gedung_bertingkat || (parseFloat(g.gedung_nilai_satuan || g.gedung_nilai_fisik) > 0))) return 'KIB C';
+                    if (spec?.mesin_items?.some(m => m.mesin_nama_barang || m.mesin_merk || m.mesin_type || m.mesin_no_pabrik || (parseFloat(m.mesin_nilai_satuan || m.mesin_nilai_fisik) > 0))) return 'KIB B';
+                    if (spec?.jaringan_items?.some(j => j.jaringan_nama_barang || j.jaringan_konstruksi || j.jaringan_panjang || (parseFloat(j.jaringan_nilai_satuan || j.jaringan_nilai_fisik) > 0))) return 'KIB D';
+                    if (spec?.lainnya_items?.some(l => l.lainnya_nama_barang || l.lainnya_judul || l.lainnya_pencipta || (parseFloat(l.lainnya_nilai_satuan || l.lainnya_nilai_fisik) > 0))) return 'KIB E';
+                    if (spec?.tanah_items?.some(t => t.tanah_nama_barang || t.tanah_luas_m2 || t.tanah_hak || t.tanah_sertifikat_no || (parseFloat(t.tanah_nilai_satuan || t.tanah_nilai_fisik) > 0))) return 'KIB A';
+
+                    // 2. Periksa kategori_kib dari spesifikasi_json
                     const kibSpec = String(spec?.kategori_kib || '').toUpperCase();
-                    if (kibSpec.includes('KIB A') || kibSpec.includes('TANAH')) return 'KIB A';
-                    if (kibSpec.includes('KIB B') || kibSpec.includes('MESIN') || kibSpec.includes('PERALATAN')) return 'KIB B';
                     if (kibSpec.includes('KIB C') || kibSpec.includes('GEDUNG') || kibSpec.includes('BANGUNAN')) return 'KIB C';
+                    if (kibSpec.includes('KIB B') || kibSpec.includes('MESIN') || kibSpec.includes('PERALATAN')) return 'KIB B';
+                    if (kibSpec.includes('KIB A') || kibSpec.includes('TANAH')) return 'KIB A';
                     if (kibSpec.includes('KIB D') || kibSpec.includes('JARINGAN') || kibSpec.includes('JALAN') || kibSpec.includes('IRIGASI')) return 'KIB D';
                     if (kibSpec.includes('KIB E') || kibSpec.includes('LAINNYA') || kibSpec.includes('BUKU')) return 'KIB E';
 
-                    // 2. Periksa kode barang 108
-                    const kd = String(astap.kode_barang || astap.kode_108 || astap.jenis_astap?.sub_sub_rincian_objek || astap.jenis_astap?.kode || '');
-                    if (kd.endsWith('.001') || kd.includes('.01.001') || kd.startsWith('1.3.1') || kd.includes('.01.01.01.001')) return 'KIB A';
-                    if (kd.endsWith('.002') || kd.includes('.01.002') || kd.startsWith('1.3.2') || kd.includes('.01.01.01.002')) return 'KIB B';
-                    if (kd.endsWith('.003') || kd.includes('.01.003') || kd.startsWith('1.3.3') || kd.includes('.01.01.01.003')) return 'KIB C';
-                    if (kd.endsWith('.004') || kd.includes('.01.004') || kd.startsWith('1.3.4') || kd.includes('.01.01.01.004')) return 'KIB D';
-                    if (kd.endsWith('.005') || kd.includes('.01.005') || kd.startsWith('1.3.5') || kd.includes('.01.01.01.005')) return 'KIB E';
+                    // 3. Periksa kode barang 108 / 1.5.2 Kemitraan secara presisi
+                    const kd = String(astap.kode_barang || astap.kode_108 || astap.jenis_astap?.sub_sub_rincian_objek || astap.jenis_astap?.sub_rincian_objek || astap.jenis_astap?.jenis || astap.jenis_astap?.kode || '').trim();
+                    if (kd.startsWith('1.3.1') || kd.startsWith('1.5.2.01.01.01.001') || kd.startsWith('1.5.2.01.01.02.001')) return 'KIB A';
+                    if (kd.startsWith('1.3.2') || kd.startsWith('1.5.2.01.01.01.002') || kd.startsWith('1.5.2.01.01.02.002')) return 'KIB B';
+                    if (kd.startsWith('1.3.3') || kd.startsWith('1.5.2.01.01.01.003') || kd.startsWith('1.5.2.01.01.02.003')) return 'KIB C';
+                    if (kd.startsWith('1.3.4') || kd.startsWith('1.5.2.01.01.01.004') || kd.startsWith('1.5.2.01.01.02.004')) return 'KIB D';
+                    if (kd.startsWith('1.3.5') || kd.startsWith('1.5.2.01.01.01.005') || kd.startsWith('1.5.2.01.01.02.005')) return 'KIB E';
                     if (kd.startsWith('1.5.4')) return 'ASET LAIN';
 
-                    // 3. Periksa isi repeater yang valid
-                    if (spec?.mesin_items?.some(m => m.mesin_nama_barang || m.mesin_merk || m.mesin_type || m.mesin_no_pabrik || (parseFloat(m.mesin_nilai_satuan) > 0))) return 'KIB B';
-                    if (spec?.tanah_items?.some(t => t.tanah_luas_m2 || t.tanah_hak || t.tanah_sertifikat_no || (parseFloat(t.tanah_nilai_satuan) > 0))) return 'KIB A';
-                    if (spec?.gedung_items?.some(g => g.gedung_nama_barang || g.gedung_luas_m2 || g.gedung_luas_lantai || g.gedung_bertingkat || (parseFloat(g.gedung_nilai_satuan) > 0))) return 'KIB C';
-                    if (spec?.jaringan_items?.some(j => j.jaringan_nama_barang || j.jaringan_konstruksi || j.jaringan_panjang || (parseFloat(j.jaringan_nilai_satuan) > 0))) return 'KIB D';
-                    if (spec?.lainnya_items?.some(l => l.lainnya_nama_barang || l.lainnya_judul || l.lainnya_pencipta || (parseFloat(l.lainnya_nilai_satuan) > 0))) return 'KIB E';
-
                     // 4. Periksa nama barang
-                    const nama = String(astap.nama_barang || '').toLowerCase();
-                    if (nama.includes('tanah')) return 'KIB A';
+                    const nama = String(astap.nama_barang || astap.jenis_astap?.nama_jenis || '').toLowerCase();
                     if (nama.includes('gedung') || nama.includes('bangunan')) return 'KIB C';
+                    if (nama.includes('tanah')) return 'KIB A';
                     if (nama.includes('jalan') || nama.includes('jaringan') || nama.includes('irigasi')) return 'KIB D';
                     if (nama.includes('buku') || nama.includes('hewan') || nama.includes('kesenian')) return 'KIB E';
 
