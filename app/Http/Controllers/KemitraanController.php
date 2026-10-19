@@ -139,7 +139,7 @@ class KemitraanController extends Controller
         $dbMaster108 = JenisAstap::getNested108();
 
         // Ambil data Astap kemitraan lengkap untuk kebutuhan Engine Ekspor Excel Multi-Sheet (Client-Side)
-        $kemitraanAstaps = Astap::with(['registers.unit', 'kemitraan', 'jenisAstap', 'unit', 'reklas.jenisTujuan', 'reklas.jenisAsal'])
+        $kemitraanAstaps = Astap::with(['registers.unit', 'kemitraan', 'jenisAstap', 'unit', 'reklas.jenisReklasTujuan', 'reklas.jenisReklasAsal'])
             ->where('is_deleted', 0)
             ->where(function ($q) {
                 $q->where('sumber_dana', 'kemitraan')
@@ -401,7 +401,6 @@ class KemitraanController extends Controller
                 'pihak_penerima_nama'    => trim($validated['pihak_penerima_nama']),
                 'pihak_penerima_jabatan' => trim($validated['pihak_penerima_jabatan'] ?? ''),
                 'catatan_terminasi'      => $validated['catatan_terminasi'] ?? null,
-                'is_transferred_to_rsud' => false,
             ]);
 
             // Sinkronisasi status register fisik aset
@@ -508,10 +507,6 @@ class KemitraanController extends Controller
                 'pihak_penerima_nama'    => trim($validated['pihak_penerima_nama']),
                 'pihak_penerima_jabatan' => trim($validated['pihak_penerima_jabatan'] ?? ''),
                 'catatan_terminasi'      => $validated['catatan_terminasi'] ?? null,
-                'is_transferred_to_rsud' => true,
-                'target_kib_reklas'      => $validated['target_kib_reklas'],
-                'target_kode_108'        => $validated['target_kode_108'] ?? null,
-                'nilai_perolehan_rsud'   => (float) $validated['nilai_perolehan_rsud'],
             ]);
 
             // Sinkronisasi status register fisik aset

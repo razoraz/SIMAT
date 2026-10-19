@@ -4060,13 +4060,20 @@
                 const currentYear = new Date().getFullYear();
                 const todayStr = this.formatLocalDate(new Date());
 
+                const tglMulai = row.tanggal_mulai || rawRow.tanggal_mulai || row.tanggal_pks || rawRow.tanggal_pks;
+                const tglSelesai = row.tanggal_selesai || rawRow.tanggal_selesai || row.tanggal_akhir || rawRow.tanggal_akhir;
+
                 this.terminasiData = {
                     id: kemitraanId,
                     nama_barang: namaBarang,
                     nomor_pks: nomorPks,
-                    mitra_nama: mitraNama,
-                    mitra_pimpinan: mitraPimpinan,
+                    mitra_nama: row.penyedia_nama || mitraNama,
+                    mitra_pimpinan: row.penyedia_pemilik || mitraPimpinan,
                     is_dimanfaatkan: isDimanfaatkan,
+                    tipe_kemitraan: isDimanfaatkan ? 'dimanfaatkan' : 'ditambahkan_mitra',
+                    tanggal_mulai_fmt: tglMulai ? (this.formatDateIndo ? this.formatDateIndo(tglMulai) : tglMulai) : '-',
+                    tanggal_selesai_fmt: tglSelesai ? (this.formatDateIndo ? this.formatDateIndo(tglSelesai) : tglSelesai) : '-',
+                    status_konsesi: row.status_konsesi || rawRow.status_konsesi || 'Aktif',
                     category: row.category || rawRow.kategori_barang || '',
                     nilai_aset: nilaiNominal,
                     raw: rawRow

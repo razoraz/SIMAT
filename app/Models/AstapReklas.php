@@ -41,6 +41,16 @@ class AstapReklas extends Model
         return $this->belongsTo(JenisReklasifikasi::class, 'jenis_reklasifikasi_tujuan_id');
     }
 
+    public function jenisAsal()
+    {
+        return $this->jenisReklasAsal();
+    }
+
+    public function jenisTujuan()
+    {
+        return $this->jenisReklasTujuan();
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

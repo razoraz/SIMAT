@@ -22,7 +22,6 @@ class AstapKemitraan extends Model
         'tanggal_terminasi'      => 'date',
         'tanggal_ba_terminasi'   => 'date',
         'nilai_aset'             => 'decimal:2',
-        'nilai_perolehan_rsud'   => 'decimal:2',
         'jumlah_volume'          => 'integer',
         'tahun'                  => 'integer',
         'is_deleted'             => 'integer',
@@ -31,7 +30,6 @@ class AstapKemitraan extends Model
         'riwayat_adendum'        => 'array',
         'is_extended'            => 'boolean',
         'jumlah_extend'          => 'integer',
-        'is_transferred_to_rsud' => 'boolean',
     ];
 
     public function astap()
@@ -41,7 +39,7 @@ class AstapKemitraan extends Model
 
     public function reklas()
     {
-        return $this->belongsTo(AstapReklas::class, 'reklas_id');
+        return $this->hasOne(AstapReklas::class, 'astap_id', 'astap_id');
     }
 
     public function objekAstap()

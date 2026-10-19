@@ -26,14 +26,14 @@
              x-transition:leave="transition ease-in duration-200"
              x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
              x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-             class="relative transform overflow-hidden rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl shadow-purple-950/50 text-left transition-all w-full max-w-3xl my-auto max-h-[92vh] flex flex-col">
+             class="relative transform overflow-hidden rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl shadow-purple-950/50 text-left transition-all w-full max-w-4xl my-auto max-h-[92vh] flex flex-col">
 
             <!-- ========================================================================= -->
             <!-- 1. HEADER MODAL ELEGAN                                                    -->
             <!-- ========================================================================= -->
-            <div class="shrink-0 relative px-6 py-5 border-b flex items-center justify-between bg-gradient-to-r from-purple-950/50 via-slate-900 to-slate-950 border-purple-500/20">
+            <div class="shrink-0 relative px-6 py-4 sm:py-5 border-b flex items-center justify-between bg-gradient-to-r from-purple-950/60 via-slate-900 to-slate-950 border-purple-500/20">
                 <div class="flex items-center space-x-3.5">
-                    <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0 shadow-inner ring-1 bg-purple-500/15 border border-purple-500/30 text-purple-300 ring-purple-500/20">
+                    <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0 shadow-inner ring-1 bg-purple-500/15 border border-purple-500/30 text-purple-300 ring-purple-500/20">
                         <span>📦</span>
                     </div>
                     <div>
@@ -61,23 +61,23 @@
             <!-- 2. FORM & SCROLLABLE CONTENT BODY                                         -->
             <!-- ========================================================================= -->
             <form @submit.prevent="submitKembalikanForm()" class="flex flex-col flex-1 overflow-hidden">
-                <div class="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4 custom-scrollbar">
+                <div class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 custom-scrollbar">
 
                     <!-- Kartu Ringkasan Objek Aset -->
-                    <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 shadow-inner space-y-3">
+                    <div class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 shadow-inner space-y-2.5">
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
-                            <div>
+                            <div class="min-w-0">
                                 <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-mono">
                                     Objek Aset Kemitraan:
                                 </span>
                                 <h4 class="text-sm sm:text-base font-extrabold text-white flex flex-wrap items-center gap-2 mt-0.5">
-                                    <span x-text="terminasiData.nama_barang || '-'"></span>
-                                    <span class="px-2 py-0.5 rounded-full text-[9.5px] font-mono border"
-                                          :class="terminasiData.tipe_kemitraan === 'dimanfaatkan' ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30' : 'bg-purple-500/10 text-purple-400 border-purple-500/30'"
+                                    <span class="truncate" x-text="terminasiData.nama_barang || '-'"></span>
+                                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold border"
+                                          :class="terminasiData.tipe_kemitraan === 'dimanfaatkan' ? 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30' : 'bg-purple-500/10 text-purple-300 border-purple-500/30'"
                                           x-text="terminasiData.tipe_kemitraan === 'dimanfaatkan' ? 'Pemanfaatan BMD' : 'Aset Mitra Ditambahkan'"></span>
                                 </h4>
                             </div>
-                            <div class="sm:text-right">
+                            <div class="sm:text-right shrink-0">
                                 <span class="text-[10px] text-slate-400 block font-mono">Nilai Kontrak di PKS</span>
                                 <span class="text-xs sm:text-sm font-mono font-bold text-emerald-400" 
                                       x-text="'Rp ' + Number(terminasiData.nilai_aset || 0).toLocaleString('id-ID')"></span>
@@ -85,19 +85,19 @@
                         </div>
 
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
-                            <div class="bg-slate-900/60 p-2 rounded-xl border border-slate-800/60">
+                            <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/60 min-w-0">
                                 <span class="text-[9.5px] text-slate-400 block uppercase font-mono">Mitra Rekanan</span>
                                 <span class="font-semibold text-slate-200 block truncate" x-text="terminasiData.mitra_nama || '-'"></span>
                             </div>
-                            <div class="bg-slate-900/60 p-2 rounded-xl border border-slate-800/60">
+                            <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/60 min-w-0">
                                 <span class="text-[9.5px] text-slate-400 block uppercase font-mono">Nomor PKS</span>
                                 <span class="font-mono text-cyan-300 block truncate" x-text="terminasiData.nomor_pks || '-'"></span>
                             </div>
-                            <div class="bg-slate-900/60 p-2 rounded-xl border border-slate-800/60">
+                            <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/60 min-w-0">
                                 <span class="text-[9.5px] text-slate-400 block uppercase font-mono">Masa Berlaku</span>
                                 <span class="text-slate-300 block truncate text-[11px]" x-text="(terminasiData.tanggal_mulai_fmt || '-') + ' s/d ' + (terminasiData.tanggal_selesai_fmt || '-')"></span>
                             </div>
-                            <div class="bg-slate-900/60 p-2 rounded-xl border border-slate-800/60">
+                            <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/60 min-w-0">
                                 <span class="text-[9.5px] text-slate-400 block uppercase font-mono">Status Saat Ini</span>
                                 <span class="font-bold text-amber-400 block truncate text-[11px]" x-text="terminasiData.status_konsesi || 'Aktif'"></span>
                             </div>
@@ -116,104 +116,113 @@
                             </span>
                         </div>
 
-                        <!-- Baris 1: Nomor BAST, Tanggal, & Kondisi -->
-                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-3.5">
-                            <!-- Nomor BAST (6 cols) -->
-                            <div class="sm:col-span-6">
-                                <label class="block text-[11px] font-bold text-slate-300 mb-1.5 flex items-center gap-1.5">
+                        <!-- Baris 1: Nomor Berita Acara (BAST) — Full Width Spacious -->
+                        <div>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label class="text-[11px] font-bold text-slate-200 flex items-center gap-1.5">
                                     <span>Nomor Berita Acara Pengembalian</span>
                                     <span class="text-rose-400">*</span>
                                 </label>
-                                <div class="relative">
-                                    <input type="text" x-model="terminasiForm.nomor_ba_terminasi" required
-                                           placeholder="Contoh: 000.2.3.2/BAST-KMT-KEMBALI/..."
-                                           class="w-full bg-slate-900 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3 py-2 text-xs font-mono font-semibold text-purple-200 placeholder-slate-500 focus:outline-none transition-all">
-                                </div>
+                                <span class="text-[10px] text-slate-400 font-mono">Format Sah RSUD / Pemkab</span>
                             </div>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-purple-400 text-xs">
+                                    <span>📄</span>
+                                </div>
+                                <input type="text" x-model="terminasiForm.nomor_ba_terminasi" required
+                                       placeholder="Contoh: 000.2.3.2/BAST-KMT-KEMBALI/001/430.10.7/2026"
+                                       class="w-full min-w-0 bg-slate-900 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl pl-9 pr-3.5 py-2.5 text-xs font-mono font-semibold text-purple-200 placeholder-slate-500 focus:outline-none transition-all shadow-inner">
+                            </div>
+                            <p class="text-[10px] text-slate-400 mt-1">Nomor BAST ini akan tercatat dalam buku inventaris dan dicetak pada berkas fisik serah terima.</p>
+                        </div>
 
-                            <!-- Tanggal Pengembalian (3 cols) -->
-                            <div class="sm:col-span-3">
-                                <label class="block text-[11px] font-bold text-slate-300 mb-1.5 flex items-center gap-1.5">
-                                    <span>Tanggal BAST</span>
+                        <!-- Baris 2: Tanggal BAST & Kondisi Fisik Akhir (2 Kolom Seimbang) -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <!-- Tanggal Pengembalian -->
+                            <div class="min-w-0">
+                                <label class="block text-[11px] font-bold text-slate-200 mb-1.5 flex items-center gap-1.5">
+                                    <span>Tanggal BAST Pengembalian</span>
                                     <span class="text-rose-400">*</span>
                                 </label>
                                 <input type="date" x-model="terminasiForm.tanggal_terminasi" required
-                                       class="w-full bg-slate-900 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all cursor-pointer">
+                                       class="w-full min-w-0 bg-slate-900 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none transition-all cursor-pointer shadow-inner">
+                                <p class="text-[10px] text-slate-400 mt-1">Tanggal resmi penandatanganan BAST dan serah terima unit.</p>
                             </div>
 
-                            <!-- Kondisi Akhir (3 cols) -->
-                            <div class="sm:col-span-3">
-                                <label class="block text-[11px] font-bold text-slate-300 mb-1.5 flex items-center gap-1.5">
-                                    <span>Kondisi Fisik Akhir</span>
+                            <!-- Kondisi Akhir -->
+                            <div class="min-w-0">
+                                <label class="block text-[11px] font-bold text-slate-200 mb-1.5 flex items-center gap-1.5">
+                                    <span>Kondisi Fisik Akhir Saat Dikembalikan</span>
                                     <span class="text-rose-400">*</span>
                                 </label>
                                 <select x-model="terminasiForm.kondisi_akhir" required
-                                        class="w-full bg-slate-900 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all cursor-pointer font-medium">
-                                    <option value="Baik">🟢 Baik</option>
-                                    <option value="Rusak Ringan">🟡 Rusak Ringan</option>
-                                    <option value="Rusak Berat">🔴 Rusak Berat</option>
+                                        class="w-full min-w-0 bg-slate-900 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none transition-all cursor-pointer font-medium shadow-inner">
+                                    <option value="Baik">🟢 Baik (Layak fungsi & operasional lengkap)</option>
+                                    <option value="Rusak Ringan">🟡 Rusak Ringan (Perlu rekondisi minor)</option>
+                                    <option value="Rusak Berat">🔴 Rusak Berat (Rusak permanen / tidak berfungsi)</option>
                                 </select>
+                                <p class="text-[10px] text-slate-400 mt-1">Status keutuhan dan kelayakan fisik aset saat diserahkan.</p>
                             </div>
                         </div>
 
-                        <!-- Baris 2: Komparasi Pihak Penyerah & Penerima -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-2">
+                        <!-- Baris 3: Komparasi Pihak Penyerah & Penerima -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
                             <!-- Pihak Penyerah (RSUD Dr. H. Koesnandi) -->
-                            <div class="p-3.5 rounded-xl bg-slate-900/80 border border-cyan-500/20 space-y-2.5">
+                            <div class="p-4 rounded-xl bg-slate-900/90 border border-cyan-500/25 space-y-3 shadow-inner min-w-0">
                                 <div class="flex items-center justify-between pb-1.5 border-b border-cyan-500/15">
-                                    <span class="text-[10px] font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5 font-mono">
+                                    <span class="text-[10.5px] font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5 font-mono">
                                         <span>🏛️</span>
                                         <span>Pihak Penyerah (RSUD)</span>
                                     </span>
-                                    <span class="text-[9px] text-cyan-400/80 bg-cyan-500/10 px-1.5 py-0.5 rounded">Pihak I</span>
+                                    <span class="text-[9.5px] text-cyan-300 font-semibold bg-cyan-500/15 px-2 py-0.5 rounded-full border border-cyan-500/25">Pihak I</span>
                                 </div>
                                 <div>
-                                    <label class="block text-[10px] text-slate-400 mb-1">
+                                    <label class="block text-[10px] font-medium text-slate-300 mb-1">
                                         Nama Pejabat RSUD <span class="text-rose-400">*</span>
                                     </label>
                                     <input type="text" x-model="terminasiForm.pihak_penyerah_nama" required
                                            placeholder="Nama Pengurus Barang / PPK / Direktur"
-                                           class="w-full bg-slate-950 border border-slate-700/80 focus:border-cyan-400 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none transition-colors">
+                                           class="w-full min-w-0 bg-slate-950 border border-slate-700/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
                                 </div>
                                 <div>
-                                    <label class="block text-[10px] text-slate-400 mb-1">Jabatan Pejabat RSUD</label>
+                                    <label class="block text-[10px] font-medium text-slate-300 mb-1">Jabatan Pejabat RSUD</label>
                                     <input type="text" x-model="terminasiForm.pihak_penyerah_jabatan"
                                            placeholder="Contoh: Direktur RSUD Dr. H. Koesnandi"
-                                           class="w-full bg-slate-950 border border-slate-700/80 focus:border-cyan-400 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none transition-colors">
+                                           class="w-full min-w-0 bg-slate-950 border border-slate-700/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
                                 </div>
                             </div>
 
                             <!-- Pihak Penerima (Mitra Rekanan) -->
-                            <div class="p-3.5 rounded-xl bg-slate-900/80 border border-purple-500/20 space-y-2.5">
+                            <div class="p-4 rounded-xl bg-slate-900/90 border border-purple-500/25 space-y-3 shadow-inner min-w-0">
                                 <div class="flex items-center justify-between pb-1.5 border-b border-purple-500/15">
-                                    <span class="text-[10px] font-bold text-purple-400 uppercase tracking-wider flex items-center gap-1.5 font-mono">
+                                    <span class="text-[10.5px] font-bold text-purple-400 uppercase tracking-wider flex items-center gap-1.5 font-mono">
                                         <span>🏢</span>
                                         <span>Pihak Penerima (Mitra Rekanan)</span>
                                     </span>
-                                    <span class="text-[9px] text-purple-400/80 bg-purple-500/10 px-1.5 py-0.5 rounded">Pihak II</span>
+                                    <span class="text-[9.5px] text-purple-300 font-semibold bg-purple-500/15 px-2 py-0.5 rounded-full border border-purple-500/25">Pihak II</span>
                                 </div>
                                 <div>
-                                    <label class="block text-[10px] text-slate-400 mb-1">
+                                    <label class="block text-[10px] font-medium text-slate-300 mb-1">
                                         Nama Pihak Mitra <span class="text-rose-400">*</span>
                                     </label>
                                     <input type="text" x-model="terminasiForm.pihak_penerima_nama" required
                                            placeholder="Nama Pimpinan / Perwakilan Mitra"
-                                           class="w-full bg-slate-950 border border-slate-700/80 focus:border-purple-400 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none transition-colors">
+                                           class="w-full min-w-0 bg-slate-950 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
                                 </div>
                                 <div>
-                                    <label class="block text-[10px] text-slate-400 mb-1">Jabatan Pihak Mitra</label>
+                                    <label class="block text-[10px] font-medium text-slate-300 mb-1">Jabatan Pihak Mitra</label>
                                     <input type="text" x-model="terminasiForm.pihak_penerima_jabatan"
                                            placeholder="Contoh: Direktur / Penanggung Jawab Mitra"
-                                           class="w-full bg-slate-950 border border-slate-700/80 focus:border-purple-400 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none transition-colors">
+                                           class="w-full min-w-0 bg-slate-950 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Baris 3: Dropzone Berkas BAST & Catatan Tambahan -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-2">
+                        <!-- Baris 4: Dropzone Berkas BAST & Catatan Tambahan -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
                             <!-- Custom Bespoke File Dropzone -->
-                            <div>
-                                <label class="block text-[11px] font-bold text-slate-300 mb-1.5">
+                            <div class="min-w-0">
+                                <label class="block text-[11px] font-bold text-slate-200 mb-1.5">
                                     Berkas Fisik BAST Bertanda Tangan (Scan / PDF)
                                 </label>
                                 
@@ -225,7 +234,7 @@
                                        @change="handleTerminasiFileChange($event)">
 
                                 <!-- Dropzone Box -->
-                                <div class="rounded-xl border-2 border-dashed transition-all p-3 text-center flex flex-col items-center justify-center min-h-[110px]"
+                                <div class="rounded-xl border-2 border-dashed transition-all p-4 text-center flex flex-col items-center justify-center min-h-[115px]"
                                      :class="isDraggingTerminasi 
                                         ? 'border-purple-400 bg-purple-500/15' 
                                         : (terminasiForm.berkas_ba_terminasi ? 'border-purple-500/40 bg-purple-950/20' : 'border-slate-700/80 hover:border-purple-400/60 bg-slate-900/60 hover:bg-slate-900')"
@@ -235,7 +244,7 @@
 
                                     <!-- Keadaan 1: Belum Ada File Dipilih -->
                                     <template x-if="!terminasiForm.berkas_ba_terminasi">
-                                        <div class="cursor-pointer space-y-1 w-full" @click="$refs.fileInputTerminasi.click()">
+                                        <div class="cursor-pointer space-y-1.5 w-full" @click="$refs.fileInputTerminasi.click()">
                                             <div class="w-8 h-8 rounded-full bg-purple-500/15 text-purple-300 flex items-center justify-center mx-auto text-base">
                                                 📁
                                             </div>
@@ -251,17 +260,17 @@
                                     <!-- Keadaan 2: File Telah Dipilih -->
                                     <template x-if="terminasiForm.berkas_ba_terminasi">
                                         <div class="w-full space-y-2">
-                                            <div class="flex items-center justify-between p-2 rounded-lg bg-slate-900 border border-purple-500/30 text-left">
-                                                <div class="flex items-center space-x-2.5 overflow-hidden">
+                                            <div class="flex items-center justify-between p-2.5 rounded-lg bg-slate-900 border border-purple-500/30 text-left">
+                                                <div class="flex items-center space-x-2.5 overflow-hidden min-w-0">
                                                     <span class="text-lg shrink-0">📄</span>
-                                                    <div class="overflow-hidden">
-                                                        <p class="text-xs font-bold text-white truncate max-w-[210px]" x-text="terminasiForm.berkas_ba_terminasi.name"></p>
+                                                    <div class="overflow-hidden min-w-0">
+                                                        <p class="text-xs font-bold text-white truncate" x-text="terminasiForm.berkas_ba_terminasi.name"></p>
                                                         <p class="text-[10px] text-purple-300 font-mono" x-text="(terminasiForm.berkas_ba_terminasi.size / 1024).toFixed(1) + ' KB'"></p>
                                                     </div>
                                                 </div>
                                                 <button type="button" @click="removeTerminasiFile()" 
                                                         title="Hapus file"
-                                                        class="w-6 h-6 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 flex items-center justify-center text-xs transition-colors shrink-0 cursor-pointer">
+                                                        class="w-6 h-6 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 flex items-center justify-center text-xs transition-colors shrink-0 cursor-pointer ml-2">
                                                     ✕
                                                 </button>
                                             </div>
@@ -275,13 +284,13 @@
                             </div>
 
                             <!-- Catatan Tambahan -->
-                            <div>
-                                <label class="block text-[11px] font-bold text-slate-300 mb-1.5">
+                            <div class="min-w-0 flex flex-col">
+                                <label class="block text-[11px] font-bold text-slate-200 mb-1.5">
                                     Catatan Tambahan / Alasan Pengembalian
                                 </label>
                                 <textarea x-model="terminasiForm.catatan_terminasi" rows="4"
                                           placeholder="Contoh: Masa konsesi/sewa telah selesai, seluruh unit aset ditarik dan diserahkan dalam keadaan berfungsi normal beserta kelengkapan aksesoris..."
-                                          class="w-full bg-slate-900 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none transition-all resize-none leading-relaxed"></textarea>
+                                          class="w-full min-w-0 flex-1 bg-slate-900 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none transition-all resize-none leading-relaxed shadow-inner"></textarea>
                             </div>
                         </div>
                     </div>

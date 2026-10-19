@@ -2162,6 +2162,11 @@ Route::middleware('auth')->group(function () {
                     }
                 }
 
+                $resolvedObjekNibar = $data['objek_nibar'] ?? null;
+                if (empty($resolvedObjekNibar) && !empty($data['objek_register_id'])) {
+                    $resolvedObjekNibar = \App\Models\AstapRegister::where('id', $data['objek_register_id'])->value('nibar');
+                }
+
                 $astapPayload = [
                     'nama_barang'               => $data['nama_barang'],
                     'jenis_astap_id'            => $data['jenis_astap_id'],
@@ -2201,7 +2206,7 @@ Route::middleware('auth')->group(function () {
                         'dokumen_path'       => $dokumenPath,
                         'objek_astap_id'     => $data['objek_astap_id'] ?? null,
                         'objek_register_id'  => $data['objek_register_id'] ?? null,
-                        'objek_nibar'        => $data['objek_nibar'] ?? null,
+                        'objek_nibar'        => $resolvedObjekNibar,
                     ],
                 ];
 
@@ -2368,7 +2373,7 @@ Route::middleware('auth')->group(function () {
 
                 $astapPayload['alamat_barang'] = $resolvedAlamat;
 
-                $item = \Illuminate\Support\Facades\DB::transaction(function () use ($astapPayload, $data, $totalVolume, $totalRealisasi, $tahun, $kondisiItem, $mesinItems, $dokumenPath, $request, $kibCategory, $kode108Clean) {
+                $item = \Illuminate\Support\Facades\DB::transaction(function () use ($astapPayload, $data, $totalVolume, $totalRealisasi, $tahun, $kondisiItem, $mesinItems, $dokumenPath, $request, $kibCategory, $kode108Clean, $resolvedObjekNibar) {
                     $item = \App\Models\Astap::create($astapPayload);
 
                     // Buat AstapRegister untuk setiap unit barang kemitraan
@@ -2631,7 +2636,7 @@ Route::middleware('auth')->group(function () {
                         'astap_id'          => $item->id,
                         'objek_astap_id'    => $data['objek_astap_id'] ?? null,
                         'objek_register_id' => $data['objek_register_id'] ?? null,
-                        'objek_nibar'       => $data['objek_nibar'] ?? null,
+                        'objek_nibar'       => $resolvedObjekNibar,
                         'mitra_nama'        => $data['mitra_nama'],
                         'mitra_pimpinan'    => $data['mitra_pimpinan'] ?? null,
                         'mitra_alamat'      => $data['mitra_alamat'] ?? null,
@@ -3173,13 +3178,18 @@ Route::middleware('auth')->group(function () {
                     $filename = 'BAST_KEMITRAAN_' . time() . '_' . \Illuminate\Support\Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $file->getClientOriginalExtension();
                     $dokumenPath = $file->storeAs('dokumen_kemitraan', $filename, 'public');
                 }
+                $resolvedObjekNibar = $data['objek_nibar'] ?? null;
+                if (empty($resolvedObjekNibar) && !empty($data['objek_register_id'])) {
+                    $resolvedObjekNibar = \App\Models\AstapRegister::where('id', $data['objek_register_id'])->value('nibar');
+                }
+
                 $specJson['dokumen_path'] = $dokumenPath;
                 $specJson['objek_astap_id'] = $data['objek_astap_id'] ?? null;
                 $specJson['objek_register_id'] = $data['objek_register_id'] ?? null;
-                $specJson['objek_nibar'] = $data['objek_nibar'] ?? null;
+                $specJson['objek_nibar'] = $resolvedObjekNibar;
 
                 $linkedAsetMitrasCount = 0;
-                \Illuminate\Support\Facades\DB::transaction(function () use ($astap, $data, $specJson, $resolvedAlamat, $totalVolume, $totalRealisasi, $hargaSatuan, $tahun, $kondisiItem, $isExtracom, $dokumenPath, $request, $kibCategory, &$linkedAsetMitrasCount) {
+                \Illuminate\Support\Facades\DB::transaction(function () use ($astap, $data, $specJson, $resolvedAlamat, $totalVolume, $totalRealisasi, $hargaSatuan, $tahun, $kondisiItem, $isExtracom, $dokumenPath, $request, $kibCategory, &$linkedAsetMitrasCount, $resolvedObjekNibar) {
                     $astap->update([
                         'nama_barang'          => $data['nama_barang'],
                         'jenis_astap_id'       => $data['jenis_astap_id'],
@@ -3206,7 +3216,7 @@ Route::middleware('auth')->group(function () {
                     $kemitraan->fill([
                         'objek_astap_id'    => $data['objek_astap_id'] ?? null,
                         'objek_register_id' => $data['objek_register_id'] ?? null,
-                        'objek_nibar'       => $data['objek_nibar'] ?? null,
+                        'objek_nibar'       => $resolvedObjekNibar,
                         'mitra_nama'       => $data['mitra_nama'],
                         'mitra_pimpinan'   => $data['mitra_pimpinan'] ?? null,
                         'mitra_alamat'     => $data['mitra_alamat'] ?? null,
