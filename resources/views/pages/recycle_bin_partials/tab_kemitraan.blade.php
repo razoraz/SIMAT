@@ -82,6 +82,57 @@
             </div>
         </template>
 
+        <!-- LEVEL 2 SUB-FILTER: (Semua NIBAR vs Dimanfaatkan vs Ditambahkan) saat Unit Fisik NIBAR aktif -->
+        <template x-if="kemitraanMainTab === 'nibar'">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 mb-5 border-b border-slate-800/60 gap-3">
+                <div class="flex items-center space-x-1.5 p-1 bg-slate-950/60 rounded-2xl border border-slate-800/80 shrink-0">
+                    <!-- Sub-Tab 1: Semua NIBAR -->
+                    <button type="button" @click="changeKemitraanNibarSubTab('all')"
+                        :style="kemitraanNibarSubTab === 'all' ? 'border-color: #10b981; box-shadow: 0 0 12px rgba(16, 185, 129, 0.25);' : ''"
+                        :class="kemitraanNibarSubTab === 'all' 
+                            ? 'bg-emerald-500/15 border border-emerald-500 text-emerald-300 font-bold' 
+                            : 'border border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'"
+                        class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer whitespace-nowrap shrink-0">
+                        <span>🏷️ Semua NIBAR</span>
+                        <span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-black"
+                            :class="kemitraanNibars.length > 0 ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-400'"
+                            x-text="kemitraanNibars.length">0</span>
+                    </button>
+
+                    <!-- Sub-Tab 2: NIBAR Dimanfaatkan -->
+                    <button type="button" @click="changeKemitraanNibarSubTab('dimanfaatkan')"
+                        :style="kemitraanNibarSubTab === 'dimanfaatkan' ? 'border-color: #06b6d4; box-shadow: 0 0 12px rgba(6, 182, 212, 0.25);' : ''"
+                        :class="kemitraanNibarSubTab === 'dimanfaatkan' 
+                            ? 'bg-cyan-500/15 border border-cyan-500 text-cyan-300 font-bold' 
+                            : 'border border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'"
+                        class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer whitespace-nowrap shrink-0">
+                        <span>🏛️ NIBAR Dimanfaatkan</span>
+                        <span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-black"
+                            :class="kemitraanNibarDimanfaatkan.length > 0 ? 'bg-cyan-500 text-slate-950' : 'bg-slate-800 text-slate-400'"
+                            x-text="kemitraanNibarDimanfaatkan.length">0</span>
+                    </button>
+
+                    <!-- Sub-Tab 3: NIBAR Ditambahkan -->
+                    <button type="button" @click="changeKemitraanNibarSubTab('ditambahkan')"
+                        :style="kemitraanNibarSubTab === 'ditambahkan' ? 'border-color: #10b981; box-shadow: 0 0 12px rgba(16, 185, 129, 0.25);' : ''"
+                        :class="kemitraanNibarSubTab === 'ditambahkan' 
+                            ? 'bg-emerald-500/15 border border-emerald-500 text-emerald-300 font-bold' 
+                            : 'border border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'"
+                        class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer whitespace-nowrap shrink-0">
+                        <span>📦 NIBAR Ditambahkan</span>
+                        <span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-black"
+                            :class="kemitraanNibarDitambahkan.length > 0 ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-400'"
+                            x-text="kemitraanNibarDitambahkan.length">0</span>
+                    </button>
+                </div>
+
+                <div class="text-xs text-slate-400 flex items-center space-x-2">
+                    <span class="inline-block w-2 h-2 rounded-full" :class="kemitraanNibarSubTab === 'dimanfaatkan' ? 'bg-cyan-400 animate-pulse' : (kemitraanNibarSubTab === 'ditambahkan' ? 'bg-emerald-400 animate-pulse' : 'bg-teal-400 animate-pulse')"></span>
+                    <span class="text-[11px] font-medium" x-text="kemitraanNibarSubTab === 'dimanfaatkan' ? 'Filter: NIBAR Satuan dari Aset BMD Dimanfaatkan Rekanan' : (kemitraanNibarSubTab === 'ditambahkan' ? 'Filter: NIBAR Satuan dari Aset Ditambahkan Rekanan (KSO)' : 'Menampilkan Seluruh Register Fisik NIBAR Kemitraan Terhapus')"></span>
+                </div>
+            </div>
+        </template>
+
         <!-- ========================================================================= -->
         <!-- SUB-KONTEN 1: TABEL ASET BMD RSUD DIMANFAATKAN MITRA (CYAN THEME)          -->
         <!-- ========================================================================= -->
@@ -390,6 +441,9 @@
                                         <div class="flex items-center space-x-1.5 mt-0.5">
                                             <span class="font-mono text-cyan-400 text-[11px]" x-text="item.kode_108"></span>
                                             <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-800 text-slate-300" x-text="item.kategori"></span>
+                                            <span class="px-1.5 py-0.2 rounded text-[9px] font-bold border"
+                                                :class="item.tipe_kemitraan === 'ditambahkan' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'"
+                                                x-text="item.tipe_kemitraan === 'ditambahkan' ? 'Ditambahkan' : 'Dimanfaatkan'"></span>
                                         </div>
                                     </td>
                                     <td class="px-4 py-4">

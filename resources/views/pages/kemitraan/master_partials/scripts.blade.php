@@ -1592,10 +1592,16 @@
                 }
             },
 
+            // Helper untuk mengambil hanya unit register aktif (tidak soft-deleted)
+            getActiveRegisters(astap) {
+                if (!astap || !Array.isArray(astap.registers)) return [];
+                return astap.registers.filter(r => !(r.is_deleted == 1 || r.is_deleted === true || r.is_deleted === '1'));
+            },
+
             // Hitung statistik kondisi aset terdaftar (Standar 3 Kondisi: Baik, Kurang Baik, Rusak Berat)
             getKondisiStats(item) {
                 if (!item) return { total: 0, baik: 0, kurang_baik: 0, rusak_berat: 0, pct_baik: 100, pct_kb: 0, pct_rb: 0, kondisi_dominan: 'Baik', is_multi: false, text: 'Baik (100%)', badge_class: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30', dot_class: 'bg-emerald-400' };
-                const regs = item.registers || [];
+                const regs = this.getActiveRegisters(item);
                 const total = regs.length;
                 if (total === 0) {
                     const k = item.kondisi || item.kondisi_barang || 'Baik';
@@ -1669,7 +1675,7 @@
             getRincianKondisiStats(astap, idx = 0, type = null) {
                 if (!astap) return { total: 0, text: 'Baik (100%)', pct_baik: 100, pct_kb: 0, pct_rr: 0, pct_rb: 0, is_multi: false, badge_class: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' };
 
-                let regs = astap.registers || [];
+                let regs = this.getActiveRegisters(astap);
                 let items = [];
 
                 if (type) {
@@ -1788,8 +1794,9 @@
 
             // Ambil info NIBAR terdaftar untuk kartu rincian spesifikasi
             getRincianNibar(astap, idx = 0, type = null) {
-                if (!astap || !astap.registers || astap.registers.length === 0) return null;
-                let regs = astap.registers;
+                if (!astap || !astap.registers) return null;
+                let regs = this.getActiveRegisters(astap);
+                if (regs.length === 0) return null;
 
                 if (type) {
                     let items = [];
@@ -1959,7 +1966,7 @@
                     const toSync = valid.length > 0 ? valid : spec.tanah_items;
                     const sumQty = toSync.reduce((s, it) => s + Math.max(1, parseInt(it.tanah_jumlah_bidang || it.tanah_jumlah_barang) || 1), 0);
                     const targetTotal = Math.max(
-                        (astap.registers && astap.registers.length > 0) ? astap.registers.length : 0,
+                        this.getActiveRegisters(astap).length,
                         parseInt(astap.jumlah_volume) || 0,
                         sumQty,
                         toSync.length
@@ -2010,7 +2017,7 @@
                     const toSync = valid.length > 0 ? valid : spec.mesin_items;
                     const sumQty = toSync.reduce((s, it) => s + Math.max(1, parseInt(it.mesin_jumlah_barang) || 1), 0);
                     const targetTotal = Math.max(
-                        (astap.registers && astap.registers.length > 0) ? astap.registers.length : 0,
+                        this.getActiveRegisters(astap).length,
                         parseInt(astap.jumlah_volume) || 0,
                         sumQty,
                         toSync.length
@@ -2031,7 +2038,7 @@
                     const toSync = valid.length > 0 ? valid : spec.gedung_items;
                     const sumQty = toSync.reduce((s, it) => s + Math.max(1, parseInt(it.gedung_jumlah_bangunan) || 1), 0);
                     const targetTotal = Math.max(
-                        (astap.registers && astap.registers.length > 0) ? astap.registers.length : 0,
+                        this.getActiveRegisters(astap).length,
                         parseInt(astap.jumlah_volume) || 0,
                         sumQty,
                         toSync.length
@@ -2052,7 +2059,7 @@
                     const toSync = valid.length > 0 ? valid : spec.jaringan_items;
                     const sumQty = toSync.reduce((s, it) => s + Math.max(1, parseInt(it.jaringan_jumlah || it.jaringan_jumlah_barang) || 1), 0);
                     const targetTotal = Math.max(
-                        (astap.registers && astap.registers.length > 0) ? astap.registers.length : 0,
+                        this.getActiveRegisters(astap).length,
                         parseInt(astap.jumlah_volume) || 0,
                         sumQty,
                         toSync.length
@@ -2073,7 +2080,7 @@
                     const toSync = valid.length > 0 ? valid : spec.lainnya_items;
                     const sumQty = toSync.reduce((s, it) => s + Math.max(1, parseInt(it.lainnya_jumlah || it.lainnya_jumlah_barang) || 1), 0);
                     const targetTotal = Math.max(
-                        (astap.registers && astap.registers.length > 0) ? astap.registers.length : 0,
+                        this.getActiveRegisters(astap).length,
                         parseInt(astap.jumlah_volume) || 0,
                         sumQty,
                         toSync.length
@@ -2107,6 +2114,7 @@
                 if (!this.selectedAstapDetail || !this.selectedAstapDetail.registers) return [];
                 const query = (this.detailSearchQuery || '').toLowerCase().trim();
                 const filtered = this.selectedAstapDetail.registers.filter(reg => {
+                    if (reg.is_deleted == 1 || reg.is_deleted === true || reg.is_deleted === '1') return false;
                     const matchKondisi = this.detailKondisiFilter === 'all' || reg.kondisi === this.detailKondisiFilter;
                     
                     let matchPenempatan = true;

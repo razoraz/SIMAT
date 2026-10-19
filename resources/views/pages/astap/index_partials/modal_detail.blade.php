@@ -338,7 +338,16 @@
                                         'text-indigo-400': getEffectiveKibCategory(selectedAstapDetail) === 'ATB',
                                         'text-amber-300': selectedAstapDetail.category === 'EXTRACOM'
                                     }">
-                                    <span>🔍 Rincian Spesifikasi Belanja Modal (Langkah 3 - <span x-text="selectedAstapDetail.category === 'EXTRACOM' ? 'EXTRACOM' : (selectedAstapDetail.category === 'KEMITRAAN' ? 'KEMITRAAN: ' + getEffectiveKibCategory(selectedAstapDetail) : getEffectiveKibCategory(selectedAstapDetail))"></span>)</span>
+                                    <span x-text="(() => {
+                                        let asal = 'Belanja Modal';
+                                        const sd = String(selectedAstapDetail.sumber_dana || '').toUpperCase();
+                                        const cat = String(selectedAstapDetail.category || '').toUpperCase();
+                                        if (selectedAstapDetail.kemitraan || cat.includes('KEMITRAAN') || sd.includes('KEMITRAAN')) asal = 'Kemitraan Pihak Ketiga';
+                                        else if (sd.includes('HIBAH') || cat.includes('HIBAH')) asal = 'Hibah';
+                                        else if (sd.includes('MUTASI') || cat.includes('MUTASI')) asal = 'Mutasi';
+                                        else if (cat === 'EXTRACOM') asal = 'Ekstrakomtabel';
+                                        return '🔍 Rincian Spesifikasi ' + asal + ' (Langkah 3 - ' + (cat === 'EXTRACOM' ? 'EXTRACOM' : (cat === 'KEMITRAAN' ? 'KEMITRAAN: ' + getEffectiveKibCategory(selectedAstapDetail) : getEffectiveKibCategory(selectedAstapDetail))) + ')';
+                                    })()"></span>
                                 </h4>
                                 <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400" x-text="'Spesifikasi Khusus ' + (selectedAstapDetail.category === 'EXTRACOM' ? 'EXTRACOM' : getEffectiveKibCategory(selectedAstapDetail))"></span>
                             </div>
@@ -366,7 +375,11 @@
                                                         </div>
                                                         <div class="text-[11px] font-mono">
                                                             <span class="text-slate-400">Total Realisasi: </span>
-                                                            <strong class="text-emerald-400 font-bold" x-text="'Rp ' + (Number(tItem.tanah_nilai_perencanaan || 0) + Number(tItem.tanah_nilai_fisik || 0) + Number(tItem.tanah_nilai_pengawasan || 0)).toLocaleString('id-ID')"></strong>
+                                                            <strong class="text-emerald-400 font-bold" x-text="'Rp ' + (
+                                                                (Number(tItem.tanah_nilai_perencanaan || 0) + Number(tItem.tanah_nilai_fisik || 0) + Number(tItem.tanah_nilai_pengawasan || 0)) > 0
+                                                                ? (Number(tItem.tanah_nilai_perencanaan || 0) + Number(tItem.tanah_nilai_fisik || 0) + Number(tItem.tanah_nilai_pengawasan || 0))
+                                                                : Number(tItem.tanah_nilai_satuan || tItem.tanah_nilai_fisik || (selectedAstapDetail.total_realisasi / (getTanahItemsForDetail(selectedAstapDetail).length || 1)) || 0)
+                                                            ).toLocaleString('id-ID')"></strong>
                                                         </div>
                                                     </div>
                                                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[10.5px]">
@@ -385,8 +398,13 @@
                                                         </div>
                                                         <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                                             <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">💰 Rincian Komponen Nilai</span>
-                                                            <span class="text-slate-200 font-medium block text-[10px]" x-text="'Fisik: Rp ' + Number(tItem.tanah_nilai_fisik || 0).toLocaleString('id-ID')"></span>
-                                                            <span class="text-slate-400 text-[9px]" x-text="'Pln: ' + Number(tItem.tanah_nilai_perencanaan || 0).toLocaleString('id-ID') + ' • Was: ' + Number(tItem.tanah_nilai_pengawasan || 0).toLocaleString('id-ID')"></span>
+                                                            <span class="text-slate-200 font-medium block text-[10px]" x-text="'Fisik / Satuan: Rp ' + Number(tItem.tanah_nilai_fisik || tItem.tanah_nilai_satuan || 0).toLocaleString('id-ID')"></span>
+                                                            <template x-if="Number(tItem.tanah_nilai_perencanaan || 0) > 0 || Number(tItem.tanah_nilai_pengawasan || 0) > 0">
+                                                                <span class="text-slate-400 text-[9px]" x-text="'Pln: ' + Number(tItem.tanah_nilai_perencanaan || 0).toLocaleString('id-ID') + ' • Was: ' + Number(tItem.tanah_nilai_pengawasan || 0).toLocaleString('id-ID')"></span>
+                                                            </template>
+                                                            <template x-if="!(Number(tItem.tanah_nilai_perencanaan || 0) > 0 || Number(tItem.tanah_nilai_pengawasan || 0) > 0)">
+                                                                <span class="text-cyan-400/90 text-[9px] font-mono">Nilai Satuan / Appraisal</span>
+                                                            </template>
                                                         </div>
                                                         <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                                             <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">📍 Letak / Alamat Lokasi</span>
@@ -583,13 +601,17 @@
                                                             </template>
                                                         </div>
                                                         <div class="flex items-center space-x-3 text-[10.5px] font-mono">
-                                                            <span class="text-slate-400">Luas: <strong class="text-cyan-300" x-text="(gItem.gedung_luas_m2 || 0) + ' M²'"></strong></span>
+                                                            <span class="text-slate-400">Luas: <strong class="text-cyan-300" x-text="(gItem.gedung_luas_lantai || gItem.gedung_luas_lantai_m2 || gItem.gedung_luas_m2 || selectedAstapDetail.spesifikasi_json?.luas_lantai_m2 || selectedAstapDetail.spesifikasi_json?.luas_m2 || 0) + ' M²'"></strong></span>
                                                             <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-semibold border inline-flex items-center gap-1.5"
                                                                   :class="getRincianKondisiStats(selectedAstapDetail, gIdx, 'gedung_items').badge_class">
                                                                 <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="getRincianKondisiStats(selectedAstapDetail, gIdx, 'gedung_items').dot_class"></span>
                                                                 <span x-text="'Kondisi: ' + getRincianKondisiStats(selectedAstapDetail, gIdx, 'gedung_items').text"></span>
                                                             </span>
-                                                            <span class="text-emerald-400 font-bold" x-text="'Rp ' + Number(Number(gItem.gedung_nilai_perencanaan || 0) + Number(gItem.gedung_nilai_fisik || 0) + Number(gItem.gedung_nilai_pengawasan || 0) + Number(gItem.gedung_nilai_ap || gItem.gedung_nilai_pip || 0)).toLocaleString('id-ID')"></span>
+                                                            <span class="text-emerald-400 font-bold" x-text="'Rp ' + Number(
+                                                                (Number(gItem.gedung_nilai_perencanaan || 0) + Number(gItem.gedung_nilai_fisik || 0) + Number(gItem.gedung_nilai_pengawasan || 0) + Number(gItem.gedung_nilai_ap || gItem.gedung_nilai_pip || 0)) > 0
+                                                                ? (Number(gItem.gedung_nilai_perencanaan || 0) + Number(gItem.gedung_nilai_fisik || 0) + Number(gItem.gedung_nilai_pengawasan || 0) + Number(gItem.gedung_nilai_ap || gItem.gedung_nilai_pip || 0))
+                                                                : (Number(gItem.gedung_nilai_satuan || gItem.gedung_nilai_fisik || (selectedAstapDetail.total_realisasi / (getGedungItemsForDetail(selectedAstapDetail).length || 1)) || 0))
+                                                            ).toLocaleString('id-ID')"></span>
                                                         </div>
                                                     </div>
                                                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[10.5px]">
@@ -605,8 +627,13 @@
                                                         </div>
                                                         <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                                             <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">💰 Komponen Nilai</span>
-                                                            <span class="text-slate-300 block text-[9.5px]" x-text="'Fisik: Rp ' + Number(gItem.gedung_nilai_fisik || 0).toLocaleString('id-ID')"></span>
-                                                            <span class="text-slate-400 text-[9px]" x-text="'Pln: ' + Number(gItem.gedung_nilai_perencanaan || 0).toLocaleString('id-ID') + ' • Pws: ' + Number(gItem.gedung_nilai_pengawasan || 0).toLocaleString('id-ID') + ' • AP: ' + Number(gItem.gedung_nilai_ap || gItem.gedung_nilai_pip || 0).toLocaleString('id-ID')"></span>
+                                                            <span class="text-slate-300 block text-[9.5px]" x-text="'Fisik / Satuan: Rp ' + Number(gItem.gedung_nilai_fisik || gItem.gedung_nilai_satuan || (selectedAstapDetail.total_realisasi / (getGedungItemsForDetail(selectedAstapDetail).length || 1)) || 0).toLocaleString('id-ID')"></span>
+                                                            <template x-if="Number(gItem.gedung_nilai_perencanaan || 0) > 0 || Number(gItem.gedung_nilai_pengawasan || 0) > 0 || Number(gItem.gedung_nilai_ap || gItem.gedung_nilai_pip || 0) > 0">
+                                                                <span class="text-slate-400 text-[9px]" x-text="'Pln: ' + Number(gItem.gedung_nilai_perencanaan || 0).toLocaleString('id-ID') + ' • Pws: ' + Number(gItem.gedung_nilai_pengawasan || 0).toLocaleString('id-ID') + ' • AP: ' + Number(gItem.gedung_nilai_ap || gItem.gedung_nilai_pip || 0).toLocaleString('id-ID')"></span>
+                                                            </template>
+                                                            <template x-if="!(Number(gItem.gedung_nilai_perencanaan || 0) > 0 || Number(gItem.gedung_nilai_pengawasan || 0) > 0 || Number(gItem.gedung_nilai_ap || gItem.gedung_nilai_pip || 0) > 0)">
+                                                                <span class="text-cyan-400/90 text-[9px] font-mono">Nilai Satuan / Appraisal</span>
+                                                            </template>
                                                         </div>
                                                         <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                                             <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">📍 Letak / Lokasi Fisik</span>
@@ -627,7 +654,7 @@
                                             </div>
                                             <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
                                                 <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📐 Luas Lantai Gedung</span>
-                                                <span class="text-white font-bold font-mono" x-text="(selectedAstapDetail.spesifikasi_json?.luas_m2 || selectedAstapDetail.volume_satuan || '-') + ' m²'"></span>
+                                                <span class="text-white font-bold font-mono" x-text="(selectedAstapDetail.spesifikasi_json?.luas_lantai_m2 || selectedAstapDetail.spesifikasi_json?.gedung_luas_lantai || selectedAstapDetail.spesifikasi_json?.luas_m2 || selectedAstapDetail.volume_satuan || '-') + ' m²'"></span>
                                             </div>
                                             <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
                                                 <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🌱 Status Hak Tanah Gedung</span>
@@ -685,7 +712,7 @@
                                                     </div>
                                                     <div class="text-[11px] font-mono">
                                                         <span class="text-slate-400">Total Realisasi: </span>
-                                                        <strong class="text-emerald-400 font-bold" x-text="'Rp ' + Number(Number(jItem.jaringan_nilai_perencanaan || 0) + Number(jItem.jaringan_nilai_fisik || 0) + Number(jItem.jaringan_nilai_pengawasan || 0) + Number(jItem.jaringan_nilai_ap || jItem.jaringan_nilai_pip || 0)).toLocaleString('id-ID')"></strong>
+                                                        <strong class="text-emerald-400 font-bold" x-text="'Rp ' + Number((Number(jItem.jaringan_nilai_perencanaan || 0) + Number(jItem.jaringan_nilai_fisik || 0) + Number(jItem.jaringan_nilai_pengawasan || 0) + Number(jItem.jaringan_nilai_ap || jItem.jaringan_nilai_pip || 0)) || Number(jItem.jaringan_nilai_satuan || jItem.jaringan_nilai_fisik || selectedAstapDetail.harga_satuan || 0)).toLocaleString('id-ID')"></strong>
                                                     </div>
                                                 </div>
 
@@ -715,7 +742,7 @@
                                                     <!-- Kolom 4: Komponen Nilai & Lokasi -->
                                                     <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                                         <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">💰 Nilai Fisik &amp; Lokasi</span>
-                                                        <span class="text-emerald-300 font-medium block text-[10px]" x-text="'Fisik: Rp ' + Number(jItem.jaringan_nilai_fisik || 0).toLocaleString('id-ID')"></span>
+                                                        <span class="text-emerald-300 font-medium block text-[10px]" x-text="'Fisik: Rp ' + Number(jItem.jaringan_nilai_fisik || jItem.jaringan_nilai_satuan || selectedAstapDetail.harga_satuan || 0).toLocaleString('id-ID')"></span>
                                                         <span class="text-teal-300 font-medium block truncate text-[9.5px]" :title="jItem.jaringan_alamat" x-text="jItem.jaringan_alamat || selectedAstapDetail.alamat_barang || '-'"></span>
                                                     </div>
                                                 </div>
@@ -767,7 +794,7 @@
                                                     </div>
                                                     <div class="text-[11px] font-mono">
                                                         <span class="text-slate-400">Subtotal: </span>
-                                                        <strong class="text-emerald-400 font-bold" x-text="'Rp ' + Number(((parseFloat(lItem.lainnya_jumlah_barang) || 1) * (parseFloat(lItem.lainnya_nilai_satuan) || 0)) + (parseFloat(lItem.lainnya_administrasi_proyek) || 0)).toLocaleString('id-ID')"></strong>
+                                                        <strong class="text-emerald-400 font-bold" x-text="'Rp ' + Number(((parseFloat(lItem.lainnya_jumlah_barang) || 1) * (parseFloat(lItem.lainnya_nilai_satuan || lItem.nilai_satuan || selectedAstapDetail.harga_satuan) || 0)) + (parseFloat(lItem.lainnya_administrasi_proyek) || 0)).toLocaleString('id-ID')"></strong>
                                                     </div>
                                                 </div>
 
@@ -812,7 +839,7 @@
                                                     <!-- Kolom 3: Nilai Satuan & Adm -->
                                                     <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                                         <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">💰 Nilai Satuan &amp; Adm</span>
-                                                        <span class="text-emerald-300 font-medium block text-[10px]" x-text="'Rp ' + Number(lItem.lainnya_nilai_satuan || 0).toLocaleString('id-ID')"></span>
+                                                        <span class="text-emerald-300 font-medium block text-[10px]" x-text="'Rp ' + Number(lItem.lainnya_nilai_satuan || lItem.nilai_satuan || selectedAstapDetail.harga_satuan || 0).toLocaleString('id-ID')"></span>
                                                         <span class="text-slate-400 text-[9px]" x-text="'Adm: Rp ' + Number(lItem.lainnya_administrasi_proyek || 0).toLocaleString('id-ID')"></span>
                                                     </div>
 
@@ -873,7 +900,7 @@
                                                     </div>
                                                     <div class="text-[11px] font-mono">
                                                         <span class="text-slate-400">Subtotal Nilai: </span>
-                                                        <strong class="text-rose-400 font-bold" x-text="'Rp ' + Number((parseFloat(kItem.kdp_nilai_perencanaan) || 0) + (parseFloat(kItem.kdp_nilai_fisik) || 0) + (parseFloat(kItem.kdp_nilai_pengawasan) || 0) + (parseFloat(kItem.kdp_nilai_ap) || 0)).toLocaleString('id-ID')"></strong>
+                                                        <strong class="text-rose-400 font-bold" x-text="'Rp ' + Number(((parseFloat(kItem.kdp_nilai_perencanaan) || 0) + (parseFloat(kItem.kdp_nilai_fisik) || 0) + (parseFloat(kItem.kdp_nilai_pengawasan) || 0) + (parseFloat(kItem.kdp_nilai_ap) || 0)) || (parseFloat(kItem.kdp_nilai_satuan) || parseFloat(kItem.kdp_nilai_fisik) || selectedAstapDetail.harga_satuan || 0)).toLocaleString('id-ID')"></strong>
                                                     </div>
                                                 </div>
 
@@ -910,7 +937,7 @@
                                                     <!-- Kolom 3: Komponen Nilai Rinci -->
                                                     <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                                         <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">💰 Komponen Biaya</span>
-                                                        <span class="text-slate-300 block text-[9.5px]" x-text="'Fisik: Rp ' + Number(kItem.kdp_nilai_fisik || 0).toLocaleString('id-ID')"></span>
+                                                        <span class="text-slate-300 block text-[9.5px]" x-text="'Fisik: Rp ' + Number(kItem.kdp_nilai_fisik || kItem.kdp_nilai_satuan || selectedAstapDetail.harga_satuan || 0).toLocaleString('id-ID')"></span>
                                                         <span class="text-slate-400 text-[9px]" x-text="'Pln: ' + Number(kItem.kdp_nilai_perencanaan || 0).toLocaleString('id-ID') + ' • Pws: ' + Number(kItem.kdp_nilai_pengawasan || 0).toLocaleString('id-ID') + ' • AP: ' + Number(kItem.kdp_nilai_ap || 0).toLocaleString('id-ID')"></span>
                                                     </div>
 
@@ -963,7 +990,7 @@
                                                     </div>
                                                     <div class="text-[11px] font-mono">
                                                         <span class="text-slate-400">Subtotal: </span>
-                                                        <strong class="text-emerald-400 font-bold" x-text="'Rp ' + Number(((parseFloat(aItem.atb_jumlah) || 1) * (parseFloat(aItem.atb_nilai_satuan) || 0)) + (parseFloat(aItem.atb_administrasi_proyek) || 0)).toLocaleString('id-ID')"></strong>
+                                                        <strong class="text-emerald-400 font-bold" x-text="'Rp ' + Number(((parseFloat(aItem.atb_jumlah) || 1) * (parseFloat(aItem.atb_nilai_satuan || aItem.nilai_satuan || selectedAstapDetail.harga_satuan) || 0)) + (parseFloat(aItem.atb_administrasi_proyek) || 0)).toLocaleString('id-ID')"></strong>
                                                     </div>
                                                 </div>
 
@@ -988,7 +1015,7 @@
                                                     <!-- Kolom 3: Nilai Satuan & Adm -->
                                                     <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                                         <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">💰 Nilai Satuan &amp; Adm</span>
-                                                        <span class="text-emerald-300 font-medium block text-[10px]" x-text="'Rp ' + Number(aItem.atb_nilai_satuan || 0).toLocaleString('id-ID')"></span>
+                                                        <span class="text-emerald-300 font-medium block text-[10px]" x-text="'Rp ' + Number(aItem.atb_nilai_satuan || aItem.nilai_satuan || selectedAstapDetail.harga_satuan || 0).toLocaleString('id-ID')"></span>
                                                         <span class="text-slate-400 text-[9px]" x-text="'Adm: Rp ' + Number(aItem.atb_administrasi_proyek || 0).toLocaleString('id-ID')"></span>
                                                     </div>
 

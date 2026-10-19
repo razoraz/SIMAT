@@ -13107,13 +13107,19 @@
                     return 'KIB B';
                 },
 
+                // Helper untuk mengambil hanya unit register aktif (tidak soft-deleted)
+                getActiveRegisters(astap) {
+                    if (!astap || !Array.isArray(astap.registers)) return [];
+                    return astap.registers.filter(r => !(r.is_deleted == 1 || r.is_deleted === true || r.is_deleted === '1'));
+                },
+
                 getTanahItemsForDetail(astap) {
                     if (!astap) return [];
                     let spec = astap.spesifikasi_json;
                     if (typeof spec === 'string') {
                         try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
                     }
-                    const targetTotal = (astap.registers && astap.registers.length > 0) ? astap.registers.length : (parseInt(astap.jumlah_volume) || 1);
+                    const targetTotal = (this.getActiveRegisters(astap).length > 0) ? this.getActiveRegisters(astap).length : (parseInt(astap.jumlah_volume) || 1);
                     if (spec && Array.isArray(spec.tanah_items) && spec.tanah_items.length > 0) {
                         const valid = spec.tanah_items.filter(t => t.tanah_luas_m2 || t.tanah_hak || t.tanah_sertifikat_no || (parseFloat(t.tanah_nilai_satuan) > 0));
                         const toSync = valid.length > 0 ? valid : spec.tanah_items;
@@ -13128,7 +13134,7 @@
                     if (typeof spec === 'string') {
                         try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
                     }
-                    const targetTotal = (astap.registers && astap.registers.length > 0) ? astap.registers.length : (parseInt(astap.jumlah_volume) || 1);
+                    const targetTotal = (this.getActiveRegisters(astap).length > 0) ? this.getActiveRegisters(astap).length : (parseInt(astap.jumlah_volume) || 1);
                     if (spec && Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0) {
                         const valid = spec.mesin_items.filter(m => m.mesin_nama_barang || m.mesin_merk || m.mesin_type || m.mesin_no_pabrik || (parseFloat(m.mesin_nilai_satuan) > 0));
                         const toSync = valid.length > 0 ? valid : spec.mesin_items;
@@ -13143,7 +13149,7 @@
                     if (typeof spec === 'string') {
                         try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
                     }
-                    const targetTotal = (astap.registers && astap.registers.length > 0) ? astap.registers.length : (parseInt(astap.jumlah_volume) || 1);
+                    const targetTotal = (this.getActiveRegisters(astap).length > 0) ? this.getActiveRegisters(astap).length : (parseInt(astap.jumlah_volume) || 1);
                     if (spec && Array.isArray(spec.gedung_items) && spec.gedung_items.length > 0) {
                         return this.syncRepeaterItemsWithVolume(spec.gedung_items, targetTotal, ['gedung_jumlah_bangunan']);
                     }
@@ -13156,7 +13162,7 @@
                     if (typeof spec === 'string') {
                         try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
                     }
-                    const targetTotal = (astap.registers && astap.registers.length > 0) ? astap.registers.length : (parseInt(astap.jumlah_volume) || 1);
+                    const targetTotal = (this.getActiveRegisters(astap).length > 0) ? this.getActiveRegisters(astap).length : (parseInt(astap.jumlah_volume) || 1);
                     if (spec && Array.isArray(spec.jaringan_items) && spec.jaringan_items.length > 0) {
                         return this.syncRepeaterItemsWithVolume(spec.jaringan_items, targetTotal, ['jaringan_jumlah', 'jaringan_jumlah_barang']);
                     }
@@ -13196,7 +13202,7 @@
                     if (typeof spec === 'string') {
                         try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
                     }
-                    const targetTotal = (astap.registers && astap.registers.length > 0) ? astap.registers.length : (parseInt(astap.jumlah_volume) || 1);
+                    const targetTotal = (this.getActiveRegisters(astap).length > 0) ? this.getActiveRegisters(astap).length : (parseInt(astap.jumlah_volume) || 1);
                     if (spec && Array.isArray(spec.kdp_items) && spec.kdp_items.length > 0) {
                         return this.syncRepeaterItemsWithVolume(spec.kdp_items, targetTotal, ['kdp_jumlah_bangunan']);
                     }
@@ -13233,7 +13239,7 @@
                     if (typeof spec === 'string') {
                         try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
                     }
-                    const targetTotal = (astap.registers && astap.registers.length > 0) ? astap.registers.length : (parseInt(astap.jumlah_volume) || 1);
+                    const targetTotal = (this.getActiveRegisters(astap).length > 0) ? this.getActiveRegisters(astap).length : (parseInt(astap.jumlah_volume) || 1);
                     if (spec && Array.isArray(spec.atb_items) && spec.atb_items.length > 0) {
                         return this.syncRepeaterItemsWithVolume(spec.atb_items, targetTotal, ['atb_jumlah']);
                     }
@@ -13263,7 +13269,7 @@
                     if (typeof spec === 'string') {
                         try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
                     }
-                    const targetTotal = (astap.registers && astap.registers.length > 0) ? astap.registers.length : (parseInt(astap.jumlah_volume) || 1);
+                    const targetTotal = (this.getActiveRegisters(astap).length > 0) ? this.getActiveRegisters(astap).length : (parseInt(astap.jumlah_volume) || 1);
                     if (spec && Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0) {
                         return this.syncRepeaterItemsWithVolume(spec.lainnya_items, targetTotal, ['lainnya_jumlah_barang']);
                     }
@@ -13347,7 +13353,7 @@
                 // Hitung statistik kondisi dari registers suatu aset (Hanya 3 Kondisi: Baik, Kurang Baik, Rusak Berat)
                 getKondisiStats(item) {
                     if (!item) return { total: 0, baik: 0, kurang_baik: 0, rusak_ringan: 0, rusak_berat: 0, pct_baik: 100, pct_kb: 0, pct_rr: 0, pct_rb: 0, kondisi_dominan: 'Baik', is_multi: false, text: 'Baik (100%)', badge_class: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30', dot_class: 'bg-emerald-400' };
-                    const regs = item.registers || [];
+                    const regs = this.getActiveRegisters(item);
                     const total = regs.length;
                     if (total === 0) {
                         const k = item.kondisi || item.kondisi_barang || 'Baik';
@@ -13424,7 +13430,7 @@
                 getRincianKondisiStats(astap, idx = 0, type = null) {
                     if (!astap) return { total: 0, text: 'Baik', pct_baik: 100, pct_kb: 0, pct_rb: 0, is_multi: false, badge_class: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30', dot_class: 'bg-emerald-400' };
 
-                    let regs = astap.registers || [];
+                    let regs = this.getActiveRegisters(astap);
                     let items = [];
 
                     // Jika ada multi-item dalam spesifikasi_json dan type diberikan
@@ -13552,9 +13558,9 @@
 
                 // Ambil info NIBAR terdaftar untuk kartu rincian spesifikasi (mendukung unit tunggal maupun rentang banyak unit)
                 getRincianNibar(astap, idx = 0, type = null) {
-                    if (!astap || !astap.registers || astap.registers.length === 0) return null;
-
-                    let regs = astap.registers;
+                    if (!astap || !astap.registers) return null;
+                    let regs = this.getActiveRegisters(astap);
+                    if (regs.length === 0) return null;
 
                     if (type) {
                         let items = [];

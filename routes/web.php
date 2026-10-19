@@ -3371,7 +3371,7 @@ Route::middleware('auth')->group(function () {
                     $specJson['kondisi'] = $overallKondisi;
                     $astap->update(['spesifikasi_json' => $specJson]);
 
-                    $registers = \App\Models\AstapRegister::where('astap_id', $astap->id)->orderBy('id')->get();
+                    $registers = \App\Models\AstapRegister::where('astap_id', $astap->id)->where('is_deleted', 0)->orderBy('id')->get();
                     foreach ($registers as $regIdx => $reg) {
                         $targetKondisi = isset($unitSpecs[$regIdx]) ? $unitSpecs[$regIdx]['kondisi'] : $overallKondisi;
 
@@ -3447,6 +3447,7 @@ Route::middleware('auth')->group(function () {
                         }
                     } elseif ($targetVolume < $currentRegCount) {
                         $excessRegisters = \App\Models\AstapRegister::where('astap_id', $astap->id)
+                            ->where('is_deleted', 0)
                             ->orderBy('id', 'desc')
                             ->take($currentRegCount - $targetVolume)
                             ->get();
@@ -3455,7 +3456,7 @@ Route::middleware('auth')->group(function () {
                             $hasDist = \App\Models\DistribusiItemRegister::where('astap_register_id', $exReg->id)->exists();
                             $hasMutasi = \App\Models\AstapMutasiRegister::where('astap_register_id', $exReg->id)->exists();
                             if (!$hasDist && !$hasMutasi) {
-                                $exReg->delete();
+                                $exReg->softDelete('Penyesuaian volume aset kemitraan');
                             }
                         }
                     }

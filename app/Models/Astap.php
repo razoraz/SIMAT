@@ -497,7 +497,17 @@ class Astap extends Model
 
     public function registers()
     {
-        return $this->hasMany(AstapRegister::class)->orderBy('no_register_int', 'asc')->orderBy('id', 'asc');
+        return $this->hasMany(AstapRegister::class)
+            ->where('is_deleted', 0)
+            ->orderBy('no_register_int', 'asc')
+            ->orderBy('id', 'asc');
+    }
+
+    public function allRegisters()
+    {
+        return $this->hasMany(AstapRegister::class)
+            ->orderBy('no_register_int', 'asc')
+            ->orderBy('id', 'asc');
     }
 
     public function reklas()

@@ -37,14 +37,14 @@
             <div class="px-4 py-2.5 rounded-2xl bg-slate-950/80 border border-slate-800 text-left shadow-inner min-w-[120px]">
                 <span class="text-[9.5px] uppercase tracking-wider font-bold text-slate-400 block">Total Terhapus</span>
                 <div class="flex items-baseline gap-1 mt-0.5">
-                    <span class="text-xl font-black text-white font-mono" x-text="totalCount">0</span>
+                    <span class="text-xl font-black text-white font-mono" x-text="totalCount">{{ $totalAllDeleted ?? 0 }}</span>
                     <span class="text-[10px] text-slate-400">item</span>
                 </div>
             </div>
             <div class="px-4 py-2.5 rounded-2xl bg-slate-950/80 border border-slate-800 text-left shadow-inner min-w-[130px]">
                 <span class="text-[9.5px] uppercase tracking-wider font-bold text-slate-400 block">Aktivitas 30 Hari</span>
                 <div class="flex items-baseline gap-1 mt-0.5">
-                    <span class="text-xl font-black text-amber-400 font-mono" x-text="totalThisMonth">0</span>
+                    <span class="text-xl font-black text-amber-400 font-mono" x-text="totalThisMonth">{{ $totalThisMonth ?? 0 }}</span>
                     <span class="text-[10px] text-amber-500/80">arsip</span>
                 </div>
             </div>
@@ -64,7 +64,7 @@
     <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         
         <!-- 1. BESPOKE MODULE DROPDOWN SELECTOR (CUSTOM LUXURY POPOVER, NEVER CLIPPED) -->
-        <div class="relative w-full lg:w-96 shrink-0" x-data="{ openModDropdown: false }" @click.outside="openModDropdown = false" @keydown.escape.window="openModDropdown = false">
+        <div class="relative w-full lg:w-96 shrink-0" @click.outside="openModDropdown = false" @keydown.escape.window="openModDropdown = false">
             <div class="flex items-center justify-between mb-1.5">
                 <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                     <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
@@ -79,27 +79,18 @@
                 
                 <div class="flex items-center gap-2.5 min-w-0">
                     <div class="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-lg shrink-0 group-hover:scale-105 transition-transform shadow-inner">
-                        <span x-show="activeModule === 'belanja_modal'">🏛️</span>
-                        <span x-show="activeModule === 'astap'">📦</span>
-                        <span x-show="activeModule === 'unit'">🏥</span>
-                        <span x-show="activeModule === 'distribusi'">🚚</span>
-                        <span x-show="activeModule === 'mutasi'">🔄</span>
-                        <span x-show="activeModule === 'hibah'">🎁</span>
-                        <span x-show="activeModule === 'kemitraan'">🤝</span>
-                        <span x-show="activeModule === 'belanja_barang'">🛒</span>
-                        <span x-show="activeModule === 'reklas'">⚖️</span>
-                        <span x-show="activeModule === 'users'">👥</span>
+                        <span x-text="activeModuleIcon">📦</span>
                     </div>
                     <div class="min-w-0">
-                        <span class="text-xs font-black text-white group-hover:text-cyan-300 transition-colors block truncate" x-text="activeModuleName"></span>
-                        <span class="text-[10px] text-slate-400 block truncate" x-text="getModuleCount(activeModule) + ' data terhapus'"></span>
+                        <span class="text-xs font-black text-white group-hover:text-cyan-300 transition-colors block truncate" x-text="activeModuleName">Master ASTAP</span>
+                        <span class="text-[10px] text-slate-400 block truncate" x-text="getModuleCount(activeModule) + ' data terhapus'">{{ ($moduleStats[$activeTab]['count'] ?? 0) }} data terhapus</span>
                     </div>
                 </div>
 
                 <div class="flex items-center gap-2 shrink-0">
                     <span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold"
                         :class="getModuleCount(activeModule) > 0 ? 'bg-red-500/20 text-red-300 border border-red-500/30' : 'bg-slate-800 text-slate-400'"
-                        x-text="getModuleCount(activeModule)">0</span>
+                        x-text="getModuleCount(activeModule)">{{ ($moduleStats[$activeTab]['count'] ?? 0) }}</span>
                     <svg class="w-4 h-4 text-cyan-400 transition-transform duration-200" :class="openModDropdown ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
                     </svg>
@@ -217,10 +208,10 @@
     <!-- STATUS INFO BARIS BAWAH -->
     <div class="pt-3 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-400">
         <div>
-            Kategori saat ini: <strong class="text-white" x-text="activeModuleName"></strong>
+            Kategori saat ini: <strong class="text-white" x-text="activeModuleName">{{ $moduleStats[$activeTab]['name'] ?? 'Master ASTAP' }}</strong>
         </div>
         <div>
-            Menampilkan <span class="font-bold text-white font-mono" x-text="filteredItems.length"></span> dari <span class="font-mono text-cyan-300 font-bold" x-text="currentList.length"></span> data terhapus
+            Menampilkan <span class="font-bold text-white font-mono" x-text="filteredItems.length">{{ $moduleStats[$activeTab]['count'] ?? 0 }}</span> dari <span class="font-mono text-cyan-300 font-bold" x-text="currentList.length">{{ $moduleStats[$activeTab]['count'] ?? 0 }}</span> data terhapus
         </div>
     </div>
 </div>
