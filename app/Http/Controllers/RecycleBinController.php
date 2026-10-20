@@ -630,7 +630,7 @@ class RecycleBinController extends Controller
         // 7. DATA TERHAPUS: KEMITRAAN ASET (AKUN 1.5.2 / KSO)
         // =========================================================================
         $rawDeletedKemitraans = AstapKemitraan::onlyDeleted()
-            ->with(['astap.jenisAstap', 'astap.registers.unit', 'astap.unit', 'objekAstap.jenisAstap', 'objekRegister', 'user'])
+            ->with(['astap.jenisAstap', 'astap.allRegisters.unit', 'astap.unit', 'objekAstap.jenisAstap', 'objekRegister', 'user'])
             ->latest('deleted_at')
             ->latest('id')
             ->get();
@@ -652,7 +652,7 @@ class RecycleBinController extends Controller
             $kodeBarang = $astap?->kode_108 ?: ($astap?->jenisAstap?->sub_sub_rincian_objek ?: '-');
             $ruangan    = $astap?->unit?->nama ?: '-';
 
-            $registersMapped = $astap?->registers?->map(function ($r, $idx) {
+            $registersMapped = $astap?->allRegisters?->map(function ($r, $idx) {
                 return [
                     'no'          => $idx + 1,
                     'nibar'       => $r->nibar ?: '-',
@@ -1165,13 +1165,13 @@ class RecycleBinController extends Controller
                 $nama = $astap->nama_barang ?: 'Aset Belanja Modal';
                 DB::transaction(function () use ($astap) {
                     $astap->restoreData();
-                    $astap->registers()->update([
+                    $astap->allRegisters()->update([
                         'is_deleted'    => 0,
                         'deleted_by'    => null,
                         'deleted_by_id' => null,
                         'deleted_at'    => null,
                     ]);
-                    $astap->jumlah_volume = max(1, $astap->registers()->where('is_deleted', 0)->count());
+                    $astap->jumlah_volume = max(1, $astap->allRegisters()->where('is_deleted', 0)->count());
                     $astap->save();
                 });
                 $msg = "Paket Belanja Modal \"{$nama}\" dan seluruh register NIBAR berhasil dipulihkan ke status aktif.";
@@ -1258,13 +1258,13 @@ class RecycleBinController extends Controller
                         // Mutasi Masuk: Pulihkan aset pelimpahan SKPD ke katalog aktif RSUD
                         if ($mEksternal->astap) {
                             $mEksternal->astap->restoreData();
-                            $mEksternal->astap->registers()->update([
+                            $mEksternal->astap->allRegisters()->update([
                                 'is_deleted'    => 0,
                                 'deleted_by'    => null,
                                 'deleted_by_id' => null,
                                 'deleted_at'    => null,
                             ]);
-                            $mEksternal->astap->jumlah_volume = max(1, $mEksternal->astap->registers()->where('is_deleted', 0)->count());
+                            $mEksternal->astap->jumlah_volume = max(1, $mEksternal->astap->allRegisters()->where('is_deleted', 0)->count());
                             $mEksternal->astap->save();
                         }
                     }
@@ -1284,7 +1284,7 @@ class RecycleBinController extends Controller
                 $nama = $astap->nama_barang ?: 'Aset ASTAP';
                 DB::transaction(function () use ($astap) {
                     $astap->restoreData();
-                    $astap->registers()->update([
+                    $astap->allRegisters()->update([
                         'is_deleted'    => 0,
                         'deleted_by'    => null,
                         'deleted_by_id' => null,
@@ -1303,7 +1303,7 @@ class RecycleBinController extends Controller
                             'deleted_at'    => null,
                         ]);
                     // Sinkronkan jumlah volume paket dengan total register aktif
-                    $astap->jumlah_volume = max(1, $astap->registers()->where('is_deleted', 0)->count());
+                    $astap->jumlah_volume = max(1, $astap->allRegisters()->where('is_deleted', 0)->count());
                     $astap->save();
                 });
                 $msg = "Data Master Aset ASTAP \"{$nama}\" dan seluruh register NIBAR berhasil dipulihkan.";
@@ -1417,14 +1417,17 @@ class RecycleBinController extends Controller
                     $kemitraan->restoreData();
                     if ($kemitraan->astap) {
                         $kemitraan->astap->restoreData();
-                        $kemitraan->astap->registers()->update([
+                        $kemitraan->astap->allRegisters()->update([
                             'is_deleted'    => 0,
                             'deleted_by'    => null,
                             'deleted_by_id' => null,
                             'deleted_at'    => null,
                         ]);
-                        $kemitraan->astap->jumlah_volume = max(1, $kemitraan->astap->registers()->where('is_deleted', 0)->count());
+                        $newCount = max(1, $kemitraan->astap->allRegisters()->where('is_deleted', 0)->count());
+                        $kemitraan->astap->jumlah_volume = $newCount;
                         $kemitraan->astap->save();
+                        $kemitraan->jumlah_volume = $newCount;
+                        $kemitraan->save();
                     }
 
                     // SKENARIO 1: Yang dipulihkan adalah ASET YANG DITAMBAHKAN MITRA
@@ -1444,14 +1447,17 @@ class RecycleBinController extends Controller
                                 $affectedKemitraanIds[] = $parentKemitraan->id;
                                 if ($parentKemitraan->astap) {
                                     $parentKemitraan->astap->restoreData();
-                                    $parentKemitraan->astap->registers()->update([
+                                    $parentKemitraan->astap->allRegisters()->update([
                                         'is_deleted'    => 0,
                                         'deleted_by'    => null,
                                         'deleted_by_id' => null,
                                         'deleted_at'    => null,
                                     ]);
-                                    $parentKemitraan->astap->jumlah_volume = max(1, $parentKemitraan->astap->registers()->where('is_deleted', 0)->count());
+                                    $pCount = max(1, $parentKemitraan->astap->allRegisters()->where('is_deleted', 0)->count());
+                                    $parentKemitraan->astap->jumlah_volume = $pCount;
                                     $parentKemitraan->astap->save();
+                                    $parentKemitraan->jumlah_volume = $pCount;
+                                    $parentKemitraan->save();
                                 }
                                 $parentRestored = true;
                                 $parentNama = $parentKemitraan->astap?->nama_barang ?: 'Objek Pemanfaatan';
@@ -1461,13 +1467,13 @@ class RecycleBinController extends Controller
                                     ->first();
                                 if ($parentAstap) {
                                     $parentAstap->restoreData();
-                                    $parentAstap->registers()->update([
+                                    $parentAstap->allRegisters()->update([
                                         'is_deleted'    => 0,
                                         'deleted_by'    => null,
                                         'deleted_by_id' => null,
                                         'deleted_at'    => null,
                                     ]);
-                                    $parentAstap->jumlah_volume = max(1, $parentAstap->registers()->where('is_deleted', 0)->count());
+                                    $parentAstap->jumlah_volume = max(1, $parentAstap->allRegisters()->where('is_deleted', 0)->count());
                                     $parentAstap->save();
                                     $parentRestored = true;
                                     $parentNama = $parentAstap->nama_barang;
@@ -1517,16 +1523,20 @@ class RecycleBinController extends Controller
                             $affectedKemitraanIds[] = $linked->id;
                             if ($linked->astap) {
                                 $linked->astap->restoreData();
-                                $linked->astap->registers()->update([
+                                $linked->astap->allRegisters()->update([
                                     'is_deleted'    => 0,
                                     'deleted_by'    => null,
                                     'deleted_by_id' => null,
                                     'deleted_at'    => null,
                                 ]);
-                                $linked->astap->jumlah_volume = max(1, $linked->astap->registers()->where('is_deleted', 0)->count());
+                                $lCount = max(1, $linked->astap->allRegisters()->where('is_deleted', 0)->count());
+                                $linked->astap->jumlah_volume = $lCount;
                                 $linked->astap->save();
+                                $linked->jumlah_volume = $lCount;
+                                $linked->save();
                             }
                         }
+
 
                         if ($linkedMitras->isNotEmpty()) {
                             $mitraCount = $linkedMitras->count();
@@ -1545,13 +1555,13 @@ class RecycleBinController extends Controller
                     $belanja->restoreData();
                     if ($belanja->astap) {
                         $belanja->astap->restoreData();
-                        $belanja->astap->registers()->update([
+                        $belanja->astap->allRegisters()->update([
                             'is_deleted'    => 0,
                             'deleted_by'    => null,
                             'deleted_by_id' => null,
                             'deleted_at'    => null,
                         ]);
-                        $belanja->astap->jumlah_volume = max(1, $belanja->astap->registers()->where('is_deleted', 0)->count());
+                        $belanja->astap->jumlah_volume = max(1, $belanja->astap->allRegisters()->where('is_deleted', 0)->count());
                         $belanja->astap->save();
                     }
                 });
@@ -1604,11 +1614,28 @@ class RecycleBinController extends Controller
                         if ($astap->mutasiEksternal) {
                             $astap->mutasiEksternal->restoreData();
                         }
+                        if ($astap->belanjaModal) {
+                            $astap->belanjaModal->restoreData();
+                        }
+                        if ($astap->belanjaBarang) {
+                            $astap->belanjaBarang->restoreData();
+                        }
+                        if ($astap->hibah) {
+                            $astap->hibah->restoreData();
+                        }
+                        \App\Models\AstapKemitraan::where('astap_id', $astap->id)
+                            ->where('is_deleted', 1)
+                            ->get()
+                            ->each(fn($km) => $km->restoreData());
+
                         $astapRestored = true;
                     }
                     if ($astap) {
                         $this->syncAstapAfterRegisterChange($astap);
+                        \App\Models\AstapKemitraan::where('astap_id', $astap->id)
+                            ->update(['jumlah_volume' => max(1, $astap->registers()->where('is_deleted', 0)->count())]);
                     }
+
                 });
 
                 if ($astapRestored) {
@@ -1724,13 +1751,13 @@ class RecycleBinController extends Controller
                         } else {
                             if ($mEksternal->astap) {
                                 $mEksternal->astap->restoreData();
-                                $mEksternal->astap->registers()->update([
+                                $mEksternal->astap->allRegisters()->update([
                                     'is_deleted'    => 0,
                                     'deleted_by'    => null,
                                     'deleted_by_id' => null,
                                     'deleted_at'    => null,
                                 ]);
-                                $mEksternal->astap->jumlah_volume = max(1, $mEksternal->astap->registers()->where('is_deleted', 0)->count());
+                                $mEksternal->astap->jumlah_volume = max(1, $mEksternal->astap->allRegisters()->where('is_deleted', 0)->count());
                                 $mEksternal->astap->save();
                             }
                         }
@@ -1759,7 +1786,7 @@ class RecycleBinController extends Controller
                         }
 
                         $a->restoreData();
-                        $a->registers()->update([
+                        $a->allRegisters()->update([
                             'is_deleted'    => 0,
                             'deleted_by'    => null,
                             'deleted_by_id' => null,
@@ -1768,7 +1795,7 @@ class RecycleBinController extends Controller
                         if ($a->mutasiEksternal) {
                             $a->mutasiEksternal->restoreData();
                         }
-                        $a->jumlah_volume = max(1, $a->registers()->where('is_deleted', 0)->count());
+                        $a->jumlah_volume = max(1, $a->allRegisters()->where('is_deleted', 0)->count());
                         $a->save();
                         $restoredCount++;
                     }
@@ -1795,13 +1822,13 @@ class RecycleBinController extends Controller
                         }
 
                         $a->restoreData();
-                        $a->registers()->update([
+                        $a->allRegisters()->update([
                             'is_deleted'    => 0,
                             'deleted_by'    => null,
                             'deleted_by_id' => null,
                             'deleted_at'    => null,
                         ]);
-                        $a->jumlah_volume = max(1, $a->registers()->where('is_deleted', 0)->count());
+                        $a->jumlah_volume = max(1, $a->allRegisters()->where('is_deleted', 0)->count());
                         $a->save();
                         $restoredCount++;
                     }
@@ -1831,6 +1858,23 @@ class RecycleBinController extends Controller
                         if ($r->astap) {
                             if ($r->astap->is_deleted && !isset($astapParents[$r->astap_id])) {
                                 $r->astap->restoreData();
+                                if ($r->astap->mutasiEksternal) {
+                                    $r->astap->mutasiEksternal->restoreData();
+                                }
+                                if ($r->astap->belanjaModal) {
+                                    $r->astap->belanjaModal->restoreData();
+                                }
+                                if ($r->astap->belanjaBarang) {
+                                    $r->astap->belanjaBarang->restoreData();
+                                }
+                                if ($r->astap->hibah) {
+                                    $r->astap->hibah->restoreData();
+                                }
+                                \App\Models\AstapKemitraan::where('astap_id', $r->astap->id)
+                                    ->where('is_deleted', 1)
+                                    ->get()
+                                    ->each(fn($km) => $km->restoreData());
+
                                 $parentRestoredCount++;
                             }
                             $astapParents[$r->astap_id] = $r->astap;
@@ -1839,7 +1883,10 @@ class RecycleBinController extends Controller
                     }
                     foreach ($astapParents as $parent) {
                         $this->syncAstapAfterRegisterChange($parent);
+                        \App\Models\AstapKemitraan::where('astap_id', $parent->id)
+                            ->update(['jumlah_volume' => max(1, $parent->registers()->where('is_deleted', 0)->count())]);
                     }
+
                 });
 
                 $msg = "Sebanyak {$restoredCount} unit register NIBAR berhasil dipulihkan ke katalog aktif.";
@@ -1913,14 +1960,17 @@ class RecycleBinController extends Controller
                         $affectedKemitraanIds[] = $k->id;
                         if ($k->astap) {
                             $k->astap->restoreData();
-                            $k->astap->registers()->update([
+                            $k->astap->allRegisters()->update([
                                 'is_deleted'    => 0,
                                 'deleted_by'    => null,
                                 'deleted_by_id' => null,
                                 'deleted_at'    => null,
                             ]);
-                            $k->astap->jumlah_volume = max(1, $k->astap->registers()->where('is_deleted', 0)->count());
+                            $newCount = max(1, $k->astap->allRegisters()->where('is_deleted', 0)->count());
+                            $k->astap->jumlah_volume = $newCount;
                             $k->astap->save();
+                            $k->jumlah_volume = $newCount;
+                            $k->save();
                         }
 
                         if ($isDitambahkan) {
@@ -1934,14 +1984,17 @@ class RecycleBinController extends Controller
                                     $affectedKemitraanIds[] = $parentKemitraan->id;
                                     if ($parentKemitraan->astap) {
                                         $parentKemitraan->astap->restoreData();
-                                        $parentKemitraan->astap->registers()->update([
+                                        $parentKemitraan->astap->allRegisters()->update([
                                             'is_deleted'    => 0,
                                             'deleted_by'    => null,
                                             'deleted_by_id' => null,
                                             'deleted_at'    => null,
                                         ]);
-                                        $parentKemitraan->astap->jumlah_volume = max(1, $parentKemitraan->astap->registers()->where('is_deleted', 0)->count());
+                                        $pCount = max(1, $parentKemitraan->astap->allRegisters()->where('is_deleted', 0)->count());
+                                        $parentKemitraan->astap->jumlah_volume = $pCount;
                                         $parentKemitraan->astap->save();
+                                        $parentKemitraan->jumlah_volume = $pCount;
+                                        $parentKemitraan->save();
                                     }
                                 } else {
                                     $parentAstap = Astap::where('id', $k->objek_astap_id)
@@ -1949,13 +2002,13 @@ class RecycleBinController extends Controller
                                         ->first();
                                     if ($parentAstap) {
                                         $parentAstap->restoreData();
-                                        $parentAstap->registers()->update([
+                                        $parentAstap->allRegisters()->update([
                                             'is_deleted'    => 0,
                                             'deleted_by'    => null,
                                             'deleted_by_id' => null,
                                             'deleted_at'    => null,
                                         ]);
-                                        $parentAstap->jumlah_volume = max(1, $parentAstap->registers()->where('is_deleted', 0)->count());
+                                        $parentAstap->jumlah_volume = max(1, $parentAstap->allRegisters()->where('is_deleted', 0)->count());
                                         $parentAstap->save();
                                     }
                                 }
@@ -1984,14 +2037,17 @@ class RecycleBinController extends Controller
                                 $affectedKemitraanIds[] = $linked->id;
                                 if ($linked->astap) {
                                     $linked->astap->restoreData();
-                                    $linked->astap->registers()->update([
+                                    $linked->astap->allRegisters()->update([
                                         'is_deleted'    => 0,
                                         'deleted_by'    => null,
                                         'deleted_by_id' => null,
                                         'deleted_at'    => null,
                                     ]);
-                                    $linked->astap->jumlah_volume = max(1, $linked->astap->registers()->where('is_deleted', 0)->count());
+                                    $lCount = max(1, $linked->astap->allRegisters()->where('is_deleted', 0)->count());
+                                    $linked->astap->jumlah_volume = $lCount;
                                     $linked->astap->save();
+                                    $linked->jumlah_volume = $lCount;
+                                    $linked->save();
                                 }
                             }
                         }
@@ -2009,13 +2065,13 @@ class RecycleBinController extends Controller
                         $b->restoreData();
                         if ($b->astap) {
                             $b->astap->restoreData();
-                            $b->astap->registers()->update([
+                            $b->astap->allRegisters()->update([
                                 'is_deleted'    => 0,
                                 'deleted_by'    => null,
                                 'deleted_by_id' => null,
                                 'deleted_at'    => null,
                             ]);
-                            $b->astap->jumlah_volume = max(1, $b->astap->registers()->where('is_deleted', 0)->count());
+                            $b->astap->jumlah_volume = max(1, $b->astap->allRegisters()->where('is_deleted', 0)->count());
                             $b->astap->save();
                         }
                         $restoredCount++;

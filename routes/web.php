@@ -6750,16 +6750,57 @@ Route::middleware('auth')->group(function () {
                 if ($astap) {
                     $newCount = $astap->registers()->where('is_deleted', 0)->count();
 
-                    // Jika register terakhir habis → soft delete master ASTAP sekalian
+                    // Jika register terakhir habis → soft delete master ASTAP sekalian beserta dokumen PKS / transaksi terkait
                     if ($newCount === 0) {
+                        $user = auth()->user();
+                        $deleterName = $user ? ($user->name . ' (' . ucfirst($user->role ?? 'user') . ')') : 'Administrator';
+                        $deleterId = $user?->id;
+                        $now = now();
+
                         $astap->softDelete('Semua unit register NIBAR telah dihapus — master ASTAP otomatis dipindahkan ke Recycle Bin.');
                         if ($astap->mutasiEksternal) {
                             $astap->mutasiEksternal->softDelete();
                         }
+
+                        // 1. Soft delete Kemitraan PKS terkait jika ada
+                        $kemitraans = \App\Models\AstapKemitraan::where('astap_id', $astap->id)
+                            ->orWhere('objek_astap_id', $astap->id)
+                            ->get();
+                        foreach ($kemitraans as $km) {
+                            $km->softDelete();
+                        }
+
+                        // 2. Soft delete Belanja Modal jika ada
+                        if ($astap->belanjaModal) {
+                            $astap->belanjaModal->softDelete();
+                        }
+
+                        // 3. Soft delete Belanja Barang jika ada
+                        if ($astap->belanjaBarang) {
+                            $astap->belanjaBarang->softDelete();
+                        }
+
+                        // 4. Soft delete Hibah jika ada
+                        if ($astap->hibah) {
+                            $astap->hibah->softDelete();
+                        }
+
+                        // 5. Soft delete Riwayat Reklasifikasi terkait jika ada
+                        \App\Models\AstapReklas::where('astap_id', $astap->id)->update([
+                            'is_deleted'    => 1,
+                            'deleted_by'    => $deleterName,
+                            'deleted_by_id' => $deleterId,
+                            'deleted_at'    => $now,
+                        ]);
+
                         $astapAutoDeleted = true;
                         $spec = $astap->spesifikasi_json ?? [];
                     } else {
                         $astap->jumlah_volume = $newCount;
+
+                        // Sinkronkan juga volume PKS Kemitraan jika aset ini terikat kontrak
+                        \App\Models\AstapKemitraan::where('astap_id', $astap->id)
+                            ->update(['jumlah_volume' => $newCount]);
 
                         $allRegs = $astap->registers()->where('is_deleted', 0)->get();
                         $totalRegs = $allRegs->count();
@@ -6834,11 +6875,14 @@ Route::middleware('auth')->group(function () {
 
                 // Kirim Notifikasi Sistem
                 try {
+                    $isKemitraan = ($astap?->sumber_dana === 'kemitraan') || !empty($astap?->kemitraan) || str_starts_with((string) $astap?->kode_108, '1.5.2');
+                    $paketLabel = $isKemitraan ? 'Dokumen PKS Kemitraan' : 'Paket ASTAP';
+
                     $notifTitle = $astapAutoDeleted
-                        ? "Paket ASTAP Dipindahkan ke Recycle Bin: {$nama}"
+                        ? "{$paketLabel} Dipindahkan ke Recycle Bin: {$nama}"
                         : "Unit Register Dihapus: {$nibar}";
                     $notifBody = $astapAutoDeleted
-                        ? "{$nama} • Semua NIBAR habis — master ASTAP otomatis ke Recycle Bin"
+                        ? "{$nama} • Semua NIBAR habis — {$paketLabel} otomatis ke Recycle Bin"
                         : "{$nama} • Register {$nibar} dihapus";
                     \App\Services\NotificationService::sendToAdminAndMaster(
                         $notifTitle,
@@ -6850,9 +6894,13 @@ Route::middleware('auth')->group(function () {
                     \Log::warning("Gagal kirim notif register delete: " . $e->getMessage());
                 }
             }
+            $isKemitraan = ($astap?->sumber_dana === 'kemitraan') || !empty($astap?->kemitraan) || str_starts_with((string) $astap?->kode_108, '1.5.2');
+            $namaPaket = $isKemitraan ? "Dokumen Kontrak / PKS Kemitraan \"{$nama}\"" : "Paket pengadaan ASTAP \"{$nama}\"";
+
             $responseMessage = ($astapAutoDeleted ?? false)
-                ? "Unit NIBAR terakhir dihapus. Paket pengadaan ASTAP \"{$nama}\" otomatis dipindahkan ke Recycle Bin."
+                ? "Unit NIBAR terakhir dihapus. {$namaPaket} otomatis dipindahkan ke Pusat Data Terhapus (Recycle Bin)."
                 : 'Unit register NIBAR berhasil dipindahkan ke Pusat Data Terhapus (Recycle Bin).';
+
             session()->flash('success', $responseMessage);
             return response()->json([
                 'success'            => true,

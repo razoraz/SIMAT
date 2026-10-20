@@ -37,10 +37,10 @@
             </div>
         </div>
 
-        <!-- FILTER SUMBER DANA (PILL SWITCHER) -->
-        <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-800/60 gap-3 flex-wrap">
-            <div class="flex items-center gap-2 flex-wrap">
-                <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5 mr-1">
+        <!-- FILTER SUMBER DANA (PILL SWITCHER - 1 BARIS NON-WRAPPING) -->
+        <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-800/60 gap-3">
+            <div class="flex items-center gap-1.5 overflow-x-auto min-w-0 py-0.5" style="scrollbar-width: none; -ms-overflow-style: none;">
+                <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5 mr-1 shrink-0 whitespace-nowrap">
                     <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
                     Filter Sumber Dana:
                 </span>
@@ -50,9 +50,9 @@
                     :class="astapSumberDanaFilter === 'all'
                         ? 'bg-blue-500/20 border-blue-500 text-blue-300 shadow-md shadow-blue-500/10'
                         : 'bg-slate-950/70 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-900'"
-                    class="px-3 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer">
+                    class="px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shrink-0 whitespace-nowrap">
                     <span>Semua Sumber</span>
-                    <span class="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold"
+                    <span class="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold shrink-0"
                         :class="astapSumberDanaFilter === 'all' ? 'bg-blue-500 text-white' : 'bg-slate-800 text-slate-400'"
                         x-text="astapSubTab === 'packet' ? astaps.length : nibars.length">0</span>
                 </button>
@@ -62,9 +62,9 @@
                     :class="astapSumberDanaFilter === 'belanja_modal'
                         ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300 shadow-md shadow-emerald-500/10'
                         : 'bg-slate-950/70 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-900'"
-                    class="px-3 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer">
+                    class="px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shrink-0 whitespace-nowrap">
                     <span>🏛️ Belanja Modal</span>
-                    <span class="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold"
+                    <span class="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold shrink-0"
                         :class="astapSumberDanaFilter === 'belanja_modal' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-400'"
                         x-text="countAstapSumberDana('belanja_modal')">0</span>
                 </button>
@@ -74,9 +74,9 @@
                     :class="astapSumberDanaFilter === 'belanja_barang'
                         ? 'bg-indigo-500/20 border-indigo-500 text-indigo-300 shadow-md shadow-indigo-500/10'
                         : 'bg-slate-950/70 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-900'"
-                    class="px-3 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer">
+                    class="px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shrink-0 whitespace-nowrap">
                     <span>📦 Belanja Barang</span>
-                    <span class="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold"
+                    <span class="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold shrink-0"
                         :class="astapSumberDanaFilter === 'belanja_barang' ? 'bg-indigo-500 text-white' : 'bg-slate-800 text-slate-400'"
                         x-text="countAstapSumberDana('belanja_barang')">0</span>
                 </button>
@@ -86,9 +86,9 @@
                     :class="astapSumberDanaFilter === 'kemitraan'
                         ? 'bg-cyan-500/20 border-cyan-500 text-cyan-300 shadow-md shadow-cyan-500/10'
                         : 'bg-slate-950/70 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-900'"
-                    class="px-3 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer">
+                    class="px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shrink-0 whitespace-nowrap">
                     <span>🤝 Kemitraan (KSO)</span>
-                    <span class="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold"
+                    <span class="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold shrink-0"
                         :class="astapSumberDanaFilter === 'kemitraan' ? 'bg-cyan-500 text-slate-950' : 'bg-slate-800 text-slate-400'"
                         x-text="countAstapSumberDana('kemitraan')">0</span>
                 </button>
@@ -98,9 +98,9 @@
                     :class="astapSumberDanaFilter === 'hibah'
                         ? 'bg-purple-500/20 border-purple-500 text-purple-300 shadow-md shadow-purple-500/10'
                         : 'bg-slate-950/70 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-900'"
-                    class="px-3 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer">
+                    class="px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shrink-0 whitespace-nowrap">
                     <span>🎁 Hibah</span>
-                    <span class="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold"
+                    <span class="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold shrink-0"
                         :class="astapSumberDanaFilter === 'hibah' ? 'bg-purple-500 text-white' : 'bg-slate-800 text-slate-400'"
                         x-text="countAstapSumberDana('hibah')">0</span>
                 </button>
@@ -110,16 +110,16 @@
                     :class="astapSumberDanaFilter === 'mutasi'
                         ? 'bg-amber-500/20 border-amber-500 text-amber-300 shadow-md shadow-amber-500/10'
                         : 'bg-slate-950/70 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-900'"
-                    class="px-3 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer">
+                    class="px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shrink-0 whitespace-nowrap">
                     <span>🔄 Mutasi</span>
-                    <span class="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold"
+                    <span class="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold shrink-0"
                         :class="astapSumberDanaFilter === 'mutasi' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'"
                         x-text="countAstapSumberDana('mutasi')">0</span>
                 </button>
             </div>
 
             <!-- Info Filter Aktif -->
-            <div class="text-[11px] text-slate-400 flex items-center gap-1.5 font-mono">
+            <div class="text-[11px] text-slate-400 flex items-center gap-1.5 font-mono shrink-0 whitespace-nowrap pl-2">
                 <span>Menampilkan:</span>
                 <span class="font-bold text-white" x-text="filteredItems.length + ' item'"></span>
             </div>
