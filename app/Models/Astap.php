@@ -544,12 +544,22 @@ class Astap extends Model
     {
         $spec = is_array($this->spesifikasi_json) ? $this->spesifikasi_json : (json_decode($this->spesifikasi_json ?? '[]', true) ?: []);
 
-        // 1. Prioritaskan repeater spesifikasi fisik yang nyata
-        if (!empty($spec['gedung_items']) && is_array($spec['gedung_items']) && count($spec['gedung_items']) > 0) return 'KIB C';
-        if (!empty($spec['mesin_items']) && is_array($spec['mesin_items']) && count($spec['mesin_items']) > 0) return 'KIB B';
-        if (!empty($spec['jaringan_items']) && is_array($spec['jaringan_items']) && count($spec['jaringan_items']) > 0) return 'KIB D';
-        if (!empty($spec['lainnya_items']) && is_array($spec['lainnya_items']) && count($spec['lainnya_items']) > 0) return 'KIB E';
-        if (!empty($spec['tanah_items']) && is_array($spec['tanah_items']) && count($spec['tanah_items']) > 0) return 'KIB A';
+        $hasFilledItem = function ($key, $nameField) use ($spec) {
+            if (empty($spec[$key]) || !is_array($spec[$key])) return false;
+            foreach ($spec[$key] as $row) {
+                if (is_array($row) && !empty($row[$nameField]) && trim((string)$row[$nameField]) !== '') {
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        // 1. Prioritaskan repeater spesifikasi fisik yang nyata dan memiliki nama terisi
+        if ($hasFilledItem('gedung_items', 'gedung_nama_barang')) return 'KIB C';
+        if ($hasFilledItem('mesin_items', 'mesin_nama_barang')) return 'KIB B';
+        if ($hasFilledItem('jaringan_items', 'jaringan_nama_barang')) return 'KIB D';
+        if ($hasFilledItem('lainnya_items', 'lainnya_nama_barang')) return 'KIB E';
+        if ($hasFilledItem('tanah_items', 'tanah_nama_barang')) return 'KIB A';
 
         // 2. Periksa deklarasi kategori_kib di spesifikasi_json
         if (!empty($spec['kategori_kib'])) {

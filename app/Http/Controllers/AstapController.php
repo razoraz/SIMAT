@@ -3726,6 +3726,16 @@ class AstapController extends Controller
                     ]);
                 }
 
+                // 2B. Jika ada data riwayat reklasifikasi terkait, soft delete transaksinya
+                \App\Models\AstapReklas::where('astap_id', $astap->id)
+                    ->where('is_deleted', 0)
+                    ->update([
+                        'is_deleted'    => 1,
+                        'deleted_by'    => $deleterName,
+                        'deleted_by_id' => $user?->id,
+                        'deleted_at'    => now(),
+                    ]);
+
                 // 3. Jika ada data kemitraan non-aktif terkait, soft delete agar tidak jadi zombie record
                 \App\Models\AstapKemitraan::where('astap_id', $astap->id)
                     ->where('is_deleted', 0)

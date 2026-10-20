@@ -259,17 +259,14 @@
                                             <span x-text="(isItemLocked(item) || isMutasiKeluarFull(item)) ? '🔒 Ubah' : 'Ubah'"></span>
                                         </a>
 
-                                        <!-- 4. Tombol Hapus -->
-                                        <button type="button" @click="if (isItemLocked(item)) { showLockedWarning(item); } else if (hasMutasiKeluar(item)) { showMutasiKeluarLockedWarning(item, 'hapus'); } else { deleteAstap(item); }"
-                                            :title="isItemLocked(item) ? 'Periode Terkunci (Tutup Buku BPKAD)' : (hasMutasiKeluar(item) ? 'Terkunci (Aset Memiliki Riwayat Mutasi Keluar OPD)' : 'Hapus Data ASTAP')"
-                                            class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl font-bold text-xs transition-all duration-200 shadow-sm leading-none"
-                                            :class="(isItemLocked(item) || hasMutasiKeluar(item))
-                                                ? 'bg-slate-800/60 text-slate-500 border border-slate-700/60 cursor-pointer hover:bg-slate-800 hover:text-slate-400'
-                                                : 'bg-rose-500/10 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 hover:border-rose-400 hover:shadow-lg hover:shadow-rose-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer'">
-                                            <svg class="w-3.5 h-3.5" :class="(isItemLocked(item) || hasMutasiKeluar(item)) ? 'text-slate-500' : 'text-rose-400 group-hover/btn:text-white group-hover/btn:scale-110 transition-all duration-200'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <!-- 4. Tombol Hapus (Bebas Kunci / Selalu Aktif) -->
+                                        <button type="button" @click="deleteAstap(item)"
+                                            title="Hapus Data ASTAP"
+                                            class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 hover:border-rose-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-rose-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
+                                            <svg class="w-3.5 h-3.5 text-rose-400 group-hover/btn:text-white group-hover/btn:scale-110 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                             </svg>
-                                            <span x-text="(isItemLocked(item) || hasMutasiKeluar(item)) ? '🔒 Hapus' : 'Hapus'"></span>
+                                            <span>Hapus</span>
                                         </button>
                                         @endif
                                     </div>

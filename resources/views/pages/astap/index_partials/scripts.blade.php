@@ -12965,18 +12965,6 @@
                 deleteAstap(item) {
                     if (!item) return;
 
-                    // 0. Validasi Proteksi Periode Terkunci (Tutup Buku)
-                    if (this.isItemLocked(item)) {
-                        this.showLockedWarning(item);
-                        return;
-                    }
-
-                    // 0.1 Validasi Proteksi Mutasi Keluar OPD
-                    if (this.hasMutasiKeluar(item)) {
-                        this.showMutasiKeluarLockedWarning(item, 'hapus');
-                        return;
-                    }
-
                     // 1. Validasi Penempatan: Cek apakah ada unit register yang SUDAH DITEMPATKAN di unit & paviliun
                     const regs = Array.isArray(item.registers) ? item.registers : [];
                     const placedRegs = regs.filter(r => this.isRegisterPlacedInUnit(r));

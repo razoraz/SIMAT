@@ -1290,9 +1290,24 @@ class RecycleBinController extends Controller
                         'deleted_by_id' => null,
                         'deleted_at'    => null,
                     ]);
-                    if ($astap->mutasiEksternal) {
-                        $astap->mutasiEksternal->restoreData();
+                    // Pulihkan seluruh mutasi eksternal (masuk/keluar) terkait
+                    if ($astap->mutasiEksternals()->exists()) {
+                        $astap->mutasiEksternals()->where('is_deleted', 1)->update([
+                            'is_deleted'    => 0,
+                            'deleted_by'    => null,
+                            'deleted_by_id' => null,
+                            'deleted_at'    => null,
+                        ]);
                     }
+                    // Pulihkan riwayat reklasifikasi terkait jika ada
+                    \App\Models\AstapReklas::where('astap_id', $astap->id)
+                        ->where('is_deleted', 1)
+                        ->update([
+                            'is_deleted'    => 0,
+                            'deleted_by'    => null,
+                            'deleted_by_id' => null,
+                            'deleted_at'    => null,
+                        ]);
                     // Pulihkan data kemitraan jika ada yang terhapus bersama astap
                     \App\Models\AstapKemitraan::where('astap_id', $astap->id)
                         ->where('is_deleted', 1)
