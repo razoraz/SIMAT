@@ -9883,6 +9883,55 @@
                     });
                 },
 
+                // Helper Cek Status Kemitraan: Apakah Aset Telah Dikembalikan ke Rekanan / Dibatalkan
+                isKemitraanReturned(item) {
+                    if (!item) return false;
+                    const status = item.kemitraan?.status_konsesi || item.status_konsesi;
+                    if (status === 'Dikembalikan ke Rekanan' || status === 'Dibatalkan') return true;
+                    if (item.registers && Array.isArray(item.registers) && item.registers.length > 0) {
+                        const hasReturned = item.registers.some(r => r.status === 'Dikembalikan ke Rekanan' || (r.ruang_pemegang && r.ruang_pemegang.toLowerCase().startsWith('telah dikembalikan')));
+                        const activeCount = item.registers.filter(r => r.status !== 'Dikembalikan ke Rekanan' && (!r.ruang_pemegang || !r.ruang_pemegang.toLowerCase().startsWith('telah dikembalikan')) && r.is_deleted != 1).length;
+                        if (hasReturned && activeCount === 0) return true;
+                    }
+                    return false;
+                },
+
+                // Modal Peringatan Interaktif saat Tombol Aset Kemitraan Dikembalikan Diklik
+                showKemitraanReturnedWarning(item, actionType = 'ubah') {
+                    if (!item) return;
+                    const name = item.nama_barang || 'Aset Kemitraan';
+                    const mitra = item.kemitraan?.mitra_nama || 'Mitra Rekanan Kerja Sama';
+                    const noPks = item.kemitraan?.nomor_pks || '-';
+                    const status = item.kemitraan?.status_konsesi || 'Dikembalikan ke Rekanan';
+
+                    let title = 'Aset Telah Dikembalikan ke Rekanan (Terkunci)';
+                    let msgAction = 'mengubah data pokok aset ini';
+                    if (actionType === 'reklas') {
+                        title = 'Aset Tidak Dapat Direklasifikasi';
+                        msgAction = 'melakukan reklasifikasi pada aset ini';
+                    }
+
+                    this.askConfirmation({
+                        title: title,
+                        message: `Aset "${name}" telah resmi dialihkan / dikembalikan kepada pihak ketiga rekanan kerja sama (${mitra}) berdasarkan dokumen PKS No. ${noPks}. Data aset telah terkunci permanen demi tertib pembukuan BMD RSUD.`,
+                        itemName: `${name} (${mitra})`,
+                        itemDetails: {
+                            nama: name,
+                            kode: item.kode_barang || '-',
+                            badgeText: '📦 DIKEMBALIKAN KE REKANAN',
+                            totalAset: item.jumlah_volume || 1,
+                            nilaiFmt: item.total_realisasi || 'Rp 0'
+                        },
+                        type: 'danger',
+                        isBlocked: true,
+                        actionUrl: '/master/kemitraan',
+                        actionText: 'Buka Menu Kemitraan',
+                        assetWarning: `Aset yang telah diserahterimakan kembali kepada pihak ketiga (rekanan) status kepemilikannya bukan lagi aset operasional RSUD, sehingga Anda tidak dapat ${msgAction}. Apabila pengembalian aset perlu ditinjau atau dibatalkan, silakan lakukan proses pembatalan pengembalian melalui menu Kemitraan agar aset dapat dipulihkan kembali ke inventaris aktif.`,
+                        btnText: null,
+                        onConfirm: null
+                    });
+                },
+
                 isReklasBelanjaModal() {
                     const it = this.selectedAstapReklas;
                     if (!it) return true;
@@ -10364,6 +10413,12 @@
                     // Proteksi jika aset telah 100% mutasi keluar ke OPD lain
                     if (this.isMutasiKeluarFull(item)) {
                         this.showMutasiKeluarLockedWarning(item, 'reklas');
+                        return;
+                    }
+
+                    // Proteksi jika aset kemitraan telah dikembalikan ke rekanan / dibatalkan
+                    if (this.isKemitraanReturned(item)) {
+                        this.showKemitraanReturnedWarning(item, 'reklas');
                         return;
                     }
 

@@ -495,6 +495,13 @@ class ReklasifikasiController extends Controller
             $q->where('astap_id', $astap->id)->orWhere('objek_astap_id', $astap->id);
         })->where('is_deleted', 0)->first();
 
+        if ($kemitraan && in_array($kemitraan->status_konsesi, ['Dikembalikan ke Rekanan', 'Dibatalkan'])) {
+            return response()->json([
+                'success' => false,
+                'message' => "Aset kemitraan telah dialihkan / dikembalikan kepada pihak ketiga rekanan kerja sama (Status: {$kemitraan->status_konsesi}) dan terkunci permanen dari reklasifikasi.",
+            ], 422);
+        }
+
         $rawStatusKonsesi = $kemitraan ? strtolower(trim((string) $kemitraan->status_konsesi)) : '';
         $endedStatuses = [
             'konsesi berakhir',

@@ -102,8 +102,15 @@
                                                         <span>🏛️</span><span>MILIK RSUD</span>
                                                     </span>
                                                 </template>
-                                                {{-- Jika Kemitraan masih aktif (belum direklas) --}}
-                                                <template x-if="!(item.is_kemitraan_reklas || item.kemitraan?.status_konsesi === 'Selesai / Reklasifikasi' || item.kemitraan?.status_konsesi === 'Selesai')">
+                                                {{-- Jika Kemitraan sudah Dikembalikan ke Rekanan / Dibatalkan --}}
+                                                <template x-if="isKemitraanReturned(item)">
+                                                    <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[9px] font-black whitespace-nowrap leading-none shrink-0 bg-purple-500/25 text-purple-300 border border-purple-500/50 shadow-sm shadow-purple-500/20 tracking-wider"
+                                                          title="Aset kemitraan telah resmi dialihkan / dikembalikan ke rekanan mitra">
+                                                        <span>📦</span><span>DIKEMBALIKAN KE MITRA</span>
+                                                    </span>
+                                                </template>
+                                                {{-- Jika Kemitraan masih aktif (belum direklas dan belum dikembalikan) --}}
+                                                <template x-if="!(item.is_kemitraan_reklas || item.kemitraan?.status_konsesi === 'Selesai / Reklasifikasi' || item.kemitraan?.status_konsesi === 'Selesai' || isKemitraanReturned(item))">
                                                     <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[9px] font-black whitespace-nowrap leading-none shrink-0 shadow-sm tracking-wider"
                                                           :class="(item.is_bmd_dimanfaatkan || item.kemitraan?.tipe_kemitraan === 'dimanfaatkan') 
                                                               ? 'bg-cyan-500/25 text-cyan-300 border border-cyan-500/50 shadow-cyan-500/10' 
@@ -233,30 +240,30 @@
 
                                         @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
                                         <!-- 2. Tombol Reklas (Reklasifikasi Aset) -->
-                                        <button type="button" @click="if (isItemLocked(item)) { showLockedWarning(item); } else if (isMutasiKeluarFull(item)) { showMutasiKeluarLockedWarning(item, 'reklas'); } else { openReklas(item); }"
-                                            :title="isItemLocked(item) ? 'Periode Terkunci (Tutup Buku BPKAD)' : (isMutasiKeluarFull(item) ? 'Terkunci (Aset Telah Dimutasi Keluar Penuh ke OPD Lain)' : 'Reklasifikasi Aset (Pindah KIB / Ekstrakom / Koreksi)')"
+                                        <button type="button" @click="if (isItemLocked(item)) { showLockedWarning(item); } else if (isMutasiKeluarFull(item)) { showMutasiKeluarLockedWarning(item, 'reklas'); } else if (isKemitraanReturned(item)) { showKemitraanReturnedWarning(item, 'reklas'); } else { openReklas(item); }"
+                                            :title="isItemLocked(item) ? 'Periode Terkunci (Tutup Buku BPKAD)' : (isMutasiKeluarFull(item) ? 'Terkunci (Aset Telah Dimutasi Keluar Penuh ke OPD Lain)' : (isKemitraanReturned(item) ? 'Terkunci (Aset Telah Dikembalikan ke Rekanan Mitra)' : 'Reklasifikasi Aset (Pindah KIB / Ekstrakom / Koreksi)'))"
                                             class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl font-bold text-xs transition-all duration-200 shadow-sm leading-none"
-                                            :class="(isItemLocked(item) || isMutasiKeluarFull(item))
+                                            :class="(isItemLocked(item) || isMutasiKeluarFull(item) || isKemitraanReturned(item))
                                                 ? 'bg-slate-800/60 text-slate-500 border border-slate-700/60 cursor-pointer hover:bg-slate-800 hover:text-slate-400' 
                                                 : 'bg-indigo-500/10 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 hover:border-indigo-400 hover:shadow-lg hover:shadow-indigo-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer'">
-                                            <svg class="w-3.5 h-3.5" :class="(isItemLocked(item) || isMutasiKeluarFull(item)) ? 'text-slate-500' : 'text-indigo-400 group-hover/btn:text-white group-hover/btn:rotate-180 transition-all duration-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg class="w-3.5 h-3.5" :class="(isItemLocked(item) || isMutasiKeluarFull(item) || isKemitraanReturned(item)) ? 'text-slate-500' : 'text-indigo-400 group-hover/btn:text-white group-hover/btn:rotate-180 transition-all duration-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
                                             </svg>
-                                            <span x-text="(isItemLocked(item) || isMutasiKeluarFull(item)) ? '🔒 Reklas' : 'Reklas'"></span>
+                                            <span x-text="(isItemLocked(item) || isMutasiKeluarFull(item) || isKemitraanReturned(item)) ? '🔒 Reklas' : 'Reklas'"></span>
                                         </button>
 
                                         <!-- 3. Tombol Ubah (Form Edit) -->
-                                        <a :href="(isItemLocked(item) || isMutasiKeluarFull(item)) ? '#' : ('/astap/' + item.id + '/edit?from=astap')"
-                                            @click="if (isItemLocked(item)) { $event.preventDefault(); showLockedWarning(item); } else if (isMutasiKeluarFull(item)) { $event.preventDefault(); showMutasiKeluarLockedWarning(item, 'ubah'); }"
-                                            :title="isItemLocked(item) ? 'Periode Terkunci (Tutup Buku BPKAD)' : (isMutasiKeluarFull(item) ? 'Terkunci (Aset Telah Dimutasi Keluar Penuh ke OPD Lain)' : 'Ubah Data ASTAP (Form Lengkap)')"
+                                        <a :href="(isItemLocked(item) || isMutasiKeluarFull(item) || isKemitraanReturned(item)) ? '#' : ('/astap/' + item.id + '/edit?from=astap')"
+                                            @click="if (isItemLocked(item)) { $event.preventDefault(); showLockedWarning(item); } else if (isMutasiKeluarFull(item)) { $event.preventDefault(); showMutasiKeluarLockedWarning(item, 'ubah'); } else if (isKemitraanReturned(item)) { $event.preventDefault(); showKemitraanReturnedWarning(item, 'ubah'); }"
+                                            :title="isItemLocked(item) ? 'Periode Terkunci (Tutup Buku BPKAD)' : (isMutasiKeluarFull(item) ? 'Terkunci (Aset Telah Dimutasi Keluar Penuh ke OPD Lain)' : (isKemitraanReturned(item) ? 'Terkunci (Aset Telah Dikembalikan ke Rekanan Mitra)' : 'Ubah Data ASTAP (Form Lengkap)'))"
                                             class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl font-bold text-xs transition-all duration-200 shadow-sm leading-none"
-                                            :class="(isItemLocked(item) || isMutasiKeluarFull(item))
+                                            :class="(isItemLocked(item) || isMutasiKeluarFull(item) || isKemitraanReturned(item))
                                                 ? 'bg-slate-800/60 text-slate-500 border border-slate-700/60 cursor-pointer hover:bg-slate-800 hover:text-slate-400'
                                                 : 'bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 hover:border-cyan-400 hover:shadow-lg hover:shadow-cyan-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer'">
-                                            <svg class="w-3.5 h-3.5" :class="(isItemLocked(item) || isMutasiKeluarFull(item)) ? 'text-slate-500' : 'text-cyan-400 group-hover/btn:text-white group-hover/btn:rotate-12 transition-all duration-200'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg class="w-3.5 h-3.5" :class="(isItemLocked(item) || isMutasiKeluarFull(item) || isKemitraanReturned(item)) ? 'text-slate-500' : 'text-cyan-400 group-hover/btn:text-white group-hover/btn:rotate-12 transition-all duration-200'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                             </svg>
-                                            <span x-text="(isItemLocked(item) || isMutasiKeluarFull(item)) ? '🔒 Ubah' : 'Ubah'"></span>
+                                            <span x-text="(isItemLocked(item) || isMutasiKeluarFull(item) || isKemitraanReturned(item)) ? '🔒 Ubah' : 'Ubah'"></span>
                                         </a>
 
                                         <!-- 4. Tombol Hapus (Bebas Kunci / Selalu Aktif) -->

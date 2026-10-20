@@ -2792,10 +2792,17 @@ Route::middleware('auth')->group(function () {
                     ]);
                 }
 
-                if (in_array($astap?->kemitraan?->status_konsesi, ['Dikembalikan ke Rekanan', 'Dibatalkan'])) {
-                    $statusTxt = $astap->kemitraan->status_konsesi;
-                    return redirect()->route('master.kemitraan')
-                        ->with('error', "Aset kemitraan '{$astap->nama_barang}' berstatus {$statusTxt} dan terkunci dari perubahan.");
+                $statusKonsesi = $astap?->kemitraan?->status_konsesi;
+                if (!$statusKonsesi) {
+                    $kCheck = \App\Models\AstapKemitraan::where(function ($q) use ($astap) {
+                        $q->where('astap_id', $astap->id)->orWhere('objek_astap_id', $astap->id);
+                    })->where('is_deleted', 0)->first();
+                    $statusKonsesi = $kCheck?->status_konsesi;
+                }
+                if (in_array($statusKonsesi, ['Dikembalikan ke Rekanan', 'Dibatalkan'])) {
+                    $targetRoute = request('from') === 'astap' ? 'astap.index' : 'master.kemitraan';
+                    return redirect()->route($targetRoute)
+                        ->with('error', "Aset kemitraan '{$astap->nama_barang}' berstatus {$statusKonsesi} dan terkunci dari perubahan.");
                 }
 
                 $spec = is_array($astap?->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap?->spesifikasi_json ?? '[]', true) ?: []);
@@ -3518,6 +3525,15 @@ Route::middleware('auth')->group(function () {
                 if ($isFullMutasiKeluar) {
                     $opdTujuan = $astap->mutasiEksternals->where('tipe', 'keluar')->first()?->opd_tujuan ?: 'SKPD / OPD Luar';
                     return redirect()->route('astap.index')->with('error', "Aset \"{$astap->nama_barang}\" telah 100% dimutasi keluar ke {$opdTujuan}. Data tidak dapat diubah langsung. Silakan batalkan mutasi di menu Mutasi Eksternal terlebih dahulu jika ingin melakukan koreksi.");
+                }
+
+                $kemitraanCheck = $astap->kemitraan ?? \App\Models\AstapKemitraan::where(function ($q) use ($astap) {
+                    $q->where('astap_id', $astap->id)->orWhere('objek_astap_id', $astap->id);
+                })->where('is_deleted', 0)->first();
+
+                if ($kemitraanCheck && in_array($kemitraanCheck->status_konsesi, ['Dikembalikan ke Rekanan', 'Dibatalkan'])) {
+                    $targetRoute = request('from') === 'kemitraan' ? 'master.kemitraan' : 'astap.index';
+                    return redirect()->route($targetRoute)->with('error', "Aset kemitraan '{$astap->nama_barang}' berstatus {$kemitraanCheck->status_konsesi} dan terkunci dari perubahan.");
                 }
 
                 if (in_array($astap->sumber_dana, ['mutasi_eksternal', 'pelimpahan_skpd', 'pelimpahan', 'mutasi_masuk'], true) || !empty($astap->mutasi_nomor_bamb) || !empty($astap->mutasi_asal)) {
