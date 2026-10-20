@@ -144,10 +144,10 @@
 
                             <div class="space-y-3.5">
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
-                                    <!-- Luas Total Bangunan (m²) -->
+                                    <!-- Luas Lantai Gedung (m²) -->
                                     <div>
                                         <label class="block text-slate-300 text-[11px] mb-1.5 font-semibold">
-                                            Luas Bangunan (m²) <span class="text-rose-400">*</span>
+                                            Luas Lantai Gedung (m²) <span class="text-rose-400">*</span>
                                         </label>
                                         <div class="flex items-center rounded-xl bg-slate-950 border border-blue-500/40 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-500/20 overflow-hidden transition-all">
                                             <input type="number" step="0.01" min="0" x-model.number="item.gedung_luas_m2" @input="syncTotalsFromItems()"
@@ -157,22 +157,6 @@
                                         </div>
                                     </div>
 
-                                    <!-- Bertingkat / Tidak -->
-                                    <div>
-                                        <label class="block text-slate-300 text-[11px] mb-1.5 font-semibold">
-                                            Bertingkat
-                                        </label>
-                                        <select x-model="item.gedung_bertingkat"
-                                            class="w-full bg-slate-950 border border-slate-700/90 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 font-semibold focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 focus:outline-none transition-all">
-                                            <option value="Tidak">Tidak (1 Lantai)</option>
-                                            <option value="Bertingkat 2 Lantai">Bertingkat 2 Lantai</option>
-                                            <option value="Bertingkat 3 Lantai">Bertingkat 3 Lantai</option>
-                                            <option value="Bertingkat > 3 Lantai">Bertingkat &gt; 3 Lantai</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
                                     <!-- Kondisi Bangunan -->
                                     <div>
                                         <label class="block text-slate-300 text-[11px] mb-1.5 font-semibold">
@@ -185,8 +169,22 @@
                                             <option value="Rusak Berat">🔴 Rusak Berat (Tidak Layak)</option>
                                         </select>
                                     </div>
+                                </div>
 
-                                    <!-- Beton / Tidak -->
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
+                                    <!-- Konstruksi Bertingkat -->
+                                    <div>
+                                        <label class="block text-slate-300 text-[11px] mb-1.5 font-semibold">
+                                            Konstruksi Bertingkat
+                                        </label>
+                                        <select x-model="item.gedung_bertingkat"
+                                            class="w-full bg-slate-950 border border-slate-700/90 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 font-semibold focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 focus:outline-none transition-all">
+                                            <option value="Tidak">Tidak Bertingkat</option>
+                                            <option value="Bertingkat">Bertingkat</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Konstruksi Beton -->
                                     <div>
                                         <label class="block text-slate-300 text-[11px] mb-1.5 font-semibold">
                                             Konstruksi Beton
@@ -250,7 +248,11 @@
                                         </div>
                                         <input type="text" x-datepicker="{ maxDate: 'today' }" x-model="item.gedung_dokumen_tgl"
                                             placeholder="dd/mm/yyyy"
-                                            class="w-full bg-slate-950 border border-slate-700/90 rounded-xl px-3 py-2.5 text-xs text-slate-100 font-mono focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 focus:outline-none transition-all">
+                                            :class="isFutureDate(item.gedung_dokumen_tgl) ? 'border-rose-500 focus:border-rose-400 bg-rose-950/20 text-rose-300' : 'border-slate-700/90 focus:border-cyan-400 bg-slate-950 text-slate-100'"
+                                            class="w-full border rounded-xl px-3 py-2.5 text-xs font-mono focus:ring-2 focus:ring-cyan-400/20 focus:outline-none transition-all">
+                                        <div x-show="isFutureDate(item.gedung_dokumen_tgl)" class="mt-1 flex items-center gap-1 text-[10px] text-rose-400 font-semibold animate-pulse">
+                                            <span>⚠️ Tanggal dokumen izin tidak boleh melebihi hari ini</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

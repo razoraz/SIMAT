@@ -55,6 +55,7 @@
                 ppk_nip: '19760229 200801 1 010',
                 mutasi_keterangan: '',
                 dokumen_lampiran_path: '',
+                hapus_dokumen: false,
                 jenis_astap_id: '',
                 nama_barang: '',
                 jumlah_volume: 1,
@@ -124,6 +125,12 @@
             isTanggalBambInvalid() {
                 if (!this.formData.mutasi_tanggal) return false;
                 const t = this.parseDateToTimestamp(this.formData.mutasi_tanggal);
+                return t > 0 && t > this.getTodayTimestamp();
+            },
+
+            isFutureDate(dateStr) {
+                if (!dateStr) return false;
+                const t = this.parseDateToTimestamp(dateStr);
                 return t > 0 && t > this.getTodayTimestamp();
             },
 
@@ -1238,7 +1245,18 @@
                         return;
                     }
                     this.selectedFile = file;
+                    this.formData.hapus_dokumen = false;
                     this.showToast('Berkas Terpilih', `Berkas "${file.name}" siap diunggah.`, 'info');
+                }
+            },
+
+            // Hapus dokumen lampiran tersimpan pada mode edit
+            hapusDokumenTersimpan() {
+                if (confirm('Apakah Anda yakin ingin menghapus berkas dokumen Berita Acara yang tersimpan ini? Berkas akan dihapus permanen saat formulir disimpan.')) {
+                    this.formData.hapus_dokumen = true;
+                    this.formData.dokumen_lampiran_path = '';
+                    this.selectedFile = null;
+                    this.showToast('Berkas Ditandai Hapus', 'Berkas dokumen akan dihapus dari sistem saat Anda menyimpan formulir.', 'warning');
                 }
             },
 
@@ -1796,9 +1814,14 @@
                     if (this.formData.gedung_items && this.formData.gedung_items.length > 0) {
                         const firstG = this.formData.gedung_items[0];
                         specJson.gedung_luas_m2 = this.totalLuasGedung;
+                        specJson.luas_m2 = this.totalLuasGedung;
                         specJson.gedung_bertingkat = firstG.gedung_bertingkat || 'Tidak';
                         specJson.gedung_beton = firstG.gedung_beton || 'Beton';
                         specJson.gedung_status_tanah = firstG.gedung_status_tanah || 'Tanah Pemda';
+                        specJson.gedung_dokumen_no = firstG.gedung_dokumen_no || '';
+                        specJson.gedung_dokumen_tgl = firstG.gedung_dokumen_tgl || '';
+                        specJson.gedung_fungsi = firstG.gedung_fungsi || '';
+                        specJson.fungsi = firstG.gedung_fungsi || '';
                         specJson.gedung_alamat = firstG.gedung_alamat || this.formData.alamat_barang || '';
                     }
                 } else if (this.isJaringan) {
@@ -1811,6 +1834,7 @@
                         specJson.jaringan_beton = firstJ.jaringan_beton || 'Beton';
                         specJson.jaringan_status_tanah = firstJ.jaringan_status_tanah || 'Tanah Pemda';
                         specJson.jaringan_dokumen_no = firstJ.jaringan_dokumen_no || '';
+                        specJson.jaringan_dokumen_tgl = firstJ.jaringan_dokumen_tgl || '';
                         specJson.jaringan_alamat = firstJ.jaringan_alamat || this.formData.alamat_barang || '';
                     }
                 } else if (this.isLainnya) {
@@ -1859,6 +1883,9 @@
                 specJson.is_extracom = this.formData.is_extracomtable;
                 postData.append('spesifikasi_json', JSON.stringify(specJson));
 
+                if (this.formData.hapus_dokumen) {
+                    postData.append('hapus_dokumen', '1');
+                }
                 if (this.selectedFile) {
                     postData.append('dokumen_file', this.selectedFile);
                 }
@@ -1909,6 +1936,7 @@
                             this.formData[k] = init[k];
                         }
                     });
+                    this.formData.hapus_dokumen = false;
 
                     this.formData.is_extracomtable = Boolean(
                         init.is_extracomtable || 

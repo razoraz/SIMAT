@@ -361,7 +361,22 @@
             <template x-if="isEdit && formData.dokumen_lampiran_path">
                 <div class="mt-2.5 p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between text-xs">
                     <span class="text-slate-300 truncate">📄 File Tersimpan: <strong class="text-indigo-300" x-text="formData.dokumen_lampiran_path.split('/').pop()"></strong></span>
-                    <a :href="'/storage/' + formData.dokumen_lampiran_path" target="_blank" class="text-indigo-400 hover:underline font-bold text-[11px] shrink-0 ml-2">Lihat File ↗</a>
+                    <div class="flex items-center gap-3 shrink-0 ml-2">
+                        <a :href="'/storage/' + formData.dokumen_lampiran_path" target="_blank" class="text-indigo-400 hover:underline font-bold text-[11px]">Lihat File ↗</a>
+                        <button type="button" @click="hapusDokumenTersimpan()" class="text-rose-400 hover:text-rose-300 hover:underline font-bold text-[11px] flex items-center gap-1 transition-colors">
+                            <span>🗑️ Hapus</span>
+                        </button>
+                    </div>
+                </div>
+            </template>
+            <template x-if="isEdit && formData.hapus_dokumen && !selectedFile">
+                <div class="mt-2.5 p-2.5 rounded-xl bg-rose-950/40 border border-rose-800/60 flex items-center justify-between text-xs text-rose-300 animate-fadeIn">
+                    <span class="flex items-center gap-1.5 text-[11px]">
+                        <span>⚠️ Berkas tersimpan ditandai untuk dihapus saat formulir disimpan.</span>
+                    </span>
+                    <button type="button" @click="formData.dokumen_lampiran_path = initialAstap?.dokumen_lampiran_path || initialAstap?.spesifikasi_json?.dokumen_lampiran || ''; formData.hapus_dokumen = false;" class="text-xs text-slate-300 hover:text-white underline ml-2 cursor-pointer font-bold">
+                        Batal Hapus
+                    </button>
                 </div>
             </template>
         </div>

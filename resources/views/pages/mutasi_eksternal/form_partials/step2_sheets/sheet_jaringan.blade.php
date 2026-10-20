@@ -79,27 +79,28 @@
                                 </span>
                             </div>
                             
-                            <div class="relative flex items-center" style="position: relative;">
-                                <svg class="w-4 h-4 text-teal-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                                     style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; z-index: 10;">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                                </svg>
+                            <div class="relative">
                                 <input type="text"
                                        x-model="item.jaringan_nama_barang"
                                        @focus="item.isFilterOpen = true"
                                        @click="item.isFilterOpen = true"
                                        @input="item.isFilterOpen = true; syncTotalsFromItems();"
                                        placeholder="Ketik untuk memfilter jenis PMDN 108 atau tulis rincian ruas jalan/irigasi/jaringan..."
-                                       style="padding-left: 38px; padding-right: 36px;"
-                                       class="w-full bg-slate-950 border border-slate-700 hover:border-teal-500 focus:border-teal-500 rounded-xl py-2.5 text-xs text-white font-bold focus:outline-none transition-all shadow-inner">
-                                <button type="button" 
-                                        x-show="item.jaringan_nama_barang" 
-                                        @click="item.jaringan_nama_barang = ''; item.jaringan_kode_barang = ''; item.isFilterOpen = true; syncTotalsFromItems();" 
-                                        style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); z-index: 10;"
-                                        class="flex items-center justify-center text-slate-400 hover:text-white transition-colors cursor-pointer">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                                       class="w-full bg-slate-950 border border-slate-700 hover:border-teal-500 focus:border-teal-500 rounded-xl px-3.5 py-2.5 text-xs text-white font-bold focus:outline-none transition-all pl-9 pr-11 shadow-inner">
+                                <div class="absolute left-3 top-1/2 -translate-y-1/2 text-teal-400 pointer-events-none">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                                     </svg>
+                                </div>
+                                <button type="button" 
+                                        x-show="Boolean(item.jaringan_nama_barang)" 
+                                        @click.stop.prevent="clearItem108(item, 'jaringan'); item.jaringan_kode_barang = ''; item.jaringan_nama_barang = ''; item.searchFilter = ''; formData.nama_barang = ''; item.isFilterOpen = true;" 
+                                        @mousedown.stop.prevent="clearItem108(item, 'jaringan'); item.jaringan_kode_barang = ''; item.jaringan_nama_barang = ''; item.searchFilter = ''; formData.nama_barang = ''; item.isFilterOpen = true;" 
+                                        class="absolute inset-y-0 right-0 w-11 flex items-center justify-center text-slate-400 hover:text-white transition-colors cursor-pointer z-30"
+                                        title="Hapus / Kosongkan Pilihan">
+                                    <span class="w-6 h-6 rounded-full bg-slate-800/90 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 flex items-center justify-center transition-all border border-slate-700 hover:border-rose-500/50 shadow-sm">
+                                        <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </span>
                                 </button>
                             </div>
 
@@ -215,7 +216,11 @@
                                     </div>
                                     <input type="text" x-datepicker="{ maxDate: 'today' }" x-model="item.jaringan_dokumen_tgl"
                                         placeholder="dd/mm/yyyy"
-                                        class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white focus:border-amber-500 focus:outline-none transition-all">
+                                        :class="isFutureDate(item.jaringan_dokumen_tgl) ? 'border-rose-500 focus:border-rose-400 bg-rose-950/20 text-rose-300' : 'border-slate-700 focus:border-amber-500 bg-slate-950 text-white'"
+                                        class="w-full border rounded-xl px-2 py-2 text-xs focus:outline-none transition-all">
+                                    <div x-show="isFutureDate(item.jaringan_dokumen_tgl)" class="mt-1 flex items-center gap-1 text-[10px] text-rose-400 font-semibold animate-pulse">
+                                        <span>⚠️ Tanggal dokumen tidak boleh melebihi hari ini</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>

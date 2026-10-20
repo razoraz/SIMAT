@@ -164,12 +164,19 @@
                                             class="w-full bg-slate-950 border border-slate-700/90 rounded-xl px-3 py-2.5 text-xs text-slate-100 font-mono focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:outline-none transition-all">
                                     </div>
                                     <div>
-                                        <label class="block text-slate-300 text-[11px] mb-1.5 font-semibold truncate" title="Tanggal Terbit Sertifikat">
-                                            Tanggal Terbit Sertifikat
-                                        </label>
+                                        <div class="flex items-center justify-between mb-1.5">
+                                            <label class="block text-slate-300 text-[11px] font-semibold truncate" title="Tanggal Terbit Sertifikat">
+                                                Tanggal Terbit Sertifikat
+                                            </label>
+                                            <span class="text-[9px] font-mono text-amber-400/80 bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-800/40">Maks: Hari Ini</span>
+                                        </div>
                                         <input type="text" x-datepicker="{ maxDate: 'today' }" x-model="item.tanah_sertifikat_tgl"
                                             placeholder="dd/mm/yyyy"
-                                            class="w-full bg-slate-950 border border-slate-700/90 rounded-xl px-3 py-2.5 text-xs text-slate-100 font-mono focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 focus:outline-none transition-all">
+                                            :class="isFutureDate(item.tanah_sertifikat_tgl) ? 'border-rose-500 focus:border-rose-400 bg-rose-950/20 text-rose-300' : 'border-slate-700/90 focus:border-amber-400 bg-slate-950 text-slate-100'"
+                                            class="w-full border rounded-xl px-3 py-2.5 text-xs font-mono focus:ring-2 focus:ring-amber-400/20 focus:outline-none transition-all">
+                                        <div x-show="isFutureDate(item.tanah_sertifikat_tgl)" class="mt-1 flex items-center gap-1 text-[10px] text-rose-400 font-semibold animate-pulse">
+                                            <span>⚠️ Tanggal sertifikat tidak boleh melebihi hari ini</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

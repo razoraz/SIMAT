@@ -789,6 +789,9 @@ class MutasiEksternalController extends Controller
             $specJson['gedung_beton'] = $firstG['gedung_beton'] ?? 'Beton';
             $specJson['gedung_status_tanah'] = $firstG['gedung_status_tanah'] ?? 'Tanah Pemda';
             $specJson['gedung_dokumen_no'] = $firstG['gedung_dokumen_no'] ?? ($firstG['gedung_dokumen_nomor'] ?? null);
+            $specJson['gedung_dokumen_tgl'] = $firstG['gedung_dokumen_tgl'] ?? ($firstG['gedung_dokumen_tanggal'] ?? null);
+            $specJson['gedung_fungsi'] = $firstG['gedung_fungsi'] ?? ($firstG['fungsi'] ?? null);
+            $specJson['fungsi'] = $firstG['gedung_fungsi'] ?? ($firstG['fungsi'] ?? null);
         }
 
         // Unpack KIB D: Jalan, Irigasi & Jaringan
@@ -798,6 +801,8 @@ class MutasiEksternalController extends Controller
             $specJson['jaringan_konstruksi'] = $firstJ['jaringan_konstruksi'] ?? null;
             $specJson['jaringan_panjang_m'] = $firstJ['jaringan_panjang_m'] ?? null;
             $specJson['jaringan_luas_m2'] = $firstJ['jaringan_luas_m2'] ?? null;
+            $specJson['jaringan_dokumen_no'] = $firstJ['jaringan_dokumen_no'] ?? null;
+            $specJson['jaringan_dokumen_tgl'] = $firstJ['jaringan_dokumen_tgl'] ?? null;
         }
 
         // Unpack KIB E: Aset Tetap Lainnya
@@ -1059,6 +1064,11 @@ class MutasiEksternalController extends Controller
                 Storage::disk('public')->delete($dokumenPath);
             }
             $dokumenPath = $newPath;
+        } elseif ($request->boolean('hapus_dokumen')) {
+            if ($dokumenPath && Storage::disk('public')->exists($dokumenPath)) {
+                Storage::disk('public')->delete($dokumenPath);
+            }
+            $dokumenPath = null;
         }
 
         $totalRealisasi = (float) $data['total_realisasi'];
@@ -1120,6 +1130,10 @@ class MutasiEksternalController extends Controller
 
         if ($dokumenPath) {
             $specJson['dokumen_lampiran'] = $dokumenPath;
+        } elseif ($request->boolean('hapus_dokumen')) {
+            $specJson['dokumen_lampiran'] = null;
+            unset($specJson['dokumen_lampiran']);
+            $existingDoc = null;
         } elseif (!empty($existingDoc)) {
             $specJson['dokumen_lampiran'] = $existingDoc;
         }
@@ -1177,6 +1191,9 @@ class MutasiEksternalController extends Controller
             $specJson['gedung_beton'] = $firstG['gedung_beton'] ?? 'Beton';
             $specJson['gedung_status_tanah'] = $firstG['gedung_status_tanah'] ?? 'Tanah Pemda';
             $specJson['gedung_dokumen_no'] = $firstG['gedung_dokumen_no'] ?? ($firstG['gedung_dokumen_nomor'] ?? null);
+            $specJson['gedung_dokumen_tgl'] = $firstG['gedung_dokumen_tgl'] ?? ($firstG['gedung_dokumen_tanggal'] ?? null);
+            $specJson['gedung_fungsi'] = $firstG['gedung_fungsi'] ?? ($firstG['fungsi'] ?? null);
+            $specJson['fungsi'] = $firstG['gedung_fungsi'] ?? ($firstG['fungsi'] ?? null);
         }
 
         // Unpack KIB D: Jalan, Irigasi & Jaringan
@@ -1186,6 +1203,8 @@ class MutasiEksternalController extends Controller
             $specJson['jaringan_konstruksi'] = $firstJ['jaringan_konstruksi'] ?? null;
             $specJson['jaringan_panjang_m'] = $firstJ['jaringan_panjang_m'] ?? null;
             $specJson['jaringan_luas_m2'] = $firstJ['jaringan_luas_m2'] ?? null;
+            $specJson['jaringan_dokumen_no'] = $firstJ['jaringan_dokumen_no'] ?? null;
+            $specJson['jaringan_dokumen_tgl'] = $firstJ['jaringan_dokumen_tgl'] ?? null;
         }
 
         // Unpack KIB E: Aset Tetap Lainnya
@@ -1295,7 +1314,7 @@ class MutasiEksternalController extends Controller
                     'pj_tujuan_jabatan'   => 'Pengurus Barang Pengguna RSUD Dr. H. Koesnadi',
                     'nomor_sk_dasar'      => $request->input('nomor_sk_dasar') ?: null,
                     'tgl_estimasi_kembali'=> $request->input('tgl_estimasi_kembali'),
-                    'dokumen_lampiran'    => $dokumenPath ?: ($existingDoc ?: null),
+                    'dokumen_lampiran'    => $dokumenPath ?: ($request->boolean('hapus_dokumen') ? null : ($existingDoc ?: null)),
                     'status'              => 'Disahkan (Selesai)',
                     'jumlah_volume'       => $totalVolume,
                     'satuan'              => $data['satuan'],
@@ -1306,7 +1325,26 @@ class MutasiEksternalController extends Controller
             );
 
             // 3. Update seluruh register aset yang ada secara presisi per unit
-            $existingRegs = AstapRegister::where('astap_id', $item->id)->orderBy('id')->get();
+            $existingRegs = AstapRegister::where('astap_id', $item->id)->where('is_deleted', 0)->orderBy('id')->get();
+            $currentRegsCount = $existingRegs->count();
+
+            // Jika jumlah_volume berkurang saat edit, tandai register berlebih di ekor sebagai soft-deleted
+            if ($totalVolume < $currentRegsCount) {
+                $user = Auth::user();
+                $deleterName = $user ? ($user->name . ' (' . ucfirst($user->role ?? 'user') . ')') : 'Administrator';
+                $excessRegs = $existingRegs->slice($totalVolume);
+                foreach ($excessRegs as $excessReg) {
+                    $excessReg->update([
+                        'is_deleted'    => 1,
+                        'status'        => 'Dihapus',
+                        'deleted_by'    => $deleterName,
+                        'deleted_by_id' => $user?->id,
+                        'deleted_at'    => now(),
+                    ]);
+                }
+                $existingRegs = $existingRegs->slice(0, $totalVolume);
+            }
+
             foreach ($existingRegs as $idx => $reg) {
                 $uKondisi = $units[$idx]['kondisi'] ?? $dominantKondisi;
                 $uRuang   = $units[$idx]['ruang'] ?? $ruangNama;
@@ -1320,7 +1358,6 @@ class MutasiEksternalController extends Controller
             }
 
             // 5. Jika jumlah_volume bertambah melebihi jumlah register saat ini, buat register baru
-            $currentRegsCount = $existingRegs->count();
             if ($totalVolume > $currentRegsCount) {
                 $ja = JenisAstap::find($data['jenis_astap_id']);
                 $kode108Raw = $ja ? ($ja->sub_sub_rincian_objek ?: $ja->jenis) : '1.3.2.00.00.00';
