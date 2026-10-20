@@ -529,8 +529,13 @@
                             </div>
                             <div>
                                 <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Jumlah Volume <span class="text-rose-400">*</span></label>
-                                <input type="number" min="1" x-model.number="item.lainnya_jumlah" @input="syncTotalsFromItems()" placeholder="1"
-                                    class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono font-bold focus:border-purple-500 focus:outline-none">
+                                <input type="number" min="1" x-model.number="item.lainnya_jumlah"
+                                       @keydown="handleVolumeKeydown($event)"
+                                       @input="if (item.lainnya_jumlah !== '' && item.lainnya_jumlah !== null && parseInt(item.lainnya_jumlah) < 1) item.lainnya_jumlah = 1; syncTotalsFromItems();"
+                                       @blur="normalizeVolume(item, 'lainnya_jumlah')"
+                                       @change="normalizeVolume(item, 'lainnya_jumlah')"
+                                       placeholder="1"
+                                       class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono font-bold focus:border-purple-500 focus:outline-none">
                             </div>
                             <div>
                                 <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Satuan <span class="text-rose-400">*</span></label>

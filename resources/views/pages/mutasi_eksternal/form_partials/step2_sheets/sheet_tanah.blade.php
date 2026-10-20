@@ -283,7 +283,12 @@
                                         <span>Jumlah Volume / Bidang <span class="text-rose-400">*</span></span>
                                         <span class="text-[9.5px] font-mono text-emerald-400 bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-800/40 font-bold">Kuantitas</span>
                                     </label>
-                                    <input type="number" min="1" x-model.number="item.tanah_jumlah_barang" @input="syncTotalsFromItems()" placeholder="1"
+                                    <input type="number" min="1" x-model.number="item.tanah_jumlah_barang"
+                                           @keydown="handleVolumeKeydown($event)"
+                                           @input="if (item.tanah_jumlah_barang !== '' && item.tanah_jumlah_barang !== null && parseInt(item.tanah_jumlah_barang) < 1) item.tanah_jumlah_barang = 1; syncTotalsFromItems();"
+                                           @blur="normalizeVolume(item, 'tanah_jumlah_barang')"
+                                           @change="normalizeVolume(item, 'tanah_jumlah_barang')"
+                                           placeholder="1"
                                            class="w-full bg-slate-950 border border-slate-700/90 hover:border-emerald-500 focus:border-emerald-400 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono font-bold focus:outline-none transition-all shadow-inner">
                                 </div>
 

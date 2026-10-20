@@ -503,6 +503,33 @@
                 return Number(this.formData.total_realisasi || 0);
             },
 
+            // Validasi & Proteksi Input Jumlah Volume (Mencegah 0, minus, e, dan minimal 1)
+            handleVolumeKeydown(e) {
+                if (e.key === '-' || e.key === 'e' || e.key === '.') {
+                    e.preventDefault();
+                    return;
+                }
+                if (e.key === '0') {
+                    const target = e.target;
+                    const val = target.value;
+                    const isAllSelected = (target.selectionStart === 0 && target.selectionEnd === val.length);
+                    if (!val || val === '0' || isAllSelected || (target.selectionStart === 0 && target.selectionEnd === 0)) {
+                        e.preventDefault();
+                    }
+                }
+            },
+
+            normalizeVolume(item, key) {
+                if (!item) return;
+                const val = parseInt(item[key]);
+                if (isNaN(val) || val < 1) {
+                    item[key] = 1;
+                } else {
+                    item[key] = val;
+                }
+                this.syncTotalsFromItems();
+            },
+
             // Setter Global Status Akuntansi (Aset Tetap Reguler vs Ekstrakomtabel)
             setGlobalExtracom(val) {
                 const isExtra = Boolean(val);

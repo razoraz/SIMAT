@@ -394,7 +394,12 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                             <div>
                                 <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Jumlah (Volume) <span class="text-rose-400">*</span></label>
-                                <input type="number" min="1" x-model.number="item.mesin_jumlah_barang" @input="syncTotalsFromItems()" placeholder="1"
+                                <input type="number" min="1" x-model.number="item.mesin_jumlah_barang"
+                                       @keydown="handleVolumeKeydown($event)"
+                                       @input="if (item.mesin_jumlah_barang !== '' && item.mesin_jumlah_barang !== null && parseInt(item.mesin_jumlah_barang) < 1) item.mesin_jumlah_barang = 1; syncTotalsFromItems();"
+                                       @blur="normalizeVolume(item, 'mesin_jumlah_barang')"
+                                       @change="normalizeVolume(item, 'mesin_jumlah_barang')"
+                                       placeholder="1"
                                        class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono font-bold focus:border-emerald-500 focus:outline-none">
                             </div>
                             <div>

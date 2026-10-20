@@ -315,7 +315,12 @@
                                         <span>Jumlah Volume / Bangunan <span class="text-rose-400">*</span></span>
                                         <span class="text-[9.5px] font-mono text-blue-400 bg-blue-950/50 px-2 py-0.5 rounded border border-blue-800/40 font-bold">Kuantitas</span>
                                     </label>
-                                    <input type="number" min="1" x-model.number="item.gedung_jumlah_bangunan" @input="syncTotalsFromItems()" placeholder="1"
+                                    <input type="number" min="1" x-model.number="item.gedung_jumlah_bangunan"
+                                           @keydown="handleVolumeKeydown($event)"
+                                           @input="if (item.gedung_jumlah_bangunan !== '' && item.gedung_jumlah_bangunan !== null && parseInt(item.gedung_jumlah_bangunan) < 1) item.gedung_jumlah_bangunan = 1; syncTotalsFromItems();"
+                                           @blur="normalizeVolume(item, 'gedung_jumlah_bangunan')"
+                                           @change="normalizeVolume(item, 'gedung_jumlah_bangunan')"
+                                           placeholder="1"
                                            class="w-full bg-slate-950 border border-slate-700/90 hover:border-blue-500 focus:border-blue-400 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono font-bold focus:outline-none transition-all shadow-inner">
                                 </div>
 
