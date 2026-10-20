@@ -1778,11 +1778,34 @@
                     ppk_nip: this.formData.ppk_nip
                 };
 
+                // Bersihkan properti KIB silang agar specJson murni sesuai KIB aktif
+                delete specJson.tanah_items;
+                delete specJson.mesin_items;
+                delete specJson.gedung_items;
+                delete specJson.jaringan_items;
+                delete specJson.lainnya_items;
+                delete specJson.merk;
+                delete specJson.type;
+                delete specJson.ukuran;
+                delete specJson.bahan;
+                delete specJson.no_pabrik;
+                delete specJson.no_rangka;
+                delete specJson.no_mesin;
+                delete specJson.no_bpkb;
+                delete specJson.no_polisi;
+                delete specJson.luas_m2;
+                delete specJson.hak_tanah;
+                delete specJson.sertifikat_no;
+                delete specJson.sertifikat_tgl;
+                delete specJson.penggunaan;
+                delete specJson.gedung_luas_m2;
+                delete specJson.jaringan_luas_m2;
+
                 if (this.isTanah) {
                     specJson.kategori_kib = 'KIB A (Tanah)';
-                    specJson.tanah_items = this.formData.tanah_items;
-                    if (this.formData.tanah_items && this.formData.tanah_items.length > 0) {
-                        const firstT = this.formData.tanah_items[0];
+                    specJson.tanah_items = (this.formData.tanah_items || []).filter(it => it && (it.tanah_nama_barang || it.tanah_hak || it.tanah_luas_m2));
+                    if (specJson.tanah_items.length > 0) {
+                        const firstT = specJson.tanah_items[0];
                         specJson.luas_m2 = this.totalLuasTanah;
                         specJson.hak_tanah = firstT.tanah_hak || 'Hak Pakai';
                         specJson.sertifikat_no = firstT.tanah_sertifikat_no || '';
@@ -1791,9 +1814,9 @@
                     }
                 } else if (this.isMesin) {
                     specJson.kategori_kib = 'KIB B (Peralatan & Mesin)';
-                    specJson.mesin_items = this.formData.mesin_items;
-                    if (this.formData.mesin_items && this.formData.mesin_items.length > 0) {
-                        const firstM = this.formData.mesin_items[0];
+                    specJson.mesin_items = (this.formData.mesin_items || []).filter(it => it && (it.mesin_nama_barang || it.mesin_merk || it.mesin_type || it.mesin_nilai_satuan));
+                    if (specJson.mesin_items.length > 0) {
+                        const firstM = specJson.mesin_items[0];
                         specJson.is_extracom = firstM.is_extracom || false;
                         specJson.merk = firstM.mesin_merk || '';
                         specJson.type = firstM.mesin_type || '';
@@ -1810,9 +1833,9 @@
                     }
                 } else if (this.isGedung) {
                     specJson.kategori_kib = 'KIB C (Gedung & Bangunan)';
-                    specJson.gedung_items = this.formData.gedung_items;
-                    if (this.formData.gedung_items && this.formData.gedung_items.length > 0) {
-                        const firstG = this.formData.gedung_items[0];
+                    specJson.gedung_items = (this.formData.gedung_items || []).filter(it => it && (it.gedung_nama_barang || it.gedung_luas_m2));
+                    if (specJson.gedung_items.length > 0) {
+                        const firstG = specJson.gedung_items[0];
                         specJson.gedung_luas_m2 = this.totalLuasGedung;
                         specJson.luas_m2 = this.totalLuasGedung;
                         specJson.gedung_bertingkat = firstG.gedung_bertingkat || 'Tidak';
@@ -1826,9 +1849,9 @@
                     }
                 } else if (this.isJaringan) {
                     specJson.kategori_kib = 'KIB D (Jalan, Irigasi & Jaringan)';
-                    specJson.jaringan_items = this.formData.jaringan_items;
-                    if (this.formData.jaringan_items && this.formData.jaringan_items.length > 0) {
-                        const firstJ = this.formData.jaringan_items[0];
+                    specJson.jaringan_items = (this.formData.jaringan_items || []).filter(it => it && (it.jaringan_nama_barang || it.jaringan_luas_m2));
+                    if (specJson.jaringan_items.length > 0) {
+                        const firstJ = specJson.jaringan_items[0];
                         specJson.jaringan_luas_m2 = this.totalLuasJaringan;
                         specJson.jaringan_bertingkat = firstJ.jaringan_bertingkat || 'Tidak';
                         specJson.jaringan_beton = firstJ.jaringan_beton || 'Beton';
@@ -1839,7 +1862,7 @@
                     }
                 } else if (this.isLainnya) {
                     specJson.kategori_kib = 'KIB E (Aset Tetap Lainnya)';
-                    specJson.lainnya_items = this.formData.lainnya_items;
+                    specJson.lainnya_items = (this.formData.lainnya_items || []).filter(it => it && (it.lainnya_nama_barang || it.lainnya_judul));
                 }
 
                 this.isSubmitting = true;
@@ -1873,12 +1896,18 @@
                 postData.append('from', this.formData.from || 'eksternal');
                 postData.append('is_extracomtable', this.formData.is_extracomtable ? 1 : 0);
 
-                // Append specs (hanya kirim items sesuai kategori KIB aktif agar tidak mengotori data)
-                postData.append('tanah_items', JSON.stringify(this.isTanah ? (this.formData.tanah_items || []) : []));
-                postData.append('mesin_items', JSON.stringify(this.isMesin ? (this.formData.mesin_items || []) : []));
-                postData.append('gedung_items', JSON.stringify(this.isGedung ? (this.formData.gedung_items || []) : []));
-                postData.append('jaringan_items', JSON.stringify(this.isJaringan ? (this.formData.jaringan_items || []) : []));
-                postData.append('lainnya_items', JSON.stringify(this.isLainnya ? (this.formData.lainnya_items || []) : []));
+                // Append specs (HANYA kirim items sesuai kategori KIB aktif agar tidak mengotori data)
+                if (this.isTanah) {
+                    postData.append('tanah_items', JSON.stringify(specJson.tanah_items || []));
+                } else if (this.isMesin) {
+                    postData.append('mesin_items', JSON.stringify(specJson.mesin_items || []));
+                } else if (this.isGedung) {
+                    postData.append('gedung_items', JSON.stringify(specJson.gedung_items || []));
+                } else if (this.isJaringan) {
+                    postData.append('jaringan_items', JSON.stringify(specJson.jaringan_items || []));
+                } else if (this.isLainnya) {
+                    postData.append('lainnya_items', JSON.stringify(specJson.lainnya_items || []));
+                }
                 specJson.is_extracomtable = this.formData.is_extracomtable;
                 specJson.is_extracom = this.formData.is_extracomtable;
                 postData.append('spesifikasi_json', JSON.stringify(specJson));

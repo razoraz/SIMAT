@@ -750,6 +750,24 @@ class MutasiEksternalController extends Controller
             }
         }
 
+        // Sanitasi spesifikasi: Hapus array repeater yang bukan milik KIB terkait agar JSON tidak kotor
+        $targetKib = 'mesin';
+        $jaModel = JenisAstap::find($data['jenis_astap_id']);
+        $prefix108 = $jaModel ? substr($jaModel->jenis, 0, 5) : '';
+        if (str_starts_with($prefix108, '1.3.1')) $targetKib = 'tanah';
+        elseif (str_starts_with($prefix108, '1.3.2')) $targetKib = 'mesin';
+        elseif (str_starts_with($prefix108, '1.3.3')) $targetKib = 'gedung';
+        elseif (str_starts_with($prefix108, '1.3.4')) $targetKib = 'jaringan';
+        elseif (str_starts_with($prefix108, '1.3.5')) $targetKib = 'lainnya';
+
+        $allKibRepeaters = ['tanah_items', 'mesin_items', 'gedung_items', 'jaringan_items', 'lainnya_items'];
+        $activeRepeater = $targetKib . '_items';
+        foreach ($allKibRepeaters as $repKey) {
+            if ($repKey !== $activeRepeater) {
+                unset($specJson[$repKey]);
+            }
+        }
+
         // Unpack KIB A: Tanah
         if (!empty($specJson['tanah_items']) && is_array($specJson['tanah_items']) && count($specJson['tanah_items']) > 0) {
             $tItems = $specJson['tanah_items'];
@@ -1149,6 +1167,24 @@ class MutasiEksternalController extends Controller
                     }
                 }
                 $specJson[$rk] = $val;
+            }
+        }
+
+        // Sanitasi spesifikasi: Hapus array repeater yang bukan milik KIB terkait agar JSON tidak kotor
+        $targetKib = 'mesin';
+        $jaModel = JenisAstap::find($data['jenis_astap_id']);
+        $prefix108 = $jaModel ? substr($jaModel->jenis, 0, 5) : '';
+        if (str_starts_with($prefix108, '1.3.1')) $targetKib = 'tanah';
+        elseif (str_starts_with($prefix108, '1.3.2')) $targetKib = 'mesin';
+        elseif (str_starts_with($prefix108, '1.3.3')) $targetKib = 'gedung';
+        elseif (str_starts_with($prefix108, '1.3.4')) $targetKib = 'jaringan';
+        elseif (str_starts_with($prefix108, '1.3.5')) $targetKib = 'lainnya';
+
+        $allKibRepeaters = ['tanah_items', 'mesin_items', 'gedung_items', 'jaringan_items', 'lainnya_items'];
+        $activeRepeater = $targetKib . '_items';
+        foreach ($allKibRepeaters as $repKey) {
+            if ($repKey !== $activeRepeater) {
+                unset($specJson[$repKey]);
             }
         }
 
