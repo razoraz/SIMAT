@@ -38,14 +38,12 @@
                 return 'dimanfaatkan';
             })(),
 
-            // Flag status kepemilikan aset sudah menjadi Milik RSUD (Reklasifikasi)
-            isMilikRsud: Boolean(
-                window.isMilikRsud || 
-                (window.editAstapData && (
-                    window.editAstapData.is_reklas || 
+            // Flag status kepemilikan aset sudah menjadi Milik RSUD (Konsesi Selesai / Hasil Reklasifikasi Balik)
+            isMilikRsud: (typeof window.isMilikRsud === 'boolean') ? window.isMilikRsud : Boolean(
+                window.editAstapData && (
                     (window.editAstapData.kemitraan && ['Selesai / Reklasifikasi', 'Selesai'].includes(window.editAstapData.kemitraan.status_konsesi)) ||
-                    (Array.isArray(window.editAstapData.reklas) && window.editAstapData.reklas.length > 0)
-                ))
+                    (window.editAstapData.is_kemitraan_reklas === true)
+                )
             ),
 
             // Mode Produksi: Lock KIB aktif secara ketat sesuai data aset BMD yang dimanfaatkan (kecuali aset sudah Milik RSUD)

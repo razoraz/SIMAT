@@ -2792,13 +2792,15 @@ Route::middleware('auth')->group(function () {
                     ]);
                 }
 
-                $statusKonsesi = $astap?->kemitraan?->status_konsesi;
-                if (!$statusKonsesi) {
-                    $kCheck = \App\Models\AstapKemitraan::where(function ($q) use ($astap) {
-                        $q->where('astap_id', $astap->id)->orWhere('objek_astap_id', $astap->id);
-                    })->where('is_deleted', 0)->first();
-                    $statusKonsesi = $kCheck?->status_konsesi;
+                $kemitraanRow = $astap->kemitraan ?? \App\Models\AstapKemitraan::where(function ($q) use ($astap) {
+                    $q->where('astap_id', $astap->id)->orWhere('objek_astap_id', $astap->id);
+                })->where('is_deleted', 0)->first();
+
+                if ($kemitraanRow && (!$astap->relationLoaded('kemitraan') || !$astap->kemitraan)) {
+                    $astap->setRelation('kemitraan', $kemitraanRow);
                 }
+
+                $statusKonsesi = $kemitraanRow?->status_konsesi;
                 if (in_array($statusKonsesi, ['Dikembalikan ke Rekanan', 'Dibatalkan'])) {
                     $targetRoute = request('from') === 'astap' ? 'astap.index' : 'master.kemitraan';
                     return redirect()->route($targetRoute)
@@ -2809,12 +2811,21 @@ Route::middleware('auth')->group(function () {
                 $queryTipe = $request->query('tipe');
                 if ($queryTipe && in_array($queryTipe, ['ditambahkan', 'dimanfaatkan'])) {
                     $tipe = $queryTipe;
-                } elseif (!empty($astap?->kemitraan?->tipe_kemitraan) && in_array($astap->kemitraan->tipe_kemitraan, ['ditambahkan', 'dimanfaatkan'])) {
-                    $tipe = $astap->kemitraan->tipe_kemitraan;
+                } elseif (!empty($kemitraanRow?->tipe_kemitraan) && in_array($kemitraanRow->tipe_kemitraan, ['ditambahkan', 'dimanfaatkan'])) {
+                    $tipe = $kemitraanRow->tipe_kemitraan;
                 } elseif (!empty($spec['tipe_kemitraan']) && in_array($spec['tipe_kemitraan'], ['ditambahkan', 'dimanfaatkan'])) {
                     $tipe = $spec['tipe_kemitraan'];
+                } elseif (!empty($kemitraanRow?->objek_astap_id)) {
+                    $tipe = 'ditambahkan';
+                } elseif ($astap?->is_reklas || !empty($spec['split_parent_id'])) {
+                    $tipe = 'dimanfaatkan';
                 } else {
-                    $tipe = ($astap?->is_reklas) ? 'dimanfaatkan' : 'ditambahkan';
+                    $nb = strtolower($astap?->nama_barang ?? '');
+                    if (str_starts_with($nb, 'sewa ') || str_contains($nb, 'pemanfaatan')) {
+                        $tipe = 'dimanfaatkan';
+                    } else {
+                        $tipe = 'ditambahkan';
+                    }
                 }
 
                 return view('pages.kemitraan.form', compact(

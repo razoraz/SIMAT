@@ -1,20 +1,36 @@
 @php
-    $isEdit = isset($astap) && $astap;
+    $astapModel = $astap ?? null;
+    $isEdit = !empty($astapModel);
     $isFromAstap = request('from') === 'astap' || request()->query('from') === 'astap';
+
+    // Status konsesi dari tabel astap_kemitraans
+    $statusKonsesi = $astapModel?->kemitraan?->status_konsesi;
+    if (!$statusKonsesi && $isEdit) {
+        $kCheck = \App\Models\AstapKemitraan::where(function ($q) use ($astapModel) {
+            $q->where('astap_id', $astapModel->id)->orWhere('objek_astap_id', $astapModel->id);
+        })->where('is_deleted', 0)->first();
+        $statusKonsesi = $kCheck?->status_konsesi;
+    }
+
+    // Reklasifikasi terakhir: apakah reklas keluar dari Kemitraan ke Milik RSUD?
+    $latestReklas = ($isEdit && $astapModel->reklas) ? $astapModel->reklas->sortByDesc('id')->first() : null;
+    $isReklasKeluar = ($latestReklas && $latestReklas->asal_kib === 'KEMITRAAN' && $latestReklas->tujuan_kib !== 'KEMITRAAN');
+
+    // Suatu aset HANYA dianggap "Milik RSUD (Eks-Kemitraan)" jika konsesinya telah selesai / direklasifikasi kembali ke RSUD
     $isMilikRsud = $isEdit && (
-        $isFromAstap
-        || ($astap->is_reklas)
-        || ($astap->kemitraan?->status_konsesi === 'Selesai / Reklasifikasi')
-        || ($astap->kemitraan?->status_konsesi === 'Selesai')
-        || ($astap->reklas && $astap->reklas->isNotEmpty())
+        in_array($statusKonsesi, ['Selesai / Reklasifikasi', 'Selesai'], true)
+        || $isReklasKeluar
     );
+
     $backUrl = ($isFromAstap || $isMilikRsud) ? route('astap.index') : route('master.kemitraan');
     $pageTitle = $isMilikRsud 
         ? 'Ubah Data Aset Milik RSUD (Eks-Kemitraan)' 
         : ($isEdit ? 'Ubah Data Aset Kemitraan (KSO)' : 'Pencatatan Aset Kemitraan (KSO)');
-    $pageBreadcrumb = ($isFromAstap || $isMilikRsud)
+    $pageBreadcrumb = $isMilikRsud
         ? 'Master Utama / Data ASTAP / Ubah Data Aset Milik RSUD'
-        : ($isEdit ? 'Master Aset / Kelola Kemitraan Aset / Ubah Aset Kemitraan' : 'Master Aset / Kelola Kemitraan Aset / Tambah Aset Kemitraan');
+        : ($isFromAstap 
+            ? 'Master Utama / Data ASTAP / Ubah Data Aset Kemitraan' 
+            : ($isEdit ? 'Master Aset / Kelola Kemitraan Aset / Ubah Aset Kemitraan' : 'Master Aset / Kelola Kemitraan Aset / Tambah Aset Kemitraan'));
 @endphp
 
 <x-layout :title="($pageTitle) . ' - SIMAT-RK'">
