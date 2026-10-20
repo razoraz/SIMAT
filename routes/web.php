@@ -3508,7 +3508,18 @@ Route::middleware('auth')->group(function () {
             })->name('astap.create');
 
             Route::get('/astap/{id}/edit', function ($id) use ($getDistinctPenyedias, $getDistinctPejabats) {
-                $astap = \App\Models\Astap::with(['registers', 'jenisAstap', 'rekeningBelanja', 'jenisPengadaan', 'belanjaModal', 'kemitraan', 'reklas'])->findOrFail($id);
+                $astap = \App\Models\Astap::with(['registers', 'jenisAstap', 'rekeningBelanja', 'jenisPengadaan', 'belanjaModal', 'kemitraan', 'reklas', 'mutasiEksternals'])->findOrFail($id);
+
+                // Proteksi Mutasi Keluar Penuh: Dilarang mengedit aset yang telah 100% keluar dari RSUD
+                $activeRegsCount = $astap->registers ? $astap->registers->where('is_deleted', 0)->where('status', '!=', 'Mutasi Keluar OPD')->count() : 0;
+                $mutatedRegsCount = $astap->registers ? $astap->registers->where('status', 'Mutasi Keluar OPD')->count() : 0;
+                $isFullMutasiKeluar = ($astap->jenis_reklas === 'MUTASI_EKSTERNAL') || ($mutatedRegsCount > 0 && $activeRegsCount === 0);
+
+                if ($isFullMutasiKeluar) {
+                    $opdTujuan = $astap->mutasiEksternals->where('tipe', 'keluar')->first()?->opd_tujuan ?: 'SKPD / OPD Luar';
+                    return redirect()->route('astap.index')->with('error', "Aset \"{$astap->nama_barang}\" telah 100% dimutasi keluar ke {$opdTujuan}. Data tidak dapat diubah langsung. Silakan batalkan mutasi di menu Mutasi Eksternal terlebih dahulu jika ingin melakukan koreksi.");
+                }
+
                 if (in_array($astap->sumber_dana, ['mutasi_eksternal', 'pelimpahan_skpd', 'pelimpahan', 'mutasi_masuk'], true) || !empty($astap->mutasi_nomor_bamb) || !empty($astap->mutasi_asal)) {
                     return redirect()->route('astap.edit_mutasi_eksternal', ['id' => $id, 'from' => request('from', 'eksternal')]);
                 }
@@ -5157,6 +5168,28 @@ Route::middleware('auth')->group(function () {
                 ], 422);
             }
 
+            // Proteksi Integritas Aset Mutasi Keluar OPD
+            $activeRegsCount = $astap->registers ? $astap->registers->where('is_deleted', 0)->where('status', '!=', 'Mutasi Keluar OPD')->count() : 0;
+            $mutatedRegsCount = $astap->registers ? $astap->registers->where('status', 'Mutasi Keluar OPD')->count() : 0;
+            $isFullMutasiKeluar = ($astap->jenis_reklas === 'MUTASI_EKSTERNAL') || ($mutatedRegsCount > 0 && $activeRegsCount === 0);
+
+            if ($isFullMutasiKeluar) {
+                $opdTujuan = $astap->mutasiEksternals()->where('tipe', 'keluar')->first()?->opd_tujuan ?: 'SKPD / OPD Luar';
+                return response()->json([
+                    'success' => false,
+                    'message' => "Data ASTAP \"{$astap->nama_barang}\" tidak dapat diubah karena telah 100% dimutasi keluar ke {$opdTujuan}. Jika terjadi kekeliruan atau mutasi dibatalkan, silakan lakukan pembatalan mutasi di menu Mutasi Eksternal terlebih dahulu."
+                ], 422);
+            }
+
+            // Validasi Volume Minimum untuk Kasus Mutasi Keluar Parsial
+            $newVolume = max(1, (int) ($request->input('jumlah_volume') ?? 1));
+            if ($mutatedRegsCount > 0 && $newVolume < $mutatedRegsCount) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Jumlah volume tidak boleh kurang dari {$mutatedRegsCount} unit, karena terdapat {$mutatedRegsCount} unit register yang telah resmi dimutasi keluar ke OPD lain."
+                ], 422);
+            }
+
             $data = $request->all();
             $isExtracom = !empty($data['is_extracomtable']);
             $hasMesinItems = !empty($data['mesin_items']) && is_array($data['mesin_items']) && count($data['mesin_items']) > 0;
@@ -6561,6 +6594,24 @@ Route::middleware('auth')->group(function () {
                     'action_url' => '/master/kemitraan',
                     'action_text' => 'Buka Menu Kemitraan',
                     'message' => "Aset \"{$astap->nama_barang}\" tidak dapat dihapus karena masih terikat sebagai {$peran} (Nomor PKS: {$activeKemitraan->nomor_pks}). Silakan selesaikan atau batalkan status kemitraannya terlebih dahulu di menu Kemitraan."
+                ], 422);
+            }
+
+            // Validasi Proteksi Mutasi Keluar OPD: Cegah penghapusan aset yang memiliki riwayat serah terima keluar ke OPD lain
+            $hasMutasiKeluar = $astap->mutasiEksternals()->where('tipe', 'keluar')->where('status', '!=', 'Dibatalkan')->exists()
+                || $astap->registers()->where('status', 'Mutasi Keluar OPD')->exists()
+                || $astap->jenis_reklas === 'MUTASI_EKSTERNAL';
+
+            if ($hasMutasiKeluar) {
+                $mutasiKeluar = $astap->mutasiEksternals()->where('tipe', 'keluar')->where('status', '!=', 'Dibatalkan')->first();
+                $opdTujuan = $mutasiKeluar?->opd_tujuan ?: 'SKPD / OPD Luar';
+                $noBast = $mutasiKeluar?->nomor_bamb ?: '-';
+                return response()->json([
+                    'success' => false,
+                    'is_blocked' => true,
+                    'action_url' => '/mutasi-aset/eksternal',
+                    'action_text' => 'Buka Menu Mutasi Eksternal',
+                    'message' => "Aset \"{$astap->nama_barang}\" tidak dapat dihapus karena memiliki rekam jejak resmi Berita Acara Mutasi Keluar ke {$opdTujuan} (BAST No: {$noBast}). Jika penyerahan ini keliru atau dibatalkan, silakan lakukan pembatalan mutasi terlebih dahulu di menu Mutasi Eksternal."
                 ], 422);
             }
 

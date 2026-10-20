@@ -706,8 +706,17 @@ class AstapController extends Controller
             }));
             $dbJenisPengadaans = \App\Models\JenisPengadaan::all();
             $dbRekeningBelanjas = \App\Models\RekeningBelanja::all();
-            $dbUnits = \App\Models\Unit::orderBy('nama')->get();
-            $astap = \App\Models\Astap::with(['registers', 'jenisAstap', 'rekeningBelanja', 'jenisPengadaan', 'belanjaModal'])->find($id);
+            $astap = \App\Models\Astap::with(['registers', 'jenisAstap', 'rekeningBelanja', 'jenisPengadaan', 'belanjaModal', 'mutasiEksternals'])->findOrFail($id);
+
+            // Proteksi Mutasi Keluar Penuh: Dilarang mengedit aset yang telah 100% keluar dari RSUD
+            $activeRegsCount = $astap->registers ? $astap->registers->where('is_deleted', 0)->where('status', '!=', 'Mutasi Keluar OPD')->count() : 0;
+            $mutatedRegsCount = $astap->registers ? $astap->registers->where('status', 'Mutasi Keluar OPD')->count() : 0;
+            $isFullMutasiKeluar = ($astap->jenis_reklas === 'MUTASI_EKSTERNAL') || ($mutatedRegsCount > 0 && $activeRegsCount === 0);
+
+            if ($isFullMutasiKeluar) {
+                $opdTujuan = $astap->mutasiEksternals->where('tipe', 'keluar')->first()?->opd_tujuan ?: 'SKPD / OPD Luar';
+                return redirect()->route('astap.index')->with('error', "Aset \"{$astap->nama_barang}\" telah 100% dimutasi keluar ke {$opdTujuan}. Data tidak dapat diubah langsung. Silakan batalkan mutasi di menu Mutasi Eksternal terlebih dahulu jika ingin melakukan koreksi.");
+            }
             return view('pages.astap.form', [
                 'id' => $id, 
                 'astap' => $astap,
@@ -2323,6 +2332,28 @@ class AstapController extends Controller
             $astap = \App\Models\Astap::find($id);
             if (!$astap) {
                 return response()->json(['success' => false, 'message' => 'Data ASTAP tidak ditemukan.'], 404);
+            }
+
+            // Proteksi Integritas Aset Mutasi Keluar OPD
+            $activeRegsCount = $astap->registers ? $astap->registers->where('is_deleted', 0)->where('status', '!=', 'Mutasi Keluar OPD')->count() : 0;
+            $mutatedRegsCount = $astap->registers ? $astap->registers->where('status', 'Mutasi Keluar OPD')->count() : 0;
+            $isFullMutasiKeluar = ($astap->jenis_reklas === 'MUTASI_EKSTERNAL') || ($mutatedRegsCount > 0 && $activeRegsCount === 0);
+
+            if ($isFullMutasiKeluar) {
+                $opdTujuan = $astap->mutasiEksternals()->where('tipe', 'keluar')->first()?->opd_tujuan ?: 'SKPD / OPD Luar';
+                return response()->json([
+                    'success' => false,
+                    'message' => "Data ASTAP \"{$astap->nama_barang}\" tidak dapat diubah karena telah 100% dimutasi keluar ke {$opdTujuan}. Jika terjadi kekeliruan atau mutasi dibatalkan, silakan lakukan pembatalan mutasi di menu Mutasi Eksternal terlebih dahulu."
+                ], 422);
+            }
+
+            // Validasi Volume Minimum untuk Kasus Mutasi Keluar Parsial
+            $newVolume = max(1, (int) ($request->input('jumlah_volume') ?? 1));
+            if ($mutatedRegsCount > 0 && $newVolume < $mutatedRegsCount) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Jumlah volume tidak boleh kurang dari {$mutatedRegsCount} unit, karena terdapat {$mutatedRegsCount} unit register yang telah resmi dimutasi keluar ke OPD lain."
+                ], 422);
             }
 
             $data = $request->all();

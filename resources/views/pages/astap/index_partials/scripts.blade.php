@@ -9812,6 +9812,77 @@
                     });
                 },
 
+                // Helper Cek Status Mutasi Keluar Penuh (100% Unit Keluar dari RSUD)
+                isMutasiKeluarFull(item) {
+                    if (!item) return false;
+                    if (item.is_mutasi_keluar_full || item.jenis_reklas === 'MUTASI_EKSTERNAL') return true;
+                    if (item.mutasi_keluar && !item.is_mutasi_keluar_partial) return true;
+                    if (item.registers && Array.isArray(item.registers) && item.registers.length > 0) {
+                        const hasMutasi = item.registers.some(r => r.status === 'Mutasi Keluar OPD');
+                        const activeCount = item.registers.filter(r => r.status !== 'Mutasi Keluar OPD' && r.is_deleted != 1).length;
+                        if (hasMutasi && activeCount === 0) return true;
+                    }
+                    return false;
+                },
+
+                // Helper Cek Status Mutasi Keluar Parsial (Sebagian Unit Keluar, Sebagian Masih di RSUD)
+                isMutasiKeluarPartial(item) {
+                    if (!item) return false;
+                    if (item.is_mutasi_keluar_partial) return true;
+                    if (item.registers && Array.isArray(item.registers) && item.registers.length > 0) {
+                        const hasMutasi = item.registers.some(r => r.status === 'Mutasi Keluar OPD');
+                        const activeCount = item.registers.filter(r => r.status !== 'Mutasi Keluar OPD' && r.is_deleted != 1).length;
+                        return hasMutasi && activeCount > 0;
+                    }
+                    return false;
+                },
+
+                // Helper Cek Apakah Aset Memiliki Rekam Jejak Mutasi Keluar (Full / Parsial)
+                hasMutasiKeluar(item) {
+                    return this.isMutasiKeluarFull(item) || this.isMutasiKeluarPartial(item) || Boolean(item?.mutasi_keluar);
+                },
+
+                // Modal Peringatan Interaktif saat Tombol Aset Terkunci Mutasi Keluar Diklik
+                showMutasiKeluarLockedWarning(item, actionType = 'ubah') {
+                    if (!item) return;
+                    const name = item.nama_barang || 'Aset';
+                    const isFull = this.isMutasiKeluarFull(item);
+                    const opdTujuan = item.opd_tujuan || item.mutasi_keluar?.opd_tujuan || 'OPD / SKPD Luar';
+                    const noBast = item.mutasi_keluar?.nomor_bamb || '-';
+                    const tglBast = item.mutasi_keluar?.tanggal_mutasi || '-';
+                    const volKeluar = item.mutasi_keluar_count || (item.jumlah_volume || 1);
+
+                    let title = 'Aset Telah Dimutasi Keluar (Terkunci)';
+                    let msgAction = 'mengubah data pokok aset ini';
+                    if (actionType === 'hapus') {
+                        title = 'Aset Tidak Dapat Dihapus';
+                        msgAction = 'menghapus aset ini ke Recycle Bin';
+                    } else if (actionType === 'reklas') {
+                        title = 'Aset Tidak Dapat Direklasifikasi';
+                        msgAction = 'melakukan reklasifikasi pada aset ini';
+                    }
+
+                    this.askConfirmation({
+                        title: title,
+                        message: `Aset "${name}" ${isFull ? 'telah resmi diserahterimakan 100% (penuh)' : 'memiliki riwayat serah terima unit'} ke ${opdTujuan} berdasarkan dokumen Berita Acara BAST No. ${noBast} tanggal ${tglBast}.`,
+                        itemName: `${name} (Tujuan: ${opdTujuan})`,
+                        itemDetails: {
+                            nama: name,
+                            kode: item.kode_barang || '-',
+                            badgeText: isFull ? '100% MUTASI KELUAR 🏛️' : `${volKeluar} UNIT KELUAR 🏛️`,
+                            totalAset: volKeluar,
+                            nilaiFmt: item.total_realisasi || 'Rp 0'
+                        },
+                        type: 'danger',
+                        isBlocked: true,
+                        actionUrl: '/mutasi-aset/eksternal',
+                        actionText: 'Buka Menu Mutasi Eksternal',
+                        assetWarning: `Demi integritas dokumen pertanggungjawaban Barang Milik Daerah (BMD) dan kesesuaian neraca aset dengan BPKAD, Anda tidak dapat ${msgAction} secara sepihak. Apabila terjadi kekeliruan atau serah terima dibatalkan, silakan lakukan pembatalan mutasi melalui menu Mutasi Eksternal agar aset dipulihkan kembali ke inventaris aktif RSUD.`,
+                        btnText: null,
+                        onConfirm: null
+                    });
+                },
+
                 isReklasBelanjaModal() {
                     const it = this.selectedAstapReklas;
                     if (!it) return true;
@@ -10289,6 +10360,12 @@
 
                 openReklas(item, specificReg = null) {
                     this.selectedAstapReklas = item;
+
+                    // Proteksi jika aset telah 100% mutasi keluar ke OPD lain
+                    if (this.isMutasiKeluarFull(item)) {
+                        this.showMutasiKeluarLockedWarning(item, 'reklas');
+                        return;
+                    }
 
                     // Jika register spesifik sudah berstatus Mutasi Keluar OPD
                     if (specificReg && specificReg.id && specificReg.status === 'Mutasi Keluar OPD') {
@@ -12891,6 +12968,12 @@
                     // 0. Validasi Proteksi Periode Terkunci (Tutup Buku)
                     if (this.isItemLocked(item)) {
                         this.showLockedWarning(item);
+                        return;
+                    }
+
+                    // 0.1 Validasi Proteksi Mutasi Keluar OPD
+                    if (this.hasMutasiKeluar(item)) {
+                        this.showMutasiKeluarLockedWarning(item, 'hapus');
                         return;
                     }
 
