@@ -22,7 +22,36 @@ class AstapController extends Controller
      */
     public function index()
     {
+        // Auto-cleanup: Jika ada paket ASTAP aktif yang seluruh registernya sudah tidak ada / kosong (0 NIBAR aktif),
+        // otomatis pindahkan ke Recycle Bin agar tidak menjadi data hantu di tabel
+        $emptyAstaps = \App\Models\Astap::where('is_deleted', 0)
+            ->whereDoesntHave('registers', function ($rq) {
+                $rq->where('is_deleted', 0);
+            })
+            ->get();
+
+        if ($emptyAstaps->isNotEmpty()) {
+            DB::transaction(function () use ($emptyAstaps) {
+                foreach ($emptyAstaps as $emptyAstap) {
+                    $emptyAstap->softDelete('Semua unit register NIBAR tidak tersedia / telah dihapus — dipindahkan ke Recycle Bin.');
+                    \App\Models\AstapKemitraan::where('astap_id', $emptyAstap->id)
+                        ->orWhere('objek_astap_id', $emptyAstap->id)
+                        ->update([
+                            'is_deleted'    => 1,
+                            'deleted_by'    => 'Sistem (Auto-Sync Register Kosong)',
+                            'deleted_at'    => now(),
+                        ]);
+                    if ($emptyAstap->mutasiEksternal) {
+                        $emptyAstap->mutasiEksternal->softDelete();
+                    }
+                }
+            });
+        }
+
         $astaps = \App\Models\Astap::where('is_deleted', 0)
+            ->whereHas('registers', function ($q) {
+                $q->where('is_deleted', 0);
+            })
             ->with([
                 'registers' => function($q) {
                     $q->where('is_deleted', 0);

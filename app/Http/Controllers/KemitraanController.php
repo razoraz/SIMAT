@@ -23,9 +23,41 @@ class KemitraanController extends Controller
     {
         Carbon::setLocale('id');
 
+        // Auto-cleanup: Jika ada Astap Kemitraan aktif yang sama sekali tidak memiliki register fisik aktif (0 unit NIBAR),
+        // otomatis pindahkan ke Recycle Bin agar tidak menjadi kontrak hantu tanpa unit barang
+        $emptyKemitraanAstaps = Astap::where('is_deleted', 0)
+            ->where(function ($q) {
+                $q->where('sumber_dana', 'kemitraan')
+                  ->orWhere('kode_108', 'like', '1.5.2%')
+                  ->orWhere('category', 'KEMITRAAN')
+                  ->orWhereHas('kemitraan');
+            })
+            ->whereDoesntHave('registers', function ($rq) {
+                $rq->where('is_deleted', 0);
+            })
+            ->get();
+
+        if ($emptyKemitraanAstaps->isNotEmpty()) {
+            DB::transaction(function () use ($emptyKemitraanAstaps) {
+                foreach ($emptyKemitraanAstaps as $emptyAstap) {
+                    $emptyAstap->softDelete('Semua unit register NIBAR tidak tersedia — dipindahkan ke Recycle Bin.');
+                    AstapKemitraan::where('astap_id', $emptyAstap->id)
+                        ->orWhere('objek_astap_id', $emptyAstap->id)
+                        ->update([
+                            'is_deleted'    => 1,
+                            'deleted_by'    => 'Sistem (Auto-Sync Register Kosong)',
+                            'deleted_at'    => now(),
+                        ]);
+                }
+            });
+        }
+
         // Sinkronisasi otomatis: Jika ada Astap dengan sumber_dana kemitraan yang belum masuk astap_kemitraans
         $unlinkedKemitraans = Astap::where('sumber_dana', 'kemitraan')
             ->where('is_deleted', 0)
+            ->whereHas('registers', function ($rq) {
+                $rq->where('is_deleted', 0);
+            })
             ->whereDoesntHave('kemitraan')
             ->get();
 
@@ -70,7 +102,7 @@ class KemitraanController extends Controller
         $filterStatus = $request->query('status', 'all');  // 'all', 'Aktif', 'Akan Berakhir', 'Konsesi Berakhir', 'Selesai / Reklasifikasi'
         $search       = trim($request->query('search', ''));
 
-        // Query utama data kemitraan (hanya yang aktif / belum dihapus)
+        // Query utama data kemitraan (hanya yang aktif / belum dihapus dan memiliki register fisik aktif)
         // Pengambilan dataset lengkap untuk pemfilteran instan reaktif di client-side (tanpa page reload seperti Data ASTAP)
         $query = AstapKemitraan::with([
             'astap.jenisAstap', 
@@ -83,7 +115,10 @@ class KemitraanController extends Controller
         ])
             ->where('is_deleted', 0)
             ->whereHas('astap', function ($q) {
-                $q->where('is_deleted', 0);
+                $q->where('is_deleted', 0)
+                  ->whereHas('registers', function ($rq) {
+                      $rq->where('is_deleted', 0);
+                  });
             })
             ->orderBy('tanggal_pks', 'desc')
             ->orderBy('id', 'desc');
@@ -92,7 +127,8 @@ class KemitraanController extends Controller
 
         // BUG-14 FIX: Hitung KPI via query aggregate — hindari memuat seluruh collection ke RAM
         $kpiBase = AstapKemitraan::where('is_deleted', 0)
-            ->whereHas('astap', fn($q) => $q->where('is_deleted', 0));
+            ->whereHas('astap', fn($q) => $q->where('is_deleted', 0)->whereHas('registers', fn($rq) => $rq->where('is_deleted', 0)));
+
 
         $totalNilaiKemitraan = (clone $kpiBase)->sum('nilai_aset');
         $totalVolumeUnit     = (clone $kpiBase)->sum('jumlah_volume');
