@@ -1325,12 +1325,20 @@
                                 <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider">
                                     Nama Perusahaan Mitra / Rekanan: <span class="text-rose-400">*</span>
                                 </label>
-                                <template x-if="masterMitraList && masterMitraList.length > 0">
-                                    <span class="text-[9.5px] text-cyan-400 font-mono font-normal flex items-center gap-1 bg-cyan-500/10 px-2 py-0.5 rounded-md border border-cyan-500/20">
-                                        <span>⚡</span>
-                                        <span>Riwayat Tersimpan</span>
-                                    </span>
-                                </template>
+                                <div class="flex items-center gap-1.5">
+                                    <template x-if="formData.spekBaru.kemitraan_mitra && filteredReklasMitraList.length === 0">
+                                        <span class="text-[9.5px] text-emerald-400 font-mono font-bold flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                                            <span>➕</span>
+                                            <span>Mitra Baru</span>
+                                        </span>
+                                    </template>
+                                    <template x-if="masterMitraList && masterMitraList.length > 0">
+                                        <span class="text-[9.5px] text-cyan-400 font-mono font-normal flex items-center gap-1 bg-cyan-500/10 px-2 py-0.5 rounded-md border border-cyan-500/20">
+                                            <span>⚡</span>
+                                            <span>Riwayat Tersimpan</span>
+                                        </span>
+                                    </template>
+                                </div>
                             </div>
 
                             <!-- Input Box dengan Ikon dan Tombol Clear -->
@@ -1341,6 +1349,7 @@
                                     @input="isReklasMitraDropdownOpen = true; onReklasMitraInput($event.target.value)"
                                     @change="onReklasMitraInput($event.target.value)"
                                     @keydown.escape="isReklasMitraDropdownOpen = false"
+                                    @keydown.enter.prevent="isReklasMitraDropdownOpen = false"
                                     autocomplete="off"
                                     placeholder="Ketik atau pilih mitra rekanan (contoh: PT. Kimia Farma, PT. Roche...)"
                                     class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3.5 py-2.5 pl-9 pr-9 text-xs text-white placeholder-slate-500 focus:outline-none font-bold shadow-inner transition-all">
@@ -1361,8 +1370,8 @@
                                 </button>
                             </div>
 
-                            <!-- Floating Dropdown Saran / Filter Mitra (Muncul saat fokus / diketik) -->
-                            <div x-show="isReklasMitraDropdownOpen" 
+                            <!-- Floating Dropdown Saran / Filter Mitra (Hanya Tampil Jika Ada Saran yang Cocok) -->
+                            <div x-show="isReklasMitraDropdownOpen && filteredReklasMitraList.length > 0" 
                                 x-cloak
                                 x-transition:enter="transition ease-out duration-100"
                                 x-transition:enter-start="opacity-0 translate-y-1"
@@ -1396,14 +1405,6 @@
                                         </span>
                                     </div>
                                 </template>
-
-                                <!-- Notifikasi jika mengetik nama mitra baru -->
-                                <template x-if="formData.spekBaru.kemitraan_mitra && filteredReklasMitraList.length === 0">
-                                    <div class="p-3 text-center text-xs text-slate-400 bg-slate-950/50">
-                                        <span class="text-cyan-300 font-semibold" x-text="'➕ Gunakan Mitra Baru: &quot;' + formData.spekBaru.kemitraan_mitra + '&quot;'"></span>
-                                        <p class="text-[10px] text-slate-500 mt-0.5">Nama mitra ini akan otomatis tercatat ke riwayat kemitraan.</p>
-                                    </div>
-                                </template>
                             </div>
                         </div>
 
@@ -1427,20 +1428,38 @@
                             </div>
                         </div>
 
-                        <!-- 3. Skema Pemanfaatan Kemitraan (Permendagri 108) -->
+                        <!-- 3. Skema Pemanfaatan Kemitraan (Otomatis Terkunci dari Rekening 108) -->
                         <div>
-                            <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
-                                Bentuk Skema Pemanfaatan (Permendagri 108): <span class="text-rose-400">*</span>
-                            </label>
-                            <select x-model="formData.spekBaru.kemitraan_skema"
-                                    class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none font-semibold">
-                                <option value="Sewa">Sewa (S) - Akun 1.5.2.01.01.01</option>
-                                <option value="Kerjasama Pemanfaatan (KP)">Kerjasama Pemanfaatan (KP) - Akun 1.5.2.01.01.02</option>
-                                <option value="BGS/BSG">Bangun Guna Serah / Bangun Serah Guna (BGS/BSG) - Akun 1.5.2.01.01.03</option>
-                                <option value="KSPI">Kerja Sama Penyediaan Infrastruktur (KSPI) - Akun 1.5.2.01.01.04</option>
-                            </select>
+                            <div class="flex items-center justify-between gap-2 mb-1.5">
+                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider">
+                                    Bentuk Skema Pemanfaatan (Permendagri 108): <span class="text-rose-400">*</span>
+                                </label>
+                                <span class="text-[9.5px] font-mono font-bold flex items-center gap-1 text-cyan-400 bg-cyan-500/10 border border-cyan-500/25 px-2 py-0.5 rounded-md">
+                                    <span>🔒</span>
+                                    <span>Otomatis Sesuai Akun 108</span>
+                                </span>
+                            </div>
+                            <input type="hidden" x-model="formData.spekBaru.kemitraan_skema">
+                            <div class="w-full bg-slate-950/90 border border-cyan-500/30 rounded-xl p-2.5 flex items-center justify-between gap-3 shadow-inner">
+                                <div class="flex items-center gap-2.5 min-w-0">
+                                    <div class="w-8 h-8 rounded-lg bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-sm shrink-0"
+                                         x-text="formData.spekBaru.kemitraan_skema === 'Sewa' ? '💰' : (formData.spekBaru.kemitraan_skema === 'BGS/BSG' ? '🏗️' : (formData.spekBaru.kemitraan_skema === 'KSPI' ? '⚡' : '🤝'))">
+                                    </div>
+                                    <div class="min-w-0">
+                                        <div class="text-xs font-extrabold text-white truncate" 
+                                             x-text="formData.spekBaru.kemitraan_skema || 'Sewa'"></div>
+                                        <div class="text-[10px] text-cyan-300/80 font-mono truncate"
+                                             x-text="formData.spekBaru.kemitraan_skema === 'Sewa' ? 'Akun 1.5.2.01.01.01 — Sewa BMD' : (formData.spekBaru.kemitraan_skema === 'BGS/BSG' ? 'Akun 1.5.2.01.01.03 — Bangun Guna Serah / BSG' : (formData.spekBaru.kemitraan_skema === 'KSPI' ? 'Akun 1.5.2.01.01.04 — KSPI' : 'Akun 1.5.2.01.01.02 — Kerja Sama Pemanfaatan (KP)'))">
+                                        </div>
+                                    </div>
+                                </div>
+                                <span class="shrink-0 text-[10px] font-bold text-slate-400 bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-lg flex items-center gap-1">
+                                    <span>✓</span>
+                                    <span>Terpilih di Atas</span>
+                                </span>
+                            </div>
                             <p class="text-[9.5px] text-slate-500 mt-1">
-                                Pemanfaatan BMD resmi sesuai Permendagri No. 108 Tahun 2016 (Bentuk resmi: S, KP, BGS/BSG, dan KSPI).
+                                Skema pemanfaatan otomatis disinkronkan dan terkunci dari Sub-Rincian Rekening 108 yang Anda pilih pada langkah di atas.
                             </p>
                         </div>
 

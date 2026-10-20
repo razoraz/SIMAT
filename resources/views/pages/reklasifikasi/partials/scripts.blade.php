@@ -395,6 +395,38 @@
                 ).slice(0, 30);
             },
 
+            detectKemitraanSkema(kode, nama) {
+                const k = (kode || '').trim();
+                const n = (nama || '').toLowerCase();
+                if (k.includes('.01.01.02') || k.endsWith('.01.02') || k === '1.5.2.01.01.02' || n.includes('kerjasama pemanfaatan') || n.includes('kerja sama pemanfaatan') || n.includes('pemanfaatan') || n.includes('kp')) {
+                    return 'Kerjasama Pemanfaatan (KP)';
+                }
+                if (k.includes('.01.01.03') || k.endsWith('.01.03') || k === '1.5.2.01.01.03' || n.includes('bangun guna') || n.includes('bangun serah') || n.includes('bgs') || n.includes('bsg')) {
+                    return 'BGS/BSG';
+                }
+                if (k.includes('.01.01.04') || k.endsWith('.01.04') || k === '1.5.2.01.01.04' || n.includes('infrastruktur') || n.includes('kspi')) {
+                    return 'KSPI';
+                }
+                if (k.includes('.01.01.01') || k.endsWith('.01.01') || k === '1.5.2.01.01.01' || n.includes('sewa')) {
+                    return 'Sewa';
+                }
+                if (k.endsWith('.02')) return 'Kerjasama Pemanfaatan (KP)';
+                if (k.endsWith('.03')) return 'BGS/BSG';
+                if (k.endsWith('.04')) return 'KSPI';
+                if (k.endsWith('.01')) return 'Sewa';
+                return 'Sewa';
+            },
+
+            syncKemitraanSkema(kode, nama) {
+                const targetKode = kode || this.reklasSubRincianKode || this.reklasSubSubRincianKode || this.formData?.tujuan_kode || '';
+                const targetNama = nama || this.reklasSubRincianNama || this.reklasSubSubRincianNama || this.formData?.tujuan_nama || '';
+                const detected = this.detectKemitraanSkema(targetKode, targetNama);
+                if (this.formData && this.formData.spekBaru) {
+                    this.formData.spekBaru.kemitraan_skema = detected;
+                }
+                return detected;
+            },
+
             selectSubRincian(s) {
                 this.reklasSubRincianKode = s.kode;
                 this.reklasSubRincianNama = s.nama;
@@ -412,6 +444,7 @@
 
                 // Auto match tujuan row in 42 rows template
                 this.matchTujuanRowByPrefix(s.kode);
+                this.syncKemitraanSkema(s.kode, s.nama);
             },
 
             clearSubRincian() {
@@ -421,6 +454,7 @@
                 this.isReklasSubRincianOpen = false;
                 this.formData.tujuan_kode = this.reklasSubSubRincianKode || '';
                 this.formData.tujuan_nama = this.reklasSubSubRincianNama || '';
+                this.syncKemitraanSkema();
             },
 
             get currentSubRincianObj() {
@@ -482,6 +516,7 @@
                         }
                     }
                 }
+                this.syncKemitraanSkema(item.kode, item.nama);
             },
 
             clearSubSubRincian() {
@@ -491,6 +526,7 @@
                 this.isReklasSubSubRincianOpen = false;
                 this.formData.tujuan_kode = this.reklasSubRincianKode || '';
                 this.formData.tujuan_nama = this.reklasSubRincianNama || '';
+                this.syncKemitraanSkema();
             },
 
             matchTujuanRowByPrefix(prefix) {
@@ -1001,6 +1037,8 @@
                 // ASET LAIN (1.5.4)
                 this.formData.spekBaru.aset_lain_kondisi = spec.kondisi_barang || spec.aset_lain_kondisi || 'Rusak Berat (Menunggu Penghapusan)';
                 this.formData.spekBaru.aset_lain_alasan = spec.alasan || spec.aset_lain_alasan || 'Pengalihan ke Akun 1.5.4 Aset Lain-Lain';
+
+                this.syncKemitraanSkema();
             },
 
             getSourcePhysicalType(item) {

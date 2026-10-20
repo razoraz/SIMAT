@@ -614,13 +614,21 @@
                     <span x-show="tipeKemitraan === 'dimanfaatkan'">Nama Mitra / Pihak Ketiga Penyewa (Pemanfaatan BMD) <span class="text-rose-400">*</span></span>
                     <span x-show="tipeKemitraan === 'ditambahkan'">Nama Perusahaan Rekanan / Vendor Mitra (Penyedia Alat / Fasilitas) <span class="text-rose-400">*</span></span>
                 </label>
-                <template x-if="masterMitraList && masterMitraList.length > 0">
-                    <span class="text-[10px] font-mono font-normal flex items-center gap-1 px-2 py-0.5 rounded-md border"
-                          :class="tipeKemitraan === 'dimanfaatkan' ? 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20' : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'">
-                        <span>⚡</span>
-                        <span>Riwayat Tersimpan</span>
-                    </span>
-                </template>
+                <div class="flex items-center gap-1.5">
+                    <template x-if="formData.mitra_nama && filteredMitraList.length === 0">
+                        <span class="text-[10px] font-mono font-bold flex items-center gap-1 px-2 py-0.5 rounded-md border text-emerald-400 bg-emerald-500/10 border-emerald-500/20">
+                            <span>➕</span>
+                            <span>Mitra Baru</span>
+                        </span>
+                    </template>
+                    <template x-if="masterMitraList && masterMitraList.length > 0">
+                        <span class="text-[10px] font-mono font-normal flex items-center gap-1 px-2 py-0.5 rounded-md border"
+                              :class="tipeKemitraan === 'dimanfaatkan' ? 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20' : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'">
+                            <span>⚡</span>
+                            <span>Riwayat Tersimpan</span>
+                        </span>
+                    </template>
+                </div>
             </div>
 
             <!-- Input Box dengan Ikon dan Clear Button -->
@@ -631,6 +639,7 @@
                     @input="isMitraDropdownOpen = true; onMitraInput($event.target.value)"
                     @change="onMitraInput($event.target.value)"
                     @keydown.escape="isMitraDropdownOpen = false"
+                    @keydown.enter.prevent="isMitraDropdownOpen = false"
                     required
                     autocomplete="off"
                     placeholder="Ketik atau pilih nama mitra / perusahaan (contoh: PT. Roche, PT. Kimia Farma...)"
@@ -652,8 +661,8 @@
                 </button>
             </div>
 
-            <!-- Floating Dropdown Saran / Filter Mitra (Muncul saat fokus/diketik) -->
-            <div x-show="isMitraDropdownOpen" 
+            <!-- Floating Dropdown Saran / Filter Mitra (Hanya Tampil Jika Ada Saran yang Cocok) -->
+            <div x-show="isMitraDropdownOpen && filteredMitraList.length > 0" 
                 x-cloak
                 x-transition:enter="transition ease-out duration-100"
                 x-transition:enter-start="opacity-0 translate-y-1"
@@ -685,14 +694,6 @@
                         <span class="text-[9px] px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/25 font-bold shrink-0 group-hover:bg-cyan-500/25">
                             Pilih &amp; Auto-fill ↵
                         </span>
-                    </div>
-                </template>
-
-                <!-- Notifikasi jika mengetik nama mitra baru -->
-                <template x-if="formData.mitra_nama && filteredMitraList.length === 0">
-                    <div class="p-3 text-center text-xs text-slate-400 bg-slate-950/50">
-                        <span class="text-cyan-300 font-semibold" x-text="'➕ Gunakan Mitra Baru: &quot;' + formData.mitra_nama + '&quot;'"></span>
-                        <p class="text-[10px] text-slate-500 mt-0.5">Nama mitra ini akan otomatis tersimpan ke riwayat kemitraan setelah formulir disimpan.</p>
                     </div>
                 </template>
             </div>

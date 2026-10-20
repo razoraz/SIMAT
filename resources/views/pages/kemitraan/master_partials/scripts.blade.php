@@ -3374,6 +3374,43 @@
                 ).slice(0, 30);
             },
 
+            detectKemitraanSkema(kode, nama) {
+                const k = (kode || '').trim();
+                const n = (nama || '').toLowerCase();
+                if (k.includes('.01.01.02') || k.endsWith('.01.02') || k === '1.5.2.01.01.02' || n.includes('kerjasama pemanfaatan') || n.includes('kerja sama pemanfaatan') || n.includes('pemanfaatan') || n.includes('kp')) {
+                    return 'Kerjasama Pemanfaatan (KP)';
+                }
+                if (k.includes('.01.01.03') || k.endsWith('.01.03') || k === '1.5.2.01.01.03' || n.includes('bangun guna') || n.includes('bangun serah') || n.includes('bgs') || n.includes('bsg')) {
+                    return 'BGS/BSG';
+                }
+                if (k.includes('.01.01.04') || k.endsWith('.01.04') || k === '1.5.2.01.01.04' || n.includes('infrastruktur') || n.includes('kspi')) {
+                    return 'KSPI';
+                }
+                if (k.includes('.01.01.01') || k.endsWith('.01.01') || k === '1.5.2.01.01.01' || n.includes('sewa')) {
+                    return 'Sewa';
+                }
+                if (k.endsWith('.02')) return 'Kerjasama Pemanfaatan (KP)';
+                if (k.endsWith('.03')) return 'BGS/BSG';
+                if (k.endsWith('.04')) return 'KSPI';
+                if (k.endsWith('.01')) return 'Sewa';
+                return 'Sewa';
+            },
+
+            syncKemitraanSkema(kode, nama) {
+                const targetKode = kode || this.reklasSubRincianKode || this.reklasSubSubRincianKode || this.reklasTujuanKode || '';
+                const targetNama = nama || this.reklasSubRincianNama || this.reklasSubSubRincianNama || this.reklasTujuanNama || '';
+                const detected = this.detectKemitraanSkema(targetKode, targetNama);
+                if (this.reklasSpekBaru) {
+                    this.reklasSpekBaru.kemitraan_skema = detected;
+                }
+                if (Array.isArray(this.reklasSpekBaruItems)) {
+                    this.reklasSpekBaruItems.forEach(item => {
+                        if (item) item.kemitraan_skema = detected;
+                    });
+                }
+                return detected;
+            },
+
             selectReklasSubRincian(s) {
                 this.reklasSubRincianKode = s.kode;
                 this.reklasSubRincianNama = s.nama;
@@ -3389,17 +3426,7 @@
                 this.reklasTujuanNama = this.reklasSubSubRincianNama || s.nama;
                 if (this.reklasTujuanKib === 'KEMITRAAN') {
                     this.reklasKemitraanTipeFisik = this.detectKemitraanPhysicalType();
-                    const kode = (s.kode || '');
-                    const nama = (s.nama || '').toLowerCase();
-                    if (kode.endsWith('.01') || nama.includes('sewa')) {
-                        if (this.reklasSpekBaru) this.reklasSpekBaru.kemitraan_skema = 'Sewa';
-                    } else if (kode.endsWith('.02') || nama.includes('pemanfaatan') || nama.includes('kp')) {
-                        if (this.reklasSpekBaru) this.reklasSpekBaru.kemitraan_skema = 'Kerjasama Pemanfaatan (KP)';
-                    } else if (kode.endsWith('.03') || nama.includes('bangun guna') || nama.includes('bgs') || nama.includes('bsg')) {
-                        if (this.reklasSpekBaru) this.reklasSpekBaru.kemitraan_skema = 'BGS/BSG';
-                    } else if (kode.endsWith('.04') || nama.includes('infrastruktur') || nama.includes('kspi')) {
-                        if (this.reklasSpekBaru) this.reklasSpekBaru.kemitraan_skema = 'KSPI';
-                    }
+                    this.syncKemitraanSkema(s.kode, s.nama);
                 }
             },
 
@@ -3412,6 +3439,7 @@
                 this.reklasTujuanNama = this.reklasSubSubRincianNama || '';
                 if (this.reklasTujuanKib === 'KEMITRAAN') {
                     this.reklasKemitraanTipeFisik = this.detectKemitraanPhysicalType();
+                    this.syncKemitraanSkema();
                 }
             },
 
@@ -3494,6 +3522,7 @@
                 this.reklasTujuanNama = item.nama;
                 if (this.reklasTujuanKib === 'KEMITRAAN') {
                     this.reklasKemitraanTipeFisik = this.detectKemitraanPhysicalType();
+                    this.syncKemitraanSkema(item.kode, item.nama);
                 }
             },
 
@@ -3506,6 +3535,7 @@
                 this.reklasTujuanNama = this.reklasSubRincianNama || '';
                 if (this.reklasTujuanKib === 'KEMITRAAN') {
                     this.reklasKemitraanTipeFisik = this.detectKemitraanPhysicalType();
+                    this.syncKemitraanSkema();
                 }
             },
 

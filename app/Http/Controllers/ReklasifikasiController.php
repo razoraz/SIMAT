@@ -1268,9 +1268,21 @@ class ReklasifikasiController extends Controller
                     $astap->satuan          = 'Paket / Lisensi';
                 } elseif ($targetKib === 'KEMITRAAN') {
                     $kemitraanItems = [];
+                    $tujuanKodeForKemitraan = (string) ($validated['tujuan_kode'] ?? ($request->input('tujuan_kode') ?? ($astap->kode_barang ?? '')));
                     foreach ($unitItems as $uIdx => $uItem) {
+                        $skema = $uItem['kemitraan_skema'] ?? ($rawNew['kemitraan_skema'] ?? null);
+                        if (!$skema || $skema === 'Sewa') {
+                            if (str_contains($tujuanKodeForKemitraan, '.01.01.02') || str_ends_with($tujuanKodeForKemitraan, '.02')) {
+                                $skema = 'Kerjasama Pemanfaatan (KP)';
+                            } elseif (str_contains($tujuanKodeForKemitraan, '.01.01.03') || str_ends_with($tujuanKodeForKemitraan, '.03')) {
+                                $skema = 'BGS/BSG';
+                            } elseif (str_contains($tujuanKodeForKemitraan, '.01.01.04') || str_ends_with($tujuanKodeForKemitraan, '.04')) {
+                                $skema = 'KSPI';
+                            }
+                        }
+                        $skema = $skema ?: 'Sewa';
                         $kemitraanItems[] = [
-                            'skema_kemitraan'       => $uItem['kemitraan_skema'] ?? ($rawNew['kemitraan_skema'] ?? 'Sewa'),
+                            'skema_kemitraan'       => $skema,
                             'mitra_nama'            => $uItem['kemitraan_mitra'] ?? ($rawNew['kemitraan_mitra'] ?? 'Pihak Ketiga Mitra RSUD'),
                             'mitra_pimpinan'        => $uItem['kemitraan_pimpinan'] ?? ($rawNew['kemitraan_pimpinan'] ?? null),
                             'mitra_alamat'          => $uItem['kemitraan_alamat'] ?? ($rawNew['kemitraan_alamat'] ?? null),
@@ -1877,7 +1889,16 @@ class ReklasifikasiController extends Controller
                         'mitra_alamat'     => $spec['mitra_alamat'] ?? ($validated['spesifikasi_baru']['kemitraan_alamat'] ?? null),
                         'nomor_pks'        => $spec['perjanjian_nomor'] ?? ($validated['spesifikasi_baru']['kemitraan_perjanjian_no'] ?? ($validated['nomor_ba_reklas'] ?? '-')),
                         'tanggal_pks'      => $spec['tanggal_pks'] ?? ($validated['spesifikasi_baru']['kemitraan_tanggal_pks'] ?? ($validated['tanggal_reklas'] ?? now())),
-                        'skema_kemitraan'  => $spec['skema_kemitraan'] ?? ($validated['spesifikasi_baru']['kemitraan_skema'] ?? 'Sewa'),
+                        'skema_kemitraan'  => (function() use ($spec, $validated, $targetAstap) {
+                            $targetCode = (string) ($targetAstap->kode_barang ?? ($validated['tujuan_kode'] ?? ''));
+                            $s = $spec['skema_kemitraan'] ?? ($validated['spesifikasi_baru']['kemitraan_skema'] ?? null);
+                            if (!$s || $s === 'Sewa') {
+                                if (str_contains($targetCode, '.01.01.02') || str_ends_with($targetCode, '.02')) return 'Kerjasama Pemanfaatan (KP)';
+                                if (str_contains($targetCode, '.01.01.03') || str_ends_with($targetCode, '.03')) return 'BGS/BSG';
+                                if (str_contains($targetCode, '.01.01.04') || str_ends_with($targetCode, '.04')) return 'KSPI';
+                            }
+                            return $s ?: 'Sewa';
+                        })(),
                         'tanggal_mulai'    => $spec['tanggal_mulai'] ?? ($validated['spesifikasi_baru']['kemitraan_tanggal_mulai'] ?? null),
                         'tanggal_selesai'  => $spec['tanggal_selesai'] ?? ($validated['spesifikasi_baru']['kemitraan_tanggal_selesai'] ?? null),
                         'status_konsesi'   => 'Aktif',
@@ -1952,7 +1973,16 @@ class ReklasifikasiController extends Controller
                         'mitra_alamat'     => $spec['mitra_alamat'] ?? ($validated['spesifikasi_baru']['kemitraan_alamat'] ?? ($existingKemitraan?->mitra_alamat ?? null)),
                         'nomor_pks'        => $spec['perjanjian_nomor'] ?? ($validated['spesifikasi_baru']['kemitraan_perjanjian_no'] ?? ($existingKemitraan?->nomor_pks ?? ($validated['nomor_ba_reklas'] ?? '-'))),
                         'tanggal_pks'      => $spec['tanggal_pks'] ?? ($validated['spesifikasi_baru']['kemitraan_tanggal_pks'] ?? ($existingKemitraan?->tanggal_pks ?? ($validated['tanggal_reklas'] ?? now()))),
-                        'skema_kemitraan'  => $spec['skema_kemitraan'] ?? ($validated['spesifikasi_baru']['kemitraan_skema'] ?? ($existingKemitraan?->skema_kemitraan ?? 'Sewa')),
+                        'skema_kemitraan'  => (function() use ($spec, $validated, $existingKemitraan, $tujuanKodeAset, $astap) {
+                            $targetCode = (string) ($tujuanKodeAset ?? ($astap->kode_barang ?? ($validated['tujuan_kode'] ?? '')));
+                            $s = $spec['skema_kemitraan'] ?? ($validated['spesifikasi_baru']['kemitraan_skema'] ?? ($existingKemitraan?->skema_kemitraan ?? null));
+                            if (!$s || $s === 'Sewa') {
+                                if (str_contains($targetCode, '.01.01.02') || str_ends_with($targetCode, '.02')) return 'Kerjasama Pemanfaatan (KP)';
+                                if (str_contains($targetCode, '.01.01.03') || str_ends_with($targetCode, '.03')) return 'BGS/BSG';
+                                if (str_contains($targetCode, '.01.01.04') || str_ends_with($targetCode, '.04')) return 'KSPI';
+                            }
+                            return $s ?: 'Sewa';
+                        })(),
                         'tanggal_mulai'    => $spec['tanggal_mulai'] ?? ($validated['spesifikasi_baru']['kemitraan_tanggal_mulai'] ?? ($existingKemitraan?->tanggal_mulai ?? null)),
                         'tanggal_selesai'  => $spec['tanggal_selesai'] ?? ($validated['spesifikasi_baru']['kemitraan_tanggal_selesai'] ?? ($existingKemitraan?->tanggal_selesai ?? null)),
                         'status_konsesi'   => 'Aktif',
