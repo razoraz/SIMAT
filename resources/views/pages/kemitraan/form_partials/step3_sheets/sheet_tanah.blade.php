@@ -82,7 +82,7 @@
                             </div>
                             <input type="text"
                                    x-model="item.tanah_nama_barang"
-                                   x-init="if (!item.tanah_nama_barang && (formData.objek_aset_terpilih?.nama_barang || formData.nama_barang)) { item.tanah_nama_barang = formData.objek_aset_terpilih?.nama_barang || formData.nama_barang; }"
+                                   x-init="if (tipeKemitraan === 'dimanfaatkan' && !item.tanah_nama_barang && formData.objek_aset_terpilih?.nama_barang) { item.tanah_nama_barang = formData.objek_aset_terpilih.nama_barang; }"
                                    :readonly="!isMilikRsud && Boolean(formData.objek_aset_terpilih?.nama_barang)"
                                    @input="syncTotalsFromItems()"
                                    placeholder="Contoh: Tanah Bangunan Rumah Negara Golongan I / Lahan Parkir Paviliun..."

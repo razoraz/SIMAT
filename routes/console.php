@@ -16,11 +16,7 @@ Artisan::command('inspire', function () {
  * Otomatis memperbarui status menjadi 'Konsesi Berakhir' saat melewati tanggal_selesai
  */
 Schedule::call(function () {
-    AstapKemitraan::where('is_deleted', 0)
-        ->where('status_konsesi', 'Aktif')
-        ->whereNotNull('tanggal_selesai')
-        ->where('tanggal_selesai', '<', Carbon::today())
-        ->update(['status_konsesi' => 'Konsesi Berakhir']);
+    AstapKemitraan::syncExpiredStatus();
 })->dailyAt('00:05')->name('kemitraan:auto-expire-konsesi');
 
 

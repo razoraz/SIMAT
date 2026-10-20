@@ -185,9 +185,10 @@ class KemitraanController extends Controller
 
         $dbMitraKemitraans = AstapKemitraan::getDistinctMitras();
 
-        // Ambil ID Astap yang SUDAH terdaftar di master kemitraan (baik aktif maupun yang sudah dihapus, agar tidak lolos dari filter reklas)
-        $allKemitraanAstapIds = AstapKemitraan::pluck('astap_id')
-            ->merge(AstapKemitraan::whereNotNull('objek_astap_id')->pluck('objek_astap_id'))
+        // Ambil ID Astap yang sedang aktif terdaftar di master kemitraan (is_deleted = 0)
+        $allKemitraanAstapIds = AstapKemitraan::where('is_deleted', 0)
+            ->pluck('astap_id')
+            ->merge(AstapKemitraan::where('is_deleted', 0)->whereNotNull('objek_astap_id')->pluck('objek_astap_id'))
             ->filter()
             ->unique()
             ->values()
@@ -324,6 +325,38 @@ class KemitraanController extends Controller
                     $astap->total_realisasi = (float) $validated['nilai_aset'];
                 }
                 $astap->save();
+            }
+
+            // Cascade update ke seluruh aset rekanan mitra (Tabel 2) yang terikat pada objek pemanfaatan ini
+            if ($kemitraan->tipe_kemitraan === 'dimanfaatkan' && $kemitraan->astap_id) {
+                $linkedMitras = AstapKemitraan::where('objek_astap_id', $kemitraan->astap_id)
+                    ->where('is_deleted', 0)
+                    ->get();
+
+                foreach ($linkedMitras as $child) {
+                    $childUpdates = [];
+                    if (array_key_exists('nomor_pks', $validated) && $validated['nomor_pks']) $childUpdates['nomor_pks'] = trim($validated['nomor_pks']);
+                    if (array_key_exists('mitra_nama', $validated)) $childUpdates['mitra_nama'] = trim($validated['mitra_nama']);
+                    if (array_key_exists('mitra_pimpinan', $validated)) $childUpdates['mitra_pimpinan'] = $validated['mitra_pimpinan'] ? trim($validated['mitra_pimpinan']) : null;
+                    if (array_key_exists('mitra_alamat', $validated)) $childUpdates['mitra_alamat'] = $validated['mitra_alamat'] ? trim($validated['mitra_alamat']) : null;
+                    if (isset($validated['skema_kemitraan'])) $childUpdates['skema_kemitraan'] = $validated['skema_kemitraan'];
+                    if (array_key_exists('tanggal_pks', $validated)) $childUpdates['tanggal_pks'] = $validated['tanggal_pks'];
+                    if (array_key_exists('tanggal_mulai', $validated)) $childUpdates['tanggal_mulai'] = $validated['tanggal_mulai'];
+                    if (array_key_exists('tanggal_selesai', $validated)) $childUpdates['tanggal_selesai'] = $validated['tanggal_selesai'];
+
+                    if (!empty($childUpdates)) {
+                        $child->update($childUpdates);
+                        if ($child->astap) {
+                            $cAstap = $child->astap;
+                            $cSpec = is_array($cAstap->spesifikasi_json) ? $cAstap->spesifikasi_json : (json_decode($cAstap->spesifikasi_json ?? '[]', true) ?: []);
+                            foreach ($childUpdates as $k => $v) {
+                                $cSpec[$k] = $v;
+                            }
+                            $cAstap->spesifikasi_json = $cSpec;
+                            $cAstap->save();
+                        }
+                    }
+                }
             }
 
             if ($request->expectsJson() || $request->ajax()) {
@@ -624,8 +657,8 @@ class KemitraanController extends Controller
             // Tentukan status kembalinya: apakah tanggal akhir/selesai masih di masa depan
             $statusSemula = 'Konsesi Berakhir';
             if (!empty($kemitraan->tanggal_selesai)) {
-                $tglAkhir = Carbon::parse($kemitraan->tanggal_selesai);
-                if ($tglAkhir->isFuture()) {
+                $tglAkhir = Carbon::parse($kemitraan->tanggal_selesai)->endOfDay();
+                if ($tglAkhir->gte(now())) {
                     $statusSemula = 'Aktif';
                 }
             }
@@ -665,6 +698,40 @@ class KemitraanController extends Controller
                     unset($spec['terminasi']);
                     $astap->spesifikasi_json = $spec;
                     $astap->save();
+                }
+            }
+
+            // Pulihkan juga status aset mitra yang terhubung jika induk dipulihkan
+            if ($kemitraan->tipe_kemitraan === 'dimanfaatkan') {
+                $linkedChildren = AstapKemitraan::where('objek_astap_id', $kemitraan->astap_id)
+                    ->where('is_deleted', 0)
+                    ->where('status_konsesi', 'Dikembalikan ke Rekanan')
+                    ->get();
+
+                foreach ($linkedChildren as $child) {
+                    $childStatus = 'Konsesi Berakhir';
+                    if (!empty($child->tanggal_selesai)) {
+                        $childEnd = Carbon::parse($child->tanggal_selesai)->endOfDay();
+                        if ($childEnd->gte(now())) {
+                            $childStatus = 'Aktif';
+                        }
+                    }
+                    $child->update([
+                        'status_konsesi'         => $childStatus,
+                        'jenis_terminasi'        => null,
+                        'nomor_ba_terminasi'     => null,
+                        'tanggal_terminasi'      => null,
+                        'tanggal_ba_terminasi'   => null,
+                        'berkas_ba_terminasi'    => null,
+                        'kondisi_akhir'          => null,
+                        'is_transferred_to_rsud' => false,
+                    ]);
+                    if ($child->astap_id) {
+                        AstapRegister::where('astap_id', $child->astap_id)->update([
+                            'status'         => 'Kemitraan',
+                            'ruang_pemegang' => 'Kemitraan (' . ($child->mitra_nama ?: 'Mitra Rekanan') . ')',
+                        ]);
+                    }
                 }
             }
 
@@ -814,8 +881,8 @@ class KemitraanController extends Controller
         return DB::transaction(function () use ($kemitraan, $request) {
             $statusSemula = 'Konsesi Berakhir';
             if (!empty($kemitraan->tanggal_selesai)) {
-                $tglAkhir = Carbon::parse($kemitraan->tanggal_selesai);
-                if ($tglAkhir->isFuture()) {
+                $tglAkhir = Carbon::parse($kemitraan->tanggal_selesai)->endOfDay();
+                if ($tglAkhir->gte(now())) {
                     $statusSemula = 'Aktif';
                 }
             }
@@ -834,6 +901,37 @@ class KemitraanController extends Controller
                 }
                 if ($kemitraan->astap_id && $kemitraan->astap_id != $targetAstapId) {
                     AstapRegister::where('astap_id', $kemitraan->astap_id)->update(['status' => 'Kemitraan']);
+                }
+
+                // Pulihkan juga aset rekanan mitra yang ikut dibatalkan otomatis
+                $autoCancelledChildren = AstapKemitraan::where('objek_astap_id', $targetAstapId)
+                    ->where('id', '!=', $kemitraan->id)
+                    ->where('is_deleted', 0)
+                    ->where('status_konsesi', 'Dibatalkan')
+                    ->get();
+
+                foreach ($autoCancelledChildren as $child) {
+                    $childStatus = 'Konsesi Berakhir';
+                    if (!empty($child->tanggal_selesai)) {
+                        $childEnd = Carbon::parse($child->tanggal_selesai)->endOfDay();
+                        if ($childEnd->gte(now())) {
+                            $childStatus = 'Aktif';
+                        }
+                    }
+                    $child->update([
+                        'status_konsesi' => $childStatus,
+                        'alasan_batal'   => null,
+                        'dibatalkan_at'  => null,
+                        'dibatalkan_by'  => null,
+                    ]);
+                    if ($child->astap_id) {
+                        AstapRegister::where('astap_id', $child->astap_id)->update(['status' => 'Kemitraan']);
+                        if ($child->astap) {
+                            $spec = is_array($child->astap->spesifikasi_json) ? $child->astap->spesifikasi_json : (json_decode($child->astap->spesifikasi_json ?? '[]', true) ?: []);
+                            unset($spec['pembatalan_kemitraan']);
+                            $child->astap->update(['spesifikasi_json' => $spec]);
+                        }
+                    }
                 }
             } else {
                 if ($kemitraan->astap_id) {

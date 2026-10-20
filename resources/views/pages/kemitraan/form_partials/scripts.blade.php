@@ -1617,8 +1617,8 @@
                     this.formData.mesin_items = [];
                 }
                 const defaultName = (this.tipeKemitraan === 'dimanfaatkan') 
-                    ? (this.formData.objek_aset_terpilih?.nama_barang || this.formData.nama_barang || '') 
-                    : (this.formData.nama_barang || '');
+                    ? (this.formData.objek_aset_terpilih?.nama_barang || '') 
+                    : '';
                 const defaultKode = (this.tipeKemitraan === 'dimanfaatkan')
                     ? (this.selectedSubSub?.kode || '1.5.2.01.01.01.002')
                     : (this.selectedSubSub?.kode || '');
@@ -1680,8 +1680,8 @@
                     this.formData.tanah_items = [];
                 }
                 const defaultName = (this.tipeKemitraan === 'dimanfaatkan') 
-                    ? (this.formData.objek_aset_terpilih?.nama_barang || this.formData.nama_barang || '') 
-                    : (this.formData.nama_barang || '');
+                    ? (this.formData.objek_aset_terpilih?.nama_barang || '') 
+                    : '';
                 const defaultKode = (this.tipeKemitraan === 'dimanfaatkan')
                     ? (this.selectedSubSub?.kode || '1.5.2.01.01.01.001')
                     : (this.selectedSubSub?.kode || '');
@@ -1743,8 +1743,8 @@
                     this.formData.gedung_items = [];
                 }
                 const defaultName = (this.tipeKemitraan === 'dimanfaatkan') 
-                    ? (this.formData.objek_aset_terpilih?.nama_barang || this.formData.nama_barang || '') 
-                    : (this.formData.nama_barang || '');
+                    ? (this.formData.objek_aset_terpilih?.nama_barang || '') 
+                    : '';
                 const defaultKode = (this.tipeKemitraan === 'dimanfaatkan')
                     ? (this.selectedSubSub?.kode || '1.5.2.01.01.01.003')
                     : (this.selectedSubSub?.kode || '');
@@ -1810,8 +1810,8 @@
                     this.formData.jaringan_items = [];
                 }
                 const defaultName = (this.tipeKemitraan === 'dimanfaatkan') 
-                    ? (this.formData.objek_aset_terpilih?.nama_barang || this.formData.nama_barang || '') 
-                    : (this.formData.nama_barang || '');
+                    ? (this.formData.objek_aset_terpilih?.nama_barang || '') 
+                    : '';
                 const defaultKode = (this.tipeKemitraan === 'dimanfaatkan')
                     ? (this.selectedSubSub?.kode || '1.5.2.01.01.01.004')
                     : (this.selectedSubSub?.kode || '');
@@ -1880,8 +1880,8 @@
                     this.formData.lainnya_items = [];
                 }
                 const defaultName = (this.tipeKemitraan === 'dimanfaatkan') 
-                    ? (this.formData.objek_aset_terpilih?.nama_barang || this.formData.nama_barang || '') 
-                    : (this.formData.nama_barang || '');
+                    ? (this.formData.objek_aset_terpilih?.nama_barang || '') 
+                    : '';
                 const defaultKode = (this.tipeKemitraan === 'dimanfaatkan')
                     ? (this.selectedSubSub?.kode || '1.5.2.01.01.01.005')
                     : (this.selectedSubSub?.kode || '');
@@ -2058,6 +2058,8 @@
 
             // Sinkronisasi Nama Barang Fisik Utama ke Lembar Spesifikasi Sheet Terpilih
             syncNameToActiveItem() {
+                // Jangan paksa menyalin nama ke sheet lain jika mode ditambahkan (aset baru mitra mandiri per KIB)
+                if (this.tipeKemitraan !== 'dimanfaatkan' && !this.isEditMode) return;
                 const val = (this.formData.nama_barang || '').trim();
                 if (!val) return;
 
@@ -2109,8 +2111,9 @@
                         if (first.mesin_nama_barang && !this.isJenisKemitraan(first.mesin_nama_barang)) {
                             this.formData.nama_barang = first.mesin_nama_barang;
                         } else if (!first.mesin_nama_barang) {
-                            if (this.formData.nama_barang && !this.isJenisKemitraan(this.formData.nama_barang)) {
-                                first.mesin_nama_barang = this.formData.nama_barang;
+                            if (this.tipeKemitraan === 'dimanfaatkan' && this.formData.objek_aset_terpilih?.nama_barang) {
+                                first.mesin_nama_barang = this.formData.objek_aset_terpilih.nama_barang;
+                                this.formData.nama_barang = this.formData.objek_aset_terpilih.nama_barang;
                             } else {
                                 this.formData.nama_barang = '';
                             }
@@ -2121,10 +2124,6 @@
                         const uniqueNames = [...new Set(names)];
                         if (uniqueNames.length > 0) {
                             this.formData.nama_barang = uniqueNames.join(', ');
-                        } else if (this.formData.nama_barang && !this.isJenisKemitraan(this.formData.nama_barang)) {
-                            this.formData.mesin_items.forEach(m => {
-                                if (!m.mesin_nama_barang) m.mesin_nama_barang = this.formData.nama_barang;
-                            });
                         } else {
                             this.formData.nama_barang = '';
                         }
@@ -2163,8 +2162,9 @@
                         if (first.tanah_nama_barang && !this.isJenisKemitraan(first.tanah_nama_barang)) {
                             this.formData.nama_barang = first.tanah_nama_barang;
                         } else if (!first.tanah_nama_barang) {
-                            if (this.formData.nama_barang && !this.isJenisKemitraan(this.formData.nama_barang)) {
-                                first.tanah_nama_barang = this.formData.nama_barang;
+                            if (this.tipeKemitraan === 'dimanfaatkan' && this.formData.objek_aset_terpilih?.nama_barang) {
+                                first.tanah_nama_barang = this.formData.objek_aset_terpilih.nama_barang;
+                                this.formData.nama_barang = this.formData.objek_aset_terpilih.nama_barang;
                             } else {
                                 this.formData.nama_barang = '';
                             }
@@ -2175,10 +2175,6 @@
                         const uniqueNames = [...new Set(names)];
                         if (uniqueNames.length > 0) {
                             this.formData.nama_barang = uniqueNames.join(', ');
-                        } else if (this.formData.nama_barang && !this.isJenisKemitraan(this.formData.nama_barang)) {
-                            this.formData.tanah_items.forEach(t => {
-                                if (!t.tanah_nama_barang) t.tanah_nama_barang = this.formData.nama_barang;
-                            });
                         } else {
                             this.formData.nama_barang = '';
                         }
@@ -2204,9 +2200,10 @@
                         if (first.gedung_nama_barang && !this.isJenisKemitraan(first.gedung_nama_barang)) {
                             this.formData.nama_barang = first.gedung_nama_barang;
                         } else if (!first.gedung_nama_barang) {
-                            if (this.formData.nama_barang && !this.isJenisKemitraan(this.formData.nama_barang)) {
-                                first.gedung_nama_barang = this.formData.nama_barang;
-                                first.gedung_nama_bangunan = this.formData.nama_barang;
+                            if (this.tipeKemitraan === 'dimanfaatkan' && this.formData.objek_aset_terpilih?.nama_barang) {
+                                first.gedung_nama_barang = this.formData.objek_aset_terpilih.nama_barang;
+                                first.gedung_nama_bangunan = this.formData.objek_aset_terpilih.nama_barang;
+                                this.formData.nama_barang = this.formData.objek_aset_terpilih.nama_barang;
                             } else {
                                 this.formData.nama_barang = '';
                             }
@@ -2217,13 +2214,6 @@
                         const uniqueNames = [...new Set(names)];
                         if (uniqueNames.length > 0) {
                             this.formData.nama_barang = uniqueNames.join(', ');
-                        } else if (this.formData.nama_barang && !this.isJenisKemitraan(this.formData.nama_barang)) {
-                            this.formData.gedung_items.forEach(g => {
-                                if (!g.gedung_nama_barang) {
-                                    g.gedung_nama_barang = this.formData.nama_barang;
-                                    g.gedung_nama_bangunan = this.formData.nama_barang;
-                                }
-                            });
                         } else {
                             this.formData.nama_barang = '';
                         }
@@ -2249,8 +2239,9 @@
                         if (first.jaringan_nama_barang && !this.isJenisKemitraan(first.jaringan_nama_barang)) {
                             this.formData.nama_barang = first.jaringan_nama_barang;
                         } else if (!first.jaringan_nama_barang) {
-                            if (this.formData.nama_barang && !this.isJenisKemitraan(this.formData.nama_barang)) {
-                                first.jaringan_nama_barang = this.formData.nama_barang;
+                            if (this.tipeKemitraan === 'dimanfaatkan' && this.formData.objek_aset_terpilih?.nama_barang) {
+                                first.jaringan_nama_barang = this.formData.objek_aset_terpilih.nama_barang;
+                                this.formData.nama_barang = this.formData.objek_aset_terpilih.nama_barang;
                             } else {
                                 this.formData.nama_barang = '';
                             }
@@ -2261,10 +2252,6 @@
                         const uniqueNames = [...new Set(names)];
                         if (uniqueNames.length > 0) {
                             this.formData.nama_barang = uniqueNames.join(', ');
-                        } else if (this.formData.nama_barang && !this.isJenisKemitraan(this.formData.nama_barang)) {
-                            this.formData.jaringan_items.forEach(j => {
-                                if (!j.jaringan_nama_barang) j.jaringan_nama_barang = this.formData.nama_barang;
-                            });
                         } else {
                             this.formData.nama_barang = '';
                         }
@@ -2290,8 +2277,9 @@
                         if (nLain && !this.isJenisKemitraan(nLain)) {
                             this.formData.nama_barang = nLain;
                         } else if (!nLain) {
-                            if (this.formData.nama_barang && !this.isJenisKemitraan(this.formData.nama_barang)) {
-                                first.lainnya_nama_barang = this.formData.nama_barang;
+                            if (this.tipeKemitraan === 'dimanfaatkan' && this.formData.objek_aset_terpilih?.nama_barang) {
+                                first.lainnya_nama_barang = this.formData.objek_aset_terpilih.nama_barang;
+                                this.formData.nama_barang = this.formData.objek_aset_terpilih.nama_barang;
                             } else {
                                 this.formData.nama_barang = '';
                             }
@@ -2302,10 +2290,6 @@
                         const uniqueNames = [...new Set(names)];
                         if (uniqueNames.length > 0) {
                             this.formData.nama_barang = uniqueNames.join(', ');
-                        } else if (this.formData.nama_barang && !this.isJenisKemitraan(this.formData.nama_barang)) {
-                            this.formData.lainnya_items.forEach(l => {
-                                if (!l.lainnya_nama_barang) l.lainnya_nama_barang = this.formData.nama_barang;
-                            });
                         } else {
                             this.formData.nama_barang = '';
                         }
@@ -2637,24 +2621,6 @@
                 this.selectedSubSub = item;
                 this.formData.jenis_astap_id = item.id;
                 
-                // JANGAN menimpa nama_barang dengan nama akun/jenis kemitraan (item.nama)!
-                // Pertahankan nama barang fisik yang diinput user, atau wariskan dari nama objek BMD jika mode dimanfaatkan
-                if (this.tipeKemitraan === 'dimanfaatkan') {
-                    if (!this.formData.nama_barang || this.isJenisKemitraan(this.formData.nama_barang)) {
-                        const objNama = this.formData.objek_aset_terpilih?.nama_barang;
-                        if (objNama && !this.isJenisKemitraan(objNama)) {
-                            this.formData.nama_barang = objNama;
-                        } else {
-                            this.formData.nama_barang = '';
-                        }
-                    }
-                } else {
-                    // Mode 'ditambahkan': default kosong! Pengguna wajib memilih/mengetik jenis barang baru di Langkah 2
-                    if (this.isJenisKemitraan(this.formData.nama_barang) || (this.formData.objek_aset_terpilih?.nama_barang && this.formData.nama_barang === this.formData.objek_aset_terpilih.nama_barang)) {
-                        this.formData.nama_barang = '';
-                    }
-                }
-
                 const kode = item.kode || '';
                 const nama = (item.nama || '').toLowerCase();
 
@@ -2670,6 +2636,30 @@
                     targetType = 'jaringan';
                 } else if (kode.endsWith('.005') || kode.startsWith('1.3.5') || nama.includes('lainnya') || nama.includes('buku') || nama.includes('hewan')) {
                     targetType = 'lainnya';
+                }
+
+                // JANGAN menimpa nama_barang dengan nama akun/jenis kemitraan (item.nama)!
+                // Pertahankan nama barang fisik yang diinput user, atau wariskan dari nama objek BMD jika mode dimanfaatkan
+                if (this.tipeKemitraan === 'dimanfaatkan') {
+                    if (!this.formData.nama_barang || this.isJenisKemitraan(this.formData.nama_barang)) {
+                        const objNama = this.formData.objek_aset_terpilih?.nama_barang;
+                        if (objNama && !this.isJenisKemitraan(objNama)) {
+                            this.formData.nama_barang = objNama;
+                        } else {
+                            this.formData.nama_barang = '';
+                        }
+                    }
+                } else {
+                    // Mode 'ditambahkan': Sinkronkan nama_barang dengan data yang tersimpan di sheet kategori aktif (targetType).
+                    // Jika kategori ini belum pernah diisi, kosongkan agar sheet baru tidak mewarisi nama dari sheet lain!
+                    let activeCategoryName = '';
+                    if (targetType === 'tanah') activeCategoryName = this.formData.tanah_items?.[0]?.tanah_nama_barang || '';
+                    else if (targetType === 'mesin') activeCategoryName = this.formData.mesin_items?.[0]?.mesin_nama_barang || '';
+                    else if (targetType === 'gedung') activeCategoryName = this.formData.gedung_items?.[0]?.gedung_nama_barang || '';
+                    else if (targetType === 'jaringan') activeCategoryName = this.formData.jaringan_items?.[0]?.jaringan_nama_barang || '';
+                    else if (targetType === 'lainnya') activeCategoryName = this.formData.lainnya_items?.[0]?.lainnya_nama_barang || this.formData.lainnya_items?.[0]?.lainnya_judul || '';
+
+                    this.formData.nama_barang = activeCategoryName;
                 }
 
                 // Reset status extracom jika memilih objek yang tidak mengizinkan extracom (Tanah, Gedung, Jaringan)
