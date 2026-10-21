@@ -44,8 +44,8 @@
                                 <span>📦 Item #<span x-text="idx + 1"></span></span>
                             </span>
                             <span class="px-2 py-0.5 rounded-md text-[10px] font-bold border transition-all"
-                                  :class="item.is_extracom ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' : 'bg-purple-500/20 text-purple-300 border-purple-500/40'"
-                                  x-text="item.is_extracom ? '📦 Extracom (≤ 300rb)' : '⚙️ Reguler'">
+                                  :class="(item.is_extracom || formData.is_extracomtable) ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' : 'bg-purple-500/20 text-purple-300 border-purple-500/40'"
+                                  x-text="(item.is_extracom || formData.is_extracomtable) ? '📦 Extracom (≤ 300rb)' : '⚙️ Reguler'">
                             </span>
                             <span class="px-2 py-0.5 rounded-md text-[10px] font-bold border"
                                 :class="{
@@ -76,7 +76,7 @@
                             <span class="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-1.5">
                                 <span>📑 Kategori Asal PMDN 108:</span>
                             </span>
-                            <span class="text-[9.5px] text-cyan-400 font-medium" x-show="item.is_extracom">
+                            <span class="text-[9.5px] text-cyan-400 font-medium" x-show="item.is_extracom || formData.is_extracomtable">
                                 ✨ Tab menentukan kode 108 asal &bull; Area isian bawah otomatis form Extracom baku
                             </span>
                         </div>
@@ -223,7 +223,7 @@
                     <!-- ========================================================================= -->
 
                     <!-- 1. Form Spesifik: Buku Perpustakaan (Hanya Tampil Saat Non-Extracom) -->
-                    <div x-show="!item.is_extracom && (item.kib_e_type || 'buku') === 'buku'" class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3 shadow-inner">
+                    <div x-show="!(item.is_extracom || formData.is_extracomtable) && (item.kib_e_type || 'buku') === 'buku'" class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3 shadow-inner">
                         <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
                             <span class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center space-x-1.5">
                                 <span>📚 Atribut Buku Perpustakaan &amp; Pustaka Medis:</span>
@@ -255,7 +255,7 @@
                     </div>
 
                     <!-- 2. Form Spesifik: Kesenian & Budaya (Hanya Tampil Saat Non-Extracom) -->
-                    <div x-show="!item.is_extracom && item.kib_e_type === 'kesenian'" class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3 shadow-inner">
+                    <div x-show="!(item.is_extracom || formData.is_extracomtable) && item.kib_e_type === 'kesenian'" class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3 shadow-inner">
                         <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
                             <span class="text-xs font-bold text-purple-400 uppercase tracking-wider flex items-center space-x-1.5">
                                 <span>🎨 Atribut Fisik Benda Seni / Budaya:</span>
@@ -297,7 +297,7 @@
                     </div>
 
                     <!-- 3. Form Spesifik: Hewan & Tumbuhan (Hanya Tampil Saat Non-Extracom) -->
-                    <div x-show="!item.is_extracom && item.kib_e_type === 'hewan_tumbuhan'" class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3 shadow-inner">
+                    <div x-show="!(item.is_extracom || formData.is_extracomtable) && item.kib_e_type === 'hewan_tumbuhan'" class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3 shadow-inner">
                         <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
                             <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center space-x-1.5">
                                 <span>🌿 Atribut Fisik Hewan &amp; Tumbuhan:</span>
@@ -329,7 +329,7 @@
                     </div>
 
                     <!-- 4. Form Spesifikasi Ekstrakomtabel Baku (Universal untuk Semua Kategori KIB E saat Extracom) -->
-                    <div x-show="item.is_extracom" class="space-y-4">
+                    <div x-show="item.is_extracom || formData.is_extracomtable" class="space-y-4">
                         <!-- Grid Form Pengisian Spesifikasi Barang Ekstrakomtabel (Persis Template Baku Belanja Modal) -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
@@ -457,10 +457,10 @@
                             </div>
                             <div>
                                 <label class="block text-slate-400 text-[10px] mb-1 font-semibold flex items-center justify-between">
-                                    <span x-text="item.is_extracom ? 'Nilai Satuan (Rp) *' : 'Taksiran Nilai Wajar (Rp) *'"></span>
+                                    <span x-text="(item.is_extracom || formData.is_extracomtable) ? 'Nilai Satuan (Rp) *' : 'Taksiran Nilai Wajar (Rp) *'"></span>
                                     <span class="text-[9px] font-bold"
-                                          :class="item.is_extracom ? 'text-amber-400 font-mono' : 'text-emerald-400'"
-                                          x-text="item.is_extracom ? 'Maks. Rp 300.000' : 'Harga Wajar'">
+                                          :class="(item.is_extracom || formData.is_extracomtable) ? 'text-amber-400 font-mono' : 'text-emerald-400'"
+                                          x-text="(item.is_extracom || formData.is_extracomtable) ? 'Maks. Rp 300.000' : 'Harga Wajar'">
                                     </span>
                                 </label>
                                 <input type="text"
@@ -471,10 +471,10 @@
                                         $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
                                         syncTotalsFromItems();
                                     "
-                                    :placeholder="item.is_extracom ? 'Maks. 300.000' : 'Contoh: 1.500.000'"
-                                    :class="item.is_extracom && item.lainnya_nilai_satuan > 300000 ? 'border-rose-500 ring-1 ring-rose-500 text-rose-300' : 'border-slate-700 text-emerald-400 focus:border-purple-500'"
+                                    :placeholder="(item.is_extracom || formData.is_extracomtable) ? 'Maks. 300.000' : 'Contoh: 1.500.000'"
+                                    :class="(item.is_extracom || formData.is_extracomtable) && item.lainnya_nilai_satuan > 300000 ? 'border-rose-500 ring-1 ring-rose-500 text-rose-300' : 'border-slate-700 text-emerald-400 focus:border-purple-500'"
                                     class="w-full bg-slate-950 border rounded-xl px-3 py-2 text-xs font-mono font-bold focus:outline-none transition-colors">
-                                <span x-show="item.is_extracom && item.lainnya_nilai_satuan > 300000" class="text-[9px] font-bold text-rose-400 block mt-1">
+                                <span x-show="(item.is_extracom || formData.is_extracomtable) && item.lainnya_nilai_satuan > 300000" class="text-[9px] font-bold text-rose-400 block mt-1">
                                     ⚠️ Nilai satuan Extracom tidak boleh > Rp 300.000!
                                 </span>
                             </div>

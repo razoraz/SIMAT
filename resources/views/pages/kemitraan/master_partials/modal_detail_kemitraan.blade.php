@@ -905,8 +905,8 @@
                                                     <span class="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-300 font-mono font-bold text-[10px] border border-emerald-500/30"
                                                           x-text="(mItem.mesin_jumlah_barang || 1) + ' ' + (mItem.mesin_satuan || 'Unit')"></span>
                                                     <span class="px-2 py-0.5 rounded-md text-[10px] font-bold border"
-                                                          :class="mItem.is_extracom ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' : 'bg-purple-500/20 text-purple-300 border-purple-500/40'"
-                                                          x-text="mItem.is_extracom ? '📦 Extracom' : '⚙️ Reguler'"></span>
+                                                          :class="(mItem.is_extracom || selectedAstapDetail?.is_extracomtable || selectedAstapDetail?.spesifikasi?.is_extracomtable) ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' : 'bg-purple-500/20 text-purple-300 border-purple-500/40'"
+                                                          x-text="(mItem.is_extracom || selectedAstapDetail?.is_extracomtable || selectedAstapDetail?.spesifikasi?.is_extracomtable) ? '📦 Extracom' : '⚙️ Reguler'"></span>
                                                     <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-semibold border inline-flex items-center gap-1.5"
                                                           :class="getRincianKondisiStats(selectedAstapDetail, mIdx, 'mesin_items').badge_class">
                                                         <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="getRincianKondisiStats(selectedAstapDetail, mIdx, 'mesin_items').dot_class"></span>
@@ -1096,8 +1096,8 @@
                                             
                                             <!-- Badge Status Akuntansi: Extracom vs Reguler -->
                                             <span class="px-2 py-0.5 rounded-md text-[10px] font-bold border"
-                                                  :class="lItem.is_extracom ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' : 'bg-purple-500/20 text-purple-300 border-purple-500/40'"
-                                                  x-text="lItem.is_extracom ? '📦 Extracom' : '⚙️ Reguler'"></span>
+                                                  :class="(lItem.is_extracom || selectedAstapDetail?.is_extracomtable || selectedAstapDetail?.spesifikasi?.is_extracomtable) ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' : 'bg-purple-500/20 text-purple-300 border-purple-500/40'"
+                                                  x-text="(lItem.is_extracom || selectedAstapDetail?.is_extracomtable || selectedAstapDetail?.spesifikasi?.is_extracomtable) ? '📦 Extracom' : '⚙️ Reguler'"></span>
 
                                             <!-- Badge Kategori KIB E -->
                                             <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold border"
@@ -1142,7 +1142,7 @@
                                         <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                             <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">💰 Nilai Wajar Satuan</span>
                                             <span class="text-emerald-300 font-mono font-bold block text-[11px]" x-text="'Rp ' + Number(lItem.lainnya_nilai_satuan || 0).toLocaleString('id-ID')"></span>
-                                            <span class="text-[9.5px]" :class="lItem.is_extracom ? 'text-amber-400 font-medium' : 'text-slate-400'" x-text="lItem.is_extracom ? 'Maksimal Rp 300.000' : 'Aset Tetap Intrakomptabel'"></span>
+                                            <span class="text-[9.5px]" :class="(lItem.is_extracom || selectedAstapDetail?.is_extracomtable || selectedAstapDetail?.spesifikasi?.is_extracomtable) ? 'text-amber-400 font-medium' : 'text-slate-400'" x-text="(lItem.is_extracom || selectedAstapDetail?.is_extracomtable || selectedAstapDetail?.spesifikasi?.is_extracomtable) ? 'Maksimal Rp 300.000' : 'Aset Tetap Intrakomptabel'"></span>
                                         </div>
                                     </div>
                                 </div>

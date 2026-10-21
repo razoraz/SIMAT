@@ -44,8 +44,8 @@
                                 <span>⚙️ Barang / Unit #<span x-text="idx + 1"></span></span>
                             </span>
                             <span class="px-2 py-0.5 rounded-md text-[10px] font-bold border transition-all"
-                                  :class="item.is_extracom ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' : 'bg-purple-500/20 text-purple-300 border-purple-500/40'"
-                                  x-text="item.is_extracom ? '📦 Ekstrakomtabel (≤ 300rb)' : '⚙️ Aset Tetap Reguler'">
+                                  :class="(item.is_extracom || formData.is_extracomtable) ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' : 'bg-purple-500/20 text-purple-300 border-purple-500/40'"
+                                  x-text="(item.is_extracom || formData.is_extracomtable) ? '📦 Ekstrakomtabel (≤ 300rb)' : '⚙️ Aset Tetap Reguler'">
                             </span>
                             <span class="text-[11px] text-slate-200 font-semibold" x-show="item.mesin_nama_barang || item.mesin_merk || item.mesin_type">
                                 • <span x-text="item.mesin_nama_barang ? (item.mesin_nama_barang + ' • ') : ''"></span><span x-text="(item.mesin_merk || '') + ' ' + (item.mesin_type || '')"></span>
@@ -172,13 +172,13 @@
                         <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3 shadow-md">
                             <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
                                 <span class="text-xs font-bold text-amber-400 block uppercase tracking-wider flex items-center space-x-1.5">
-                                    <span x-text="item.is_extracom ? '⚙️ MERK, TYPE & UKURAN:' : '⚙️ Merk, Type & Ukuran:'"></span>
+                                    <span x-text="(item.is_extracom || formData.is_extracomtable) ? '📦 MERK, TYPE & UKURAN:' : '⚙️ Merk, Type & Ukuran:'"></span>
                                 </span>
-                                <span x-show="!item.is_extracom" class="text-[9px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 font-bold">Identitas Fisik</span>
+                                <span x-show="!(item.is_extracom || formData.is_extracomtable)" class="text-[9px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 font-bold">Identitas Fisik</span>
                             </div>
 
                             <!-- Nama Barang (PMDN 108) Khusus Mode Extracom (Persis Template Baku Belanja Modal) -->
-                            <div x-show="item.is_extracom">
+                            <div x-show="item.is_extracom || formData.is_extracomtable">
                                 <label class="block text-slate-400 text-[10px] mb-1 font-semibold flex items-center justify-between">
                                     <span>Nama Barang (PMDN 108)</span>
                                     <span class="text-[9px] text-amber-400 font-bold flex items-center space-x-1">
@@ -195,10 +195,10 @@
                             <!-- Merk Barang -->
                             <div>
                                 <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
-                                    <span x-text="item.is_extracom ? 'Merk Barang' : 'Merk / Brand Pabrikan'"></span> <span class="text-rose-400">*</span>
+                                    <span x-text="(item.is_extracom || formData.is_extracomtable) ? 'Merk Barang' : 'Merk / Brand Pabrikan'"></span> <span class="text-rose-400">*</span>
                                 </label>
                                 <input type="text" x-model="item.mesin_merk" @input="syncTotalsFromItems()"
-                                       :placeholder="item.is_extracom ? 'Contoh: Olympic / Lion / Krisbow / Kenko' : 'Contoh: Siemens / Mindray / Roche / Sysmex / Fresenius / GE'"
+                                       :placeholder="(item.is_extracom || formData.is_extracomtable) ? 'Contoh: Olympic / Lion / Krisbow / Kenko' : 'Contoh: Siemens / Mindray / Roche / Sysmex / Fresenius / GE'"
                                        class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:border-amber-500 focus:outline-none transition-all">
                             </div>
 
@@ -206,19 +206,19 @@
                                 <div>
                                     <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Type / Model <span class="text-rose-400">*</span></label>
                                     <input type="text" x-model="item.mesin_type" @input="syncTotalsFromItems()"
-                                           :placeholder="item.is_extracom ? 'Contoh: Standard / Meja / Rak' : 'Contoh: SOMATOM go.Now / DC-70 / 4008S'"
+                                           :placeholder="(item.is_extracom || formData.is_extracomtable) ? 'Contoh: Standard / Meja / Rak' : 'Contoh: SOMATOM go.Now / DC-70 / 4008S'"
                                            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-mono focus:border-amber-500 focus:outline-none transition-all">
                                 </div>
                                 <div>
                                     <label class="block text-slate-400 text-[10px] mb-1">Ukuran / Kapasitas</label>
                                     <input type="text" x-model="item.mesin_ukuran"
-                                           :placeholder="item.is_extracom ? 'Contoh: 120x60 cm / Sedang' : 'Contoh: 128 Slice / 300 Test/Jam'"
+                                           :placeholder="(item.is_extracom || formData.is_extracomtable) ? 'Contoh: 120x60 cm / Sedang' : 'Contoh: 128 Slice / 300 Test/Jam'"
                                            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:border-amber-500 focus:outline-none transition-all">
                                 </div>
                             </div>
 
                             <!-- Tahun Pembuatan Pabrik (Khusus Reguler, disembunyikan saat Extracom) -->
-                            <div x-show="!item.is_extracom">
+                            <div x-show="!(item.is_extracom || formData.is_extracomtable)">
                                 <div class="flex items-center justify-between mb-1">
                                     <label class="text-slate-400 text-[10px] font-semibold">Tahun Pembuatan Pabrik</label>
                                     <span class="text-[9px] text-slate-500 font-mono">Maks: {{ date('Y') }}</span>
@@ -234,42 +234,42 @@
                         <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3 shadow-md">
                             <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
                                 <span class="text-xs font-bold text-cyan-400 block uppercase tracking-wider flex items-center space-x-1.5">
-                                    <span x-text="item.is_extracom ? '🏷️ NO PABRIK, BAHAN & KONDISI:' : '🏷️ No Pabrik, Kendaraan, Bahan & Kondisi:'"></span>
+                                    <span x-text="(item.is_extracom || formData.is_extracomtable) ? '📦 NO PABRIK, BAHAN & KONDISI:' : '🏷️ No Pabrik, Kendaraan, Bahan & Kondisi:'"></span>
                                 </span>
-                                <span x-show="!item.is_extracom" class="text-[9px] px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 font-bold">Serial &amp; Spesifikasi</span>
+                                <span x-show="!(item.is_extracom || formData.is_extracomtable)" class="text-[9px] px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 font-bold">Serial &amp; Spesifikasi</span>
                             </div>
 
                             <div class="grid grid-cols-2 gap-2.5">
                                 <div>
                                     <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
-                                        <span x-text="item.is_extracom ? 'No Pabrik / SN' : 'No Pabrik / Serial Number (SN)'"></span>
+                                        <span x-text="(item.is_extracom || formData.is_extracomtable) ? 'No Pabrik / SN' : 'No Pabrik / Serial Number (SN)'"></span>
                                     </label>
                                     <input type="text" x-model="item.mesin_no_pabrik"
-                                           :placeholder="item.is_extracom ? 'SN-EXT-2026-001' : 'SN-RAD-2026-88192'"
+                                           :placeholder="(item.is_extracom || formData.is_extracomtable) ? 'SN-EXT-2026-001' : 'SN-RAD-2026-88192'"
                                            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono focus:border-cyan-500 focus:outline-none transition-all">
                                 </div>
                                 <div>
                                     <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Bahan Pembuatan</label>
                                     <input type="text" x-model="item.mesin_bahan"
-                                           :placeholder="item.is_extracom ? 'Kayu / Besi / Plastik' : 'Logam & Elektronik / Stainless'"
+                                           :placeholder="(item.is_extracom || formData.is_extracomtable) ? 'Kayu / Besi / Plastik' : 'Logam & Elektronik / Stainless'"
                                            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-cyan-500 focus:outline-none transition-all">
                                 </div>
                             </div>
 
                             <div>
                                 <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
-                                    <span x-text="item.is_extracom ? 'Kondisi Barang' : 'Kondisi Fisik Barang'"></span> <span class="text-rose-400" x-show="!item.is_extracom">*</span>
+                                    <span x-text="(item.is_extracom || formData.is_extracomtable) ? 'Kondisi Barang' : 'Kondisi Fisik Barang'"></span> <span class="text-rose-400" x-show="!(item.is_extracom || formData.is_extracomtable)">*</span>
                                 </label>
                                 <select x-model="item.mesin_kondisi" @change="syncTotalsFromItems()"
                                         class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold focus:border-cyan-500 focus:outline-none transition-all">
-                                    <option value="Baik" x-text="item.is_extracom ? 'Baik (B)' : '🟢 Baik (B) — Siap Operasional'"></option>
-                                    <option value="Kurang Baik" x-text="item.is_extracom ? 'Kurang Baik (KB)' : '🟡 Kurang Baik (KB) — Perlu Kalibrasi / Setting'"></option>
-                                    <option value="Rusak Berat" x-text="item.is_extracom ? 'Rusak Berat (RB)' : '🔴 Rusak Berat (RB)'"></option>
+                                    <option value="Baik" x-text="(item.is_extracom || formData.is_extracomtable) ? 'Baik (B)' : '🟢 Baik (B) — Siap Operasional'"></option>
+                                    <option value="Kurang Baik" x-text="(item.is_extracom || formData.is_extracomtable) ? 'Kurang Baik (KB)' : '🟡 Kurang Baik (KB) — Perlu Kalibrasi / Setting'"></option>
+                                    <option value="Rusak Berat" x-text="(item.is_extracom || formData.is_extracomtable) ? 'Rusak Berat (RB)' : '🔴 Rusak Berat (RB)'"></option>
                                 </select>
                             </div>
 
                             <!-- Detail Kendaraan Bermotor (Khusus Ambulans / Kendaraan Operasional Kemitraan Non-Extracom) -->
-                            <div x-show="!item.is_extracom" class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1.5 transition-all">
+                            <div x-show="!(item.is_extracom || formData.is_extracomtable)" class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1.5 transition-all">
                                 <span class="text-[9.5px] font-bold text-slate-400 block uppercase tracking-wider">
                                     🚗 Legality Kendaraan (Khusus Ambulans / Kendaraan Operasional):
                                 </span>
@@ -338,10 +338,10 @@
                             </div>
                             <div>
                                 <label class="block text-slate-400 text-[10px] mb-1 font-semibold flex items-center justify-between">
-                                    <span x-text="item.is_extracom ? 'Nilai Satuan (Rp) *' : 'Taksiran Nilai Wajar (Rp) *'"></span>
+                                    <span x-text="(item.is_extracom || formData.is_extracomtable) ? 'Nilai Satuan (Rp) *' : 'Taksiran Nilai Wajar (Rp) *'"></span>
                                     <span class="text-[9px] font-bold"
-                                          :class="item.is_extracom ? 'text-amber-400 font-mono' : 'text-emerald-400'"
-                                          x-text="item.is_extracom ? 'Maks. Rp 300.000' : 'Harga Wajar'">
+                                          :class="(item.is_extracom || formData.is_extracomtable) ? 'text-amber-400 font-mono' : 'text-emerald-400'"
+                                          x-text="(item.is_extracom || formData.is_extracomtable) ? 'Maks. Rp 300.000' : 'Harga Wajar'">
                                     </span>
                                 </label>
                                 <input type="text" 
@@ -352,10 +352,10 @@
                                            $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
                                            syncTotalsFromItems();
                                        "
-                                       :placeholder="item.is_extracom ? 'Maks. 300.000' : 'Contoh: 185.000.000'"
-                                       :class="item.is_extracom && item.mesin_nilai_satuan > 300000 ? 'border-rose-500 ring-1 ring-rose-500 text-rose-300' : 'border-slate-700 text-emerald-300 focus:border-emerald-500'"
+                                       :placeholder="(item.is_extracom || formData.is_extracomtable) ? 'Maks. 300.000' : 'Contoh: 185.000.000'"
+                                       :class="(item.is_extracom || formData.is_extracomtable) && item.mesin_nilai_satuan > 300000 ? 'border-rose-500 ring-1 ring-rose-500 text-rose-300' : 'border-slate-700 text-emerald-300 focus:border-emerald-500'"
                                        class="w-full bg-slate-950 border rounded-xl px-3 py-2 text-xs font-mono font-bold focus:outline-none transition-colors">
-                                <span x-show="item.is_extracom && item.mesin_nilai_satuan > 300000" class="text-[9px] font-bold text-rose-400 block mt-1">
+                                <span x-show="(item.is_extracom || formData.is_extracomtable) && item.mesin_nilai_satuan > 300000" class="text-[9px] font-bold text-rose-400 block mt-1">
                                     ⚠️ Nilai satuan Extracom tidak boleh > Rp 300.000!
                                 </span>
                             </div>

@@ -1104,6 +1104,16 @@
                     });
                 });
 
+                this.$watch('formData.is_extracomtable', (val) => {
+                    const isExtra = Boolean(val);
+                    if (this.formData.mesin_items && Array.isArray(this.formData.mesin_items)) {
+                        this.formData.mesin_items.forEach(m => { m.is_extracom = isExtra; });
+                    }
+                    if (this.formData.lainnya_items && Array.isArray(this.formData.lainnya_items)) {
+                        this.formData.lainnya_items.forEach(l => { l.is_extracom = isExtra; });
+                    }
+                });
+
                 this.$watch('formData.mesin_items', () => {
                     this.syncTotalsFromItems();
                 }, { deep: true });
@@ -1383,8 +1393,17 @@
                 this.formData.kondisi = spec.kondisi || 'Baik';
                 this.formData.alamat_barang = d.alamat_barang || 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1';
                 this.formData.ppk_nama = d.ppk_nama || spec.ppk_nama || 'BUDI HARTONO, S.Sos';
-                this.formData.ppk_nip = d.ppk_nip || spec.ppk_nip || '19760229 200801 1 010';
-                this.formData.is_extracomtable = Boolean(d.is_extracomtable || spec.is_extracomtable);
+                const isAsetExtracom = Boolean(
+                    d.is_extracomtable || 
+                    spec.is_extracomtable || 
+                    spec.is_extracom || 
+                    (d.category === 'EXTRACOM') || 
+                    (d.jenis_reklas === 'EKSTRAKOMPTABEL') || 
+                    (specLama && (specLama.is_extracomtable || specLama.is_extracom)) ||
+                    (Array.isArray(spec.mesin_items) && spec.mesin_items.some(m => !!m.is_extracom || !!m.is_extracomtable)) ||
+                    (Array.isArray(spec.lainnya_items) && spec.lainnya_items.some(l => !!l.is_extracom || !!l.is_extracomtable))
+                );
+                this.formData.is_extracomtable = isAsetExtracom;
 
                 // Rehidrasi Repeater KIB A-E
                 if (Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0) {
@@ -1395,7 +1414,7 @@
                         mesin_nilai_satuan: Number(m.mesin_nilai_satuan || m.mesin_nilai_fisik || m.mesin_harga_satuan || (spec.mesin_items.length > 0 ? Math.round((d.total_realisasi || kemitraan.nilai_aset || 0) / spec.mesin_items.length) : 0) || 0),
                         mesin_jumlah_barang: parseInt(m.mesin_jumlah_barang || m.jumlah || 1),
                         mesin_satuan: m.mesin_satuan || d.satuan || 'Unit',
-                        is_extracom: Boolean(m.is_extracom)
+                        is_extracom: (m.is_extracom !== undefined && m.is_extracom !== null) ? Boolean(m.is_extracom) : (m.is_extracomtable !== undefined ? Boolean(m.is_extracomtable) : isAsetExtracom)
                     }));
                 } else if (d.nama_barang || spec.merk || (d.jenis_astap?.kode && (d.jenis_astap.kode.endsWith('.002') || d.jenis_astap.kode.startsWith('1.3.2')))) {
                     this.formData.mesin_items = [{
@@ -1413,7 +1432,7 @@
                         mesin_jumlah_barang: d.jumlah_volume || 1,
                         mesin_satuan: d.satuan || 'Unit',
                         mesin_nilai_satuan: Number(spec.mesin_nilai_satuan || spec.mesin_nilai_fisik || d.total_realisasi || kemitraan.nilai_aset || 0),
-                        is_extracom: Boolean(d.is_extracomtable || spec.is_extracomtable)
+                        is_extracom: isAsetExtracom
                     }];
                 }
 
@@ -1552,7 +1571,7 @@
                         lainnya_nilai_satuan: Number(l.lainnya_nilai_satuan || l.lainnya_nilai_fisik || (spec.lainnya_items.length > 0 ? Math.round((d.total_realisasi || kemitraan.nilai_aset || 0) / spec.lainnya_items.length) : 0) || 0),
                         lainnya_jumlah: parseInt(l.lainnya_jumlah || l.lainnya_jumlah_barang || 1),
                         lainnya_satuan: l.lainnya_satuan || d.satuan || 'Buah',
-                        is_extracom: Boolean(l.is_extracom)
+                        is_extracom: (l.is_extracom !== undefined && l.is_extracom !== null) ? Boolean(l.is_extracom) : (l.is_extracomtable !== undefined ? Boolean(l.is_extracomtable) : isAsetExtracom)
                     }));
                 } else if (d.nama_barang || (d.jenis_astap?.kode && (d.jenis_astap.kode.endsWith('.005') || d.jenis_astap.kode.startsWith('1.3.5')))) {
                     this.formData.lainnya_items = [{
@@ -1560,12 +1579,18 @@
                         lainnya_nama_barang: d.nama_barang || '',
                         isFilterOpen: false,
                         searchFilter: '',
-                        is_extracom: Boolean(d.is_extracomtable || spec.is_extracomtable),
+                        is_extracom: isAsetExtracom,
                         lainnya_jumlah_barang: d.jumlah_volume || 1,
                         lainnya_jumlah: d.jumlah_volume || 1,
                         lainnya_satuan: d.satuan || 'Unit',
                         lainnya_nilai_satuan: Number(spec.lainnya_nilai_satuan || spec.lainnya_nilai_fisik || d.total_realisasi || kemitraan.nilai_aset || 0)
                     }];
+                }
+
+                // Pastikan konsistensi status extracom pada seluruh repeater item
+                if (this.formData.is_extracomtable) {
+                    if (this.formData.mesin_items) this.formData.mesin_items.forEach(m => m.is_extracom = true);
+                    if (this.formData.lainnya_items) this.formData.lainnya_items.forEach(l => l.is_extracom = true);
                 }
 
                 // Rehidrasi Sub-Sub 108
@@ -3071,6 +3096,10 @@
                         }
                     }
                 } else if (s === 3) {
+                    if (this.formData.is_extracomtable) {
+                        if (this.formData.mesin_items) this.formData.mesin_items.forEach(m => m.is_extracom = true);
+                        if (this.formData.lainnya_items) this.formData.lainnya_items.forEach(l => l.is_extracom = true);
+                    }
                     this.syncStep3WithLockedObjek();
                 }
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -3090,6 +3119,10 @@
                             }
                         }
                     } else if (this.currentStep === 3) {
+                        if (this.formData.is_extracomtable) {
+                            if (this.formData.mesin_items) this.formData.mesin_items.forEach(m => m.is_extracom = true);
+                            if (this.formData.lainnya_items) this.formData.lainnya_items.forEach(l => l.is_extracom = true);
+                        }
                         this.syncStep3WithLockedObjek();
                     }
                     window.scrollTo({ top: 0, behavior: 'smooth' });
