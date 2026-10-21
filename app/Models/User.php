@@ -657,6 +657,22 @@ class User extends Authenticatable
     }
 
     /**
+     * Relasi ke master Unit / Ruangan
+     */
+    public function unitModel()
+    {
+        return $this->belongsTo(Unit::class, 'unit_id');
+    }
+
+    /**
+     * Accessor atribut unit untuk kompatibilitas nama unit/ruangan
+     */
+    public function getUnitAttribute(): ?string
+    {
+        return $this->unitModel?->nama ?? ($this->attributes['unit'] ?? $this->penugasan);
+    }
+
+    /**
      * Booted Hook: Sinkronisasi otomatis ke tabel units saat name / email user diubah
      */
     protected static function booted(): void
