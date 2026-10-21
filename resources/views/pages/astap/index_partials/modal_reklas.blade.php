@@ -1655,13 +1655,15 @@
                             <div x-show="reklasJenis === 'extracom'" class="p-3 rounded-xl bg-amber-950/30 border border-amber-500/30 flex items-start space-x-2.5">
                                 <span class="text-amber-400 text-sm shrink-0">💡</span>
                                 <div class="text-[11px] text-amber-200/90 leading-relaxed">
-                                    Barang ini akan dialihkan keluar dari Aset Tetap ke kelompok <strong>Ekstrakomtable</strong>. Anda dapat menyesuaikan harga satuan langsung di bawah ini jika diperlukan.
+                                    Barang ini dialihkan ke kelompok <strong>Ekstrakomtable</strong> (batas nilai satuan &le; Rp 300.000 per unit).<br>
+                                    <span class="text-cyan-300 font-semibold">Saran jika ingin diubah ke Intrakomtable:</span> Nilai satuan barang wajib disesuaikan menjadi <strong>di atas Rp 300.000 (&gt; Rp 300.000)</strong> per unit.
                                 </div>
                             </div>
                             <div x-show="reklasJenis === 'intracom'" class="p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/30 flex items-start space-x-2.5">
                                 <span class="text-emerald-400 text-sm shrink-0">💡</span>
                                 <div class="text-[11px] text-emerald-200/90 leading-relaxed">
-                                    Barang Ekstrakomtable ini akan <strong>dimasukkan kembali ke Neraca Aset Tetap (Intrakomtable)</strong>. Silakan sesuaikan harga satuan langsung di bawah ini jika diperlukan.
+                                    Barang Ekstrakomtable ini akan <strong>dimasukkan kembali ke Neraca Aset Tetap (Intrakomtable)</strong>.<br>
+                                    <span class="text-emerald-300 font-semibold">Syarat Kapitalisasi:</span> Nilai satuan barang wajib <strong>di atas Rp 300.000 (&gt; Rp 300.000)</strong> per unit. Silakan sesuaikan harga satuan langsung di bawah ini.
                                 </div>
                             </div>
 
@@ -1762,6 +1764,10 @@
                                                                     <span>ℹ️</span>
                                                                     <span>Batas Intrakomtable: Nilai satuan wajib <strong>&gt; Rp 300.000</strong> per unit</span>
                                                                 </div>
+                                                                <div class="text-[9.5px] text-amber-300/90 pl-4 flex items-center space-x-1 mt-0.5">
+                                                                    <span>💡</span>
+                                                                    <span>Saran: Naikkan harga satuan di atas <strong>Rp 300.000</strong> agar memenuhi syarat kapitalisasi ke Aset Tetap Intrakomtable.</span>
+                                                                </div>
                                                             </div>
                                                         </template>
                                                         <template x-if="parseFloat(item.harga_satuan) > 300000">
@@ -1791,6 +1797,10 @@
                                                                     <span>ℹ️</span>
                                                                     <span>Batas Ekstrakomtable: Nilai satuan maksimal <strong>Rp 300.000</strong> per unit</span>
                                                                 </div>
+                                                                <div class="text-[9.5px] text-emerald-300/90 pl-4 flex items-center space-x-1 mt-0.5">
+                                                                    <span>✨</span>
+                                                                    <span>Nilai ini memenuhi syarat kapitalisasi ke <strong>Intrakomtable (&gt; Rp 300.000)</strong>.</span>
+                                                                </div>
                                                             </div>
                                                         </template>
                                                         <template x-if="parseFloat(item.harga_satuan) <= 0">
@@ -1812,6 +1822,10 @@
                                                                 </span>
                                                                 <div class="text-[9.5px] text-emerald-400/80 pl-0.5">
                                                                     ✓ Memenuhi batas Ekstrakomtable (&le; Rp 300.000)
+                                                                </div>
+                                                                <div class="text-[9.5px] text-cyan-300/90 pl-0.5 flex items-center space-x-1 mt-0.5">
+                                                                    <span>💡</span>
+                                                                    <span>Saran jika ingin diubah ke <strong>Intrakomtable</strong>: Nilai satuan wajib di atas <strong>Rp 300.000</strong> (&gt; Rp 300.000).</span>
                                                                 </div>
                                                             </div>
                                                         </template>

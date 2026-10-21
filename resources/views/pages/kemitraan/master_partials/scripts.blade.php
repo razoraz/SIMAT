@@ -2992,6 +2992,7 @@
                 if (!this.selectedAstapReklas) return false;
                 const it = this.selectedAstapReklas;
                 if (it.is_extracomtable === true || it.is_extracomtable === 1 || it.is_extracomtable === '1') return true;
+                if (it.jenis_reklas === 'EKSTRAKOMPTABEL' || it.tujuan_kib === 'EKSTRAKOMPTABEL') return true;
                 const cat = (it.category || '').toString().trim().toUpperCase();
                 return cat === 'EXTRACOM';
             },

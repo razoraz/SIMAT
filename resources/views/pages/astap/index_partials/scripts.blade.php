@@ -10239,6 +10239,7 @@
                 isItemExtracom(it) {
                     if (!it) return false;
                     if (it.is_extracomtable === true || it.is_extracomtable === 1 || it.is_extracomtable === '1') return true;
+                    if (it.jenis_reklas === 'EKSTRAKOMPTABEL' || it.tujuan_kib === 'EKSTRAKOMPTABEL') return true;
                     const cat = (it.category || '').toString().trim().toUpperCase();
                     if (cat === 'EXTRACOM') return true;
                     if (typeof resolveItemCategory === 'function' && resolveItemCategory(it) === 'EXTRACOM') return true;
