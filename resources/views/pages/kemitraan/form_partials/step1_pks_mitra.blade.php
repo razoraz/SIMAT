@@ -263,9 +263,78 @@
         </div>
 
         <!-- ========================================================================= -->
-        <!-- BANNER INFO: PEMANFAATAN BMD RSUD (INFORMASI RINGKAS TANPA PENCARIAN)     -->
+        <!-- BANNER INFO / SHOWCASE OBJEK BMD: PEMANFAATAN BMD RSUD                   -->
         <!-- ========================================================================= -->
-        <div x-show="!isMilikRsud && tipeKemitraan === 'dimanfaatkan'"
+        <!-- 1. MODE EDIT: SHOWCASE OBJEK BMD RSUD YANG SEDANG DIUBAH / DIMANFAATKAN -->
+        <div x-show="!isMilikRsud && tipeKemitraan === 'dimanfaatkan' && isEditMode"
+             x-transition:enter="transition ease-out duration-200"
+             class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-cyan-950/40 via-slate-900/95 to-slate-950/90 border border-cyan-500/40 shadow-xl shadow-cyan-500/5 space-y-3.5 relative">
+            <div class="flex items-start justify-between gap-3 flex-wrap sm:flex-nowrap pb-3 border-b border-slate-800">
+                <div class="space-y-1.5 min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider font-mono border"
+                              :class="{
+                                  'bg-emerald-500/20 text-emerald-300 border-emerald-500/40': (formData.objek_aset_terpilih?.kib || lockedKibFromData) === 'KIB A' || (formData.objek_aset_terpilih?.kib || lockedKibFromData) === 'A',
+                                  'bg-amber-500/20 text-amber-300 border-amber-500/40': (formData.objek_aset_terpilih?.kib || lockedKibFromData) === 'KIB B' || (formData.objek_aset_terpilih?.kib || lockedKibFromData) === 'B',
+                                  'bg-indigo-500/20 text-indigo-300 border-indigo-500/40': (formData.objek_aset_terpilih?.kib || lockedKibFromData) === 'KIB C' || (formData.objek_aset_terpilih?.kib || lockedKibFromData) === 'C',
+                                  'bg-purple-500/20 text-purple-300 border-purple-500/40': (formData.objek_aset_terpilih?.kib || lockedKibFromData) === 'KIB D' || (formData.objek_aset_terpilih?.kib || lockedKibFromData) === 'D',
+                                  'bg-teal-500/20 text-teal-300 border-teal-500/40': (formData.objek_aset_terpilih?.kib || lockedKibFromData) === 'KIB E' || (formData.objek_aset_terpilih?.kib || lockedKibFromData) === 'E',
+                                  'bg-cyan-500/20 text-cyan-300 border-cyan-500/40': !(formData.objek_aset_terpilih?.kib || lockedKibFromData)
+                              }"
+                              x-text="formData.objek_aset_terpilih?.kib || (lockedKibFromData ? ('KIB ' + lockedKibFromData) : 'BMD RSUD')"></span>
+
+                        <span class="text-[10px] text-cyan-300 font-extrabold bg-cyan-500/15 px-2.5 py-0.5 rounded-md border border-cyan-500/30 flex items-center gap-1 font-mono">
+                            <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                            <span>Aset Terpilih (Mode Ubah)</span>
+                        </span>
+
+                        <template x-if="formData.nomor_pks && formData.nomor_pks !== '-'">
+                            <span class="text-xs font-mono font-extrabold text-cyan-300 bg-cyan-950/70 px-2.5 py-0.5 rounded-lg border border-cyan-500/30"
+                                  x-text="'PKS: ' + formData.nomor_pks"></span>
+                        </template>
+                    </div>
+
+                    <h4 class="text-sm sm:text-base font-extrabold text-white leading-snug tracking-tight"
+                        x-text="formData.objek_aset_terpilih?.nama_barang || formData.nama_barang || 'Aset BMD RSUD Terpilih'"></h4>
+                    <p class="text-[11px] text-slate-300 leading-relaxed">
+                        Aset BMD RSUD Dr. H. Koesnandi yang sedang dikerjasamakan / dimanfaatkan oleh pihak ketiga. Anda dapat memperbarui data legalitas PKS, jangka waktu sewa/konsesi, dan spesifikasi aset.
+                    </p>
+                </div>
+
+                <div class="shrink-0 text-left sm:text-right">
+                    <span class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">Nilai Kontrak / Aset</span>
+                    <span class="text-xs sm:text-sm font-mono font-extrabold text-cyan-300 block"
+                          x-text="'Rp ' + formatRupiah(formData.nilai_aset || formData.total_realisasi || formData.objek_aset_terpilih?.nilai_aset || 0)"></span>
+                </div>
+            </div>
+
+            <!-- Detail Grid Mini Card -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+                <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800">
+                    <span class="text-[10px] uppercase font-bold text-slate-500 block">🏷️ Klasifikasi 108</span>
+                    <span class="font-mono font-bold text-slate-200 block truncate"
+                          x-text="formData.objek_aset_terpilih?.kode_108 || currentSelected108?.kode || '1.5.2 (Kemitraan)'"></span>
+                </div>
+                <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800">
+                    <span class="text-[10px] uppercase font-bold text-slate-500 block">🔢 NIBAR / Register</span>
+                    <span class="font-mono font-bold text-cyan-300 block truncate"
+                          x-text="formData.objek_aset_terpilih?.nibar || formData.objek_nibar || '-'"></span>
+                </div>
+                <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800">
+                    <span class="text-[10px] uppercase font-bold text-slate-500 block">📍 Ruang / Lokasi</span>
+                    <span class="font-bold text-slate-200 block truncate"
+                          x-text="formData.objek_aset_terpilih?.unit_nama || formData.alamat_barang || 'RSUD Dr. H. Koesnandi'"></span>
+                </div>
+                <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800">
+                    <span class="text-[10px] uppercase font-bold text-slate-500 block">📦 Volume</span>
+                    <span class="font-mono font-bold text-slate-300 block"
+                          x-text="(formData.objek_aset_terpilih?.volume || formData.jumlah_volume || 1) + ' ' + (formData.objek_aset_terpilih?.satuan || formData.satuan || 'Unit')"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. MODE TAMBAH BARU: BANNER PANDUAN RINGKAS -->
+        <div x-show="!isMilikRsud && tipeKemitraan === 'dimanfaatkan' && !isEditMode"
              x-transition:enter="transition ease-out duration-200"
              class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-cyan-950/40 via-slate-900/90 to-slate-950/90 border border-cyan-500/30 shadow-xl space-y-2 relative">
             <div class="flex items-center gap-3.5">
@@ -557,7 +626,7 @@
                 <!-- 1. Sewa (1.5.2.01.01.01) -->
                 <button type="button" @click="formData.skema_kemitraan = 'Sewa'"
                     class="p-2.5 rounded-xl border text-center transition-all cursor-pointer"
-                    :class="formData.skema_kemitraan === 'Sewa' ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 font-black shadow-lg shadow-cyan-500/20 ring-1 ring-cyan-400' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'">
+                    :class="(formData.skema_kemitraan === 'Sewa' || (formData.skema_kemitraan && formData.skema_kemitraan.toLowerCase().includes('sewa'))) ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 font-black shadow-lg shadow-cyan-500/20 ring-1 ring-cyan-400' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'">
                     <span class="block text-xs font-bold">Sewa</span>
                     <span class="block text-[9px] text-slate-400 mt-0.5">Sewa Barang / Alat</span>
                     <span class="block font-mono text-[9px] text-cyan-400/70 mt-0.5">1.5.2.01.01.01</span>
@@ -566,7 +635,7 @@
                 <!-- 2. KSP (1.5.2.01.01.02) -->
                 <button type="button" @click="formData.skema_kemitraan = 'KSP'"
                     class="p-2.5 rounded-xl border text-center transition-all cursor-pointer"
-                    :class="formData.skema_kemitraan === 'KSP' ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 font-black shadow-lg shadow-cyan-500/20 ring-1 ring-cyan-400' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'">
+                    :class="(formData.skema_kemitraan === 'KSP' || (formData.skema_kemitraan && (formData.skema_kemitraan.toLowerCase().includes('ksp') || formData.skema_kemitraan.toLowerCase().includes('pemanfaatan')))) ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 font-black shadow-lg shadow-cyan-500/20 ring-1 ring-cyan-400' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'">
                     <span class="block text-xs font-bold">KSP</span>
                     <span class="block text-[9px] text-slate-400 mt-0.5">Kerja Sama Pemanfaatan</span>
                     <span class="block font-mono text-[9px] text-cyan-400/70 mt-0.5">1.5.2.01.01.02</span>
@@ -575,7 +644,7 @@
                 <!-- 3. BGS / BSG (1.5.2.01.01.03) -->
                 <button type="button" @click="formData.skema_kemitraan = 'BGS/BSG'"
                     class="p-2.5 rounded-xl border text-center transition-all cursor-pointer"
-                    :class="(formData.skema_kemitraan === 'BGS/BSG' || formData.skema_kemitraan === 'BSG' || formData.skema_kemitraan === 'BGS') ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 font-black shadow-lg shadow-cyan-500/20 ring-1 ring-cyan-400' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'">
+                    :class="(formData.skema_kemitraan === 'BGS/BSG' || formData.skema_kemitraan === 'BSG' || formData.skema_kemitraan === 'BGS' || (formData.skema_kemitraan && (formData.skema_kemitraan.toLowerCase().includes('bgs') || formData.skema_kemitraan.toLowerCase().includes('bsg')))) ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 font-black shadow-lg shadow-cyan-500/20 ring-1 ring-cyan-400' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'">
                     <span class="block text-xs font-bold">BGS / BSG</span>
                     <span class="block text-[9px] text-slate-400 mt-0.5">Bangun Guna / Serah Guna</span>
                     <span class="block font-mono text-[9px] text-cyan-400/70 mt-0.5">1.5.2.01.01.03</span>
@@ -584,7 +653,7 @@
                 <!-- 4. KSPI (1.5.2.01.01.04) -->
                 <button type="button" @click="formData.skema_kemitraan = 'KSPI'"
                     class="p-2.5 rounded-xl border text-center transition-all cursor-pointer"
-                    :class="(formData.skema_kemitraan === 'KSPI' || formData.skema_kemitraan === 'KSO') ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 font-black shadow-lg shadow-cyan-500/20 ring-1 ring-cyan-400' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'">
+                    :class="(formData.skema_kemitraan === 'KSPI' || formData.skema_kemitraan === 'KSO' || (formData.skema_kemitraan && (formData.skema_kemitraan.toLowerCase().includes('kspi') || formData.skema_kemitraan.toLowerCase().includes('kso') || formData.skema_kemitraan.toLowerCase().includes('infrastruktur')))) ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 font-black shadow-lg shadow-cyan-500/20 ring-1 ring-cyan-400' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'">
                     <span class="block text-xs font-bold">KSPI</span>
                     <span class="block text-[9px] text-slate-400 mt-0.5">Penyediaan Infrastruktur</span>
                     <span class="block font-mono text-[9px] text-cyan-400/70 mt-0.5">1.5.2.01.01.04</span>

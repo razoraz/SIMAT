@@ -458,6 +458,29 @@
                 return Number(val).toLocaleString('id-ID');
             },
 
+            // Normalisasi skema kemitraan agar seragam dengan opsi tombol UI (Sewa, KSP, BGS/BSG, KSPI, KSO)
+            normalizeSkemaKemitraan(raw) {
+                if (!raw) return (this.tipeKemitraan === 'dimanfaatkan' ? 'Sewa' : 'KSO');
+                const s = String(raw).trim();
+                const upper = s.toUpperCase();
+
+                if (upper.includes('SEWA')) return 'Sewa';
+                if (upper.includes('BGS') || upper.includes('BSG') || upper.includes('BANGUN GUNA') || upper.includes('BANGUN SERAH')) {
+                    return 'BGS/BSG';
+                }
+                if (upper.includes('KSPI') || upper.includes('INFRASTRUKTUR')) {
+                    return 'KSPI';
+                }
+                if (upper.includes('KSP') || upper.includes('PEMANFAATAN') || upper.includes('(KP)')) {
+                    return 'KSP';
+                }
+                if (upper.includes('KSO') || upper.includes('OPERASI')) {
+                    return 'KSO';
+                }
+
+                return s;
+            },
+
             cleanDateString(val) {
                 if (!val) return '';
                 val = String(val).trim();
@@ -1030,8 +1053,8 @@
                         }
                         if (qPimpinan) this.formData.mitra_pimpinan = qPimpinan;
                         if (qAlamat) this.formData.mitra_alamat = qAlamat;
-                        if (qSkema && ['Sewa', 'KSP', 'BGS', 'BSG', 'KSPI', 'KSO'].includes(qSkema)) {
-                            this.formData.skema_kemitraan = qSkema;
+                        if (qSkema) {
+                            this.formData.skema_kemitraan = this.normalizeSkemaKemitraan(qSkema);
                         } else if (!qSkema && this.tipeKemitraan === 'ditambahkan' && this.formData.skema_kemitraan === 'Sewa') {
                             this.formData.skema_kemitraan = 'KSO';
                         }
@@ -1282,7 +1305,8 @@
                 this.formData.mitra_alamat = kemitraan.mitra_alamat || specLama.mitra_alamat || spec.mitra_alamat || '';
                 this.formData.nomor_pks = kemitraan.nomor_pks || specLama.nomor_pks || d.bast_dokumen_nomor || spec.nomor_pks || '';
                 this.formData.tanggal_pks = this.cleanDateString(kemitraan.tanggal_pks || specLama.tanggal_pks || d.bast_dokumen_tanggal || spec.tanggal_pks || '');
-                this.formData.skema_kemitraan = kemitraan.skema_kemitraan || specLama.skema_kemitraan || spec.skema_kemitraan || 'Sewa';
+                const rawSkema = kemitraan.skema_kemitraan || specLama.skema_kemitraan || spec.skema_kemitraan || '';
+                this.formData.skema_kemitraan = this.normalizeSkemaKemitraan(rawSkema) || (this.tipeKemitraan === 'dimanfaatkan' ? 'Sewa' : 'KSO');
                 this.formData.tanggal_mulai = this.cleanDateString(kemitraan.tanggal_mulai || specLama.tanggal_mulai || spec.tanggal_mulai || '');
                 this.formData.tanggal_selesai = this.cleanDateString(kemitraan.tanggal_selesai || specLama.tanggal_selesai || spec.tanggal_selesai || '');
                 this.formData.jangka_waktu = kemitraan.jangka_waktu || specLama.jangka_waktu || spec.jangka_waktu || (this.formData.tanggal_mulai && this.formData.tanggal_selesai ? this.formatKemitraanDurationFromDates(this.formData.tanggal_mulai, this.formData.tanggal_selesai) : '');
@@ -1292,24 +1316,57 @@
                 this.formData.dokumen_path = kemitraan.dokumen_path || spec.dokumen_path || '';
 
                 // Objek Aset Terkait RSUD yang Dikerjasamakan
-                this.formData.objek_astap_id = kemitraan.objek_astap_id || spec.objek_astap_id || null;
-                this.formData.objek_register_id = kemitraan.objek_register_id || spec.objek_register_id || null;
-                this.formData.objek_nibar = kemitraan.objek_nibar || spec.objek_nibar || '';
-                if (this.formData.objek_astap_id || this.formData.objek_register_id) {
-                    const foundObj = this.dbObjekAsetList.find(o => 
-                        (this.formData.objek_astap_id && o.astap_id == this.formData.objek_astap_id) ||
-                        (this.formData.objek_register_id && o.register_id == this.formData.objek_register_id)
-                    );
-                    if (foundObj) {
-                        this.formData.objek_aset_terpilih = foundObj;
-                    } else if (this.formData.objek_astap_id) {
-                        this.formData.objek_aset_terpilih = {
-                            register_id: this.formData.objek_register_id,
-                            astap_id: this.formData.objek_astap_id,
-                            nama_barang: 'Aset BMD RSUD Terpilih',
-                            kib: 'KIB Terkait',
-                            unit_nama: 'RSUD Dr. H. Koesnandi',
-                        };
+                if (this.tipeKemitraan === 'dimanfaatkan') {
+                    // Mode Dimanfaatkan: Aset d ini sendiri merupakan objek BMD milik RSUD yang dimanfaatkan / disewakan
+                    const firstReg = (Array.isArray(d.registers) && d.registers.length > 0) ? d.registers[0] : null;
+                    const kibName = d.category || (this.lockedKibFromData ? ('KIB ' + this.lockedKibFromData) : 'KIB Terkait');
+                    const nibarVal = (firstReg && firstReg.nibar) || kemitraan.objek_nibar || spec.nibar || '-';
+                    const unitName = (firstReg && firstReg.unit && firstReg.unit.nama)
+                        || (firstReg && firstReg.ruang_pemegang)
+                        || d.alamat_barang
+                        || 'RSUD Dr. H. Koesnandi';
+
+                    this.formData.objek_astap_id = null; // Tetap null di payload agar tidak self-referencing
+                    this.formData.objek_register_id = null;
+                    this.formData.objek_nibar = nibarVal !== '-' ? nibarVal : '';
+                    this.formData.objek_aset_terpilih = {
+                        astap_id: d.id,
+                        register_id: firstReg ? firstReg.id : null,
+                        nama_barang: d.nama_barang || 'Aset BMD RSUD Terpilih',
+                        kib: kibName,
+                        kode_108: d.jenis_astap?.sub_sub_rincian_objek || d.jenis_astap?.sub_rincian_objek || d.jenis_astap?.kode_108 || spec.kode_108 || '1.5.2',
+                        nibar: nibarVal,
+                        unit_nama: unitName,
+                        alamat_barang: d.alamat_barang || 'RSUD Dr. H. Koesnandi',
+                        volume: d.jumlah_volume || 1,
+                        satuan: d.satuan || 'Unit',
+                        total_realisasi: Number(d.total_realisasi || kemitraan.nilai_aset || 0),
+                        nilai_aset: Number(kemitraan.nilai_aset || d.total_realisasi || 0),
+                        nomor_pks: this.formData.nomor_pks || kemitraan.nomor_pks || '-',
+                        kondisi: firstReg?.kondisi || spec.kondisi || 'Baik',
+                        luas: spec.luas_m2 || spec.luas || null,
+                        sertifikat: spec.sertifikat_no || spec.no_sertifikat || null,
+                    };
+                } else {
+                    this.formData.objek_astap_id = kemitraan.objek_astap_id || spec.objek_astap_id || null;
+                    this.formData.objek_register_id = kemitraan.objek_register_id || spec.objek_register_id || null;
+                    this.formData.objek_nibar = kemitraan.objek_nibar || spec.objek_nibar || '';
+                    if (this.formData.objek_astap_id || this.formData.objek_register_id) {
+                        const foundObj = this.dbObjekAsetList.find(o => 
+                            (this.formData.objek_astap_id && o.astap_id == this.formData.objek_astap_id) ||
+                            (this.formData.objek_register_id && o.register_id == this.formData.objek_register_id)
+                        );
+                        if (foundObj) {
+                            this.formData.objek_aset_terpilih = foundObj;
+                        } else if (this.formData.objek_astap_id) {
+                            this.formData.objek_aset_terpilih = {
+                                register_id: this.formData.objek_register_id,
+                                astap_id: this.formData.objek_astap_id,
+                                nama_barang: 'Aset BMD RSUD Terpilih',
+                                kib: 'KIB Terkait',
+                                unit_nama: 'RSUD Dr. H. Koesnandi',
+                            };
+                        }
                     }
                 }
 
