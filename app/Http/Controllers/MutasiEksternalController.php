@@ -585,9 +585,9 @@ class MutasiEksternalController extends Controller
                 'kondisi'                   => $items[0]['kondisi'] ?? ($m->kondisi ?: 'Baik'),
                 'opd_asal'                  => $opdAsal,
                 'ruangan_asal'              => $isKeluar ? ($items[0]['ruangan_asal'] ?? ($m->ruangan_tujuan ?: 'RSUD Dr. H. Koesnadi')) : $opdAsal,
-                'pj_asal_nama'              => $m->pj_asal_nama ?: ($isKeluar ? 'Pengurus Barang RSUD Dr. H. Koesnadi' : 'Pejabat Penyerah SKPD Pengirim'),
-                'pj_asal_nip'               => $m->pj_asal_nip ?: '-',
-                'pj_asal_jabatan'           => $m->pj_asal_jabatan ?: ($isKeluar ? 'Pengurus Barang Pengguna' : 'Pengurus Barang / PPK Asal'),
+                'pj_asal_nama'              => ($isKeluar && (empty($m->pj_asal_nama) || str_contains(strtolower($m->pj_asal_nama), 'yus'))) ? 'BUDI HARTONO, S.Sos' : ($m->pj_asal_nama ?: ($isKeluar ? 'Pengurus Barang RSUD Dr. H. Koesnandi' : 'Pejabat Penyerah SKPD Pengirim')),
+                'pj_asal_nip'               => ($isKeluar && (empty($m->pj_asal_nip) || $m->pj_asal_nip === '-' || str_contains($m->pj_asal_nip, '19690412') || str_contains($m->pj_asal_nip, '19771002'))) ? '19760229 200801 1 010' : ($m->pj_asal_nip ?: '-'),
+                'pj_asal_jabatan'           => ($isKeluar && (empty($m->pj_asal_jabatan) || str_contains(strtolower($m->pj_asal_jabatan), 'direktur'))) ? 'Pengurus Barang Pengguna RSUD Dr. H. Koesnandi' : ($m->pj_asal_jabatan ?: ($isKeluar ? 'Pengurus Barang Pengguna' : 'Pengurus Barang / PPK Asal')),
                 'opd_tujuan'                => $opdTujuan,
                 'ruangan_tujuan'            => $isKeluar ? $opdTujuan : $ruangRSUD,
                 'pejabat_opd_tujuan'        => $isKeluar ? ($m->pj_tujuan_nama ?: 'Pejabat Penerima OPD') : $pjNama,
@@ -991,7 +991,7 @@ class MutasiEksternalController extends Controller
                     'qr_code_path'    => $qrPath,
                     'ruang_pemegang'  => $uRuang,
                     'kondisi'         => $uKondisi,
-                    'status'          => 'Aktif',
+                    'status'          => !empty($uUnitId) ? 'Tidak Tersedia' : 'Tersedia',
                     'is_deleted'      => 0,
                 ]);
             }
@@ -1471,7 +1471,7 @@ class MutasiEksternalController extends Controller
                         'qr_code_path'    => $qrPath,
                         'ruang_pemegang'  => $uRuang,
                         'kondisi'         => $uKondisi,
-                        'status'          => 'Aktif',
+                        'status'          => !empty($uUnitId) ? 'Tidak Tersedia' : 'Tersedia',
                         'is_deleted'      => 0,
                     ]);
                 }
@@ -1948,9 +1948,9 @@ class MutasiEksternalController extends Controller
                     'opd_tujuan'          => $skpdTujuan,
                     'unit_id'             => $astap->unit_id,
                     'ruangan_tujuan'      => $astap->ruang_unit ?: ($astap->alamat_barang ?: 'RSUD Dr. H. Koesnadi'),
-                    'pj_asal_nama'        => $astap->ppk_nama ?: 'dr. H. Yus Priyatna, Sp.P',
-                    'pj_asal_nip'         => $astap->ppk_nip ?: '196904121999031004',
-                    'pj_asal_jabatan'     => 'Direktur RSUD Dr. H. Koesnadi',
+                    'pj_asal_nama'        => 'BUDI HARTONO, S.Sos',
+                    'pj_asal_nip'         => '19760229 200801 1 010',
+                    'pj_asal_jabatan'     => 'Pengurus Barang Pengguna RSUD Dr. H. Koesnandi',
                     'pj_tujuan_nama'      => $mutInfo['pj_tujuan_nama'] ?? 'Pejabat Penerima OPD',
                     'pj_tujuan_nip'       => $mutInfo['pj_tujuan_nip'] ?? '-',
                     'pj_tujuan_jabatan'   => $mutInfo['pj_tujuan_jabatan'] ?? 'Pejabat Penerima OPD',
