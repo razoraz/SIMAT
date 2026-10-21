@@ -12,11 +12,11 @@ use Carbon\Carbon;
 
 class KemitraanBugFixesTest extends TestCase
 {
+    use \Illuminate\Foundation\Testing\DatabaseTransactions;
+
     protected function setUp(): void
     {
         parent::setUp();
-        config(['database.connections.sqlite.database' => database_path('database.sqlite')]);
-        \DB::purge('sqlite');
     }
 
     public function test_sync_expired_status_expires_both_aktif_and_perpanjangan(): void
