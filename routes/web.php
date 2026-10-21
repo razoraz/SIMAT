@@ -508,10 +508,10 @@ Route::middleware('auth')->group(function () {
                     'hibah_nomor_bast' => $a->hibah_nomor_bast ?? '',
                     'hibah_tanggal_bast' => $fmtDate($a->hibah_tanggal_bast, ''),
                     'hibah_keterangan' => $a->hibah_keterangan ?? '',
-                    'mutasi_asal' => $a->mutasiEksternalMasuk?->opd_asal ?: ($a->mutasi_asal ?: ($spec['skpd_asal'] ?? ($spec['mutasi_asal'] ?? ''))),
-                    'mutasi_nomor_bamb' => $a->mutasiEksternalMasuk?->nomor_bamb ?: ($a->mutasi_nomor_bamb ?: ($spec['nomor_bamb'] ?? ($spec['mutasi_nomor_bamb'] ?? ''))),
-                    'mutasi_tanggal' => $fmtDate($a->mutasiEksternalMasuk?->tanggal_mutasi ?: $a->mutasi_tanggal, $spec['tanggal_bamb'] ?? ($spec['mutasi_tanggal'] ?? '')),
-                    'mutasi_keterangan' => $a->mutasiEksternalMasuk?->alasan_mutasi ?: ($a->mutasi_keterangan ?: ($spec['mutasi_keterangan'] ?? '')),
+                    'mutasi_asal' => ($a->isMutasiMasuk() && !$a->isBelanjaModal()) ? ($a->mutasiEksternalMasuk?->opd_asal ?: ($a->mutasi_asal ?: ($spec['skpd_asal'] ?? ($spec['mutasi_asal'] ?? '')))) : '',
+                    'mutasi_nomor_bamb' => ($a->isMutasiMasuk() && !$a->isBelanjaModal()) ? ($a->mutasiEksternalMasuk?->nomor_bamb ?: ($a->mutasi_nomor_bamb ?: ($spec['nomor_bamb'] ?? ($spec['mutasi_nomor_bamb'] ?? '')))) : '',
+                    'mutasi_tanggal' => ($a->isMutasiMasuk() && !$a->isBelanjaModal()) ? $fmtDate($a->mutasiEksternalMasuk?->tanggal_mutasi ?: $a->mutasi_tanggal, $spec['tanggal_bamb'] ?? ($spec['mutasi_tanggal'] ?? '')) : '',
+                    'mutasi_keterangan' => ($a->isMutasiMasuk() && !$a->isBelanjaModal()) ? ($a->mutasiEksternalMasuk?->alasan_mutasi ?: ($a->mutasi_keterangan ?: ($spec['mutasi_keterangan'] ?? ''))) : '',
                     'rekening_penyedia' => $a->belanjaBarang?->nama_toko ?: ($spec['rekening_penyedia'] ?? ($a->penyedia_nama ?: '')),
                     'rekening_nomor_faktur' => $a->belanjaBarang?->nomor_faktur ?: ($spec['rekening_nomor_faktur'] ?? ($a->faktur_nomor ?: '')),
                     'rekening_tanggal_faktur' => $fmtDate($a->belanjaBarang?->tanggal_faktur, $spec['rekening_tanggal_faktur'] ?? ''),
@@ -3547,7 +3547,7 @@ Route::middleware('auth')->group(function () {
                     return redirect()->route($targetRoute)->with('error', "Aset kemitraan '{$astap->nama_barang}' berstatus {$kemitraanCheck->status_konsesi} dan terkunci dari perubahan.");
                 }
 
-                if (in_array($astap->sumber_dana, ['mutasi_eksternal', 'pelimpahan_skpd', 'pelimpahan', 'mutasi_masuk'], true) || !empty($astap->mutasi_nomor_bamb) || !empty($astap->mutasi_asal)) {
+                if (!$astap->isBelanjaModal() && in_array($astap->sumber_dana, ['mutasi_eksternal', 'pelimpahan_skpd', 'pelimpahan', 'mutasi_masuk'], true)) {
                     return redirect()->route('astap.edit_mutasi_eksternal', ['id' => $id, 'from' => request('from', 'eksternal')]);
                 }
                 if ($astap->sumber_dana === 'kemitraan' 
