@@ -1281,7 +1281,7 @@
                         <table class="w-full text-left text-[11px] text-slate-300 min-w-[640px]">
                             <thead class="bg-slate-950 text-slate-400 font-bold uppercase text-[9.5px] border-b border-slate-800 shadow-sm" style="position: sticky; top: 0; z-index: 10; background-color: #020617;">
                                 <tr>
-                                    <th class="px-3.5 py-2.5 text-center">NIBAR &amp; No. Register Resmi</th>
+                                    <th class="px-3.5 py-2.5 text-center">NIBAR RESMI</th>
                                     <th class="px-3.5 py-2.5 text-center">Lokasi / Pengelolaan</th>
                                     <th class="px-3.5 py-2.5 text-center">Kondisi</th>
                                     <th class="px-3.5 py-2.5 text-center whitespace-nowrap">QR Code</th>
@@ -1293,24 +1293,15 @@
                                     <tr class="hover:bg-slate-800/60 transition-colors">
                                         <!-- 1. NIBAR & No Register Resmi -->
                                         <td class="px-4 py-3 text-center whitespace-nowrap align-middle">
-                                            <div class="flex flex-col items-center justify-center gap-1">
-                                                <div class="flex items-center gap-1.5">
-                                                    <span class="px-2 py-0.5 rounded-md text-[10px] font-black font-mono tracking-wider bg-slate-950 text-cyan-400 border border-cyan-500/30 shadow-sm"
-                                                          x-text="'REG #' + (reg.no_register_int ? String(reg.no_register_int).padStart(6, '0') : (reg.nibar ? reg.nibar.slice(-6) : (reg.no_register || '000001')))"></span>
-                                                    <template x-if="reg.tahun_perolehan || selectedAstapDetail?.tahun_perolehan">
-                                                        <span class="text-[9.5px] font-bold text-slate-500 font-mono" x-text="'(' + (reg.tahun_perolehan || selectedAstapDetail?.tahun_perolehan) + ')'"></span>
-                                                    </template>
-                                                </div>
-                                                <div class="flex items-center gap-1.5 group/copy">
-                                                    <span class="font-mono text-[10.5px] font-semibold text-slate-300 tracking-tight group-hover/copy:text-cyan-300 transition-colors select-all"
-                                                          :title="'NIBAR Resmi: ' + (reg.nibar || reg.no_register)"
-                                                          x-text="reg.nibar || reg.no_register"></span>
-                                                    <button type="button" @click.stop="navigator.clipboard.writeText(reg.nibar || reg.no_register); showToast('NIBAR berhasil disalin ke clipboard!', 'success')"
-                                                            title="Salin NIBAR ke Clipboard"
-                                                            class="p-1 rounded-md bg-slate-800/60 hover:bg-cyan-500/20 text-slate-400 hover:text-cyan-300 border border-slate-700/60 hover:border-cyan-500/30 transition-all cursor-pointer">
-                                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/></svg>
-                                                    </button>
-                                                </div>
+                                            <div class="inline-flex items-center justify-center gap-1.5 group/copy">
+                                                <span class="font-mono text-[11px] font-bold text-slate-200 tracking-tight group-hover/copy:text-cyan-300 transition-colors select-all"
+                                                      :title="'NIBAR Resmi: ' + (reg.nibar || reg.no_register)"
+                                                      x-text="reg.nibar || reg.no_register"></span>
+                                                <button type="button" @click.stop="navigator.clipboard.writeText(reg.nibar || reg.no_register); showToast('NIBAR berhasil disalin ke clipboard!', 'success')"
+                                                        title="Salin NIBAR ke Clipboard"
+                                                        class="p-1 rounded-md bg-slate-800/60 hover:bg-cyan-500/20 text-slate-400 hover:text-cyan-300 border border-slate-700/60 hover:border-cyan-500/30 transition-all cursor-pointer">
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/></svg>
+                                                </button>
                                             </div>
                                         </td>
                                         <!-- 2. Lokasi / Pengelolaan -->

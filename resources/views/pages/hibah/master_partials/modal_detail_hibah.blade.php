@@ -333,7 +333,7 @@
                             <thead class="bg-slate-950 text-slate-400 text-[10px] font-bold uppercase tracking-wider border-b border-slate-800 sticky top-0 z-10">
                                 <tr>
                                     <th class="px-3 py-2.5 text-center w-10">No</th>
-                                    <th class="px-4 py-2.5">No. Register / NIBAR</th>
+                                    <th class="px-4 py-2.5">NIBAR RESMI</th>
                                     <th class="px-4 py-2.5">Ruangan Pemegang</th>
                                     <th class="px-3 py-2.5 text-center">Kondisi</th>
                                     <th class="px-3 py-2.5 text-center">Status</th>
@@ -345,7 +345,6 @@
                                         <td class="px-3 py-2 text-center text-slate-500 font-mono" x-text="rIdx + 1"></td>
                                         <td class="px-4 py-2">
                                             <div class="font-mono font-bold text-cyan-300" x-text="reg.nibar || reg.no_register || ('REG-' + String(rIdx+1).padStart(4,'0'))"></div>
-                                            <div class="text-[9.5px] text-slate-500 font-mono" x-text="'No Reg: ' + (reg.no_register || (rIdx + 1))"></div>
                                         </td>
                                         <td class="px-4 py-2">
                                             <div class="font-semibold text-slate-200" x-text="reg.ruang_pemegang || reg.unit?.nama || (selectedDetail.astap?.unit?.nama || 'Gudang Aset')"></div>
