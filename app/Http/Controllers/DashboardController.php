@@ -304,7 +304,9 @@ class DashboardController extends Controller
             ->where('is_deleted', 0)
             ->where(function($q) {
                 $q->whereNull('status')
-                  ->orWhere('status', '!=', 'Mutasi Keluar OPD');
+                  ->orWhere(function($sub) {
+                      $sub->whereNotIn('status', ['Mutasi Keluar OPD', 'Kemitraan', 'Dihibahkan']);
+                  });
             })
             ->where(function($q) use ($unitId, $unitNama) {
                 if ($unitId) {
@@ -333,11 +335,34 @@ class DashboardController extends Controller
         $directRegisters = collect();
         if ($unitId) {
             $astapDirectIds = \App\Models\Astap::where('unit_id', $unitId)
+                ->where('is_deleted', 0)
+                ->where(function($q) {
+                    $q->whereNull('kondisi')
+                      ->orWhere('kondisi', '!=', 'Mutasi Keluar OPD');
+                })
+                ->where(function($q) {
+                    $q->whereNull('sumber_dana')
+                      ->orWhere('sumber_dana', '!=', 'kemitraan');
+                })
+                ->where(function($q) {
+                    $q->whereNull('category')
+                      ->orWhere('category', '!=', 'KEMITRAAN');
+                })
+                ->whereDoesntHave('kemitraan', function($kq) {
+                    $kq->where('is_deleted', 0)->whereIn('status_konsesi', ['Aktif', 'Perpanjangan']);
+                })
                 ->whereNotIn('id', $registers->pluck('astap_id')->filter()->unique())
                 ->pluck('id');
 
             if ($astapDirectIds->isNotEmpty()) {
                 $directRegisters = \App\Models\AstapRegister::with(['astap.jenisAstap'])
+                    ->where('is_deleted', 0)
+                    ->where(function($q) {
+                        $q->whereNull('status')
+                          ->orWhere(function($sub) {
+                              $sub->whereNotIn('status', ['Mutasi Keluar OPD', 'Kemitraan', 'Dihibahkan']);
+                          });
+                    })
                     ->whereIn('astap_id', $astapDirectIds)
                     ->get();
             }

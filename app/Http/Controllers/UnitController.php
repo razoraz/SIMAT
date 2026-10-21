@@ -22,7 +22,9 @@ class UnitController extends Controller
                 ->where('is_deleted', 0)
                 ->where(function($q) {
                     $q->whereNull('status')
-                      ->orWhere('status', '!=', 'Mutasi Keluar OPD');
+                      ->orWhere(function($sub) {
+                          $sub->whereNotIn('status', ['Mutasi Keluar OPD', 'Kemitraan', 'Dihibahkan']);
+                      });
                 })
                 ->where(function($q) use ($u) {
                     $q->where('unit_id', $u->id)
@@ -44,6 +46,17 @@ class UnitController extends Controller
                     $q->whereNull('kondisi')
                       ->orWhere('kondisi', '!=', 'Mutasi Keluar OPD');
                 })
+                ->where(function($q) {
+                    $q->whereNull('sumber_dana')
+                      ->orWhere('sumber_dana', '!=', 'kemitraan');
+                })
+                ->where(function($q) {
+                    $q->whereNull('category')
+                      ->orWhere('category', '!=', 'KEMITRAAN');
+                })
+                ->whereDoesntHave('kemitraan', function($kq) {
+                    $kq->where('is_deleted', 0)->whereIn('status_konsesi', ['Aktif', 'Perpanjangan']);
+                })
                 ->whereNotIn('id', $registers->pluck('astap_id')->filter()->unique())
                 ->pluck('id');
 
@@ -53,7 +66,9 @@ class UnitController extends Controller
                     ->where('is_deleted', 0)
                     ->where(function($q) {
                         $q->whereNull('status')
-                          ->orWhere('status', '!=', 'Mutasi Keluar OPD');
+                          ->orWhere(function($sub) {
+                              $sub->whereNotIn('status', ['Mutasi Keluar OPD', 'Kemitraan', 'Dihibahkan']);
+                          });
                     })
                     ->whereIn('astap_id', $astapDirectIds)
                     ->get();
@@ -301,7 +316,9 @@ class UnitController extends Controller
                 ->where('is_deleted', 0)
                 ->where(function($q) {
                     $q->whereNull('status')
-                      ->orWhere('status', '!=', 'Mutasi Keluar OPD');
+                      ->orWhere(function($sub) {
+                          $sub->whereNotIn('status', ['Mutasi Keluar OPD', 'Kemitraan', 'Dihibahkan']);
+                      });
                 })
                 ->where(function($q) use ($currentUnit) {
                     $q->where('unit_id', $currentUnit->id)
@@ -322,6 +339,17 @@ class UnitController extends Controller
                     $q->whereNull('kondisi')
                       ->orWhere('kondisi', '!=', 'Mutasi Keluar OPD');
                 })
+                ->where(function($q) {
+                    $q->whereNull('sumber_dana')
+                      ->orWhere('sumber_dana', '!=', 'kemitraan');
+                })
+                ->where(function($q) {
+                    $q->whereNull('category')
+                      ->orWhere('category', '!=', 'KEMITRAAN');
+                })
+                ->whereDoesntHave('kemitraan', function($kq) {
+                    $kq->where('is_deleted', 0)->whereIn('status_konsesi', ['Aktif', 'Perpanjangan']);
+                })
                 ->whereNotIn('id', $registers->pluck('astap_id')->filter()->unique())
                 ->pluck('id');
 
@@ -331,7 +359,9 @@ class UnitController extends Controller
                     ->where('is_deleted', 0)
                     ->where(function($q) {
                         $q->whereNull('status')
-                          ->orWhere('status', '!=', 'Mutasi Keluar OPD');
+                          ->orWhere(function($sub) {
+                              $sub->whereNotIn('status', ['Mutasi Keluar OPD', 'Kemitraan', 'Dihibahkan']);
+                          });
                     })
                     ->whereIn('astap_id', $astapDirectIds)
                     ->get();

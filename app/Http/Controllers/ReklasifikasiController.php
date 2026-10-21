@@ -1728,6 +1728,7 @@ class ReklasifikasiController extends Controller
 
                 if ($targetKib === 'KEMITRAAN') {
                     $targetAstap->sumber_dana = 'kemitraan';
+                    $targetAstap->unit_id = null; // Lepaskan dari ruangan KIR
                     $kemitraanJenis = null;
                     if ($tujuanKodeAset) {
                         $kemitraanJenis = JenisAstap::where('sub_sub_rincian_objek', $tujuanKodeAset)
@@ -1806,6 +1807,7 @@ class ReklasifikasiController extends Controller
                         $regToMove->astap_id = $targetAstap->id;
                         if ($targetKib === 'KEMITRAAN') {
                             $regToMove->status = 'Kemitraan';
+                            $regToMove->unit_id = null; // Lepaskan dari unit ruangan KIR
                             $mName = $targetSpec['mitra_nama'] ?? ($validated['spesifikasi_baru']['kemitraan_mitra'] ?? 'Pihak Ketiga');
                             $regToMove->ruang_pemegang = 'Kemitraan: ' . $mName;
                         }
@@ -1976,9 +1978,14 @@ class ReklasifikasiController extends Controller
                 // Sinkronisasi status dan data Kemitraan (Akun 1.5.2)
                 if ($targetKib === 'KEMITRAAN') {
                     $astap->sumber_dana = 'kemitraan';
-                    $astap->save();
-
                     $spec = $astap->spesifikasi_json ?? [];
+                    if (!empty($astap->unit_id)) {
+                        $spec['unit_id_asal'] = $astap->unit_id;
+                        $spec['ruang_asal'] = $astap->ruang_unit;
+                        $astap->spesifikasi_json = $spec;
+                        $astap->unit_id = null; // Lepaskan dari unit ruangan KIR
+                    }
+                    $astap->save();
                     $existingKemitraan = $astap->kemitraan ?? $kemitraan;
                     $kemitraanData = [
                         'astap_id'         => $astap->id,
@@ -2023,7 +2030,8 @@ class ReklasifikasiController extends Controller
 
                     $mNameFull = $spec['mitra_nama'] ?? ($validated['spesifikasi_baru']['kemitraan_mitra'] ?? 'Mitra Pihak Ketiga');
                     $astap->registers()->update([
-                        'status' => 'Kemitraan',
+                        'status'         => 'Kemitraan',
+                        'unit_id'        => null, // Lepaskan dari unit ruangan KIR
                         'ruang_pemegang' => 'Kemitraan: ' . $mNameFull,
                     ]);
                 } elseif ($astap->kemitraan && $asalKibFinal === 'KEMITRAAN') {
@@ -2202,6 +2210,7 @@ class ReklasifikasiController extends Controller
 
                         $reg->update([
                             'status'         => 'Mutasi Keluar OPD',
+                            'unit_id'        => null, // Lepaskan dari unit ruangan KIR
                             'ruang_pemegang' => null,
                             'kondisi'        => $kondisiSerah,
                         ]);
@@ -2231,6 +2240,7 @@ class ReklasifikasiController extends Controller
                 $isFullTransferFinal = ($remainingActiveCount === 0);
                 if ($isFullTransferFinal) {
                     $astap->jenis_reklas = 'MUTASI_EKSTERNAL';
+                    $astap->unit_id = null; // Lepaskan dari unit ruangan KIR
                     $astap->save();
                 }
             }
