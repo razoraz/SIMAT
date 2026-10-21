@@ -10347,10 +10347,26 @@
                     return num.toLocaleString('id-ID');
                 },
 
-                updateItemHargaSatuan(item, rawText) {
+                updateItemHargaSatuan(item, eventOrText) {
+                    let rawText = '';
+                    let targetEl = null;
+                    if (eventOrText && typeof eventOrText === 'object') {
+                        if (eventOrText.target) {
+                            targetEl = eventOrText.target;
+                            rawText = targetEl.value || '';
+                        }
+                    } else {
+                        rawText = String(eventOrText || '');
+                    }
+
                     const cleanDigits = String(rawText || '').replace(/[^0-9]/g, '');
                     const num = cleanDigits ? parseInt(cleanDigits, 10) : 0;
                     item.harga_satuan = num;
+
+                    if (targetEl) {
+                        targetEl.value = num > 0 ? num.toLocaleString('id-ID') : '';
+                    }
+
                     this.onReklasItemPriceChanged();
                 },
 
