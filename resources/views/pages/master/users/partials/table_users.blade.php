@@ -48,14 +48,13 @@
                                             <span class="whitespace-nowrap" x-text="item.role === 'master_admin' ? '👑 Master Admin' : (item.role === 'admin' ? '🛡️ Admin Operasional' : '🏥 Sub Admin Unit')"></span>
                                         </span>
                                         <!-- Badge info modul aktif untuk admin operasional -->
-                                        <template x-if="item.role === 'admin'">
-                                            <div class="flex items-center space-x-1 text-[9px] font-mono text-cyan-400">
-                                                <template x-if="!item.permissions || item.permissions.length >= 7">
-                                                    <span class="px-1.5 py-0.5 rounded bg-cyan-950/60 border border-cyan-500/30 font-semibold">Semua Modul</span>
-                                                </template>
-                                                <template x-if="item.permissions && item.permissions.length < 7">
-                                                    <span class="px-1.5 py-0.5 rounded bg-slate-950/80 border border-slate-800 text-slate-300 font-semibold" x-text="item.permissions.length + ' Modul Diizinkan'"></span>
-                                                </template>
+                                        <template x-if="item.role === 'admin' && getUserPermissionsSummary(item)">
+                                            <div class="flex items-center space-x-1 text-[9px] font-mono">
+                                                <span class="px-2 py-0.5 rounded-md font-semibold border transition-all cursor-help"
+                                                    :class="getUserPermissionsSummary(item).isAll ? 'bg-cyan-950/60 border-cyan-500/30 text-cyan-400' : 'bg-slate-900 border-slate-700 text-slate-300'"
+                                                    :title="getUserPermissionsSummary(item).tooltip"
+                                                    x-text="getUserPermissionsSummary(item).text">
+                                                </span>
                                             </div>
                                         </template>
                                     </div>

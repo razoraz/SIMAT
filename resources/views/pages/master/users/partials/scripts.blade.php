@@ -348,6 +348,48 @@
                     return [];
                 },
 
+                // Ringkasan Tampilan Badge Modul untuk Kolom Tabel Peran
+                getUserPermissionsSummary(user) {
+                    if (!user || user.role !== 'admin') return null;
+                    const perms = user.permissions;
+                    const totalModules = Object.keys(this.availablePermissions || {}).length || 7;
+
+                    if (!perms) {
+                        return { text: 'Semua Modul', isAll: true, tooltip: 'Akses penuh ke seluruh modul sistem' };
+                    }
+
+                    if (Array.isArray(perms)) {
+                        if (perms.length >= totalModules) {
+                            return { text: 'Semua Modul', isAll: true, tooltip: 'Akses ke seluruh modul sistem' };
+                        }
+                        return {
+                            text: `${perms.length} Modul Diizinkan`,
+                            isAll: false,
+                            tooltip: 'Modul aktif: ' + perms.map(k => this.availablePermissions[k]?.label || k).join(', ')
+                        };
+                    }
+
+                    if (typeof perms === 'object') {
+                        const activeKeys = Object.entries(perms)
+                            .filter(([k, v]) => v && (v === true || v.enabled === true))
+                            .map(([k]) => k);
+
+                        if (activeKeys.length >= totalModules) {
+                            return { text: 'Semua Modul', isAll: true, tooltip: 'Akses ke seluruh modul sistem' };
+                        }
+                        if (activeKeys.length === 0) {
+                            return { text: 'Belum Ada Akses', isAll: false, tooltip: 'Akun ini belum memiliki akses modul aktif' };
+                        }
+                        return {
+                            text: `${activeKeys.length} Modul Diizinkan`,
+                            isAll: false,
+                            tooltip: 'Modul aktif: ' + activeKeys.map(k => this.availablePermissions[k]?.label || k).join(', ')
+                        };
+                    }
+
+                    return { text: 'Semua Modul', isAll: true, tooltip: 'Akses penuh operasional' };
+                },
+
                 // Data Users & Units dari Database Backend
                 users: @json($users ?? []),
                 unitsList: @json($units ?? []),
