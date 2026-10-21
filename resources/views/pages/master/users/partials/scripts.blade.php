@@ -9,10 +9,13 @@
                 selectedUser: null,
                 isSaving: false,
 
-                // Sesi Pengguna Aktif
-                currentUserRole: '{{ Auth::user()->role ?? "admin" }}',
-                currentUserId: {{ Auth::user()->id ?? 2 }},
-                currentUserEmail: '{{ Auth::user()->email ?? "admin@asimat.com" }}',
+                // Sesi Pengguna Aktif & Izin Akses
+                currentUserRole: '{{ Auth::user()?->role ?? "admin" }}',
+                currentUserId: {{ Auth::user()?->id ?? 2 }},
+                currentUserEmail: '{{ Auth::user()?->email ?? "admin@asimat.com" }}',
+                canCreateUser: {{ (Auth::user()?->role === 'master_admin' || Auth::user()?->canDo('users', 'create')) ? 'true' : 'false' }},
+                canEditUserPerm: {{ (Auth::user()?->role === 'master_admin' || Auth::user()?->canDo('users', 'edit')) ? 'true' : 'false' }},
+                canDeleteUserPerm: {{ (Auth::user()?->role === 'master_admin' || Auth::user()?->canDo('users', 'delete')) ? 'true' : 'false' }},
                 csrfToken: '{{ csrf_token() }}',
 
                 newFormData: {
@@ -40,24 +43,309 @@
                     status: ''
                 },
 
-                // Daftar Definisi Hak Akses Modul dari Backend
+                // Daftar Definisi Hak Akses Modul & Sub-Aksi dari Backend (Hierarchical Tree)
                 availablePermissions: @json($availablePermissions ?? \App\Models\User::AVAILABLE_PERMISSIONS),
+                rolePresets: @json($rolePresets ?? \App\Models\User::ROLE_PRESETS),
 
-                // Helper Checklist Permissions
-                toggleAllNewPermissions(select) {
-                    if (select) {
-                        this.newFormData.permissions = Object.keys(this.availablePermissions);
+                // State Expanded Modul untuk Accordion Drawer UI
+                expandedModules: {
+                    new: {},
+                    edit: {}
+                },
+
+                // Helper Inisialisasi Tree Permissions dari Data Backend / Database
+                initTreePermissions(rawPermissions, role = 'admin') {
+                    const result = {};
+                    const isLegacyFlat = Array.isArray(rawPermissions) && (rawPermissions.length === 0 || typeof rawPermissions[0] === 'string');
+                    const hasData = rawPermissions && (typeof rawPermissions === 'object');
+
+                    Object.keys(this.availablePermissions).forEach(modKey => {
+                        const modDef = this.availablePermissions[modKey];
+                        const allActionKeys = Object.keys(modDef.actions || {});
+                        const defaultActionKeys = allActionKeys.filter(actKey => modDef.actions[actKey].default);
+
+                        let enabled = false;
+                        let actions = [];
+
+                        if (!hasData || rawPermissions === null) {
+                            if (role === 'admin') {
+                                // Default awal untuk admin baru: Modul ASTAP, Distribusi, Unit aktif dengan aksi default
+                                enabled = ['astap', 'distribusi', 'unit'].includes(modKey);
+                                actions = enabled ? [...defaultActionKeys] : [];
+                            }
+                        } else if (isLegacyFlat) {
+                            // Kompatibilitas Akun Lama (Flat Array)
+                            enabled = rawPermissions.includes(modKey);
+                            actions = enabled ? [...defaultActionKeys] : [];
+                        } else {
+                            // Format Hirarki Baru (Object)
+                            const modConfig = rawPermissions[modKey];
+                            if (modConfig && modConfig.enabled) {
+                                enabled = true;
+                                if (Array.isArray(modConfig.actions)) {
+                                    if (modConfig.actions.includes('*')) {
+                                        actions = [...allActionKeys];
+                                    } else {
+                                        actions = modConfig.actions.filter(a => allActionKeys.includes(a));
+                                    }
+                                }
+                            }
+                        }
+
+                        result[modKey] = {
+                            enabled: enabled,
+                            actions: actions
+                        };
+                    });
+
+                    return result;
+                },
+
+                // Cek status modul induk apakah aktif
+                isModuleEnabled(formType, modKey) {
+                    const form = formType === 'new' ? this.newFormData : this.editFormData;
+                    return !!(form.permissions && form.permissions[modKey] && form.permissions[modKey].enabled);
+                },
+
+                // Cek status indeterminate (sebagian aksi dicentang)
+                isModuleIndeterminate(formType, modKey) {
+                    const form = formType === 'new' ? this.newFormData : this.editFormData;
+                    if (!this.isModuleEnabled(formType, modKey)) return false;
+
+                    const actions = form.permissions[modKey]?.actions || [];
+                    const totalActions = Object.keys(this.availablePermissions[modKey]?.actions || {}).length;
+
+                    return actions.length > 0 && actions.length < totalActions;
+                },
+
+                // Cek apakah seluruh aksi dalam modul sudah dicentang
+                isModuleFullyChecked(formType, modKey) {
+                    const form = formType === 'new' ? this.newFormData : this.editFormData;
+                    if (!this.isModuleEnabled(formType, modKey)) return false;
+
+                    const actions = form.permissions[modKey]?.actions || [];
+                    const totalActions = Object.keys(this.availablePermissions[modKey]?.actions || {}).length;
+
+                    return actions.length >= totalActions && totalActions > 0;
+                },
+
+                // Toggle Modul Induk (Klik Checkbox Parent)
+                toggleParentModule(formType, modKey) {
+                    const form = formType === 'new' ? this.newFormData : this.editFormData;
+                    if (!form.permissions) form.permissions = {};
+                    if (!form.permissions[modKey]) {
+                        form.permissions[modKey] = { enabled: false, actions: [] };
+                    }
+
+                    const modDef = this.availablePermissions[modKey];
+                    const allActionKeys = Object.keys(modDef.actions || {});
+                    const defaultActionKeys = allActionKeys.filter(actKey => modDef.actions[actKey].default);
+
+                    // Jika saat ini aktif (baik full maupun indeterminate) -> nonaktifkan
+                    if (form.permissions[modKey].enabled) {
+                        form.permissions[modKey].enabled = false;
+                        form.permissions[modKey].actions = [];
                     } else {
-                        this.newFormData.permissions = [];
+                        // Jika saat ini mati -> hidupkan dengan aksi-aksi default & buka drawer
+                        form.permissions[modKey].enabled = true;
+                        form.permissions[modKey].actions = [...defaultActionKeys];
+                        this.setModuleExpanded(formType, modKey, true);
                     }
                 },
 
-                toggleAllEditPermissions(select) {
-                    if (select) {
-                        this.editFormData.permissions = Object.keys(this.availablePermissions);
-                    } else {
-                        this.editFormData.permissions = [];
+                // Cek apakah sub-aksi spesifik dicentang
+                isActionChecked(formType, modKey, actionKey) {
+                    const form = formType === 'new' ? this.newFormData : this.editFormData;
+                    const mod = form.permissions?.[modKey];
+                    if (!mod || !mod.enabled) return false;
+                    return Array.isArray(mod.actions) && mod.actions.includes(actionKey);
+                },
+
+                // Toggle Sub-Aksi (Klik Checkbox Child)
+                toggleSubAction(formType, modKey, actionKey) {
+                    const form = formType === 'new' ? this.newFormData : this.editFormData;
+                    if (!form.permissions) form.permissions = {};
+                    if (!form.permissions[modKey]) {
+                        form.permissions[modKey] = { enabled: true, actions: [] };
                     }
+
+                    const mod = form.permissions[modKey];
+                    if (!Array.isArray(mod.actions)) mod.actions = [];
+
+                    const idx = mod.actions.indexOf(actionKey);
+                    if (idx > -1) {
+                        mod.actions.splice(idx, 1);
+                    } else {
+                        mod.actions.push(actionKey);
+                    }
+
+                    // Sinkronisasi status modul induk
+                    if (mod.actions.length > 0) {
+                        mod.enabled = true;
+                    } else {
+                        mod.enabled = false;
+                    }
+                },
+
+                // Toggle Seluruh Aksi di dalam 1 Modul
+                toggleAllActionsInModule(formType, modKey, selectAll) {
+                    const form = formType === 'new' ? this.newFormData : this.editFormData;
+                    if (!form.permissions?.[modKey]) return;
+
+                    const allActions = Object.keys(this.availablePermissions[modKey]?.actions || {});
+                    if (selectAll) {
+                        form.permissions[modKey].enabled = true;
+                        form.permissions[modKey].actions = [...allActions];
+                    } else {
+                        form.permissions[modKey].enabled = false;
+                        form.permissions[modKey].actions = [];
+                    }
+                },
+
+                // Kontrol Expand / Collapse Accordion Drawer Modul
+                isModuleExpanded(formType, modKey) {
+                    return !!this.expandedModules[formType]?.[modKey];
+                },
+
+                toggleExpandModule(formType, modKey) {
+                    if (!this.expandedModules[formType]) this.expandedModules[formType] = {};
+                    this.expandedModules[formType][modKey] = !this.expandedModules[formType][modKey];
+                },
+
+                setModuleExpanded(formType, modKey, state) {
+                    if (!this.expandedModules[formType]) this.expandedModules[formType] = {};
+                    this.expandedModules[formType][modKey] = state;
+                },
+
+                // Hitung ringkasan aksi aktif (misal: "5/10 Aksi Aktif")
+                getModuleActionSummary(formType, modKey) {
+                    const form = formType === 'new' ? this.newFormData : this.editFormData;
+                    const mod = form.permissions?.[modKey];
+                    const total = Object.keys(this.availablePermissions[modKey]?.actions || {}).length;
+
+                    if (!mod || !mod.enabled || !mod.actions || mod.actions.length === 0) {
+                        return { text: 'Nonaktif', color: 'slate', count: 0, total };
+                    }
+
+                    const count = mod.actions.length;
+                    if (count >= total) {
+                        return { text: 'Semua Aksi Aktif (' + count + '/' + total + ')', color: 'emerald', count, total };
+                    }
+
+                    return { text: count + '/' + total + ' Aksi Aktif', color: 'cyan', count, total };
+                },
+
+                // Terapkan Template Preset 1-Klik
+                applyPreset(formType, presetKey) {
+                    const form = formType === 'new' ? this.newFormData : this.editFormData;
+                    const tree = this.availablePermissions;
+
+                    Object.keys(tree).forEach(modKey => {
+                        const modDef = tree[modKey];
+                        const allActionKeys = Object.keys(modDef.actions || {});
+                        const defaultActions = allActionKeys.filter(a => modDef.actions[a].default);
+
+                        let enabled = false;
+                        let actions = [];
+
+                        switch (presetKey) {
+                            case 'full_admin':
+                                enabled = true;
+                                actions = [...allActionKeys];
+                                break;
+
+                            case 'inventaris':
+                                enabled = ['astap', 'distribusi', 'unit'].includes(modKey);
+                                if (enabled) {
+                                    actions = defaultActions.filter(a => !['delete', 'reklas', 'hibah', 'kemitraan', 'tte'].includes(a));
+                                }
+                                break;
+
+                            case 'keuangan_legal':
+                                enabled = ['astap', 'bast', 'mutasi'].includes(modKey);
+                                if (modKey === 'astap') {
+                                    actions = ['view', 'export', 'reklas', 'hibah', 'kemitraan', 'tte'];
+                                } else if (modKey === 'bast') {
+                                    actions = ['view', 'create', 'tte', 'cetak'];
+                                } else if (modKey === 'mutasi') {
+                                    actions = ['view', 'internal', 'eksternal', 'approve', 'cetak'];
+                                }
+                                break;
+
+                            case 'data_entry':
+                                enabled = ['astap', 'distribusi'].includes(modKey);
+                                if (modKey === 'astap') {
+                                    actions = ['view', 'create', 'edit', 'export', 'qr'];
+                                } else if (modKey === 'distribusi') {
+                                    actions = ['view', 'create', 'konfirmasi', 'cetak'];
+                                }
+                                break;
+
+                            case 'auditor':
+                                enabled = true;
+                                actions = allActionKeys.filter(a => a === 'view' || a === 'export');
+                                break;
+
+                            default:
+                                enabled = false;
+                                actions = [];
+                                break;
+                        }
+
+                        if (!form.permissions) form.permissions = {};
+                        form.permissions[modKey] = {
+                            enabled: enabled,
+                            actions: actions
+                        };
+                    });
+
+                    const presetTitle = this.rolePresets[presetKey]?.title || 'Preset';
+                    this.showToast('✨ Template diterapkan: ' + presetTitle, 'info');
+                },
+
+                // Toggle Seluruh Modul (Pilih Semua / Kosongkan)
+                toggleAllPermissions(formType, selectAll) {
+                    if (selectAll) {
+                        this.applyPreset(formType, 'full_admin');
+                    } else {
+                        const form = formType === 'new' ? this.newFormData : this.editFormData;
+                        Object.keys(this.availablePermissions).forEach(modKey => {
+                            if (!form.permissions) form.permissions = {};
+                            form.permissions[modKey] = { enabled: false, actions: [] };
+                        });
+                        this.showToast('Seluruh hak akses telah dikosongkan.', 'warning');
+                    }
+                },
+
+                // Helper Tampilan Hak Akses di Modal Detail
+                isDetailModEnabled(modKey) {
+                    if (!this.selectedUser) return false;
+                    if (this.selectedUser.role === 'master_admin') return true;
+                    const p = this.selectedUser.permissions;
+                    if (!p) return true;
+                    if (Array.isArray(p)) return p.includes(modKey);
+                    return !!(p[modKey] && p[modKey].enabled);
+                },
+
+                getDetailModActions(modKey) {
+                    if (!this.selectedUser) return [];
+                    const modDef = this.availablePermissions[modKey];
+                    if (!modDef) return [];
+                    const allActionKeys = Object.keys(modDef.actions || {});
+                    if (this.selectedUser.role === 'master_admin') return allActionKeys;
+
+                    const p = this.selectedUser.permissions;
+                    if (!p) return allActionKeys;
+                    if (Array.isArray(p)) {
+                        return p.includes(modKey) ? allActionKeys.filter(a => modDef.actions[a]?.default) : [];
+                    }
+
+                    const mod = p[modKey];
+                    if (!mod || !mod.enabled) return [];
+                    if (Array.isArray(mod.actions)) {
+                        return mod.actions.includes('*') ? allActionKeys : mod.actions;
+                    }
+                    return [];
                 },
 
                 // Data Users & Units dari Database Backend
@@ -86,7 +374,9 @@
                         if (targetUser.role === 'admin') {
                             return this.isSelf(targetUser);
                         }
-                        if (targetUser.role === 'sub_admin') return true;
+                        if (targetUser.role === 'sub_admin') {
+                            return this.canEditUserPerm;
+                        }
                     }
 
                     return false;
@@ -101,7 +391,7 @@
 
                     if (this.currentUserRole === 'admin') {
                         if (targetUser.role === 'master_admin' || targetUser.role === 'admin') return false;
-                        return targetUser.role === 'sub_admin';
+                        return targetUser.role === 'sub_admin' && this.canDeleteUserPerm;
                     }
 
                     return false;
@@ -111,6 +401,7 @@
                     if (this.canEditUser(targetUser)) return '';
                     if (targetUser.role === 'master_admin') return '🔒 Akun Master Admin diproteksi khusus (Hanya Master Admin yang dapat mengubah)';
                     if (targetUser.role === 'admin' && !this.isSelf(targetUser)) return '🔒 Admin tidak diizinkan mengubah akun Admin lain';
+                    if (targetUser.role === 'sub_admin' && !this.canEditUserPerm) return '🔒 Anda tidak memiliki izin untuk mengubah akun pengguna';
                     return 'Akses dibatasi';
                 },
 
@@ -118,6 +409,7 @@
                     if (this.canDeleteUser(targetUser)) return '';
                     if (targetUser.role === 'master_admin') return '🔒 Akun Master Admin tidak dapat dihapus';
                     if (targetUser.role === 'admin') return '🔒 Admin tidak diizinkan menghapus akun Admin';
+                    if (targetUser.role === 'sub_admin' && !this.canDeleteUserPerm) return '🔒 Anda tidak memiliki izin untuk menghapus akun pengguna';
                     return 'Akses dibatasi';
                 },
 
@@ -169,6 +461,11 @@
                 },
 
                 openAddModal() {
+                    if (!this.canCreateUser) {
+                        this.showToast('⛔ Akses Ditolak: Anda tidak memiliki wewenang untuk menambah akun pengguna baru', 'error');
+                        return;
+                    }
+
                     this.newFormData = {
                         name: '',
                         nip: '',
@@ -176,10 +473,11 @@
                         role: this.currentUserRole === 'master_admin' ? 'admin' : 'sub_admin',
                         unit: this.unitsList && this.unitsList.length > 0 ? this.unitsList[0] : 'Pav. Anggrek',
                         penugasan: '',
-                        permissions: ['astap', 'distribusi', 'bast', 'mutasi', 'unit', 'master_data'],
+                        permissions: this.initTreePermissions(null, 'admin'),
                         password: '',
                         status: 'Aktif'
                     };
+                    this.expandedModules.new = {};
                     this.showAddModal = true;
                 },
 
@@ -187,14 +485,6 @@
                     if (!this.canEditUser(item)) {
                         this.showToast('⛔ Akses Ditolak: ' + this.getEditTooltip(item), 'error');
                         return;
-                    }
-
-                    // Inisialisasi permissions: jika null/array kosong pada role admin, defaultkan seluruh modul
-                    let currentPermissions = [];
-                    if (Array.isArray(item.permissions)) {
-                        currentPermissions = [...item.permissions];
-                    } else if (item.role === 'admin') {
-                        currentPermissions = Object.keys(this.availablePermissions);
                     }
 
                     this.editFormData = { 
@@ -205,10 +495,11 @@
                         role: item.role || 'sub_admin',
                         unit: item.unit || '',
                         penugasan: item.penugasan || '',
-                        permissions: currentPermissions,
+                        permissions: this.initTreePermissions(item.permissions, item.role),
                         password: '',
                         status: item.status || 'Aktif'
                     };
+                    this.expandedModules.edit = {};
                     this.showEditModal = true;
                 },
 

@@ -238,8 +238,8 @@
                                             <span>Detail</span>
                                         </button>
 
-                                        @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
                                         <!-- 2. Tombol Reklas (Reklasifikasi Aset) -->
+                                        @if(Auth::user()?->role === 'master_admin' || Auth::user()?->canDo('astap', 'reklas'))
                                         <button type="button" @click="if (isItemLocked(item)) { showLockedWarning(item); } else if (isMutasiKeluarFull(item)) { showMutasiKeluarLockedWarning(item, 'reklas'); } else if (isKemitraanReturned(item)) { showKemitraanReturnedWarning(item, 'reklas'); } else { openReklas(item); }"
                                             :title="isItemLocked(item) ? 'Periode Terkunci (Tutup Buku BPKAD)' : (isMutasiKeluarFull(item) ? 'Terkunci (Aset Telah Dimutasi Keluar Penuh ke OPD Lain)' : (isKemitraanReturned(item) ? 'Terkunci (Aset Telah Dikembalikan ke Rekanan Mitra)' : 'Reklasifikasi Aset (Pindah KIB / Ekstrakom / Koreksi)'))"
                                             class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl font-bold text-xs transition-all duration-200 shadow-sm leading-none"
@@ -251,8 +251,10 @@
                                             </svg>
                                             <span x-text="(isItemLocked(item) || isMutasiKeluarFull(item) || isKemitraanReturned(item)) ? '🔒 Reklas' : 'Reklas'"></span>
                                         </button>
+                                        @endif
 
                                         <!-- 3. Tombol Ubah (Form Edit) -->
+                                        @if(Auth::user()?->role === 'master_admin' || Auth::user()?->canDo('astap', 'edit'))
                                         <a :href="(isItemLocked(item) || isMutasiKeluarFull(item) || isKemitraanReturned(item)) ? '#' : ('/astap/' + item.id + '/edit?from=astap')"
                                             @click="if (isItemLocked(item)) { $event.preventDefault(); showLockedWarning(item); } else if (isMutasiKeluarFull(item)) { $event.preventDefault(); showMutasiKeluarLockedWarning(item, 'ubah'); } else if (isKemitraanReturned(item)) { $event.preventDefault(); showKemitraanReturnedWarning(item, 'ubah'); }"
                                             :title="isItemLocked(item) ? 'Periode Terkunci (Tutup Buku BPKAD)' : (isMutasiKeluarFull(item) ? 'Terkunci (Aset Telah Dimutasi Keluar Penuh ke OPD Lain)' : (isKemitraanReturned(item) ? 'Terkunci (Aset Telah Dikembalikan ke Rekanan Mitra)' : 'Ubah Data ASTAP (Form Lengkap)'))"
@@ -265,8 +267,10 @@
                                             </svg>
                                             <span x-text="(isItemLocked(item) || isMutasiKeluarFull(item) || isKemitraanReturned(item)) ? '🔒 Ubah' : 'Ubah'"></span>
                                         </a>
+                                        @endif
 
                                         <!-- 4. Tombol Hapus (Bebas Kunci / Selalu Aktif) -->
+                                        @if(Auth::user()?->role === 'master_admin' || Auth::user()?->canDo('astap', 'delete'))
                                         <button type="button" @click="deleteAstap(item)"
                                             title="Hapus Data ASTAP"
                                             class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 hover:border-rose-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-rose-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">

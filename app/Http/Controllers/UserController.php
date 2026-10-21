@@ -28,8 +28,9 @@ class UserController extends Controller
         // Ambil daftar seluruh nama unit dari tabel units
         $units = Unit::pluck('nama')->toArray();
         $availablePermissions = User::AVAILABLE_PERMISSIONS;
+        $rolePresets = User::ROLE_PRESETS;
 
-        return view('pages.master.users.index', compact('users', 'units', 'currentUser', 'availablePermissions'));
+        return view('pages.master.users.index', compact('users', 'units', 'currentUser', 'availablePermissions', 'rolePresets'));
     }
 
     /**
@@ -40,14 +41,25 @@ class UserController extends Controller
         $currentUser = Auth::user();
 
         // Validasi Otorisasi
-        if ($currentUser->role === 'admin' && $request->role !== 'sub_admin') {
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Admin Operasional hanya diizinkan mendaftarkan akun Sub Admin.'
-                ], 403);
+        if ($currentUser->role === 'admin') {
+            if (!$currentUser->canDo('users', 'create')) {
+                if ($request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Anda tidak memiliki hak akses untuk mendaftarkan akun pengguna baru.'
+                    ], 403);
+                }
+                return redirect()->back()->with('error', 'Anda tidak memiliki hak akses untuk mendaftarkan akun pengguna baru.');
             }
-            return redirect()->back()->with('error', 'Admin Operasional hanya diizinkan mendaftarkan akun Sub Admin.');
+            if ($request->role !== 'sub_admin') {
+                if ($request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Admin Operasional hanya diizinkan mendaftarkan akun Sub Admin.'
+                    ], 403);
+                }
+                return redirect()->back()->with('error', 'Admin Operasional hanya diizinkan mendaftarkan akun Sub Admin.');
+            }
         }
 
         // Cek jika email sudah terdaftar di Recycle Bin
@@ -64,17 +76,17 @@ class UserController extends Controller
             'email' => 'required|email|max:255|unique:users,email',
             'role' => ['required', Rule::in(['master_admin', 'admin', 'sub_admin'])],
             'penugasan' => 'nullable|string|max:500',
-            'permissions' => 'nullable|array',
-            'permissions.*' => 'string|in:astap,distribusi,bast,mutasi,unit,master_data,users',
+            'permissions' => 'nullable',
             'password' => 'nullable|string|min:4',
         ]);
 
         $permissions = null;
         if ($validated['role'] === 'admin') {
-            $permissions = $request->input('permissions', []);
-            // Jika kosong, default beri modul astap & distribusi
+            $rawPermissions = $request->input('permissions');
+            $permissions = User::normalizePermissions($rawPermissions);
+            // Jika kosong, berikan preset data_entry
             if (empty($permissions)) {
-                $permissions = ['astap'];
+                $permissions = User::getPresetPermissions('data_entry');
             }
         }
 
@@ -110,6 +122,12 @@ class UserController extends Controller
 
         // Validasi Otorisasi Edit
         if ($currentUser->role === 'admin') {
+            if ($user->id !== $currentUser->id && !$currentUser->canDo('users', 'edit')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki hak akses untuk mengubah akun pengguna lain.'
+                ], 403);
+            }
             if ($user->role === 'master_admin') {
                 return response()->json([
                     'success' => false,
@@ -129,8 +147,7 @@ class UserController extends Controller
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'role' => ['required', Rule::in(['master_admin', 'admin', 'sub_admin'])],
             'penugasan' => 'nullable|string|max:500',
-            'permissions' => 'nullable|array',
-            'permissions.*' => 'string|in:astap,distribusi,bast,mutasi,unit,master_data,users',
+            'permissions' => 'nullable',
             'password' => 'nullable|string|min:4',
         ]);
 
@@ -150,7 +167,7 @@ class UserController extends Controller
         // Hanya Master Admin yang berwenang mengubah daftar permissions akun Admin
         if ($currentUser->role === 'master_admin') {
             if ($validated['role'] === 'admin') {
-                $updateData['permissions'] = $request->input('permissions', []);
+                $updateData['permissions'] = User::normalizePermissions($request->input('permissions'));
             } else {
                 $updateData['permissions'] = null;
             }
@@ -192,15 +209,26 @@ class UserController extends Controller
             return redirect()->back()->with('error', 'Anda tidak dapat menghapus akun Anda sendiri.');
         }
 
-        // Admin dilarang menghapus sesama admin atau master admin
-        if ($currentUser->role === 'admin' && in_array($user->role, ['admin', 'master_admin'])) {
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Admin Operasional hanya diizinkan menghapus akun Sub Admin.'
-                ], 403);
+        // Admin dilarang menghapus sesama admin atau master admin & harus memiliki izin users.delete
+        if ($currentUser->role === 'admin') {
+            if (!$currentUser->canDo('users', 'delete')) {
+                if ($request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Anda tidak memiliki hak akses untuk menghapus akun pengguna.'
+                    ], 403);
+                }
+                return redirect()->back()->with('error', 'Anda tidak memiliki hak akses untuk menghapus akun pengguna.');
             }
-            return redirect()->back()->with('error', 'Anda tidak memiliki hak akses menghapus akun tersebut.');
+            if (in_array($user->role, ['admin', 'master_admin'])) {
+                if ($request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Admin Operasional hanya diizinkan menghapus akun Sub Admin.'
+                    ], 403);
+                }
+                return redirect()->back()->with('error', 'Anda tidak memiliki hak akses menghapus akun tersebut.');
+            }
         }
 
         $userName = $user->name;

@@ -27,6 +27,7 @@
                 </div>
                 
                 <!-- Action Button Tambah Pengguna / Sub Admin -->
+                @if(Auth::user()?->role === 'master_admin' || Auth::user()?->canDo('users', 'create'))
                 <div class="shrink-0">
                     <button type="button" @click="openAddModal()"
                         class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-amber-500/20 transition-all flex items-center space-x-2 shrink-0 active:scale-95">
@@ -34,6 +35,7 @@
                         <span x-text="currentUserRole === 'admin' ? 'Tambah Sub Admin' : 'Tambah Pengguna'"></span>
                     </button>
                 </div>
+                @endif
             </div>
 
             <!-- Mini Summary KPI Cards Strip -->

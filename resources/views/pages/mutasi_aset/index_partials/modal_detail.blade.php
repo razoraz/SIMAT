@@ -199,11 +199,13 @@
                                 </template>
 
                                 {{-- 3. Tombol Setujui Admin (HANYA DITAMPILKAN PADA AKUN ADMIN & MASTER ADMIN - BISA LANGSUNG) --}}
+                                @if(Auth::user()?->role === 'master_admin' || Auth::user()?->canDo('mutasi', 'approve'))
                                 <template x-if="canApproveAdmin(selectedMutasi)">
                                     <button type="button" @click="approveAdmin(selectedMutasi)" class="px-3.5 py-2 rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shadow-sm active:scale-95">
                                         <span>✓ Setujui (Admin)</span>
                                     </button>
                                 </template>
+                                @endif
 
                                 {{-- 4. Tombol Tolak Mutasi (Selalu tampil jika status belum ditolak & belum selesai) --}}
                                 <template x-if="selectedMutasi && selectedMutasi.status !== 'Ditolak' && selectedMutasi.status !== 'Disetujui Admin (Selesai)'">

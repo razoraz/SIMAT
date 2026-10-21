@@ -30,11 +30,18 @@ class CheckModulePermission
 
         $moduleList = array_map('trim', explode(',', $module));
 
-        // 2. Admin Operasional: periksa izin modul
+        // 2. Admin Operasional: periksa izin modul / sub-aksi
         if ($user->role === 'admin') {
             foreach ($moduleList as $mod) {
-                if ($user->canAccess($mod)) {
-                    return $next($request);
+                if (str_contains($mod, '.')) {
+                    [$parentMod, $subAction] = explode('.', $mod, 2);
+                    if ($user->canDo($parentMod, $subAction)) {
+                        return $next($request);
+                    }
+                } else {
+                    if ($user->canAccess($mod)) {
+                        return $next($request);
+                    }
                 }
             }
 
@@ -47,16 +54,17 @@ class CheckModulePermission
                 'master_data' => 'Master Data SIPD',
                 'users'       => 'Manajemen Pengguna',
             ];
-            $modName = $moduleLabels[$moduleList[0]] ?? strtoupper($moduleList[0]);
+            $firstMod = explode('.', $moduleList[0])[0];
+            $modName = $moduleLabels[$firstMod] ?? strtoupper($firstMod);
 
             if ($request->expectsJson() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => "Akses Ditolak: Anda tidak memiliki wewenang untuk modul {$modName}."
+                    'message' => "Akses Ditolak: Anda tidak memiliki wewenang untuk modul / aksi {$modName}."
                 ], 403);
             }
 
-            abort(403, "Akses Ditolak: Akun Anda tidak memiliki wewenang untuk mengakses modul {$modName}. Silakan hubungi Master Admin untuk mendapatkan hak akses.");
+            abort(403, "Akses Ditolak: Akun Anda tidak memiliki wewenang untuk mengakses fitur / aksi {$modName}. Silakan hubungi Master Admin untuk mendapatkan hak akses.");
         }
 
         // 3. Sub Admin: hanya modul tertentu yang diizinkan untuk ruangan (misal: kir, pengajuan distribusi, mutasi ruangan)

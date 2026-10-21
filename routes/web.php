@@ -877,7 +877,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/distribusi/save', [DistribusiController::class, 'saveDistribusi'])->name('distribusi.save');
         Route::post('/distribusi', [DistribusiController::class, 'saveDistribusi'])->name('distribusi.store');
         Route::put('/distribusi/{id}', [DistribusiController::class, 'saveDistribusi'])->name('distribusi.update');
-        Route::delete('/distribusi/{id}', [DistribusiController::class, 'destroy'])->name('distribusi.destroy');
+        Route::delete('/distribusi/{id}', [DistribusiController::class, 'destroy'])->name('distribusi.destroy')->middleware('module:distribusi.delete');
         Route::post('/distribusi/{id}/restore', [DistribusiController::class, 'restore'])->name('distribusi.restore');
     });
 
@@ -1032,27 +1032,27 @@ Route::middleware('auth')->group(function () {
     // 4. Mutasi Aset Pages & Forms
     Route::middleware('module:mutasi')->group(function () {
         Route::get('/mutasi-aset',                 [MutasiController::class, 'index'])->name('mutasi.index');
-        Route::get('/mutasi-aset/eksternal',        [\App\Http\Controllers\MutasiEksternalController::class, 'index'])->name('mutasi.eksternal')->middleware('role:master_admin,admin');
+        Route::get('/mutasi-aset/eksternal',        [\App\Http\Controllers\MutasiEksternalController::class, 'index'])->name('mutasi.eksternal')->middleware(['role:master_admin,admin', 'module:mutasi.eksternal']);
         Route::get('/mutasi-aset/create',          [MutasiController::class, 'create'])->name('mutasi.create');
         Route::post('/mutasi-aset',                [MutasiController::class, 'store'])->name('mutasi.store');
         Route::get('/mutasi-aset/{id}/edit',       [MutasiController::class, 'edit'])->name('mutasi.edit');
         Route::put('/mutasi-aset/{id}',            [MutasiController::class, 'update'])->name('mutasi.update');
-        Route::delete('/mutasi-aset/{id}',         [MutasiController::class, 'destroy'])->name('mutasi.destroy');
+        Route::delete('/mutasi-aset/{id}',         [MutasiController::class, 'destroy'])->name('mutasi.destroy')->middleware('module:mutasi.delete');
         Route::post('/mutasi-aset/{id}/restore',    [MutasiController::class, 'restore'])->name('mutasi.restore');
         Route::post('/mutasi-aset/{id}/approve-pengirim', [MutasiController::class, 'approvePengirim'])->name('mutasi.approve.pengirim');
         Route::post('/mutasi-aset/{id}/approve-penerima', [MutasiController::class, 'approvePenerima'])->name('mutasi.approve.penerima');
-        Route::post('/mutasi-aset/{id}/approve-admin',    [MutasiController::class, 'approveAdmin'])->name('mutasi.approve.admin');
+        Route::post('/mutasi-aset/{id}/approve-admin',    [MutasiController::class, 'approveAdmin'])->name('mutasi.approve.admin')->middleware('module:mutasi.approve');
         Route::post('/mutasi-aset/{id}/reject',           [MutasiController::class, 'reject'])->name('mutasi.reject');
         Route::post('/mutasi-aset/{id}/cancel-reject',    [MutasiController::class, 'cancelReject'])->name('mutasi.cancel.reject');
         Route::get('/mutasi-aset/register/{id}',          [MutasiController::class, 'getRegisterData'])->name('mutasi.register.data');
     });
 
     // 4b. Pusat Pemulihan Data (Recycle Bin Center Terpadu SIMAT)
-    Route::get('/recycle-bin',                                     [RecycleBinController::class, 'index'])->name('recycle_bin.index');
-    Route::post('/recycle-bin/{module}/{id}/restore',              [RecycleBinController::class, 'restore'])->name('recycle_bin.restore');
-    Route::post('/recycle-bin/{module}/bulk-restore',              [RecycleBinController::class, 'bulkRestore'])->name('recycle_bin.bulk_restore');
-    Route::post('/recycle-bin/{module}/bulk-force-delete',         [RecycleBinController::class, 'bulkForceDelete'])->name('recycle_bin.bulk_force_delete');
-    Route::delete('/recycle-bin/{module}/{id}/force-delete',       [RecycleBinController::class, 'forceDelete'])->name('recycle_bin.force_delete');
+    Route::get('/recycle-bin',                                     [RecycleBinController::class, 'index'])->name('recycle_bin.index')->middleware('module:recycle_bin.view');
+    Route::post('/recycle-bin/{module}/{id}/restore',              [RecycleBinController::class, 'restore'])->name('recycle_bin.restore')->middleware('module:recycle_bin.restore');
+    Route::post('/recycle-bin/{module}/bulk-restore',              [RecycleBinController::class, 'bulkRestore'])->name('recycle_bin.bulk_restore')->middleware('module:recycle_bin.restore');
+    Route::post('/recycle-bin/{module}/bulk-force-delete',         [RecycleBinController::class, 'bulkForceDelete'])->name('recycle_bin.bulk_force_delete')->middleware('module:recycle_bin.force_delete');
+    Route::delete('/recycle-bin/{module}/{id}/force-delete',       [RecycleBinController::class, 'forceDelete'])->name('recycle_bin.force_delete')->middleware('module:recycle_bin.force_delete');
 
     // 4c. Rekonsiliasi Belanja Modal (RMB) - Format Resmi BPKAD
     Route::get('/audit-pemulihan/rmb', [\App\Http\Controllers\RmbController::class, 'index'])->name('rmb.index');
@@ -1109,8 +1109,8 @@ Route::middleware('auth')->group(function () {
         Route::middleware('module:bast')->group(function () {
             Route::get('/berita-acara', [\App\Http\Controllers\BeritaAcaraController::class, 'index'])->name('bast.index');
             Route::post('/berita-acara/triwulan/{key}', [\App\Http\Controllers\BeritaAcaraController::class, 'saveTriwulan'])->name('bast.save_triwulan');
-            Route::post('/berita-acara/triwulan/{key}/sign', [\App\Http\Controllers\BeritaAcaraController::class, 'signTriwulan'])->name('bast.sign_triwulan');
-            Route::post('/berita-acara/mutasi-eksternal/{id}/sign', [\App\Http\Controllers\BeritaAcaraController::class, 'signMutasiEksternal'])->name('bast.sign_mutasi_eksternal');
+            Route::post('/berita-acara/triwulan/{key}/sign', [\App\Http\Controllers\BeritaAcaraController::class, 'signTriwulan'])->name('bast.sign_triwulan')->middleware('module:bast.tte');
+            Route::post('/berita-acara/mutasi-eksternal/{id}/sign', [\App\Http\Controllers\BeritaAcaraController::class, 'signMutasiEksternal'])->name('bast.sign_mutasi_eksternal')->middleware('module:bast.tte');
         });
 
         // Form Tambah, Edit, Simpan, Update & Hapus ASTAP
@@ -6555,6 +6555,13 @@ Route::middleware('auth')->group(function () {
         })->name('astap.update');
 
         Route::delete('/astap/{id}', function ($id) {
+            if (!auth()->user()->canDo('astap', 'delete')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Akses Ditolak: Akun Anda tidak memiliki wewenang untuk menghapus Data ASTAP.'
+                ], 403);
+            }
+
             $astap = \App\Models\Astap::with('registers.unit')->find($id);
             if (!$astap) {
                 return response()->json(['success' => false, 'message' => 'Data ASTAP tidak ditemukan.'], 404);
@@ -6998,9 +7005,9 @@ Route::middleware('auth')->group(function () {
     Route::middleware('module:unit')->group(function () {
         Route::get('/unit-paviliun/create', [UnitController::class, 'create'])->name('unit.create');
         Route::post('/unit-paviliun', [UnitController::class, 'store'])->name('unit.store');
-        Route::get('/unit-paviliun/{id}/edit', [UnitController::class, 'edit'])->name('unit.edit');
-        Route::put('/unit-paviliun/{id}', [UnitController::class, 'update'])->name('unit.update');
-        Route::delete('/unit-paviliun/{id}', [UnitController::class, 'destroy'])->name('unit.destroy');
+        Route::get('/unit-paviliun/{id}/edit', [UnitController::class, 'edit'])->name('unit.edit')->middleware('module:unit.edit');
+        Route::put('/unit-paviliun/{id}', [UnitController::class, 'update'])->name('unit.update')->middleware('module:unit.edit');
+        Route::delete('/unit-paviliun/{id}', [UnitController::class, 'destroy'])->name('unit.destroy')->middleware('module:unit.delete');
         Route::post('/unit-paviliun/{id}/restore', [UnitController::class, 'restore'])->name('unit.restore');
     });
 
@@ -7009,7 +7016,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/master-data/users', [UserController::class, 'index'])->name('master.users');
         Route::post('/master-data/users', [UserController::class, 'store'])->name('master.users.store');
         Route::put('/master-data/users/{id}', [UserController::class, 'update'])->name('master.users.update');
-        Route::delete('/master-data/users/{id}', [UserController::class, 'destroy'])->name('master.users.destroy');
+        Route::delete('/master-data/users/{id}', [UserController::class, 'destroy'])->name('master.users.destroy')->middleware('module:users.delete');
         Route::post('/master-data/users/{id}/reset-password', [UserController::class, 'resetPassword'])->name('master.users.reset_password');
     });
 
@@ -7038,20 +7045,23 @@ Route::middleware('auth')->group(function () {
 
     });
 
-    // Master Reklasifikasi, Hibah & Kemitraan Aset (Dapat diakses oleh wewenang ASTAP & Master Data)
-    Route::middleware('module:astap,master_data')->group(function () {
-        // Master Reklasifikasi Aset (PMDN 108)
+    // Master Reklasifikasi Aset (PMDN 108)
+    Route::middleware('module:astap.reklas')->group(function () {
         Route::get('/master-data/reklasifikasi', [\App\Http\Controllers\ReklasifikasiController::class, 'index'])->name('master.reklasifikasi');
         Route::post('/master-data/reklasifikasi', [\App\Http\Controllers\ReklasifikasiController::class, 'store'])->name('master.reklasifikasi.store');
         Route::delete('/master-data/reklasifikasi/{id}', [\App\Http\Controllers\ReklasifikasiController::class, 'destroy'])->name('master.reklasifikasi.destroy');
+    });
 
-        // Master Hibah Aset (Hibah Masuk & Hibah Keluar)
+    // Master Hibah Aset (Hibah Masuk & Hibah Keluar)
+    Route::middleware('module:astap.hibah')->group(function () {
         Route::get('/master-data/hibah', [\App\Http\Controllers\HibahController::class, 'index'])->name('master.hibah');
         Route::get('/master-data/hibah/{id}/cetak', [\App\Http\Controllers\HibahController::class, 'cetak'])->name('master.hibah.cetak');
         Route::post('/master-data/hibah/keluar', [\App\Http\Controllers\HibahController::class, 'storeHibahKeluar'])->name('master.hibah.keluar');
         Route::delete('/master-data/hibah/{id}', [\App\Http\Controllers\HibahController::class, 'destroy'])->name('master.hibah.destroy');
+    });
 
-        // Master Kemitraan Aset (KSO, BGS, Sewa Akun 1.5.2)
+    // Master Kemitraan Aset (KSO, BGS, Sewa Akun 1.5.2)
+    Route::middleware('module:astap.kemitraan')->group(function () {
         Route::get('/master-data/kemitraan', [\App\Http\Controllers\KemitraanController::class, 'index'])->name('master.kemitraan');
         Route::put('/master-data/kemitraan/{id}/status', [\App\Http\Controllers\KemitraanController::class, 'updateStatus'])->name('master.kemitraan.status');
         Route::post('/master-data/kemitraan/{id}/extend', [\App\Http\Controllers\KemitraanController::class, 'extendKonsesi'])->name('master.kemitraan.extend');

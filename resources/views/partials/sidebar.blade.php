@@ -243,22 +243,24 @@
                                     </a>
 
                                     <!-- 2. Mutasi Eksternal (Antar-OPD) -->
-                                    <a href="{{ route('mutasi.eksternal') }}" @click="if (isMobile) sidebarOpen = false"
-                                        class="group flex items-center space-x-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all {{ request()->routeIs('mutasi.eksternal*') || request()->routeIs('astap.create_mutasi_eksternal') || request()->routeIs('astap.edit_mutasi_eksternal') || request()->routeIs('astap.create_mutasi_masuk') || request()->routeIs('astap.edit_mutasi_masuk') || (request()->routeIs('astap.edit*') && request('from') === 'eksternal') ? 'bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                                        <svg class="w-3.5 h-3.5 shrink-0 transition-colors duration-200 {{ request()->routeIs('mutasi.eksternal*') || request()->routeIs('astap.create_mutasi_eksternal') || request()->routeIs('astap.edit_mutasi_eksternal') || request()->routeIs('astap.create_mutasi_masuk') || request()->routeIs('astap.edit_mutasi_masuk') || (request()->routeIs('astap.edit*') && request('from') === 'eksternal') ? 'text-indigo-400' : 'text-slate-500 group-hover:text-indigo-400' }}"
-                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
-                                        </svg>
-                                        <span>Mutasi Eksternal</span>
-                                    </a>
+                                    @if ($role === 'master_admin' || $user->canDo('mutasi', 'eksternal'))
+                                        <a href="{{ route('mutasi.eksternal') }}" @click="if (isMobile) sidebarOpen = false"
+                                            class="group flex items-center space-x-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all {{ request()->routeIs('mutasi.eksternal*') || request()->routeIs('astap.create_mutasi_eksternal') || request()->routeIs('astap.edit_mutasi_eksternal') || request()->routeIs('astap.create_mutasi_masuk') || request()->routeIs('astap.edit_mutasi_masuk') || (request()->routeIs('astap.edit*') && request('from') === 'eksternal') ? 'bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
+                                            <svg class="w-3.5 h-3.5 shrink-0 transition-colors duration-200 {{ request()->routeIs('mutasi.eksternal*') || request()->routeIs('astap.create_mutasi_eksternal') || request()->routeIs('astap.edit_mutasi_eksternal') || request()->routeIs('astap.create_mutasi_masuk') || request()->routeIs('astap.edit_mutasi_masuk') || (request()->routeIs('astap.edit*') && request('from') === 'eksternal') ? 'text-indigo-400' : 'text-slate-500 group-hover:text-indigo-400' }}"
+                                                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
+                                            </svg>
+                                            <span>Mutasi Eksternal</span>
+                                        </a>
+                                    @endif
                                 </div>
                             </div>
                         @endif
                     @endif
 
                     <!-- Reklasifikasi Aset -->
-                    @if ($user->canAccess('astap') || $user->canAccess('master_data') || $role === 'admin' || $role === 'master_admin')
+                    @if ($user->canDo('astap', 'reklas'))
                         <a href="{{ route('master.reklasifikasi') }}" @click="if (isMobile) sidebarOpen = false"
                             class="flex items-center space-x-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 {{ request()->routeIs('master.reklasifikasi*') ? 'bg-gradient-to-r from-emerald-600/20 to-teal-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
                             <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -270,7 +272,7 @@
                     @endif
 
                     <!-- Kelola Hibah Aset -->
-                    @if ($user->canAccess('astap') || $user->canAccess('master_data') || $role === 'admin' || $role === 'master_admin')
+                    @if ($user->canDo('astap', 'hibah'))
                         <a href="{{ route('master.hibah') }}" @click="if (isMobile) sidebarOpen = false"
                             class="flex items-center space-x-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 {{ request()->routeIs('master.hibah*') || request()->routeIs('astap.create_hibah') || request()->routeIs('astap.create-hibah') ? 'bg-gradient-to-r from-emerald-600/20 to-teal-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
                             <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -282,7 +284,7 @@
                     @endif
 
                     <!-- Kelola Kemitraan Aset (KSO / KSP / Sewa Akun 1.5.2) -->
-                    @if ($user->canAccess('astap') || $user->canAccess('master_data') || $role === 'admin' || $role === 'master_admin')
+                    @if ($user->canDo('astap', 'kemitraan'))
                         <a href="{{ route('master.kemitraan') }}" @click="if (isMobile) sidebarOpen = false"
                             class="flex items-center space-x-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 {{ request()->routeIs('master.kemitraan*') || request()->routeIs('astap.create_kemitraan') || (request()->routeIs('astap.edit_kemitraan') && !$isFromAstap) ? 'bg-gradient-to-r from-emerald-600/20 to-teal-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
                             <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -354,7 +356,7 @@
                     @endif
 
                     <!-- Jenis ASTAP (Klasifikasi Kode 108) -->
-                    @if ($user->canAccess('astap'))
+                    @if ($user->canDo('master_data', 'jenis_astap'))
                         <a href="{{ route('master.jenis_astap') }}" @click="if (isMobile) sidebarOpen = false"
                             class="flex items-center space-x-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 {{ request()->routeIs('master.jenis_astap*') ? 'bg-gradient-to-r from-emerald-600/20 to-teal-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
                             <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -366,7 +368,7 @@
                     @endif
 
                     <!-- Jenis Pengadaan -->
-                    @if ($user->canAccess('master_data'))
+                    @if ($user->canDo('master_data', 'jenis_pengadaan'))
                         <a href="{{ route('master.jenis_pengadaan') }}" @click="if (isMobile) sidebarOpen = false"
                             class="flex items-center space-x-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 {{ request()->routeIs('master.jenis_pengadaan*') ? 'bg-gradient-to-r from-emerald-600/20 to-teal-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
                             <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -375,8 +377,10 @@
                             </svg>
                             <span>Jenis Pengadaan</span>
                         </a>
+                    @endif
 
-                        <!-- Rekening Belanja SIPD -->
+                    <!-- Rekening Belanja SIPD -->
+                    @if ($user->canDo('master_data', 'rekening'))
                         <a href="{{ route('master.rekening_belanja') }}" @click="if (isMobile) sidebarOpen = false"
                             class="flex items-center space-x-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 {{ request()->routeIs('master.rekening_belanja*') ? 'bg-gradient-to-r from-emerald-600/20 to-teal-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
                             <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

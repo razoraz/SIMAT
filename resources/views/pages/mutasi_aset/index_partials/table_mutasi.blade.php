@@ -164,6 +164,7 @@
                                             </button>
 
                                             {{-- 2. Tombol Ubah (Terkunci jika status Ditolak) --}}
+                                            @if(Auth::user()?->role === 'master_admin' || Auth::user()?->canDo('mutasi', 'edit'))
                                             <template x-if="item.status !== 'Ditolak'">
                                                 <a :href="'/mutasi-aset/' + item.id + '/edit'" title="Ubah Data Pengajuan Mutasi"
                                                     class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
@@ -178,13 +179,16 @@
                                                     <span>Ubah</span>
                                                 </button>
                                             </template>
+                                            @endif
 
                                             {{-- 3. Tombol Hapus --}}
+                                            @if(Auth::user()?->role === 'master_admin' || Auth::user()?->canDo('mutasi', 'delete'))
                                             <button type="button" @click="deleteMutasi(item)" title="Hapus Data Mutasi"
                                                 class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
                                                 <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                                 <span>Hapus</span>
                                             </button>
+                                            @endif
 
                                         </div>
                                     </template>

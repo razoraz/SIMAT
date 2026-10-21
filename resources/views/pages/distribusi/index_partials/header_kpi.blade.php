@@ -15,6 +15,7 @@
                 </div>
                 
                 <!-- Action Button Input Baru -->
+                @if(Auth::user()?->role === 'master_admin' || Auth::user()?->role === 'sub_admin' || Auth::user()?->canDo('distribusi', 'create'))
                 <div class="flex items-center gap-2.5 shrink-0">
                     <a href="{{ route('distribusi.create') }}"
                         class="px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs shadow-lg shadow-teal-500/20 transition-all flex items-center space-x-2 shrink-0">
@@ -22,6 +23,7 @@
                         <span>{{ $isSubAdmin ? 'Input Pengajuan Baru' : 'Input Distribusi Baru' }}</span>
                     </a>
                 </div>
+                @endif
             </div>
 
             <!-- Mini Summary KPI Cards Strip -->

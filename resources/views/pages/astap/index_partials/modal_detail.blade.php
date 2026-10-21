@@ -1360,6 +1360,7 @@
 
                                                 <!-- 6. QR Code Download -->
                                                 <td class="px-3.5 py-3 text-center whitespace-nowrap align-middle">
+                                                    @if(Auth::user()?->role === 'master_admin' || Auth::user()?->canDo('astap', 'qr'))
                                                     <button type="button" @click.stop="downloadQrCodeNibar(reg, selectedAstapDetail)"
                                                         title="Pratinjau & Download QR NIBAR Aset Ini"
                                                         class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/25 border border-emerald-500/30 hover:border-emerald-400 text-emerald-400 hover:text-emerald-300 font-bold text-[10.5px] transition-all shadow-sm active:scale-95 group cursor-pointer leading-none">
@@ -1368,6 +1369,9 @@
                                                         </svg>
                                                         <span>Download QR</span>
                                                     </button>
+                                                    @else
+                                                    <span class="text-slate-500 text-[10px] italic">Terkunci</span>
+                                                    @endif
                                                 </td>
 
                                                 <!-- 7. Tombol Aksi -->
@@ -1379,13 +1383,15 @@
                                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                                         </button>
 
-                                                        @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
+                                                        @if(Auth::user()?->role === 'master_admin' || Auth::user()?->canDo('astap', 'edit'))
                                                         <!-- 2. Tombol Ubah Kondisi Barang (Modal Khusus) -->
                                                         <button type="button" @click.stop="openEditKondisiModal(reg)" title="Ubah Kondisi Aset Ini"
                                                                 class="p-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 hover:text-amber-300 transition-all cursor-pointer shadow-sm active:scale-95">
                                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 0L20.586 7a2 2 0 010 2.828l-8.586 8.586z"/></svg>
                                                         </button>
+                                                        @endif
 
+                                                        @if(Auth::user()?->role === 'master_admin' || Auth::user()?->canDo('astap', 'delete'))
                                                         <!-- 4. Tombol Hapus Register -->
                                                         <button type="button" @click.stop="deleteRegister(reg)" title="Hapus Aset Register Ini"
                                                                 class="p-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 hover:text-rose-300 transition-all cursor-pointer shadow-sm active:scale-95">

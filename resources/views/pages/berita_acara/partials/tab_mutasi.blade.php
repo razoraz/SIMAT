@@ -133,12 +133,14 @@
                                     </td>
                                     <td class="px-4 py-4 text-center space-x-1.5 whitespace-nowrap">
                                         <!-- Toggle TTD -->
+                                        @if(Auth::user()?->role === 'master_admin' || Auth::user()?->canDo('bast', 'tte'))
                                         <button type="button" @click="toggleSignMutasi(item)"
                                             :class="item.signed ? 'bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40' : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold shadow-sm'"
                                             class="px-2.5 py-1.5 rounded-xl font-bold text-xs transition-all inline-flex items-center space-x-1 active:scale-95 cursor-pointer"
                                             :title="item.signed ? 'Batalkan Tanda Tangan Digital BSrE' : 'Tanda Tangan Digital BSrE'">
                                             <span x-text="item.signed ? '↩️ Batal TTD' : '✍️ TTD BSrE'"></span>
                                         </button>
+                                        @endif
 
                                         <!-- Rincian -->
                                         <button type="button" @click="openDetailMutasi(item)"
@@ -237,12 +239,14 @@
                                     <!-- Aksi BAST Eksternal -->
                                     <td class="px-4 py-4 text-center space-x-1.5 whitespace-nowrap">
                                         <!-- Toggle TTD -->
+                                        @if(Auth::user()?->role === 'master_admin' || Auth::user()?->canDo('bast', 'tte'))
                                         <button type="button" @click="toggleSignMutasiEksternal(item)"
                                             :class="item.signed ? 'bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40' : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold shadow-sm'"
                                             class="px-2.5 py-1.5 rounded-xl font-bold text-xs transition-all inline-flex items-center space-x-1 active:scale-95 cursor-pointer"
                                             :title="item.signed ? 'Batalkan Tanda Tangan Digital BSrE' : 'Tanda Tangan Digital BSrE'">
                                             <span x-text="item.signed ? '↩️ Batal TTD' : '✍️ TTD BSrE'"></span>
                                         </button>
+                                        @endif
 
                                         <!-- Rincian -->
                                         <button type="button" @click="openDetailMutasiEksternal(item)"

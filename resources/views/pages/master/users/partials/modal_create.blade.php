@@ -12,7 +12,7 @@
          x-transition:leave="transition ease-in duration-150"
          x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0">
-        <div @click.away="showAddModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto my-auto"
+        <div @click.away="showAddModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto my-auto"
              x-transition:enter="transition ease-out duration-200"
              x-transition:enter-start="opacity-0 scale-95"
              x-transition:enter-end="opacity-100 scale-100"
@@ -76,37 +76,133 @@
                     </template>
                 </div>
 
-                <!-- Bagian Hak Akses Modul (Hanya Tampil Jika Role: Admin Operasional) -->
+                <!-- Bagian Hak Akses Modul (Hanya Tampil Jika Role: Admin Operasional & Login: Master Admin) -->
                 <template x-if="newFormData.role === 'admin' && currentUserRole === 'master_admin'">
-                    <div class="p-3.5 bg-slate-950/90 border border-cyan-500/30 rounded-2xl space-y-2.5">
-                        <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                    <div class="p-4 bg-slate-950/90 border border-cyan-500/30 rounded-2xl space-y-3 shadow-inner">
+                        <!-- Header Kontrol Permissions -->
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
                             <div>
-                                <label class="block text-cyan-300 font-bold text-xs flex items-center space-x-1.5">
+                                <label class="block text-cyan-300 font-extrabold text-xs flex items-center space-x-2">
                                     <span>🛡️</span>
-                                    <span>Wewenang Hak Akses Modul Admin</span>
+                                    <span>Hak Akses Modul & Sub-Fitur Admin</span>
+                                    <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">Hierarchical Tree</span>
                                 </label>
-                                <p class="text-[10px] text-slate-400">Centang modul yang boleh dikelola oleh admin ini:</p>
+                                <p class="text-[10px] text-slate-400 mt-0.5">Centang modul induk untuk otomatis aktifkan sub-aksi, atau sesuaikan opsi detailnya:</p>
                             </div>
-                            <div class="flex items-center space-x-2">
-                                <button type="button" @click="toggleAllNewPermissions(true)" class="text-[10px] text-cyan-400 hover:text-cyan-300 font-bold hover:underline">Pilih Semua</button>
-                                <span class="text-slate-600">•</span>
-                                <button type="button" @click="toggleAllNewPermissions(false)" class="text-[10px] text-rose-400 hover:text-rose-300 font-bold hover:underline">Kosongkan</button>
+                            <div class="flex items-center space-x-2 shrink-0">
+                                <button type="button" @click="toggleAllPermissions('new', true)" class="px-2 py-1 rounded-lg text-[10px] bg-slate-800/80 hover:bg-cyan-500/20 text-cyan-300 border border-slate-700 hover:border-cyan-500/40 font-bold transition-all">
+                                    Pilih Semua
+                                </button>
+                                <button type="button" @click="toggleAllPermissions('new', false)" class="px-2 py-1 rounded-lg text-[10px] bg-slate-800/80 hover:bg-rose-500/20 text-rose-300 border border-slate-700 hover:border-rose-500/40 font-bold transition-all">
+                                    Kosongkan
+                                </button>
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                            <template x-for="(perm, key) in availablePermissions" :key="key">
-                                <label class="flex items-start space-x-2.5 p-2.5 rounded-xl border transition-all cursor-pointer select-none"
-                                    :class="newFormData.permissions.includes(key) ? 'bg-cyan-500/10 border-cyan-500/40 text-white' : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700'">
-                                    <input type="checkbox" :value="key" x-model="newFormData.permissions" class="mt-0.5 rounded border-slate-700 text-cyan-500 focus:ring-0 focus:ring-offset-0 bg-slate-950">
-                                    <div class="min-w-0 flex-1">
-                                        <div class="flex items-center space-x-1.5">
-                                            <span x-text="perm.icon"></span>
-                                            <span class="font-bold text-[11px] truncate" x-text="perm.label"></span>
+                        <!-- Template Presets Cepat (1-Klik) -->
+                        <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1.5">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center space-x-1.5">
+                                <span>⚡</span>
+                                <span>Pilihan Cepat Template Otorisasi:</span>
+                            </span>
+                            <div class="flex flex-wrap gap-1.5">
+                                <template x-for="(preset, pKey) in rolePresets" :key="pKey">
+                                    <button type="button" @click="applyPreset('new', pKey)"
+                                        class="px-2.5 py-1 rounded-lg text-[10px] font-semibold flex items-center space-x-1.5 transition-all border active:scale-95 bg-slate-950 text-slate-300 border-slate-800 hover:border-cyan-500/40 hover:text-white hover:bg-cyan-500/10"
+                                        :title="preset.description">
+                                        <span x-text="preset.icon"></span>
+                                        <span x-text="preset.title"></span>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- Tree Daftar Modul & Sub-Aksi -->
+                        <div class="space-y-2 max-h-[380px] overflow-y-auto pr-1 custom-scrollbar">
+                            <template x-for="(modDef, modKey) in availablePermissions" :key="modKey">
+                                <div class="rounded-xl border transition-all overflow-hidden"
+                                    :class="isModuleEnabled('new', modKey) ? 'bg-slate-900/80 border-slate-700 shadow-md' : 'bg-slate-950/60 border-slate-800/70 opacity-80'">
+                                    
+                                    <!-- Baris Header Modul Induk (Parent) -->
+                                    <div class="p-2.5 flex items-center justify-between gap-2.5 cursor-pointer select-none"
+                                        @click="toggleExpandModule('new', modKey)">
+                                        <div class="flex items-center space-x-2.5 min-w-0 flex-1">
+                                            <!-- Tri-State Checkbox Modul Induk -->
+                                            <input type="checkbox"
+                                                :checked="isModuleFullyChecked('new', modKey)"
+                                                x-effect="$el.indeterminate = isModuleIndeterminate('new', modKey); $el.checked = isModuleFullyChecked('new', modKey) || (!isModuleIndeterminate('new', modKey) && isModuleEnabled('new', modKey))"
+                                                @click.stop="toggleParentModule('new', modKey)"
+                                                class="rounded border-slate-700 text-cyan-500 focus:ring-0 focus:ring-offset-0 bg-slate-950 w-4 h-4 cursor-pointer">
+                                            
+                                            <div class="min-w-0 flex-1">
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="text-sm" x-text="modDef.icon"></span>
+                                                    <span class="font-extrabold text-xs text-white truncate" x-text="modDef.label"></span>
+                                                </div>
+                                                <p class="text-[9px] text-slate-400 truncate mt-0.5" x-text="modDef.description"></p>
+                                            </div>
                                         </div>
-                                        <p class="text-[9px] text-slate-400 line-clamp-1 mt-0.5" x-text="perm.description"></p>
+
+                                        <div class="flex items-center space-x-2 shrink-0">
+                                            <!-- Status Summary Pill -->
+                                            <span class="px-2 py-0.5 rounded-full text-[9px] font-bold border"
+                                                :class="{
+                                                    'bg-emerald-500/15 text-emerald-300 border-emerald-500/30': getModuleActionSummary('new', modKey).color === 'emerald',
+                                                    'bg-cyan-500/15 text-cyan-300 border-cyan-500/30': getModuleActionSummary('new', modKey).color === 'cyan',
+                                                    'bg-slate-800 text-slate-500 border-slate-700': getModuleActionSummary('new', modKey).color === 'slate'
+                                                }"
+                                                x-text="getModuleActionSummary('new', modKey).text"></span>
+
+                                            <!-- Chevron Expand/Collapse -->
+                                            <button type="button" @click.stop="toggleExpandModule('new', modKey)"
+                                                class="w-6 h-6 rounded-lg bg-slate-800/60 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-transform"
+                                                :class="isModuleExpanded('new', modKey) ? 'rotate-180 text-cyan-400' : ''">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                            </button>
+                                        </div>
                                     </div>
-                                </label>
+
+                                    <!-- Drawer Sub-Aksi (Collapsible Children) -->
+                                    <div x-show="isModuleExpanded('new', modKey)" x-collapse
+                                        class="border-t border-slate-800/80 bg-slate-950/80 p-3 space-y-2">
+                                        
+                                        <!-- Sub-Header Quick Action -->
+                                        <div class="flex items-center justify-between text-[10px] pb-1.5 border-b border-slate-800/60 text-slate-400">
+                                            <span>Rincian Wewenang Sub-Aksi:</span>
+                                            <div class="flex items-center space-x-2">
+                                                <button type="button" @click="toggleAllActionsInModule('new', modKey, true)"
+                                                    class="text-cyan-400 hover:text-cyan-300 font-semibold hover:underline">Semua Aksi</button>
+                                                <span>•</span>
+                                                <button type="button" @click="toggleAllActionsInModule('new', modKey, false)"
+                                                    class="text-rose-400 hover:text-rose-300 font-semibold hover:underline">Hapus Semua</button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Grid Sub-Aksi -->
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                                            <template x-for="(actDef, actKey) in modDef.actions" :key="actKey">
+                                                <label class="flex items-start space-x-2.5 p-2 rounded-xl border transition-all cursor-pointer select-none"
+                                                    :class="isActionChecked('new', modKey, actKey) ? 'bg-cyan-500/10 border-cyan-500/40 text-white' : 'bg-slate-900/50 border-slate-800/80 text-slate-400 hover:border-slate-700'">
+                                                    
+                                                    <input type="checkbox"
+                                                        :checked="isActionChecked('new', modKey, actKey)"
+                                                        @change="toggleSubAction('new', modKey, actKey)"
+                                                        class="mt-0.5 rounded border-slate-700 text-cyan-500 focus:ring-0 focus:ring-offset-0 bg-slate-950 w-3.5 h-3.5 cursor-pointer">
+                                                    
+                                                    <div class="min-w-0 flex-1">
+                                                        <div class="flex items-center space-x-1.5">
+                                                            <span class="font-bold text-[11px] truncate" x-text="actDef.label"></span>
+                                                            <template x-if="actDef.critical">
+                                                                <span class="px-1.5 py-0.2 rounded text-[8px] font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30">Kritis</span>
+                                                            </template>
+                                                        </div>
+                                                        <p class="text-[9px] text-slate-400 line-clamp-1 mt-0.5" x-text="actDef.desc"></p>
+                                                    </div>
+                                                </label>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
                             </template>
                         </div>
                     </div>

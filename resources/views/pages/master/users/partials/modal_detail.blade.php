@@ -79,14 +79,24 @@
 
                             <!-- Admin Operasional -->
                             <template x-if="selectedUser.role === 'admin'">
-                                <div class="flex flex-wrap gap-1.5 pt-0.5">
+                                <div class="space-y-1.5 pt-0.5 max-h-[220px] overflow-y-auto custom-scrollbar pr-1">
                                     <template x-for="(perm, key) in availablePermissions" :key="key">
-                                        <span class="px-2.5 py-1 rounded-lg text-[10px] font-semibold flex items-center space-x-1.5 border"
-                                            :class="(selectedUser.permissions && selectedUser.permissions.includes(key)) || !selectedUser.permissions ? 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30' : 'bg-slate-900/50 text-slate-600 border-slate-800/80 line-through opacity-50'">
-                                            <span x-text="perm.icon"></span>
-                                            <span x-text="perm.label"></span>
-                                            <span x-text="(selectedUser.permissions && selectedUser.permissions.includes(key)) || !selectedUser.permissions ? '✓' : '✗'" class="text-[9px] font-bold"></span>
-                                        </span>
+                                        <div class="p-2 rounded-xl border flex items-center justify-between text-xs"
+                                            :class="isDetailModEnabled(key) ? 'bg-cyan-500/10 border-cyan-500/30 text-white' : 'bg-slate-900/40 border-slate-800/80 text-slate-500 opacity-60'">
+                                            <div class="flex items-center space-x-2 min-w-0 flex-1">
+                                                <span x-text="perm.icon"></span>
+                                                <span class="font-bold text-[11px] truncate" x-text="perm.label"></span>
+                                            </div>
+                                            <div class="flex items-center space-x-1.5 shrink-0">
+                                                <template x-if="isDetailModEnabled(key)">
+                                                    <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
+                                                        x-text="getDetailModActions(key).length + ' Aksi Aktif'"></span>
+                                                </template>
+                                                <template x-if="!isDetailModEnabled(key)">
+                                                    <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-slate-800 text-slate-500 border border-slate-700">Nonaktif</span>
+                                                </template>
+                                            </div>
+                                        </div>
                                     </template>
                                 </div>
                             </template>
