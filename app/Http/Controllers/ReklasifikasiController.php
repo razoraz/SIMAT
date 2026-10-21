@@ -1315,11 +1315,15 @@ class ReklasifikasiController extends Controller
                     $newSpec['nilai_kontribusi']      = $kemitraanItems[0]['nilai_kontribusi'] ?? null;
                     $newSpec['keterangan_kontribusi'] = $kemitraanItems[0]['keterangan_kontribusi'] ?? null;
 
-                    // Simpan juga spesifikasi fisik (Tanah / Gedung / Jaringan / Lainnya / Mesin) sesuai wujud asal aset
-                    $isTanah = in_array($asalKibAset, ['KIB A', 'A', 'TANAH']) || (!empty($specLama['tanah_items']) && empty($specLama['mesin_items'])) || (!empty($rawNew['tanah_luas_m2']) && empty($rawNew['mesin_merk']));
-                    $isGedung = in_array($asalKibAset, ['KIB C', 'C', 'GEDUNG', 'BANGUNAN']) || (!empty($specLama['gedung_items']) && empty($specLama['mesin_items'])) || (!empty($rawNew['gedung_luas_lantai_m2']) && empty($rawNew['mesin_merk']));
-                    $isJaringan = in_array($asalKibAset, ['KIB D', 'D', 'JALAN', 'JARINGAN', 'IRIGASI']) || (!empty($specLama['jaringan_items']) && empty($specLama['mesin_items']));
-                    $isLainnya = in_array($asalKibAset, ['KIB E', 'E', 'ASET TETAP LAINNYA', 'LAINNYA']) || (!empty($specLama['lainnya_items']) && empty($specLama['mesin_items']));
+                    // Simpan juga spesifikasi fisik (Tanah / Gedung / Jaringan / Lainnya / Mesin) sesuai wujud asal aset & kode 108 tujuan
+                    $isTanah = in_array($asalKibAset, ['KIB A', 'A', 'TANAH']) || str_ends_with($tujuanKodeForKemitraan, '.001') || (!empty($specLama['tanah_items']) && empty($specLama['mesin_items'])) || (!empty($rawNew['tanah_luas_m2']) && empty($rawNew['mesin_merk']));
+                    $isGedung = in_array($asalKibAset, ['KIB C', 'C', 'GEDUNG', 'BANGUNAN']) || str_ends_with($tujuanKodeForKemitraan, '.003') || (!empty($specLama['gedung_items']) && empty($specLama['mesin_items'])) || (!empty($rawNew['gedung_luas_lantai_m2']) && empty($rawNew['mesin_merk']));
+                    $isJaringan = in_array($asalKibAset, ['KIB D', 'D', 'JALAN', 'JARINGAN', 'IRIGASI']) || str_ends_with($tujuanKodeForKemitraan, '.004') || (!empty($specLama['jaringan_items']) && empty($specLama['mesin_items']));
+                    $isLainnya = in_array($asalKibAset, ['KIB E', 'E', 'ASET TETAP LAINNYA', 'LAINNYA']) || str_ends_with($tujuanKodeForKemitraan, '.005') || (!empty($specLama['lainnya_items']) && empty($specLama['mesin_items'])) || !empty($rawNew['lainnya_judul']) || !empty($rawNew['lainnya_pencipta']);
+
+                    $isTargetExtracom = !empty($rawNew['is_extracom']) || ($astap->category === 'EXTRACOM') || ($unitPrice <= 300000);
+                    $newSpec['is_extracom'] = $isTargetExtracom;
+                    $newSpec['is_extracomtable'] = $isTargetExtracom;
 
                     if ($isTanah) {
                         $tanahItems = [];
@@ -1405,13 +1409,18 @@ class ReklasifikasiController extends Controller
                             $oldL = $oldLainnyaList[$uIdx] ?? ($oldLainnyaList[0] ?? []);
                             $vol = max(1, (int) ($uItem['item_volume'] ?? ($uItem['lainnya_jumlah_barang'] ?? 1)));
                             $l = [
-                                'lainnya_nama_barang'    => $uItem['item_nama'] ?? ($uItem['lainnya_nama_barang'] ?? ($oldL['lainnya_nama_barang'] ?? $astap->nama_barang)),
+                                'lainnya_nama_barang'    => $uItem['item_nama'] ?? ($uItem['lainnya_nama_barang'] ?? ($rawNew['lainnya_nama_barang'] ?? ($oldL['lainnya_nama_barang'] ?? $astap->nama_barang))),
+                                'lainnya_judul'          => $uItem['lainnya_judul'] ?? ($rawNew['lainnya_judul'] ?? ($oldL['lainnya_judul'] ?? ($rawNew['lainnya_judul_pencipta'] ?? $astap->nama_barang))),
+                                'lainnya_pencipta'       => $uItem['lainnya_pencipta'] ?? ($rawNew['lainnya_pencipta'] ?? ($oldL['lainnya_pencipta'] ?? null)),
                                 'lainnya_judul_pencipta' => $uItem['lainnya_judul_pencipta'] ?? ($rawNew['lainnya_judul_pencipta'] ?? ($oldL['lainnya_judul_pencipta'] ?? $astap->nama_barang)),
                                 'lainnya_spesifikasi'    => $uItem['lainnya_spesifikasi'] ?? ($rawNew['lainnya_spesifikasi'] ?? ($oldL['lainnya_spesifikasi'] ?? '-')),
                                 'lainnya_asal_daerah'    => $uItem['lainnya_asal_daerah'] ?? ($rawNew['lainnya_asal_daerah'] ?? ($oldL['lainnya_asal_daerah'] ?? '-')),
                                 'lainnya_bahan'          => $uItem['lainnya_bahan'] ?? ($rawNew['lainnya_bahan'] ?? ($oldL['lainnya_bahan'] ?? 'Kertas / Kanvas / Lainnya')),
                                 'lainnya_ukuran'         => $uItem['lainnya_ukuran'] ?? ($rawNew['lainnya_ukuran'] ?? ($oldL['lainnya_ukuran'] ?? '-')),
-                                'lainnya_kondisi'        => $oldL['lainnya_kondisi'] ?? 'Baik',
+                                'lainnya_no_pabrik'      => $uItem['lainnya_no_pabrik'] ?? ($rawNew['lainnya_no_pabrik'] ?? ($oldL['lainnya_no_pabrik'] ?? null)),
+                                'lainnya_kondisi'        => $uItem['lainnya_kondisi'] ?? ($rawNew['lainnya_kondisi'] ?? ($oldL['lainnya_kondisi'] ?? 'Baik')),
+                                'kib_e_type'             => $uItem['kib_e_type'] ?? ($rawNew['kib_e_type'] ?? ($oldL['kib_e_type'] ?? 'buku')),
+                                'is_extracom'            => $isTargetExtracom,
                                 'lainnya_jumlah_barang'  => $vol,
                                 'lainnya_satuan'         => $uItem['item_satuan'] ?? ($astap->satuan ?: 'Buah'),
                                 'lainnya_nilai_satuan'   => $unitPrice,
@@ -1430,22 +1439,25 @@ class ReklasifikasiController extends Controller
                             $oldM = $oldMesinList[$uIdx] ?? ($oldMesinList[0] ?? []);
                             $vol = max(1, (int) ($uItem['item_volume'] ?? ($uItem['mesin_jumlah_barang'] ?? 1)));
                             $m = [
-                                'mesin_nama_barang'   => $uItem['item_nama'] ?? ($uItem['mesin_nama_barang'] ?? ($oldM['mesin_nama_barang'] ?? $astap->nama_barang)),
+                                'mesin_nama_barang'   => $uItem['item_nama'] ?? ($uItem['mesin_nama_barang'] ?? ($rawNew['mesin_nama_barang'] ?? ($oldM['mesin_nama_barang'] ?? $astap->nama_barang))),
                                 'mesin_merk'          => $uItem['mesin_merk'] ?? ($rawNew['mesin_merk'] ?? ($oldM['mesin_merk'] ?? ($specLama['merk'] ?? '-'))),
                                 'mesin_type'          => $uItem['mesin_type'] ?? ($rawNew['mesin_type'] ?? ($oldM['mesin_type'] ?? ($specLama['type'] ?? '-'))),
-                                'mesin_ukuran_cc'     => $uItem['mesin_ukuran_cc'] ?? ($rawNew['mesin_ukuran_cc'] ?? ($oldM['mesin_ukuran_cc'] ?? '-')),
+                                'mesin_ukuran_cc'     => $uItem['mesin_ukuran_cc'] ?? ($rawNew['mesin_ukuran_cc'] ?? ($rawNew['mesin_ukuran'] ?? ($oldM['mesin_ukuran_cc'] ?? ($oldM['mesin_ukuran'] ?? '-')))),
                                 'mesin_bahan'         => $uItem['mesin_bahan'] ?? ($rawNew['mesin_bahan'] ?? ($oldM['mesin_bahan'] ?? 'Logam / Komponen Elektronik')),
                                 'mesin_no_pabrik'     => $uItem['mesin_no_pabrik'] ?? ($rawNew['mesin_no_pabrik'] ?? ($oldM['mesin_no_pabrik'] ?? ($specLama['no_pabrik'] ?? '-'))),
                                 'mesin_no_rangka'     => $uItem['mesin_no_rangka'] ?? ($rawNew['mesin_no_rangka'] ?? ($oldM['mesin_no_rangka'] ?? '-')),
                                 'mesin_no_mesin'      => $uItem['mesin_no_mesin'] ?? ($rawNew['mesin_no_mesin'] ?? ($oldM['mesin_no_mesin'] ?? '-')),
                                 'mesin_no_polisi'     => $uItem['mesin_no_polisi'] ?? ($rawNew['mesin_no_polisi'] ?? ($oldM['mesin_no_polisi'] ?? '-')),
                                 'mesin_no_bpkb'       => $uItem['mesin_no_bpkb'] ?? ($rawNew['mesin_no_bpkb'] ?? ($oldM['mesin_no_bpkb'] ?? '-')),
-                                'mesin_kondisi'       => $oldM['mesin_kondisi'] ?? 'Baik',
+                                'mesin_tahun_pembuatan'=> $uItem['mesin_tahun_pembuatan'] ?? ($rawNew['mesin_tahun_pembuatan'] ?? ($oldM['mesin_tahun_pembuatan'] ?? null)),
+                                'mesin_kondisi'       => $uItem['mesin_kondisi'] ?? ($rawNew['mesin_kondisi'] ?? ($oldM['mesin_kondisi'] ?? 'Baik')),
+                                'mesin_keterangan'    => $uItem['mesin_keterangan'] ?? ($rawNew['mesin_keterangan'] ?? ($oldM['mesin_keterangan'] ?? null)),
                                 'mesin_ruang_pemegang'=> $uItem['mesin_ruang_pemegang'] ?? ($astap->registers->skip($regCursor)->first()?->ruang_pemegang ?? 'Instalasi Perbekalan'),
                                 'mesin_jumlah_barang' => $vol,
                                 'mesin_satuan'        => $uItem['item_satuan'] ?? ($astap->satuan ?: 'Unit'),
                                 'mesin_nilai_satuan'  => $unitPrice,
                                 'mesin_total_nilai'   => $vol * $unitPrice,
+                                'is_extracom'         => $isTargetExtracom,
                             ];
                             $mesinItems[] = $m;
                             if (!empty($m['mesin_no_pabrik']) && $m['mesin_no_pabrik'] !== '-') {
