@@ -534,6 +534,23 @@ class MutasiEksternalController extends Controller
             $tahunMasuk = (string) ($astap?->tahun_perolehan ?: date('Y', strtotime($tglRaw)));
             $volAset = (int) ($m->jumlah_volume ?: ($itemCount ?: 1));
 
+            $displayRegisters = $registers;
+            if ($isKeluar && $m->mutasiRegisters && $m->mutasiRegisters->isNotEmpty()) {
+                $outRegs = $m->mutasiRegisters->map(function ($mr) {
+                    $r = $mr->register;
+                    if (!$r) return null;
+                    $arr = $r->toArray();
+                    if ($mr->kondisi) {
+                        $arr['kondisi'] = $mr->kondisi;
+                    }
+                    return $arr;
+                })->filter()->values();
+
+                if ($outRegs->isNotEmpty()) {
+                    $displayRegisters = $outRegs;
+                }
+            }
+
             return [
                 'id'                        => $astap?->id ?: $m->id,
                 'astap_id'                  => $astap?->id ?: $m->astap_id,
@@ -562,7 +579,7 @@ class MutasiEksternalController extends Controller
                 'total_realisasi_num'       => $nilaiReal,
                 'item_count'                => $itemCount,
                 'items'                     => $items,
-                'registers'                 => $registers->toArray(),
+                'registers'                 => is_array($displayRegisters) ? $displayRegisters : $displayRegisters->toArray(),
                 'kode_barang'               => $kode108 ?: $firstNibar,
                 'kode_108'                  => $kode108,
                 'kondisi'                   => $items[0]['kondisi'] ?? ($m->kondisi ?: 'Baik'),
@@ -1325,7 +1342,31 @@ class MutasiEksternalController extends Controller
         $specJson['kondisi'] = $dominantKondisi;
         $astapPayload['spesifikasi_json'] = $specJson;
 
-        DB::transaction(function () use ($item, $astapPayload, $data, $totalRealisasi, $totalVolume, $tahun, $kondisiItem, $dominantKondisi, $units, $jenisMutasi, $ruangNama, $ppkNama, $ppkNip, $dokumenPath, $existingDoc, $request) {
+        // Validasi proteksi register: Jangan biarkan pengurangan volume menghapus unit yang sudah dimutasi keluar atau didistribusikan
+        $existingRegs = AstapRegister::where('astap_id', $item->id)->where('is_deleted', 0)->orderBy('id')->get();
+        $currentRegsCount = $existingRegs->count();
+
+        if ($totalVolume < $currentRegsCount) {
+            $excessRegs = $existingRegs->slice($totalVolume);
+            foreach ($excessRegs as $excessReg) {
+                if ($excessReg->status === 'Mutasi Keluar OPD' || \App\Models\MutasiEksternalRegister::where('astap_register_id', $excessReg->id)->exists()) {
+                    $msg = "Volume tidak dapat dikurangi menjadi {$totalVolume} unit karena terdapat register unit ({$excessReg->nibar}) yang telah resmi diserahterimakan ke OPD lain (Mutasi Keluar).";
+                    if ($request->ajax() || $request->wantsJson()) {
+                        return response()->json(['success' => false, 'message' => $msg], 422);
+                    }
+                    return back()->withInput()->withErrors(['jumlah_volume' => $msg]);
+                }
+                if (\App\Models\DistribusiItemRegister::where('astap_register_id', $excessReg->id)->exists()) {
+                    $msg = "Volume tidak dapat dikurangi menjadi {$totalVolume} unit karena terdapat register unit ({$excessReg->nibar}) yang memiliki riwayat distribusi ruangan.";
+                    if ($request->ajax() || $request->wantsJson()) {
+                        return response()->json(['success' => false, 'message' => $msg], 422);
+                    }
+                    return back()->withInput()->withErrors(['jumlah_volume' => $msg]);
+                }
+            }
+        }
+
+        DB::transaction(function () use ($item, $astapPayload, $data, $totalRealisasi, $totalVolume, $tahun, $kondisiItem, $dominantKondisi, $units, $jenisMutasi, $ruangNama, $ppkNama, $ppkNip, $dokumenPath, $existingDoc, $existingRegs, $currentRegsCount, $request) {
             // 1. Update master Astap
             $item->update($astapPayload);
 
@@ -1578,10 +1619,26 @@ class MutasiEksternalController extends Controller
      */
     public function show($id)
     {
-        $mutasi = MutasiEksternal::with(['astap.registers', 'astap.jenisAstap', 'unit', 'user'])
-            ->where('astap_id', $id)
-            ->orWhere('id', $id)
-            ->firstOrFail();
+        $relations = [
+            'astap.registers', 
+            'astap.jenisAstap', 
+            'unit', 
+            'user',
+            'mutasiRegisters.register.astap.jenisAstap',
+            'mutasiRegisters.register.unit'
+        ];
+
+        $mutasi = MutasiEksternal::with($relations)
+            ->where('is_deleted', 0)
+            ->find($id);
+
+        if (!$mutasi) {
+            $mutasi = MutasiEksternal::with($relations)
+                ->where('is_deleted', 0)
+                ->where('astap_id', $id)
+                ->latest('id')
+                ->firstOrFail();
+        }
 
         return response()->json([
             'success' => true,
@@ -1739,10 +1796,26 @@ class MutasiEksternalController extends Controller
      */
     public function cetak($id)
     {
-        $mutasi = MutasiEksternal::with(['astap.registers', 'astap.jenisAstap', 'unit', 'user'])
-            ->where('astap_id', $id)
-            ->orWhere('id', $id)
-            ->firstOrFail();
+        $relations = [
+            'astap.registers', 
+            'astap.jenisAstap', 
+            'unit', 
+            'user',
+            'mutasiRegisters.register.astap.jenisAstap',
+            'mutasiRegisters.register.unit'
+        ];
+
+        $mutasi = MutasiEksternal::with($relations)
+            ->where('is_deleted', 0)
+            ->find($id);
+
+        if (!$mutasi) {
+            $mutasi = MutasiEksternal::with($relations)
+                ->where('is_deleted', 0)
+                ->where('astap_id', $id)
+                ->latest('id')
+                ->firstOrFail();
+        }
 
         return view('pages.mutasi_eksternal.cetak_bast', compact('mutasi'));
     }

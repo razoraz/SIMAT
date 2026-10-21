@@ -60,11 +60,13 @@
             <!-- Action 2: Input Mutasi Keluar (via Reklasifikasi) -->
             <a href="{{ route('master.reklasifikasi', ['tab' => 'matriks']) }}"
                 x-show="activeDirection === 'keluar'"
-                class="px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 active:bg-cyan-700 text-white text-xs font-bold shadow-lg shadow-cyan-600/30 hover:shadow-cyan-500/50 hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2 active:scale-95 cursor-pointer shrink-0 border border-cyan-500/30">
+                title="Pilih aset aktif RSUD yang akan dimutasi keluar ke OPD lain melalui fitur Reklasifikasi Aset"
+                class="px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 active:bg-cyan-700 text-white text-xs font-bold shadow-lg shadow-cyan-600/30 hover:shadow-cyan-500/50 hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2 active:scale-95 cursor-pointer shrink-0 border border-cyan-500/30 group">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
                 </svg>
                 <span>Input Mutasi Keluar (via Reklasifikasi)</span>
+                <span class="text-[10px] bg-cyan-700/70 text-cyan-200 px-1.5 py-0.5 rounded font-mono group-hover:bg-cyan-800 transition-colors">Pilih Aset RSUD</span>
             </a>
         </div>
     </div>

@@ -67,6 +67,7 @@
     <!-- Official Paper Document -->
     @php
         \Carbon\Carbon::setLocale('id');
+        $isKeluar = ($mutasi->tipe === 'keluar');
         $tglObj = $mutasi->tanggal_mutasi ?: ($mutasi->astap?->created_at ?: now());
         $hariTgl = \Carbon\Carbon::parse($tglObj)->isoFormat('dddd');
         $tglFormatted = \Carbon\Carbon::parse($tglObj)->isoFormat('D MMMM Y');
@@ -84,10 +85,11 @@
             $mutasi->ruangan_tujuan ?: 'RSUD'
         );
 
-        // Data Resmi Pejabat SIMAT RSUD dr. H. Koesnadi Bondowoso
-        // Pihak Kedua: Pengurus Barang Pengguna RSUD (BUDI HARTONO, S.Sos)
+        // Data Pejabat Pengurus Barang RSUD dr. H. Koesnadi
         $isPjYus = str_contains(strtolower($mutasi->pj_tujuan_nama ?? ''), 'yus');
-        $pbNama = (!$isPjYus && !empty($mutasi->pj_tujuan_nama)) ? $mutasi->pj_tujuan_nama : 'BUDI HARTONO, S.Sos';
+        $pbNama = (!$isPjYus && !empty($mutasi->pj_tujuan_nama) && !str_contains(strtolower($mutasi->pj_tujuan_nama), 'pejabat penerima')) 
+            ? $mutasi->pj_tujuan_nama 
+            : 'BUDI HARTONO, S.Sos';
         $pbNip = (!$isPjYus && !empty($mutasi->pj_tujuan_nip) && !str_contains($mutasi->pj_tujuan_nip, '19771002') && !str_contains($mutasi->pj_tujuan_nip, '19690412'))
             ? $mutasi->pj_tujuan_nip 
             : '19760229 200801 1 010';
@@ -102,8 +104,89 @@
         $nomorSurat = $mutasi->nomor_bamb ?: ($astap?->bast_dokumen_nomor ?: ('BAST-EXT-' . str_pad($mutasi->id, 4, '0', STR_PAD_LEFT) . '/430.10.7/' . date('Y', strtotime($tglObj))));
         $opdAsal = $mutasi->opd_asal ?: ($astap?->mutasi_asal ?: 'SKPD / Instansi Luar');
         $ruangRSUD = $mutasi->unit?->nama ?: ($mutasi->ruangan_tujuan ?: ($astap?->alamat_barang ?: 'Gudang/Ruangan RSUD'));
-        $opdTujuan = $mutasi->opd_tujuan ?: ('RSUD dr. H. Koesnandi (' . $ruangRSUD . ')');
+        $opdTujuan = $mutasi->opd_tujuan ?: ('RSUD dr. H. Koesnadi (' . $ruangRSUD . ')');
         $alamatInstansi = $mutasi->alamat_instansi ?: ($mutasi->astap?->spesifikasi_json['alamat_instansi'] ?? '');
+
+        // Identitas Pihak Kesatu & Pihak Kedua Disesuaikan dengan Arah Mutasi
+        if ($isKeluar) {
+            // Mutasi Keluar: Pihak Kesatu = RSUD Dr. H. Koesnadi (Menyerahkan), Pihak Kedua = OPD Luar (Menerima)
+            $p1Nama = $mutasi->pj_asal_nama ?: $pbNama;
+            $p1Nip = ($mutasi->pj_asal_nip && $mutasi->pj_asal_nip !== '-') ? $mutasi->pj_asal_nip : $pbNip;
+            $p1Jabatan = $mutasi->pj_asal_jabatan ?: 'Pengurus Barang Pengguna';
+            $p1Instansi = 'RSUD dr. H. Koesnadi Kabupaten Bondowoso';
+            $p1Alamat = 'Jl. Kapten Piere Tendean No. 3, Bondowoso';
+
+            $p2Nama = $mutasi->pj_tujuan_nama ?: 'Pejabat Penerima OPD';
+            $p2Nip = $mutasi->pj_tujuan_nip ?: '-';
+            $p2Jabatan = $mutasi->pj_tujuan_jabatan ?: 'Pejabat Penerima OPD';
+            $p2Instansi = $mutasi->opd_tujuan ?: 'SKPD / Instansi Luar';
+            $p2Alamat = $alamatInstansi ?: '-';
+        } else {
+            // Mutasi Masuk: Pihak Kesatu = OPD Luar (Menyerahkan), Pihak Kedua = RSUD Dr. H. Koesnadi (Menerima)
+            $p1Nama = $mutasi->pj_asal_nama ?: 'Pejabat Penyerah OPD';
+            $p1Nip = $mutasi->pj_asal_nip ?: '-';
+            $p1Jabatan = $mutasi->pj_asal_jabatan ?: 'Pengurus Barang / PPK Asal';
+            $p1Instansi = $opdAsal;
+            $p1Alamat = $alamatInstansi;
+
+            $p2Nama = $pbNama;
+            $p2Nip = $pbNip;
+            $p2Jabatan = $pbJabatan;
+            $p2Instansi = 'RSUD dr. H. Koesnadi Kabupaten Bondowoso (Unit: ' . $ruangRSUD . ')';
+            $p2Alamat = 'Jl. Kapten Piere Tendean No. 3, Bondowoso';
+        }
+
+        // Rincian Barang / Unit yang Diserahterimakan
+        $printItems = [];
+        if ($isKeluar && $mutasi->mutasiRegisters && $mutasi->mutasiRegisters->isNotEmpty()) {
+            foreach ($mutasi->mutasiRegisters as $mr) {
+                $reg = $mr->register;
+                $ast = $reg?->astap ?: $astap;
+                $uNama = $ast?->nama_barang ?: 'Barang Mutasi Eksternal';
+                $uKondisi = $mr->kondisi ?: ($reg?->kondisi ?: ($mutasi->kondisi ?: 'Baik'));
+                $uHarga = (float)($reg?->harga_satuan ?: ($ast?->harga_satuan ?: $hargaSatuan));
+                $printItems[] = [
+                    'nama_barang'  => $uNama,
+                    'nibar'        => $reg?->nibar ?: ($reg?->no_register ?: '-'),
+                    'kode_108'     => $ast?->kode_108 ?: $kode108,
+                    'kondisi'      => $uKondisi,
+                    'satuan'       => $ast?->satuan ?: ($mutasi->satuan ?: 'Unit'),
+                    'harga_satuan' => $uHarga,
+                    'volume'       => 1,
+                    'nilai_total'  => $uHarga,
+                ];
+            }
+        } elseif ($registers->isNotEmpty()) {
+            foreach ($registers as $idx => $reg) {
+                $uNama = $extractedUnits[$idx]['nama'] ?? ($astap?->nama_barang ?: 'Barang Mutasi Eksternal');
+                $uKondisi = $reg->kondisi ?: ($extractedUnits[$idx]['kondisi'] ?? ($mutasi->kondisi ?: 'Baik'));
+                $uHarga = !empty($extractedUnits[$idx]['nilai_satuan']) ? (float)$extractedUnits[$idx]['nilai_satuan'] : $hargaSatuan;
+                $printItems[] = [
+                    'nama_barang'  => $uNama,
+                    'nibar'        => $reg->nibar ?: '-',
+                    'kode_108'     => $kode108,
+                    'kondisi'      => $uKondisi,
+                    'satuan'       => $mutasi->satuan ?: ($astap?->satuan ?: 'Unit'),
+                    'harga_satuan' => $uHarga,
+                    'volume'       => 1,
+                    'nilai_total'  => $uHarga,
+                ];
+            }
+        } else {
+            $printItems[] = [
+                'nama_barang'  => $astap?->nama_barang ?: 'Barang Mutasi Eksternal',
+                'nibar'        => '-',
+                'kode_108'     => $kode108,
+                'kondisi'      => $mutasi->kondisi ?: 'Baik',
+                'satuan'       => $mutasi->satuan ?: ($astap?->satuan ?: 'Unit'),
+                'harga_satuan' => $hargaSatuan,
+                'volume'       => $totalVol,
+                'nilai_total'  => $nilaiTotal,
+            ];
+        }
+
+        $printTotalVol = array_sum(array_column($printItems, 'volume')) ?: $totalVol;
+        $printNilaiTotal = array_sum(array_column($printItems, 'nilai_total')) ?: $nilaiTotal;
     @endphp
 
     <div class="print-container w-full max-w-[760px] shrink-0 bg-white text-black p-8 sm:p-12 md:p-14 shadow-2xl rounded-sm space-y-3.5 select-text print:p-0 print:m-0 print:shadow-none print:max-w-none"
@@ -131,7 +214,7 @@
         <!-- JUDUL SURAT RESMI & NOMOR -->
         <div class="text-center text-black mb-3">
             <h3 class="font-bold text-[11pt] sm:text-[11.5pt] uppercase underline tracking-normal text-black m-0">
-                {{ $mutasi->tipe === 'keluar' ? 'BERITA ACARA SERAH TERIMA PEMINDAHTANGANAN BMD' : 'BERITA ACARA SERAH TERIMA BARANG MILIK DAERAH (BMD)' }}
+                {{ $isKeluar ? 'BERITA ACARA SERAH TERIMA PEMINDAHTANGANAN BMD' : 'BERITA ACARA SERAH TERIMA BARANG MILIK DAERAH (BMD)' }}
             </h3>
             <p class="text-[9.5pt] sm:text-[10pt] font-semibold text-black mt-1 m-0">
                 Nomor : <span>{{ $nomorSurat }}</span>
@@ -140,7 +223,7 @@
 
         <!-- KLAUSUL PEMBUKA -->
         <p class="text-justify mb-2.5 text-[9.5pt] sm:text-[10pt] leading-[1.5] text-black">
-            Pada hari ini <strong>{{ $hariTgl }}</strong> tanggal <strong>{{ $tglFormatted }}</strong>, bertempat di Rumah Sakit Umum Daerah dr. H. Koesnandi Kabupaten Bondowoso, yang bertanda tangan di bawah ini :
+            Pada hari ini <strong>{{ $hariTgl }}</strong> tanggal <strong>{{ $tglFormatted }}</strong>, bertempat di Rumah Sakit Umum Daerah dr. H. Koesnadi Kabupaten Bondowoso, yang bertanda tangan di bawah ini :
         </p>
 
         <!-- IDENTITAS PIHAK KESATU & PIHAK KEDUA -->
@@ -151,32 +234,32 @@
                     <td style="border: none !important; width: 22px; vertical-align: top; padding: 1.5px 0;" class="font-bold">1.</td>
                     <td style="border: none !important; width: 130px; vertical-align: top; padding: 1.5px 0;">Nama</td>
                     <td style="border: none !important; width: 15px; vertical-align: top; padding: 1.5px 0;">:</td>
-                    <td style="border: none !important; vertical-align: top; padding: 1.5px 0;" class="font-bold uppercase">{{ $mutasi->pj_asal_nama ?: 'Pejabat Penyerah OPD' }}</td>
+                    <td style="border: none !important; vertical-align: top; padding: 1.5px 0;" class="font-bold uppercase">{{ $p1Nama }}</td>
                 </tr>
                 <tr style="border: none !important;">
                     <td style="border: none !important; padding: 1.5px 0;"></td>
                     <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">NIP</td>
                     <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">:</td>
-                    <td style="border: none !important; vertical-align: top; padding: 1.5px 0;" class="font-mono">{{ $mutasi->pj_asal_nip ?: '-' }}</td>
+                    <td style="border: none !important; vertical-align: top; padding: 1.5px 0;" class="font-mono">{{ $p1Nip }}</td>
                 </tr>
                 <tr style="border: none !important;">
                     <td style="border: none !important; padding: 1.5px 0;"></td>
                     <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">Jabatan</td>
                     <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">:</td>
-                    <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">{{ $mutasi->pj_asal_jabatan ?: 'Pengurus Barang / PPK Asal' }}</td>
+                    <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">{{ $p1Jabatan }}</td>
                 </tr>
                 <tr style="border: none !important;">
                     <td style="border: none !important; padding: 1.5px 0;"></td>
                     <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">Instansi / OPD</td>
                     <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">:</td>
-                    <td style="border: none !important; vertical-align: top; padding: 1.5px 0;" class="font-bold uppercase">{{ $opdAsal }}</td>
+                    <td style="border: none !important; vertical-align: top; padding: 1.5px 0;" class="font-bold uppercase">{{ $p1Instansi }}</td>
                 </tr>
-                @if(!empty($alamatInstansi))
+                @if(!empty($p1Alamat) && $p1Alamat !== '-')
                 <tr style="border: none !important;">
                     <td style="border: none !important; padding: 1.5px 0;"></td>
                     <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">Alamat Instansi</td>
                     <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">:</td>
-                    <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">{{ $alamatInstansi }}</td>
+                    <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">{{ $p1Alamat }}</td>
                 </tr>
                 @endif
                 <tr style="border: none !important;">
@@ -191,26 +274,34 @@
                     <td style="border: none !important; width: 22px; vertical-align: top; padding: 1.5px 0;" class="font-bold">2.</td>
                     <td style="border: none !important; width: 130px; vertical-align: top; padding: 1.5px 0;">Nama</td>
                     <td style="border: none !important; width: 15px; vertical-align: top; padding: 1.5px 0;">:</td>
-                    <td style="border: none !important; vertical-align: top; padding: 1.5px 0;" class="font-bold uppercase">{{ $pbNama }}</td>
+                    <td style="border: none !important; vertical-align: top; padding: 1.5px 0;" class="font-bold uppercase">{{ $p2Nama }}</td>
                 </tr>
                 <tr style="border: none !important;">
                     <td style="border: none !important; padding: 1.5px 0;"></td>
                     <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">NIP</td>
                     <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">:</td>
-                    <td style="border: none !important; vertical-align: top; padding: 1.5px 0;" class="font-mono">{{ $pbNip }}</td>
+                    <td style="border: none !important; vertical-align: top; padding: 1.5px 0;" class="font-mono">{{ $p2Nip }}</td>
                 </tr>
                 <tr style="border: none !important;">
                     <td style="border: none !important; padding: 1.5px 0;"></td>
                     <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">Jabatan</td>
                     <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">:</td>
-                    <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">{{ $pbJabatan }}</td>
+                    <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">{{ $p2Jabatan }}</td>
                 </tr>
                 <tr style="border: none !important;">
                     <td style="border: none !important; padding: 1.5px 0;"></td>
                     <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">Instansi / Unit</td>
                     <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">:</td>
-                    <td style="border: none !important; vertical-align: top; padding: 1.5px 0;" class="font-bold uppercase">RSUD dr. H. Koesnandi Kabupaten Bondowoso (Unit: {{ $ruangRSUD }})</td>
+                    <td style="border: none !important; vertical-align: top; padding: 1.5px 0;" class="font-bold uppercase">{{ $p2Instansi }}</td>
                 </tr>
+                @if(!empty($p2Alamat) && $p2Alamat !== '-')
+                <tr style="border: none !important;">
+                    <td style="border: none !important; padding: 1.5px 0;"></td>
+                    <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">Alamat Instansi</td>
+                    <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">:</td>
+                    <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">{{ $p2Alamat }}</td>
+                </tr>
+                @endif
                 <tr style="border: none !important;">
                     <td style="border: none !important; padding: 1.5px 0;"></td>
                     <td colspan="3" style="border: none !important; padding: 2px 0 4px 0;" class="italic">
@@ -246,65 +337,39 @@
                     </tr>
                 </thead>
                 <tbody style="background-color: #ffffff !important; color: #000000 !important;">
-                    @if($registers->isNotEmpty())
-                        @foreach($registers as $idx => $reg)
-                        @php
-                            $uNama = $extractedUnits[$idx]['nama'] ?? ($astap->nama_barang ?: 'Barang Mutasi Eksternal');
-                            $uKondisi = $reg->kondisi ?: ($extractedUnits[$idx]['kondisi'] ?? ($mutasi->kondisi ?: 'Baik'));
-                            $uHarga = !empty($extractedUnits[$idx]['nilai_satuan']) ? $extractedUnits[$idx]['nilai_satuan'] : $hargaSatuan;
-                            $isBaik = ($uKondisi === 'Baik' || empty($uKondisi));
-                            $isKB = ($uKondisi === 'Kurang Baik' || $uKondisi === 'KB' || $uKondisi === 'Rusak Ringan' || $uKondisi === 'RR');
-                            $isRB = ($uKondisi === 'Rusak Berat' || $uKondisi === 'RB' || $uKondisi === 'Rusak');
-                        @endphp
-                        <tr style="border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;">
-                            <td class="px-1.5 py-1 text-center" style="border: 1px solid black;">{{ $idx + 1 }}</td>
-                            <td class="px-2 py-1 text-left font-bold" style="border: 1px solid black;">{{ $uNama }}</td>
-                            <td class="px-2 py-1 font-mono text-[8.5pt] text-left break-all" style="border: 1px solid black;">
-                                <div>{{ $kode108 }}</div>
-                                @if($reg->nibar)
-                                <div class="text-[8pt] text-black">NIBAR: {{ $reg->nibar }}</div>
-                                @endif
-                            </td>
-                            <td class="px-1 py-1 text-center font-bold" style="border: 1px solid black;">1</td>
-                            <td class="px-1 py-1 text-center" style="border: 1px solid black;">{{ $mutasi->satuan ?: ($astap->satuan ?: 'Unit') }}</td>
-                            <td class="px-1 py-1 text-center text-[8.5pt]" style="border: 1px solid black;">{{ $isBaik ? '✓' : '' }}</td>
-                            <td class="px-1 py-1 text-center text-[8.5pt]" style="border: 1px solid black;">{{ $isKB ? '✓' : '' }}</td>
-                            <td class="px-1 py-1 text-center text-[8.5pt]" style="border: 1px solid black;">{{ $isRB ? '✓' : '' }}</td>
-                            <td class="px-2 py-1 text-right font-mono text-[8.5pt]" style="border: 1px solid black;">{{ number_format($uHarga, 0, ',', '.') }}</td>
-                            <td class="px-2 py-1 text-right font-mono font-bold text-[8.5pt]" style="border: 1px solid black;">{{ number_format($uHarga, 0, ',', '.') }}</td>
-                        </tr>
-                        @endforeach
-                    @else
-                        @php
-                            $knd = $mutasi->kondisi ?: 'Baik';
-                            $isBaik = ($knd === 'Baik' || empty($knd));
-                            $isKB = ($knd === 'Kurang Baik' || $knd === 'KB' || $knd === 'Rusak Ringan' || $knd === 'RR');
-                            $isRB = ($knd === 'Rusak Berat' || $knd === 'RB' || $knd === 'Rusak');
-                        @endphp
-                        <tr style="border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;">
-                            <td class="px-1.5 py-1 text-center" style="border: 1px solid black;">1</td>
-                            <td class="px-2 py-1 text-left font-bold" style="border: 1px solid black;">{{ $astap?->nama_barang ?: 'Barang Mutasi Eksternal' }}</td>
-                            <td class="px-2 py-1 font-mono text-[8.5pt] text-left break-all" style="border: 1px solid black;">
-                                <div>{{ $kode108 }}</div>
-                                <div class="text-[8pt] text-black">NIBAR: -</div>
-                            </td>
-                            <td class="px-1 py-1 text-center font-bold" style="border: 1px solid black;">{{ $totalVol }}</td>
-                            <td class="px-1 py-1 text-center" style="border: 1px solid black;">{{ $mutasi->satuan ?: ($astap?->satuan ?: 'Unit') }}</td>
-                            <td class="px-1 py-1 text-center text-[8.5pt]" style="border: 1px solid black;">{{ $isBaik ? '✓' : '' }}</td>
-                            <td class="px-1 py-1 text-center text-[8.5pt]" style="border: 1px solid black;">{{ $isKB ? '✓' : '' }}</td>
-                            <td class="px-1 py-1 text-center text-[8.5pt]" style="border: 1px solid black;">{{ $isRB ? '✓' : '' }}</td>
-                            <td class="px-2 py-1 text-right font-mono text-[8.5pt]" style="border: 1px solid black;">{{ number_format($hargaSatuan, 0, ',', '.') }}</td>
-                            <td class="px-2 py-1 text-right font-mono font-bold text-[8.5pt]" style="border: 1px solid black;">{{ number_format($nilaiTotal, 0, ',', '.') }}</td>
-                        </tr>
-                    @endif
+                    @foreach($printItems as $idx => $pItem)
+                    @php
+                        $knd = $pItem['kondisi'] ?? 'Baik';
+                        $isBaik = ($knd === 'Baik' || $knd === 'B' || empty($knd));
+                        $isKB = ($knd === 'Kurang Baik' || $knd === 'KB' || $knd === 'Rusak Ringan' || $knd === 'RR');
+                        $isRB = ($knd === 'Rusak Berat' || $knd === 'RB' || $knd === 'Rusak');
+                    @endphp
+                    <tr style="border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;">
+                        <td class="px-1.5 py-1 text-center" style="border: 1px solid black;">{{ $idx + 1 }}</td>
+                        <td class="px-2 py-1 text-left font-bold" style="border: 1px solid black;">{{ $pItem['nama_barang'] }}</td>
+                        <td class="px-2 py-1 font-mono text-[8.5pt] text-left break-all" style="border: 1px solid black;">
+                            <div>{{ $pItem['kode_108'] }}</div>
+                            @if(!empty($pItem['nibar']) && $pItem['nibar'] !== '-')
+                            <div class="text-[8pt] text-black">NIBAR: {{ $pItem['nibar'] }}</div>
+                            @endif
+                        </td>
+                        <td class="px-1 py-1 text-center font-bold" style="border: 1px solid black;">{{ $pItem['volume'] }}</td>
+                        <td class="px-1 py-1 text-center" style="border: 1px solid black;">{{ $pItem['satuan'] }}</td>
+                        <td class="px-1 py-1 text-center text-[8.5pt]" style="border: 1px solid black;">{{ $isBaik ? '✓' : '' }}</td>
+                        <td class="px-1 py-1 text-center text-[8.5pt]" style="border: 1px solid black;">{{ $isKB ? '✓' : '' }}</td>
+                        <td class="px-1 py-1 text-center text-[8.5pt]" style="border: 1px solid black;">{{ $isRB ? '✓' : '' }}</td>
+                        <td class="px-2 py-1 text-right font-mono text-[8.5pt]" style="border: 1px solid black;">{{ number_format($pItem['harga_satuan'], 0, ',', '.') }}</td>
+                        <td class="px-2 py-1 text-right font-mono font-bold text-[8.5pt]" style="border: 1px solid black;">{{ number_format($pItem['nilai_total'], 0, ',', '.') }}</td>
+                    </tr>
+                    @endforeach
 
                     <!-- BARIS TOTAL JUMLAH -->
                     <tr style="font-weight: 700; border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;">
                         <td colspan="3" style="border: 1px solid black; padding: 5px 8px; text-align: right; text-transform: uppercase;">Total Aset Yang Diserahkan</td>
-                        <td style="border: 1px solid black; padding: 5px 4px; text-align: center;">{{ $totalVol }}</td>
-                        <td style="border: 1px solid black; padding: 5px 4px; text-align: center;">{{ $mutasi->satuan ?: ($astap?->satuan ?: 'Unit') }}</td>
+                        <td style="border: 1px solid black; padding: 5px 4px; text-align: center;">{{ $printTotalVol }}</td>
+                        <td style="border: 1px solid black; padding: 5px 4px; text-align: center;">{{ $printItems[0]['satuan'] ?? ($mutasi->satuan ?: 'Unit') }}</td>
                         <td colspan="3" style="border: 1px solid black;"></td>
-                        <td colspan="2" style="border: 1px solid black; padding: 5px 8px; text-align: right; font-family: monospace; font-size: 9.5pt;">Rp {{ number_format($nilaiTotal, 0, ',', '.') }}</td>
+                        <td colspan="2" style="border: 1px solid black; padding: 5px 8px; text-align: right; font-family: monospace; font-size: 9.5pt;">Rp {{ number_format($printNilaiTotal, 0, ',', '.') }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -312,7 +377,7 @@
 
         @if($mutasi->alasan_mutasi)
         <div class="my-2.5 p-2 rounded border border-black text-[9pt] leading-relaxed" style="background-color: #ffffff !important; color: #000000 !important;">
-            <strong>Maksud / Catatan Mutasi Masuk:</strong>
+            <strong>{{ $isKeluar ? 'Maksud / Catatan Mutasi Keluar:' : 'Maksud / Catatan Mutasi Masuk:' }}</strong>
             <span>{{ $mutasi->alasan_mutasi }}</span>
         </div>
         @endif
@@ -326,46 +391,86 @@
         <div class="mt-5 pt-2 space-y-4" style="color: #000000 !important;">
             <!-- Baris Atas: Pihak Kesatu & Pihak Kedua -->
             <div class="grid grid-cols-2 gap-8 text-center text-black text-[9.5pt] sm:text-[10pt]" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; color: #000000 !important;">
-                <!-- Kolom Kiri: PIHAK KESATU (Yang Menyerahkan - OPD Luar) -->
-                <div>
-                    <p class="m-0">Yang Menyerahkan,</p>
-                    <p class="font-bold m-0">{{ $opdAsal }}</p>
-                    
-                    <!-- Ruang TTD Basah (Tinggi 55px) -->
-                    <div class="my-1 flex items-center justify-center" style="height: 55px; min-height: 55px;"></div>
-
-                    <p class="font-bold underline uppercase m-0">{{ $mutasi->pj_asal_nama ?: 'Pejabat Penyerah OPD' }}</p>
-                    <p class="m-0">{{ $mutasi->pj_asal_nip && $mutasi->pj_asal_nip !== '-' ? 'NIP. ' . $mutasi->pj_asal_nip : 'NIP. ..........................................' }}</p>
-                </div>
-
-                <!-- Kolom Kanan: PIHAK KEDUA (Yang Menerima - Pengurus Barang RSUD) -->
-                <div>
-                    <p class="m-0">Yang Menerima,</p>
-                    <p class="font-bold m-0">Pengurus Barang Pengguna</p>
-                    
-                    <!-- TTD Elektronik BSrE Pengurus Barang (Pak Budi Hartono) -->
-                    <div class="my-1 flex items-center justify-center" style="height: 55px; min-height: 55px;">
-                        @if($mutasi->signed)
-                        <div style="padding:4px; border:1.5px solid #16a34a; background:#f0fdf4; border-radius:5px; display:inline-flex; align-items:center; gap:6px; text-align:left;">
-                            @php
-                                $qrHash = $mutasi->qr_hash ?: md5($mutasi->nomor_bamb ?: ('ME-' . $mutasi->id));
-                                $qrUrl = url('/validasi-tte/' . $qrHash);
-                            @endphp
-                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data={{ urlencode($qrUrl) }}" alt="QR TTE" style="width:36px; height:36px; flex-shrink:0;">
-                            <div style="font-size:7.5px; line-height:1.35; color:#1e293b;">
-                                <div style="font-weight:700; color:#14532d;">DITANDATANGANI ELEKTRONIK</div>
-                                <div style="color:#374151;">Pengurus Barang Aset</div>
-                                <div style="font-size:6.5px; color:#6b7280; font-family:monospace;">Sertifikat BSrE - BSSN</div>
+                
+                @if($isKeluar)
+                    <!-- KELUAR: Kolom Kiri = Yang Menyerahkan (RSUD Koesnadi) -->
+                    <div>
+                        <p class="m-0">Yang Menyerahkan,</p>
+                        <p class="font-bold m-0">{{ $p1Jabatan }}</p>
+                        
+                        <!-- TTD Elektronik BSrE RSUD jika signed -->
+                        <div class="my-1 flex items-center justify-center" style="height: 55px; min-height: 55px;">
+                            @if($mutasi->signed)
+                            <div style="padding:4px; border:1.5px solid #16a34a; background:#f0fdf4; border-radius:5px; display:inline-flex; align-items:center; gap:6px; text-align:left;">
+                                @php
+                                    $qrHash = $mutasi->qr_hash ?: md5($mutasi->nomor_bamb ?: ('ME-' . $mutasi->id));
+                                    $qrUrl = url('/validasi-tte/' . $qrHash);
+                                @endphp
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data={{ urlencode($qrUrl) }}" alt="QR TTE" style="width:36px; height:36px; flex-shrink:0;">
+                                <div style="font-size:7.5px; line-height:1.35; color:#1e293b;">
+                                    <div style="font-weight:700; color:#14532d;">DITANDATANGANI ELEKTRONIK</div>
+                                    <div style="color:#374151;">Pengurus Barang Aset</div>
+                                    <div style="font-size:6.5px; color:#6b7280; font-family:monospace;">Sertifikat BSrE - BSSN</div>
+                                </div>
                             </div>
+                            @endif
                         </div>
-                        @else
-                        <!-- Ruang Bersih untuk Tanda Tangan Basah & Stempel -->
-                        @endif
+
+                        <p class="font-bold underline uppercase m-0">{{ $p1Nama }}</p>
+                        <p class="m-0">NIP. {{ $p1Nip }}</p>
                     </div>
 
-                    <p class="font-bold underline uppercase m-0">{{ $pbNama }}</p>
-                    <p class="m-0">NIP. {{ $pbNip }}</p>
-                </div>
+                    <!-- KELUAR: Kolom Kanan = Yang Menerima (Pejabat Penerima OPD Luar) -->
+                    <div>
+                        <p class="m-0">Yang Menerima,</p>
+                        <p class="font-bold m-0">{{ $p2Instansi }}</p>
+                        
+                        <!-- Ruang TTD Basah -->
+                        <div class="my-1 flex items-center justify-center" style="height: 55px; min-height: 55px;"></div>
+
+                        <p class="font-bold underline uppercase m-0">{{ $p2Nama }}</p>
+                        <p class="m-0">{{ $p2Nip && $p2Nip !== '-' ? 'NIP. ' . $p2Nip : 'NIP. ..........................................' }}</p>
+                    </div>
+                @else
+                    <!-- MASUK: Kolom Kiri = Yang Menyerahkan (OPD Luar) -->
+                    <div>
+                        <p class="m-0">Yang Menyerahkan,</p>
+                        <p class="font-bold m-0">{{ $p1Instansi }}</p>
+                        
+                        <!-- Ruang TTD Basah -->
+                        <div class="my-1 flex items-center justify-center" style="height: 55px; min-height: 55px;"></div>
+
+                        <p class="font-bold underline uppercase m-0">{{ $p1Nama }}</p>
+                        <p class="m-0">{{ $p1Nip && $p1Nip !== '-' ? 'NIP. ' . $p1Nip : 'NIP. ..........................................' }}</p>
+                    </div>
+
+                    <!-- MASUK: Kolom Kanan = Yang Menerima (Pengurus Barang RSUD) -->
+                    <div>
+                        <p class="m-0">Yang Menerima,</p>
+                        <p class="font-bold m-0">{{ $p2Jabatan }}</p>
+                        
+                        <!-- TTD Elektronik BSrE RSUD jika signed -->
+                        <div class="my-1 flex items-center justify-center" style="height: 55px; min-height: 55px;">
+                            @if($mutasi->signed)
+                            <div style="padding:4px; border:1.5px solid #16a34a; background:#f0fdf4; border-radius:5px; display:inline-flex; align-items:center; gap:6px; text-align:left;">
+                                @php
+                                    $qrHash = $mutasi->qr_hash ?: md5($mutasi->nomor_bamb ?: ('ME-' . $mutasi->id));
+                                    $qrUrl = url('/validasi-tte/' . $qrHash);
+                                @endphp
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data={{ urlencode($qrUrl) }}" alt="QR TTE" style="width:36px; height:36px; flex-shrink:0;">
+                                <div style="font-size:7.5px; line-height:1.35; color:#1e293b;">
+                                    <div style="font-weight:700; color:#14532d;">DITANDATANGANI ELEKTRONIK</div>
+                                    <div style="color:#374151;">Pengurus Barang Aset</div>
+                                    <div style="font-size:6.5px; color:#6b7280; font-family:monospace;">Sertifikat BSrE - BSSN</div>
+                                </div>
+                            </div>
+                            @endif
+                        </div>
+
+                        <p class="font-bold underline uppercase m-0">{{ $p2Nama }}</p>
+                        <p class="m-0">NIP. {{ $p2Nip }}</p>
+                    </div>
+                @endif
             </div>
 
             <!-- Baris Bawah: Mengetahui DIREKTUR RSUD Dr. H. Koesnandi -->

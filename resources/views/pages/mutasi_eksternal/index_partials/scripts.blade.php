@@ -129,7 +129,10 @@
             // Hitung statistik kondisi dari registers suatu aset (Hanya 3 Kondisi: Baik, Kurang Baik, Rusak Berat)
             getKondisiStats(item) {
                 if (!item) return { total: 0, baik: 0, kurang_baik: 0, rusak_ringan: 0, rusak_berat: 0, pct_baik: 100, pct_kb: 0, pct_rr: 0, pct_rb: 0, kondisi_dominan: 'Baik', is_multi: false, text: 'Baik (100%)', badge_class: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30', dot_class: 'bg-emerald-400' };
-                const regs = item.registers || [];
+                let regs = item.registers || [];
+                if (regs.length === 0 && item.items && item.items.length > 0) {
+                    regs = item.items;
+                }
                 const total = regs.length;
                 if (total === 0) {
                     const k = item.kondisi || item.kondisi_barang || 'Baik';
@@ -225,9 +228,21 @@
 
             get filteredRegisters() {
                 const target = this.selectedAstapDetail || this.selectedMutasi;
-                if (!target || !target.registers) return [];
+                if (!target) return [];
+                let regs = target.registers || [];
+                if (regs.length === 0 && target.items && target.items.length > 0) {
+                    regs = target.items.map((it, idx) => ({
+                        id: it.id || (idx + 1),
+                        nibar: it.nibar || it.kode_barang || '-',
+                        no_register: it.nibar || ('REG-' + (idx + 1)),
+                        kondisi: it.kondisi || 'Baik',
+                        ruang_pemegang: it.ruangan_asal || (target.opd_tujuan || 'SKPD Penerima'),
+                        status: target.tipe === 'keluar' ? 'Mutasi Keluar OPD' : 'Aktif'
+                    }));
+                }
+                if (!regs || regs.length === 0) return [];
                 const q = (this.detailSearchQuery || '').toLowerCase().trim();
-                return target.registers.filter(reg => {
+                return regs.filter(reg => {
                     if (this.detailPenempatanFilter === 'sudah' && !reg.ruang_pemegang) return false;
                     if (this.detailPenempatanFilter === 'belum' && reg.ruang_pemegang) return false;
                     if (this.detailKondisiFilter !== 'all') {
@@ -556,12 +571,13 @@
             toggleSign(doc) {
                 if (!doc) return;
                 doc.signed = !doc.signed;
+                const tipeLabel = doc.tipe === 'keluar' ? 'BAST Mutasi Keluar' : 'BAST Mutasi Masuk';
                 if (doc.signed) {
                     doc.qr_hash = doc.qr_hash || `BSRE-KOESNANDI-PLP-${doc.id || 1}-${doc.tahun || 2026}`;
                     if (typeof window.showSimatToast === 'function') {
-                        window.showSimatToast('✍️ BAST Mutasi Masuk berhasil disahkan secara digital (BSrE Aktif)!', 'success');
+                        window.showSimatToast(`✍️ ${tipeLabel} berhasil disahkan secara digital (BSrE Aktif)!`, 'success');
                     } else {
-                        alert('✍️ BAST Mutasi Masuk berhasil disahkan secara digital (BSrE Aktif)!');
+                        alert(`✍️ ${tipeLabel} berhasil disahkan secara digital (BSrE Aktif)!`);
                     }
                 } else {
                     if (typeof window.showSimatToast === 'function') {
@@ -604,7 +620,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>BAST Mutasi Masuk BMD - ${this.printDoc?.nomor_bast || 'RSUD Dr. H. Koesnandi'}</title>
+    <title>${this.printDoc?.tipe === 'keluar' ? 'BAST Mutasi Keluar BMD' : 'BAST Mutasi Masuk BMD'} - ${this.printDoc?.nomor_bast || 'RSUD Dr. H. Koesnandi'}</title>
     ${headStyles}
     <style>
         @page {

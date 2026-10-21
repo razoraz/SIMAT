@@ -604,7 +604,7 @@
                             <div class="flex items-center space-x-2">
                                 <span class="text-xs font-extrabold text-cyan-400 uppercase tracking-wider">🏷️ RINCIAN NIBAR &amp; PENEMPATAN RUANGAN (REGISTER):</span>
                             </div>
-                            <p class="text-[10px] text-slate-400 mt-0.5">Daftar unik kode NIBAR per-aset hasil mutasi masuk beserta ruangan penempatannya di RSUD Koesnandi.</p>
+                            <p class="text-[10px] text-slate-400 mt-0.5" x-text="(selectedMutasi && selectedMutasi.tipe === 'keluar') ? 'Daftar kode NIBAR unit aset yang dimutasi keluar ke instansi / OPD tujuan.' : 'Daftar unik kode NIBAR per-aset hasil mutasi masuk beserta ruangan penempatannya di RSUD Koesnandi.'"></p>
                         </div>
                         <div class="flex items-center space-x-2 shrink-0">
                             <span class="text-[10px] font-extrabold px-3 py-1 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-mono shadow-sm"
@@ -712,7 +712,7 @@
 
                 <!-- 8. CATATAN / MAKSUD & ALASAN MUTASI -->
                 <div class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-1">
-                    <span class="text-slate-400 text-[10px] block font-bold uppercase tracking-wider">💡 Maksud &amp; Alasan Mutasi Masuk Antar-OPD:</span>
+                    <span class="text-slate-400 text-[10px] block font-bold uppercase tracking-wider" x-text="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? '💡 Maksud &amp; Alasan Mutasi Keluar Antar-OPD:' : '💡 Maksud &amp; Alasan Mutasi Masuk Antar-OPD:'"></span>
                     <p class="text-slate-200 text-xs leading-relaxed" x-text="(selectedAstapDetail || selectedMutasi).alasan_mutasi || (selectedAstapDetail || selectedMutasi).mutasi_keterangan || '-'"></p>
                 </div>
             </div>

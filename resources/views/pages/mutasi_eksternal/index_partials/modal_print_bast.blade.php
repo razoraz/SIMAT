@@ -9,7 +9,7 @@
             <div class="flex items-center space-x-2">
                 <span class="p-2 rounded-xl bg-purple-500/20 text-purple-300 text-sm">🏛️</span>
                 <div>
-                    <h3 class="text-base font-extrabold text-white">Berita Acara Serah Terima (BAST) Mutasi Masuk BMD</h3>
+                    <h3 class="text-base font-extrabold text-white" x-text="printDoc && printDoc.tipe === 'keluar' ? 'Berita Acara Serah Terima (BAST) Mutasi Keluar BMD' : 'Berita Acara Serah Terima (BAST) Mutasi Masuk BMD'"></h3>
                     <p class="text-[11px] text-slate-400 font-mono" x-text="printDoc ? ('Nomor BAST: ' + (printDoc.nomor_bast || printDoc.kode || '-')) : ''"></p>
                 </div>
             </div>
@@ -45,7 +45,7 @@
             <div x-show="showEditForm" class="no-print bg-slate-950 p-4 rounded-2xl border border-purple-500/40 text-xs space-y-3.5 shadow-inner">
                 <div class="flex items-center justify-between border-b border-slate-800 pb-2">
                     <span class="font-bold text-purple-300 text-[11px] uppercase tracking-wider flex items-center space-x-1.5">
-                        <span>✏️ Live Edit BAST Mutasi Masuk BMD (Otomatis Berubah Pada Lembar Cetak):</span>
+                        <span x-text="printDoc.tipe === 'keluar' ? '✏️ Live Edit BAST Mutasi Keluar BMD (Otomatis Berubah Pada Lembar Cetak):' : '✏️ Live Edit BAST Mutasi Masuk BMD (Otomatis Berubah Pada Lembar Cetak):'"></span>
                     </span>
                     <span class="text-[10px] text-emerald-400 font-mono">Teks di kertas cetak otomatis sinkron</span>
                 </div>
@@ -53,7 +53,7 @@
                 <!-- Baris 1: Informasi Dokumen & Tanggal -->
                 <div class="grid grid-cols-2 sm:grid-cols-6 gap-2.5">
                     <div class="col-span-2">
-                        <label class="block text-slate-400 text-[10px] mb-1">Nomor BAST Mutasi Masuk</label>
+                        <label class="block text-slate-400 text-[10px] mb-1" x-text="printDoc.tipe === 'keluar' ? 'Nomor BAST Mutasi Keluar' : 'Nomor BAST Mutasi Masuk'"></label>
                         <input type="text" x-model="printDoc.nomor_bast" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-purple-300 font-mono font-bold text-xs">
                     </div>
                     <div>
@@ -74,12 +74,13 @@
                     </div>
                 </div>
 
-                <!-- Baris 2: Pihak Kesatu (Yang Menyerahkan / OPD Luar) -->
+                <!-- Baris 2: Pihak Kesatu (Yang Menyerahkan) -->
                 <div class="pt-2 border-t border-slate-800/80">
-                    <span class="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider block mb-2">1. Pihak Kesatu (Yang Menyerahkan / SKPD Pengirim):</span>
+                    <span class="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider block mb-2"
+                        x-text="printDoc.tipe === 'keluar' ? '1. Pihak Kesatu (Yang Menyerahkan / RSUD Dr. H. Koesnandi):' : '1. Pihak Kesatu (Yang Menyerahkan / SKPD Pengirim):'"></span>
                     <div class="grid grid-cols-1 sm:grid-cols-5 gap-2.5">
                         <div class="col-span-1 sm:col-span-2">
-                            <label class="block text-slate-400 text-[10px] mb-1">Nama Instansi / OPD Pengirim</label>
+                            <label class="block text-slate-400 text-[10px] mb-1" x-text="printDoc.tipe === 'keluar' ? 'Nama Instansi / OPD Penyerah' : 'Nama Instansi / OPD Pengirim'"></label>
                             <input type="text" x-model="printDoc.opd_asal" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-cyan-300 font-bold text-xs">
                         </div>
                         <div class="col-span-1">
@@ -97,16 +98,17 @@
                     </div>
                 </div>
 
-                <!-- Baris 3: Pihak Kedua (Yang Menerima / RSUD Koesnandi) & Direktur -->
+                <!-- Baris 3: Pihak Kedua (Yang Menerima) & Direktur -->
                 <div class="pt-2 border-t border-slate-800/80">
-                    <span class="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider block mb-2">2. Pihak Kedua (Yang Menerima / RSUD) & Pejabat Pengesah:</span>
+                    <span class="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider block mb-2"
+                        x-text="printDoc.tipe === 'keluar' ? '2. Pihak Kedua (Yang Menerima / OPD Luar) & Pejabat Pengesah:' : '2. Pihak Kedua (Yang Menerima / RSUD) & Pejabat Pengesah:'"></span>
                     <div class="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
                         <div>
-                            <label class="block text-slate-400 text-[10px] mb-1">Nama Pengurus Barang (Penerima)</label>
+                            <label class="block text-slate-400 text-[10px] mb-1" x-text="printDoc.tipe === 'keluar' ? 'Nama Pejabat Penerima OPD' : 'Nama Pengurus Barang (Penerima)'"></label>
                             <input type="text" x-model="printDoc.pj_tujuan_nama" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-emerald-300 font-bold text-xs">
                         </div>
                         <div>
-                            <label class="block text-slate-400 text-[10px] mb-1">NIP Pengurus Barang</label>
+                            <label class="block text-slate-400 text-[10px] mb-1" x-text="printDoc.tipe === 'keluar' ? 'NIP Pejabat Penerima' : 'NIP Pengurus Barang'"></label>
                             <input type="text" x-model="printDoc.pj_tujuan_nip" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-slate-200 font-mono text-xs">
                         </div>
                         <div>
@@ -293,10 +295,10 @@
                         </table>
                     </div>
 
-                    <!-- ALASAN / MAKSUD MUTASI MASUK -->
+                    <!-- ALASAN / MAKSUD MUTASI -->
                     <div class="my-2.5 p-2 rounded border border-black text-[9pt] leading-relaxed" style="background-color: #ffffff !important; color: #000000 !important;">
-                        <strong>Maksud / Catatan Mutasi Masuk:</strong>
-                        <span x-text="printDoc.alasan_mutasi || 'Mutasi masuk aset barang milik daerah dari OPD luar ke RSUD dr. H. Koesnandi Kabupaten Bondowoso.'"></span>
+                        <strong x-text="printDoc.tipe === 'keluar' ? 'Maksud / Catatan Mutasi Keluar:' : 'Maksud / Catatan Mutasi Masuk:'"></strong>
+                        <span x-text="printDoc.alasan_mutasi || (printDoc.tipe === 'keluar' ? 'Pelimpahan / pemindahtanganan aset barang milik daerah dari RSUD dr. H. Koesnandi ke instansi/OPD tujuan.' : 'Mutasi masuk aset barang milik daerah dari OPD luar ke RSUD dr. H. Koesnandi Kabupaten Bondowoso.')"></span>
                     </div>
 
                     <!-- KLAUSUL PENUTUP -->
@@ -308,26 +310,37 @@
                     <div class="mt-5 pt-2 space-y-4" style="color: #000000 !important;">
                         <!-- Baris Atas: Pihak Kesatu & Pihak Kedua -->
                         <div class="grid grid-cols-2 gap-8 text-center text-black text-[9.5pt] sm:text-[10pt]" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; color: #000000 !important;">
-                            <!-- Kolom Kiri: PIHAK KESATU (Yang Menyerahkan - OPD Luar) -->
+                            <!-- Kolom Kiri: PIHAK KESATU (Yang Menyerahkan) -->
                             <div>
                                 <p class="m-0">Yang Menyerahkan,</p>
-                                <p class="font-bold m-0" x-text="printDoc.opd_asal"></p>
+                                <p class="font-bold m-0" x-text="printDoc.tipe === 'keluar' ? 'Pengurus Barang Pengguna' : printDoc.opd_asal"></p>
                                 
-                                <!-- Ruang TTD Basah (Tinggi 55px) -->
-                                <div class="my-1 flex items-center justify-center" style="height: 55px; min-height: 55px;"></div>
+                                <!-- TTD Elektronik BSrE jika Mutasi Keluar (RSUD Menyerahkan) ATAU Ruang TTD Basah jika Mutasi Masuk (OPD Menyerahkan) -->
+                                <div class="my-1 flex items-center justify-center" style="height: 55px; min-height: 55px;">
+                                    <template x-if="printDoc.tipe === 'keluar' && printDoc.signed !== false">
+                                        <div style="padding:4px; border:1.5px solid #16a34a; background:#f0fdf4; border-radius:5px; display:inline-flex; align-items:center; gap:6px; text-align:left;">
+                                            <img :src="getQrCodeSvg(window.location.origin + '/validasi-tte/' + (printDoc.qr_hash || printDoc.nomor_bast || 'BSRE-MUTASI-EKSTERNAL'))" alt="QR TTE" style="width:36px; height:36px; flex-shrink:0;">
+                                            <div style="font-size:7.5px; line-height:1.35; color:#1e293b;">
+                                                <div style="font-weight:700; color:#14532d;">DITANDATANGANI ELEKTRONIK</div>
+                                                <div style="color:#374151;">Pengurus Barang Pengguna</div>
+                                                <div style="font-size:6.5px; color:#6b7280; font-family:monospace;">Sertifikat BSrE - BSSN</div>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
 
                                 <p class="font-bold underline uppercase m-0" x-text="printDoc.pj_asal_nama"></p>
                                 <p class="m-0" x-text="printDoc.pj_asal_nip && printDoc.pj_asal_nip !== '-' ? 'NIP. ' + printDoc.pj_asal_nip : ''"></p>
                             </div>
 
-                            <!-- Kolom Kanan: PIHAK KEDUA (Yang Menerima - Pengurus Barang RSUD) -->
+                            <!-- Kolom Kanan: PIHAK KEDUA (Yang Menerima) -->
                             <div>
                                 <p class="m-0">Yang Menerima,</p>
-                                <p class="font-bold m-0">Pengurus Barang Pengguna</p>
+                                <p class="font-bold m-0" x-text="printDoc.tipe === 'keluar' ? (printDoc.opd_tujuan || 'Pengurus Barang OPD Penerima') : 'Pengurus Barang Pengguna'"></p>
                                 
-                                <!-- TTD Elektronik BSrE Pengurus Barang (Pak Budi Hartono) -->
+                                <!-- TTD Elektronik BSrE jika Mutasi Masuk (RSUD Menerima) ATAU Ruang TTD Basah jika Mutasi Keluar (OPD Menerima) -->
                                 <div class="my-1 flex items-center justify-center" style="height: 55px; min-height: 55px;">
-                                    <template x-if="printDoc.signed !== false">
+                                    <template x-if="printDoc.tipe !== 'keluar' && printDoc.signed !== false">
                                         <div style="padding:4px; border:1.5px solid #16a34a; background:#f0fdf4; border-radius:5px; display:inline-flex; align-items:center; gap:6px; text-align:left;">
                                             <img :src="getQrCodeSvg(window.location.origin + '/validasi-tte/' + (printDoc.qr_hash || printDoc.nomor_bast || 'BSRE-MUTASI-EKSTERNAL'))" alt="QR TTE" style="width:36px; height:36px; flex-shrink:0;">
                                             <div style="font-size:7.5px; line-height:1.35; color:#1e293b;">
@@ -340,7 +353,7 @@
                                 </div>
 
                                 <p class="font-bold underline uppercase m-0" x-text="printDoc.pj_tujuan_nama"></p>
-                                <p class="m-0" x-text="'NIP. ' + printDoc.pj_tujuan_nip"></p>
+                                <p class="m-0" x-text="printDoc.pj_tujuan_nip && printDoc.pj_tujuan_nip !== '-' ? 'NIP. ' + printDoc.pj_tujuan_nip : ''"></p>
                             </div>
                         </div>
 
