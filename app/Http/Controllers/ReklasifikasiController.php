@@ -1299,6 +1299,7 @@ class ReklasifikasiController extends Controller
                         ];
                     }
                     $newSpec['kemitraan_items']       = $kemitraanItems;
+                    $newSpec['tipe_kemitraan']        = 'dimanfaatkan';
                     $newSpec['skema_kemitraan']       = $kemitraanItems[0]['skema_kemitraan'] ?? 'Sewa';
                     $newSpec['mitra_nama']            = $kemitraanItems[0]['mitra_nama'] ?? '-';
                     $newSpec['mitra_pimpinan']        = $kemitraanItems[0]['mitra_pimpinan'] ?? null;
@@ -1881,6 +1882,7 @@ class ReklasifikasiController extends Controller
                     $spec = $targetSpec;
                     $kemitraanData = [
                         'astap_id'         => $targetAstap->id,
+                        'tipe_kemitraan'   => 'dimanfaatkan',
                         'objek_astap_id'   => $astap->id,
                         'objek_register_id'=> $firstTransferredReg?->id ?? null,
                         'objek_nibar'      => $firstTransferredReg?->nibar ?? null,
@@ -1968,6 +1970,9 @@ class ReklasifikasiController extends Controller
                     $existingKemitraan = $astap->kemitraan ?? $kemitraan;
                     $kemitraanData = [
                         'astap_id'         => $astap->id,
+                        'tipe_kemitraan'   => 'dimanfaatkan',
+                        'objek_astap_id'   => null,
+                        'objek_register_id'=> null,
                         'mitra_nama'       => $spec['mitra_nama'] ?? ($validated['spesifikasi_baru']['kemitraan_mitra'] ?? ($existingKemitraan?->mitra_nama ?? 'Mitra Pihak Ketiga')),
                         'mitra_pimpinan'   => $spec['mitra_pimpinan'] ?? ($validated['spesifikasi_baru']['kemitraan_pimpinan'] ?? ($existingKemitraan?->mitra_pimpinan ?? null)),
                         'mitra_alamat'     => $spec['mitra_alamat'] ?? ($validated['spesifikasi_baru']['kemitraan_alamat'] ?? ($existingKemitraan?->mitra_alamat ?? null)),

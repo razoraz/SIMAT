@@ -645,7 +645,7 @@
                         <table class="w-full text-left text-[11px] text-slate-300 min-w-[640px]">
                             <thead class="bg-slate-950 text-slate-400 font-bold uppercase text-[9.5px] border-b border-slate-800 shadow-sm" style="position: sticky; top: 0; z-index: 10; background-color: #020617;">
                                 <tr>
-                                    <th class="px-3.5 py-2.5 text-center">NIBAR &amp; No. Register Resmi</th>
+                                    <th class="px-3.5 py-2.5 text-center">NIBAR RESMI</th>
                                     <th class="px-3.5 py-2.5 text-center" x-text="(selectedMutasi && selectedMutasi.tipe === 'keluar') ? 'Instansi Tujuan' : 'Penempatan Ruangan'">Penempatan Ruangan</th>
                                     <th class="px-3.5 py-2.5 text-center">Kondisi</th>
                                     <th class="px-3.5 py-2.5 text-center whitespace-nowrap">QR Code</th>
