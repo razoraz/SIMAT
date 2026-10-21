@@ -3757,6 +3757,204 @@
                 }
             },
 
+            parseKemitraanDuration(text) {
+                if (!text || typeof text !== 'string') return null;
+                const str = text.trim().toLowerCase();
+                if (!str) return null;
+
+                let totalMonths = 0;
+                let totalDays = 0;
+                let matched = false;
+
+                const decimalYearMatch = str.match(/^([\d]+[.,][\d]+)\s*(?:tahun|thn|th|y|year|years)?$/);
+                if (decimalYearMatch) {
+                    const num = parseFloat(decimalYearMatch[1].replace(',', '.'));
+                    if (!isNaN(num) && num > 0) {
+                        const m = Math.round(num * 12);
+                        return { years: Math.floor(m / 12), months: m % 12, days: 0 };
+                    }
+                }
+
+                const yearMatch = str.match(/(\d+)\s*(?:tahun|thn|th|y|year|years)\b/);
+                if (yearMatch) {
+                    totalMonths += parseInt(yearMatch[1], 10) * 12;
+                    matched = true;
+                }
+
+                const monthMatch = str.match(/(\d+)\s*(?:bulan|bln|bl|mo|month|months)\b/);
+                if (monthMatch) {
+                    totalMonths += parseInt(monthMatch[1], 10);
+                    matched = true;
+                }
+
+                const dayMatch = str.match(/(\d+)\s*(?:hari|hr|d|day|days)\b/);
+                if (dayMatch) {
+                    totalDays += parseInt(dayMatch[1], 10);
+                    matched = true;
+                }
+
+                if (!matched) {
+                    const plainNumMatch = str.match(/^(\d+)$/);
+                    if (plainNumMatch) {
+                        const num = parseInt(plainNumMatch[1], 10);
+                        if (num > 0) {
+                            if (num <= 30) {
+                                totalMonths += num * 12;
+                            } else {
+                                totalDays += num;
+                            }
+                            matched = true;
+                        }
+                    }
+                }
+
+                if (!matched || (totalMonths === 0 && totalDays === 0)) return null;
+
+                return {
+                    years: Math.floor(totalMonths / 12),
+                    months: totalMonths % 12,
+                    days: totalDays
+                };
+            },
+
+            computeKemitraanEndDate(startDateStr, durationObj) {
+                if (!startDateStr || !durationObj) return null;
+                let d;
+                if (typeof startDateStr === 'string' && startDateStr.includes('/')) {
+                    const p = startDateStr.split('/');
+                    d = new Date(parseInt(p[2], 10), parseInt(p[1], 10) - 1, parseInt(p[0], 10));
+                } else {
+                    const p = String(startDateStr).split('T')[0].split('-');
+                    d = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10));
+                }
+                if (isNaN(d.getTime())) return null;
+
+                if (durationObj.years > 0) {
+                    d.setFullYear(d.getFullYear() + durationObj.years);
+                }
+                if (durationObj.months > 0) {
+                    d.setMonth(d.getMonth() + durationObj.months);
+                }
+                if (durationObj.days > 0) {
+                    d.setDate(d.getDate() + durationObj.days);
+                }
+
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                return `${yyyy}-${mm}-${dd}`;
+            },
+
+            formatKemitraanDurationFromDates(startDateStr, endDateStr) {
+                if (!startDateStr || !endDateStr) return '';
+                let dM, dS;
+                if (typeof startDateStr === 'string' && startDateStr.includes('/')) {
+                    const p = startDateStr.split('/');
+                    dM = new Date(parseInt(p[2], 10), parseInt(p[1], 10) - 1, parseInt(p[0], 10));
+                } else {
+                    const p = String(startDateStr).split('T')[0].split('-');
+                    dM = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10));
+                }
+                if (typeof endDateStr === 'string' && endDateStr.includes('/')) {
+                    const p = endDateStr.split('/');
+                    dS = new Date(parseInt(p[2], 10), parseInt(p[1], 10) - 1, parseInt(p[0], 10));
+                } else {
+                    const p = String(endDateStr).split('T')[0].split('-');
+                    dS = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10));
+                }
+                if (isNaN(dM.getTime()) || isNaN(dS.getTime()) || dS < dM) return '';
+
+                let years = dS.getFullYear() - dM.getFullYear();
+                let months = dS.getMonth() - dM.getMonth();
+                let days = dS.getDate() - dM.getDate();
+
+                if (days < 0) {
+                    months -= 1;
+                    const prevMonthDate = new Date(dS.getFullYear(), dS.getMonth(), 0);
+                    days += prevMonthDate.getDate();
+                }
+                if (months < 0) {
+                    years -= 1;
+                    months += 12;
+                }
+
+                const parts = [];
+                if (years > 0) parts.push(`${years} Tahun`);
+                if (months > 0) parts.push(`${months} Bulan`);
+                if (days > 0 && years === 0) parts.push(`${days} Hari`);
+
+                if (parts.length === 0) {
+                    const diffMs = dS.getTime() - dM.getTime();
+                    const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+                    return diffDays > 0 ? `${diffDays} Hari` : '1 Hari';
+                }
+                return parts.join(' ');
+            },
+
+            calcReklasKemitraanDurasi() {
+                const tM = this.reklasSpekBaru?.kemitraan_tanggal_mulai;
+                const tS = this.reklasSpekBaru?.kemitraan_tanggal_selesai;
+                if (!tM || !tS) return;
+                const durText = this.formatKemitraanDurationFromDates(tM, tS);
+                if (durText) {
+                    this.reklasSpekBaru.kemitraan_jangka_waktu = durText;
+                    this.syncCurrentSpekToActiveItem();
+                }
+            },
+
+            onReklasKemitraanDurasiInput() {
+                const durText = this.reklasSpekBaru?.kemitraan_jangka_waktu;
+                if (!durText) return;
+                const parsed = this.parseKemitraanDuration(durText);
+                if (!parsed) return;
+
+                let tM = this.reklasSpekBaru.kemitraan_tanggal_mulai;
+                if (!tM) {
+                    tM = new Date().toISOString().split('T')[0];
+                    this.reklasSpekBaru.kemitraan_tanggal_mulai = tM;
+                }
+                const newEnd = this.computeKemitraanEndDate(tM, parsed);
+                if (newEnd) {
+                    this.reklasSpekBaru.kemitraan_tanggal_selesai = newEnd;
+                    this.syncCurrentSpekToActiveItem();
+                }
+            },
+
+            onReklasKemitraanTanggalMulaiChange() {
+                const durText = this.reklasSpekBaru?.kemitraan_jangka_waktu;
+                const parsed = durText ? this.parseKemitraanDuration(durText) : null;
+                const tM = this.reklasSpekBaru?.kemitraan_tanggal_mulai;
+                if (parsed && tM) {
+                    const newEnd = this.computeKemitraanEndDate(tM, parsed);
+                    if (newEnd) {
+                        this.reklasSpekBaru.kemitraan_tanggal_selesai = newEnd;
+                        this.syncCurrentSpekToActiveItem();
+                        return;
+                    }
+                }
+                this.calcReklasKemitraanDurasi();
+            },
+
+            setReklasKemitraanDurasiQuick(amount, unit) {
+                const unitText = unit === 'tahun' ? 'Tahun' : (unit === 'bulan' ? 'Bulan' : 'Hari');
+                this.reklasSpekBaru.kemitraan_jangka_waktu = `${amount} ${unitText}`;
+                let tM = this.reklasSpekBaru.kemitraan_tanggal_mulai;
+                if (!tM) {
+                    tM = new Date().toISOString().split('T')[0];
+                    this.reklasSpekBaru.kemitraan_tanggal_mulai = tM;
+                }
+                const parsed = {
+                    years: unit === 'tahun' ? amount : 0,
+                    months: unit === 'bulan' ? amount : 0,
+                    days: unit === 'hari' ? amount : 0
+                };
+                const newEnd = this.computeKemitraanEndDate(tM, parsed);
+                if (newEnd) {
+                    this.reklasSpekBaru.kemitraan_tanggal_selesai = newEnd;
+                    this.syncCurrentSpekToActiveItem();
+                }
+            },
+
             copyActiveSpekToAll() {
                 this.syncCurrentSpekToActiveItem();
                 const current = Object.assign({}, this.reklasSpekBaru);

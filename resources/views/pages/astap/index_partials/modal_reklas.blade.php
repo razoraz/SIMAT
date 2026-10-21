@@ -733,8 +733,8 @@
                                                 Tanggal Mulai Berlaku: <span class="text-rose-400">*</span>
                                             </label>
                                             <input type="date" x-model="reklasSpekBaru.kemitraan_tanggal_mulai"
-                                                @input="calcReklasKemitraanDurasi()"
-                                                @change="calcReklasKemitraanDurasi()"
+                                                @input="onReklasKemitraanTanggalMulaiChange()"
+                                                @change="onReklasKemitraanTanggalMulaiChange()"
                                                 class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
                                         </div>
                                         <div>
@@ -749,12 +749,41 @@
                                         </div>
                                     </div>
                                     <div>
-                                        <label class="block text-[10px] font-semibold text-slate-400 mb-1">
-                                            Estimasi Jangka Waktu / Durasi:
-                                        </label>
+                                        <div class="flex items-center justify-between mb-1">
+                                            <label class="text-[10px] font-semibold text-slate-400">
+                                                Estimasi Jangka Waktu / Durasi:
+                                            </label>
+                                            <span class="text-[9.5px] text-cyan-400 font-mono">⚡ Ketik 2 Tahun dkk, tanggal berakhir otomatis menyesuaikan</span>
+                                        </div>
                                         <input type="text" x-model="reklasSpekBaru.kemitraan_jangka_waktu"
-                                            placeholder="Contoh: 5 Tahun (2026 s/d 2031)"
-                                            class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            @input="onReklasKemitraanDurasiInput()"
+                                            @change="onReklasKemitraanDurasiInput()"
+                                            placeholder="Contoh: 2 Tahun / 6 Bulan / 90 Hari"
+                                            class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none font-medium">
+                                        <!-- Shortcut Preset Buttons -->
+                                        <div class="flex flex-wrap items-center gap-1.5 mt-2">
+                                            <span class="text-[9.5px] text-slate-500 font-medium mr-0.5">⚡ Pilihan Cepat:</span>
+                                            <button type="button" @click="setReklasKemitraanDurasiQuick(6, 'bulan')"
+                                                class="px-2 py-0.5 rounded-lg bg-slate-900 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 border border-slate-700/80 hover:border-cyan-500/40 text-[10px] font-semibold transition-all cursor-pointer active:scale-95">
+                                                +6 Bulan
+                                            </button>
+                                            <button type="button" @click="setReklasKemitraanDurasiQuick(1, 'tahun')"
+                                                class="px-2 py-0.5 rounded-lg bg-slate-900 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 border border-slate-700/80 hover:border-cyan-500/40 text-[10px] font-semibold transition-all cursor-pointer active:scale-95">
+                                                +1 Tahun
+                                            </button>
+                                            <button type="button" @click="setReklasKemitraanDurasiQuick(2, 'tahun')"
+                                                class="px-2 py-0.5 rounded-lg bg-slate-900 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 border border-slate-700/80 hover:border-cyan-500/40 text-[10px] font-semibold transition-all cursor-pointer active:scale-95">
+                                                +2 Tahun
+                                            </button>
+                                            <button type="button" @click="setReklasKemitraanDurasiQuick(3, 'tahun')"
+                                                class="px-2 py-0.5 rounded-lg bg-slate-900 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 border border-slate-700/80 hover:border-cyan-500/40 text-[10px] font-semibold transition-all cursor-pointer active:scale-95">
+                                                +3 Tahun
+                                            </button>
+                                            <button type="button" @click="setReklasKemitraanDurasiQuick(5, 'tahun')"
+                                                class="px-2 py-0.5 rounded-lg bg-slate-900 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 border border-slate-700/80 hover:border-cyan-500/40 text-[10px] font-semibold transition-all cursor-pointer active:scale-95">
+                                                +5 Tahun
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
 

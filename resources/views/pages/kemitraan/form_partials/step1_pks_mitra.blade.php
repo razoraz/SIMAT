@@ -928,6 +928,7 @@
                     <input type="text" 
                         x-datepicker="{ maxDate: formatDateToIso(formData.tanggal_selesai) || undefined }" 
                         x-model="formData.tanggal_mulai"
+                        @change="onTanggalMulaiKerjasamaChange()"
                         placeholder="dd/mm/yyyy"
                         :class="isTanggalMulaiInvalid() ? 'border-rose-500 focus:border-rose-400 bg-rose-950/20' : 'border-slate-700 focus:border-cyan-400 bg-slate-950'"
                         class="w-full border rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none transition-colors">
@@ -954,6 +955,7 @@
                     <input type="text" 
                         x-datepicker="{ minDate: formatDateToIso(formData.tanggal_mulai) || undefined }" 
                         x-model="formData.tanggal_selesai"
+                        @change="onTanggalSelesaiKerjasamaChange()"
                         placeholder="dd/mm/yyyy"
                         :class="isTanggalSelesaiInvalid() ? 'border-rose-500 focus:border-rose-400 bg-rose-950/20' : 'border-slate-700 focus:border-cyan-400 bg-slate-950'"
                         class="w-full border rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none transition-colors">
@@ -965,6 +967,49 @@
                             <span>Tanggal berakhir tidak boleh di bawah (lebih awal dari) tanggal mulai kerjasama!</span>
                         </div>
                     </template>
+                </div>
+            </div>
+
+            <!-- Input Estimasi Jangka Waktu / Durasi Konsesi -->
+            <div class="pt-3 border-t border-slate-800/80 space-y-2">
+                <div class="flex items-center justify-between flex-wrap gap-1">
+                    <label class="text-[11px] font-bold text-slate-300 flex items-center gap-1.5">
+                        <span>⏳</span>
+                        <span>Estimasi Jangka Waktu / Durasi Konsesi:</span>
+                    </label>
+                    <span class="text-[9.5px] text-cyan-400 font-mono">⚡ Ketik 2 Tahun dkk, tanggal berakhir otomatis menyesuaikan</span>
+                </div>
+                <div class="relative">
+                    <input type="text" 
+                        x-model="formData.jangka_waktu" 
+                        @input="onDurasiInputChange()" 
+                        @change="onDurasiInputChange()" 
+                        placeholder="Contoh: 2 Tahun / 6 Bulan / 90 Hari"
+                        class="w-full border border-slate-700 focus:border-cyan-400 bg-slate-950 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none transition-colors font-medium">
+                </div>
+                <!-- Shortcut Preset Pills -->
+                <div class="flex flex-wrap items-center gap-1.5 pt-1">
+                    <span class="text-[10px] text-slate-400 font-medium mr-0.5">⚡ Pilihan Cepat:</span>
+                    <button type="button" @click="setKemitraanDurasiQuick(6, 'bulan')" 
+                        class="px-2.5 py-1 rounded-lg bg-slate-800/90 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 border border-slate-700/80 hover:border-cyan-500/40 text-[10.5px] font-bold transition-all cursor-pointer active:scale-95 shadow-sm">
+                        +6 Bulan
+                    </button>
+                    <button type="button" @click="setKemitraanDurasiQuick(1, 'tahun')" 
+                        class="px-2.5 py-1 rounded-lg bg-slate-800/90 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 border border-slate-700/80 hover:border-cyan-500/40 text-[10.5px] font-bold transition-all cursor-pointer active:scale-95 shadow-sm">
+                        +1 Tahun
+                    </button>
+                    <button type="button" @click="setKemitraanDurasiQuick(2, 'tahun')" 
+                        class="px-2.5 py-1 rounded-lg bg-slate-800/90 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 border border-slate-700/80 hover:border-cyan-500/40 text-[10.5px] font-bold transition-all cursor-pointer active:scale-95 shadow-sm">
+                        +2 Tahun
+                    </button>
+                    <button type="button" @click="setKemitraanDurasiQuick(3, 'tahun')" 
+                        class="px-2.5 py-1 rounded-lg bg-slate-800/90 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 border border-slate-700/80 hover:border-cyan-500/40 text-[10.5px] font-bold transition-all cursor-pointer active:scale-95 shadow-sm">
+                        +3 Tahun
+                    </button>
+                    <button type="button" @click="setKemitraanDurasiQuick(5, 'tahun')" 
+                        class="px-2.5 py-1 rounded-lg bg-slate-800/90 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 border border-slate-700/80 hover:border-cyan-500/40 text-[10.5px] font-bold transition-all cursor-pointer active:scale-95 shadow-sm">
+                        +5 Tahun
+                    </button>
                 </div>
             </div>
             <p class="text-[10.5px] text-cyan-400/80 italic">
