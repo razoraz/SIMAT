@@ -110,9 +110,10 @@
         // Identitas Pihak Kesatu & Pihak Kedua Disesuaikan dengan Arah Mutasi
         if ($isKeluar) {
             // Mutasi Keluar: Pihak Kesatu = RSUD Dr. H. Koesnadi (Menyerahkan), Pihak Kedua = OPD Luar (Menerima)
-            $p1Nama = $mutasi->pj_asal_nama ?: $pbNama;
-            $p1Nip = ($mutasi->pj_asal_nip && $mutasi->pj_asal_nip !== '-') ? $mutasi->pj_asal_nip : $pbNip;
-            $p1Jabatan = $mutasi->pj_asal_jabatan ?: 'Pengurus Barang Pengguna';
+            $isP1Yus = str_contains(strtolower($mutasi->pj_asal_nama ?? ''), 'yus');
+            $p1Nama = (!$isP1Yus && !empty($mutasi->pj_asal_nama)) ? $mutasi->pj_asal_nama : $pbNama;
+            $p1Nip = (!$isP1Yus && !empty($mutasi->pj_asal_nip) && $mutasi->pj_asal_nip !== '-' && !str_contains($mutasi->pj_asal_nip, '19771002') && !str_contains($mutasi->pj_asal_nip, '19690412')) ? $mutasi->pj_asal_nip : $pbNip;
+            $p1Jabatan = (!$isP1Yus && !empty($mutasi->pj_asal_jabatan) && !str_contains(strtolower($mutasi->pj_asal_jabatan), 'direktur')) ? $mutasi->pj_asal_jabatan : 'Pengurus Barang Pengguna';
             $p1Instansi = 'RSUD dr. H. Koesnadi Kabupaten Bondowoso';
             $p1Alamat = 'Jl. Kapten Piere Tendean No. 3, Bondowoso';
 

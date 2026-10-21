@@ -877,9 +877,9 @@ class BeritaAcaraController extends Controller
             $judul = $ext->tipe === 'keluar' ? 'Berita Acara Serah Terima (BAST) Mutasi Keluar OPD' : 'Berita Acara Serah Terima (BAST) Mutasi Masuk OPD';
             $nomor = $ext->nomor_bamb ?: ('BAST-EXT-' . $ext->id);
             if ($ext->tipe === 'keluar') {
-                $nama = $ext->pj_asal_nama ?: 'dr. H. Yus Priyatna, Sp.P';
-                $nip = $ext->pj_asal_nip ?: '196904121999031004';
-                $jabatan = $ext->pj_asal_jabatan ?: 'Direktur RSUD Dr. H. Koesnandi';
+                $nama = ($ext->pj_asal_nama && !str_contains(strtolower($ext->pj_asal_nama), 'yus')) ? $ext->pj_asal_nama : 'BUDI HARTONO, S.Sos';
+                $nip = ($ext->pj_asal_nip && $ext->pj_asal_nip !== '-' && !str_contains($ext->pj_asal_nip, '19690412') && !str_contains($ext->pj_asal_nip, '19771002')) ? $ext->pj_asal_nip : '19760229 200801 1 010';
+                $jabatan = ($ext->pj_asal_jabatan && !str_contains(strtolower($ext->pj_asal_jabatan), 'direktur')) ? $ext->pj_asal_jabatan : 'Pengurus Barang Pengguna RSUD Dr. H. Koesnandi';
             } else {
                 $nama = $ext->pj_tujuan_nama ?: 'BUDI HARTONO, S.Sos';
                 $nip = $ext->pj_tujuan_nip ?: '19760229 200801 1 010';
@@ -888,8 +888,8 @@ class BeritaAcaraController extends Controller
             $tgl = $ext->tgl_signed ?: ($ext->tanggal_mutasi ? date('d/m/Y', strtotime($ext->tanggal_mutasi)) . ' WIB' : date('d/m/Y H:i') . ' WIB');
         }
 
-        // Fallback parser jika hash mengandung kata kunci PPK
-        if (str_contains($hash, 'PPK')) {
+        // Fallback parser jika hash mengandung kata kunci PPK (hanya bila tidak ditemukan record di database)
+        if (!$tw && !$dst && !$mts && !$ext && str_contains($hash, 'PPK')) {
             $nama = 'dr. YUS PRIYATNA ADRYANTO, Sp.P, FISR';
             $nip = '19771002 200604 1 006';
             $jabatan = 'Pejabat Pembuat Komitmen (PPK) RSUD dr. H. Koesnandi';

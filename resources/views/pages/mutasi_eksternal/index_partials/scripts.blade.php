@@ -533,9 +533,9 @@
                     // Pihak Kesatu & Pihak Kedua (Disesuaikan dengan Arah Mutasi: Masuk vs Keluar)
                     opd_asal: (item.tipe === 'keluar') ? 'RSUD dr. H. Koesnandi Kabupaten Bondowoso' : (item.opd_asal || 'Dinas Kesehatan Kabupaten Bondowoso'),
                     alamat_instansi: (item.tipe === 'keluar') ? 'Jl. Piere Tendean No. 1, Bondowoso' : (item.alamat_instansi || (item.astap && item.astap.spesifikasi_json ? item.astap.spesifikasi_json.alamat_instansi : '') || ''),
-                    pj_asal_nama: (item.tipe === 'keluar') ? (item.pj_asal_nama || 'BUDI HARTONO, S.Sos') : (item.pj_asal_nama || 'Pejabat Penyerah SKPD Pengirim'),
+                    pj_asal_nama: (item.tipe === 'keluar') ? ((item.pj_asal_nama && !item.pj_asal_nama.toLowerCase().includes('yus')) ? item.pj_asal_nama : 'BUDI HARTONO, S.Sos') : (item.pj_asal_nama || 'Pejabat Penyerah SKPD Pengirim'),
                     pj_asal_nip: (item.tipe === 'keluar') ? (item.pj_asal_nip || '19760229 200801 1 010') : (item.pj_asal_nip || '-'),
-                    pj_asal_jabatan: (item.tipe === 'keluar') ? (item.pj_asal_jabatan || 'Pengurus Barang Pengguna RSUD Dr. H. Koesnadi') : (item.pj_asal_jabatan || 'Pengurus Barang / PPK Asal'),
+                    pj_asal_jabatan: (item.tipe === 'keluar') ? ((item.pj_asal_jabatan && !item.pj_asal_jabatan.toLowerCase().includes('direktur')) ? item.pj_asal_jabatan : 'Pengurus Barang Pengguna RSUD Dr. H. Koesnadi') : (item.pj_asal_jabatan || 'Pengurus Barang / PPK Asal'),
                     nomor_sk_dasar: item.nomor_sk_dasar || '',
 
                     // Pihak Kedua

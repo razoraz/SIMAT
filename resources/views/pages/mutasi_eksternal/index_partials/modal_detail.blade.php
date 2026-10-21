@@ -243,7 +243,7 @@
                                 'text-orange-400': getEffectiveKibCategory(selectedAstapDetail || selectedMutasi) === 'KIB E',
                                 'text-amber-300': (selectedAstapDetail || selectedMutasi)?.category === 'EXTRACOM'
                             }">
-                            <span>🔍 Rincian Spesifikasi Mutasi Masuk (<span x-text="getEffectiveKibCategory(selectedAstapDetail || selectedMutasi)"></span>)</span>
+                            <span>🔍 <span x-text="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? 'Rincian Spesifikasi Aset Mutasi Keluar' : 'Rincian Spesifikasi Mutasi Masuk'"></span> (<span x-text="getEffectiveKibCategory(selectedAstapDetail || selectedMutasi)"></span>)</span>
                         </h4>
                         <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400"
                               x-text="'Spesifikasi Fisik ' + getEffectiveKibCategory(selectedAstapDetail || selectedMutasi)"></span>
