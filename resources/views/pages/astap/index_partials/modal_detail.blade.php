@@ -183,7 +183,7 @@
                         </div>
 
                         <!-- DOKUMEN BAMB MUTASI MASUK (DARI OPD LUAR) -->
-                        <div x-show="selectedAstapDetail?.sumber_dana === 'mutasi_eksternal' || selectedAstapDetail?.sumber_dana === 'pelimpahan_skpd' || selectedAstapDetail?.sumber_dana === 'mutasi_masuk' || selectedAstapDetail?.mutasi_nomor_bamb" class="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/30 space-y-2">
+                        <div x-show="(selectedAstapDetail?.sumber_dana === 'mutasi_eksternal' || selectedAstapDetail?.sumber_dana === 'pelimpahan_skpd' || selectedAstapDetail?.sumber_dana === 'mutasi_masuk') && selectedAstapDetail?.sumber_dana !== 'belanja_modal'" class="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/30 space-y-2">
                             <div class="flex items-center space-x-2 text-purple-300 font-extrabold text-xs uppercase tracking-wider">
                                 <span>📜 Dokumen Berita Acara Mutasi Barang (BAMB) / Mutasi Masuk</span>
                             </div>
@@ -1271,7 +1271,7 @@
                                                     </template>
                                                     <template x-if="reg.status !== 'Mutasi Keluar OPD' && selectedAstapDetail?.jenis_reklas !== 'MUTASI_EKSTERNAL' && reg.status !== 'Kemitraan' && selectedAstapDetail?.sumber_dana !== 'kemitraan' && selectedAstapDetail?.category !== 'KEMITRAAN' && !selectedAstapDetail?.kemitraan">
                                                         <span class="px-2.5 py-1 rounded-xl text-[9.5px] font-bold uppercase tracking-wider bg-slate-950 text-slate-400 border border-slate-800"
-                                                              x-text="reg.status || 'Tersedia'">
+                                                              x-text="(isRegisterPlacedInUnit(reg) || reg.status === 'Tidak Tersedia') ? 'Tidak Tersedia' : (reg.status || 'Tersedia')">
                                                         </span>
                                                     </template>
                                                 </td>

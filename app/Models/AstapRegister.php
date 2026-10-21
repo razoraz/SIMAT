@@ -16,6 +16,28 @@ class AstapRegister extends Model
         'deleted_at' => 'datetime',
     ];
 
+    protected static function booted()
+    {
+        static::saving(function ($reg) {
+            $specialStatuses = ['Mutasi Keluar OPD', 'Kemitraan', 'Dihibahkan', 'Dibatalkan'];
+            if (!in_array($reg->status, $specialStatuses)) {
+                $unplacedPlaceholders = [
+                    '', '-', 'belum ditempatkan', 'belum ditempatkan / di gudang',
+                    'belum ditempatkan / di gudang aset', 'gudang aset',
+                    'gudang aset utama / belum ditempatkan', 'gudang perbekalan'
+                ];
+                $clean = strtolower(trim((string)$reg->ruang_pemegang));
+                $isPlaced = !empty($reg->unit_id) || (!empty($clean) && !in_array($clean, $unplacedPlaceholders) && !str_starts_with($clean, 'kemitraan') && !str_starts_with($clean, 'telah dikembalikan'));
+
+                if ($isPlaced) {
+                    $reg->status = 'Tidak Tersedia';
+                } else {
+                    $reg->status = 'Tersedia';
+                }
+            }
+        });
+    }
+
     public function astap()
     {
         return $this->belongsTo(Astap::class);

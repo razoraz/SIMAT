@@ -29,17 +29,17 @@
                                     <div class="flex items-center space-x-1.5 mt-1">
                                         <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-extrabold whitespace-nowrap leading-none shrink-0 shadow-sm"
                                             :class="{
-                                                'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-amber-500/10': item.category === 'KIB A',
-                                                'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-cyan-500/10': item.category === 'KIB B',
-                                                'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-purple-500/10': item.category === 'KIB C',
-                                                'bg-teal-500/20 text-teal-300 border border-teal-500/40 shadow-teal-500/10': item.category === 'KIB D',
-                                                'bg-orange-500/20 text-orange-300 border border-orange-500/40 shadow-orange-500/10': item.category === 'KIB E',
-                                                'bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-rose-500/10': item.category === 'KIB F',
-                                                'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 shadow-indigo-500/10': item.category === 'ATB',
-                                                'bg-amber-400/20 text-amber-300 border border-amber-400/40 shadow-amber-400/10': item.category === 'EXTRACOM',
-                                                'bg-violet-500/20 text-violet-300 border border-violet-500/40 shadow-violet-500/10': item.category === 'ASET LAIN' || item.category === 'ASET LAINNYA'
+                                                'bg-amber-400/20 text-amber-300 border border-amber-400/40 shadow-amber-400/10': isItemExtracom(item),
+                                                'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-amber-500/10': !isItemExtracom(item) && item.category === 'KIB A',
+                                                'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-cyan-500/10': !isItemExtracom(item) && item.category === 'KIB B',
+                                                'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-purple-500/10': !isItemExtracom(item) && item.category === 'KIB C',
+                                                'bg-teal-500/20 text-teal-300 border border-teal-500/40 shadow-teal-500/10': !isItemExtracom(item) && item.category === 'KIB D',
+                                                'bg-orange-500/20 text-orange-300 border border-orange-500/40 shadow-orange-500/10': !isItemExtracom(item) && item.category === 'KIB E',
+                                                'bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-rose-500/10': !isItemExtracom(item) && item.category === 'KIB F',
+                                                'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 shadow-indigo-500/10': !isItemExtracom(item) && item.category === 'ATB',
+                                                'bg-violet-500/20 text-violet-300 border border-violet-500/40 shadow-violet-500/10': !isItemExtracom(item) && (item.category === 'ASET LAIN' || item.category === 'ASET LAINNYA')
                                             }"
-                                            x-text="item.category === 'ATB' ? 'ATB' : (item.category === 'EXTRACOM' ? 'Extracom' : (item.category === 'ASET LAIN' || item.category === 'ASET LAINNYA' ? 'Aset Lain' : item.category))"></span>
+                                            x-text="isItemExtracom(item) ? 'Extracom' : (item.category === 'ATB' ? 'ATB' : (item.category === 'ASET LAIN' || item.category === 'ASET LAINNYA' ? 'Aset Lain' : item.category))"></span>
                                         {{-- 2. Reklasifikasi --}}
                                         <template x-if="item.has_reklas || item.is_reklas || (item.reklas_count && item.reklas_count > 0) || item.jenis_reklas || !!item.mutasi_keluar">
                                             <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[9px] font-black whitespace-nowrap leading-none shrink-0 bg-indigo-500/25 text-indigo-300 border border-indigo-400/50 shadow-sm shadow-indigo-500/20 tracking-wider"

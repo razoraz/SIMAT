@@ -10236,15 +10236,18 @@
                     kemitraan_keterangan_kontribusi: '',
                 },
 
-                isCurrentAstapExtracom() {
-
-                    if (!this.selectedAstapReklas) return false;
-                    const it = this.selectedAstapReklas;
+                isItemExtracom(it) {
+                    if (!it) return false;
                     if (it.is_extracomtable === true || it.is_extracomtable === 1 || it.is_extracomtable === '1') return true;
+                    if (it.jenis_reklas === 'EKSTRAKOMPTABEL' || it.tujuan_kib === 'EKSTRAKOMPTABEL') return true;
                     const cat = (it.category || '').toString().trim().toUpperCase();
                     if (cat === 'EXTRACOM') return true;
                     if (typeof resolveItemCategory === 'function' && resolveItemCategory(it) === 'EXTRACOM') return true;
                     return false;
+                },
+
+                isCurrentAstapExtracom() {
+                    return this.isItemExtracom(this.selectedAstapReklas);
                 },
 
                 isKemitraanAktif() {
@@ -10344,10 +10347,26 @@
                     return num.toLocaleString('id-ID');
                 },
 
-                updateItemHargaSatuan(item, rawText) {
+                updateItemHargaSatuan(item, eventOrText) {
+                    let rawText = '';
+                    let targetEl = null;
+                    if (eventOrText && typeof eventOrText === 'object') {
+                        if (eventOrText.target) {
+                            targetEl = eventOrText.target;
+                            rawText = targetEl.value || '';
+                        }
+                    } else {
+                        rawText = String(eventOrText || '');
+                    }
+
                     const cleanDigits = String(rawText || '').replace(/[^0-9]/g, '');
                     const num = cleanDigits ? parseInt(cleanDigits, 10) : 0;
                     item.harga_satuan = num;
+
+                    if (targetEl) {
+                        targetEl.value = num > 0 ? num.toLocaleString('id-ID') : '';
+                    }
+
                     this.onReklasItemPriceChanged();
                 },
 
@@ -10507,26 +10526,47 @@
                     this.reklasKdpProgresAwal = kdpProgres;
 
                     // Helper untuk menentukan nama barang asli vs nama rekening akun belanja
-                    const rekName = item.nama_barang || '';
+                    const rekName = (item.nama_barang || '').trim();
+                    const isDashOrEmpty = (str) => !str || String(str).trim() === '' || String(str).trim() === '-' || String(str).trim() === '--' || String(str).trim() === '- -';
+
                     const resolveItemName = (rawName, merk, type, defaultName) => {
-                        const merkType = [merk, type].filter(Boolean).join(' ').trim();
-                        const isRekeningOrSewa = (name) => {
+                        const cleanRaw = (rawName || '').trim();
+                        
+                        // Bersihkan merk & type agar tidak pernah mengambil tanda strip '-'
+                        const validMerk = (!isDashOrEmpty(merk)) ? String(merk).trim() : '';
+                        const validType = (!isDashOrEmpty(type)) ? String(type).trim() : '';
+                        const merkType = [validMerk, validType].filter(Boolean).join(' ').trim();
+
+                        const isGenericBelanja = (name) => {
                             if (!name) return true;
-                            const n = name.trim().toLowerCase();
-                            if (n.startsWith('sewa ') || n.startsWith('belanja ') || n.startsWith('pengadaan ')) return true;
-                            if (rekName && n === rekName.trim().toLowerCase()) return true;
-                            return false;
+                            const n = String(name).trim().toLowerCase();
+                            return n.startsWith('sewa ') || n.startsWith('belanja ') || n.startsWith('pengadaan ');
                         };
 
-                        if (rawName && !isRekeningOrSewa(rawName)) {
-                            return rawName;
+                        // 1. Jika rawName valid dan bukan strip
+                        if (!isDashOrEmpty(cleanRaw)) {
+                            // Jika rawName adalah nama spesifik barang (bukan akun belanja generic), langsung gunakan
+                            if (!isGenericBelanja(cleanRaw)) {
+                                return cleanRaw;
+                            }
+                            // Jika rawName generic belanja tapi ada merk/type spesifik, gunakan merk/type
+                            if (merkType && !isDashOrEmpty(merkType)) {
+                                return merkType;
+                            }
+                            return cleanRaw;
                         }
-                        if (merkType) {
+
+                        // 2. Jika rawName kosong/strip, coba gunakan merkType jika valid
+                        if (merkType && !isDashOrEmpty(merkType)) {
                             return merkType;
                         }
-                        if (rawName) {
-                            return rawName;
+
+                        // 3. Gunakan nama barang dari master aset induk jika bukan strip
+                        if (!isDashOrEmpty(rekName) && !isGenericBelanja(rekName)) {
+                            return rekName;
                         }
+
+                        // 4. Default fallback jika semua kosong
                         return defaultName;
                     };
 
@@ -11095,16 +11135,19 @@
                         const lItem = lItems[idx] || (sourceKib === 'KIB E' || pType === 'lainnya' ? currItem : (lItems[0] || currItem || {}));
                         const aItem = aItems[idx] || (sourceKib === 'ATB' || pType === 'atb' ? currItem : (aItems[0] || currItem || {}));
 
-                        const itemNama = currItem.mesin_nama_barang 
-                            || currItem.lainnya_nama_barang 
-                            || currItem.gedung_nama_bangunan 
-                            || currItem.jaringan_nama 
-                            || currItem.tanah_nama_barang 
-                            || currItem.atb_nama_software 
-                            || currItem.nama_barang 
-                            || (this.reklasExtracomItems && this.reklasExtracomItems[idx] ? this.reklasExtracomItems[idx].nama_barang : null)
-                            || it.nama_barang 
-                            || `Barang #${idx + 1}`;
+                        const isDash = (v) => !v || String(v).trim() === '' || String(v).trim() === '-' || String(v).trim() === '--' || String(v).trim() === '- -';
+                        const candidateNames = [
+                            currItem.mesin_nama_barang,
+                            currItem.lainnya_nama_barang,
+                            currItem.gedung_nama_bangunan,
+                            currItem.jaringan_nama,
+                            currItem.tanah_nama_barang,
+                            currItem.atb_nama_software,
+                            currItem.nama_barang,
+                            (this.reklasExtracomItems && this.reklasExtracomItems[idx] ? this.reklasExtracomItems[idx].nama_barang : null),
+                            it.nama_barang
+                        ];
+                        const itemNama = candidateNames.find(n => !isDash(n)) || `Barang #${idx + 1}`;
 
                         const itemVol = parseInt(currItem.mesin_jumlah_barang || currItem.lainnya_jumlah || currItem.gedung_jumlah_bangunan || currItem.jaringan_jumlah || currItem.tanah_jumlah_bidang || currItem.atb_jumlah_barang || currItem.jumlah_volume || (this.reklasExtracomItems && this.reklasExtracomItems[idx] ? this.reklasExtracomItems[idx].jumlah_volume : 1));
                         const itemSatuan = currItem.mesin_satuan || currItem.lainnya_satuan || currItem.gedung_satuan || currItem.jaringan_satuan || currItem.tanah_satuan || currItem.atb_satuan || (this.reklasExtracomItems && this.reklasExtracomItems[idx] ? this.reklasExtracomItems[idx].satuan : null) || it.satuan || 'Unit';
@@ -13966,14 +14009,23 @@
                                             (item.kode_barang || '').toLowerCase().includes(query) ||
                                             (item.merk || '').toLowerCase().includes(query);
                                             
-                        const matchCategory = this.categoryFilter === 'all' || 
-                                              item.category === this.categoryFilter ||
-                                              (this.categoryFilter === 'ASET LAIN' && (
-                                                  item.category === 'ASET LAIN' || 
-                                                  item.category === 'ASET LAINNYA' || 
-                                                  item.category === '1.5.4' || 
-                                                  (item.kode_barang && String(item.kode_barang).startsWith('1.5.4'))
-                                              ));
+                        let matchCategory = true;
+                        if (this.categoryFilter !== 'all') {
+                            const isExtracom = this.isItemExtracom(item);
+                            if (this.categoryFilter === 'EXTRACOM') {
+                                matchCategory = isExtracom;
+                            } else if (this.categoryFilter === 'ASET LAIN') {
+                                matchCategory = !isExtracom && (
+                                    item.category === 'ASET LAIN' || 
+                                    item.category === 'ASET LAINNYA' || 
+                                    item.category === '1.5.4' || 
+                                    (item.kode_barang && String(item.kode_barang).startsWith('1.5.4'))
+                                );
+                            } else {
+                                const resolvedCat = typeof resolveItemCategory === 'function' ? resolveItemCategory(item) : item.category;
+                                matchCategory = !isExtracom && (resolvedCat === this.categoryFilter || item.category === this.categoryFilter);
+                            }
+                        }
                         // Filter kondisi: mencakup jika ada unit dengan kondisi tsb
                         const stats = this.getKondisiStats(item);
                         let matchKondisi = true;

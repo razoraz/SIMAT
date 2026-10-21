@@ -1643,6 +1643,622 @@
                                 <span><strong>Catatan:</strong> Nilai buku aset BMD (tanah/gedung) yang direklasifikasi tetap dicatat terpisah sebesar nilai perolehan/revaluasinya. Nilai di atas adalah nilai kontrak finansial pemanfaatan.</span>
                             </div>
                         </div>
+
+                        <!-- 7. SPESIFIKASI FISIK OBJEK BMD YANG DIKEMITRAKAN (AUTO-ADAPTIF SESUAI KIB / KODE PMDN 108) -->
+                        <div class="p-4 sm:p-5 rounded-2xl bg-slate-950/90 border border-purple-500/30 space-y-4 shadow-xl relative overflow-hidden">
+                            <!-- Ambient Glow Effect -->
+                            <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                            <!-- Header Section 7 -->
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                                <div class="flex items-center space-x-2.5">
+                                    <span class="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center text-base border border-purple-500/30 shadow-inner">
+                                        <span x-text="getKemitraanTargetSubGroup() === 'tanah' ? '🏛️' : (getKemitraanTargetSubGroup() === 'gedung' ? '🏢' : (getKemitraanTargetSubGroup() === 'jaringan' ? '🌐' : (getKemitraanTargetSubGroup() === 'lainnya' ? '📦' : '⚙️')))"></span>
+                                    </span>
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <h4 class="text-xs sm:text-sm font-extrabold text-white uppercase tracking-wide">
+                                                Spesifikasi Fisik Objek BMD yang Dikemitrakan
+                                            </h4>
+                                            <!-- Sub-Group Badge -->
+                                            <span class="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-mono font-bold text-[10px] border border-purple-500/40"
+                                                  x-text="getKemitraanTargetSubGroup() === 'tanah' ? 'KIB A (Tanah)' : (getKemitraanTargetSubGroup() === 'gedung' ? 'KIB C (Gedung)' : (getKemitraanTargetSubGroup() === 'jaringan' ? 'KIB D (Jaringan)' : (getKemitraanTargetSubGroup() === 'lainnya' ? 'KIB E (Lainnya)' : 'KIB B (Peralatan & Mesin)')))">
+                                            </span>
+                                            <!-- Extracom vs Reguler Indicator Badge -->
+                                            <template x-if="getKemitraanTargetSubGroup() === 'mesin' || getKemitraanTargetSubGroup() === 'lainnya'">
+                                                <button type="button" 
+                                                        class="px-2.5 py-0.5 rounded-md text-[10px] font-bold border transition-all flex items-center gap-1 cursor-pointer"
+                                                        :class="isKemitraanExtracom() ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 shadow-sm hover:bg-cyan-500/30' : 'bg-purple-500/20 text-purple-300 border-purple-500/40 hover:bg-purple-500/30'"
+                                                        @click="formData.spekBaru.is_extracom = !isKemitraanExtracom()"
+                                                        title="Klik untuk beralih mode Extracom / Reguler secara manual">
+                                                    <span x-text="isKemitraanExtracom() ? '📦 Ekstrakomptabel (≤ 300rb)' : '⚙️ Aset Tetap Reguler'"></span>
+                                                    <span class="text-[9px] opacity-60">⇄ Ubah</span>
+                                                </button>
+                                            </template>
+                                        </div>
+                                        <p class="text-[11px] text-slate-400 mt-0.5">
+                                            Data rincian fisik aset yang menjadi objek kemitraan. Tersalin otomatis dari aset terpilih dan dapat Anda sesuaikan.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- Sub-Group Selector Tabs -->
+                                <div class="flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800 self-start sm:self-auto">
+                                    <button type="button" @click="kemitraanSubGroupOverride = 'mesin'"
+                                            :class="(kemitraanSubGroupOverride || getKemitraanTargetSubGroup()) === 'mesin' ? 'bg-purple-600 text-white font-bold shadow-md' : 'text-slate-400 hover:text-slate-200'"
+                                            class="px-2.5 py-1 rounded-lg text-[10.5px] transition-all cursor-pointer">
+                                        ⚙️ Mesin / Alkes
+                                    </button>
+                                    <button type="button" @click="kemitraanSubGroupOverride = 'lainnya'"
+                                            :class="(kemitraanSubGroupOverride || getKemitraanTargetSubGroup()) === 'lainnya' ? 'bg-purple-600 text-white font-bold shadow-md' : 'text-slate-400 hover:text-slate-200'"
+                                            class="px-2.5 py-1 rounded-lg text-[10.5px] transition-all cursor-pointer">
+                                        📦 KIB E
+                                    </button>
+                                    <button type="button" @click="kemitraanSubGroupOverride = 'gedung'"
+                                            :class="(kemitraanSubGroupOverride || getKemitraanTargetSubGroup()) === 'gedung' ? 'bg-purple-600 text-white font-bold shadow-md' : 'text-slate-400 hover:text-slate-200'"
+                                            class="px-2.5 py-1 rounded-lg text-[10.5px] transition-all cursor-pointer">
+                                        🏢 Gedung
+                                    </button>
+                                    <button type="button" @click="kemitraanSubGroupOverride = 'tanah'"
+                                            :class="(kemitraanSubGroupOverride || getKemitraanTargetSubGroup()) === 'tanah' ? 'bg-purple-600 text-white font-bold shadow-md' : 'text-slate-400 hover:text-slate-200'"
+                                            class="px-2.5 py-1 rounded-lg text-[10.5px] transition-all cursor-pointer">
+                                        🏛️ Tanah
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- SUB-TIPE 1: PERALATAN DAN MESIN (KIB B / 1.5.2.xx.002) -->
+                            <template x-if="(kemitraanSubGroupOverride || getKemitraanTargetSubGroup()) === 'mesin'">
+                                <div class="space-y-4">
+                                    
+                                    <!-- KASUS A: REGULER (NON-EXTRACOM) -> GAMBAR 2 -->
+                                    <template x-if="!isKemitraanExtracom()">
+                                        <div class="space-y-4">
+                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <!-- Kolom Kiri: Merk, Type & Ukuran (Reguler) -->
+                                                <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3 shadow-md">
+                                                    <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                                                        <span class="text-xs font-bold text-amber-400 block uppercase tracking-wider flex items-center space-x-1.5">
+                                                            <span>⚙️ Merk, Type &amp; Ukuran:</span>
+                                                        </span>
+                                                        <span class="text-[9px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 font-bold">Identitas Fisik</span>
+                                                    </div>
+
+                                                    <!-- Merk / Brand Pabrikan -->
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
+                                                            Merk / Brand Pabrikan <span class="text-rose-400">*</span>
+                                                        </label>
+                                                        <input type="text" x-model="formData.spekBaru.mesin_merk"
+                                                               placeholder="Contoh: Siemens / Mindray / Roche / Sysmex / Fresenius / GE"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:border-amber-500 focus:outline-none transition-all">
+                                                    </div>
+
+                                                    <!-- Type / Model & Ukuran / Kapasitas -->
+                                                    <div class="grid grid-cols-2 gap-2">
+                                                        <div>
+                                                            <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Type / Model <span class="text-rose-400">*</span></label>
+                                                            <input type="text" x-model="formData.spekBaru.mesin_type"
+                                                                   placeholder="Contoh: SOMATOM go.Now / DC-70 / 4008S"
+                                                                   class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-mono focus:border-amber-500 focus:outline-none transition-all">
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Ukuran / Kapasitas</label>
+                                                            <input type="text" x-model="formData.spekBaru.mesin_ukuran_cc"
+                                                                   placeholder="Contoh: 128 Slice / 300 Test/Jam"
+                                                                   class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:border-amber-500 focus:outline-none transition-all">
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Tahun Pembuatan Pabrik (Khusus Reguler) -->
+                                                    <div>
+                                                        <div class="flex items-center justify-between mb-1">
+                                                            <label class="text-slate-400 text-[10px] font-semibold">Tahun Pembuatan Pabrik</label>
+                                                            <span class="text-[9px] text-slate-500 font-mono">Maks: {{ date('Y') }}</span>
+                                                        </div>
+                                                        <input type="number" min="1970" :max="new Date().getFullYear()" x-model.number="formData.spekBaru.mesin_tahun_pembuatan"
+                                                               placeholder="Contoh: {{ date('Y') }}"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono focus:border-amber-500 focus:outline-none transition-all">
+                                                    </div>
+                                                </div>
+
+                                                <!-- Kolom Kanan: No Pabrik, Kendaraan, Bahan & Kondisi (Reguler) -->
+                                                <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3 shadow-md">
+                                                    <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                                                        <span class="text-xs font-bold text-cyan-400 block uppercase tracking-wider flex items-center space-x-1.5">
+                                                            <span>🏷️ No Pabrik, Kendaraan, Bahan &amp; Kondisi:</span>
+                                                        </span>
+                                                        <span class="text-[9px] px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 font-bold">Serial &amp; Spesifikasi</span>
+                                                    </div>
+
+                                                    <div class="grid grid-cols-2 gap-2.5">
+                                                        <div>
+                                                            <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
+                                                                No Pabrik / Serial Number (SN)
+                                                            </label>
+                                                            <input type="text" x-model="formData.spekBaru.mesin_no_pabrik"
+                                                                   placeholder="SN-RAD-2026-88192"
+                                                                   class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono focus:border-cyan-500 focus:outline-none transition-all">
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Bahan Pembuatan</label>
+                                                            <input type="text" x-model="formData.spekBaru.mesin_bahan"
+                                                                   placeholder="Logam &amp; Elektronik / Stainless"
+                                                                   class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-cyan-500 focus:outline-none transition-all">
+                                                        </div>
+                                                    </div>
+
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
+                                                            Kondisi Fisik Barang <span class="text-rose-400">*</span>
+                                                        </label>
+                                                        <select x-model="formData.spekBaru.mesin_kondisi"
+                                                                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold focus:border-cyan-500 focus:outline-none transition-all">
+                                                            <option value="Baik">🟢 Baik (B) — Siap Operasional</option>
+                                                            <option value="Kurang Baik">🟡 Kurang Baik (KB) — Perlu Kalibrasi / Setting</option>
+                                                            <option value="Rusak Berat">🔴 Rusak Berat (RB)</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <!-- Legality Kendaraan (Khusus Ambulans / Kendaraan Operasional) -->
+                                                    <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1.5 transition-all">
+                                                        <span class="text-[9.5px] font-bold text-slate-400 block uppercase tracking-wider">
+                                                            🚗 Legality Kendaraan (Khusus Ambulans / Kendaraan Operasional):
+                                                        </span>
+                                                        <div class="grid grid-cols-2 gap-2">
+                                                            <div>
+                                                                <label class="block text-slate-500 text-[9px] mb-0.5">No Rangka</label>
+                                                                <input type="text" x-model="formData.spekBaru.mesin_no_rangka" placeholder="MH1JM..."
+                                                                       class="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-2 py-1 text-xs text-white font-mono focus:border-cyan-500 focus:outline-none">
+                                                            </div>
+                                                            <div>
+                                                                <label class="block text-slate-500 text-[9px] mb-0.5">No Mesin</label>
+                                                                <input type="text" x-model="formData.spekBaru.mesin_no_mesin" placeholder="JM51E..."
+                                                                       class="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-2 py-1 text-xs text-white font-mono focus:border-cyan-500 focus:outline-none">
+                                                            </div>
+                                                            <div>
+                                                                <label class="block text-slate-500 text-[9px] mb-0.5">No BPKB</label>
+                                                                <input type="text" x-model="formData.spekBaru.mesin_no_bpkb" placeholder="BPKB-88..."
+                                                                       class="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-2 py-1 text-xs text-white font-mono focus:border-cyan-500 focus:outline-none">
+                                                            </div>
+                                                            <div>
+                                                                <label class="block text-slate-500 text-[9px] mb-0.5">No POLISI / Plat</label>
+                                                                <input type="text" x-model="formData.spekBaru.mesin_no_polisi" placeholder="P 1080 RS"
+                                                                       class="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-2 py-1 text-xs text-amber-300 font-mono font-bold focus:border-cyan-500 focus:outline-none">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Keterangan / Catatan Khusus Mesin -->
+                                            <div class="p-3 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1 shadow-md">
+                                                <label class="block text-slate-300 font-bold text-[10.5px] uppercase tracking-wider">
+                                                    📝 Keterangan / Catatan Khusus Peralatan:
+                                                </label>
+                                                <input type="text" x-model="formData.spekBaru.mesin_keterangan"
+                                                       placeholder="Contoh: Penempatan alat uji laboratorium KSO / Garansi vendor 3 tahun / Keterangan operasional"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
+                                            </div>
+                                        </div>
+                                    </template>
+
+                                    <!-- KASUS B: EXTRACOM (EKSTRAKOMPTABEL) -> GAMBAR 3 -->
+                                    <template x-if="isKemitraanExtracom()">
+                                        <div class="space-y-4">
+                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <!-- Kolom Kiri: Merk, Type & Ukuran (Extracom) -->
+                                                <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3 shadow-md">
+                                                    <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                                                        <span class="text-xs font-bold text-amber-400 block uppercase tracking-wider flex items-center space-x-1.5">
+                                                            <span>⚙️ MERK, TYPE &amp; UKURAN:</span>
+                                                        </span>
+                                                        <span class="text-[9px] px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 font-bold">Ekstrakomptabel</span>
+                                                    </div>
+
+                                                    <!-- Nama Barang (PMDN 108) Khusus Extracom -->
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold flex items-center justify-between">
+                                                            <span>Nama Barang (PMDN 108)</span>
+                                                            <span class="text-[9px] text-amber-400 font-bold flex items-center space-x-1">
+                                                                <span>🔒</span>
+                                                                <span>Otomatis Sesuai Akun 108</span>
+                                                            </span>
+                                                        </label>
+                                                        <input type="text" 
+                                                               :value="formData.tujuan_nama || selectedAstap?.nama_barang || 'Barang Ekstrakomptabel'"
+                                                               readonly
+                                                               class="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 font-bold cursor-not-allowed select-none focus:outline-none">
+                                                    </div>
+
+                                                    <!-- Merk Barang -->
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
+                                                            Merk Barang <span class="text-rose-400">*</span>
+                                                        </label>
+                                                        <input type="text" x-model="formData.spekBaru.mesin_merk"
+                                                               placeholder="Contoh: Olympic / Lion / Krisbow / Kenko"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:border-amber-500 focus:outline-none transition-all">
+                                                    </div>
+
+                                                    <!-- Type / Model & Ukuran / Kapasitas -->
+                                                    <div class="grid grid-cols-2 gap-2">
+                                                        <div>
+                                                            <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Type / Model <span class="text-rose-400">*</span></label>
+                                                            <input type="text" x-model="formData.spekBaru.mesin_type"
+                                                                   placeholder="Contoh: Standard / Meja / Rak"
+                                                                   class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-mono focus:border-amber-500 focus:outline-none transition-all">
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Ukuran / Kapasitas</label>
+                                                            <input type="text" x-model="formData.spekBaru.mesin_ukuran_cc"
+                                                                   placeholder="Contoh: 120x60 cm / Sedang"
+                                                                   class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:border-amber-500 focus:outline-none transition-all">
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Kolom Kanan: No Pabrik, Bahan & Kondisi (Extracom) -->
+                                                <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3 shadow-md">
+                                                    <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                                                        <span class="text-xs font-bold text-cyan-400 block uppercase tracking-wider flex items-center space-x-1.5">
+                                                            <span>🏷️ NO PABRIK, BAHAN &amp; KONDISI:</span>
+                                                        </span>
+                                                        <span class="text-[9px] px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 font-bold">Spesifikasi Baku</span>
+                                                    </div>
+
+                                                    <div class="grid grid-cols-2 gap-2.5">
+                                                        <div>
+                                                            <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
+                                                                No Pabrik / SN
+                                                            </label>
+                                                            <input type="text" x-model="formData.spekBaru.mesin_no_pabrik"
+                                                                   placeholder="SN-EXT-2026-001"
+                                                                   class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono focus:border-cyan-500 focus:outline-none transition-all">
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Bahan Pembuatan</label>
+                                                            <input type="text" x-model="formData.spekBaru.mesin_bahan"
+                                                                   placeholder="Kayu / Besi / Plastik"
+                                                                   class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-cyan-500 focus:outline-none transition-all">
+                                                        </div>
+                                                    </div>
+
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
+                                                            Kondisi Barang <span class="text-rose-400">*</span>
+                                                        </label>
+                                                        <select x-model="formData.spekBaru.mesin_kondisi"
+                                                                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold focus:border-cyan-500 focus:outline-none transition-all">
+                                                            <option value="Baik">Baik (B)</option>
+                                                            <option value="Kurang Baik">Kurang Baik (KB)</option>
+                                                            <option value="Rusak Berat">Rusak Berat (RB)</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Keterangan / Catatan Khusus Extracom -->
+                                            <div class="p-3 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1 shadow-md">
+                                                <label class="block text-slate-300 font-bold text-[10.5px] uppercase tracking-wider">
+                                                    📝 Keterangan / Catatan Khusus Barang:
+                                                </label>
+                                                <input type="text" x-model="formData.spekBaru.mesin_keterangan"
+                                                       placeholder="Contoh: Barang ekstrakomptabel penunjang operasional kemitraan"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
+                                            </div>
+                                        </div>
+                                    </template>
+
+                                </div>
+                            </template>
+
+                            <!-- SUB-TIPE 2: ASET TETAP LAINNYA (KIB E / 1.5.2.xx.005) -->
+                            <template x-if="(kemitraanSubGroupOverride || getKemitraanTargetSubGroup()) === 'lainnya'">
+                                <div class="space-y-4">
+                                    
+                                    <!-- KASUS A: REGULER (NON-EXTRACOM) -> SPESIFIK BUKU / KESENIAN / HEWAN TANAMAN -->
+                                    <template x-if="!isKemitraanExtracom()">
+                                        <div class="space-y-3">
+                                            <!-- Tab Kategori KIB E (Buku, Kesenian, Hewan/Tumbuhan) -->
+                                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                                <div @click="formData.spekBaru.kib_e_type = 'buku'"
+                                                     :class="(formData.spekBaru.kib_e_type || 'buku') === 'buku' ? 'border-amber-500 bg-amber-950/40 ring-1 ring-amber-500 text-white font-extrabold shadow-sm' : 'border-slate-800 bg-slate-950/60 opacity-60 hover:opacity-100 text-amber-300/80'"
+                                                     class="p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between text-xs font-bold">
+                                                    <div class="flex items-center space-x-2">
+                                                        <span>📚</span>
+                                                        <div class="text-left">
+                                                            <div class="text-xs">Buku Perpustakaan</div>
+                                                            <div class="text-[9px] text-slate-400 font-mono font-normal">Pustaka Medis</div>
+                                                        </div>
+                                                    </div>
+                                                    <span x-show="(formData.spekBaru.kib_e_type || 'buku') === 'buku'" class="text-amber-400 font-bold">✓</span>
+                                                </div>
+                                                <div @click="formData.spekBaru.kemitraan_kib_e_type = 'kesenian'; formData.spekBaru.kib_e_type = 'kesenian'"
+                                                     :class="formData.spekBaru.kib_e_type === 'kesenian' ? 'border-purple-500 bg-purple-950/40 ring-1 ring-purple-500 text-white font-extrabold shadow-sm' : 'border-slate-800 bg-slate-950/60 opacity-60 hover:opacity-100 text-purple-300/80'"
+                                                     class="p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between text-xs font-bold">
+                                                    <div class="flex items-center space-x-2">
+                                                        <span>🎨</span>
+                                                        <div class="text-left">
+                                                            <div class="text-xs">Kesenian &amp; Budaya</div>
+                                                            <div class="text-[9px] text-slate-400 font-mono font-normal">Karya Seni / Ornamen</div>
+                                                        </div>
+                                                    </div>
+                                                    <span x-show="formData.spekBaru.kib_e_type === 'kesenian'" class="text-purple-400 font-bold">✓</span>
+                                                </div>
+                                                <div @click="formData.spekBaru.kemitraan_kib_e_type = 'hewan_tumbuhan'; formData.spekBaru.kib_e_type = 'hewan_tumbuhan'"
+                                                     :class="formData.spekBaru.kib_e_type === 'hewan_tumbuhan' ? 'border-emerald-500 bg-emerald-950/40 ring-1 ring-emerald-500 text-white font-extrabold shadow-sm' : 'border-slate-800 bg-slate-950/60 opacity-60 hover:opacity-100 text-emerald-300/80'"
+                                                     class="p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between text-xs font-bold">
+                                                    <div class="flex items-center space-x-2">
+                                                        <span>🌿</span>
+                                                        <div class="text-left">
+                                                            <div class="text-xs">Hewan &amp; Tumbuhan</div>
+                                                            <div class="text-[9px] text-slate-400 font-mono font-normal">Penghijauan / Hewan Lab</div>
+                                                        </div>
+                                                    </div>
+                                                    <span x-show="formData.spekBaru.kib_e_type === 'hewan_tumbuhan'" class="text-emerald-400 font-bold">✓</span>
+                                                </div>
+                                            </div>
+
+                                            <!-- 1. Form Buku Perpustakaan -->
+                                            <div x-show="(formData.spekBaru.kib_e_type || 'buku') === 'buku'" class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3 shadow-md">
+                                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                    <div class="sm:col-span-2">
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Judul Buku / Pustaka Medis <span class="text-rose-400">*</span></label>
+                                                        <input type="text" x-model="formData.spekBaru.lainnya_judul" placeholder="Contoh: Atlas Anatomi Manusia Sobotta Edisi 24"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:border-amber-500">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Pengarang / Penerbit / Pencipta</label>
+                                                        <input type="text" x-model="formData.spekBaru.lainnya_pencipta" placeholder="Contoh: EGC Penerbit Buku Kedokteran"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-500">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Spesifikasi / Edisi</label>
+                                                        <input type="text" x-model="formData.spekBaru.lainnya_spesifikasi" placeholder="Contoh: Edisi Revisi 2026 / Hardcover Lux"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-500">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- 2. Form Benda Seni & Budaya -->
+                                            <div x-show="formData.spekBaru.kib_e_type === 'kesenian'" class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3 shadow-md">
+                                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Asal Daerah / Wilayah</label>
+                                                        <input type="text" x-model="formData.spekBaru.lainnya_asal_daerah" placeholder="Bondowoso, Jawa Timur"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-purple-500">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Pencipta / Seniman</label>
+                                                        <input type="text" x-model="formData.spekBaru.lainnya_pencipta" placeholder="Sanggar Seni Rupa Bondowoso"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-purple-500">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Bahan Pembuatan</label>
+                                                        <input type="text" x-model="formData.spekBaru.lainnya_bahan" placeholder="Kanvas Cat Minyak / Perunggu / Kayu Jati"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-purple-500">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Ukuran / Dimensi</label>
+                                                        <input type="text" x-model="formData.spekBaru.lainnya_ukuran" placeholder="150 x 200 cm"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-purple-500">
+                                                    </div>
+                                                    <div class="sm:col-span-2">
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Spesifikasi Karya Seni / Ornamen</label>
+                                                        <input type="text" x-model="formData.spekBaru.lainnya_spesifikasi" placeholder="Lukisan dinding sejarah pelayanan RSUD"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-purple-500">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- 3. Form Hewan & Tumbuhan -->
+                                            <div x-show="formData.spekBaru.kib_e_type === 'hewan_tumbuhan'" class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3 shadow-md">
+                                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Jenis Hewan / Tanaman <span class="text-rose-400">*</span></label>
+                                                        <input type="text" x-model="formData.spekBaru.lainnya_judul" placeholder="Contoh: Pohon Ketapang Kencana / Palem Raja"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-emerald-500">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Ukuran / Tinggi</label>
+                                                        <input type="text" x-model="formData.spekBaru.lainnya_ukuran" placeholder="Tinggi 3.5 Meter"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-emerald-500">
+                                                    </div>
+                                                    <div class="sm:col-span-2">
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Keterangan / Spesifikasi Khusus</label>
+                                                        <input type="text" x-model="formData.spekBaru.lainnya_spesifikasi" placeholder="Penghijauan Area Taman Rawat Inap Barat"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-emerald-500">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Kondisi Fisik KIB E Reguler -->
+                                            <div class="p-3 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-between gap-3">
+                                                <label class="text-slate-300 font-bold text-[10.5px] uppercase tracking-wider">Kondisi Fisik Barang:</label>
+                                                <select x-model="formData.spekBaru.lainnya_kondisi" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white font-bold focus:border-cyan-500">
+                                                    <option value="Baik">🟢 Baik (B)</option>
+                                                    <option value="Kurang Baik">🟡 Kurang Baik (KB)</option>
+                                                    <option value="Rusak Berat">🔴 Rusak Berat (RB)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </template>
+
+                                    <!-- KASUS B: EXTRACOM (UNIVERSAL GAMBAR 3) -->
+                                    <template x-if="isKemitraanExtracom()">
+                                        <div class="space-y-4">
+                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <!-- Kolom Kiri: Merk, Type & Ukuran (Extracom KIB E) -->
+                                                <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3 shadow-md">
+                                                    <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                                                        <span class="text-xs font-bold text-amber-400 block uppercase tracking-wider flex items-center space-x-1.5">
+                                                            <span>⚙️ MERK, TYPE &amp; UKURAN:</span>
+                                                        </span>
+                                                        <span class="text-[9px] px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 font-bold">Ekstrakomptabel KIB E</span>
+                                                    </div>
+
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold flex items-center justify-between">
+                                                            <span>Nama Barang (PMDN 108)</span>
+                                                            <span class="text-[9px] text-amber-400 font-bold flex items-center space-x-1">
+                                                                <span>🔒</span>
+                                                                <span>Otomatis Sesuai Akun 108</span>
+                                                            </span>
+                                                        </label>
+                                                        <input type="text" 
+                                                               :value="formData.tujuan_nama || selectedAstap?.nama_barang || 'Aset Tetap Lainnya'"
+                                                               readonly
+                                                               class="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 font-bold cursor-not-allowed select-none focus:outline-none">
+                                                    </div>
+
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Merk / Penerbit <span class="text-rose-400">*</span></label>
+                                                        <input type="text" x-model="formData.spekBaru.lainnya_pencipta"
+                                                               placeholder="Contoh: Olympic / Lion / Krisbow / Kenko"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:border-amber-500">
+                                                    </div>
+
+                                                    <div class="grid grid-cols-2 gap-2">
+                                                        <div>
+                                                            <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Type / Model <span class="text-rose-400">*</span></label>
+                                                            <input type="text" x-model="formData.spekBaru.lainnya_spesifikasi"
+                                                                   placeholder="Contoh: Standard / Meja / Rak"
+                                                                   class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-mono focus:border-amber-500">
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Ukuran / Kapasitas</label>
+                                                            <input type="text" x-model="formData.spekBaru.lainnya_ukuran"
+                                                                   placeholder="Contoh: 120x60 cm / Sedang"
+                                                                   class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:border-amber-500">
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Kolom Kanan: No Pabrik, Bahan & Kondisi (Extracom KIB E) -->
+                                                <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3 shadow-md">
+                                                    <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                                                        <span class="text-xs font-bold text-cyan-400 block uppercase tracking-wider flex items-center space-x-1.5">
+                                                            <span>🏷️ NO PABRIK, BAHAN &amp; KONDISI:</span>
+                                                        </span>
+                                                        <span class="text-[9px] px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 font-bold">Spesifikasi Baku</span>
+                                                    </div>
+
+                                                    <div class="grid grid-cols-2 gap-2.5">
+                                                        <div>
+                                                            <label class="block text-slate-400 text-[10px] mb-1 font-semibold">No Pabrik / SN</label>
+                                                            <input type="text" x-model="formData.spekBaru.lainnya_no_pabrik"
+                                                                   placeholder="SN-EXT-2026-001"
+                                                                   class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono focus:border-cyan-500">
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Bahan Pembuatan</label>
+                                                            <input type="text" x-model="formData.spekBaru.lainnya_bahan"
+                                                                   placeholder="Kayu / Besi / Plastik"
+                                                                   class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-cyan-500">
+                                                        </div>
+                                                    </div>
+
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Kondisi Barang <span class="text-rose-400">*</span></label>
+                                                        <select x-model="formData.spekBaru.lainnya_kondisi" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold focus:border-cyan-500">
+                                                            <option value="Baik">Baik (B)</option>
+                                                            <option value="Kurang Baik">Kurang Baik (KB)</option>
+                                                            <option value="Rusak Berat">Rusak Berat (RB)</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Keterangan / Catatan Khusus Extracom KIB E -->
+                                            <div class="p-3 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1 shadow-md">
+                                                <label class="block text-slate-300 font-bold text-[10.5px] uppercase tracking-wider">
+                                                    📝 Keterangan / Catatan Khusus Barang:
+                                                </label>
+                                                <input type="text" x-model="formData.spekBaru.lainnya_keterangan"
+                                                       placeholder="Contoh: Koleksi literatur medis kemitraan / Spesifikasi khusus"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-purple-500 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
+                                            </div>
+                                        </div>
+                                    </template>
+
+                                </div>
+                            </template>
+
+                            <!-- SUB-TIPE 3: GEDUNG DAN BANGUNAN (KIB C / 1.5.2.xx.003) -->
+                            <template x-if="(kemitraanSubGroupOverride || getKemitraanTargetSubGroup()) === 'gedung'">
+                                <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3 shadow-md">
+                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Konstruksi Bertingkat:</label>
+                                            <select x-model="formData.spekBaru.gedung_konstruksi_bertingkat" class="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                                <option value="Bertingkat">Bertingkat</option>
+                                                <option value="Tidak Bertingkat">Tidak Bertingkat</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Konstruksi Beton:</label>
+                                            <select x-model="formData.spekBaru.gedung_konstruksi_beton" class="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                                <option value="Beton">Beton</option>
+                                                <option value="Tidak">Bukan Beton / Semi Permanen</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Luas Lantai (M2):</label>
+                                            <input type="number" step="0.01" min="0" x-model="formData.spekBaru.gedung_luas_lantai_m2" placeholder="Contoh: 450.5" class="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none font-mono">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Status Hak Tanah:</label>
+                                            <select x-model="formData.spekBaru.gedung_status_tanah" class="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                                <option value="Tanah Pemda">Tanah Milik Pemda</option>
+                                                <option value="Tanah Negara">Tanah Negara</option>
+                                                <option value="Hak Pengelolaan">Hak Pengelolaan (HPL)</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Nomor Dokumen Bangunan (IMB/PBG):</label>
+                                            <input type="text" x-model="formData.spekBaru.gedung_dokumen_nomor" placeholder="Contoh: 640/IMB/DPMPTSP/2026" class="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none font-mono">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Lokasi Alamat Bangunan:</label>
+                                            <input type="text" x-model="formData.spekBaru.gedung_alamat" placeholder="Sayap Barat RSUD Dr. H. Koesnandi" class="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- SUB-TIPE 4: TANAH (KIB A / 1.5.2.xx.001) -->
+                            <template x-if="(kemitraanSubGroupOverride || getKemitraanTargetSubGroup()) === 'tanah'">
+                                <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3 shadow-md">
+                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Luas Tanah (M2):</label>
+                                            <input type="number" step="0.01" min="0" x-model="formData.spekBaru.tanah_luas_m2" placeholder="Contoh: 1500" class="w-full bg-slate-950 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none font-mono">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Hak Tanah:</label>
+                                            <select x-model="formData.spekBaru.tanah_hak" class="w-full bg-slate-950 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                                <option value="Hak Pakai">Hak Pakai</option>
+                                                <option value="Hak Milik">Hak Milik</option>
+                                                <option value="Hak Pengelolaan">Hak Pengelolaan (HPL)</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Nomor Sertifikat:</label>
+                                            <input type="text" x-model="formData.spekBaru.tanah_sertifikat_no" placeholder="No. 12.04.05..." class="w-full bg-slate-950 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none font-mono">
+                                        </div>
+                                        <div class="sm:col-span-2">
+                                            <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Penggunaan Tanah:</label>
+                                            <input type="text" x-model="formData.spekBaru.tanah_penggunaan" placeholder="Area Parkir / Lahan Kemitraan" class="w-full bg-slate-950 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Alamat / Lokasi:</label>
+                                            <input type="text" x-model="formData.spekBaru.tanah_alamat" placeholder="Jl. Kapten Piere Tendean No. 1 Bondowoso" class="w-full bg-slate-950 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
                     </div>
                 </template>
 

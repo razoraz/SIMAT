@@ -29,8 +29,13 @@
 - Untuk modul master atau halaman kompleks, pisahkan komponen UI ke dalam folder partials tersendiri (contoh: `resources/views/pages/<nama_halaman>_partials/`).
 - Halaman view utama hanya bertugas meng-`@include` file-file partials tersebut agar kode terstruktur, modular, dan mudah dipelihara.
 
-## 5. METODE EKSEKUSI (DIRECT CODING)
-- Setiap instruksi dari pengguna harus dikerjakan secara langsung (*direct execution*):
-  1. Buat atau perbarui file kode (Blade, Controller, Model, Migration, Route).
-  2. Jalankan validasi atau migrasi jika diperlukan langsung melalui terminal (misal: `php artisan migrate`, `php artisan view:clear`).
-  3. Lapor kembali ke pengguna dengan ringkas, jelas, profesional, dan solutif.
+## 5. FOKUS KETAT PADA TUJUAN PEMBENAHAN (LASER-FOCUSED SCOPE)
+- **Hanya Fokus pada Masalah yang Diminta**: Dilarang keras menyentuh, merombak, atau mengubah file, fungsi, kode, maupun komponen di luar fokus masalah yang secara spesifik diminta oleh pengguna (*strictly no collateral modifications*).
+- **Pertahankan Stabilitas Sistem**: Jangan melakukan refactoring liar atau mengubah logika yang sudah berjalan normal di modul lain.
+
+## 6. WAJIB DETAILKAN RANCANGAN SEBELUM PERUBAHAN KODE (PLAN-FIRST WORKFLOW)
+- **Rancangan Terperinci**: Sebelum melakukan modifikasi kode apapun (edit file, ganti logika, ubah UI), AI **WAJIB** menyajikan detail rancangan rencana pembenahan terlebih dahulu:
+  1. **Akar Masalah**: Penjelasan ringkas mengapa isu tersebut terjadi.
+  2. **File Target**: Daftar file yang akan diubah beserta bagian spesifik yang disentuh (dan penegasan file mana yang tidak diubah).
+  3. **Detail Rencana Solusi**: Uraian langkah-langkah logika/tampilan yang akan diterapkan.
+- Tunggu konfirmasi atau persetujuan pengguna terhadap rancangan tersebut sebelum mengeksekusi perubahan kode, kecuali pengguna secara eksplisit menginstruksikan untuk langsung dikerjakan (misal: "langsung perbaiki" atau "gas").
