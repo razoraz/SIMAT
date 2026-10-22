@@ -855,6 +855,56 @@
                 const volumeNum = parseInt(kemitraan?.jumlah_volume || astap?.jumlah_volume || (registers.length > 0 ? registers.length : 1));
                 const satuanStr = kemitraan?.satuan || astap?.satuan || 'Unit';
 
+                // Resolusi objek aset & sumber perolehan awal pra-kemitraan
+                const targetAstap = astap || kemitraan?.astap || kemitraan?.objek_astap || kemitraan?.objekAstap || null;
+                const objekAstap = kemitraan?.objek_astap || kemitraan?.objekAstap || null;
+
+                const bm = targetAstap?.belanja_modal || targetAstap?.belanjaModal || objekAstap?.belanja_modal || objekAstap?.belanjaModal || null;
+                const bb = targetAstap?.belanja_barang || targetAstap?.belanjaBarang || null;
+                const hibahList = targetAstap?.hibahs || (targetAstap?.hibah ? [targetAstap.hibah] : []);
+                const mutasiList = targetAstap?.mutasi_eksternals || targetAstap?.mutasiEksternals || [];
+
+                // Cari riwayat reklasifikasi (baik dari astap maupun objekAstap)
+                const reklasArray = Array.isArray(targetAstap?.reklas) ? targetAstap.reklas : (Array.isArray(targetAstap?.reklases) ? targetAstap.reklases : (Array.isArray(objekAstap?.reklas) ? objekAstap.reklas : []));
+                const reklasOrigin = reklasArray.find(r => r.tujuan_kib === 'KEMITRAAN' || String(r.tujuan_kode || '').startsWith('1.5.2')) || (reklasArray.length > 0 ? reklasArray[reklasArray.length - 1] : null);
+
+                // Tentukan klasifikasi sumber asal pra-kemitraan
+                let asalSumberDana = 'belanja_modal';
+                let asalSumberDanaLabel = '🏛️ Belanja Modal (APBD / BLUD RSUD)';
+                let asalSumberDanaIcon = '🏛️';
+                let asalSumberDanaBadge = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
+
+                const isHibahOrigin = (hibahList && hibahList.length > 0) || targetAstap?.sumber_dana === 'hibah' || targetAstap?.hibah_pemberi || spec?.hibah_info || spec?.pemberi;
+                const isMutasiOrigin = (mutasiList && mutasiList.length > 0) || ['mutasi_eksternal', 'pelimpahan_skpd', 'mutasi_masuk', 'pelimpahan', 'mutasi'].includes(targetAstap?.sumber_dana) || spec?.mutasi_info;
+                const isBarangOrigin = bb || targetAstap?.sumber_dana === 'belanja_barang' || targetAstap?.sumber_dana === 'belanja_rekening';
+
+                if (isHibahOrigin) {
+                    asalSumberDana = 'hibah';
+                    asalSumberDanaLabel = '🎁 Hibah Masuk (Pemerintah / Swasta)';
+                    asalSumberDanaIcon = '🎁';
+                    asalSumberDanaBadge = 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+                } else if (isMutasiOrigin) {
+                    asalSumberDana = 'mutasi_eksternal';
+                    asalSumberDanaLabel = '🔄 Mutasi Masuk / Pelimpahan SKPD';
+                    asalSumberDanaIcon = '🔄';
+                    asalSumberDanaBadge = 'bg-purple-500/20 text-purple-300 border-purple-500/40';
+                } else if (isBarangOrigin) {
+                    asalSumberDana = 'belanja_barang';
+                    asalSumberDanaLabel = '🛍️ Belanja Barang & Jasa (Perbekalan)';
+                    asalSumberDanaIcon = '🛍️';
+                    asalSumberDanaBadge = 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40';
+                } else if (bm || targetAstap?.sumber_dana === 'belanja_modal' || isDimanfaatkan || !targetAstap?.sumber_dana) {
+                    asalSumberDana = 'belanja_modal';
+                    asalSumberDanaLabel = '🏛️ Belanja Modal (APBD / BLUD RSUD)';
+                    asalSumberDanaIcon = '🏛️';
+                    asalSumberDanaBadge = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
+                } else {
+                    asalSumberDana = 'kemitraan_murni';
+                    asalSumberDanaLabel = '🤝 Kemitraan Pihak Ketiga';
+                    asalSumberDanaIcon = '🤝';
+                    asalSumberDanaBadge = 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40';
+                }
+
                 this.selectedAstapDetail = {
                     id: astap?.id || kemitraan?.astap_id,
                     kemitraan_id: kemitraan?.id,
@@ -877,7 +927,53 @@
                     alamat_barang: astap?.alamat_barang || (register?.ruang_pemegang ? ('Ruang ' + register.ruang_pemegang + ' RSUD Dr. H. Koesnandi') : 'RSUD Dr. H. Koesnandi'),
                     kemitraan: kemitraan || {},
 
+                    // Sumber Asal Perolehan Pra-Kemitraan (BMD RSUD)
+                    asal_sumber_dana: asalSumberDana,
+                    asal_sumber_dana_label: asalSumberDanaLabel,
+                    asal_sumber_dana_icon: asalSumberDanaIcon,
+                    asal_sumber_dana_badge: asalSumberDanaBadge,
+
+                    // Data Belanja Modal Pengadaan Asal
+                    penyedia_pengadaan_nama: bm?.penyedia_nama || targetAstap?.penyedia_nama || spec.penyedia_nama || bb?.toko_penyedia || '-',
+                    penyedia_pengadaan_pemilik: bm?.penyedia_pemilik || targetAstap?.penyedia_pemilik || spec.penyedia_pemilik || '-',
+                    penyedia_pengadaan_alamat: bm?.penyedia_alamat || targetAstap?.penyedia_alamat || spec.penyedia_alamat || '-',
+                    penyedia_pengadaan_rekening: (bm?.penyedia_rekening_nama ? (bm.penyedia_rekening_nama + ' - ') : '') + (bm?.penyedia_rekening_nomor || targetAstap?.penyedia_rekening_nomor || '-'),
+                    spk_nomor_pengadaan: bm?.spk_nomor || targetAstap?.spk_nomor || spec.spk_nomor || '-',
+                    spk_tanggal_pengadaan: bm?.spk_tanggal || targetAstap?.spk_tanggal || spec.spk_tanggal || null,
+                    faktur_nomor_pengadaan: bm?.faktur_nomor || targetAstap?.faktur_nomor || spec.faktur_nomor || bb?.nomor_faktur || '-',
+                    faktur_tanggal_pengadaan: bm?.faktur_tanggal || targetAstap?.faktur_tanggal || spec.faktur_tanggal || bb?.tanggal_faktur || null,
+                    sp2d_nomor_pengadaan: bm?.sp2d_nomor || targetAstap?.sp2d_nomor || spec.sp2d_nomor || '-',
+                    sp2d_tanggal_pengadaan: bm?.sp2d_tanggal || targetAstap?.sp2d_tanggal || spec.sp2d_tanggal || null,
+                    bast_nomor_pengadaan: bm?.bast_dokumen_nomor || targetAstap?.bast_dokumen_nomor || spec.bast_dokumen_nomor || '-',
+                    bast_tanggal_pengadaan: bm?.bast_dokumen_tanggal || targetAstap?.bast_dokumen_tanggal || spec.bast_dokumen_tanggal || null,
+                    rekening_belanja_pengadaan: (bm?.rekening_belanja?.kode_rek ? (bm.rekening_belanja.kode_rek + ' - ') : '') + (bm?.rekening_belanja?.nama_belanja || targetAstap?.rekening_belanja?.nama_belanja || spec.rekening_nama || '-'),
+                    metode_pengadaan: bm?.jenis_pengadaan?.nama_pengadaan || targetAstap?.jenis_pengadaan?.nama_pengadaan || spec.metode_pengadaan || spec.cara_perolehan || 'Pembelian Langsung / DPA',
+
+                    // Data Hibah / Mutasi / Belanja Barang
+                    hibah_pemberi: targetAstap?.hibah_pemberi || (hibahList && hibahList[0]?.pemberi_hibah) || spec.hibah_info?.pihak || spec.pemberi || '-',
+                    hibah_nomor_bast: targetAstap?.hibah_nomor_bast || (hibahList && hibahList[0]?.nomor_bast) || spec.hibah_info?.nomor_bast || spec.nomor_bast || '-',
+                    hibah_tanggal_bast: targetAstap?.hibah_tanggal_bast || (hibahList && hibahList[0]?.tanggal_bast) || spec.hibah_info?.tanggal_bast || spec.tanggal_bast || null,
+                    mutasi_skpd_asal: (mutasiList && mutasiList[0]?.opd_asal) || spec.mutasi_info?.skpd_asal || spec.opd_asal || 'SKPD Pemerintah Daerah',
+                    mutasi_nomor_sk: (mutasiList && mutasiList[0]?.nomor_sk_dasar) || spec.mutasi_info?.nomor_sk || spec.nomor_sk || '-',
+                    mutasi_nomor_bamb: (mutasiList && mutasiList[0]?.nomor_bamb) || spec.mutasi_info?.nomor_bast || spec.nomor_bamb || '-',
+                    mutasi_tanggal: (mutasiList && mutasiList[0]?.tanggal_mutasi) || spec.mutasi_info?.tanggal_bast || null,
+
+                    // Data Riwayat Transisi Reklasifikasi
+                    has_reklas_origin: Boolean(reklasOrigin || (targetAstap?.is_reklas && targetAstap?.jenis_reklas) || (kemitraan?.is_reklas_pending)),
+                    reklas_nomor_ba: reklasOrigin?.nomor_ba_reklas || spec.nomor_ba_reklas || '-',
+                    reklas_tanggal: reklasOrigin?.tanggal_reklas || spec.tanggal_reklas || null,
+                    reklas_asal_kib: reklasOrigin?.asal_kib || spec.asal_kib || (targetAstap?.category || 'KIB Asal'),
+                    reklas_asal_kode: reklasOrigin?.asal_kode || spec.asal_kode || '-',
+                    reklas_asal_nama: reklasOrigin?.asal_nama || spec.asal_nama || (targetAstap?.nama_barang || '-'),
+                    reklas_alasan: reklasOrigin?.alasan_reklas || reklasOrigin?.keterangan || spec.alasan_reklas || 'Optimalisasi Pemanfaatan Barang Milik Daerah (BMD) bersama Pihak Ketiga',
+
                     // Informasi Mitra Rekanan
+                    mitra_nama: kemitraan?.mitra_nama || spec.mitra_nama || '-',
+                    mitra_pimpinan: kemitraan?.mitra_pimpinan || spec.mitra_pimpinan || '-',
+                    mitra_alamat: kemitraan?.mitra_alamat || spec.mitra_alamat || '-',
+                    mitra_telepon: spec.mitra_telepon || spec.penyedia_telepon || spec.penyedia_kontak || '-',
+
+                    // Kompatibilitas mundur
                     penyedia_nama: kemitraan?.mitra_nama || spec.mitra_nama || '-',
                     penyedia_pemilik: kemitraan?.mitra_pimpinan || spec.mitra_pimpinan || '-',
                     penyedia_alamat: kemitraan?.mitra_alamat || spec.mitra_alamat || '-',

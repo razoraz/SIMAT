@@ -411,6 +411,195 @@
                 </div>
 
                 <!-- ========================================================================= -->
+                <!-- SECTION: RIWAYAT SUMBER ASAL PEROLEHAN PRA-KEMITRAAN (BMD RSUD)           -->
+                <!-- ========================================================================= -->
+                <template x-if="selectedAstapDetail && (selectedAstapDetail.is_dimanfaatkan || selectedAstapDetail.has_reklas_origin || selectedAstapDetail.asal_sumber_dana !== 'kemitraan_murni' || (selectedAstapDetail.penyedia_pengadaan_nama && selectedAstapDetail.penyedia_pengadaan_nama !== '-'))">
+                    <div class="p-4 sm:p-5 rounded-2xl bg-slate-950/90 border border-indigo-500/30 space-y-4 shadow-xl">
+                        <!-- Header Seksi -->
+                        <div class="flex items-center justify-between pb-3 border-b border-indigo-500/20 gap-2 flex-wrap">
+                            <div class="flex items-center space-x-2.5">
+                                <div class="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 flex items-center justify-center text-base shadow-inner">
+                                    🏛️
+                                </div>
+                                <div>
+                                    <h4 class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-indigo-400 flex items-center gap-2">
+                                        <span>Riwayat Asal Perolehan Pra-Kemitraan (BMD RSUD)</span>
+                                    </h4>
+                                    <p class="text-[11px] text-slate-400">
+                                        Histori asal-usul aset sebelum masuk skema pemanfaatan mitra (Akun Kemitraan 1.5.2).
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2.5 py-1 rounded-xl text-[10.5px] font-bold border"
+                                      :class="selectedAstapDetail.asal_sumber_dana_badge || 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40'"
+                                      x-text="selectedAstapDetail.asal_sumber_dana_label || 'BMD RSUD'">
+                                </span>
+                                <template x-if="selectedAstapDetail.has_reklas_origin">
+                                    <span class="px-2.5 py-1 rounded-xl text-[10.5px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1">
+                                        <span>🔄 Transisi Reklasifikasi</span>
+                                    </span>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- Grid Konten Asal Perolehan -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3.5 text-[11px]">
+                            <!-- 1. Transisi Reklasifikasi (Jika Direklasifikasi ke Kemitraan) -->
+                            <template x-if="selectedAstapDetail.has_reklas_origin || (selectedAstapDetail.reklas_nomor_ba && selectedAstapDetail.reklas_nomor_ba !== '-')">
+                                <div class="p-4 rounded-xl bg-slate-900/80 border border-amber-500/30 space-y-3 lg:col-span-2">
+                                    <div class="flex items-center justify-between pb-2 border-b border-amber-500/20">
+                                        <span class="text-[10.5px] font-extrabold text-amber-400 uppercase tracking-wider flex items-center space-x-1.5">
+                                            <span>🔄 Berita Acara Reklasifikasi ke Akun Kemitraan</span>
+                                        </span>
+                                        <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20"
+                                              x-text="selectedAstapDetail.reklas_tanggal ? formatDate(selectedAstapDetail.reklas_tanggal) : '-'"></span>
+                                    </div>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-slate-300">
+                                        <div class="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800">
+                                            <span class="text-slate-400 text-[10px] block uppercase font-semibold">Nomor BA Reklas:</span>
+                                            <strong class="text-amber-300 font-mono text-xs select-all" x-text="selectedAstapDetail.reklas_nomor_ba || '-'"></strong>
+                                        </div>
+                                        <div class="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800">
+                                            <span class="text-slate-400 text-[10px] block uppercase font-semibold">KIB & Buku Aset Asal:</span>
+                                            <strong class="text-white text-xs" x-text="(selectedAstapDetail.reklas_asal_kib || 'Aset Tetap') + ' (RSUD)'"></strong>
+                                        </div>
+                                        <div class="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800">
+                                            <span class="text-slate-400 text-[10px] block uppercase font-semibold">Kode 108 Rekening Asal:</span>
+                                            <strong class="text-cyan-300 font-mono text-xs select-all" x-text="selectedAstapDetail.reklas_asal_kode || '-'"></strong>
+                                        </div>
+                                        <div class="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800">
+                                            <span class="text-slate-400 text-[10px] block uppercase font-semibold">Uraian / Alasan Reklas:</span>
+                                            <span class="text-slate-300 text-[10.5px] italic line-clamp-2" :title="selectedAstapDetail.reklas_alasan" x-text="selectedAstapDetail.reklas_alasan || 'Pemanfaatan BMD Bersama Mitra'"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- 2. Belanja Modal: Data Vendor Penyedia Pengadaan Asal BMD -->
+                            <template x-if="selectedAstapDetail.penyedia_pengadaan_nama && selectedAstapDetail.penyedia_pengadaan_nama !== '-'">
+                                <div class="p-4 rounded-xl bg-slate-900/70 border border-slate-800/90 space-y-3">
+                                    <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+                                        <span class="text-[10.5px] font-extrabold text-emerald-400 uppercase tracking-wider flex items-center space-x-1.5">
+                                            <span>🏢 Pihak Penyedia Pengadaan Asal (Vendor)</span>
+                                        </span>
+                                        <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-bold">Sumber Belanja RSUD</span>
+                                    </div>
+                                    <div class="space-y-2 divide-y divide-slate-800/60">
+                                        <div class="flex items-start justify-between gap-2 pt-1">
+                                            <span class="text-slate-400 shrink-0">Nama Perusahaan / Rekanan:</span>
+                                            <strong class="text-white font-bold text-right" :title="selectedAstapDetail.penyedia_pengadaan_nama" x-text="selectedAstapDetail.penyedia_pengadaan_nama"></strong>
+                                        </div>
+                                        <div class="flex items-start justify-between gap-2 pt-2">
+                                            <span class="text-slate-400 shrink-0">Pimpinan / Direktur Vendor:</span>
+                                            <strong class="text-emerald-300 font-bold text-right" :title="selectedAstapDetail.penyedia_pengadaan_pemilik" x-text="selectedAstapDetail.penyedia_pengadaan_pemilik || '-'"></strong>
+                                        </div>
+                                        <div class="flex items-start justify-between gap-2 pt-2">
+                                            <span class="text-slate-400 shrink-0">Rekening Bank Penyedia:</span>
+                                            <span class="text-amber-400 font-mono font-bold text-right select-all" :title="selectedAstapDetail.penyedia_pengadaan_rekening" x-text="selectedAstapDetail.penyedia_pengadaan_rekening || '-'"></span>
+                                        </div>
+                                        <div class="flex items-start justify-between gap-2 pt-2">
+                                            <span class="text-slate-400 shrink-0">Alamat Kantor Penyedia:</span>
+                                            <span class="text-slate-300 font-medium text-right leading-relaxed" :title="selectedAstapDetail.penyedia_pengadaan_alamat" x-text="selectedAstapDetail.penyedia_pengadaan_alamat || '-'"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- 3. Belanja Modal: Dokumen Kontrak & SP2D Asal BMD -->
+                            <template x-if="selectedAstapDetail.penyedia_pengadaan_nama && selectedAstapDetail.penyedia_pengadaan_nama !== '-'">
+                                <div class="p-4 rounded-xl bg-slate-900/70 border border-slate-800/90 space-y-3">
+                                    <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+                                        <span class="text-[10.5px] font-extrabold text-cyan-400 uppercase tracking-wider flex items-center space-x-1.5">
+                                            <span>📄 Dokumen Pengadaan &amp; SP2D Asal</span>
+                                        </span>
+                                        <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20"
+                                              x-text="selectedAstapDetail.metode_pengadaan || 'DPA Belanja'"></span>
+                                    </div>
+                                    <div class="space-y-2 divide-y divide-slate-800/60">
+                                        <div class="flex items-start justify-between gap-2 pt-1">
+                                            <span class="text-slate-400 shrink-0">Nomor SPK / Kontrak:</span>
+                                            <div class="text-right">
+                                                <strong class="text-white font-mono font-bold select-all block" x-text="selectedAstapDetail.spk_nomor_pengadaan || '-'"></strong>
+                                                <span class="text-[10px] text-slate-400" x-show="selectedAstapDetail.spk_tanggal_pengadaan" x-text="selectedAstapDetail.spk_tanggal_pengadaan ? formatDate(selectedAstapDetail.spk_tanggal_pengadaan) : ''"></span>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-start justify-between gap-2 pt-2">
+                                            <span class="text-slate-400 shrink-0">Nomor Faktur / BAST Asal:</span>
+                                            <div class="text-right">
+                                                <strong class="text-emerald-300 font-mono font-bold select-all block" x-text="(selectedAstapDetail.faktur_nomor_pengadaan !== '-' ? selectedAstapDetail.faktur_nomor_pengadaan : selectedAstapDetail.bast_nomor_pengadaan) || '-'"></strong>
+                                                <span class="text-[10px] text-slate-400" x-show="selectedAstapDetail.bast_tanggal_pengadaan || selectedAstapDetail.faktur_tanggal_pengadaan" x-text="formatDate(selectedAstapDetail.bast_tanggal_pengadaan || selectedAstapDetail.faktur_tanggal_pengadaan)"></span>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-start justify-between gap-2 pt-2">
+                                            <span class="text-slate-400 shrink-0">Nomor SP2D Pengadaan:</span>
+                                            <div class="text-right">
+                                                <strong class="text-amber-400 font-mono font-bold select-all block" x-text="selectedAstapDetail.sp2d_nomor_pengadaan || '-'"></strong>
+                                                <span class="text-[10px] text-slate-400" x-show="selectedAstapDetail.sp2d_tanggal_pengadaan" x-text="selectedAstapDetail.sp2d_tanggal_pengadaan ? formatDate(selectedAstapDetail.sp2d_tanggal_pengadaan) : ''"></span>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-start justify-between gap-2 pt-2">
+                                            <span class="text-slate-400 shrink-0">DPA / Rekening Belanja:</span>
+                                            <span class="text-cyan-300 text-right leading-relaxed font-mono font-semibold" :title="selectedAstapDetail.rekening_belanja_pengadaan" x-text="selectedAstapDetail.rekening_belanja_pengadaan || '-'"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- 4. Hibah Masuk (Jika Asal Hibah) -->
+                            <template x-if="selectedAstapDetail.asal_sumber_dana === 'hibah'">
+                                <div class="p-4 rounded-xl bg-slate-900/70 border border-purple-500/30 space-y-3 lg:col-span-2">
+                                    <div class="flex items-center justify-between pb-2 border-b border-purple-500/20">
+                                        <span class="text-[10.5px] font-extrabold text-purple-400 uppercase tracking-wider flex items-center space-x-1.5">
+                                            <span>🎁 Dokumen BAST Hibah Masuk</span>
+                                        </span>
+                                        <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20"
+                                              x-text="selectedAstapDetail.hibah_tanggal_bast ? formatDate(selectedAstapDetail.hibah_tanggal_bast) : '-'"></span>
+                                    </div>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-300">
+                                        <div class="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800">
+                                            <span class="text-slate-400 text-[10px] block uppercase font-semibold">Pihak Pemberi Hibah:</span>
+                                            <strong class="text-white text-xs" x-text="selectedAstapDetail.hibah_pemberi || '-'"></strong>
+                                        </div>
+                                        <div class="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800">
+                                            <span class="text-slate-400 text-[10px] block uppercase font-semibold">Nomor BAST Hibah:</span>
+                                            <strong class="text-purple-300 font-mono text-xs select-all" x-text="selectedAstapDetail.hibah_nomor_bast || '-'"></strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- 5. Mutasi Eksternal / Pelimpahan SKPD (Jika Asal Mutasi Masuk) -->
+                            <template x-if="selectedAstapDetail.asal_sumber_dana === 'mutasi_eksternal'">
+                                <div class="p-4 rounded-xl bg-slate-900/70 border border-indigo-500/30 space-y-3 lg:col-span-2">
+                                    <div class="flex items-center justify-between pb-2 border-b border-indigo-500/20">
+                                        <span class="text-[10.5px] font-extrabold text-indigo-400 uppercase tracking-wider flex items-center space-x-1.5">
+                                            <span>🚚 SK &amp; Berita Acara Mutasi Eksternal (Pelimpahan SKPD)</span>
+                                        </span>
+                                        <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20"
+                                              x-text="selectedAstapDetail.mutasi_tanggal ? formatDate(selectedAstapDetail.mutasi_tanggal) : '-'"></span>
+                                    </div>
+                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-slate-300">
+                                        <div class="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800">
+                                            <span class="text-slate-400 text-[10px] block uppercase font-semibold">Instansi / OPD Asal:</span>
+                                            <strong class="text-white text-xs" x-text="selectedAstapDetail.mutasi_skpd_asal || '-'"></strong>
+                                        </div>
+                                        <div class="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800">
+                                            <span class="text-slate-400 text-[10px] block uppercase font-semibold">Nomor SK Dasar Mutasi:</span>
+                                            <strong class="text-indigo-300 font-mono text-xs select-all" x-text="selectedAstapDetail.mutasi_nomor_sk || '-'"></strong>
+                                        </div>
+                                        <div class="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800">
+                                            <span class="text-slate-400 text-[10px] block uppercase font-semibold">Nomor Berita Acara (BAMB):</span>
+                                            <strong class="text-indigo-300 font-mono text-xs select-all" x-text="selectedAstapDetail.mutasi_nomor_bamb || '-'"></strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- ========================================================================= -->
                 <!-- SECTION: RIWAYAT ADENDUM / PERPANJANGAN KONSESI PKS (AUDIT TRAIL)         -->
                 <!-- ========================================================================= -->
                 <template x-if="selectedAstapDetail && selectedAstapDetail.riwayat_adendum && selectedAstapDetail.riwayat_adendum.length > 0">
@@ -1161,26 +1350,26 @@
                     </div>
 
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3.5 text-[11px]">
-                        <!-- Card Pihak Mitra Rekanan -->
+                        <!-- Card Pihak Mitra Rekanan (Penyewa PKS) -->
                         <div class="p-4 rounded-xl bg-slate-900/70 border border-slate-800/90 space-y-3">
                             <span class="text-[10.5px] font-extrabold text-cyan-400 uppercase tracking-wider block flex items-center space-x-1.5">
-                                <span>🏢 Informasi Mitra Pihak Ketiga</span>
+                                <span>🏢 Informasi Mitra Pihak Ketiga (Pemanfaat / Penyewa)</span>
                             </span>
                             <div class="space-y-2 divide-y divide-slate-800/60">
                                 <div class="flex items-start justify-between gap-2 pt-1">
-                                    <span class="text-slate-400 shrink-0">Nama Rekanan / Instansi:</span>
-                                    <strong class="text-white font-bold text-right" :title="selectedAstapDetail.penyedia_nama" x-text="selectedAstapDetail.penyedia_nama || '-'"></strong>
+                                    <span class="text-slate-400 shrink-0">Nama Lembaga / Mitra PKS:</span>
+                                    <strong class="text-white font-bold text-right" :title="selectedAstapDetail.mitra_nama || selectedAstapDetail.penyedia_nama" x-text="(selectedAstapDetail.mitra_nama !== '-' ? selectedAstapDetail.mitra_nama : selectedAstapDetail.penyedia_nama) || '-'"></strong>
                                 </div>
                                 <div class="flex items-start justify-between gap-2 pt-2">
-                                    <span class="text-slate-400 shrink-0">Pejabat Mitra / Direktur:</span>
-                                    <strong class="text-cyan-300 font-bold text-right" :title="selectedAstapDetail.penyedia_pemilik" x-text="selectedAstapDetail.penyedia_pemilik || '-'"></strong>
+                                    <span class="text-slate-400 shrink-0">Pimpinan / Direktur Mitra:</span>
+                                    <strong class="text-cyan-300 font-bold text-right" :title="selectedAstapDetail.mitra_pimpinan || selectedAstapDetail.penyedia_pemilik" x-text="(selectedAstapDetail.mitra_pimpinan !== '-' ? selectedAstapDetail.mitra_pimpinan : selectedAstapDetail.penyedia_pemilik) || '-'"></strong>
                                 </div>
                                 <div class="flex items-center justify-between gap-2 pt-2">
-                                    <span class="text-slate-400 shrink-0">No. HP / Kontak Aktif:</span>
+                                    <span class="text-slate-400 shrink-0">No. HP / Kontak Mitra:</span>
                                     <div class="flex items-center gap-1">
-                                        <span class="text-amber-400 font-mono font-bold select-all" x-text="selectedAstapDetail.penyedia_telepon || '-'"></span>
-                                        <template x-if="selectedAstapDetail.penyedia_telepon && selectedAstapDetail.penyedia_telepon !== '-'">
-                                            <button type="button" @click.stop="navigator.clipboard.writeText(selectedAstapDetail.penyedia_telepon); showToast('Kontak mitra disalin!', 'success')"
+                                        <span class="text-amber-400 font-mono font-bold select-all" x-text="(selectedAstapDetail.mitra_telepon !== '-' ? selectedAstapDetail.mitra_telepon : selectedAstapDetail.penyedia_telepon) || '-'"></span>
+                                        <template x-if="(selectedAstapDetail.mitra_telepon && selectedAstapDetail.mitra_telepon !== '-') || (selectedAstapDetail.penyedia_telepon && selectedAstapDetail.penyedia_telepon !== '-')">
+                                            <button type="button" @click.stop="navigator.clipboard.writeText(selectedAstapDetail.mitra_telepon !== '-' ? selectedAstapDetail.mitra_telepon : selectedAstapDetail.penyedia_telepon); showToast('Kontak mitra disalin!', 'success')"
                                                     class="p-0.5 text-slate-500 hover:text-amber-300 transition-colors cursor-pointer" title="Salin Kontak">
                                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/></svg>
                                             </button>
@@ -1188,8 +1377,8 @@
                                     </div>
                                 </div>
                                 <div class="flex items-start justify-between gap-2 pt-2">
-                                    <span class="text-slate-400 shrink-0">Alamat Domisili:</span>
-                                    <span class="text-teal-300 font-medium text-right leading-relaxed" :title="selectedAstapDetail.penyedia_alamat" x-text="selectedAstapDetail.penyedia_alamat || '-'"></span>
+                                    <span class="text-slate-400 shrink-0">Alamat Kantor Mitra:</span>
+                                    <span class="text-teal-300 font-medium text-right leading-relaxed" :title="selectedAstapDetail.mitra_alamat || selectedAstapDetail.penyedia_alamat" x-text="(selectedAstapDetail.mitra_alamat !== '-' ? selectedAstapDetail.mitra_alamat : selectedAstapDetail.penyedia_alamat) || '-'"></span>
                                 </div>
                             </div>
                         </div>

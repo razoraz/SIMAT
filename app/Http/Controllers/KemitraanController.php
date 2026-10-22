@@ -108,10 +108,20 @@ class KemitraanController extends Controller
             'astap.jenisAstap', 
             'astap.registers.unit', 
             'astap.unit', 
-            'astap.reklas',
+            'astap.reklas.jenisReklasAsal',
+            'astap.reklas.jenisReklasTujuan',
+            'astap.belanjaModal.jenisPengadaan',
+            'astap.belanjaModal.rekeningBelanja',
+            'astap.belanjaBarang',
+            'astap.hibahs',
+            'astap.mutasiEksternals',
             'user', 
-            'objekRegister.astap.reklas', 
-            'objekAstap.reklas'
+            'objekRegister.astap.reklas.jenisReklasAsal',
+            'objekRegister.astap.belanjaModal.jenisPengadaan',
+            'objekRegister.astap.belanjaModal.rekeningBelanja',
+            'objekAstap.reklas.jenisReklasAsal',
+            'objekAstap.belanjaModal.jenisPengadaan',
+            'objekAstap.belanjaModal.rekeningBelanja'
         ])
             ->where('is_deleted', 0)
             ->whereHas('astap', function ($q) {
@@ -175,7 +185,18 @@ class KemitraanController extends Controller
         $dbMaster108 = JenisAstap::getNested108();
 
         // Ambil data Astap kemitraan lengkap untuk kebutuhan Engine Ekspor Excel Multi-Sheet (Client-Side)
-        $kemitraanAstaps = Astap::with(['registers.unit', 'kemitraan', 'jenisAstap', 'unit', 'reklas.jenisReklasTujuan', 'reklas.jenisReklasAsal'])
+        $kemitraanAstaps = Astap::with([
+            'registers.unit', 
+            'kemitraan', 
+            'jenisAstap', 
+            'unit', 
+            'reklas.jenisReklasTujuan', 
+            'reklas.jenisReklasAsal',
+            'belanjaModal.jenisPengadaan',
+            'belanjaModal.rekeningBelanja',
+            'belanjaBarang',
+            'hibahs'
+        ])
             ->where('is_deleted', 0)
             ->where(function ($q) {
                 $q->where('sumber_dana', 'kemitraan')
