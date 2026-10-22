@@ -691,6 +691,30 @@ class User extends Authenticatable
     }
 
     /**
+     * Cek apakah pengguna memiliki peran Sub Admin Unit / Ruangan
+     */
+    public function isSubAdmin(): bool
+    {
+        return $this->role === 'sub_admin';
+    }
+
+    /**
+     * Cek apakah pengguna memiliki peran Admin Operasional
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * Cek apakah pengguna memiliki peran Master Admin
+     */
+    public function isMasterAdmin(): bool
+    {
+        return $this->role === 'master_admin';
+    }
+
+    /**
      * Relasi ke master Unit / Ruangan
      */
     public function unitModel()
