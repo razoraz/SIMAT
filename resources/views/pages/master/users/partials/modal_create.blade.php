@@ -76,6 +76,24 @@
                     </template>
                 </div>
 
+                <!-- Dropdown Pemilihan Unit / Ruangan Penugasan (Khusus Sub Admin) -->
+                <template x-if="newFormData.role === 'sub_admin'">
+                    <div class="p-3 bg-slate-950/80 border border-emerald-500/30 rounded-2xl space-y-1.5 shadow-inner">
+                        <label class="block text-emerald-300 font-extrabold text-xs flex items-center space-x-2">
+                            <span>🏥</span>
+                            <span>Unit / Ruangan Penugasan</span>
+                            <span class="text-rose-400">*</span>
+                        </label>
+                        <select x-model="newFormData.unit_id" @change="const sel = unitsList.find(u => u.id == newFormData.unit_id); newFormData.unit = sel ? sel.nama : ''; newFormData.nip = sel ? (sel.nip || '') : ''; if (sel && !newFormData.penugasan) { newFormData.penugasan = 'Penanggung Jawab Inventaris ' + sel.nama; }" required class="w-full bg-slate-900 border border-slate-700 hover:border-emerald-500 rounded-xl px-3.5 py-2.5 text-emerald-300 font-semibold text-xs focus:border-emerald-500 focus:outline-none transition-all cursor-pointer">
+                            <option value="" class="bg-slate-950 text-slate-400">-- Pilih Ruangan / Paviliun Penugasan --</option>
+                            <template x-for="u in unitsList" :key="u.id">
+                                <option :value="u.id" class="bg-slate-950 text-white" x-text="u.nama + (u.tipe ? ' (' + u.tipe + ')' : '')"></option>
+                            </template>
+                        </select>
+                        <p class="text-[10px] text-slate-400">Akun Sub Admin akan otomatis mengelola inventaris, KIR, dan verifikasi distribusi untuk unit yang dipilih.</p>
+                    </div>
+                </template>
+
                 <!-- Bagian Hak Akses Modul (Hanya Tampil Jika Role: Admin Operasional & Login: Master Admin) -->
                 <template x-if="newFormData.role === 'admin' && currentUserRole === 'master_admin'">
                     <div class="p-4 bg-slate-950/90 border border-cyan-500/30 rounded-2xl space-y-3 shadow-inner">

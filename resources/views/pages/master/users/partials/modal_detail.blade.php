@@ -66,7 +66,7 @@
                         <div class="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
                             <div class="flex items-center justify-between">
                                 <span class="text-slate-400 text-[10px] uppercase font-bold block">Wewenang Modul Sistem:</span>
-                                <span class="text-[10px] font-mono text-cyan-400" x-text="selectedUser.role === 'master_admin' ? 'Akses Penuh' : (selectedUser.role === 'admin' ? ((selectedUser.permissions || []).length + ' Modul Aktif') : 'Ruangan Unit')"></span>
+                                <span class="text-[10px] font-mono text-cyan-400" x-text="selectedUser.role === 'master_admin' ? 'Akses Penuh' : (selectedUser.role === 'admin' ? (getUserPermissionsSummary(selectedUser)?.text || 'Modul Aktif') : 'Ruangan Unit')"></span>
                             </div>
 
                             <!-- Master Admin -->
@@ -79,23 +79,39 @@
 
                             <!-- Admin Operasional -->
                             <template x-if="selectedUser.role === 'admin'">
-                                <div class="space-y-1.5 pt-0.5 max-h-[220px] overflow-y-auto custom-scrollbar pr-1">
+                                <div class="space-y-2 pt-0.5 max-h-[250px] overflow-y-auto custom-scrollbar pr-1">
                                     <template x-for="(perm, key) in availablePermissions" :key="key">
-                                        <div class="p-2 rounded-xl border flex items-center justify-between text-xs"
-                                            :class="isDetailModEnabled(key) ? 'bg-cyan-500/10 border-cyan-500/30 text-white' : 'bg-slate-900/40 border-slate-800/80 text-slate-500 opacity-60'">
-                                            <div class="flex items-center space-x-2 min-w-0 flex-1">
-                                                <span x-text="perm.icon"></span>
-                                                <span class="font-bold text-[11px] truncate" x-text="perm.label"></span>
+                                        <div class="p-2.5 rounded-xl border transition-all"
+                                            :class="isDetailModEnabled(key) ? 'bg-cyan-950/20 border-cyan-500/30 text-white' : 'bg-slate-900/40 border-slate-800/80 text-slate-500 opacity-60'">
+                                            <div class="flex items-center justify-between text-xs">
+                                                <div class="flex items-center space-x-2 min-w-0 flex-1">
+                                                    <span class="text-sm" x-text="perm.icon"></span>
+                                                    <span class="font-bold text-[11px] text-white truncate" x-text="perm.label"></span>
+                                                </div>
+                                                <div class="flex items-center space-x-1.5 shrink-0">
+                                                    <template x-if="isDetailModEnabled(key)">
+                                                        <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
+                                                            x-text="getDetailModActions(key).length + ' Aksi Aktif'"></span>
+                                                    </template>
+                                                    <template x-if="!isDetailModEnabled(key)">
+                                                        <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-slate-800 text-slate-500 border border-slate-700">Nonaktif</span>
+                                                    </template>
+                                                </div>
                                             </div>
-                                            <div class="flex items-center space-x-1.5 shrink-0">
-                                                <template x-if="isDetailModEnabled(key)">
-                                                    <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
-                                                        x-text="getDetailModActions(key).length + ' Aksi Aktif'"></span>
-                                                </template>
-                                                <template x-if="!isDetailModEnabled(key)">
-                                                    <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-slate-800 text-slate-500 border border-slate-700">Nonaktif</span>
-                                                </template>
-                                            </div>
+
+                                            <!-- Sub-Aksi Aktif Badges -->
+                                            <template x-if="isDetailModEnabled(key) && getDetailModActions(key).length > 0">
+                                                <div class="flex flex-wrap gap-1 mt-2 pt-2 border-t border-cyan-500/10">
+                                                    <template x-for="actKey in getDetailModActions(key)" :key="actKey">
+                                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-medium"
+                                                              :class="perm.actions[actKey]?.critical ? 'bg-rose-500/10 text-rose-300 border border-rose-500/30' : 'bg-cyan-500/10 text-cyan-300 border border-cyan-500/20'"
+                                                              :title="perm.actions[actKey]?.desc || ''">
+                                                            <span class="mr-1" x-text="perm.actions[actKey]?.critical ? '⚠️' : '✓'"></span>
+                                                            <span x-text="perm.actions[actKey]?.label || actKey"></span>
+                                                        </span>
+                                                    </template>
+                                                </div>
+                                            </template>
                                         </div>
                                     </template>
                                 </div>

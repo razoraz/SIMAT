@@ -23,7 +23,8 @@
                     nip: '',
                     email: '',
                     role: 'admin',
-                    unit: 'Pav. Anggrek',
+                    unit_id: '',
+                    unit: '',
                     penugasan: '',
                     permissions: ['astap', 'distribusi', 'bast', 'mutasi', 'unit', 'master_data'],
                     password: '',
@@ -36,6 +37,7 @@
                     nip: '',
                     email: '',
                     role: '',
+                    unit_id: '',
                     unit: '',
                     penugasan: '',
                     permissions: [],
@@ -513,7 +515,8 @@
                         nip: '',
                         email: '',
                         role: this.currentUserRole === 'master_admin' ? 'admin' : 'sub_admin',
-                        unit: this.unitsList && this.unitsList.length > 0 ? this.unitsList[0] : 'Pav. Anggrek',
+                        unit_id: '',
+                        unit: '',
                         penugasan: '',
                         permissions: this.initTreePermissions(null, 'admin'),
                         password: '',
@@ -535,6 +538,7 @@
                         nip: item.nip || '',
                         email: item.email || '',
                         role: item.role || 'sub_admin',
+                        unit_id: item.unit_id || '',
                         unit: item.unit || '',
                         penugasan: item.penugasan || '',
                         permissions: this.initTreePermissions(item.permissions, item.role),
@@ -551,8 +555,13 @@
 
                 // 1. Simpan Pengguna Baru ke Backend (CREATE)
                 async saveUser() {
-                    if (!this.newFormData.name || !this.newFormData.email || !this.newFormData.password) {
-                        this.showToast('⚠️ Harap lengkapi Nama Lengkap, Email, dan Password!', 'warning');
+                    if (!this.newFormData.name || !this.newFormData.email) {
+                        this.showToast('⚠️ Harap lengkapi Nama Lengkap dan Email pengguna!', 'warning');
+                        return;
+                    }
+
+                    if (this.newFormData.role === 'sub_admin' && !this.newFormData.unit_id) {
+                        this.showToast('⚠️ Harap pilih Ruangan / Unit Penugasan untuk akun Sub Admin!', 'warning');
                         return;
                     }
 

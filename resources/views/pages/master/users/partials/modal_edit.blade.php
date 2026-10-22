@@ -58,13 +58,32 @@
                             <input type="password" x-model="editFormData.password" placeholder="Kosongkan jika tidak diganti" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-mono focus:border-amber-500 focus:outline-none">
                         </div>
 
-                        <template x-if="editFormData.unit">
-                            <div class="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-200 flex items-center justify-between text-[11px]">
-                                <span class="flex items-center space-x-1.5">
-                                    <span>🏥</span>
-                                    <span>Unit: <strong class="text-white" x-text="editFormData.unit"></strong></span>
-                                </span>
-                                <span class="font-mono text-slate-400" x-text="'NIP: ' + (editFormData.nip || '-')"></span>
+                        <!-- Dropdown Pemilihan Unit / Ruangan Penugasan (Khusus Sub Admin) -->
+                        <template x-if="editFormData.role === 'sub_admin'">
+                            <div class="p-3 bg-slate-950/80 border border-emerald-500/30 rounded-2xl space-y-1.5 shadow-inner">
+                                <label class="block text-emerald-300 font-extrabold text-xs flex items-center justify-between">
+                                    <span class="flex items-center space-x-2">
+                                        <span>🏥</span>
+                                        <span>Unit / Ruangan Penugasan</span>
+                                    </span>
+                                    <template x-if="editFormData.nip">
+                                        <span class="font-mono text-[10px] text-slate-400 font-normal" x-text="'NIP: ' + editFormData.nip"></span>
+                                    </template>
+                                </label>
+                                
+                                <template x-if="currentUserRole === 'master_admin'">
+                                    <select x-model="editFormData.unit_id" @change="const sel = unitsList.find(u => u.id == editFormData.unit_id); editFormData.unit = sel ? sel.nama : ''; editFormData.nip = sel ? (sel.nip || '') : '';" class="w-full bg-slate-900 border border-slate-700 hover:border-emerald-500 rounded-xl px-3.5 py-2.5 text-emerald-300 font-semibold text-xs focus:border-emerald-500 focus:outline-none transition-all cursor-pointer">
+                                        <option value="" class="bg-slate-950 text-slate-400">-- Non-Unit (Pusat) --</option>
+                                        <template x-for="u in unitsList" :key="u.id">
+                                            <option :value="u.id" class="bg-slate-950 text-white" :selected="u.id == editFormData.unit_id" x-text="u.nama + (u.tipe ? ' (' + u.tipe + ')' : '')"></option>
+                                        </template>
+                                    </select>
+                                </template>
+                                
+                                <template x-if="currentUserRole !== 'master_admin'">
+                                    <input type="text" :value="editFormData.unit || '- Non-Unit (Pusat) -'" readonly class="w-full bg-slate-950/60 border border-slate-800 rounded-xl px-3.5 py-2 text-emerald-400 font-semibold text-xs cursor-not-allowed">
+                                </template>
+                                <p class="text-[10px] text-slate-400">Menentukan penugasan ruangan untuk pencetakan KIR dan verifikasi distribusi aset.</p>
                             </div>
                         </template>
 

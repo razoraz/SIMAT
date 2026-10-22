@@ -25,8 +25,8 @@ class UserController extends Controller
             END ASC
         ")->orderBy('id', 'asc')->get();
 
-        // Ambil daftar seluruh nama unit dari tabel units
-        $units = Unit::pluck('nama')->toArray();
+        // Ambil daftar seluruh unit dari tabel units untuk dropdown penugasan
+        $units = Unit::active()->orderBy('nama')->get(['id', 'nama', 'tipe', 'kepala', 'nip']);
         $availablePermissions = User::AVAILABLE_PERMISSIONS;
         $rolePresets = User::ROLE_PRESETS;
 
@@ -78,6 +78,7 @@ class UserController extends Controller
             'penugasan' => 'nullable|string|max:500',
             'permissions' => 'nullable',
             'password' => 'nullable|string|min:4',
+            'unit_id' => 'nullable|exists:units,id',
         ]);
 
         $permissions = null;
@@ -90,11 +91,17 @@ class UserController extends Controller
             }
         }
 
+        $unitId = null;
+        if ($validated['role'] === 'sub_admin' && !empty($request->unit_id)) {
+            $unitId = (int) $request->unit_id;
+        }
+
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($request->filled('password') ? $request->password : 'rsud123'),
             'role' => $validated['role'],
+            'unit_id' => $unitId,
             'penugasan' => $validated['penugasan'] ?? 'Pengguna Sistem SIMAT',
             'permissions' => $permissions,
             'status' => 'Aktif',
@@ -149,6 +156,7 @@ class UserController extends Controller
             'penugasan' => 'nullable|string|max:500',
             'permissions' => 'nullable',
             'password' => 'nullable|string|min:4',
+            'unit_id' => 'nullable|exists:units,id',
         ]);
 
         // Cegah Admin mengubah role menjadi master_admin
@@ -163,6 +171,13 @@ class UserController extends Controller
             'penugasan' => $validated['penugasan'] ?? $user->penugasan,
             'status' => 'Aktif',
         ];
+
+        // Pengaturan penugasan unit
+        if ($validated['role'] === 'sub_admin') {
+            $updateData['unit_id'] = !empty($request->unit_id) ? (int) $request->unit_id : null;
+        } else {
+            $updateData['unit_id'] = null;
+        }
 
         // Hanya Master Admin yang berwenang mengubah daftar permissions akun Admin
         if ($currentUser->role === 'master_admin') {
