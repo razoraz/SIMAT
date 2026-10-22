@@ -117,23 +117,6 @@
                             </div>
                         </div>
 
-                        <!-- Template Presets Cepat (1-Klik) -->
-                        <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1.5">
-                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center space-x-1.5">
-                                <span>⚡</span>
-                                <span>Pilihan Cepat Template Otorisasi:</span>
-                            </span>
-                            <div class="flex flex-wrap gap-1.5">
-                                <template x-for="(preset, pKey) in rolePresets" :key="pKey">
-                                    <button type="button" @click="applyPreset('new', pKey)"
-                                        class="px-2.5 py-1 rounded-lg text-[10px] font-semibold flex items-center space-x-1.5 transition-all border active:scale-95 bg-slate-950 text-slate-300 border-slate-800 hover:border-cyan-500/40 hover:text-white hover:bg-cyan-500/10"
-                                        :title="preset.description">
-                                        <span x-text="preset.icon"></span>
-                                        <span x-text="preset.title"></span>
-                                    </button>
-                                </template>
-                            </div>
-                        </div>
 
                         <!-- Tree Daftar Modul & Sub-Aksi -->
                         <div class="space-y-2 max-h-[380px] overflow-y-auto pr-1 custom-scrollbar">

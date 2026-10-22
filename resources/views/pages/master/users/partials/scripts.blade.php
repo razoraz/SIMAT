@@ -71,14 +71,14 @@
 
                         if (!hasData || rawPermissions === null) {
                             if (role === 'admin') {
-                                // Default awal untuk admin baru: Modul ASTAP, Distribusi, Unit aktif dengan aksi default
+                                // Default awal untuk admin baru: Modul ASTAP, Distribusi, Unit aktif penuh
                                 enabled = ['astap', 'distribusi', 'unit'].includes(modKey);
-                                actions = enabled ? [...defaultActionKeys] : [];
+                                actions = enabled ? [...allActionKeys] : [];
                             }
                         } else if (isLegacyFlat) {
-                            // Kompatibilitas Akun Lama (Flat Array)
+                            // Kompatibilitas Akun Lama (Flat Array): Berikan akses penuh ke modul aktif tersebut
                             enabled = rawPermissions.includes(modKey);
-                            actions = enabled ? [...defaultActionKeys] : [];
+                            actions = enabled ? [...allActionKeys] : [];
                         } else {
                             // Format Hirarki Baru (Object)
                             const modConfig = rawPermissions[modKey];
@@ -131,7 +131,7 @@
                     return actions.length >= totalActions && totalActions > 0;
                 },
 
-                // Toggle Modul Induk (Klik Checkbox Parent)
+                // Toggle Modul Induk (Klik Checkbox Parent: Langsung Pilih Semua Aksi)
                 toggleParentModule(formType, modKey) {
                     const form = formType === 'new' ? this.newFormData : this.editFormData;
                     if (!form.permissions) form.permissions = {};
@@ -141,17 +141,16 @@
 
                     const modDef = this.availablePermissions[modKey];
                     const allActionKeys = Object.keys(modDef.actions || {});
-                    const defaultActionKeys = allActionKeys.filter(actKey => modDef.actions[actKey].default);
+                    const isFullyChecked = this.isModuleFullyChecked(formType, modKey);
 
-                    // Jika saat ini aktif (baik full maupun indeterminate) -> nonaktifkan
-                    if (form.permissions[modKey].enabled) {
+                    // Jika saat ini SUDAH terpilih semua (100%) -> nonaktifkan modul
+                    if (isFullyChecked) {
                         form.permissions[modKey].enabled = false;
                         form.permissions[modKey].actions = [];
                     } else {
-                        // Jika saat ini mati -> hidupkan dengan aksi-aksi default & buka drawer
+                        // Jika saat ini belum terpilih penuh (baik nonaktif maupun sebagian) -> LANGSUNG PILIH SEMUA AKSI
                         form.permissions[modKey].enabled = true;
-                        form.permissions[modKey].actions = [...defaultActionKeys];
-                        this.setModuleExpanded(formType, modKey, true);
+                        form.permissions[modKey].actions = [...allActionKeys];
                     }
                 },
 
