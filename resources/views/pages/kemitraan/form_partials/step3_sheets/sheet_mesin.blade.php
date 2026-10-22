@@ -313,23 +313,42 @@
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                            <div>
-                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Jumlah (Volume) <span class="text-rose-400">*</span></label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-start">
+                            <!-- Kolom 1: Volume (2 cols) -->
+                            <div class="lg:col-span-2">
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold min-h-[18px] flex items-center">
+                                    <span>Jumlah (Volume)</span>
+                                    <span class="text-rose-400 ml-0.5">*</span>
+                                </label>
                                 <input type="number" min="1" x-model.number="item.mesin_jumlah_barang" @input="syncTotalsFromItems()" placeholder="1"
                                        class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono font-bold focus:border-emerald-500 focus:outline-none">
                             </div>
-                            <div>
-                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Satuan <span class="text-rose-400">*</span></label>
+
+                            <!-- Kolom 2: Satuan (2 cols) -->
+                            <div class="lg:col-span-2">
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold min-h-[18px] flex items-center">
+                                    <span>Satuan</span>
+                                    <span class="text-rose-400 ml-0.5">*</span>
+                                </label>
                                 <input type="text" x-model="item.mesin_satuan" @input="syncTotalsFromItems()" placeholder="Unit / Buah / Set"
                                        class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:border-emerald-500 focus:outline-none">
                             </div>
-                            <div>
-                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold flex items-center justify-between">
-                                    <span x-text="(item.is_extracom || formData.is_extracomtable) ? 'Nilai Satuan (Rp) *' : 'Taksiran Nilai Wajar (Rp) *'"></span>
-                                    <span class="text-[9px] font-bold"
-                                          :class="(item.is_extracom || formData.is_extracomtable) ? 'text-amber-400 font-mono' : 'text-emerald-400'"
-                                          x-text="(item.is_extracom || formData.is_extracomtable) ? 'Maks. Rp 300.000' : 'Harga Wajar'">
+
+                            <!-- Kolom 3: Taksiran Nilai Wajar (4 cols) -->
+                            <div class="lg:col-span-4">
+                                <label class="block text-[10px] mb-1 font-semibold min-h-[18px] flex items-center justify-between gap-1.5">
+                                    <span class="text-slate-400 whitespace-nowrap flex items-center">
+                                        <span x-text="(item.is_extracom || formData.is_extracomtable) ? 'Nilai Satuan (Rp)' : 'Taksiran Nilai (Rp)'"></span>
+                                        <span class="text-rose-400 ml-0.5">*</span>
+                                    </span>
+                                    <!-- Badge Status Kompak & Anti-Wrap -->
+                                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap shrink-0 transition-colors"
+                                          :class="(item.is_extracom || formData.is_extracomtable) 
+                                              ? (Number(item.mesin_nilai_satuan || 0) > 300000 ? 'text-rose-400 bg-rose-950/60 border border-rose-500/40 animate-pulse' : 'text-amber-400 bg-amber-950/40 border border-amber-500/30') 
+                                              : (Number(item.mesin_nilai_satuan || 0) > 0 && Number(item.mesin_nilai_satuan || 0) <= 300000 ? 'text-rose-400 bg-rose-950/60 border border-rose-500/40 animate-pulse' : (Number(item.mesin_nilai_satuan || 0) > 300000 ? 'text-emerald-400 bg-emerald-950/40 border border-emerald-500/30' : 'text-slate-400 bg-slate-900 border border-slate-700/60'))"
+                                          x-text="(item.is_extracom || formData.is_extracomtable) 
+                                              ? (Number(item.mesin_nilai_satuan || 0) > 300000 ? 'Lewat Maksimal!' : 'Maks. Rp 300rb') 
+                                              : (Number(item.mesin_nilai_satuan || 0) > 0 && Number(item.mesin_nilai_satuan || 0) <= 300000 ? 'Wajib > Rp 300rb' : (Number(item.mesin_nilai_satuan || 0) > 300000 ? '✓ Harga Wajar' : '> Rp 300rb'))">
                                     </span>
                                 </label>
                                 <input type="text" 
@@ -341,14 +360,21 @@
                                            syncTotalsFromItems();
                                        "
                                        :placeholder="(item.is_extracom || formData.is_extracomtable) ? 'Maks. 300.000' : 'Contoh: 185.000.000'"
-                                       :class="(item.is_extracom || formData.is_extracomtable) && item.mesin_nilai_satuan > 300000 ? 'border-rose-500 ring-1 ring-rose-500 text-rose-300' : 'border-slate-700 text-emerald-300 focus:border-emerald-500'"
+                                       :class="((item.is_extracom || formData.is_extracomtable) && Number(item.mesin_nilai_satuan || 0) > 300000) || (!(item.is_extracom || formData.is_extracomtable) && Number(item.mesin_nilai_satuan || 0) > 0 && Number(item.mesin_nilai_satuan || 0) <= 300000) ? 'border-rose-500 ring-1 ring-rose-500 text-rose-300' : 'border-slate-700 text-emerald-300 focus:border-emerald-500'"
                                        class="w-full bg-slate-950 border rounded-xl px-3 py-2 text-xs font-mono font-bold focus:outline-none transition-colors">
-                                <span x-show="(item.is_extracom || formData.is_extracomtable) && item.mesin_nilai_satuan > 300000" class="text-[9px] font-bold text-rose-400 block mt-1">
+                                <span x-show="(item.is_extracom || formData.is_extracomtable) && Number(item.mesin_nilai_satuan || 0) > 300000" class="text-[9.5px] font-bold text-rose-400 block mt-1">
                                     ⚠️ Nilai satuan Extracom tidak boleh > Rp 300.000!
                                 </span>
+                                <span x-show="!(item.is_extracom || formData.is_extracomtable) && Number(item.mesin_nilai_satuan || 0) > 0 && Number(item.mesin_nilai_satuan || 0) <= 300000" class="text-[9.5px] font-bold text-rose-400 block mt-1">
+                                    ⚠️ Aset Reguler: Nilai satuan wajib > Rp 300.000 (Jika ≤ Rp 300.000, silakan centang Ekstrakomptabel).
+                                </span>
                             </div>
-                            <div>
-                                <label class="block text-emerald-400 text-[10px] mb-1 font-bold">Sub Total Item #<span x-text="idx + 1"></span> (Rp)</label>
+
+                            <!-- Kolom 4: Sub Total (4 cols) -->
+                            <div class="lg:col-span-4">
+                                <label class="block text-emerald-400 text-[10px] mb-1 font-bold min-h-[18px] flex items-center">
+                                    <span>Sub Total Item #<span x-text="idx + 1"></span> (Rp)</span>
+                                </label>
                                 <div class="w-full bg-slate-950/90 border border-emerald-500/50 rounded-xl px-3 py-2 text-xs text-emerald-400 font-mono font-black flex items-center justify-between shadow-inner">
                                     <span class="text-emerald-500 text-[10px]">Rp</span>
                                     <span x-text="Number(getMesinSubtotal(item)).toLocaleString('id-ID')"></span>

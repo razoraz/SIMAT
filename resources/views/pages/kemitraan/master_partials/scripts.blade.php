@@ -4163,7 +4163,7 @@
                 const parts = [];
                 if (years > 0) parts.push(`${years} Tahun`);
                 if (months > 0) parts.push(`${months} Bulan`);
-                if (days > 0 && years === 0) parts.push(`${days} Hari`);
+                if (days > 0) parts.push(`${days} Hari`);
 
                 if (parts.length === 0) {
                     const diffMs = dS.getTime() - dM.getTime();
