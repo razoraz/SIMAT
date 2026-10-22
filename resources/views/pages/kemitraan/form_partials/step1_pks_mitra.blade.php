@@ -275,13 +275,14 @@
                         <span class="px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider font-mono border"
                               :class="{
                                   'bg-emerald-500/20 text-emerald-300 border-emerald-500/40': (formData.objek_aset_terpilih?.kib || lockedKibFromData) === 'KIB A' || (formData.objek_aset_terpilih?.kib || lockedKibFromData) === 'A',
-                                  'bg-amber-500/20 text-amber-300 border-amber-500/40': (formData.objek_aset_terpilih?.kib || lockedKibFromData) === 'KIB B' || (formData.objek_aset_terpilih?.kib || lockedKibFromData) === 'B',
+                                  'bg-amber-500/20 text-amber-300 border-amber-500/40': ((formData.objek_aset_terpilih?.kib || lockedKibFromData) === 'KIB B' || (formData.objek_aset_terpilih?.kib || lockedKibFromData) === 'B') && !formData.objek_aset_terpilih?.is_extracomtable,
                                   'bg-indigo-500/20 text-indigo-300 border-indigo-500/40': (formData.objek_aset_terpilih?.kib || lockedKibFromData) === 'KIB C' || (formData.objek_aset_terpilih?.kib || lockedKibFromData) === 'C',
                                   'bg-purple-500/20 text-purple-300 border-purple-500/40': (formData.objek_aset_terpilih?.kib || lockedKibFromData) === 'KIB D' || (formData.objek_aset_terpilih?.kib || lockedKibFromData) === 'D',
-                                  'bg-teal-500/20 text-teal-300 border-teal-500/40': (formData.objek_aset_terpilih?.kib || lockedKibFromData) === 'KIB E' || (formData.objek_aset_terpilih?.kib || lockedKibFromData) === 'E',
+                                  'bg-teal-500/20 text-teal-300 border-teal-500/40': ((formData.objek_aset_terpilih?.kib || lockedKibFromData) === 'KIB E' || (formData.objek_aset_terpilih?.kib || lockedKibFromData) === 'E') && !formData.objek_aset_terpilih?.is_extracomtable,
+                                  'bg-rose-500/20 text-rose-300 border-rose-500/40': (formData.objek_aset_terpilih?.kib || lockedKibFromData) === 'EXTRACOM' || formData.objek_aset_terpilih?.is_extracomtable,
                                   'bg-cyan-500/20 text-cyan-300 border-cyan-500/40': !(formData.objek_aset_terpilih?.kib || lockedKibFromData)
                               }"
-                              x-text="formData.objek_aset_terpilih?.kib || (lockedKibFromData ? ('KIB ' + lockedKibFromData) : 'BMD RSUD')"></span>
+                              x-text="(formData.objek_aset_terpilih?.is_extracomtable || formData.objek_aset_terpilih?.kib === 'EXTRACOM') ? 'EXTRACOM' : (formData.objek_aset_terpilih?.kib || (lockedKibFromData ? ('KIB ' + lockedKibFromData) : 'BMD RSUD'))"></span>
 
                         <span class="text-[10px] text-cyan-300 font-extrabold bg-cyan-500/15 px-2.5 py-0.5 rounded-md border border-cyan-500/30 flex items-center gap-1 font-mono">
                             <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
@@ -372,12 +373,17 @@
                             <span class="px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider font-mono border"
                                   :class="{
                                       'bg-emerald-500/20 text-emerald-300 border-emerald-500/40': formData.objek_aset_terpilih?.kib === 'KIB A',
-                                      'bg-amber-500/20 text-amber-300 border-amber-500/40': formData.objek_aset_terpilih?.kib === 'KIB B',
+                                      'bg-amber-500/20 text-amber-300 border-amber-500/40': formData.objek_aset_terpilih?.kib === 'KIB B' && !formData.objek_aset_terpilih?.is_extracomtable,
                                       'bg-indigo-500/20 text-indigo-300 border-indigo-500/40': formData.objek_aset_terpilih?.kib === 'KIB C',
                                       'bg-purple-500/20 text-purple-300 border-purple-500/40': formData.objek_aset_terpilih?.kib === 'KIB D',
-                                      'bg-teal-500/20 text-teal-300 border-teal-500/40': formData.objek_aset_terpilih?.kib === 'KIB E'
+                                      'bg-teal-500/20 text-teal-300 border-teal-500/40': formData.objek_aset_terpilih?.kib === 'KIB E' && !formData.objek_aset_terpilih?.is_extracomtable,
+                                      'bg-rose-500/20 text-rose-300 border-rose-500/40': formData.objek_aset_terpilih?.kib === 'EXTRACOM' || formData.objek_aset_terpilih?.is_extracomtable
                                   }"
-                                  x-text="formData.objek_aset_terpilih?.kib || 'Objek BMD'"></span>
+                                  x-text="(formData.objek_aset_terpilih?.is_extracomtable || formData.objek_aset_terpilih?.kib === 'EXTRACOM') ? 'EXTRACOM' : (formData.objek_aset_terpilih?.kib || 'Objek BMD')"></span>
+                            <template x-if="formData.objek_aset_terpilih?.is_extracomtable && formData.objek_aset_terpilih?.kib_asli && formData.objek_aset_terpilih?.kib_asli !== 'EXTRACOM'">
+                                <span class="text-[9.5px] font-mono font-bold text-rose-300 bg-rose-950/60 px-2 py-0.5 rounded-lg border border-rose-500/30"
+                                      x-text="'Ekstrakomptabel (' + formData.objek_aset_terpilih.kib_asli + ')'"></span>
+                            </template>
                             <template x-if="formData.objek_aset_terpilih?.nomor_pks && formData.objek_aset_terpilih?.nomor_pks !== '-'">
                                 <span class="text-xs font-mono font-extrabold text-cyan-300 bg-cyan-950/60 px-2.5 py-0.5 rounded-lg border border-cyan-500/30"
                                       x-text="'PKS: ' + formData.objek_aset_terpilih.nomor_pks"></span>
@@ -405,19 +411,22 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
                     <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800">
-                        <span class="text-[10px] uppercase font-bold text-slate-500 block">📍 Lokasi / Ruangan</span>
+                        <span class="text-[10px] uppercase font-bold text-slate-500 block"
+                              x-text="getObjekStatSlot1(formData.objek_aset_terpilih).label"></span>
                         <span class="font-bold text-slate-200 block truncate"
-                              x-text="formData.objek_aset_terpilih?.unit_nama || formData.objek_aset_terpilih?.alamat_barang || 'RSUD Dr. H. Koesnandi'"></span>
+                              x-text="getObjekStatSlot1(formData.objek_aset_terpilih).value"></span>
                     </div>
                     <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800">
-                        <span class="text-[10px] uppercase font-bold text-slate-500 block">📐 Luas Objek</span>
-                        <span class="font-mono font-bold text-cyan-300 block"
-                              x-text="formData.objek_aset_terpilih?.luas ? (formData.objek_aset_terpilih.luas + ' m²') : '-'"></span>
+                        <span class="text-[10px] uppercase font-bold text-slate-500 block"
+                              x-text="getObjekStatSlot2(formData.objek_aset_terpilih).label"></span>
+                        <span class="font-mono font-bold text-cyan-300 block truncate"
+                              x-text="getObjekStatSlot2(formData.objek_aset_terpilih).value"></span>
                     </div>
                     <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800">
-                        <span class="text-[10px] uppercase font-bold text-slate-500 block">📜 Sertifikat / Dokumen</span>
+                        <span class="text-[10px] uppercase font-bold text-slate-500 block"
+                              x-text="getObjekStatSlot3(formData.objek_aset_terpilih).label"></span>
                         <span class="font-mono font-bold text-slate-300 block truncate"
-                              x-text="formData.objek_aset_terpilih?.sertifikat || '-'"></span>
+                              x-text="getObjekStatSlot3(formData.objek_aset_terpilih).value"></span>
                     </div>
                 </div>
 
@@ -525,6 +534,9 @@
                                     <button type="button" @click="objekKibFilter = 'KIB E'"
                                         :class="objekKibFilter === 'KIB E' ? 'bg-teal-500/20 text-teal-300 border-teal-400/60 font-extrabold shadow-sm' : 'bg-slate-950 text-slate-400 hover:text-white border-slate-800'"
                                         class="px-2 py-1 rounded-lg text-[10px] border transition-all">📦 KIB E (Lainnya)</button>
+                                    <button type="button" @click="objekKibFilter = 'EXTRACOM'"
+                                        :class="objekKibFilter === 'EXTRACOM' ? 'bg-rose-500/20 text-rose-300 border-rose-400/60 font-extrabold shadow-sm' : 'bg-slate-950 text-slate-400 hover:text-white border-slate-800'"
+                                        class="px-2 py-1 rounded-lg text-[10px] border transition-all">⚡ EXTRACOM</button>
                                 </div>
                                 <span class="text-[10px] font-mono text-emerald-400/90 bg-slate-950 px-2 py-0.5 rounded-md border border-slate-800 shrink-0"
                                     x-text="'Menampilkan ' + filteredObjekAsetList.length + ' dari ' + totalFilteredObjekCount + ' objek'"></span>
@@ -546,12 +558,13 @@
                                             <span class="px-2 py-0.5 rounded text-[9.5px] font-mono font-extrabold uppercase shrink-0"
                                                 :class="{
                                                     'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40': item.kib === 'KIB A',
-                                                    'bg-amber-500/20 text-amber-300 border border-amber-500/40': item.kib === 'KIB B',
+                                                    'bg-amber-500/20 text-amber-300 border border-amber-500/40': item.kib === 'KIB B' && !item.is_extracomtable,
                                                     'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40': item.kib === 'KIB C',
                                                     'bg-purple-500/20 text-purple-300 border border-purple-500/40': item.kib === 'KIB D',
-                                                    'bg-teal-500/20 text-teal-300 border border-teal-500/40': item.kib === 'KIB E'
+                                                    'bg-teal-500/20 text-teal-300 border border-teal-500/40': item.kib === 'KIB E' && !item.is_extracomtable,
+                                                    'bg-rose-500/20 text-rose-300 border border-rose-500/40': item.kib === 'EXTRACOM' || item.is_extracomtable
                                                 }"
-                                                x-text="item.kib"></span>
+                                                x-text="(item.is_extracomtable || item.kib === 'EXTRACOM') ? 'EXTRACOM' : item.kib"></span>
                                             <span class="font-bold text-white text-xs truncate group-hover:text-emerald-300 transition-colors" x-text="item.nama_barang"></span>
                                         </div>
                                         <!-- Identitas PKS & Volume (GANTI NIBAR) -->
@@ -572,7 +585,14 @@
                                             <span x-text="item.unit_nama || item.alamat_barang || 'RSUD Dr. H. Koesnandi'"></span>
                                         </span>
                                         <div class="flex items-center gap-2 shrink-0">
-                                            <span x-show="item.luas" class="font-mono text-slate-300" x-text="item.luas + ' m²'"></span>
+                                            <!-- Info Spesifikasi Ringkas (Luas untuk Tanah/Gedung, Merk/Ukuran untuk Mesin/Extracom) -->
+                                            <template x-if="item.luas">
+                                                <span class="font-mono text-slate-300" x-text="item.luas + ' m²'"></span>
+                                            </template>
+                                            <template x-if="!item.luas && (item.merk_type || item.ukuran)">
+                                                <span class="font-mono text-slate-300 text-[10.5px] truncate max-w-[170px]"
+                                                      x-text="(item.merk_type || '') + (item.merk_type && item.ukuran ? ' · ' : '') + (item.ukuran || '')"></span>
+                                            </template>
                                             <template x-if="item.mitra_nama && item.mitra_nama !== '-'">
                                                 <span class="px-1.5 py-0.5 rounded text-[9.5px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold"
                                                     x-text="'🤝 ' + (item.kemitraan_data?.skema_kemitraan || 'Sewa') + ': ' + item.mitra_nama"></span>
@@ -1039,46 +1059,98 @@
                 </div>
             </div>
 
-            <!-- Input Estimasi Jangka Waktu / Durasi Konsesi -->
-            <div class="pt-3 border-t border-slate-800/80 space-y-2">
+            <!-- Input Estimasi Jangka Waktu / Durasi Konsesi (3 Kolom Terpisah: Tahun, Bulan, Hari) -->
+            <div class="pt-3 border-t border-slate-800/80 space-y-2.5">
                 <div class="flex items-center justify-between flex-wrap gap-1">
                     <label class="text-[11px] font-bold text-slate-300 flex items-center gap-1.5">
                         <span>⏳</span>
                         <span>Estimasi Jangka Waktu / Durasi Konsesi:</span>
                     </label>
-                    <span class="text-[9.5px] text-cyan-400 font-mono">⚡ Ketik 2 Tahun dkk, tanggal berakhir otomatis menyesuaikan</span>
+                    <span class="text-[9.5px] text-cyan-400 font-mono">⚡ Ubah angka atau tanggal kalender, durasi dan tanggal berakhir otomatis sinkron</span>
                 </div>
-                <div class="relative">
-                    <input type="text" 
-                        x-model="formData.jangka_waktu" 
-                        @input="onDurasiInputChange()" 
-                        @change="onDurasiInputChange()" 
-                        placeholder="Contoh: 2 Tahun / 6 Bulan / 90 Hari"
-                        class="w-full border border-slate-700 focus:border-cyan-400 bg-slate-950 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none transition-colors font-medium">
+
+                <!-- 3 Kolom Input Angka Presisi: Tahun, Bulan, Hari -->
+                <div class="grid grid-cols-3 gap-2.5 sm:gap-3.5">
+                    <!-- Kolom 1: Tahun -->
+                    <div class="space-y-1">
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Tahun</label>
+                        <div class="relative flex items-center">
+                            <input type="number" min="0" max="99" 
+                                   x-model.number="durasiTahun" 
+                                   @input="onDurasiComponentChange()" 
+                                   @change="onDurasiComponentChange()"
+                                   placeholder="0"
+                                   class="w-full border border-slate-700 focus:border-cyan-400 bg-slate-950 rounded-xl px-3 sm:px-4 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none transition-colors font-mono font-bold pr-11">
+                            <span class="absolute right-3 text-[10.5px] font-bold text-slate-500 pointer-events-none">Thn</span>
+                        </div>
+                    </div>
+
+                    <!-- Kolom 2: Bulan -->
+                    <div class="space-y-1">
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Bulan</label>
+                        <div class="relative flex items-center">
+                            <input type="number" min="0" max="11" 
+                                   x-model.number="durasiBulan" 
+                                   @input="onDurasiComponentChange()" 
+                                   @change="onDurasiComponentChange()"
+                                   placeholder="0"
+                                   class="w-full border border-slate-700 focus:border-cyan-400 bg-slate-950 rounded-xl px-3 sm:px-4 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none transition-colors font-mono font-bold pr-11">
+                            <span class="absolute right-3 text-[10.5px] font-bold text-slate-500 pointer-events-none">Bln</span>
+                        </div>
+                    </div>
+
+                    <!-- Kolom 3: Hari -->
+                    <div class="space-y-1">
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Hari</label>
+                        <div class="relative flex items-center">
+                            <input type="number" min="0" max="31" 
+                                   x-model.number="durasiHari" 
+                                   @input="onDurasiComponentChange()" 
+                                   @change="onDurasiComponentChange()"
+                                   placeholder="0"
+                                   class="w-full border border-slate-700 focus:border-cyan-400 bg-slate-950 rounded-xl px-3 sm:px-4 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none transition-colors font-mono font-bold pr-11">
+                            <span class="absolute right-3 text-[10.5px] font-bold text-slate-500 pointer-events-none">Hari</span>
+                        </div>
+                    </div>
                 </div>
-                <!-- Shortcut Preset Pills -->
-                <div class="flex flex-wrap items-center gap-1.5 pt-1">
-                    <span class="text-[10px] text-slate-400 font-medium mr-0.5">⚡ Pilihan Cepat:</span>
-                    <button type="button" @click="setKemitraanDurasiQuick(6, 'bulan')" 
-                        class="px-2.5 py-1 rounded-lg bg-slate-800/90 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 border border-slate-700/80 hover:border-cyan-500/40 text-[10.5px] font-bold transition-all cursor-pointer active:scale-95 shadow-sm">
-                        +6 Bulan
-                    </button>
-                    <button type="button" @click="setKemitraanDurasiQuick(1, 'tahun')" 
-                        class="px-2.5 py-1 rounded-lg bg-slate-800/90 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 border border-slate-700/80 hover:border-cyan-500/40 text-[10.5px] font-bold transition-all cursor-pointer active:scale-95 shadow-sm">
-                        +1 Tahun
-                    </button>
-                    <button type="button" @click="setKemitraanDurasiQuick(2, 'tahun')" 
-                        class="px-2.5 py-1 rounded-lg bg-slate-800/90 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 border border-slate-700/80 hover:border-cyan-500/40 text-[10.5px] font-bold transition-all cursor-pointer active:scale-95 shadow-sm">
-                        +2 Tahun
-                    </button>
-                    <button type="button" @click="setKemitraanDurasiQuick(3, 'tahun')" 
-                        class="px-2.5 py-1 rounded-lg bg-slate-800/90 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 border border-slate-700/80 hover:border-cyan-500/40 text-[10.5px] font-bold transition-all cursor-pointer active:scale-95 shadow-sm">
-                        +3 Tahun
-                    </button>
-                    <button type="button" @click="setKemitraanDurasiQuick(5, 'tahun')" 
-                        class="px-2.5 py-1 rounded-lg bg-slate-800/90 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 border border-slate-700/80 hover:border-cyan-500/40 text-[10.5px] font-bold transition-all cursor-pointer active:scale-95 shadow-sm">
-                        +5 Tahun
-                    </button>
+
+                <!-- Baris Bawah: Shortcut Preset & Live Detail Summary Badge -->
+                <div class="flex items-center justify-between flex-wrap gap-2 pt-1">
+                    <!-- Shortcut Preset Pills -->
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        <span class="text-[10px] text-slate-400 font-medium mr-0.5">⚡ Pilihan Cepat:</span>
+                        <button type="button" @click="setKemitraanDurasiComponents(0, 6, 0)" 
+                            class="px-2.5 py-1 rounded-lg bg-slate-800/90 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 border border-slate-700/80 hover:border-cyan-500/40 text-[10.5px] font-bold transition-all cursor-pointer active:scale-95 shadow-sm">
+                            +6 Bulan
+                        </button>
+                        <button type="button" @click="setKemitraanDurasiComponents(1, 0, 0)" 
+                            class="px-2.5 py-1 rounded-lg bg-slate-800/90 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 border border-slate-700/80 hover:border-cyan-500/40 text-[10.5px] font-bold transition-all cursor-pointer active:scale-95 shadow-sm">
+                            +1 Tahun
+                        </button>
+                        <button type="button" @click="setKemitraanDurasiComponents(2, 0, 0)" 
+                            class="px-2.5 py-1 rounded-lg bg-slate-800/90 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 border border-slate-700/80 hover:border-cyan-500/40 text-[10.5px] font-bold transition-all cursor-pointer active:scale-95 shadow-sm">
+                            +2 Tahun
+                        </button>
+                        <button type="button" @click="setKemitraanDurasiComponents(3, 0, 0)" 
+                            class="px-2.5 py-1 rounded-lg bg-slate-800/90 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 border border-slate-700/80 hover:border-cyan-500/40 text-[10.5px] font-bold transition-all cursor-pointer active:scale-95 shadow-sm">
+                            +3 Tahun
+                        </button>
+                        <button type="button" @click="setKemitraanDurasiComponents(5, 0, 0)" 
+                            class="px-2.5 py-1 rounded-lg bg-slate-800/90 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 border border-slate-700/80 hover:border-cyan-500/40 text-[10.5px] font-bold transition-all cursor-pointer active:scale-95 shadow-sm">
+                            +5 Tahun
+                        </button>
+                    </div>
+
+                    <!-- Live Summary Badge Presisi -->
+                    <template x-if="durasiKonsesiDetail.formatted">
+                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-cyan-950/60 border border-cyan-500/30 text-xs font-mono shadow-sm">
+                            <span class="text-cyan-400 font-bold">⏱️ Total:</span>
+                            <span class="text-white font-extrabold" x-text="durasiKonsesiDetail.formatted"></span>
+                            <template x-if="durasiKonsesiDetail.totalDays > 0">
+                                <span class="text-cyan-300/70 text-[11px]" x-text="'(' + durasiKonsesiDetail.totalDays + ' Hari)'"></span>
+                            </template>
+                        </div>
+                    </template>
                 </div>
             </div>
             <p class="text-[10.5px] text-cyan-400/80 italic">

@@ -300,8 +300,10 @@
             get filteredObjekAsetList() {
                 const q = (this.objekSearchQuery || '').toLowerCase().trim();
                 let list = this.dbObjekAsetList;
-                if (this.objekKibFilter !== 'ALL') {
-                    list = list.filter(item => item.kib === this.objekKibFilter);
+                if (this.objekKibFilter === 'EXTRACOM') {
+                    list = list.filter(item => item.kib === 'EXTRACOM' || !!item.is_extracomtable);
+                } else if (this.objekKibFilter !== 'ALL') {
+                    list = list.filter(item => item.kib === this.objekKibFilter && !item.is_extracomtable);
                 }
                 if (!q) return list.slice(0, 10);
                 return list.filter(item => {
@@ -311,15 +313,18 @@
                     const kode = (item.kode_108 || '').toLowerCase();
                     const unit = (item.unit_nama || '').toLowerCase();
                     const alamat = (item.alamat_barang || '').toLowerCase();
-                    return nama.includes(q) || pks.includes(q) || mitra.includes(q) || kode.includes(q) || unit.includes(q) || alamat.includes(q);
+                    const merk = (item.merk_type || '').toLowerCase();
+                    return nama.includes(q) || pks.includes(q) || mitra.includes(q) || kode.includes(q) || unit.includes(q) || alamat.includes(q) || merk.includes(q);
                 }).slice(0, 10);
             },
 
             get totalFilteredObjekCount() {
                 const q = (this.objekSearchQuery || '').toLowerCase().trim();
                 let list = this.dbObjekAsetList;
-                if (this.objekKibFilter !== 'ALL') {
-                    list = list.filter(item => item.kib === this.objekKibFilter);
+                if (this.objekKibFilter === 'EXTRACOM') {
+                    list = list.filter(item => item.kib === 'EXTRACOM' || !!item.is_extracomtable);
+                } else if (this.objekKibFilter !== 'ALL') {
+                    list = list.filter(item => item.kib === this.objekKibFilter && !item.is_extracomtable);
                 }
                 if (!q) return list.length;
                 return list.filter(item => {
@@ -329,8 +334,114 @@
                     const kode = (item.kode_108 || '').toLowerCase();
                     const unit = (item.unit_nama || '').toLowerCase();
                     const alamat = (item.alamat_barang || '').toLowerCase();
-                    return nama.includes(q) || pks.includes(q) || mitra.includes(q) || kode.includes(q) || unit.includes(q) || alamat.includes(q);
+                    const merk = (item.merk_type || '').toLowerCase();
+                    return nama.includes(q) || pks.includes(q) || mitra.includes(q) || kode.includes(q) || unit.includes(q) || alamat.includes(q) || merk.includes(q);
                 }).length;
+            },
+
+            getObjekStatSlot1(obj) {
+                if (!obj) return { label: '📍 Lokasi / Ruangan', value: '-' };
+                const kib = obj.kib || '';
+                let label = '📍 Lokasi / Ruangan';
+                if (kib === 'KIB A') label = '📍 Lokasi / Alamat';
+                else if (kib === 'KIB C') label = '📍 Lokasi / Kawasan';
+                else if (kib === 'KIB D') label = '📍 Lokasi / Ruas';
+                return {
+                    label: label,
+                    value: obj.unit_nama || obj.alamat_barang || 'RSUD Dr. H. Koesnandi'
+                };
+            },
+
+            getObjekStatSlot2(obj) {
+                if (!obj) return { label: '🏷️ Spesifikasi', value: '-' };
+                const kib = obj.kib || '';
+                const isExtracom = !!obj.is_extracomtable || kib === 'EXTRACOM';
+
+                if (isExtracom || kib === 'KIB B') {
+                    const val = obj.merk_type || obj.spesifikasi_raw?.merk || obj.spesifikasi_raw?.type || obj.spesifikasi_raw?.spesifikasi || '-';
+                    return {
+                        label: '🏷️ Merk / Type',
+                        value: val
+                    };
+                }
+                if (kib === 'KIB A') {
+                    return {
+                        label: '📐 Luas Tanah',
+                        value: obj.luas ? (obj.luas + ' m²') : '-'
+                    };
+                }
+                if (kib === 'KIB C') {
+                    return {
+                        label: '📐 Luas Lantai',
+                        value: obj.luas ? (obj.luas + ' m²') : '-'
+                    };
+                }
+                if (kib === 'KIB D') {
+                    return {
+                        label: '📐 Luas / Panjang',
+                        value: obj.luas ? (obj.luas + ' m²') : (obj.panjang ? (obj.panjang + ' m') : '-')
+                    };
+                }
+                if (kib === 'KIB E') {
+                    return {
+                        label: '📚 Judul / Pencipta',
+                        value: obj.judul || obj.spesifikasi_raw?.judul || obj.spesifikasi_raw?.pencipta || '-'
+                    };
+                }
+                // Fallback dinamis jika kategori belum spesifik
+                if (obj.luas) {
+                    return { label: '📐 Luas Objek', value: obj.luas + ' m²' };
+                }
+                if (obj.merk_type) {
+                    return { label: '🏷️ Merk / Type', value: obj.merk_type };
+                }
+                return { label: '🏷️ Spesifikasi', value: obj.spesifikasi_raw?.spesifikasi || '-' };
+            },
+
+            getObjekStatSlot3(obj) {
+                if (!obj) return { label: '📜 Dokumen / Legalitas', value: '-' };
+                const kib = obj.kib || '';
+                const isExtracom = !!obj.is_extracomtable || kib === 'EXTRACOM';
+
+                if (isExtracom || kib === 'KIB B') {
+                    const noPabrik = obj.no_pabrik || obj.spesifikasi_raw?.no_pabrik || obj.spesifikasi_raw?.mesin_no_pabrik || obj.spesifikasi_raw?.mesin_no_polisi;
+                    const ukuran = obj.ukuran || obj.spesifikasi_raw?.ukuran || obj.spesifikasi_raw?.mesin_ukuran;
+                    const val = ukuran || noPabrik || (obj.volume ? (obj.volume + ' ' + (obj.satuan || 'Unit')) : '-');
+                    const lbl = ukuran ? '📏 Ukuran / Kapasitas' : (noPabrik ? '🔢 No. Pabrik / Seri' : '📏 Ukuran / No. Seri');
+                    return {
+                        label: lbl,
+                        value: val
+                    };
+                }
+                if (kib === 'KIB A') {
+                    return {
+                        label: '📜 Sertifikat / Dokumen',
+                        value: obj.sertifikat || obj.spesifikasi_raw?.sertifikat_no || '-'
+                    };
+                }
+                if (kib === 'KIB C') {
+                    return {
+                        label: '🏢 Konstruksi / Dokumen',
+                        value: obj.konstruksi || obj.sertifikat || obj.spesifikasi_raw?.gedung_konstruksi_bertingkat || '-'
+                    };
+                }
+                if (kib === 'KIB D') {
+                    return {
+                        label: '🛣️ Konstruksi',
+                        value: obj.konstruksi || obj.sertifikat || '-'
+                    };
+                }
+                if (kib === 'KIB E') {
+                    return {
+                        label: '🧪 Bahan / Spesifikasi',
+                        value: obj.bahan || obj.ukuran || obj.spesifikasi_raw?.bahan || '-'
+                    };
+                }
+                // Fallback dinamis
+                if (obj.sertifikat) {
+                    return { label: '📜 Sertifikat / Dokumen', value: obj.sertifikat };
+                }
+                return { label: '📜 Dokumen / Legalitas', value: '-' };
             },
 
             selectObjekAset(item) {
@@ -407,6 +518,7 @@
                 }
 
                 // SINKRONISASIKAN LANGSUNG KE FLATPICKR DOM AGAR TAMPILAN DATEPICKER SEGERA TERISI
+                this.syncDurationComponentsFromDates();
                 this.$nextTick(() => {
                     ['tanggal_pks', 'tanggal_mulai', 'tanggal_selesai'].forEach(field => {
                         const inputEl = document.querySelector(`input[x-model="formData.${field}"]`);
@@ -587,9 +699,162 @@
                 return tMulai > 0 && tSelesai > 0 && tSelesai < tMulai;
             },
 
+            // 3 Kolom Durasi Terpisah
+            durasiTahun: 0,
+            durasiBulan: 0,
+            durasiHari: 0,
+
+            get durasiKonsesiDetail() {
+                const y = parseInt(this.durasiTahun, 10) || 0;
+                const m = parseInt(this.durasiBulan, 10) || 0;
+                const d = parseInt(this.durasiHari, 10) || 0;
+                const parts = [];
+                if (y > 0) parts.push(`${y} Tahun`);
+                if (m > 0) parts.push(`${m} Bulan`);
+                if (d > 0) parts.push(`${d} Hari`);
+
+                let totalDays = 0;
+                if (this.formData.tanggal_mulai && this.formData.tanggal_selesai) {
+                    const isoM = this.formatDateToIso(this.formData.tanggal_mulai) || this.formData.tanggal_mulai;
+                    const isoS = this.formatDateToIso(this.formData.tanggal_selesai) || this.formData.tanggal_selesai;
+                    const dM = new Date(isoM);
+                    const dS = new Date(isoS);
+                    if (!isNaN(dM.getTime()) && !isNaN(dS.getTime()) && dS >= dM) {
+                        totalDays = Math.round((dS.getTime() - dM.getTime()) / (1000 * 60 * 60 * 24));
+                    }
+                }
+
+                return {
+                    years: y,
+                    months: m,
+                    days: d,
+                    formatted: parts.join(' ') || (this.formData.jangka_waktu || ''),
+                    totalDays: totalDays
+                };
+            },
+
             get durasiKonsesiText() {
-                if (!this.formData.tanggal_mulai || !this.formData.tanggal_selesai) return '';
-                return this.formatKemitraanDurationFromDates(this.formData.tanggal_mulai, this.formData.tanggal_selesai);
+                const detail = this.durasiKonsesiDetail;
+                return detail.formatted || this.formData.jangka_waktu || '';
+            },
+
+            // Sinkronisasi ketika user mengubah angka Tahun, Bulan, atau Hari
+            onDurasiComponentChange() {
+                if (this.durasiTahun < 0 || isNaN(this.durasiTahun)) this.durasiTahun = 0;
+                if (this.durasiBulan < 0 || isNaN(this.durasiBulan)) this.durasiBulan = 0;
+                if (this.durasiHari < 0 || isNaN(this.durasiHari)) this.durasiHari = 0;
+
+                const y = parseInt(this.durasiTahun, 10) || 0;
+                const m = parseInt(this.durasiBulan, 10) || 0;
+                const d = parseInt(this.durasiHari, 10) || 0;
+
+                const parts = [];
+                if (y > 0) parts.push(`${y} Tahun`);
+                if (m > 0) parts.push(`${m} Bulan`);
+                if (d > 0) parts.push(`${d} Hari`);
+                this.formData.jangka_waktu = parts.join(' ');
+
+                // Otomatis hitung Tanggal Selesai jika Tanggal Mulai sudah ada
+                let tM = this.formData.tanggal_mulai;
+                if (!tM && (y > 0 || m > 0 || d > 0)) {
+                    tM = new Date().toISOString().split('T')[0];
+                    this.formData.tanggal_mulai = tM;
+                    const inputMulai = document.querySelector('input[x-model="formData.tanggal_mulai"]');
+                    if (inputMulai && inputMulai._flatpickr) {
+                        inputMulai._flatpickr.setDate(tM, false);
+                    }
+                }
+
+                if (tM && (y > 0 || m > 0 || d > 0)) {
+                    const newEnd = this.computeKemitraanEndDate(tM, { years: y, months: m, days: d });
+                    if (newEnd) {
+                        this.formData.tanggal_selesai = newEnd;
+                        this.$nextTick(() => {
+                            const inputSelesai = document.querySelector('input[x-model="formData.tanggal_selesai"]');
+                            if (inputSelesai && inputSelesai._flatpickr) {
+                                inputSelesai._flatpickr.setDate(newEnd, false);
+                            }
+                        });
+                    }
+                }
+            },
+
+            setKemitraanDurasiComponents(years, months, days) {
+                this.durasiTahun = years;
+                this.durasiBulan = months;
+                this.durasiHari = days;
+                this.onDurasiComponentChange();
+            },
+
+            setKemitraanDurasiQuick(amount, unit) {
+                if (unit === 'tahun') {
+                    this.setKemitraanDurasiComponents(amount, 0, 0);
+                } else if (unit === 'bulan') {
+                    this.setKemitraanDurasiComponents(0, amount, 0);
+                } else {
+                    this.setKemitraanDurasiComponents(0, 0, amount);
+                }
+            },
+
+            syncDurationComponentsFromDates() {
+                if (!this.formData.tanggal_mulai || !this.formData.tanggal_selesai) return;
+                const diff = this.calcDifferenceInYMD(this.formData.tanggal_mulai, this.formData.tanggal_selesai);
+                if (diff) {
+                    this.durasiTahun = diff.years;
+                    this.durasiBulan = diff.months;
+                    this.durasiHari = diff.days;
+                    const parts = [];
+                    if (diff.years > 0) parts.push(`${diff.years} Tahun`);
+                    if (diff.months > 0) parts.push(`${diff.months} Bulan`);
+                    if (diff.days > 0) parts.push(`${diff.days} Hari`);
+                    this.formData.jangka_waktu = parts.join(' ') || (diff.totalDays > 0 ? `${diff.totalDays} Hari` : '1 Hari');
+                }
+            },
+
+            calcDifferenceInYMD(startDateStr, endDateStr) {
+                if (!startDateStr || !endDateStr) return null;
+                const isoStart = this.formatDateToIso(startDateStr) || startDateStr;
+                const isoEnd = this.formatDateToIso(endDateStr) || endDateStr;
+                let dM, dS;
+                if (typeof isoStart === 'string' && isoStart.includes('/')) {
+                    const p = isoStart.split('/');
+                    dM = new Date(parseInt(p[2], 10), parseInt(p[1], 10) - 1, parseInt(p[0], 10));
+                } else {
+                    const p = String(isoStart).split('T')[0].split('-');
+                    dM = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10));
+                }
+                if (typeof isoEnd === 'string' && isoEnd.includes('/')) {
+                    const p = isoEnd.split('/');
+                    dS = new Date(parseInt(p[2], 10), parseInt(p[1], 10) - 1, parseInt(p[0], 10));
+                } else {
+                    const p = String(isoEnd).split('T')[0].split('-');
+                    dS = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10));
+                }
+                if (isNaN(dM.getTime()) || isNaN(dS.getTime()) || dS < dM) return null;
+
+                let years = dS.getFullYear() - dM.getFullYear();
+                let months = dS.getMonth() - dM.getMonth();
+                let days = dS.getDate() - dM.getDate();
+
+                if (days < 0) {
+                    months -= 1;
+                    const prevMonthDate = new Date(dS.getFullYear(), dS.getMonth(), 0);
+                    days += prevMonthDate.getDate();
+                }
+                if (months < 0) {
+                    years -= 1;
+                    months += 12;
+                }
+
+                const diffMs = dS.getTime() - dM.getTime();
+                const totalDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+                return {
+                    years: Math.max(0, years),
+                    months: Math.max(0, months),
+                    days: Math.max(0, days),
+                    totalDays: totalDays
+                };
             },
 
             parseKemitraanDuration(text) {
@@ -597,34 +862,24 @@
                 const str = text.trim().toLowerCase();
                 if (!str) return null;
 
-                let totalMonths = 0;
-                let totalDays = 0;
+                let y = 0, m = 0, d = 0;
                 let matched = false;
-
-                const decimalYearMatch = str.match(/^([\d]+[.,][\d]+)\s*(?:tahun|thn|th|y|year|years)?$/);
-                if (decimalYearMatch) {
-                    const num = parseFloat(decimalYearMatch[1].replace(',', '.'));
-                    if (!isNaN(num) && num > 0) {
-                        const m = Math.round(num * 12);
-                        return { years: Math.floor(m / 12), months: m % 12, days: 0 };
-                    }
-                }
 
                 const yearMatch = str.match(/(\d+)\s*(?:tahun|thn|th|y|year|years)\b/);
                 if (yearMatch) {
-                    totalMonths += parseInt(yearMatch[1], 10) * 12;
+                    y = parseInt(yearMatch[1], 10);
                     matched = true;
                 }
 
                 const monthMatch = str.match(/(\d+)\s*(?:bulan|bln|bl|mo|month|months)\b/);
                 if (monthMatch) {
-                    totalMonths += parseInt(monthMatch[1], 10);
+                    m = parseInt(monthMatch[1], 10);
                     matched = true;
                 }
 
                 const dayMatch = str.match(/(\d+)\s*(?:hari|hr|d|day|days)\b/);
                 if (dayMatch) {
-                    totalDays += parseInt(dayMatch[1], 10);
+                    d = parseInt(dayMatch[1], 10);
                     matched = true;
                 }
 
@@ -633,23 +888,15 @@
                     if (plainNumMatch) {
                         const num = parseInt(plainNumMatch[1], 10);
                         if (num > 0) {
-                            if (num <= 30) {
-                                totalMonths += num * 12;
-                            } else {
-                                totalDays += num;
-                            }
+                            if (num <= 30) y = num;
+                            else d = num;
                             matched = true;
                         }
                     }
                 }
 
-                if (!matched || (totalMonths === 0 && totalDays === 0)) return null;
-
-                return {
-                    years: Math.floor(totalMonths / 12),
-                    months: totalMonths % 12,
-                    days: totalDays
-                };
+                if (!matched) return null;
+                return { years: y, months: m, days: d };
             },
 
             computeKemitraanEndDate(startDateStr, durationObj) {
@@ -682,110 +929,33 @@
             },
 
             formatKemitraanDurationFromDates(startDateStr, endDateStr) {
-                if (!startDateStr || !endDateStr) return '';
-                const isoStart = this.formatDateToIso(startDateStr) || startDateStr;
-                const isoEnd = this.formatDateToIso(endDateStr) || endDateStr;
-                let dM, dS;
-                if (typeof isoStart === 'string' && isoStart.includes('/')) {
-                    const p = isoStart.split('/');
-                    dM = new Date(parseInt(p[2], 10), parseInt(p[1], 10) - 1, parseInt(p[0], 10));
-                } else {
-                    const p = String(isoStart).split('T')[0].split('-');
-                    dM = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10));
-                }
-                if (typeof isoEnd === 'string' && isoEnd.includes('/')) {
-                    const p = isoEnd.split('/');
-                    dS = new Date(parseInt(p[2], 10), parseInt(p[1], 10) - 1, parseInt(p[0], 10));
-                } else {
-                    const p = String(isoEnd).split('T')[0].split('-');
-                    dS = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10));
-                }
-                if (isNaN(dM.getTime()) || isNaN(dS.getTime()) || dS < dM) return '';
-
-                let years = dS.getFullYear() - dM.getFullYear();
-                let months = dS.getMonth() - dM.getMonth();
-                let days = dS.getDate() - dM.getDate();
-
-                if (days < 0) {
-                    months -= 1;
-                    const prevMonthDate = new Date(dS.getFullYear(), dS.getMonth(), 0);
-                    days += prevMonthDate.getDate();
-                }
-                if (months < 0) {
-                    years -= 1;
-                    months += 12;
-                }
-
+                const diff = this.calcDifferenceInYMD(startDateStr, endDateStr);
+                if (!diff) return '';
                 const parts = [];
-                if (years > 0) parts.push(`${years} Tahun`);
-                if (months > 0) parts.push(`${months} Bulan`);
-                if (days > 0 && years === 0) parts.push(`${days} Hari`);
-
+                if (diff.years > 0) parts.push(`${diff.years} Tahun`);
+                if (diff.months > 0) parts.push(`${diff.months} Bulan`);
+                if (diff.days > 0) parts.push(`${diff.days} Hari`);
                 if (parts.length === 0) {
-                    const diffMs = dS.getTime() - dM.getTime();
-                    const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
-                    return diffDays > 0 ? `${diffDays} Hari` : '1 Hari';
+                    return diff.totalDays > 0 ? `${diff.totalDays} Hari` : '1 Hari';
                 }
                 return parts.join(' ');
             },
 
             onDurasiInputChange() {
-                const durText = this.formData?.jangka_waktu;
-                if (!durText) return;
-                const parsed = this.parseKemitraanDuration(durText);
-                if (!parsed) return;
-
-                let tM = this.formData.tanggal_mulai;
-                if (!tM) {
-                    tM = new Date().toISOString().split('T')[0];
-                    this.formData.tanggal_mulai = tM;
-                }
-                const newEnd = this.computeKemitraanEndDate(tM, parsed);
-                if (newEnd) {
-                    this.formData.tanggal_selesai = newEnd;
-                }
+                this.onDurasiComponentChange();
             },
 
             onTanggalMulaiKerjasamaChange() {
-                const durText = this.formData?.jangka_waktu;
-                const parsed = durText ? this.parseKemitraanDuration(durText) : null;
-                const tM = this.formData?.tanggal_mulai;
-                if (parsed && tM) {
-                    const newEnd = this.computeKemitraanEndDate(tM, parsed);
-                    if (newEnd) {
-                        this.formData.tanggal_selesai = newEnd;
-                        return;
-                    }
-                }
                 if (this.formData.tanggal_mulai && this.formData.tanggal_selesai) {
-                    const dur = this.formatKemitraanDurationFromDates(this.formData.tanggal_mulai, this.formData.tanggal_selesai);
-                    if (dur) this.formData.jangka_waktu = dur;
+                    this.syncDurationComponentsFromDates();
+                } else if (this.durasiTahun > 0 || this.durasiBulan > 0 || this.durasiHari > 0) {
+                    this.onDurasiComponentChange();
                 }
             },
 
             onTanggalSelesaiKerjasamaChange() {
                 if (this.formData.tanggal_mulai && this.formData.tanggal_selesai) {
-                    const dur = this.formatKemitraanDurationFromDates(this.formData.tanggal_mulai, this.formData.tanggal_selesai);
-                    if (dur) this.formData.jangka_waktu = dur;
-                }
-            },
-
-            setKemitraanDurasiQuick(amount, unit) {
-                const unitText = unit === 'tahun' ? 'Tahun' : (unit === 'bulan' ? 'Bulan' : 'Hari');
-                this.formData.jangka_waktu = `${amount} ${unitText}`;
-                let tM = this.formData.tanggal_mulai;
-                if (!tM) {
-                    tM = new Date().toISOString().split('T')[0];
-                    this.formData.tanggal_mulai = tM;
-                }
-                const parsed = {
-                    years: unit === 'tahun' ? amount : 0,
-                    months: unit === 'bulan' ? amount : 0,
-                    days: unit === 'hari' ? amount : 0
-                };
-                const newEnd = this.computeKemitraanEndDate(tM, parsed);
-                if (newEnd) {
-                    this.formData.tanggal_selesai = newEnd;
+                    this.syncDurationComponentsFromDates();
                 }
             },
 
@@ -1320,6 +1490,15 @@
                 this.formData.tanggal_mulai = this.cleanDateString(kemitraan.tanggal_mulai || specLama.tanggal_mulai || spec.tanggal_mulai || '');
                 this.formData.tanggal_selesai = this.cleanDateString(kemitraan.tanggal_selesai || specLama.tanggal_selesai || spec.tanggal_selesai || '');
                 this.formData.jangka_waktu = kemitraan.jangka_waktu || specLama.jangka_waktu || spec.jangka_waktu || (this.formData.tanggal_mulai && this.formData.tanggal_selesai ? this.formatKemitraanDurationFromDates(this.formData.tanggal_mulai, this.formData.tanggal_selesai) : '');
+                this.syncDurationComponentsFromDates();
+                if (this.durasiTahun === 0 && this.durasiBulan === 0 && this.durasiHari === 0 && this.formData.jangka_waktu) {
+                    const parsedDur = this.parseKemitraanDuration(this.formData.jangka_waktu);
+                    if (parsedDur) {
+                        this.durasiTahun = parsedDur.years || 0;
+                        this.durasiBulan = parsedDur.months || 0;
+                        this.durasiHari = parsedDur.days || 0;
+                    }
+                }
                 this.formData.tahun_perolehan = d.tahun_perolehan || kemitraan.tahun || specLama.tahun || {{ date('Y') }};
                 this.formData.triwulan = d.triwulan || kemitraan.triwulan || specLama.triwulan || 'TW I';
                 this.formData.kemitraan_keterangan = d.keterangan_tambahan || kemitraan.keterangan || specLama.keterangan || spec.keterangan || '';
@@ -3297,15 +3476,23 @@
                                 this.setStepError(2, msg);
                                 return false;
                             }
-                            if (parseFloat(it.mesin_nilai_satuan) <= 0 || isNaN(parseFloat(it.mesin_nilai_satuan))) {
+                            const valMesin = parseFloat(it.mesin_nilai_satuan) || 0;
+                            if (valMesin <= 0 || isNaN(valMesin)) {
                                 const msg = `Taksiran nilai satuan pada Barang #${num} harus lebih dari 0.`;
                                 this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
                                 this.setStepError(2, msg);
                                 return false;
                             }
-                            if (it.is_extracom && parseFloat(it.mesin_nilai_satuan) > 300000) {
+                            const isItemExtracom = Boolean(it.is_extracom || this.formData.is_extracomtable);
+                            if (isItemExtracom && valMesin > 300000) {
                                 const msg = `Nilai satuan pada Barang Extracom #${num} tidak boleh melebihi Rp 300.000.`;
                                 this.showToast('Validasi Extracom Gagal', msg, 'error');
+                                this.setStepError(2, msg);
+                                return false;
+                            }
+                            if (!isItemExtracom && valMesin <= 300000) {
+                                const msg = `Nilai satuan pada Peralatan & Mesin (Aset Reguler/Non-Extracom) #${num} wajib lebih dari Rp 300.000! Barang ≤ Rp 300.000 tergolong Ekstrakomptabel (Extracom).`;
+                                this.showToast('Validasi Batas Kapitalisasi Gagal', msg, 'error');
                                 this.setStepError(2, msg);
                                 return false;
                             }
@@ -3429,9 +3616,23 @@
                                 this.setStepError(2, msg);
                                 return false;
                             }
-                            if (it.is_extracom && parseFloat(it.lainnya_nilai_satuan) > 300000) {
+                            const valLainnya = parseFloat(it.lainnya_nilai_satuan) || 0;
+                            if (valLainnya <= 0 || isNaN(valLainnya)) {
+                                const msg = `Taksiran nilai satuan pada Item #${num} harus lebih dari 0.`;
+                                this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                                this.setStepError(2, msg);
+                                return false;
+                            }
+                            const isLainnyaExtracom = Boolean(it.is_extracom || this.formData.is_extracomtable);
+                            if (isLainnyaExtracom && valLainnya > 300000) {
                                 const msg = `Nilai satuan pada Barang Extracom #${num} tidak boleh melebihi Rp 300.000.`;
                                 this.showToast('Validasi Extracom Gagal', msg, 'error');
+                                this.setStepError(2, msg);
+                                return false;
+                            }
+                            if (!isLainnyaExtracom && valLainnya <= 300000) {
+                                const msg = `Nilai satuan pada Aset Tetap Lainnya (Aset Reguler/Non-Extracom) #${num} wajib lebih dari Rp 300.000! Barang ≤ Rp 300.000 tergolong Ekstrakomptabel (Extracom).`;
+                                this.showToast('Validasi Batas Kapitalisasi Gagal', msg, 'error');
                                 this.setStepError(2, msg);
                                 return false;
                             }

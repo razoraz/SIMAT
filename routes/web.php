@@ -1809,7 +1809,7 @@ Route::middleware('auth')->group(function () {
 
                 $resolveKib = function($astap, $spec, $reklasHistory) {
                     if (!empty($reklasHistory?->asal_kib)) return strtoupper($reklasHistory->asal_kib);
-                    if (!empty($astap?->category) && in_array(strtoupper($astap->category), ['KIB A', 'KIB B', 'KIB C', 'KIB D', 'KIB E'])) {
+                    if (!empty($astap?->category) && in_array(strtoupper($astap->category), ['KIB A', 'KIB B', 'KIB C', 'KIB D', 'KIB E', 'EXTRACOM'])) {
                         return strtoupper($astap->category);
                     }
                     $kode = $astap?->kode_108 ?: ($astap?->jenisAstap?->sub_sub_rincian_objek ?: ($astap?->jenisAstap?->jenis ?: ''));
@@ -1828,6 +1828,53 @@ Route::middleware('auth')->group(function () {
                     return 'KIB A';
                 };
 
+                $extractSpecFields = function($astap, $spec, $reklasHistory) use ($resolveKib) {
+                    $isExtracom = (bool) (
+                        $astap?->is_extracomtable 
+                        || ($astap?->category && strtoupper($astap->category) === 'EXTRACOM')
+                        || ($reklasHistory?->asal_kib && strtoupper($reklasHistory->asal_kib) === 'EXTRACOM')
+                        || ($spec['is_extracomtable'] ?? false)
+                        || (isset($spec['mesin_items']) && is_array($spec['mesin_items']) && collect($spec['mesin_items'])->contains(fn($m) => !empty($m['is_extracom'])))
+                        || (isset($spec['lainnya_items']) && is_array($spec['lainnya_items']) && collect($spec['lainnya_items'])->contains(fn($l) => !empty($l['is_extracom'])))
+                    );
+
+                    $kibAsli = $resolveKib($astap, $spec, $reklasHistory);
+                    $kib = $isExtracom ? 'EXTRACOM' : $kibAsli;
+
+                    $luas = $spec['luas_m2'] ?? ($spec['tanah_luas_m2'] ?? ($spec['gedung_luas_lantai'] ?? ($spec['jaringan_luas'] ?? null)));
+                    $sertifikat = $spec['sertifikat_no'] ?? ($spec['tanah_sertifikat_no'] ?? ($spec['gedung_dokumen_no'] ?? null));
+
+                    $merk = $spec['merk'] ?? ($spec['mesin_merk'] ?? ($spec['mesin_items'][0]['mesin_merk'] ?? null));
+                    $type = $spec['type'] ?? ($spec['mesin_type'] ?? ($spec['mesin_items'][0]['mesin_type'] ?? null));
+                    $merkType = trim(($merk ?: '') . ' ' . ($type ?: ''));
+                    if (empty($merkType)) {
+                        $merkType = $spec['spesifikasi'] ?? ($spec['lainnya_spesifikasi'] ?? ($spec['lainnya_items'][0]['lainnya_spesifikasi'] ?? null));
+                    }
+
+                    $ukuran = $spec['ukuran'] ?? ($spec['mesin_ukuran'] ?? ($spec['mesin_items'][0]['mesin_ukuran'] ?? ($spec['lainnya_ukuran'] ?? null)));
+                    $noPabrik = $spec['no_pabrik'] ?? ($spec['mesin_no_pabrik'] ?? ($spec['mesin_items'][0]['mesin_no_pabrik'] ?? ($spec['mesin_no_polisi'] ?? null)));
+                    $konstruksi = $spec['konstruksi_bertingkat'] ?? ($spec['gedung_konstruksi_bertingkat'] ?? ($spec['jaringan_konstruksi'] ?? null));
+                    $panjang = $spec['panjang_m'] ?? ($spec['jaringan_panjang'] ?? null);
+                    $judul = $spec['judul'] ?? ($spec['lainnya_judul'] ?? ($spec['lainnya_items'][0]['lainnya_judul'] ?? null));
+                    $bahan = $spec['bahan'] ?? ($spec['mesin_bahan'] ?? ($spec['lainnya_bahan'] ?? null));
+
+                    return [
+                        'kib'             => $kib,
+                        'kib_asli'        => $kibAsli,
+                        'is_extracomtable'=> $isExtracom,
+                        'luas'            => $luas,
+                        'sertifikat'      => $sertifikat,
+                        'merk_type'       => $merkType ?: null,
+                        'ukuran'          => $ukuran ?: null,
+                        'no_pabrik'       => $noPabrik ?: null,
+                        'konstruksi'      => $konstruksi ?: null,
+                        'panjang'         => $panjang ?: null,
+                        'judul'           => $judul ?: null,
+                        'bahan'           => $bahan ?: null,
+                        'spesifikasi_raw' => $spec,
+                    ];
+                };
+
                 $result = collect();
 
                 // Masukkan data Kemitraan Dimanfaatkan (Per Aset/Kontrak Induk)
@@ -1837,11 +1884,8 @@ Route::middleware('auth')->group(function () {
                     $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?: []);
                     $firstReg = $astap->registers?->first();
                     $reklasHistory = $astap->reklas?->sortByDesc('id')->first();
-                    $kib = $resolveKib($astap, $spec, $reklasHistory);
-                    $namaBarang = $resolveNama($astap, $kem, $spec, $reklasHistory, $kib);
-
-                    $luas = $spec['luas_m2'] ?? ($spec['tanah_luas_m2'] ?? ($spec['gedung_luas_lantai'] ?? null));
-                    $sertifikat = $spec['sertifikat_no'] ?? ($spec['tanah_sertifikat_no'] ?? ($spec['gedung_dokumen_no'] ?? ($spec['mesin_no_polisi'] ?? null)));
+                    $specData = $extractSpecFields($astap, $spec, $reklasHistory);
+                    $namaBarang = $resolveNama($astap, $kem, $spec, $reklasHistory, $specData['kib']);
 
                     $tglPks = $kem->tanggal_pks ? $kem->tanggal_pks->format('Y-m-d') : ($astap->bast_dokumen_tanggal ? date('Y-m-d', strtotime($astap->bast_dokumen_tanggal)) : ($spec['tanggal_pks'] ?? null));
                     $tglMulai = $kem->tanggal_mulai ? $kem->tanggal_mulai->format('Y-m-d') : ($spec['tanggal_mulai'] ?? null);
@@ -1854,7 +1898,9 @@ Route::middleware('auth')->group(function () {
                         'register_id'     => $firstReg?->id ?: null,
                         'nibar'           => null, // Sesuai permintaan user: tidak menampilkan NIBAR register
                         'nama_barang'     => $namaBarang,
-                        'kib'             => $kib,
+                        'kib'             => $specData['kib'],
+                        'kib_asli'        => $specData['kib_asli'],
+                        'is_extracomtable'=> $specData['is_extracomtable'],
                         'kode_108'        => $astap->jenisAstap?->sub_sub_rincian_objek ?: ($astap->jenisAstap?->sub_rincian_objek ?: ($astap->jenisAstap?->jenis ?: '1.5.2')),
                         'volume'          => $kem->jumlah_volume ?: ($astap->jumlah_volume ?: 1),
                         'satuan'          => $kem->satuan ?: ($astap->satuan ?: 'Unit'),
@@ -1866,8 +1912,16 @@ Route::middleware('auth')->group(function () {
                         'tahun_perolehan' => $kem->tahun ?: $astap->tahun_perolehan,
                         'total_realisasi' => (float) ($kem->nilai_aset ?: $astap->total_realisasi),
                         'kondisi'         => $firstReg?->kondisi ?: 'Baik',
-                        'luas'            => $luas,
-                        'sertifikat'      => $sertifikat,
+                        'luas'            => $specData['luas'],
+                        'sertifikat'      => $specData['sertifikat'],
+                        'merk_type'       => $specData['merk_type'],
+                        'ukuran'          => $specData['ukuran'],
+                        'no_pabrik'       => $specData['no_pabrik'],
+                        'konstruksi'      => $specData['konstruksi'],
+                        'panjang'         => $specData['panjang'],
+                        'judul'           => $specData['judul'],
+                        'bahan'           => $specData['bahan'],
+                        'spesifikasi_raw' => $specData['spesifikasi_raw'],
                         'skema_kemitraan' => $kem->skema_kemitraan ?: ($spec['skema_kemitraan'] ?? 'Sewa'),
                         'kemitraan_data'  => [
                             'mitra_nama'      => $kem->mitra_nama,
@@ -1894,8 +1948,8 @@ Route::middleware('auth')->group(function () {
                     if (!$astap) continue;
                     $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?: []);
                     $firstReg = $astap->registers?->first();
-                    $kib = $resolveKib($astap, $spec, $reklas);
-                    $namaBarang = $resolveNama($astap, null, $spec, $reklas, $kib);
+                    $specData = $extractSpecFields($astap, $spec, $reklas);
+                    $namaBarang = $resolveNama($astap, null, $spec, $reklas, $specData['kib']);
 
                     $result->push([
                         'id'              => null,
@@ -1904,7 +1958,9 @@ Route::middleware('auth')->group(function () {
                         'register_id'     => $firstReg?->id ?: null,
                         'nibar'           => null,
                         'nama_barang'     => $namaBarang,
-                        'kib'             => $kib,
+                        'kib'             => $specData['kib'],
+                        'kib_asli'        => $specData['kib_asli'],
+                        'is_extracomtable'=> $specData['is_extracomtable'],
                         'kode_108'        => $reklas->tujuan_kode ?: ($astap->jenisAstap?->sub_sub_rincian_objek ?: '1.5.2'),
                         'volume'          => $astap->jumlah_volume ?: 1,
                         'satuan'          => $astap->satuan ?: 'Unit',
@@ -1916,8 +1972,16 @@ Route::middleware('auth')->group(function () {
                         'tahun_perolehan' => $astap->tahun_perolehan,
                         'total_realisasi' => (float) $astap->total_realisasi,
                         'kondisi'         => $firstReg?->kondisi ?: 'Baik',
-                        'luas'            => $spec['luas_m2'] ?? ($spec['tanah_luas_m2'] ?? null),
-                        'sertifikat'      => $spec['sertifikat_no'] ?? ($spec['tanah_sertifikat_no'] ?? null),
+                        'luas'            => $specData['luas'],
+                        'sertifikat'      => $specData['sertifikat'],
+                        'merk_type'       => $specData['merk_type'],
+                        'ukuran'          => $specData['ukuran'],
+                        'no_pabrik'       => $specData['no_pabrik'],
+                        'konstruksi'      => $specData['konstruksi'],
+                        'panjang'         => $specData['panjang'],
+                        'judul'           => $specData['judul'],
+                        'bahan'           => $specData['bahan'],
+                        'spesifikasi_raw' => $specData['spesifikasi_raw'],
                         'kemitraan_data'  => null,
                         'pks_aktif'       => null,
                     ]);
