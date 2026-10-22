@@ -3074,13 +3074,22 @@ Route::middleware('auth')->group(function () {
 
                 $mesinItems = ($kibCategory === 'KIB B') ? ($request->input('mesin_items') ?? ($specJson['mesin_items'] ?? null)) : null;
                 if ($kibCategory === 'KIB B' && is_array($mesinItems) && count($mesinItems) > 0) {
+                    foreach ($mesinItems as &$mi) {
+                        $uk = $mi['mesin_ukuran'] ?? ($mi['mesin_ukuran_cc'] ?? ($mi['ukuran'] ?? ($mi['ukuran_cc'] ?? '')));
+                        $mi['mesin_ukuran'] = $uk;
+                        $mi['mesin_ukuran_cc'] = $uk;
+                    }
+                    unset($mi);
                     $specJson['mesin_items'] = $mesinItems;
                     $firstM = $mesinItems[0];
                     if (empty($specJson['merk'])) $specJson['merk'] = $firstM['mesin_merk'] ?? '';
                     if (empty($specJson['type'])) $specJson['type'] = $firstM['mesin_type'] ?? '';
                     if (empty($specJson['no_pabrik'])) $specJson['no_pabrik'] = $firstM['mesin_no_pabrik'] ?? '';
                     if (empty($specJson['bahan'])) $specJson['bahan'] = $firstM['mesin_bahan'] ?? '';
-                    if (empty($specJson['ukuran'])) $specJson['ukuran'] = $firstM['mesin_ukuran'] ?? '';
+                    $ukuranM = $firstM['mesin_ukuran'] ?? ($firstM['mesin_ukuran_cc'] ?? ($firstM['ukuran'] ?? ($specJson['ukuran'] ?? '')));
+                    $specJson['ukuran'] = $ukuranM;
+                    $specJson['mesin_ukuran'] = $ukuranM;
+                    $specJson['mesin_ukuran_cc'] = $ukuranM;
                     if (empty($specJson['tahun_pembuatan'])) $specJson['tahun_pembuatan'] = $firstM['mesin_tahun_pembuatan'] ?? null;
                     if (empty($specJson['kondisi'])) $specJson['kondisi'] = $firstM['mesin_kondisi'] ?? 'Baik';
                     if (empty($specJson['no_rangka'])) $specJson['no_rangka'] = $firstM['mesin_no_rangka'] ?? '';
@@ -3110,12 +3119,22 @@ Route::middleware('auth')->group(function () {
                     foreach ($gItems as &$gi) {
                         $gi['gedung_is_baru'] = $gi['gedung_is_baru'] ?? 'Lama';
                         $gi['is_baru'] = $gi['is_baru'] ?? $gi['gedung_is_baru'];
+                        $luas = $gi['gedung_luas_lantai_m2'] ?? ($gi['gedung_luas_lantai'] ?? ($gi['luas_lantai_m2'] ?? 0));
+                        $gi['gedung_luas_lantai'] = $luas;
+                        $gi['gedung_luas_lantai_m2'] = $luas;
+                        $dokNo = $gi['gedung_dokumen_nomor'] ?? ($gi['gedung_dokumen_no'] ?? ($gi['dokumen_nomor'] ?? ''));
+                        $gi['gedung_dokumen_no'] = $dokNo;
+                        $gi['gedung_dokumen_nomor'] = $dokNo;
                     }
                     unset($gi);
                     $firstG = $gItems[0];
                     $specJson['gedung_items'] = $gItems;
                     $specJson['gedung_is_baru'] = $firstG['gedung_is_baru'] ?? 'Lama';
                     $specJson['is_baru'] = $specJson['gedung_is_baru'];
+                    $specJson['luas_lantai_m2'] = $firstG['gedung_luas_lantai_m2'] ?? 0;
+                    $specJson['gedung_luas_lantai'] = $specJson['luas_lantai_m2'];
+                    $specJson['dokumen_nomor'] = $firstG['gedung_dokumen_nomor'] ?? null;
+                    $specJson['dokumen_no'] = $specJson['dokumen_nomor'];
                     if (!empty($firstG['gedung_kapitalisasi_tahun_induk'])) {
                         $specJson['gedung_kapitalisasi_tahun_induk'] = $firstG['gedung_kapitalisasi_tahun_induk'];
                         $specJson['kapitalisasi_tahun_induk'] = $firstG['gedung_kapitalisasi_tahun_induk'];
@@ -3128,12 +3147,27 @@ Route::middleware('auth')->group(function () {
                     foreach ($jItems as &$ji) {
                         $ji['jaringan_is_baru'] = $ji['jaringan_is_baru'] ?? 'Lama';
                         $ji['is_baru'] = $ji['is_baru'] ?? $ji['jaringan_is_baru'];
+                        $panjang = $ji['jaringan_panjang'] ?? ($ji['jaringan_panjang_km'] ?? null);
+                        $ji['jaringan_panjang'] = $panjang;
+                        $ji['jaringan_panjang_km'] = $panjang;
+                        $lebar = $ji['jaringan_lebar'] ?? ($ji['jaringan_lebar_m'] ?? null);
+                        $ji['jaringan_lebar'] = $lebar;
+                        $ji['jaringan_lebar_m'] = $lebar;
+                        $luas = $ji['jaringan_luas'] ?? ($ji['jaringan_luas_m2'] ?? 0);
+                        $ji['jaringan_luas'] = $luas;
+                        $ji['jaringan_luas_m2'] = $luas;
                     }
                     unset($ji);
                     $firstJ = $jItems[0];
                     $specJson['jaringan_items'] = $jItems;
                     $specJson['jaringan_is_baru'] = $firstJ['jaringan_is_baru'] ?? 'Lama';
                     $specJson['is_baru'] = $specJson['jaringan_is_baru'];
+                    $specJson['panjang_km'] = $firstJ['jaringan_panjang'] ?? null;
+                    $specJson['jaringan_panjang'] = $specJson['panjang_km'];
+                    $specJson['lebar_m'] = $firstJ['jaringan_lebar'] ?? null;
+                    $specJson['jaringan_lebar'] = $specJson['lebar_m'];
+                    $specJson['luas_m2'] = $firstJ['jaringan_luas'] ?? 0;
+                    $specJson['jaringan_luas'] = $specJson['luas_m2'];
                     if (!empty($firstJ['jaringan_kapitalisasi_tahun_induk'])) {
                         $specJson['jaringan_kapitalisasi_tahun_induk'] = $firstJ['jaringan_kapitalisasi_tahun_induk'];
                         $specJson['kapitalisasi_tahun_induk'] = $firstJ['jaringan_kapitalisasi_tahun_induk'];
@@ -3143,8 +3177,19 @@ Route::middleware('auth')->group(function () {
 
                 if ($kibCategory === 'KIB E' && $request->has('lainnya_items') && is_array($request->input('lainnya_items')) && count($request->input('lainnya_items')) > 0) {
                     $lItems = $request->input('lainnya_items');
+                    foreach ($lItems as &$li) {
+                        $judul = $li['lainnya_judul'] ?? ($li['lainnya_judul_pencipta'] ?? ($li['lainnya_nama_barang'] ?? ''));
+                        $li['lainnya_judul'] = $judul;
+                        $li['lainnya_judul_pencipta'] = $judul;
+                    }
+                    unset($li);
                     $firstL = $lItems[0];
                     $specJson['lainnya_items'] = $lItems;
+                    $specJson['judul'] = $firstL['lainnya_judul'] ?? null;
+                    $specJson['pencipta'] = $firstL['lainnya_pencipta'] ?? null;
+                    $specJson['spesifikasi'] = $firstL['lainnya_spesifikasi'] ?? null;
+                    $specJson['bahan'] = $firstL['lainnya_bahan'] ?? null;
+                    $specJson['ukuran'] = $firstL['lainnya_ukuran'] ?? null;
                     if (!empty($firstL['lainnya_kode_barang'])) $specJson['lainnya_kode_barang'] = $firstL['lainnya_kode_barang'];
                 }
 

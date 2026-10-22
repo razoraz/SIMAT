@@ -216,18 +216,6 @@
                                            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:border-amber-500 focus:outline-none transition-all">
                                 </div>
                             </div>
-
-                            <!-- Tahun Pembuatan Pabrik (Khusus Reguler, disembunyikan saat Extracom) -->
-                            <div x-show="!(item.is_extracom || formData.is_extracomtable)">
-                                <div class="flex items-center justify-between mb-1">
-                                    <label class="text-slate-400 text-[10px] font-semibold">Tahun Pembuatan Pabrik</label>
-                                    <span class="text-[9px] text-slate-500 font-mono">Maks: {{ date('Y') }}</span>
-                                </div>
-                                <input type="number" min="1970" :max="new Date().getFullYear()" x-model.number="item.mesin_tahun_pembuatan"
-                                       @input="if(item.mesin_tahun_pembuatan > {{ date('Y') }}) item.mesin_tahun_pembuatan = {{ date('Y') }};"
-                                       placeholder="Contoh: {{ date('Y') }}"
-                                       class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono focus:border-amber-500 focus:outline-none transition-all">
-                            </div>
                         </div>
 
                         <!-- 2. Spesifikasi No Pabrik, Bahan, Kondisi & Kendaraan -->
