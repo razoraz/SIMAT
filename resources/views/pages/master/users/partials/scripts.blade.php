@@ -131,7 +131,7 @@
                     return actions.length >= totalActions && totalActions > 0;
                 },
 
-                // Toggle Modul Induk (Klik Checkbox Parent: Langsung Pilih Semua Aksi)
+                // Toggle Modul Induk (Klik Checkbox Parent: Langsung Pilih Semua Aksi & Auto-Expand)
                 toggleParentModule(formType, modKey) {
                     const form = formType === 'new' ? this.newFormData : this.editFormData;
                     if (!form.permissions) form.permissions = {};
@@ -143,14 +143,16 @@
                     const allActionKeys = Object.keys(modDef.actions || {});
                     const isFullyChecked = this.isModuleFullyChecked(formType, modKey);
 
-                    // Jika saat ini SUDAH terpilih semua (100%) -> nonaktifkan modul
+                    // Jika saat ini SUDAH terpilih semua (100%) -> nonaktifkan modul & tutup drawer
                     if (isFullyChecked) {
                         form.permissions[modKey].enabled = false;
                         form.permissions[modKey].actions = [];
+                        this.setModuleExpanded(formType, modKey, false);
                     } else {
-                        // Jika saat ini belum terpilih penuh (baik nonaktif maupun sebagian) -> LANGSUNG PILIH SEMUA AKSI
+                        // Jika saat ini belum terpilih penuh -> LANGSUNG PILIH SEMUA AKSI & Buka Drawer
                         form.permissions[modKey].enabled = true;
                         form.permissions[modKey].actions = [...allActionKeys];
+                        this.setModuleExpanded(formType, modKey, true);
                     }
                 },
 
@@ -216,6 +218,41 @@
                 setModuleExpanded(formType, modKey, state) {
                     if (!this.expandedModules[formType]) this.expandedModules[formType] = {};
                     this.expandedModules[formType][modKey] = state;
+                },
+
+                // Hitung jumlah aksi kritis yang aktif di 1 modul
+                getModuleCriticalCount(formType, modKey) {
+                    const form = formType === 'new' ? this.newFormData : this.editFormData;
+                    const actions = form.permissions?.[modKey]?.actions || [];
+                    const modDef = this.availablePermissions[modKey];
+                    if (!modDef) return 0;
+                    return actions.filter(actKey => modDef.actions[actKey]?.critical).length;
+                },
+
+                // Ringkasan Global Wewenang
+                getGlobalPermissionStats(formType) {
+                    const form = formType === 'new' ? this.newFormData : this.editFormData;
+                    const totalModules = Object.keys(this.availablePermissions).length;
+                    let activeModules = 0;
+                    let activeActions = 0;
+                    let criticalActions = 0;
+
+                    Object.keys(this.availablePermissions).forEach(modKey => {
+                        const mod = form.permissions?.[modKey];
+                        const modDef = this.availablePermissions[modKey];
+                        if (mod && mod.enabled && Array.isArray(mod.actions) && mod.actions.length > 0) {
+                            activeModules++;
+                            activeActions += mod.actions.length;
+                            criticalActions += mod.actions.filter(a => modDef.actions[a]?.critical).length;
+                        }
+                    });
+
+                    return {
+                        totalModules,
+                        activeModules,
+                        activeActions,
+                        criticalActions
+                    };
                 },
 
                 // Hitung ringkasan aksi aktif (misal: "5/10 Aksi Aktif")
@@ -304,15 +341,34 @@
                     this.showToast('✨ Template diterapkan: ' + presetTitle, 'info');
                 },
 
-                // Toggle Seluruh Modul (Pilih Semua / Kosongkan)
-                toggleAllPermissions(formType, selectAll) {
+                // Toggle Seluruh Modul (Pilih Semua / Safe-Mode / Kosongkan)
+                toggleAllPermissions(formType, selectAll, safeOnly = false) {
+                    const form = formType === 'new' ? this.newFormData : this.editFormData;
+                    if (!form.permissions) form.permissions = {};
+
                     if (selectAll) {
-                        this.applyPreset(formType, 'full_admin');
-                    } else {
-                        const form = formType === 'new' ? this.newFormData : this.editFormData;
                         Object.keys(this.availablePermissions).forEach(modKey => {
-                            if (!form.permissions) form.permissions = {};
+                            const modDef = this.availablePermissions[modKey];
+                            const allActions = Object.keys(modDef.actions || {});
+                            const targetActions = safeOnly 
+                                ? allActions.filter(a => !modDef.actions[a]?.critical)
+                                : [...allActions];
+
+                            form.permissions[modKey] = {
+                                enabled: true,
+                                actions: targetActions
+                            };
+                            this.setModuleExpanded(formType, modKey, safeOnly ? false : true);
+                        });
+                        if (safeOnly) {
+                            this.showToast('🛡️ Seluruh modul diaktifkan dengan Mode Aman (Aksi Hapus & Kritis tetap dinonaktifkan).', 'info');
+                        } else {
+                            this.showToast('👑 Seluruh modul & seluruh aksi aktif penuh (Full Control).', 'success');
+                        }
+                    } else {
+                        Object.keys(this.availablePermissions).forEach(modKey => {
                             form.permissions[modKey] = { enabled: false, actions: [] };
+                            this.setModuleExpanded(formType, modKey, false);
                         });
                         this.showToast('Seluruh hak akses telah dikosongkan.', 'warning');
                     }
@@ -672,6 +728,36 @@
                     this.deleteItem(item);
                 },
 
+                // 4. Masuk Sementara Sebagai Pengguna (IMPERSONATE)
+                confirmImpersonate(user) {
+                    if (this.currentUserRole !== 'master_admin') {
+                        this.showToast('⛔ Hanya Master Admin yang dapat menggunakan fitur ini.', 'error');
+                        return;
+                    }
+
+                    this.askConfirmation({
+                        title: '👁️ Masuk Sementara Sebagai Pengguna',
+                        message: `Anda akan beralih sesi dan melihat SIMAT-RK persis sebagaimana dilihat oleh ${user.name} (${user.role.toUpperCase()}). Anda dapat kembali ke sesi Master Admin kapan saja melalui tombol di bagian atas layar.`,
+                        itemName: user.name + ' (' + user.email + ')',
+                        type: 'info',
+                        btnText: '👁️ Ya, Masuk Sebagai Akun Ini',
+                        onConfirm: async () => {
+                            const form = document.createElement('form');
+                            form.method = 'POST';
+                            form.action = '/impersonate/' + user.id;
+
+                            const csrfInput = document.createElement('input');
+                            csrfInput.type = 'hidden';
+                            csrfInput.name = '_token';
+                            csrfInput.value = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || this.csrfToken;
+                            form.appendChild(csrfInput);
+
+                            document.body.appendChild(form);
+                            form.submit();
+                        }
+                    });
+                },
+
                 deleteItem(item) {
                     if (!this.canDeleteUser(item)) {
                         this.showToast('⛔ Akses Ditolak: ' + this.getDeleteTooltip(item), 'error');
@@ -764,7 +850,7 @@
                     if (!item) return;
                     this.askConfirmation({
                         title: '🔑 Konfirmasi Reset Password',
-                        message: 'Apakah Anda yakin ingin mengembalikan password akun ini ke password default "rsud123"?',
+                        message: 'Apakah Anda yakin ingin mengembalikan password akun ini ke password default "rsud123"? Tindakan ini akan dicatat ke dalam Log Audit Wewenang.',
                         itemName: item.name + ' (' + item.email + ')',
                         type: 'warning',
                         btnText: '🔑 Ya, Reset Password',
@@ -786,6 +872,15 @@
 
                                 const res = await response.json();
                                 if (response.ok && res.success) {
+                                    if (res.user) {
+                                        const idx = this.users.findIndex(u => u.id === item.id);
+                                        if (idx !== -1) {
+                                            this.users[idx] = { ...res.user };
+                                        }
+                                        if (this.selectedUser && this.selectedUser.id === item.id) {
+                                            this.selectedUser = { ...res.user };
+                                        }
+                                    }
                                     this.showToast(res.message, 'success');
                                 } else {
                                     this.showToast(res.message || 'Gagal mereset password.', 'error');
@@ -796,6 +891,48 @@
                             }
                         }
                     });
+                },
+
+                // Helper Format Tanggal Audit Trail
+                formatAuditDate(dateStr) {
+                    if (!dateStr) return '-';
+                    try {
+                        const d = new Date(dateStr);
+                        if (isNaN(d.getTime())) return dateStr;
+                        return d.toLocaleString('id-ID', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        }) + ' WIB';
+                    } catch (e) {
+                        return dateStr;
+                    }
+                },
+
+                // Helper Badge Styling Action Type Audit Trail
+                getAuditBadge(actionType) {
+                    switch (actionType) {
+                        case 'ROLE_CHANGE':
+                            return { label: '👑 UBAH ROLE', class: 'bg-amber-500/20 text-amber-300 border border-amber-500/40' };
+                        case 'PERMISSION_UPDATE':
+                            return { label: '⚡ HAK AKSES', class: 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40' };
+                        case 'ROLE_AND_PERMISSION':
+                            return { label: '👑⚡ ROLE & AKSES', class: 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40' };
+                        case 'PASSWORD_CHANGE':
+                            return { label: '🔑 UBAH PASSWORD', class: 'bg-purple-500/20 text-purple-300 border border-purple-500/40' };
+                        case 'RESET_PASSWORD':
+                            return { label: '🔄 RESET PASSWORD', class: 'bg-rose-500/20 text-rose-300 border border-rose-500/40' };
+                        case 'UNIT_ASSIGNMENT':
+                            return { label: '🏥 RUANGAN UNIT', class: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' };
+                        case 'CREATE_USER':
+                            return { label: '✨ BUAT AKUN', class: 'bg-teal-500/20 text-teal-300 border border-teal-500/40' };
+                        case 'DELETE_USER':
+                            return { label: '🗑️ HAPUS AKUN', class: 'bg-red-500/20 text-red-300 border border-red-500/40' };
+                        default:
+                            return { label: '📝 PROFIL', class: 'bg-slate-700/60 text-slate-300 border border-slate-600' };
+                    }
                 }
             };
         }

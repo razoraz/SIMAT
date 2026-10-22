@@ -9,7 +9,7 @@
                             <th class="px-4 py-3.5 text-left min-w-[190px] whitespace-nowrap">Email Kredensial</th>
                             <th class="px-4 py-3.5 text-center min-w-[160px] whitespace-nowrap">Role Otorisasi</th>
                             <th class="px-4 py-3.5 text-left min-w-[180px] whitespace-nowrap">Unit Penugasan</th>
-                            <th class="px-4 py-3.5 text-center min-w-[260px] w-[260px] whitespace-nowrap border-l border-slate-800/80 shrink-0" style="position: sticky; right: 0; top: 0; z-index: 30; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">Aksi</th>
+                            <th class="px-4 py-3.5 text-center min-w-[320px] w-[320px] whitespace-nowrap border-l border-slate-800/80 shrink-0" style="position: sticky; right: 0; top: 0; z-index: 30; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-800/80">
@@ -60,7 +60,7 @@
                                 </td>
                                 
                                 <!-- Aksi Frozen/Sticky di Sebelah Kanan -->
-                                <td class="px-4 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[260px] w-[260px]" style="position: sticky; right: 0; z-index: 2; background-color: #0f172a !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
+                                <td class="px-4 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[320px] w-[320px]" style="position: sticky; right: 0; z-index: 2; background-color: #0f172a !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
                                     <div class="flex items-center justify-center gap-1.5">
                                         <!-- Tombol Detail (Bisa untuk Semua Akun) -->
                                         <button type="button" @click="openDetail(item)"
@@ -68,6 +68,16 @@
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                             <span>Detail</span>
                                         </button>
+
+                                        <!-- Tombol Impersonate (Lihat Sebagai) - Khusus Master Admin ke Akun Admin & Sub Admin -->
+                                        <template x-if="currentUserRole === 'master_admin' && !isSelf(item) && item.role !== 'master_admin'">
+                                            <button type="button" @click="confirmImpersonate(item)"
+                                                class="px-2.5 py-1.5 rounded-xl bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 border border-purple-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer"
+                                                title="Masuk sementara sebagai pengguna ini untuk pengujian tampilan">
+                                                <span>👁️</span>
+                                                <span>Lihat Sebagai</span>
+                                            </button>
+                                        </template>
 
                                         <!-- Tombol Ubah (Aktif jika diizinkan) -->
                                         <template x-if="canEditUser(item)">

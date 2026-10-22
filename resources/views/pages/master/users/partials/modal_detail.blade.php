@@ -11,7 +11,7 @@
                  x-transition:leave-start="opacity-100"
                  x-transition:leave-end="opacity-0"
                  x-cloak>
-                <div @click.away="showDetailModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 relative my-auto">
+                <div @click.away="showDetailModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 relative my-auto max-h-[92vh] overflow-y-auto custom-scrollbar">
                     <!-- Tombol Close Corner -->
                     <button type="button" @click="showDetailModal = false" class="absolute right-5 top-5 w-8 h-8 rounded-full bg-slate-800/80 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 border border-transparent hover:border-rose-500/30 flex items-center justify-center transition-all">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -136,6 +136,56 @@
                                 class="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md transition-all active:scale-95 shrink-0">
                                 Reset ke rsud123
                             </button>
+                        </div>
+
+                        <!-- ========================================================= -->
+                        <!-- RIWAYAT LOG AUDIT WEWENANG & ESKALASI AKSES              -->
+                        <!-- ========================================================= -->
+                        <div class="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 space-y-2.5">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-1.5">
+                                    <span class="text-xs">📜</span>
+                                    <span class="text-slate-300 text-[11px] uppercase font-bold tracking-wider">Log Audit Eskalasi & Wewenang</span>
+                                </div>
+                                <span class="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-slate-800 text-slate-400 border border-slate-700"
+                                      x-text="(selectedUser.access_logs?.length || 0) + ' Catatan Terbaru'"></span>
+                            </div>
+
+                            <!-- List Timeline Log -->
+                            <template x-if="selectedUser.access_logs && selectedUser.access_logs.length > 0">
+                                <div class="space-y-2 max-h-[180px] overflow-y-auto custom-scrollbar pr-1 pt-1">
+                                    <template x-for="log in selectedUser.access_logs" :key="log.id">
+                                        <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800/80 hover:border-slate-700 transition-all text-[11px] space-y-1">
+                                            <div class="flex items-center justify-between gap-2">
+                                                <div class="flex items-center space-x-1.5 min-w-0">
+                                                    <!-- Action Badge -->
+                                                    <span class="px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0"
+                                                          :class="getAuditBadge(log.action_type).class"
+                                                          x-text="getAuditBadge(log.action_type).label"></span>
+                                                    <span class="text-[10px] text-slate-400 truncate"
+                                                          x-text="'Oleh: ' + (log.actor?.name || 'Sistem')"></span>
+                                                </div>
+                                                <span class="text-[9px] font-mono text-slate-400 shrink-0"
+                                                      x-text="formatAuditDate(log.created_at)"></span>
+                                            </div>
+                                            <p class="text-slate-300 text-[11px] leading-relaxed" x-text="log.summary"></p>
+                                            <div class="flex items-center justify-between text-[9px] text-slate-400 pt-0.5 border-t border-slate-800/50">
+                                                <span class="font-mono" x-text="'IP: ' + (log.ip_address || '127.0.0.1')"></span>
+                                                <template x-if="log.old_role && log.new_role && log.old_role !== log.new_role">
+                                                    <span class="text-amber-400/90 font-mono" x-text="log.old_role + ' → ' + log.new_role"></span>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+
+                            <!-- State Kosong (Belum ada catatan log) -->
+                            <template x-if="!selectedUser.access_logs || selectedUser.access_logs.length === 0">
+                                <div class="py-3 text-center rounded-xl bg-slate-900/40 border border-dashed border-slate-800/80 text-slate-400 text-[11px]">
+                                    <span>🛡️ Belum ada riwayat eskalasi hak akses atau mutasi peran untuk akun ini.</span>
+                                </div>
+                            </template>
                         </div>
                     </div>
 

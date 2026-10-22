@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AccessAuditLog;
 use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -17,7 +18,7 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $currentUser = Auth::user();
-        $users = User::active()->with('unitModel')->orderByRaw("
+        $users = User::active()->with(['unitModel', 'accessLogs.actor'])->orderByRaw("
             CASE 
                 WHEN role = 'master_admin' THEN 1 
                 WHEN role = 'admin' THEN 2 
@@ -108,11 +109,27 @@ class UserController extends Controller
             'deskripsi' => $validated['penugasan'] ?? '',
         ]);
 
+        // Catat Audit Trail Pendaftaran Akun Pengguna
+        $user->load('unitModel');
+        $unitSummary = ($user->role === 'sub_admin' && $user->unitModel) ? " (Unit: {$user->unitModel->nama})" : '';
+        AccessAuditLog::create([
+            'user_id' => $user->id,
+            'actor_id' => $currentUser->id,
+            'action_type' => 'CREATE_USER',
+            'summary' => "Pendaftaran akun baru {$user->name} dengan role {$user->role}{$unitSummary}",
+            'old_permissions' => null,
+            'new_permissions' => $permissions,
+            'old_role' => null,
+            'new_role' => $user->role,
+            'ip_address' => $request->ip(),
+            'user_agent' => substr((string) $request->userAgent(), 0, 500),
+        ]);
+
         if ($request->wantsJson()) {
             return response()->json([
                 'success' => true,
                 'message' => "Akun {$user->name} ({$user->role}) berhasil didaftarkan!",
-                'user' => $user->load('unitModel')
+                'user' => $user->load(['unitModel', 'accessLogs.actor'])
             ]);
         }
 
@@ -159,6 +176,11 @@ class UserController extends Controller
             'unit_id' => 'nullable|exists:units,id',
         ]);
 
+        // Simpan snapshot nilai lama sebelum pembaruan untuk Audit Trail
+        $oldRole = $user->role;
+        $oldPermissions = $user->permissions;
+        $oldUnitId = $user->unit_id;
+
         // Cegah Admin mengubah role menjadi master_admin
         if ($currentUser->role === 'admin') {
             $validated['role'] = $user->role;
@@ -194,11 +216,61 @@ class UserController extends Controller
 
         $user->update($updateData);
 
+        // Deteksi Perubahan Signifikan & Catat ke Audit Trail
+        $changes = [];
+        $actionType = 'UPDATE_PROFILE';
+
+        if ($oldRole !== $user->role) {
+            $changes[] = "Role diubah dari '{$oldRole}' menjadi '{$user->role}'";
+            $actionType = 'ROLE_CHANGE';
+        }
+
+        // Periksa apakah hak akses (permissions) berubah
+        $oldPermsJson = json_encode($oldPermissions ?? []);
+        $newPermsJson = json_encode($user->permissions ?? []);
+        if ($oldPermsJson !== $newPermsJson) {
+            $changes[] = "Matriks wewenang hak akses modul diperbarui";
+            $actionType = ($actionType === 'ROLE_CHANGE') ? 'ROLE_AND_PERMISSION' : 'PERMISSION_UPDATE';
+        }
+
+        if ($request->filled('password')) {
+            $changes[] = "Password akun diperbarui";
+            if ($actionType === 'UPDATE_PROFILE') {
+                $actionType = 'PASSWORD_CHANGE';
+            }
+        }
+
+        if ($oldUnitId !== $user->unit_id) {
+            $user->load('unitModel');
+            $unitName = $user->unitModel?->nama ?? 'Tanpa Unit';
+            $changes[] = "Penugasan unit diubah ke {$unitName}";
+            if ($actionType === 'UPDATE_PROFILE') {
+                $actionType = 'UNIT_ASSIGNMENT';
+            }
+        }
+
+        $summary = !empty($changes)
+            ? implode('; ', $changes)
+            : "Pembaruan informasi profil akun ({$user->name})";
+
+        AccessAuditLog::create([
+            'user_id' => $user->id,
+            'actor_id' => $currentUser->id,
+            'action_type' => $actionType,
+            'summary' => $summary,
+            'old_permissions' => $oldPermissions,
+            'new_permissions' => $user->permissions,
+            'old_role' => $oldRole,
+            'new_role' => $user->role,
+            'ip_address' => $request->ip(),
+            'user_agent' => substr((string) $request->userAgent(), 0, 500),
+        ]);
+
         if ($request->wantsJson()) {
             return response()->json([
                 'success' => true,
                 'message' => "Data pengguna {$user->name} berhasil diperbarui!",
-                'user' => $user->load('unitModel')
+                'user' => $user->load(['unitModel', 'accessLogs.actor'])
             ]);
         }
 
@@ -246,6 +318,20 @@ class UserController extends Controller
             }
         }
 
+        // Catat Audit Trail Penghapusan Akun Pengguna
+        AccessAuditLog::create([
+            'user_id' => $user->id,
+            'actor_id' => $currentUser->id,
+            'action_type' => 'DELETE_USER',
+            'summary' => "Penghapusan akun {$user->name} ({$user->role}) ke Pusat Data Terhapus (Recycle Bin)",
+            'old_permissions' => $user->permissions,
+            'new_permissions' => null,
+            'old_role' => $user->role,
+            'new_role' => null,
+            'ip_address' => $request->ip(),
+            'user_agent' => substr((string) $request->userAgent(), 0, 500),
+        ]);
+
         $userName = $user->name;
         $user->softDelete();
 
@@ -278,9 +364,25 @@ class UserController extends Controller
             'password' => Hash::make('rsud123')
         ]);
 
+        // Catat Audit Trail Reset Password
+        AccessAuditLog::create([
+            'user_id' => $user->id,
+            'actor_id' => $currentUser->id,
+            'action_type' => 'RESET_PASSWORD',
+            'summary' => "Reset password akun {$user->name} ke default ('rsud123') oleh {$currentUser->name}",
+            'old_permissions' => $user->permissions,
+            'new_permissions' => $user->permissions,
+            'old_role' => $user->role,
+            'new_role' => $user->role,
+            'ip_address' => $request->ip(),
+            'user_agent' => substr((string) $request->userAgent(), 0, 500),
+        ]);
+
         return response()->json([
             'success' => true,
-            'message' => "Password akun {$user->name} berhasil direset ke default ('rsud123')."
+            'message' => "Password akun {$user->name} berhasil direset ke default ('rsud123').",
+            'user' => $user->load(['unitModel', 'accessLogs.actor'])
         ]);
     }
 }
+

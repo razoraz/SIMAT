@@ -1,3 +1,25 @@
+@if(session()->has('impersonator_id'))
+    <!-- Impersonation Floating Dock Banner -->
+    <div class="bg-gradient-to-r from-amber-600 via-rose-600 to-amber-700 text-white px-4 py-2 flex items-center justify-between text-xs font-bold shadow-2xl z-[9999] sticky top-0 border-b border-rose-400/40">
+        <div class="flex items-center space-x-2.5">
+            <span class="text-base animate-pulse">👁️</span>
+            <div>
+                <span>Mode Impersonasi: Sedang mengakses SIMAT-RK sebagai <strong>{{ Auth::user()->name }}</strong> ({{ strtoupper(str_replace('_', ' ', Auth::user()->role)) }})</span>
+                @if(Auth::user()->unit)
+                    <span class="text-amber-200 text-[11px] font-normal"> • Unit: {{ Auth::user()->unit }}</span>
+                @endif
+            </div>
+        </div>
+        <form action="{{ route('impersonate.leave') }}" method="POST" class="m-0">
+            @csrf
+            <button type="submit" class="px-3 py-1 rounded-xl bg-slate-950/80 hover:bg-black text-amber-300 hover:text-white border border-amber-400/40 text-xs font-extrabold transition-all active:scale-95 flex items-center space-x-1.5 shadow-md">
+                <span>⬅</span>
+                <span>Kembali ke Master Admin</span>
+            </button>
+        </form>
+    </div>
+@endif
+
 <!-- TOPBAR SIMAT-RK -->
 <header class="h-16 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-4 sm:px-6 flex items-center justify-between z-30 sticky top-0 shadow-lg shadow-black/20">
     <!-- Left Section: Hamburger & Breadcrumb -->

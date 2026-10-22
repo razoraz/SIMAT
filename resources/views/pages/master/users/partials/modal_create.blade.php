@@ -98,25 +98,42 @@
                 <template x-if="newFormData.role === 'admin' && currentUserRole === 'master_admin'">
                     <div class="p-4 bg-slate-950/90 border border-cyan-500/30 rounded-2xl space-y-3 shadow-inner">
                         <!-- Header Kontrol Permissions -->
-                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-800/80 pb-3">
                             <div>
-                                <label class="block text-cyan-300 font-extrabold text-xs flex items-center space-x-2">
-                                    <span>🛡️</span>
-                                    <span>Hak Akses Modul & Sub-Fitur Admin</span>
+                                <div class="flex items-center space-x-2">
+                                    <label class="block text-cyan-300 font-extrabold text-xs flex items-center space-x-1.5">
+                                        <span>🛡️</span>
+                                        <span>Hak Akses Modul & Sub-Fitur Admin</span>
+                                    </label>
                                     <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">Hierarchical Tree</span>
-                                </label>
-                                <p class="text-[10px] text-slate-400 mt-0.5">Centang modul induk untuk otomatis aktifkan sub-aksi, atau sesuaikan opsi detailnya:</p>
+                                </div>
+                                <div class="flex items-center space-x-2 text-[10px] text-slate-400 mt-1">
+                                    <span>Aktif: <strong class="text-white font-mono" x-text="getGlobalPermissionStats('new').activeModules + '/' + getGlobalPermissionStats('new').totalModules"></strong> Modul</span>
+                                    <span>•</span>
+                                    <span><strong class="text-cyan-300 font-mono" x-text="getGlobalPermissionStats('new').activeActions"></strong> Aksi</span>
+                                    <template x-if="getGlobalPermissionStats('new').criticalActions > 0">
+                                        <span class="px-1.5 py-0.2 rounded text-[8px] font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center space-x-1">
+                                            <span>⚠️</span>
+                                            <span x-text="getGlobalPermissionStats('new').criticalActions + ' Aksi Kritis'"></span>
+                                        </span>
+                                    </template>
+                                </div>
                             </div>
-                            <div class="flex items-center space-x-2 shrink-0">
-                                <button type="button" @click="toggleAllPermissions('new', true)" class="px-2 py-1 rounded-lg text-[10px] bg-slate-800/80 hover:bg-cyan-500/20 text-cyan-300 border border-slate-700 hover:border-cyan-500/40 font-bold transition-all">
-                                    Pilih Semua
+                            <div class="flex items-center space-x-1.5 shrink-0 flex-wrap gap-1">
+                                <button type="button" @click="toggleAllPermissions('new', true, false)" class="px-2.5 py-1 rounded-lg text-[10px] bg-slate-800/80 hover:bg-cyan-500/20 text-cyan-300 border border-slate-700 hover:border-cyan-500/40 font-bold transition-all flex items-center space-x-1 shadow-sm active:scale-95">
+                                    <span>✓</span>
+                                    <span>Pilih Semua</span>
                                 </button>
-                                <button type="button" @click="toggleAllPermissions('new', false)" class="px-2 py-1 rounded-lg text-[10px] bg-slate-800/80 hover:bg-rose-500/20 text-rose-300 border border-slate-700 hover:border-rose-500/40 font-bold transition-all">
-                                    Kosongkan
+                                <button type="button" @click="toggleAllPermissions('new', true, true)" class="px-2.5 py-1 rounded-lg text-[10px] bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold transition-all flex items-center space-x-1 shadow-sm active:scale-95" title="Aktifkan seluruh modul & fitur input/edit/cetak, namun membiarkan seluruh hak Hapus & Kritis tetap mati">
+                                    <span>🛡️</span>
+                                    <span>Aksi Aman (Kecualikan Hapus)</span>
+                                </button>
+                                <button type="button" @click="toggleAllPermissions('new', false, false)" class="px-2.5 py-1 rounded-lg text-[10px] bg-slate-800/80 hover:bg-rose-500/20 text-rose-300 border border-slate-700 hover:border-rose-500/40 font-bold transition-all flex items-center space-x-1 shadow-sm active:scale-95">
+                                    <span>✕</span>
+                                    <span>Kosongkan</span>
                                 </button>
                             </div>
                         </div>
-
 
                         <!-- Tree Daftar Modul & Sub-Aksi -->
                         <div class="space-y-2 max-h-[380px] overflow-y-auto pr-1 custom-scrollbar">
@@ -144,7 +161,15 @@
                                             </div>
                                         </div>
 
-                                        <div class="flex items-center space-x-2 shrink-0">
+                                        <div class="flex items-center space-x-1.5 shrink-0">
+                                            <!-- Critical Alert Badge jika ada aksi kritis aktif di modul ini -->
+                                            <template x-if="getModuleCriticalCount('new', modKey) > 0">
+                                                <span class="px-1.5 py-0.5 rounded-full text-[8px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center space-x-1" :title="getModuleCriticalCount('new', modKey) + ' aksi berisiko tinggi aktif di modul ini'">
+                                                    <span>⚠️</span>
+                                                    <span x-text="getModuleCriticalCount('new', modKey) + ' Kritis'"></span>
+                                                </span>
+                                            </template>
+
                                             <!-- Status Summary Pill -->
                                             <span class="px-2 py-0.5 rounded-full text-[9px] font-bold border"
                                                 :class="{
@@ -183,18 +208,24 @@
                                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
                                             <template x-for="(actDef, actKey) in modDef.actions" :key="actKey">
                                                 <label class="flex items-start space-x-2.5 p-2 rounded-xl border transition-all cursor-pointer select-none"
-                                                    :class="isActionChecked('new', modKey, actKey) ? 'bg-cyan-500/10 border-cyan-500/40 text-white' : 'bg-slate-900/50 border-slate-800/80 text-slate-400 hover:border-slate-700'">
+                                                    :class="isActionChecked('new', modKey, actKey) 
+                                                        ? (actDef.critical ? 'bg-rose-950/20 border-rose-500/40 text-rose-200' : 'bg-cyan-500/10 border-cyan-500/40 text-white') 
+                                                        : (actDef.critical ? 'bg-slate-900/40 border-rose-500/20 text-rose-400/70 hover:border-rose-500/40' : 'bg-slate-900/50 border-slate-800/80 text-slate-400 hover:border-slate-700')">
                                                     
                                                     <input type="checkbox"
                                                         :checked="isActionChecked('new', modKey, actKey)"
                                                         @change="toggleSubAction('new', modKey, actKey)"
-                                                        class="mt-0.5 rounded border-slate-700 text-cyan-500 focus:ring-0 focus:ring-offset-0 bg-slate-950 w-3.5 h-3.5 cursor-pointer">
+                                                        :class="actDef.critical ? 'text-rose-500 focus:ring-rose-500' : 'text-cyan-500 focus:ring-cyan-500'"
+                                                        class="mt-0.5 rounded border-slate-700 bg-slate-950 w-3.5 h-3.5 cursor-pointer">
                                                     
                                                     <div class="min-w-0 flex-1">
                                                         <div class="flex items-center space-x-1.5">
-                                                            <span class="font-bold text-[11px] truncate" x-text="actDef.label"></span>
+                                                            <span class="font-bold text-[11px] truncate" :class="actDef.critical && isActionChecked('new', modKey, actKey) ? 'text-rose-200 font-extrabold' : ''" x-text="actDef.label"></span>
                                                             <template x-if="actDef.critical">
-                                                                <span class="px-1.5 py-0.2 rounded text-[8px] font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30">Kritis</span>
+                                                                <span class="px-1.5 py-0.2 rounded text-[8px] font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center space-x-0.5">
+                                                                    <span>⚠️</span>
+                                                                    <span>Kritis</span>
+                                                                </span>
                                                             </template>
                                                         </div>
                                                         <p class="text-[9px] text-slate-400 line-clamp-1 mt-0.5" x-text="actDef.desc"></p>

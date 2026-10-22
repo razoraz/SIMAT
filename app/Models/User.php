@@ -736,4 +736,12 @@ class User extends Authenticatable
             }
         });
     }
+
+    /**
+     * Relasi ke riwayat log audit perubahan wewenang & status akun
+     */
+    public function accessLogs(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(AccessAuditLog::class, 'user_id')->latest()->limit(5);
+    }
 }

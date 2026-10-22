@@ -144,6 +144,10 @@ Route::get('/validasi-tte/{hash}', function ($hash) {
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
+// Rute Impersonasi Akun (Khusus Master Admin)
+Route::post('/impersonate/{id}', [AuthController::class, 'impersonate'])->name('impersonate.start')->middleware(['auth', 'role:master_admin']);
+Route::post('/impersonate-leave', [AuthController::class, 'leaveImpersonate'])->name('impersonate.leave')->middleware('auth');
+
 // Redirect / or /dashboard to specific role dashboard
 Route::middleware('auth')->get('/', function () {
     $role = Auth::user()->role;
