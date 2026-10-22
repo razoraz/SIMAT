@@ -24,6 +24,9 @@
         <!-- MODAL DETAIL BAST ANTAR-OPD -->
         @include('pages.mutasi_eksternal.index_partials.modal_detail')
 
+        <!-- MODAL AKSI REGISTER NIBAR (UBAH KONDISI & RIWAYAT MUTASI) -->
+        @include('pages.mutasi_eksternal.index_partials.modal_register_actions')
+
         <!-- MODAL CETAK BAST MUTASI MASUK BMD (INTERAKTIF & LIVE EDIT) -->
         @include('pages.mutasi_eksternal.index_partials.modal_print_bast')
 

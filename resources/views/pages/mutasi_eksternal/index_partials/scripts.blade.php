@@ -25,6 +25,24 @@
             batalAlasan: '',
             isCancelling: false,
 
+            // Modal Edit Kondisi Register NIBAR State
+            showEditKondisiModal: false,
+            editingRegisterItem: null,
+            newKondisiValue: 'Baik',
+            isSavingKondisi: false,
+
+            // Modal Riwayat Mutasi Register NIBAR State
+            showRiwayatModal: false,
+            riwayatActiveTab: 'semua',
+            selectedRiwayatRegister: null,
+            selectedRiwayatMutasis: [],
+            selectedRiwayatMutasisInternal: [],
+            selectedRiwayatMutasisEksternal: [],
+            selectedRiwayatReklas: [],
+            selectedRiwayatTimeline: [],
+            selectedRiwayatCounts: { internal: 0, eksternal: 0, reklas: 0, total: 0 },
+            isLoadingRiwayat: false,
+
             getQrCodeSvg(text) {
                 if (typeof window.getQrCodeSvg === 'function') {
                     return window.getQrCodeSvg(text);
@@ -821,7 +839,149 @@
                     console.error('Batal error:', err);
                     this.showToast('Terjadi kesalahan jaringan saat membatalkan transaksi.', 'error');
                 }
+            },
+
+            // =====================================================================
+            // AKSI REGISTER NIBAR: EDIT KONDISI, RIWAYAT MUTASI, DAN HAPUS REGISTER
+            // =====================================================================
+            openEditKondisiModal(reg) {
+                if (!reg) return;
+                this.editingRegisterItem = reg;
+                this.newKondisiValue = reg.kondisi || 'Baik';
+                this.showEditKondisiModal = true;
+            },
+
+            async saveKondisiChange() {
+                if (!this.editingRegisterItem || this.isSavingKondisi) return;
+                const reg = this.editingRegisterItem;
+                this.isSavingKondisi = true;
+                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+
+                try {
+                    const res = await fetch('/astap-register/' + reg.id, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': token,
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({
+                            ruang_pemegang: reg.ruang_pemegang || '',
+                            kondisi: this.newKondisiValue
+                        })
+                    });
+
+                    const data = await res.json();
+                    this.isSavingKondisi = false;
+
+                    if (res.ok && data.success) {
+                        reg.kondisi = this.newKondisiValue;
+                        const curDetail = this.selectedAstapDetail || this.selectedMutasi;
+                        if (curDetail && curDetail.registers) {
+                            curDetail.registers = curDetail.registers.map(r => 
+                                r.id === reg.id ? { ...r, kondisi: this.newKondisiValue } : { ...r }
+                            );
+                        }
+                        this.showEditKondisiModal = false;
+                        this.showToast(data.message || 'Kondisi barang berhasil diperbarui.', 'success');
+                    } else {
+                        this.showToast(data.message || 'Gagal memperbarui kondisi barang.', 'error');
+                    }
+                } catch (err) {
+                    this.isSavingKondisi = false;
+                    console.error('Save kondisi error:', err);
+                    this.showToast('Terjadi kesalahan jaringan saat menyimpan kondisi barang.', 'error');
+                }
+            },
+
+            async openRiwayatModal(reg) {
+                if (!reg) return;
+                this.riwayatActiveTab = 'semua';
+                this.selectedRiwayatRegister = reg;
+                this.selectedRiwayatMutasis = Array.isArray(reg.mutasis) ? reg.mutasis : [];
+                this.selectedRiwayatMutasisInternal = Array.isArray(reg.mutasis) ? reg.mutasis : [];
+                this.selectedRiwayatMutasisEksternal = [];
+                this.selectedRiwayatReklas = [];
+                this.selectedRiwayatTimeline = [];
+                this.selectedRiwayatCounts = { internal: this.selectedRiwayatMutasisInternal.length, eksternal: 0, reklas: 0, total: this.selectedRiwayatMutasisInternal.length };
+                this.showRiwayatModal = true;
+
+                try {
+                    this.isLoadingRiwayat = true;
+                    const res = await fetch(`/astap/register-mutasi/${reg.id}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.success) {
+                            this.selectedRiwayatMutasis = data.mutasis || [];
+                            this.selectedRiwayatMutasisInternal = data.mutasis_internal || data.mutasis || [];
+                            this.selectedRiwayatMutasisEksternal = data.mutasis_eksternal || [];
+                            this.selectedRiwayatReklas = data.reklasifikasis || [];
+                            this.selectedRiwayatTimeline = data.timeline || [];
+                            this.selectedRiwayatCounts = data.counts || {
+                                internal: this.selectedRiwayatMutasisInternal.length,
+                                eksternal: this.selectedRiwayatMutasisEksternal.length,
+                                reklas: this.selectedRiwayatReklas.length,
+                                total: (data.timeline || []).length
+                            };
+                            reg.mutasis = this.selectedRiwayatMutasisInternal;
+                            if (data.kondisi) reg.kondisi = data.kondisi;
+                            if (data.ruang) reg.ruang_pemegang = data.ruang;
+                        }
+                    }
+                } catch (err) {
+                    console.error('Gagal memuat riwayat mutasi:', err);
+                } finally {
+                    this.isLoadingRiwayat = false;
+                }
+            },
+
+            async deleteRegister(reg) {
+                if (!reg) return;
+                const nibarStr = reg.nibar || reg.no_register || 'Unit NIBAR';
+                const confirmMsg = `Apakah Anda yakin ingin memindahkan unit register NIBAR "${nibarStr}" ke Pusat Data Terhapus (Recycle Bin)?`;
+                if (!confirm(confirmMsg)) return;
+
+                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+                try {
+                    const res = await fetch('/astap-register/' + reg.id, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': token,
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    const data = await res.json();
+                    if (res.ok && data.success) {
+                        const curDetail = this.selectedAstapDetail || this.selectedMutasi;
+                        if (curDetail && curDetail.registers) {
+                            curDetail.registers = curDetail.registers.filter(r => r.id !== reg.id);
+                            curDetail.jumlah_volume = curDetail.registers.length;
+                            curDetail.volume_satuan = curDetail.registers.length + ' Aset';
+                        }
+                        this.mutasiEksternals = this.mutasiEksternals.map(m => {
+                            if (curDetail && (Number(m.id) === Number(curDetail.id) || Number(m.mutasi_id) === Number(curDetail.mutasi_id))) {
+                                const updatedRegs = (m.registers || []).filter(r => r.id !== reg.id);
+                                return {
+                                    ...m,
+                                    jumlah_volume: updatedRegs.length,
+                                    volume_satuan: updatedRegs.length + ' Aset',
+                                    registers: updatedRegs
+                                };
+                            }
+                            return m;
+                        });
+                        this.showToast(data.message || 'Unit register NIBAR berhasil dipindahkan ke Recycle Bin.', 'success');
+                    } else {
+                        this.showToast(data.message || 'Gagal menghapus unit register NIBAR.', 'error');
+                    }
+                } catch (err) {
+                    console.error('Delete register error:', err);
+                    this.showToast('Terjadi kesalahan jaringan saat menghapus unit register.', 'error');
+                }
             }
         };
     }
 </script>
+
