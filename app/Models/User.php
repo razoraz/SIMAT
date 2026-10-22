@@ -30,6 +30,14 @@ class User extends Authenticatable
     ];
 
     /**
+     * Accessor yang otomatis disertakan saat model diserialisasi ke JSON / Array
+     */
+    protected $appends = [
+        'unit',
+        'nip',
+    ];
+
+    /**
      * Daftar Definisi Hak Akses Modul & Sub-Aksi Operasional SIMAT-RK (Hierarchical Tree)
      */
     public const AVAILABLE_PERMISSIONS = [
@@ -691,11 +699,19 @@ class User extends Authenticatable
     }
 
     /**
-     * Accessor atribut unit untuk kompatibilitas nama unit/ruangan
+     * Accessor atribut unit untuk nama unit/ruangan resmi
      */
     public function getUnitAttribute(): ?string
     {
-        return $this->unitModel?->nama ?? ($this->attributes['unit'] ?? $this->penugasan);
+        return $this->unitModel?->nama ?? ($this->attributes['unit'] ?? null);
+    }
+
+    /**
+     * Accessor atribut NIP resmi pegawai dari master ruangan
+     */
+    public function getNipAttribute(): ?string
+    {
+        return $this->unitModel?->nip ?? ($this->attributes['nip'] ?? null);
     }
 
     /**
