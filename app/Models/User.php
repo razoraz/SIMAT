@@ -317,6 +317,32 @@ class User extends Authenticatable
                 ],
             ],
         ],
+        'recycle_bin' => [
+            'label' => 'Pusat Data Terhapus (Recycle Bin)',
+            'icon' => '🗑️',
+            'color' => 'emerald',
+            'description' => 'Melihat arsip data terhapus, memulihkan (restore), dan menghapus permanen',
+            'actions' => [
+                'view' => [
+                    'label' => 'Lihat Data Terhapus',
+                    'desc' => 'Melihat tabulasi aset, mutasi, distribusi, dan unit yang terhapus sementara',
+                    'critical' => false,
+                    'default' => true,
+                ],
+                'restore' => [
+                    'label' => 'Pulihkan Data (Restore)',
+                    'desc' => 'Mengembalikan item yang terhapus kembali ke status aktif operasional',
+                    'critical' => false,
+                    'default' => true,
+                ],
+                'force_delete' => [
+                    'label' => 'Hapus Permanen (Force Delete)',
+                    'desc' => 'Menghapus data secara permanen dari basis data sistem secara mutlak',
+                    'critical' => true,
+                    'default' => false,
+                ],
+            ],
+        ],
     ];
 
     /**

@@ -53,6 +53,7 @@ class CheckModulePermission
                 'unit'        => 'Unit & Paviliun',
                 'master_data' => 'Master Data SIPD',
                 'users'       => 'Manajemen Pengguna',
+                'recycle_bin' => 'Pusat Data Terhapus (Recycle Bin)',
             ];
             $firstMod = explode('.', $moduleList[0])[0];
             $modName = $moduleLabels[$firstMod] ?? strtoupper($firstMod);
