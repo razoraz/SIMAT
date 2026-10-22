@@ -38,26 +38,14 @@
                                     :class="item.role === 'master_admin' ? 'text-amber-300' : (item.role === 'admin' ? 'text-cyan-300' : 'text-emerald-300')"
                                     x-text="item.email"></td>
                                 <td class="px-4 py-4 text-center whitespace-nowrap">
-                                    <div class="flex flex-col items-center space-y-1">
-                                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold border inline-block whitespace-nowrap"
-                                            :class="{
-                                                'bg-amber-500/20 text-amber-300 border-amber-500/30': item.role === 'master_admin',
-                                                'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30': item.role === 'admin',
-                                                'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30': item.role === 'sub_admin'
-                                            }">
-                                            <span class="whitespace-nowrap" x-text="item.role === 'master_admin' ? '👑 Master Admin' : (item.role === 'admin' ? '🛡️ Admin Operasional' : '🏥 Sub Admin Unit')"></span>
-                                        </span>
-                                        <!-- Badge info modul aktif untuk admin operasional -->
-                                        <template x-if="item.role === 'admin' && getUserPermissionsSummary(item)">
-                                            <div class="flex items-center space-x-1 text-[9px] font-mono">
-                                                <span class="px-2 py-0.5 rounded-md font-semibold border transition-all cursor-help"
-                                                    :class="getUserPermissionsSummary(item).isAll ? 'bg-cyan-950/60 border-cyan-500/30 text-cyan-400' : 'bg-slate-900 border-slate-700 text-slate-300'"
-                                                    :title="getUserPermissionsSummary(item).tooltip"
-                                                    x-text="getUserPermissionsSummary(item).text">
-                                                </span>
-                                            </div>
-                                        </template>
-                                    </div>
+                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold border inline-block whitespace-nowrap"
+                                        :class="{
+                                            'bg-amber-500/20 text-amber-300 border-amber-500/30': item.role === 'master_admin',
+                                            'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30': item.role === 'admin',
+                                            'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30': item.role === 'sub_admin'
+                                        }">
+                                        <span class="whitespace-nowrap" x-text="item.role === 'master_admin' ? '👑 Master Admin' : (item.role === 'admin' ? '🛡️ Admin Operasional' : '🏥 Sub Admin Unit')"></span>
+                                    </span>
                                 </td>
                                 <td class="px-4 py-4 font-semibold whitespace-nowrap">
                                     <template x-if="item.unit">
