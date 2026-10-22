@@ -1087,11 +1087,13 @@ class ReklasifikasiController extends Controller
                             ? (float)$uItem['harga_satuan'] 
                             : ($astap->harga_satuan ?: ($astap->total_realisasi / max(1, $astap->jumlah_volume)));
 
+                        $ukuranVal = $uItem['mesin_ukuran'] ?? ($uItem['mesin_ukuran_cc'] ?? ($uItem['ukuran'] ?? ($uItem['ukuran_cc'] ?? ($rawNew['mesin_ukuran'] ?? ($rawNew['mesin_ukuran_cc'] ?? ($rawNew['ukuran'] ?? '-'))))));
                         $m = [
                             'mesin_nama_barang'   => $uItem['item_nama'] ?? ($uItem['mesin_nama_barang'] ?? $astap->nama_barang),
                             'mesin_merk'          => $uItem['mesin_merk'] ?? ($rawNew['mesin_merk'] ?? '-'),
                             'mesin_type'          => $uItem['mesin_type'] ?? ($rawNew['mesin_type'] ?? '-'),
-                            'mesin_ukuran_cc'     => $uItem['mesin_ukuran_cc'] ?? ($rawNew['mesin_ukuran_cc'] ?? '-'),
+                            'mesin_ukuran'        => $ukuranVal,
+                            'mesin_ukuran_cc'     => $ukuranVal,
                             'mesin_bahan'         => $uItem['mesin_bahan'] ?? ($rawNew['mesin_bahan'] ?? 'Logam / Komponen Elektronik'),
                             'mesin_no_pabrik'     => $uItem['mesin_no_pabrik'] ?? ($rawNew['mesin_no_pabrik'] ?? '-'),
                             'mesin_no_rangka'     => $uItem['mesin_no_rangka'] ?? ($rawNew['mesin_no_rangka'] ?? '-'),
@@ -1126,6 +1128,10 @@ class ReklasifikasiController extends Controller
                     $newSpec['mesin_items']     = $mesinItems;
                     $newSpec['merk']            = $mesinItems[0]['mesin_merk'] ?? '-';
                     $newSpec['type']            = $mesinItems[0]['mesin_type'] ?? '-';
+                    $newSpec['ukuran']          = $mesinItems[0]['mesin_ukuran'] ?? '-';
+                    $newSpec['mesin_ukuran']    = $newSpec['ukuran'];
+                    $newSpec['mesin_ukuran_cc'] = $newSpec['ukuran'];
+                    $newSpec['bahan']           = $mesinItems[0]['mesin_bahan'] ?? 'Logam / Komponen Elektronik';
                     $newSpec['no_pabrik']       = count($allNoPabrik) > 0 ? implode(', ', $allNoPabrik) : ($mesinItems[0]['mesin_no_pabrik'] ?? '-');
                     if (\Illuminate\Support\Facades\Schema::hasColumn('astaps', 'merk_type')) {
                         $astap->merk_type = trim(($mesinItems[0]['mesin_merk'] ?? '') . ' ' . ($mesinItems[0]['mesin_type'] ?? ''));
@@ -1148,14 +1154,23 @@ class ReklasifikasiController extends Controller
                         $tahunInduk = ($isBaruVal === 'Baru') ? null : ($uItem['gedung_kapitalisasi_tahun_induk'] ?? ($rawNew['gedung_kapitalisasi_tahun_induk'] ?? ($oldG['gedung_kapitalisasi_tahun_induk'] ?? ($specLama['tahun_induk'] ?? null))));
                         $nilaiInduk = ($isBaruVal === 'Baru') ? 0 : (float) ($uItem['gedung_kapitalisasi_nilai_induk'] ?? ($rawNew['gedung_kapitalisasi_nilai_induk'] ?? ($oldG['gedung_kapitalisasi_nilai_induk'] ?? ($specLama['nilai_induk'] ?? 0))));
 
+                        $luasGedung = (float) ($uItem['gedung_luas_lantai_m2'] ?? ($uItem['gedung_luas_lantai'] ?? ($rawNew['gedung_luas_lantai_m2'] ?? ($rawNew['gedung_luas_lantai'] ?? ($oldG['gedung_luas_lantai_m2'] ?? ($oldG['gedung_luas_lantai'] ?? ($oldG['luas_lantai'] ?? ($oldG['gedung_luas_m2'] ?? ($specLama['luas_lantai_m2'] ?? ($specLama['gedung_luas_lantai'] ?? 0))))))))));
+                        $dokNomor = $uItem['gedung_dokumen_nomor'] ?? ($uItem['gedung_dokumen_no'] ?? ($rawNew['gedung_dokumen_nomor'] ?? ($rawNew['gedung_dokumen_no'] ?? ($oldG['gedung_dokumen_nomor'] ?? ($oldG['gedung_dokumen_no'] ?? ($oldG['dokumen_nomor'] ?? ($specLama['dokumen_nomor'] ?? null)))))));
+                        $bertingkat = $uItem['gedung_konstruksi_bertingkat'] ?? ($rawNew['gedung_konstruksi_bertingkat'] ?? ($oldG['gedung_konstruksi_bertingkat'] ?? ($oldG['gedung_bertingkat'] ?? ($oldG['bertingkat'] ?? ($specLama['konstruksi_bertingkat'] ?? 'Bertingkat')))));
+                        $beton = $uItem['gedung_konstruksi_beton'] ?? ($rawNew['gedung_konstruksi_beton'] ?? ($oldG['gedung_konstruksi_beton'] ?? ($oldG['gedung_beton'] ?? ($oldG['beton'] ?? ($specLama['konstruksi_beton'] ?? 'Beton')))));
+
                         $g = [
                             'gedung_nama_bangunan'        => $astap->nama_barang,
-                            'gedung_konstruksi_bertingkat'=> $uItem['gedung_konstruksi_bertingkat'] ?? ($rawNew['gedung_konstruksi_bertingkat'] ?? ($oldG['gedung_konstruksi_bertingkat'] ?? ($oldG['gedung_bertingkat'] ?? ($oldG['bertingkat'] ?? ($specLama['konstruksi_bertingkat'] ?? 'Bertingkat'))))),
-                            'gedung_konstruksi_beton'     => $uItem['gedung_konstruksi_beton'] ?? ($rawNew['gedung_konstruksi_beton'] ?? ($oldG['gedung_konstruksi_beton'] ?? ($oldG['gedung_beton'] ?? ($oldG['beton'] ?? ($specLama['konstruksi_beton'] ?? 'Beton'))))),
-                            'gedung_luas_lantai_m2'       => (float) ($uItem['gedung_luas_lantai_m2'] ?? ($rawNew['gedung_luas_lantai_m2'] ?? ($oldG['gedung_luas_lantai_m2'] ?? ($oldG['gedung_luas_lantai'] ?? ($oldG['luas_lantai'] ?? ($oldG['gedung_luas_m2'] ?? ($specLama['luas_lantai_m2'] ?? ($specLama['gedung_luas_lantai'] ?? 0)))))))),
+                            'gedung_konstruksi_bertingkat'=> $bertingkat,
+                            'gedung_bertingkat'           => $bertingkat,
+                            'gedung_konstruksi_beton'     => $beton,
+                            'gedung_beton'                => $beton,
+                            'gedung_luas_lantai'          => $luasGedung,
+                            'gedung_luas_lantai_m2'       => $luasGedung,
                             'gedung_alamat'               => $uItem['gedung_alamat'] ?? ($rawNew['gedung_alamat'] ?? ($oldG['gedung_alamat'] ?? ($oldG['alamat'] ?? ($astap->alamat_barang ?: 'Kompleks RSUD Dr. H. Koesnandi')))),
                             'gedung_dokumen_tgl'          => $uItem['gedung_dokumen_tgl'] ?? ($rawNew['gedung_dokumen_tgl'] ?? ($oldG['gedung_dokumen_tgl'] ?? ($oldG['gedung_dokumen_tanggal'] ?? ($oldG['dokumen_tgl'] ?? ($specLama['dokumen_tgl'] ?? null))))),
-                            'gedung_dokumen_nomor'        => $uItem['gedung_dokumen_nomor'] ?? ($rawNew['gedung_dokumen_nomor'] ?? ($oldG['gedung_dokumen_nomor'] ?? ($oldG['gedung_dokumen_no'] ?? ($oldG['dokumen_nomor'] ?? ($specLama['dokumen_nomor'] ?? null))))),
+                            'gedung_dokumen_no'           => $dokNomor,
+                            'gedung_dokumen_nomor'        => $dokNomor,
                             'gedung_status_tanah'         => $uItem['gedung_status_tanah'] ?? ($rawNew['gedung_status_tanah'] ?? ($oldG['gedung_status_tanah'] ?? ($oldG['status_tanah'] ?? ($specLama['status_tanah'] ?? 'Tanah Pemda')))),
                             'gedung_kondisi'              => $uItem['gedung_kondisi'] ?? ($rawNew['gedung_kondisi'] ?? ($oldG['gedung_kondisi'] ?? ($oldG['kondisi'] ?? 'Baik'))),
                             'gedung_is_baru'              => $isBaruVal,
@@ -1169,9 +1184,13 @@ class ReklasifikasiController extends Controller
 
                     $newSpec['gedung_items']         = $gedungItems;
                     $newSpec['luas_lantai_m2']        = $totalLuas > 0 ? $totalLuas : (float)($rawNew['gedung_luas_lantai_m2'] ?? 0);
+                    $newSpec['gedung_luas_lantai']    = $newSpec['luas_lantai_m2'];
                     $newSpec['konstruksi_bertingkat'] = $gedungItems[0]['gedung_konstruksi_bertingkat'] ?? 'Bertingkat';
+                    $newSpec['bertingkat']            = $newSpec['konstruksi_bertingkat'];
                     $newSpec['konstruksi_beton']      = $gedungItems[0]['gedung_konstruksi_beton'] ?? 'Beton';
+                    $newSpec['beton']                 = $newSpec['konstruksi_beton'];
                     $newSpec['dokumen_nomor']         = $gedungItems[0]['gedung_dokumen_nomor'] ?? null;
+                    $newSpec['dokumen_no']            = $newSpec['dokumen_nomor'];
                     $newSpec['dokumen_tgl']           = $gedungItems[0]['gedung_dokumen_tgl'] ?? null;
                     $newSpec['gedung_is_baru']        = $gedungItems[0]['gedung_is_baru'] ?? $defaultIsBaru;
                     $newSpec['is_baru']               = $gedungItems[0]['gedung_is_baru'] ?? $defaultIsBaru;
@@ -1197,15 +1216,26 @@ class ReklasifikasiController extends Controller
                         $tahunInduk = ($isBaruVal === 'Baru') ? null : ($uItem['jaringan_kapitalisasi_tahun_induk'] ?? ($rawNew['jaringan_kapitalisasi_tahun_induk'] ?? ($oldJ['jaringan_kapitalisasi_tahun_induk'] ?? ($specLama['tahun_induk'] ?? null))));
                         $nilaiInduk = ($isBaruVal === 'Baru') ? 0 : (float) ($uItem['jaringan_kapitalisasi_nilai_induk'] ?? ($rawNew['jaringan_kapitalisasi_nilai_induk'] ?? ($oldJ['jaringan_kapitalisasi_nilai_induk'] ?? ($specLama['nilai_induk'] ?? 0))));
 
+                        $panjangVal = $uItem['jaringan_panjang'] ?? ($uItem['jaringan_panjang_km'] ?? ($rawNew['jaringan_panjang'] ?? ($rawNew['jaringan_panjang_km'] ?? ($oldJ['jaringan_panjang'] ?? ($oldJ['jaringan_panjang_km'] ?? null)))));
+                        $lebarVal = $uItem['jaringan_lebar'] ?? ($uItem['jaringan_lebar_m'] ?? ($rawNew['jaringan_lebar'] ?? ($rawNew['jaringan_lebar_m'] ?? ($oldJ['jaringan_lebar'] ?? ($oldJ['jaringan_lebar_m'] ?? null)))));
+                        $luasVal = (float) ($uItem['jaringan_luas'] ?? ($uItem['jaringan_luas_m2'] ?? ($rawNew['jaringan_luas'] ?? ($rawNew['jaringan_luas_m2'] ?? ($oldJ['jaringan_luas'] ?? ($oldJ['jaringan_luas_m2'] ?? ($specLama['luas_m2'] ?? 0)))))));
+                        $dokNo = $uItem['jaringan_dokumen_no'] ?? ($uItem['jaringan_dokumen_nomor'] ?? ($rawNew['jaringan_dokumen_no'] ?? ($rawNew['jaringan_dokumen_nomor'] ?? ($oldJ['jaringan_dokumen_no'] ?? ($oldJ['jaringan_dokumen_nomor'] ?? ($specLama['dokumen_nomor'] ?? null))))));
+                        $dokTgl = $uItem['jaringan_dokumen_tgl'] ?? ($rawNew['jaringan_dokumen_tgl'] ?? ($oldJ['jaringan_dokumen_tgl'] ?? ($specLama['dokumen_tgl'] ?? null)));
+
                         $j = [
                             'jaringan_nama'          => $astap->nama_barang,
+                            'jaringan_nama_barang'   => $astap->nama_barang,
                             'jaringan_konstruksi'    => $uItem['jaringan_konstruksi'] ?? ($rawNew['jaringan_konstruksi'] ?? ($oldJ['jaringan_konstruksi'] ?? ($specLama['konstruksi'] ?? 'Aspal / Beton'))),
-                            'jaringan_panjang_km'    => $uItem['jaringan_panjang_km'] ?? ($rawNew['jaringan_panjang_km'] ?? ($oldJ['jaringan_panjang_km'] ?? null)),
-                            'jaringan_lebar_m'       => $uItem['jaringan_lebar_m'] ?? ($rawNew['jaringan_lebar_m'] ?? ($oldJ['jaringan_lebar_m'] ?? null)),
-                            'jaringan_luas_m2'       => (float) ($uItem['jaringan_luas_m2'] ?? ($rawNew['jaringan_luas_m2'] ?? ($oldJ['jaringan_luas_m2'] ?? ($specLama['luas_m2'] ?? 0)))),
+                            'jaringan_panjang'       => $panjangVal,
+                            'jaringan_panjang_km'    => $panjangVal,
+                            'jaringan_lebar'         => $lebarVal,
+                            'jaringan_lebar_m'       => $lebarVal,
+                            'jaringan_luas'          => $luasVal,
+                            'jaringan_luas_m2'       => $luasVal,
                             'jaringan_alamat'        => $uItem['jaringan_alamat'] ?? ($rawNew['jaringan_alamat'] ?? ($oldJ['jaringan_alamat'] ?? ($astap->alamat_barang ?: 'Kompleks RSUD'))),
-                            'jaringan_dokumen_nomor' => $uItem['jaringan_dokumen_nomor'] ?? ($rawNew['jaringan_dokumen_nomor'] ?? ($oldJ['jaringan_dokumen_nomor'] ?? ($specLama['dokumen_nomor'] ?? null))),
-                            'jaringan_dokumen_tgl'   => $uItem['jaringan_dokumen_tgl'] ?? ($rawNew['jaringan_dokumen_tgl'] ?? ($oldJ['jaringan_dokumen_tgl'] ?? ($specLama['dokumen_tgl'] ?? null))),
+                            'jaringan_dokumen_no'    => $dokNo,
+                            'jaringan_dokumen_nomor' => $dokNo,
+                            'jaringan_dokumen_tgl'   => $dokTgl,
                             'jaringan_status_tanah'  => 'Tanah Pemda',
                             'jaringan_kondisi'       => $uItem['jaringan_kondisi'] ?? ($rawNew['jaringan_kondisi'] ?? ($oldJ['jaringan_kondisi'] ?? 'Baik')),
                             'jaringan_is_baru'       => $isBaruVal,
@@ -1219,6 +1249,15 @@ class ReklasifikasiController extends Controller
 
                     $newSpec['jaringan_items']       = $jaringanItems;
                     $newSpec['konstruksi']           = $jaringanItems[0]['jaringan_konstruksi'] ?? 'Aspal / Beton';
+                    $newSpec['panjang_km']           = $jaringanItems[0]['jaringan_panjang'] ?? null;
+                    $newSpec['jaringan_panjang']     = $newSpec['panjang_km'];
+                    $newSpec['lebar_m']              = $jaringanItems[0]['jaringan_lebar'] ?? null;
+                    $newSpec['jaringan_lebar']       = $newSpec['lebar_m'];
+                    $newSpec['luas_m2']              = $totalLuas > 0 ? $totalLuas : ($jaringanItems[0]['jaringan_luas'] ?? 0);
+                    $newSpec['jaringan_luas']        = $newSpec['luas_m2'];
+                    $newSpec['dokumen_nomor']         = $jaringanItems[0]['jaringan_dokumen_nomor'] ?? null;
+                    $newSpec['dokumen_no']            = $newSpec['dokumen_nomor'];
+                    $newSpec['dokumen_tgl']           = $jaringanItems[0]['jaringan_dokumen_tgl'] ?? null;
                     $newSpec['jaringan_is_baru']     = $jaringanItems[0]['jaringan_is_baru'] ?? $defaultIsBaru;
                     $newSpec['is_baru']              = $jaringanItems[0]['jaringan_is_baru'] ?? $defaultIsBaru;
                     $newSpec['jaringan_kapitalisasi_tahun_induk'] = $jaringanItems[0]['jaringan_kapitalisasi_tahun_induk'] ?? null;
@@ -1236,12 +1275,15 @@ class ReklasifikasiController extends Controller
 
                         $l = [
                             'lainnya_nama_barang'    => $uItem['item_nama'] ?? ($uItem['lainnya_nama_barang'] ?? $astap->nama_barang),
-                            'lainnya_judul_pencipta' => $uItem['lainnya_judul_pencipta'] ?? ($rawNew['lainnya_judul_pencipta'] ?? $astap->nama_barang),
+                            'lainnya_judul'          => $uItem['lainnya_judul'] ?? ($uItem['lainnya_judul_pencipta'] ?? ($rawNew['lainnya_judul'] ?? ($rawNew['lainnya_judul_pencipta'] ?? $astap->nama_barang))),
+                            'lainnya_judul_pencipta' => $uItem['lainnya_judul_pencipta'] ?? ($uItem['lainnya_judul'] ?? ($rawNew['lainnya_judul_pencipta'] ?? ($rawNew['lainnya_judul'] ?? $astap->nama_barang))),
+                            'lainnya_pencipta'       => $uItem['lainnya_pencipta'] ?? ($rawNew['lainnya_pencipta'] ?? '-'),
                             'lainnya_spesifikasi'    => $uItem['lainnya_spesifikasi'] ?? ($rawNew['lainnya_spesifikasi'] ?? '-'),
                             'lainnya_asal_daerah'    => $uItem['lainnya_asal_daerah'] ?? ($rawNew['lainnya_asal_daerah'] ?? '-'),
                             'lainnya_bahan'          => $uItem['lainnya_bahan'] ?? ($rawNew['lainnya_bahan'] ?? 'Kertas / Kanvas / Lainnya'),
                             'lainnya_ukuran'         => $uItem['lainnya_ukuran'] ?? ($rawNew['lainnya_ukuran'] ?? '-'),
                             'lainnya_kondisi'        => 'Baik',
+                            'lainnya_jumlah'         => $vol,
                             'lainnya_jumlah_barang'  => $vol,
                             'lainnya_satuan'         => $uItem['item_satuan'] ?? ($astap->satuan ?: 'Buah'),
                             'lainnya_nilai_satuan'   => $unitItemPrice,
@@ -1250,6 +1292,11 @@ class ReklasifikasiController extends Controller
                         $lainnyaItems[] = $l;
                     }
                     $newSpec['lainnya_items']        = $lainnyaItems;
+                    $newSpec['judul']                = $lainnyaItems[0]['lainnya_judul'] ?? null;
+                    $newSpec['pencipta']              = $lainnyaItems[0]['lainnya_pencipta'] ?? null;
+                    $newSpec['spesifikasi']          = $lainnyaItems[0]['lainnya_spesifikasi'] ?? null;
+                    $newSpec['bahan']                = $lainnyaItems[0]['lainnya_bahan'] ?? null;
+                    $newSpec['ukuran']               = $lainnyaItems[0]['lainnya_ukuran'] ?? null;
 
                 } elseif ($targetKib === 'ATB') {
                     $atbItems = [];
@@ -1361,14 +1408,23 @@ class ReklasifikasiController extends Controller
                         $oldGedungList = $specLama['gedung_items'] ?? [];
                         foreach ($unitItems as $uIdx => $uItem) {
                             $oldG = $oldGedungList[$uIdx] ?? ($oldGedungList[0] ?? []);
+                            $luasGedung = (float) ($uItem['gedung_luas_lantai_m2'] ?? ($uItem['gedung_luas_lantai'] ?? ($rawNew['gedung_luas_lantai_m2'] ?? ($rawNew['gedung_luas_lantai'] ?? ($oldG['gedung_luas_lantai_m2'] ?? ($oldG['gedung_luas_lantai'] ?? ($oldG['luas_lantai'] ?? ($oldG['gedung_luas_m2'] ?? ($specLama['luas_lantai_m2'] ?? ($specLama['gedung_luas_lantai'] ?? 0))))))))));
+                            $dokNomor = $uItem['gedung_dokumen_nomor'] ?? ($uItem['gedung_dokumen_no'] ?? ($rawNew['gedung_dokumen_nomor'] ?? ($rawNew['gedung_dokumen_no'] ?? ($oldG['gedung_dokumen_nomor'] ?? ($oldG['gedung_dokumen_no'] ?? ($oldG['dokumen_nomor'] ?? ($specLama['dokumen_nomor'] ?? null)))))));
+                            $bertingkat = $uItem['gedung_konstruksi_bertingkat'] ?? ($rawNew['gedung_konstruksi_bertingkat'] ?? ($oldG['gedung_konstruksi_bertingkat'] ?? ($oldG['gedung_bertingkat'] ?? ($oldG['bertingkat'] ?? ($specLama['konstruksi_bertingkat'] ?? 'Bertingkat')))));
+                            $beton = $uItem['gedung_konstruksi_beton'] ?? ($rawNew['gedung_konstruksi_beton'] ?? ($oldG['gedung_konstruksi_beton'] ?? ($oldG['gedung_beton'] ?? ($oldG['beton'] ?? ($specLama['konstruksi_beton'] ?? 'Beton')))));
+
                             $g = [
                                 'gedung_nama_bangunan'        => $astap->nama_barang,
-                                'gedung_konstruksi_bertingkat'=> $uItem['gedung_konstruksi_bertingkat'] ?? ($rawNew['gedung_konstruksi_bertingkat'] ?? ($oldG['gedung_konstruksi_bertingkat'] ?? ($oldG['gedung_bertingkat'] ?? ($oldG['bertingkat'] ?? ($specLama['konstruksi_bertingkat'] ?? 'Bertingkat'))))),
-                                'gedung_konstruksi_beton'     => $uItem['gedung_konstruksi_beton'] ?? ($rawNew['gedung_konstruksi_beton'] ?? ($oldG['gedung_konstruksi_beton'] ?? ($oldG['gedung_beton'] ?? ($oldG['beton'] ?? ($specLama['konstruksi_beton'] ?? 'Beton'))))),
-                                'gedung_luas_lantai_m2'       => (float) ($uItem['gedung_luas_lantai_m2'] ?? ($rawNew['gedung_luas_lantai_m2'] ?? ($oldG['gedung_luas_lantai_m2'] ?? ($oldG['gedung_luas_lantai'] ?? ($oldG['luas_lantai'] ?? ($oldG['gedung_luas_m2'] ?? ($specLama['luas_lantai_m2'] ?? ($specLama['gedung_luas_lantai'] ?? 0)))))))),
+                                'gedung_konstruksi_bertingkat'=> $bertingkat,
+                                'gedung_bertingkat'           => $bertingkat,
+                                'gedung_konstruksi_beton'     => $beton,
+                                'gedung_beton'                => $beton,
+                                'gedung_luas_lantai'          => $luasGedung,
+                                'gedung_luas_lantai_m2'       => $luasGedung,
                                 'gedung_alamat'               => $uItem['gedung_alamat'] ?? ($rawNew['gedung_alamat'] ?? ($oldG['gedung_alamat'] ?? ($oldG['alamat'] ?? ($astap->alamat_barang ?: 'Kompleks RSUD Dr. H. Koesnandi')))),
                                 'gedung_dokumen_tgl'          => $uItem['gedung_dokumen_tgl'] ?? ($rawNew['gedung_dokumen_tgl'] ?? ($oldG['gedung_dokumen_tgl'] ?? ($oldG['gedung_dokumen_tanggal'] ?? ($oldG['dokumen_tgl'] ?? ($specLama['dokumen_tgl'] ?? null))))),
-                                'gedung_dokumen_nomor'        => $uItem['gedung_dokumen_nomor'] ?? ($rawNew['gedung_dokumen_nomor'] ?? ($oldG['gedung_dokumen_nomor'] ?? ($oldG['gedung_dokumen_no'] ?? ($oldG['dokumen_nomor'] ?? ($specLama['dokumen_nomor'] ?? null))))),
+                                'gedung_dokumen_no'           => $dokNomor,
+                                'gedung_dokumen_nomor'        => $dokNomor,
                                 'gedung_status_tanah'         => $uItem['gedung_status_tanah'] ?? ($rawNew['gedung_status_tanah'] ?? ($oldG['gedung_status_tanah'] ?? ($oldG['status_tanah'] ?? ($specLama['status_tanah'] ?? 'Tanah Pemda')))),
                                 'gedung_kondisi'              => $uItem['gedung_kondisi'] ?? ($rawNew['gedung_kondisi'] ?? ($oldG['gedung_kondisi'] ?? ($oldG['kondisi'] ?? 'Baik'))),
                                 'gedung_nilai_fisik'          => $unitPrice,
@@ -1378,21 +1434,32 @@ class ReklasifikasiController extends Controller
                         }
                         $newSpec['gedung_items']         = $gedungItems;
                         $newSpec['luas_lantai_m2']        = $totalLuas > 0 ? $totalLuas : (float)($rawNew['gedung_luas_lantai_m2'] ?? ($specLama['luas_lantai_m2'] ?? 0));
+                        $newSpec['gedung_luas_lantai']    = $newSpec['luas_lantai_m2'];
                         $newSpec['konstruksi_bertingkat'] = $gedungItems[0]['gedung_konstruksi_bertingkat'] ?? 'Bertingkat';
+                        $newSpec['bertingkat']            = $newSpec['konstruksi_bertingkat'];
                         $newSpec['konstruksi_beton']      = $gedungItems[0]['gedung_konstruksi_beton'] ?? 'Beton';
+                        $newSpec['beton']                 = $newSpec['konstruksi_beton'];
                         $newSpec['dokumen_nomor']         = $gedungItems[0]['gedung_dokumen_nomor'] ?? null;
+                        $newSpec['dokumen_no']            = $newSpec['dokumen_nomor'];
                     } elseif ($isJaringan) {
                         $jaringanItems = [];
                         $totalLuas = 0;
                         $oldJaringanList = $specLama['jaringan_items'] ?? [];
                         foreach ($unitItems as $uIdx => $uItem) {
                             $oldJ = $oldJaringanList[$uIdx] ?? ($oldJaringanList[0] ?? []);
+                            $panjangVal = $uItem['jaringan_panjang'] ?? ($uItem['jaringan_panjang_km'] ?? ($rawNew['jaringan_panjang'] ?? ($rawNew['jaringan_panjang_km'] ?? ($oldJ['jaringan_panjang'] ?? ($oldJ['jaringan_panjang_km'] ?? null)))));
+                            $lebarVal = $uItem['jaringan_lebar'] ?? ($uItem['jaringan_lebar_m'] ?? ($rawNew['jaringan_lebar'] ?? ($rawNew['jaringan_lebar_m'] ?? ($oldJ['jaringan_lebar'] ?? ($oldJ['jaringan_lebar_m'] ?? null)))));
+                            $luasVal = (float) ($uItem['jaringan_luas'] ?? ($uItem['jaringan_luas_m2'] ?? ($rawNew['jaringan_luas'] ?? ($rawNew['jaringan_luas_m2'] ?? ($oldJ['jaringan_luas'] ?? ($oldJ['jaringan_luas_m2'] ?? 0))))));
                             $j = [
                                 'jaringan_nama'          => $astap->nama_barang,
+                                'jaringan_nama_barang'   => $astap->nama_barang,
                                 'jaringan_konstruksi'    => $uItem['jaringan_konstruksi'] ?? ($rawNew['jaringan_konstruksi'] ?? ($oldJ['jaringan_konstruksi'] ?? 'Aspal / Beton')),
-                                'jaringan_panjang_km'    => $uItem['jaringan_panjang_km'] ?? ($rawNew['jaringan_panjang_km'] ?? ($oldJ['jaringan_panjang_km'] ?? null)),
-                                'jaringan_lebar_m'       => $uItem['jaringan_lebar_m'] ?? ($rawNew['jaringan_lebar_m'] ?? ($oldJ['jaringan_lebar_m'] ?? null)),
-                                'jaringan_luas_m2'       => (float) ($uItem['jaringan_luas_m2'] ?? ($rawNew['jaringan_luas_m2'] ?? ($oldJ['jaringan_luas_m2'] ?? 0))),
+                                'jaringan_panjang'       => $panjangVal,
+                                'jaringan_panjang_km'    => $panjangVal,
+                                'jaringan_lebar'         => $lebarVal,
+                                'jaringan_lebar_m'       => $lebarVal,
+                                'jaringan_luas'          => $luasVal,
+                                'jaringan_luas_m2'       => $luasVal,
                                 'jaringan_alamat'        => $uItem['jaringan_alamat'] ?? ($rawNew['jaringan_alamat'] ?? ($oldJ['jaringan_alamat'] ?? ($astap->alamat_barang ?: 'Kompleks RSUD'))),
                                 'jaringan_kondisi'       => $oldJ['jaringan_kondisi'] ?? 'Baik',
                                 'jaringan_nilai_fisik'   => $unitPrice,
@@ -1400,8 +1467,14 @@ class ReklasifikasiController extends Controller
                             $jaringanItems[] = $j;
                             $totalLuas += $j['jaringan_luas_m2'];
                         }
-                        $newSpec['jaringan_items'] = $jaringanItems;
-                        $newSpec['konstruksi']     = $jaringanItems[0]['jaringan_konstruksi'] ?? 'Aspal / Beton';
+                        $newSpec['jaringan_items']   = $jaringanItems;
+                        $newSpec['konstruksi']       = $jaringanItems[0]['jaringan_konstruksi'] ?? 'Aspal / Beton';
+                        $newSpec['panjang_km']       = $jaringanItems[0]['jaringan_panjang'] ?? null;
+                        $newSpec['jaringan_panjang'] = $newSpec['panjang_km'];
+                        $newSpec['lebar_m']          = $jaringanItems[0]['jaringan_lebar'] ?? null;
+                        $newSpec['jaringan_lebar']   = $newSpec['lebar_m'];
+                        $newSpec['luas_m2']          = $totalLuas > 0 ? $totalLuas : ($jaringanItems[0]['jaringan_luas'] ?? 0);
+                        $newSpec['jaringan_luas']    = $newSpec['luas_m2'];
                     } elseif ($isLainnya) {
                         $lainnyaItems = [];
                         $oldLainnyaList = $specLama['lainnya_items'] ?? [];
@@ -1421,6 +1494,7 @@ class ReklasifikasiController extends Controller
                                 'lainnya_kondisi'        => $uItem['lainnya_kondisi'] ?? ($rawNew['lainnya_kondisi'] ?? ($oldL['lainnya_kondisi'] ?? 'Baik')),
                                 'kib_e_type'             => $uItem['kib_e_type'] ?? ($rawNew['kib_e_type'] ?? ($oldL['kib_e_type'] ?? 'buku')),
                                 'is_extracom'            => $isTargetExtracom,
+                                'lainnya_jumlah'         => $vol,
                                 'lainnya_jumlah_barang'  => $vol,
                                 'lainnya_satuan'         => $uItem['item_satuan'] ?? ($astap->satuan ?: 'Buah'),
                                 'lainnya_nilai_satuan'   => $unitPrice,
@@ -1429,6 +1503,11 @@ class ReklasifikasiController extends Controller
                             $lainnyaItems[] = $l;
                         }
                         $newSpec['lainnya_items'] = $lainnyaItems;
+                        $newSpec['judul']         = $lainnyaItems[0]['lainnya_judul'] ?? null;
+                        $newSpec['pencipta']      = $lainnyaItems[0]['lainnya_pencipta'] ?? null;
+                        $newSpec['spesifikasi']   = $lainnyaItems[0]['lainnya_spesifikasi'] ?? null;
+                        $newSpec['bahan']         = $lainnyaItems[0]['lainnya_bahan'] ?? null;
+                        $newSpec['ukuran']        = $lainnyaItems[0]['lainnya_ukuran'] ?? null;
                     } else {
                         // KIB B Mesin & Peralatan
                         $mesinItems = [];
@@ -1438,11 +1517,13 @@ class ReklasifikasiController extends Controller
                         foreach ($unitItems as $uIdx => $uItem) {
                             $oldM = $oldMesinList[$uIdx] ?? ($oldMesinList[0] ?? []);
                             $vol = max(1, (int) ($uItem['item_volume'] ?? ($uItem['mesin_jumlah_barang'] ?? 1)));
+                            $ukuranVal = $uItem['mesin_ukuran'] ?? ($uItem['mesin_ukuran_cc'] ?? ($uItem['ukuran'] ?? ($uItem['ukuran_cc'] ?? ($rawNew['mesin_ukuran'] ?? ($rawNew['mesin_ukuran_cc'] ?? ($rawNew['ukuran'] ?? ($oldM['mesin_ukuran'] ?? ($oldM['mesin_ukuran_cc'] ?? ($oldM['ukuran'] ?? '-')))))))));
                             $m = [
                                 'mesin_nama_barang'   => $uItem['item_nama'] ?? ($uItem['mesin_nama_barang'] ?? ($rawNew['mesin_nama_barang'] ?? ($oldM['mesin_nama_barang'] ?? $astap->nama_barang))),
                                 'mesin_merk'          => $uItem['mesin_merk'] ?? ($rawNew['mesin_merk'] ?? ($oldM['mesin_merk'] ?? ($specLama['merk'] ?? '-'))),
                                 'mesin_type'          => $uItem['mesin_type'] ?? ($rawNew['mesin_type'] ?? ($oldM['mesin_type'] ?? ($specLama['type'] ?? '-'))),
-                                'mesin_ukuran_cc'     => $uItem['mesin_ukuran_cc'] ?? ($rawNew['mesin_ukuran_cc'] ?? ($rawNew['mesin_ukuran'] ?? ($oldM['mesin_ukuran_cc'] ?? ($oldM['mesin_ukuran'] ?? '-')))),
+                                'mesin_ukuran'        => $ukuranVal,
+                                'mesin_ukuran_cc'     => $ukuranVal,
                                 'mesin_bahan'         => $uItem['mesin_bahan'] ?? ($rawNew['mesin_bahan'] ?? ($oldM['mesin_bahan'] ?? 'Logam / Komponen Elektronik')),
                                 'mesin_no_pabrik'     => $uItem['mesin_no_pabrik'] ?? ($rawNew['mesin_no_pabrik'] ?? ($oldM['mesin_no_pabrik'] ?? ($specLama['no_pabrik'] ?? '-'))),
                                 'mesin_no_rangka'     => $uItem['mesin_no_rangka'] ?? ($rawNew['mesin_no_rangka'] ?? ($oldM['mesin_no_rangka'] ?? '-')),
@@ -1465,10 +1546,14 @@ class ReklasifikasiController extends Controller
                             }
                             $regCursor += $vol;
                         }
-                        $newSpec['mesin_items'] = $mesinItems;
-                        $newSpec['merk']        = $mesinItems[0]['mesin_merk'] ?? '-';
-                        $newSpec['type']        = $mesinItems[0]['mesin_type'] ?? '-';
-                        $newSpec['no_pabrik']   = count($allNoPabrik) > 0 ? implode(', ', $allNoPabrik) : ($mesinItems[0]['mesin_no_pabrik'] ?? '-');
+                        $newSpec['mesin_items']     = $mesinItems;
+                        $newSpec['merk']            = $mesinItems[0]['mesin_merk'] ?? '-';
+                        $newSpec['type']            = $mesinItems[0]['mesin_type'] ?? '-';
+                        $newSpec['ukuran']          = $mesinItems[0]['mesin_ukuran'] ?? '-';
+                        $newSpec['mesin_ukuran']    = $newSpec['ukuran'];
+                        $newSpec['mesin_ukuran_cc'] = $newSpec['ukuran'];
+                        $newSpec['bahan']           = $mesinItems[0]['mesin_bahan'] ?? 'Logam / Komponen Elektronik';
+                        $newSpec['no_pabrik']       = count($allNoPabrik) > 0 ? implode(', ', $allNoPabrik) : ($mesinItems[0]['mesin_no_pabrik'] ?? '-');
                         if (\Illuminate\Support\Facades\Schema::hasColumn('astaps', 'merk_type')) {
                             $astap->merk_type = trim(($mesinItems[0]['mesin_merk'] ?? '') . ' ' . ($mesinItems[0]['mesin_type'] ?? ''));
                         }

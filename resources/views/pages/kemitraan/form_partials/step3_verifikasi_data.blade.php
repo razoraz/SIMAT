@@ -462,10 +462,6 @@
                                 <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Ukuran / Kapasitas:</span>
                                 <span class="text-slate-200 block" x-text="formData.ukuran || (formData.mesin_items?.[0]?.mesin_ukuran || '-')"></span>
                             </div>
-                            <div>
-                                <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Tahun Pembuatan:</span>
-                                <span class="font-mono text-slate-200 block" x-text="formData.tahun_pembuatan || (formData.mesin_items?.[0]?.mesin_tahun_pembuatan || '-')"></span>
-                            </div>
                             <div class="col-span-2">
                                 <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Keterangan:</span>
                                 <span class="text-slate-200 block" x-text="formData.mesin_items?.[0]?.mesin_keterangan || '-'"></span>

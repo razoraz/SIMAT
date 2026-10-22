@@ -905,6 +905,10 @@
                     asalSumberDanaBadge = 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40';
                 }
 
+                const isDimanfaat = Boolean(isDimanfaatkan || (kemitraan && kemitraan.tipe_kemitraan === 'dimanfaatkan') || kemitraan?.is_reklas_pending);
+                const tahunPerolehanBmd = targetAstap?.tahun_perolehan || objekAstap?.tahun_perolehan || (registers.length > 0 && registers[0]?.tahun_perolehan) || astap?.tahun_perolehan || kemitraan?.tahun || new Date().getFullYear();
+                const tahunPenempatanMitra = kemitraan?.tahun || astap?.tahun_perolehan || new Date().getFullYear();
+
                 this.selectedAstapDetail = {
                     id: astap?.id || kemitraan?.astap_id,
                     kemitraan_id: kemitraan?.id,
@@ -913,7 +917,11 @@
                     category: category,
                     sumber_dana: 'kemitraan',
                     sumber_dana_label: '🤝 KEMITRAAN AKUN 1.5.2',
-                    tahun_perolehan: kemitraan?.tahun || astap?.tahun_perolehan || new Date().getFullYear(),
+                    tahun_perolehan: isDimanfaat ? tahunPerolehanBmd : tahunPenempatanMitra,
+                    tahun_perolehan_bmd: tahunPerolehanBmd,
+                    tahun_penempatan_mitra: tahunPenempatanMitra,
+                    tahun_pengadaan_asal: bm?.tahun || targetAstap?.tahun_perolehan || objekAstap?.tahun_perolehan || tahunPerolehanBmd,
+                    label_tahun_kpi: isDimanfaat ? '🏛️ Tahun Perolehan BMD' : '🏢 Tahun Penempatan di RSUD',
                     triwulan: kemitraan?.triwulan || astap?.triwulan || 'TW I',
                     jumlah_volume: volumeNum,
                     satuan: satuanStr,
@@ -2059,7 +2067,25 @@
                 spec = spec || {};
                 if (Array.isArray(spec.tanah_items) && spec.tanah_items.length > 0) {
                     const valid = spec.tanah_items.filter(t => t.tanah_nama_barang || t.tanah_luas_m2 || t.tanah_hak || t.tanah_sertifikat_no || (parseFloat(t.tanah_nilai_satuan) > 0));
-                    const toSync = valid.length > 0 ? valid : spec.tanah_items;
+                    const rawList = valid.length > 0 ? valid : spec.tanah_items;
+                    const toSync = rawList.map(t => {
+                        const luas = parseFloat(t.tanah_luas_m2 || t.luas_m2 || 0);
+                        const hak = t.tanah_hak || t.hak_tanah || 'Hak Pakai';
+                        const sertifikat = t.tanah_sertifikat_no || t.sertifikat_no || '';
+                        const sertifikatTgl = t.tanah_sertifikat_tgl || t.sertifikat_tgl || '';
+                        const penggunaan = t.tanah_penggunaan || t.penggunaan || '';
+                        const alamat = t.tanah_alamat || t.alamat || astap.alamat_barang || '';
+                        return {
+                            ...t,
+                            tanah_luas_m2: luas,
+                            tanah_hak: hak,
+                            tanah_sertifikat_no: sertifikat,
+                            tanah_sertifikat_tgl: sertifikatTgl,
+                            tanah_penggunaan: penggunaan,
+                            tanah_alamat: alamat,
+                            tanah_jumlah_bidang: t.tanah_jumlah_bidang || t.tanah_jumlah_barang || 1,
+                        };
+                    });
                     const sumQty = toSync.reduce((s, it) => s + Math.max(1, parseInt(it.tanah_jumlah_bidang || it.tanah_jumlah_barang) || 1), 0);
                     const targetTotal = Math.max(
                         this.getActiveRegisters(astap).length,
@@ -2108,9 +2134,29 @@
                 if (typeof spec === 'string') {
                     try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
                 }
-                if (spec && Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0) {
+                spec = spec || {};
+                if (Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0) {
                     const valid = spec.mesin_items.filter(m => m.mesin_nama_barang || m.mesin_merk || m.mesin_type || m.mesin_no_pabrik || (parseFloat(m.mesin_nilai_satuan) > 0));
-                    const toSync = valid.length > 0 ? valid : spec.mesin_items;
+                    const rawList = valid.length > 0 ? valid : spec.mesin_items;
+                    const toSync = rawList.map(m => {
+                        const uk = m.mesin_ukuran || m.mesin_ukuran_cc || m.ukuran || m.ukuran_cc || spec.ukuran || spec.mesin_ukuran || spec.mesin_ukuran_cc || '';
+                        return {
+                            ...m,
+                            mesin_ukuran: uk,
+                            mesin_ukuran_cc: uk,
+                            mesin_merk: m.mesin_merk || m.merk || spec.merk || '',
+                            mesin_type: m.mesin_type || m.type || spec.type || '',
+                            mesin_bahan: m.mesin_bahan || m.bahan || spec.bahan || '',
+                            mesin_no_pabrik: m.mesin_no_pabrik || m.no_pabrik || spec.no_pabrik || '',
+                            mesin_no_rangka: m.mesin_no_rangka || m.no_rangka || spec.no_rangka || '',
+                            mesin_no_mesin: m.mesin_no_mesin || m.no_mesin || spec.no_mesin || '',
+                            mesin_no_polisi: m.mesin_no_polisi || m.no_polisi || spec.no_polisi || '',
+                            mesin_no_bpkb: m.mesin_no_bpkb || m.no_bpkb || spec.no_bpkb || '',
+                            mesin_kondisi: m.mesin_kondisi || m.kondisi || spec.kondisi || 'Baik',
+                            mesin_keterangan: m.mesin_keterangan || m.keterangan || spec.keterangan || '',
+                            mesin_jumlah_barang: m.mesin_jumlah_barang || m.item_volume || 1,
+                        };
+                    });
                     const sumQty = toSync.reduce((s, it) => s + Math.max(1, parseInt(it.mesin_jumlah_barang) || 1), 0);
                     const targetTotal = Math.max(
                         this.getActiveRegisters(astap).length,
@@ -2120,6 +2166,31 @@
                     );
                     return this.syncRepeaterItemsWithVolume(toSync, targetTotal, ['mesin_jumlah_barang']);
                 }
+
+                // Fallback untuk data historis single item KIB B
+                if (spec && (spec.merk || spec.type || spec.ukuran || spec.ukuran_cc || spec.mesin_ukuran || spec.mesin_ukuran_cc || spec.no_pabrik || spec.bahan)) {
+                    const uk = spec.mesin_ukuran || spec.mesin_ukuran_cc || spec.ukuran || spec.ukuran_cc || '';
+                    const totalVol = Math.max(this.getActiveRegisters(astap).length, parseInt(astap.jumlah_volume) || 1);
+                    return [{
+                        mesin_nama_barang: astap.nama_barang,
+                        mesin_merk: spec.merk || spec.mesin_merk || '',
+                        mesin_type: spec.type || spec.mesin_type || '',
+                        mesin_ukuran: uk,
+                        mesin_ukuran_cc: uk,
+                        mesin_bahan: spec.bahan || spec.mesin_bahan || '',
+                        mesin_no_pabrik: spec.no_pabrik || spec.mesin_no_pabrik || '',
+                        mesin_no_rangka: spec.no_rangka || spec.mesin_no_rangka || '',
+                        mesin_no_mesin: spec.no_mesin || spec.mesin_no_mesin || '',
+                        mesin_no_polisi: spec.no_polisi || spec.mesin_no_polisi || '',
+                        mesin_no_bpkb: spec.no_bpkb || spec.mesin_no_bpkb || '',
+                        mesin_kondisi: spec.kondisi || astap.kondisi || 'Baik',
+                        mesin_jumlah_barang: totalVol,
+                        mesin_satuan: astap.satuan || 'Unit',
+                        mesin_nilai_satuan: parseFloat(astap.harga_satuan || (astap.total_realisasi / totalVol) || 0),
+                        is_extracom: Boolean(spec.is_extracomtable)
+                    }];
+                }
+
                 return [];
             },
 
@@ -2129,9 +2200,30 @@
                 if (typeof spec === 'string') {
                     try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
                 }
-                if (spec && Array.isArray(spec.gedung_items) && spec.gedung_items.length > 0) {
+                spec = spec || {};
+                if (Array.isArray(spec.gedung_items) && spec.gedung_items.length > 0) {
                     const valid = spec.gedung_items.filter(g => g.gedung_nama_barang || g.gedung_nama_bangunan || g.gedung_luas_lantai || g.gedung_luas_lantai_m2 || g.gedung_luas_m2 || (parseFloat(g.gedung_nilai_satuan || g.gedung_nilai_fisik) > 0));
-                    const toSync = valid.length > 0 ? valid : spec.gedung_items;
+                    const rawList = valid.length > 0 ? valid : spec.gedung_items;
+                    const toSync = rawList.map(g => {
+                        const luas = g.gedung_luas_lantai_m2 || g.gedung_luas_lantai || g.gedung_luas_m2 || g.luas_lantai_m2 || spec.luas_lantai_m2 || '';
+                        const dokNo = g.gedung_dokumen_nomor || g.gedung_dokumen_no || g.dokumen_nomor || spec.dokumen_nomor || '';
+                        const bertingkat = g.gedung_konstruksi_bertingkat || g.gedung_bertingkat || g.bertingkat || spec.konstruksi_bertingkat || spec.bertingkat || 'Bertingkat';
+                        const beton = g.gedung_konstruksi_beton || g.gedung_beton || g.beton || spec.konstruksi_beton || spec.beton || 'Beton';
+                        const statusTanah = g.gedung_status_tanah || g.status_tanah || spec.status_tanah || 'Tanah Milik RSUD';
+                        return {
+                            ...g,
+                            gedung_luas_lantai: luas,
+                            gedung_luas_lantai_m2: luas,
+                            gedung_dokumen_no: dokNo,
+                            gedung_dokumen_nomor: dokNo,
+                            gedung_konstruksi_bertingkat: bertingkat,
+                            gedung_bertingkat: bertingkat,
+                            gedung_konstruksi_beton: beton,
+                            gedung_beton: beton,
+                            gedung_status_tanah: statusTanah,
+                            gedung_jumlah_bangunan: g.gedung_jumlah_bangunan || 1,
+                        };
+                    });
                     const sumQty = toSync.reduce((s, it) => s + Math.max(1, parseInt(it.gedung_jumlah_bangunan) || 1), 0);
                     const targetTotal = Math.max(
                         this.getActiveRegisters(astap).length,
@@ -2141,6 +2233,31 @@
                     );
                     return this.syncRepeaterItemsWithVolume(toSync, targetTotal, ['gedung_jumlah_bangunan']);
                 }
+
+                // Fallback single item KIB C
+                if (spec && (spec.luas_lantai_m2 || spec.gedung_luas_lantai || spec.bertingkat || spec.konstruksi_bertingkat || spec.dokumen_nomor)) {
+                    const totalVol = Math.max(this.getActiveRegisters(astap).length, parseInt(astap.jumlah_volume) || 1);
+                    const luas = spec.luas_lantai_m2 || spec.gedung_luas_lantai || spec.gedung_luas_lantai_m2 || spec.luas_m2 || '';
+                    const dokNo = spec.dokumen_nomor || spec.gedung_dokumen_nomor || spec.dokumen_no || '';
+                    const bertingkat = spec.konstruksi_bertingkat || spec.bertingkat || spec.gedung_bertingkat || 'Bertingkat';
+                    const beton = spec.konstruksi_beton || spec.beton || spec.gedung_beton || 'Beton';
+                    return [{
+                        gedung_nama_bangunan: astap.nama_barang,
+                        gedung_luas_lantai: luas,
+                        gedung_luas_lantai_m2: luas,
+                        gedung_dokumen_no: dokNo,
+                        gedung_dokumen_nomor: dokNo,
+                        gedung_konstruksi_bertingkat: bertingkat,
+                        gedung_bertingkat: bertingkat,
+                        gedung_konstruksi_beton: beton,
+                        gedung_beton: beton,
+                        gedung_status_tanah: spec.status_tanah || 'Tanah Milik RSUD',
+                        gedung_alamat: astap.alamat_barang || 'Kompleks RSUD Dr. H. Koesnandi',
+                        gedung_nilai_satuan: parseFloat(astap.harga_satuan || (astap.total_realisasi / totalVol) || 0),
+                        gedung_jumlah_bangunan: totalVol,
+                    }];
+                }
+
                 return [];
             },
 
@@ -2150,9 +2267,31 @@
                 if (typeof spec === 'string') {
                     try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
                 }
-                if (spec && Array.isArray(spec.jaringan_items) && spec.jaringan_items.length > 0) {
-                    const valid = spec.jaringan_items.filter(j => j.jaringan_nama_barang || j.jaringan_konstruksi || j.jaringan_panjang || (parseFloat(j.jaringan_nilai_satuan) > 0));
-                    const toSync = valid.length > 0 ? valid : spec.jaringan_items;
+                spec = spec || {};
+                if (Array.isArray(spec.jaringan_items) && spec.jaringan_items.length > 0) {
+                    const valid = spec.jaringan_items.filter(j => j.jaringan_nama_barang || j.jaringan_konstruksi || j.jaringan_panjang || j.jaringan_panjang_km || (parseFloat(j.jaringan_nilai_satuan) > 0));
+                    const rawList = valid.length > 0 ? valid : spec.jaringan_items;
+                    const toSync = rawList.map(j => {
+                        const panjang = j.jaringan_panjang || j.jaringan_panjang_km || spec.jaringan_panjang || spec.panjang_km || '';
+                        const lebar = j.jaringan_lebar || j.jaringan_lebar_m || spec.jaringan_lebar || spec.lebar_m || '';
+                        const luas = j.jaringan_luas || j.jaringan_luas_m2 || spec.jaringan_luas || spec.luas_m2 || '';
+                        const dokNo = j.jaringan_dokumen_no || j.jaringan_dokumen_nomor || spec.dokumen_nomor || '';
+                        const konstruksi = j.jaringan_konstruksi || spec.konstruksi || 'Aspal / Beton';
+                        return {
+                            ...j,
+                            jaringan_panjang: panjang,
+                            jaringan_panjang_km: panjang,
+                            jaringan_lebar: lebar,
+                            jaringan_lebar_m: lebar,
+                            jaringan_luas: luas,
+                            jaringan_luas_m2: luas,
+                            jaringan_dokumen_no: dokNo,
+                            jaringan_dokumen_nomor: dokNo,
+                            jaringan_konstruksi: konstruksi,
+                            jaringan_jumlah: j.jaringan_jumlah || j.jaringan_jumlah_barang || 1,
+                            jaringan_jumlah_barang: j.jaringan_jumlah_barang || j.jaringan_jumlah || 1,
+                        };
+                    });
                     const sumQty = toSync.reduce((s, it) => s + Math.max(1, parseInt(it.jaringan_jumlah || it.jaringan_jumlah_barang) || 1), 0);
                     const targetTotal = Math.max(
                         this.getActiveRegisters(astap).length,
@@ -2162,6 +2301,30 @@
                     );
                     return this.syncRepeaterItemsWithVolume(toSync, targetTotal, ['jaringan_jumlah', 'jaringan_jumlah_barang']);
                 }
+
+                // Fallback jika single item spesifikasi jaringan di spesifikasi_json
+                if (spec && (spec.konstruksi || spec.luas_m2 || spec.panjang_km || spec.jaringan_luas || spec.jaringan_panjang)) {
+                    const totalVol = Math.max(this.getActiveRegisters(astap).length, parseInt(astap.jumlah_volume) || 1);
+                    const panjang = spec.jaringan_panjang || spec.panjang_km || '';
+                    const lebar = spec.jaringan_lebar || spec.lebar_m || '';
+                    const luas = spec.jaringan_luas || spec.luas_m2 || '';
+                    return [{
+                        jaringan_nama_barang: astap.nama_barang,
+                        jaringan_konstruksi: spec.konstruksi || 'Aspal / Beton',
+                        jaringan_panjang: panjang,
+                        jaringan_panjang_km: panjang,
+                        jaringan_lebar: lebar,
+                        jaringan_lebar_m: lebar,
+                        jaringan_luas: luas,
+                        jaringan_luas_m2: luas,
+                        jaringan_alamat: astap.alamat_barang || 'Kompleks RSUD',
+                        jaringan_status_tanah: spec.status_tanah || 'Tanah Hak Pakai RSUD',
+                        jaringan_nilai_satuan: parseFloat(astap.harga_satuan || (astap.total_realisasi / totalVol) || 0),
+                        jaringan_jumlah: totalVol,
+                        jaringan_jumlah_barang: totalVol,
+                    }];
+                }
+
                 return [];
             },
 
@@ -2171,9 +2334,27 @@
                 if (typeof spec === 'string') {
                     try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
                 }
-                if (spec && Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0) {
+                spec = spec || {};
+                if (Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0) {
                     const valid = spec.lainnya_items.filter(l => l.lainnya_nama_barang || l.lainnya_judul || l.lainnya_pencipta || (parseFloat(l.lainnya_nilai_satuan) > 0));
-                    const toSync = valid.length > 0 ? valid : spec.lainnya_items;
+                    const rawList = valid.length > 0 ? valid : spec.lainnya_items;
+                    const toSync = rawList.map(l => {
+                        const judul = l.lainnya_judul || l.lainnya_judul_pencipta || l.lainnya_nama_barang || spec.judul || astap.nama_barang || '';
+                        const pencipta = l.lainnya_pencipta || spec.pencipta || '';
+                        const spesifikasi = l.lainnya_spesifikasi || spec.spesifikasi || '';
+                        const bahan = l.lainnya_bahan || spec.bahan || '';
+                        const ukuran = l.lainnya_ukuran || spec.ukuran || '';
+                        return {
+                            ...l,
+                            lainnya_judul: judul,
+                            lainnya_pencipta: pencipta,
+                            lainnya_spesifikasi: spesifikasi,
+                            lainnya_bahan: bahan,
+                            lainnya_ukuran: ukuran,
+                            lainnya_jumlah: l.lainnya_jumlah || l.lainnya_jumlah_barang || 1,
+                            lainnya_jumlah_barang: l.lainnya_jumlah_barang || l.lainnya_jumlah || 1,
+                        };
+                    });
                     const sumQty = toSync.reduce((s, it) => s + Math.max(1, parseInt(it.lainnya_jumlah || it.lainnya_jumlah_barang) || 1), 0);
                     const targetTotal = Math.max(
                         this.getActiveRegisters(astap).length,
@@ -2183,8 +2364,10 @@
                     );
                     return this.syncRepeaterItemsWithVolume(toSync, targetTotal, ['lainnya_jumlah', 'lainnya_jumlah_barang']);
                 }
-                // Fallback untuk data historis lama sebelum repeater multi-item KIB E
-                if (spec && (spec.judul || spec.pencipta || spec.nama_barang || (astap.nama_barang && astap.nama_barang.toLowerCase().includes('buku')))) {
+
+                // Fallback untuk data historis single item KIB E
+                if (spec && (spec.judul || spec.pencipta || spec.nama_barang || spec.ukuran || spec.bahan || (astap.nama_barang && (astap.nama_barang.toLowerCase().includes('buku') || astap.nama_barang.toLowerCase().includes('kesenian'))))) {
+                    const targetTotal = Math.max(this.getActiveRegisters(astap).length, parseInt(astap.jumlah_volume) || 1);
                     return [{
                         is_extracom: Boolean(spec.is_extracomtable),
                         kib_e_type: spec.kib_e_type || 'buku',
@@ -2197,11 +2380,13 @@
                         lainnya_tahun: spec.tahun || astap.tahun_perolehan,
                         lainnya_kondisi: spec.kondisi || astap.kondisi || 'Baik',
                         lainnya_jumlah: targetTotal,
+                        lainnya_jumlah_barang: targetTotal,
                         lainnya_satuan: astap.satuan || 'Buah',
                         lainnya_nilai_satuan: (astap.harga_satuan || (astap.total_realisasi / targetTotal) || 0),
                         ruang_pemegang: astap.alamat_barang || ''
                     }];
                 }
+
                 return [];
             },
 
