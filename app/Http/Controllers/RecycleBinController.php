@@ -16,6 +16,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 
 class RecycleBinController extends Controller
@@ -323,7 +324,8 @@ class RecycleBinController extends Controller
                 'astap_id'            => $r->astap_id,
                 'nibar'               => $r->nibar ?: ($r->no_register ?: 'REG-' . $r->id),
                 'no_register'         => $r->no_register ?: '-',
-                'nama_barang'         => $r->astap?->nama_barang ?? 'Aset Belanja Modal',
+                'nama_barang'         => $r->nama_barang ?: ($r->astap?->nama_barang ?? 'Aset Belanja Modal'),
+                'nama_aset_induk'     => $r->astap?->nama_barang,
                 'kode_108'            => $r->astap?->kode_108 ?: ($r->astap?->jenisAstap?->kode_108 ?: '-'),
                 'kategori'            => $r->astap?->category ?: ($r->astap?->jenisAstap?->kategori ?? 'KIB B'),
                 'ruang'               => $r->ruang_pemegang ?: ($r->unit?->nama ?: 'Gudang Perbekalan'),
@@ -492,7 +494,8 @@ class RecycleBinController extends Controller
                 'astap_id'            => $r->astap_id,
                 'nibar'               => $r->nibar ?: ($r->no_register ?: 'REG-' . $r->id),
                 'no_register'         => $r->no_register ?: '-',
-                'nama_barang'         => $r->astap?->nama_barang ?? 'Aset ASTAP',
+                'nama_barang'         => $r->nama_barang ?: ($r->astap?->nama_barang ?? 'Aset ASTAP'),
+                'nama_aset_induk'     => $r->astap?->nama_barang,
                 'kode_108'            => $r->astap?->kode_108 ?: ($r->astap?->jenisAstap?->kode_108 ?: '-'),
                 'kategori'            => $r->astap?->category ?: ($r->astap?->jenisAstap?->kategori ?? 'KIB B'),
                 'sumber_dana'         => $astapSumberDana,
@@ -853,7 +856,8 @@ class RecycleBinController extends Controller
                 'astap_id'            => $r->astap_id,
                 'nibar'               => $r->nibar ?: ($r->no_register ?: 'REG-' . $r->id),
                 'no_register'         => $r->no_register ?: '-',
-                'nama_barang'         => $r->astap?->nama_barang ?? 'Aset Kemitraan',
+                'nama_barang'         => $r->nama_barang ?: ($r->astap?->nama_barang ?? 'Aset Kemitraan'),
+                'nama_aset_induk'     => $r->astap?->nama_barang,
                 'kode_108'            => $r->astap?->kode_108 ?: ($r->astap?->jenisAstap?->kode_108 ?: '-'),
                 'kategori'            => $r->astap?->category ?: ($r->astap?->jenisAstap?->kategori ?? 'KIB B'),
                 'mitra_nama'          => $kem?->mitra_nama ?: '-',
@@ -871,8 +875,9 @@ class RecycleBinController extends Controller
         });
 
         // 2) REGISTER NIBAR MUTASI EKSTERNAL INDIVIDUAL
+        $hasMutasiRegTable = Schema::hasTable('mutasi_eksternal_registers');
         $rawDeletedMutasiEksternalNibars = AstapRegister::onlyDeleted()
-            ->where(function ($rootQ) {
+            ->where(function ($rootQ) use ($hasMutasiRegTable) {
                 // Skenario 1: Aset Mutasi Masuk (sumber_dana mutasi/pelimpahan atau memiliki mutasiEksternals)
                 $rootQ->whereHas('astap', function ($q) {
                     $q->where('is_deleted', 0)
@@ -880,13 +885,15 @@ class RecycleBinController extends Controller
                           $sq->whereIn('sumber_dana', ['mutasi_eksternal', 'mutasi_masuk', 'pelimpahan_skpd', 'pelimpahan', 'mutasi'])
                              ->orWhereHas('mutasiEksternals', fn($m) => $m->where('is_deleted', 0));
                       });
-                })
-                // Skenario 2: Aset Mutasi Keluar yang unit fisiknya terdaftar di mutasi_eksternal_registers
-                ->orWhereHas('mutasiEksternalRegisters.mutasiEksternal', function ($m) {
-                    $m->where('is_deleted', 0);
                 });
+                // Skenario 2: Aset Mutasi Keluar yang unit fisiknya terdaftar di mutasi_eksternal_registers
+                if ($hasMutasiRegTable) {
+                    $rootQ->orWhereHas('mutasiEksternalRegisters.mutasiEksternal', function ($m) {
+                        $m->where('is_deleted', 0);
+                    });
+                }
             })
-            ->with(['astap.jenisAstap', 'astap.mutasiEksternals', 'mutasiEksternalRegisters.mutasiEksternal', 'unit'])
+            ->with(array_filter(['astap.jenisAstap', 'astap.mutasiEksternals', $hasMutasiRegTable ? 'mutasiEksternalRegisters.mutasiEksternal' : null, 'unit']))
             ->latest('deleted_at')
             ->latest('id')
             ->get();
@@ -908,7 +915,8 @@ class RecycleBinController extends Controller
                 'astap_id'            => $r->astap_id,
                 'nibar'               => $r->nibar ?: ($r->no_register ?: 'REG-' . $r->id),
                 'no_register'         => $r->no_register ?: '-',
-                'nama_barang'         => $r->astap?->nama_barang ?? 'Aset Mutasi Eksternal',
+                'nama_barang'         => $r->nama_barang ?: ($r->astap?->nama_barang ?? 'Aset Mutasi Eksternal'),
+                'nama_aset_induk'     => $r->astap?->nama_barang,
                 'kode_108'            => $r->astap?->kode_108 ?: ($r->astap?->jenisAstap?->kode_108 ?: '-'),
                 'kategori'            => $r->astap?->category ?: ($r->astap?->jenisAstap?->kategori ?? 'KIB B'),
                 'tipe_mutasi'         => $tipe,
@@ -948,7 +956,8 @@ class RecycleBinController extends Controller
                 'astap_id'            => $r->astap_id,
                 'nibar'               => $r->nibar ?: ($r->no_register ?: 'REG-' . $r->id),
                 'no_register'         => $r->no_register ?: '-',
-                'nama_barang'         => $r->astap?->nama_barang ?? 'Aset Hibah',
+                'nama_barang'         => $r->nama_barang ?: ($r->astap?->nama_barang ?? 'Aset Hibah'),
+                'nama_aset_induk'     => $r->astap?->nama_barang,
                 'kode_108'            => $r->astap?->kode_108 ?: ($r->astap?->jenisAstap?->kode_108 ?: '-'),
                 'kategori'            => $r->astap?->category ?: ($r->astap?->jenisAstap?->kategori ?? 'KIB B'),
                 'tipe_hibah'          => $hib?->tipe_hibah ?: 'masuk',
@@ -987,7 +996,8 @@ class RecycleBinController extends Controller
                 'astap_id'            => $r->astap_id,
                 'nibar'               => $r->nibar ?: ($r->no_register ?: 'REG-' . $r->id),
                 'no_register'         => $r->no_register ?: '-',
-                'nama_barang'         => $r->astap?->nama_barang ?? 'Aset Belanja Barang',
+                'nama_barang'         => $r->nama_barang ?: ($r->astap?->nama_barang ?? 'Aset Belanja Barang'),
+                'nama_aset_induk'     => $r->astap?->nama_barang,
                 'kode_108'            => $r->astap?->kode_108 ?: ($r->astap?->jenisAstap?->kode_108 ?: '-'),
                 'kategori'            => $r->astap?->category ?: ($r->astap?->jenisAstap?->kategori ?? 'KIB B'),
                 'nomor_faktur'        => $bb?->nomor_faktur ?: '-',
@@ -3033,6 +3043,53 @@ class RecycleBinController extends Controller
                 'pct_rb' => $totalRegs > 0 ? round($rbCount / $totalRegs * 100) : 0,
                 'kondisi_dominan' => $dominan,
             ];
+
+            // Sinkronisasi volume pada repeater items agar selalu seimbang dan akurat dengan register aktif
+            $repeatersConfig = [
+                'tanah_items'    => ['name' => 'tanah_nama_barang', 'qty' => ['tanah_jumlah_barang', 'tanah_jumlah_bidang']],
+                'mesin_items'    => ['name' => 'mesin_nama_barang', 'qty' => ['mesin_jumlah_barang']],
+                'gedung_items'   => ['name' => 'gedung_nama_barang', 'qty' => ['gedung_jumlah_bangunan']],
+                'jaringan_items' => ['name' => 'jaringan_nama_barang', 'qty' => ['jaringan_jumlah', 'jaringan_jumlah_barang']],
+                'lainnya_items'  => ['name' => 'lainnya_nama_barang', 'qty' => ['lainnya_jumlah_barang']],
+                'atb_items'      => ['name' => 'atb_nama_barang', 'qty' => ['atb_jumlah']],
+                'kdp_items'      => ['name' => 'kdp_nama_barang', 'qty' => ['kdp_jumlah_bangunan']],
+            ];
+
+            $activeCounts = $allRegs->groupBy(fn($r) => trim((string)$r->nama_barang))->map->count();
+
+            foreach ($repeatersConfig as $itemsKey => $cfg) {
+                if (!empty($spec[$itemsKey]) && is_array($spec[$itemsKey])) {
+                    $nameKey = $cfg['name'];
+                    $qtyKeys = $cfg['qty'];
+                    $syncedItems = [];
+
+                    foreach ($spec[$itemsKey] as $it) {
+                        $itemName = trim((string)($it[$nameKey] ?? ''));
+                        $activeQtyKey = $qtyKeys[0];
+                        foreach ($qtyKeys as $qk) {
+                            if (isset($it[$qk])) {
+                                $activeQtyKey = $qk;
+                                break;
+                            }
+                        }
+
+                        if ($activeCounts->has($itemName)) {
+                            $matchedCount = $activeCounts->get($itemName);
+                            if ($matchedCount > 0) {
+                                $it[$activeQtyKey] = $matchedCount;
+                                $syncedItems[] = $it;
+                            }
+                        } else {
+                            $syncedItems[] = $it;
+                        }
+                    }
+
+                    if (!empty($syncedItems)) {
+                        $spec[$itemsKey] = $syncedItems;
+                    }
+                }
+            }
+
             $astap->spesifikasi_json = $spec;
         }
         $astap->save();

@@ -1727,21 +1727,58 @@
 
                         <!-- TOMBOL AKSI PENGEMBALIAN KE MITRA (SEMBUNYIKAN JIKA SUDAH DIKEMBALIKAN / RESMI RSUD / DIBATALKAN) -->
                         <div x-show="selectedAstapDetail.status_konsesi !== 'Dikembalikan ke Rekanan' && selectedAstapDetail.status_konsesi !== 'Selesai / Reklasifikasi' && selectedAstapDetail.status_konsesi !== 'Dibatalkan'">
-                            <button type="button" @click="openTerminasiModal(selectedAstapDetail, 'kembalikan')"
-                                    class="w-full p-4 rounded-2xl bg-gradient-to-br from-purple-950/40 via-slate-900 to-slate-950 border border-purple-500/30 hover:border-purple-400 text-left transition-all hover:scale-[1.005] hover:shadow-lg hover:shadow-purple-500/20 group cursor-pointer">
-                                <div class="flex items-center gap-2.5 mb-1.5">
-                                    <span class="text-xl group-hover:scale-110 transition-transform">📦</span>
-                                    <span class="text-xs font-extrabold text-purple-300 group-hover:text-purple-200">
-                                        Kembalikan Aset ke Mitra Rekanan
-                                    </span>
-                                    <span class="ml-auto text-[9.5px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 font-mono">
-                                        Masa Pakai Selesai
-                                    </span>
+                            
+                            <!-- KONDISI 1: MASA KONSESI MASIH BERJALAN (SISA HARI > 0 / STATUS AKTIF) -> TOMBOL TERKUNCI DENGAN INFO -->
+                            <template x-if="selectedAstapDetail.status_konsesi === 'Aktif' && (selectedAstapDetail.sisa_hari_konsesi === null || selectedAstapDetail.sisa_hari_konsesi > 0)">
+                                <div class="w-full p-4 rounded-2xl bg-slate-950/80 border border-slate-800 text-left transition-all">
+                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                                        <div class="flex items-center gap-2.5">
+                                            <div class="w-8 h-8 rounded-xl bg-slate-800/80 border border-slate-700 text-slate-400 flex items-center justify-center text-sm shrink-0">
+                                                🔒
+                                            </div>
+                                            <div>
+                                                <span class="text-xs font-extrabold text-slate-300 block">
+                                                    Kembalikan Aset ke Mitra Rekanan
+                                                </span>
+                                                <span class="text-[10px] text-slate-500 font-mono">
+                                                    Fitur Pengembalian Aset Terkunci Sementara
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <span class="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 shrink-0 self-start sm:self-auto flex items-center gap-1.5">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                                            <span x-text="selectedAstapDetail.sisa_hari_konsesi ? ('🔒 Konsesi Berjalan (Sisa ' + selectedAstapDetail.sisa_hari_konsesi + ' Hari)') : '🔒 Masa Konsesi Aktif'"></span>
+                                        </span>
+                                    </div>
+                                    <p class="text-[10.5px] text-slate-400 leading-relaxed bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/70">
+                                        ℹ️ Aset ini masih dalam masa konsesi kerja sama yang aktif hingga <strong class="text-cyan-300 font-semibold" x-text="selectedAstapDetail.tanggal_selesai ? formatTanggalIndo(selectedAstapDetail.tanggal_selesai) : 'akhir kontrak'"></strong>. Eksekusi Berita Acara (BAST) Pengembalian ke mitra rekanan baru akan terbuka otomatis saat masa konsesi telah berakhir (jatuh tempo).
+                                    </p>
+                                    <div class="mt-2.5 flex items-center justify-between flex-wrap gap-2 text-[10px] text-slate-500">
+                                        <span>Perlu memutus kerja sama lebih awal?</span>
+                                        <span class="text-rose-400/90 font-medium italic">Gunakan fitur "Batalkan Kemitraan" di bagian bawah.</span>
+                                    </div>
                                 </div>
-                                <p class="text-[10.5px] text-slate-400 leading-relaxed">
-                                    Untuk aset titipan mitra (sewa/KSO) yang masa pakainya telah selesai dan dikembalikan secara resmi ke pihak rekanan swasta melalui Berita Acara (BAST).
-                                </p>
-                            </button>
+                            </template>
+
+                            <!-- KONDISI 2: MASA KONSESI TELAH BERAKHIR (SISA HARI <= 0 / STATUS KONSESI BERAKHIR) -> TOMBOL AKTIF BISA DIKLIK -->
+                            <template x-if="selectedAstapDetail.status_konsesi === 'Konsesi Berakhir' || (selectedAstapDetail.sisa_hari_konsesi !== null && selectedAstapDetail.sisa_hari_konsesi <= 0)">
+                                <button type="button" @click="openTerminasiModal(selectedAstapDetail, 'kembalikan')"
+                                        class="w-full p-4 rounded-2xl bg-gradient-to-br from-purple-950/40 via-slate-900 to-slate-950 border border-purple-500/40 hover:border-purple-400 text-left transition-all hover:scale-[1.005] hover:shadow-lg hover:shadow-purple-500/25 group cursor-pointer">
+                                    <div class="flex items-center gap-2.5 mb-1.5">
+                                        <span class="text-xl group-hover:scale-110 transition-transform">📦</span>
+                                        <span class="text-xs font-extrabold text-purple-300 group-hover:text-purple-200">
+                                            Kembalikan Aset ke Mitra Rekanan
+                                        </span>
+                                        <span class="ml-auto text-[9.5px] px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono font-bold animate-pulse">
+                                            ⚡ Masa Konsesi Berakhir
+                                        </span>
+                                    </div>
+                                    <p class="text-[10.5px] text-slate-400 leading-relaxed">
+                                        Masa konsesi kemitraan telah berakhir. Klik untuk memproses Berita Acara Serah Terima (BAST) pengembalian fisik aset secara resmi ke pihak mitra rekanan swasta.
+                                    </p>
+                                </button>
+                            </template>
+
                         </div>
                     </div>
                 </template>

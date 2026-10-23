@@ -200,6 +200,11 @@
                                     </td>
                                     <td class="px-4 py-4">
                                         <span class="font-bold text-white block text-sm" x-text="item.nama_barang"></span>
+                                        <template x-if="item.nama_aset_induk && item.nama_aset_induk !== item.nama_barang">
+                                            <span class="text-[10px] text-slate-400 block mt-0.5 truncate max-w-xs" :title="'Paket Induk: ' + item.nama_aset_induk">
+                                                <span class="text-slate-500">Paket:</span> <span x-text="item.nama_aset_induk"></span>
+                                            </span>
+                                        </template>
                                         <div class="flex items-center space-x-1.5 mt-0.5">
                                             <span class="font-mono text-cyan-400 text-[11px]" x-text="item.kode_108"></span>
                                             <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-800 text-slate-300" x-text="item.kategori"></span>

@@ -1003,7 +1003,22 @@
                     tanggal_mulai: kemitraan?.tanggal_mulai || spec.tanggal_mulai || null,
                     tanggal_selesai: kemitraan?.tanggal_selesai || spec.tanggal_selesai || null,
                     status_konsesi: kemitraan?.status_konsesi || 'Aktif',
-                    sisa_hari_konsesi: kemitraan?.sisa_hari_konsesi ?? null,
+                    sisa_hari_konsesi: (() => {
+                        if (kemitraan?.sisa_hari_konsesi !== undefined && kemitraan?.sisa_hari_konsesi !== null) {
+                            return parseInt(kemitraan.sisa_hari_konsesi, 10);
+                        }
+                        const tSelesai = kemitraan?.tanggal_selesai || spec.tanggal_selesai;
+                        if (tSelesai) {
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            const endDate = new Date(tSelesai);
+                            endDate.setHours(0, 0, 0, 0);
+                            if (!isNaN(endDate.getTime())) {
+                                return Math.round((endDate - today) / (1000 * 60 * 60 * 24));
+                            }
+                        }
+                        return null;
+                    })(),
                     dokumen_path: (() => {
                         const targetAstapId = astap?.id || kemitraan?.astap_id;
                         const targetKmtId = kemitraan?.id;
@@ -2093,7 +2108,18 @@
                         sumQty,
                         toSync.length
                     );
-                    return this.syncRepeaterItemsWithVolume(toSync, targetTotal, ['tanah_jumlah_bidang', 'tanah_jumlah_barang']);
+                    const synced = this.syncRepeaterItemsWithVolume(toSync, targetTotal, ['tanah_jumlah_bidang', 'tanah_jumlah_barang']);
+                    if (astap.nama_barang && astap.nama_barang.includes(',')) {
+                        const splitNames = astap.nama_barang.split(',').map(s => s.trim()).filter(Boolean);
+                        if (splitNames.length > 1) {
+                            synced.forEach((item, idx) => {
+                                if (idx < splitNames.length && (!item.tanah_nama_barang || (idx > 0 && item.tanah_nama_barang === synced[0].tanah_nama_barang))) {
+                                    item.tanah_nama_barang = splitNames[idx];
+                                }
+                            });
+                        }
+                    }
+                    return synced;
                 }
 
                 // Fallback jika tidak ada array tanah_items tapi ada luas_m2 / hak_tanah / sertifikat_no di spesifikasi_json
@@ -2164,7 +2190,18 @@
                         sumQty,
                         toSync.length
                     );
-                    return this.syncRepeaterItemsWithVolume(toSync, targetTotal, ['mesin_jumlah_barang']);
+                    const synced = this.syncRepeaterItemsWithVolume(toSync, targetTotal, ['mesin_jumlah_barang']);
+                    if (astap.nama_barang && astap.nama_barang.includes(',')) {
+                        const splitNames = astap.nama_barang.split(',').map(s => s.trim()).filter(Boolean);
+                        if (splitNames.length > 1) {
+                            synced.forEach((item, idx) => {
+                                if (idx < splitNames.length && (!item.mesin_nama_barang || (idx > 0 && item.mesin_nama_barang === synced[0].mesin_nama_barang))) {
+                                    item.mesin_nama_barang = splitNames[idx];
+                                }
+                            });
+                        }
+                    }
+                    return synced;
                 }
 
                 // Fallback untuk data historis single item KIB B
@@ -2231,7 +2268,19 @@
                         sumQty,
                         toSync.length
                     );
-                    return this.syncRepeaterItemsWithVolume(toSync, targetTotal, ['gedung_jumlah_bangunan']);
+                    const synced = this.syncRepeaterItemsWithVolume(toSync, targetTotal, ['gedung_jumlah_bangunan']);
+                    if (astap.nama_barang && astap.nama_barang.includes(',')) {
+                        const splitNames = astap.nama_barang.split(',').map(s => s.trim()).filter(Boolean);
+                        if (splitNames.length > 1) {
+                            synced.forEach((item, idx) => {
+                                if (idx < splitNames.length && (!item.gedung_nama_barang || (idx > 0 && item.gedung_nama_barang === synced[0].gedung_nama_barang))) {
+                                    item.gedung_nama_barang = splitNames[idx];
+                                    item.gedung_nama_bangunan = splitNames[idx];
+                                }
+                            });
+                        }
+                    }
+                    return synced;
                 }
 
                 // Fallback single item KIB C
@@ -2299,7 +2348,18 @@
                         sumQty,
                         toSync.length
                     );
-                    return this.syncRepeaterItemsWithVolume(toSync, targetTotal, ['jaringan_jumlah', 'jaringan_jumlah_barang']);
+                    const synced = this.syncRepeaterItemsWithVolume(toSync, targetTotal, ['jaringan_jumlah', 'jaringan_jumlah_barang']);
+                    if (astap.nama_barang && astap.nama_barang.includes(',')) {
+                        const splitNames = astap.nama_barang.split(',').map(s => s.trim()).filter(Boolean);
+                        if (splitNames.length > 1) {
+                            synced.forEach((item, idx) => {
+                                if (idx < splitNames.length && (!item.jaringan_nama_barang || (idx > 0 && item.jaringan_nama_barang === synced[0].jaringan_nama_barang))) {
+                                    item.jaringan_nama_barang = splitNames[idx];
+                                }
+                            });
+                        }
+                    }
+                    return synced;
                 }
 
                 // Fallback jika single item spesifikasi jaringan di spesifikasi_json
@@ -2362,7 +2422,19 @@
                         sumQty,
                         toSync.length
                     );
-                    return this.syncRepeaterItemsWithVolume(toSync, targetTotal, ['lainnya_jumlah', 'lainnya_jumlah_barang']);
+                    const synced = this.syncRepeaterItemsWithVolume(toSync, targetTotal, ['lainnya_jumlah', 'lainnya_jumlah_barang']);
+                    if (astap.nama_barang && astap.nama_barang.includes(',')) {
+                        const splitNames = astap.nama_barang.split(',').map(s => s.trim()).filter(Boolean);
+                        if (splitNames.length > 1) {
+                            synced.forEach((item, idx) => {
+                                if (idx < splitNames.length && (!item.lainnya_nama_barang || (idx > 0 && item.lainnya_nama_barang === synced[0].lainnya_nama_barang))) {
+                                    item.lainnya_nama_barang = splitNames[idx];
+                                    item.lainnya_judul = splitNames[idx];
+                                }
+                            });
+                        }
+                    }
+                    return synced;
                 }
 
                 // Fallback untuk data historis single item KIB E
@@ -4589,6 +4661,14 @@
             // =========================================================================
             openTerminasiModal(row, defaultTab = 'kembalikan') {
                 if (!row) return;
+
+                // Pengaman Akuntabilitas: Jangan izinkan pengembalian aset jika masa konsesi masih berjalan aktif
+                const sisaHari = row.sisa_hari_konsesi !== undefined && row.sisa_hari_konsesi !== null ? parseInt(row.sisa_hari_konsesi, 10) : null;
+                const statusKonsesi = row.status_konsesi || (row.kemitraan ? row.kemitraan.status_konsesi : 'Aktif');
+                if (statusKonsesi === 'Aktif' && sisaHari !== null && sisaHari > 0) {
+                    this.showToast('Masa Konsesi Masih Berjalan', `Aset ini masih dalam masa konsesi aktif (tersisa ${sisaHari} hari). Pengembalian aset baru dapat dieksekusi setelah masa konsesi selesai (jatuh tempo).`, 'warning');
+                    return;
+                }
 
                 const kemitraanId = row.kemitraan_id || (row.kemitraan ? row.kemitraan.id : row.id);
                 const rawRow = (row.raw_row && Object.keys(row.raw_row).length > 0) ? row.raw_row : (row.kemitraan || row);

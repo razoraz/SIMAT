@@ -2627,6 +2627,7 @@ Route::middleware('auth')->group(function () {
                     } elseif ($kibCategory === 'KIB B' && isset($astapPayload['spesifikasi_json']['mesin_items']) && is_array($astapPayload['spesifikasi_json']['mesin_items']) && count($astapPayload['spesifikasi_json']['mesin_items']) > 0) {
                         foreach ($astapPayload['spesifikasi_json']['mesin_items'] as $mItem) {
                             $itemQty = max(1, (int)($mItem['mesin_jumlah_barang'] ?? 1));
+                            $itemNama = !empty($mItem['mesin_nama_barang']) ? trim($mItem['mesin_nama_barang']) : ($item->nama_barang ?? 'Peralatan & Mesin');
                             $rawKondisi = strtoupper(trim((string)($mItem['mesin_kondisi'] ?? $kondisiItem)));
                             $kondisiStr = ($rawKondisi === 'KB' || $rawKondisi === 'KURANG BAIK' || $rawKondisi === 'RR' || $rawKondisi === 'RUSAK RINGAN') ? 'Kurang Baik' : (($rawKondisi === 'RB' || $rawKondisi === 'RUSAK BERAT' || $rawKondisi === 'RUSAK') ? 'Rusak Berat' : 'Baik');
 
@@ -2644,6 +2645,7 @@ Route::middleware('auth')->group(function () {
                                 $qrPath = "/scan/{$nibar}";
                                 \App\Models\AstapRegister::create([
                                     'astap_id'        => $item->id,
+                                    'nama_barang'     => $itemNama,
                                     'unit_id'         => null,
                                     'tahun_perolehan' => $tahun,
                                     'no_register_int' => $runningRegNum,
@@ -2676,6 +2678,7 @@ Route::middleware('auth')->group(function () {
                         $qrPath = "/scan/{$nibar}";
                         \App\Models\AstapRegister::create([
                             'astap_id'        => $item->id,
+                            'nama_barang'     => $item->nama_barang,
                             'unit_id'         => $itemRuang ? ($data['unit_id'] ?? null) : null,
                             'tahun_perolehan' => $tahun,
                             'no_register_int' => $runningRegNum,
@@ -7022,46 +7025,50 @@ Route::middleware('auth')->group(function () {
                                 'kondisi_dominan' => $dominan,
                             ];
 
-                            // Sinkronisasi volume pada repeater items agar selalu seimbang dengan total register
+                            // Sinkronisasi volume pada repeater items agar selalu seimbang dan akurat dengan register aktif
                             $repeatersConfig = [
-                                'tanah_items' => ['tanah_jumlah_bidang'],
-                                'mesin_items' => ['mesin_jumlah_barang'],
-                                'gedung_items' => ['gedung_jumlah_bangunan'],
-                                'jaringan_items' => ['jaringan_jumlah', 'jaringan_jumlah_barang'],
-                                'lainnya_items' => ['lainnya_jumlah_barang'],
-                                'atb_items' => ['atb_jumlah'],
-                                'kdp_items' => ['kdp_jumlah_bangunan'],
+                                'tanah_items'    => ['name' => 'tanah_nama_barang', 'qty' => ['tanah_jumlah_barang', 'tanah_jumlah_bidang']],
+                                'mesin_items'    => ['name' => 'mesin_nama_barang', 'qty' => ['mesin_jumlah_barang']],
+                                'gedung_items'   => ['name' => 'gedung_nama_barang', 'qty' => ['gedung_jumlah_bangunan']],
+                                'jaringan_items' => ['name' => 'jaringan_nama_barang', 'qty' => ['jaringan_jumlah', 'jaringan_jumlah_barang']],
+                                'lainnya_items'  => ['name' => 'lainnya_nama_barang', 'qty' => ['lainnya_jumlah_barang']],
+                                'atb_items'      => ['name' => 'atb_nama_barang', 'qty' => ['atb_jumlah']],
+                                'kdp_items'      => ['name' => 'kdp_nama_barang', 'qty' => ['kdp_jumlah_bangunan']],
                             ];
 
-                            foreach ($repeatersConfig as $itemsKey => $qtyKeys) {
+                            $activeRegs = $astap->registers()->where('is_deleted', 0)->get();
+                            $activeCounts = $activeRegs->groupBy(fn($r) => trim((string)$r->nama_barang))->map->count();
+
+                            foreach ($repeatersConfig as $itemsKey => $cfg) {
                                 if (!empty($spec[$itemsKey]) && is_array($spec[$itemsKey])) {
-                                    $quota = $astap->jumlah_volume;
+                                    $nameKey = $cfg['name'];
+                                    $qtyKeys = $cfg['qty'];
                                     $syncedItems = [];
+
                                     foreach ($spec[$itemsKey] as $it) {
-                                        if ($quota <= 0) break;
-                                        $activeQtyKey = null;
-                                        $curQty = 1;
-                                        foreach ($qtyKeys as $k) {
-                                            if (isset($it[$k]) && is_numeric($it[$k])) {
-                                                $activeQtyKey = $k;
-                                                $curQty = floatval($it[$k]);
+                                        $itemName = trim((string)($it[$nameKey] ?? ''));
+                                        $activeQtyKey = $qtyKeys[0];
+                                        foreach ($qtyKeys as $qk) {
+                                            if (isset($it[$qk])) {
+                                                $activeQtyKey = $qk;
                                                 break;
                                             }
                                         }
-                                        if ($curQty <= 0) $curQty = 1;
 
-                                        if ($curQty <= $quota) {
-                                            if ($activeQtyKey) $it[$activeQtyKey] = $curQty;
-                                            $syncedItems[] = $it;
-                                            $quota -= $curQty;
+                                        if ($activeCounts->has($itemName)) {
+                                            $matchedCount = $activeCounts->get($itemName);
+                                            if ($matchedCount > 0) {
+                                                $it[$activeQtyKey] = $matchedCount;
+                                                $syncedItems[] = $it;
+                                            }
                                         } else {
-                                            if ($activeQtyKey) $it[$activeQtyKey] = $quota;
                                             $syncedItems[] = $it;
-                                            $quota = 0;
-                                            break;
                                         }
                                     }
-                                    $spec[$itemsKey] = $syncedItems;
+
+                                    if (!empty($syncedItems)) {
+                                        $spec[$itemsKey] = $syncedItems;
+                                    }
                                 }
                             }
 

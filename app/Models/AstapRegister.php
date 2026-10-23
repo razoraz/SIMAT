@@ -85,6 +85,11 @@ class AstapRegister extends Model
         return $this->astap ? ($this->astap->kode_108 ?? '') : '';
     }
 
+    public function getNamaBarangAttribute($value): string
+    {
+        return !empty($value) ? $value : ($this->astap?->nama_barang ?? 'Aset ASTAP');
+    }
+
     public function getQrCodePathAttribute($value): string
     {
         return $value ?: '/scan/' . ($this->nibar ?? $this->no_register ?? '');

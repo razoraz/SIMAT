@@ -3138,11 +3138,22 @@
                     // Mode 'ditambahkan': Sinkronkan nama_barang dengan data yang tersimpan di sheet kategori aktif (targetType).
                     // Jika kategori ini belum pernah diisi, kosongkan agar sheet baru tidak mewarisi nama dari sheet lain!
                     let activeCategoryName = '';
-                    if (targetType === 'tanah') activeCategoryName = this.formData.tanah_items?.[0]?.tanah_nama_barang || '';
-                    else if (targetType === 'mesin') activeCategoryName = this.formData.mesin_items?.[0]?.mesin_nama_barang || '';
-                    else if (targetType === 'gedung') activeCategoryName = this.formData.gedung_items?.[0]?.gedung_nama_barang || '';
-                    else if (targetType === 'jaringan') activeCategoryName = this.formData.jaringan_items?.[0]?.jaringan_nama_barang || '';
-                    else if (targetType === 'lainnya') activeCategoryName = this.formData.lainnya_items?.[0]?.lainnya_nama_barang || this.formData.lainnya_items?.[0]?.lainnya_judul || '';
+                    if (targetType === 'tanah') {
+                        const tNames = (this.formData.tanah_items || []).map(t => t.tanah_nama_barang).filter(n => n && !this.isJenisKemitraan(n));
+                        activeCategoryName = [...new Set(tNames)].join(', ');
+                    } else if (targetType === 'mesin') {
+                        const mNames = (this.formData.mesin_items || []).map(m => m.mesin_nama_barang || (m.mesin_merk ? m.mesin_merk + ' ' + m.mesin_type : '')).filter(n => n && !this.isJenisKemitraan(n));
+                        activeCategoryName = [...new Set(mNames)].join(', ');
+                    } else if (targetType === 'gedung') {
+                        const gNames = (this.formData.gedung_items || []).map(g => g.gedung_nama_barang || g.gedung_nama_bangunan).filter(n => n && !this.isJenisKemitraan(n));
+                        activeCategoryName = [...new Set(gNames)].join(', ');
+                    } else if (targetType === 'jaringan') {
+                        const jNames = (this.formData.jaringan_items || []).map(j => j.jaringan_nama_barang).filter(n => n && !this.isJenisKemitraan(n));
+                        activeCategoryName = [...new Set(jNames)].join(', ');
+                    } else if (targetType === 'lainnya') {
+                        const lNames = (this.formData.lainnya_items || []).map(l => l.lainnya_nama_barang || l.lainnya_judul).filter(n => n && !this.isJenisKemitraan(n));
+                        activeCategoryName = [...new Set(lNames)].join(', ');
+                    }
 
                     this.formData.nama_barang = activeCategoryName;
                 }
