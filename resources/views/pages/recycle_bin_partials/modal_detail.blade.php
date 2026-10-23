@@ -292,6 +292,44 @@
                                             <span class="text-[11px] text-slate-400 block mt-0.5" x-text="(selectedItem.item_count || 1) + ' Unit Barang'"></span>
                                         </div>
                                     </div>
+
+                                    <!-- Card Analisis Cakupan Mutasi (Sebagian vs Penuh) -->
+                                    <template x-if="selectedItem.cakupan_badge">
+                                        <div class="p-3 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shadow-sm"
+                                            :class="{
+                                                'bg-amber-950/30 border-amber-500/30 text-amber-200': selectedItem.cakupan_tipe === 'sebagian',
+                                                'bg-emerald-950/30 border-emerald-500/30 text-emerald-200': selectedItem.cakupan_tipe === 'penuh',
+                                                'bg-cyan-950/30 border-cyan-500/30 text-cyan-200': selectedItem.cakupan_tipe === 'masuk_penuh'
+                                            }">
+                                            <div class="flex items-center space-x-2.5">
+                                                <div class="w-8 h-8 rounded-xl flex items-center justify-center text-sm font-bold shrink-0"
+                                                    :class="{
+                                                        'bg-amber-500/20 text-amber-300 border border-amber-500/40': selectedItem.cakupan_tipe === 'sebagian',
+                                                        'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40': selectedItem.cakupan_tipe === 'penuh',
+                                                        'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40': selectedItem.cakupan_tipe === 'masuk_penuh'
+                                                    }"
+                                                    x-text="selectedItem.cakupan_tipe === 'sebagian' ? '⚡' : (selectedItem.cakupan_tipe === 'penuh' ? '✓' : '📥')">
+                                                </div>
+                                                <div>
+                                                    <span class="text-[9.5px] uppercase font-bold tracking-wider block opacity-75">Status Cakupan NIBAR:</span>
+                                                    <span class="font-extrabold text-xs block" x-text="selectedItem.cakupan_badge"></span>
+                                                </div>
+                                            </div>
+                                            <template x-if="selectedItem.tipe === 'keluar' && selectedItem.is_partial">
+                                                <div class="flex items-center gap-3 text-xs font-mono pt-1 sm:pt-0 border-t sm:border-t-0 border-amber-500/20">
+                                                    <div>
+                                                        <span class="text-[9.5px] text-slate-400 block uppercase">Dimutasi:</span>
+                                                        <span class="font-bold text-amber-300" x-text="selectedItem.mutasi_unit_count + ' NIBAR'"></span>
+                                                    </div>
+                                                    <div class="w-px h-6 bg-slate-800 hidden sm:block"></div>
+                                                    <div>
+                                                        <span class="text-[9.5px] text-slate-400 block uppercase">Sisa di RSUD:</span>
+                                                        <span class="font-bold text-emerald-400" x-text="selectedItem.sisa_unit_rsud + ' NIBAR'"></span>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-0.5">
                                         <div>
                                             <span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider block" x-text="selectedItem.tipe === 'keluar' ? 'Instansi / Ruangan Asal (RSUD):' : 'Instansi / OPD Pengirim:'"></span>

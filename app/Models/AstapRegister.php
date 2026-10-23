@@ -49,11 +49,19 @@ class AstapRegister extends Model
     }
 
     /**
-     * Relasi ke rincian transaksi mutasi register.
+     * Relasi ke rincian transaksi mutasi register internal.
      */
     public function mutasiRegisters()
     {
         return $this->hasMany(AstapMutasiRegister::class, 'astap_register_id');
+    }
+
+    /**
+     * Relasi ke rincian transaksi mutasi eksternal register (antar-OPD).
+     */
+    public function mutasiEksternalRegisters()
+    {
+        return $this->hasMany(MutasiEksternalRegister::class, 'astap_register_id');
     }
 
     /**

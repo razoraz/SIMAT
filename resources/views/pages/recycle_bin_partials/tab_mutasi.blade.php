@@ -288,8 +288,19 @@
                                                     </template>
                                                 </td>
                                                 <td class="px-4 py-4">
-                                                    <span class="font-bold text-white block" x-text="item.nama"></span>
-                                                    <span class="text-[10px] font-mono text-slate-400" x-text="'Kode 108: ' + item.kode_barang"></span>
+                                                    <span class="font-bold text-white block text-xs sm:text-sm" x-text="item.nama"></span>
+                                                    <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+                                                        <span class="text-[10px] font-mono text-slate-400" x-text="'Kode 108: ' + item.kode_barang"></span>
+                                                        <template x-if="item.cakupan_badge">
+                                                            <span class="px-2 py-0.5 rounded-full text-[9px] font-bold border inline-flex items-center gap-1 shadow-sm"
+                                                                :class="{
+                                                                    'bg-amber-500/15 border-amber-500/30 text-amber-300': item.cakupan_tipe === 'sebagian',
+                                                                    'bg-emerald-500/15 border-emerald-500/30 text-emerald-300': item.cakupan_tipe === 'penuh',
+                                                                    'bg-cyan-500/15 border-cyan-500/30 text-cyan-300': item.cakupan_tipe === 'masuk_penuh'
+                                                                }"
+                                                                x-text="item.cakupan_badge"></span>
+                                                        </template>
+                                                    </div>
                                                 </td>
                                                 <td class="px-4 py-4 font-mono font-bold text-emerald-400" x-text="item.nilai_perolehan_formatted"></td>
                                                 <td class="px-4 py-4">

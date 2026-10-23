@@ -3808,6 +3808,12 @@ class AstapController extends Controller
                 $nama = $reg->astap?->nama_barang ?? 'Aset ASTAP';
                 $reg->softDelete();
 
+                // Sinkronkan jumlah_volume barang induk di database
+                if ($reg->astap) {
+                    $reg->astap->jumlah_volume = max(1, $reg->astap->registers()->where('is_deleted', 0)->count());
+                    $reg->astap->save();
+                }
+
                 // Kirim Notifikasi Sistem saat Unit NIBAR Dihapus
                 try {
                     \App\Services\NotificationService::sendToAdminAndMaster(
