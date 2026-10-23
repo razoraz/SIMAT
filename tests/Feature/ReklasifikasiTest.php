@@ -1889,6 +1889,110 @@ class ReklasifikasiTest extends TestCase
         $this->assertEquals('General Electric', $spec['mesin_items'][0]['mesin_merk'] ?? null);
         $this->assertEquals('SN-CT-99201', $spec['mesin_items'][0]['mesin_no_pabrik'] ?? null);
     }
+
+    public function test_reklas_validates_based_on_current_asset_state_not_historical_log()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        $jenisAstap = JenisAstap::firstOrCreate(
+            ['sub_rincian_objek' => '1.3.2.05.02'],
+            [
+                'jenis' => '1.3.2.05',
+                'nama_jenis' => 'Alat Besar Darat',
+                'uraian_sub_rincian' => 'Tractor',
+                'sub_sub_rincian_objek' => '1.3.2.05.02.01.001',
+                'uraian_sub_sub_rincian' => 'Crawler Tractor + Attachment',
+            ]
+        );
+
+        // Aset saat ini INTRAKOMPTABEL (is_extracomtable = false)
+        $astap = Astap::create([
+            'nama_barang' => 'Crawler Tractor + Attachment',
+            'tahun_perolehan' => 2026,
+            'jumlah_volume' => 1,
+            'harga_satuan' => 250000,
+            'total_realisasi' => 250000,
+            'jumlah_anggaran' => 250000,
+            'is_extracomtable' => false,
+            'is_reklas' => true,
+            'jenis_reklas' => 'KAPITALISASI_INTRAKOM',
+            'category' => 'KIB B',
+            'jenis_astap_id' => $jenisAstap->id,
+            'user_id' => $admin->id,
+        ]);
+
+        // Simulasikan ada log masa lalu di tahun 2026
+        AstapReklas::create([
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'EKSTRAKOMPTABEL',
+            'asal_kib' => 'KIB B',
+            'tujuan_kib' => 'EKSTRAKOMPTABEL',
+            'nilai_reklas' => 250000,
+            'tanggal_reklas' => '2026-01-15',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'user_id' => $admin->id,
+        ]);
+
+        // 1. Karena status riil aset saat ini Intrakomptabel, reklas ke Ekstrakomptabel HARUS BERHASIL (tidak diblokir log lama)
+        $payload = [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'EKSTRAKOMPTABEL',
+            'asal_kib' => 'KIB B',
+            'tujuan_kib' => 'EKSTRAKOMPTABEL',
+            'nilai_reklas' => 250000,
+            'tanggal_reklas' => '2026-03-28',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'nomor_ba_reklas' => 'BA/REKLAS/EXTRACOM/TEST-01',
+            'alasan_reklas' => 'Penyesuaian nilai aset ke bawah batas kapitalisasi',
+            'reklas_items' => [
+                [
+                    'nama_barang' => 'Crawler Tractor + Attachment',
+                    'jumlah_volume' => 1,
+                    'satuan' => 'Unit',
+                    'harga_satuan' => 250000,
+                ]
+            ]
+        ];
+
+        $res1 = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), $payload);
+        $res1->assertStatus(200);
+        $res1->assertJson(['success' => true]);
+
+        $astap->refresh();
+        $this->assertTrue((bool)$astap->is_extracomtable);
+        $this->assertEquals('EKSTRAKOMPTABEL', $astap->jenis_reklas);
+
+        // 2. Sekarang aset SUDAH EKSTRAKOMPTABEL, jika dicoba reklas lagi ke EKSTRAKOMPTABEL, harus ditolak 422
+        $payloadDuplicate = [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'EKSTRAKOMPTABEL',
+            'asal_kib' => 'KIB B',
+            'tujuan_kib' => 'EKSTRAKOMPTABEL',
+            'nilai_reklas' => 250000,
+            'tanggal_reklas' => '2026-03-29',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'nomor_ba_reklas' => 'BA/REKLAS/EXTRACOM/TEST-02',
+            'alasan_reklas' => 'Penyesuaian nilai aset duplikat',
+            'reklas_items' => [
+                [
+                    'nama_barang' => 'Crawler Tractor + Attachment',
+                    'jumlah_volume' => 1,
+                    'satuan' => 'Unit',
+                    'harga_satuan' => 250000,
+                ]
+            ]
+        ];
+
+        $res2 = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), $payloadDuplicate);
+        $res2->assertStatus(422);
+        $res2->assertJson([
+            'success' => false,
+            'message' => "Aset 'Crawler Tractor + Attachment' saat ini sudah berstatus EKSTRAKOMPTABEL. Transaksi reklasifikasi ke Ekstrakomptabel tidak dapat dilakukan kembali.",
+        ]);
+    }
 }
 
 

@@ -473,19 +473,43 @@ class ReklasifikasiController extends Controller
             }
         }
 
-        // Proteksi Validasi Duplikasi: Jenis reklasifikasi non-repeatable dalam satu periode tahun anggaran
-        $jenisNonRepeat = ['EKSTRAKOMPTABEL', 'KAPITALISASI_INTRAKOM', 'DEFINITIF_TO_KDP'];
-        if (in_array($validated['jenis_reklas'], $jenisNonRepeat, true)) {
-            $duplikat = AstapReklas::where('astap_id', $astap->id)
-                ->where('jenis_reklas', $validated['jenis_reklas'])
-                ->where('tahun', (int) $validated['tahun'])
-                ->where('is_deleted', 0)
-                ->exists();
-
-            if ($duplikat) {
+        // Proteksi Validasi Duplikasi: Validasi Berbasis Status Riil Aset Saat Ini (Bukan Riwayat Log Masa Lalu)
+        if ($validated['jenis_reklas'] === 'EKSTRAKOMPTABEL') {
+            $alreadyExtracom = (bool) $astap->is_extracomtable || $astap->jenis_reklas === 'EKSTRAKOMPTABEL' || $astap->category === 'EKSTRAKOMPTABEL';
+            if ($alreadyExtracom) {
                 return response()->json([
                     'success' => false,
-                    'message' => "Aset '{$astap->nama_barang}' sudah pernah direklasifikasi sebagai {$validated['jenis_reklas']} pada tahun {$validated['tahun']}. Tidak diperbolehkan transaksi duplikat untuk jenis ini pada tahun yang sama.",
+                    'message' => "Aset '{$astap->nama_barang}' saat ini sudah berstatus EKSTRAKOMPTABEL. Transaksi reklasifikasi ke Ekstrakomptabel tidak dapat dilakukan kembali.",
+                ], 422);
+            }
+        } elseif ($validated['jenis_reklas'] === 'KAPITALISASI_INTRAKOM') {
+            $alreadyIntracom = !$astap->is_extracomtable && $astap->jenis_reklas !== 'EKSTRAKOMPTABEL' && $astap->category !== 'EKSTRAKOMPTABEL';
+            if ($alreadyIntracom && empty($request->reklas_items)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Aset '{$astap->nama_barang}' saat ini sudah berstatus INTRAKOMPTABEL dan tidak memiliki penambahan rincian nilai kapitalisasi.",
+                ], 422);
+            }
+        } elseif ($validated['jenis_reklas'] === 'DEFINITIF_TO_KDP') {
+            $kodeJenis = (string) ($astap->jenisAstap?->jenis ?? $astap->jenisAstap?->sub_sub_rincian_objek ?? '');
+            $alreadyKdp = $astap->category === 'KDP' || str_starts_with($kodeJenis, '1.3.6') || $astap->jenis_reklas === 'DEFINITIF_TO_KDP';
+            if ($alreadyKdp) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Aset '{$astap->nama_barang}' saat ini sudah berstatus Konstruksi Dalam Pengerjaan (KDP). Transaksi ke KDP tidak dapat dilakukan kembali.",
+                ], 422);
+            }
+        }
+
+        if (!empty($validated['nomor_ba_reklas'])) {
+            $duplicateBa = AstapReklas::where('astap_id', $astap->id)
+                ->where('nomor_ba_reklas', trim($validated['nomor_ba_reklas']))
+                ->where('is_deleted', 0)
+                ->exists();
+            if ($duplicateBa) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Nomor Berita Acara '{$validated['nomor_ba_reklas']}' sudah pernah digunakan untuk transaksi reklasifikasi aset ini.",
                 ], 422);
             }
         }
@@ -2300,16 +2324,18 @@ class ReklasifikasiController extends Controller
                             'kondisi'        => $kondisiSerah,
                         ]);
 
-                        MutasiEksternalRegister::updateOrCreate(
-                            [
-                                'mutasi_eksternal_id' => $mutasiKeluar->id,
-                                'astap_register_id'   => $reg->id,
-                            ],
-                            [
-                                'kondisi' => $kondisiSerah,
-                                'catatan' => 'Diserahkan ke ' . $skpdTujuan,
-                            ]
-                        );
+                        if (\Illuminate\Support\Facades\Schema::hasTable('mutasi_eksternal_registers')) {
+                            MutasiEksternalRegister::updateOrCreate(
+                                [
+                                    'mutasi_eksternal_id' => $mutasiKeluar->id,
+                                    'astap_register_id'   => $reg->id,
+                                ],
+                                [
+                                    'kondisi' => $kondisiSerah,
+                                    'catatan' => 'Diserahkan ke ' . $skpdTujuan,
+                                ]
+                            );
+                        }
                     }
                 }
 
