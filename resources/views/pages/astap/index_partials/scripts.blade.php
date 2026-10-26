@@ -349,6 +349,34 @@
         return val;
     }
 
+    // HELPER FUNGSI UNTUK MENGAMBIL NIBAR DARI ASTAP REGISTERS (DENGAN FALLBACK)
+    function getAstapNibar(item, subItem = null, idx = 0) {
+        let spec = item ? item.spesifikasi_json : null;
+        if (typeof spec === 'string') {
+            try { spec = JSON.parse(spec); } catch (e) { spec = {}; }
+        }
+
+        // 1. Cek subItem registers jika ada
+        if (subItem && subItem.registers && Array.isArray(subItem.registers) && subItem.registers.length > 0) {
+            const list = subItem.registers.map(r => r.nibar || r.no_register).filter(Boolean);
+            if (list.length > 0) return list.join(', ');
+        }
+
+        // 2. Cek item.registers (dari relasi astaps register)
+        if (item && item.registers && Array.isArray(item.registers) && item.registers.length > 0) {
+            if (subItem && item.registers[idx] && (item.registers[idx].nibar || item.registers[idx].no_register)) {
+                return item.registers[idx].nibar || item.registers[idx].no_register;
+            }
+            const list = item.registers.map(r => r.nibar || r.no_register).filter(Boolean);
+            if (list.length > 0) return list.join(', ');
+        }
+
+        // 3. Fallback ke property kapitalisasi_nibar / nibar
+        return (subItem && (subItem.gedung_kapitalisasi_nibar || subItem.jaringan_kapitalisasi_nibar || subItem.nibar))
+            || (item && (item.gedung_kapitalisasi_nibar || item.jaringan_kapitalisasi_nibar || (spec ? spec.kapitalisasi_nibar : null) || item.nibar))
+            || '-';
+    }
+
     // STYLING ENGINE MASTER 4 LANGKAH (LANGKAH 1 s/d 4)
     function applyUnified4StepMasterSheetStyling(ws, rowCount, colCount, kibL3ColCount, titleRowCount = 5, hasSignature = false) {
         const thinBorder = {
@@ -893,34 +921,6 @@
                 item.ppk_nip || '-',
                 item.keterangan_tambahan || item.keterangan || '-'
             ];
-        }
-
-        // HELPER FUNGSI UNTUK MENGAMBIL NIBAR DARI ASTAP REGISTERS (DENGAN FALLBACK)
-        function getAstapNibar(item, subItem = null, idx = 0) {
-            let spec = item ? item.spesifikasi_json : null;
-            if (typeof spec === 'string') {
-                try { spec = JSON.parse(spec); } catch (e) { spec = {}; }
-            }
-
-            // 1. Cek subItem registers jika ada
-            if (subItem && subItem.registers && Array.isArray(subItem.registers) && subItem.registers.length > 0) {
-                const list = subItem.registers.map(r => r.nibar || r.no_register).filter(Boolean);
-                if (list.length > 0) return list.join(', ');
-            }
-
-            // 2. Cek item.registers (dari relasi astaps register)
-            if (item && item.registers && Array.isArray(item.registers) && item.registers.length > 0) {
-                if (subItem && item.registers[idx] && (item.registers[idx].nibar || item.registers[idx].no_register)) {
-                    return item.registers[idx].nibar || item.registers[idx].no_register;
-                }
-                const list = item.registers.map(r => r.nibar || r.no_register).filter(Boolean);
-                if (list.length > 0) return list.join(', ');
-            }
-
-            // 3. Fallback ke property kapitalisasi_nibar / nibar
-            return (subItem && (subItem.gedung_kapitalisasi_nibar || subItem.jaringan_kapitalisasi_nibar || subItem.nibar))
-                || (item && (item.gedung_kapitalisasi_nibar || item.jaringan_kapitalisasi_nibar || (spec ? spec.kapitalisasi_nibar : null) || item.nibar))
-                || '-';
         }
 
         // ------------------------------------------------------------------------
