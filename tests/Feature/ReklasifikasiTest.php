@@ -1993,6 +1993,80 @@ class ReklasifikasiTest extends TestCase
             'message' => "Aset 'Crawler Tractor + Attachment' saat ini sudah berstatus EKSTRAKOMPTABEL. Transaksi reklasifikasi ke Ekstrakomptabel tidak dapat dilakukan kembali.",
         ]);
     }
+
+    public function test_can_reklas_to_kib_e_with_rich_subcategories_and_attributes()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        $astap = Astap::create([
+            'nama_barang' => 'Pedoman Standar Pelayanan Klinis',
+            'tahun_perolehan' => 2026,
+            'jumlah_volume' => 2,
+            'satuan' => 'Buah',
+            'harga_satuan' => 1500000,
+            'total_realisasi' => 3000000,
+            'jumlah_anggaran' => 3000000,
+            'user_id' => $admin->id,
+            'category' => 'KIB B',
+        ]);
+
+        $payload = [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'KOREKSI_REKENING',
+            'asal_kib' => 'KIB B',
+            'tujuan_kib' => 'KIB E',
+            'tujuan_kode' => '1.3.5.01.01',
+            'tujuan_nama' => 'Buku Perpustakaan Medis',
+            'nilai_reklas' => 3000000,
+            'tanggal_reklas' => '2026-04-10',
+            'triwulan' => 2,
+            'tahun' => 2026,
+            'nomor_ba_reklas' => 'BA/REKLAS/KIBE/001',
+            'alasan_reklas' => 'Koreksi reklasifikasi dari KIB B ke KIB E Buku',
+            'keterangan' => 'Pengalihan Buku Pedoman ke KIB E',
+            'spesifikasi_baru' => [
+                'kib_e_type' => 'buku',
+                'items' => [
+                    [
+                        'kib_e_type' => 'buku',
+                        'item_nama' => 'Pedoman Standar Pelayanan Klinis Jilid 1',
+                        'lainnya_judul' => 'Pedoman Standar Pelayanan Klinis Jilid 1',
+                        'lainnya_pencipta' => 'Komite Medis RSUD Koesnandi',
+                        'lainnya_spesifikasi' => 'Edisi 2026 Cetakan Lux Hardcover',
+                        'lainnya_bahan' => 'Kertas Art Paper / Hardcover',
+                        'kondisi' => 'Baik',
+                        'item_volume' => 1,
+                        'item_satuan' => 'Buah',
+                    ],
+                    [
+                        'kib_e_type' => 'buku',
+                        'item_nama' => 'Pedoman Standar Pelayanan Klinis Jilid 2',
+                        'lainnya_judul' => 'Pedoman Standar Pelayanan Klinis Jilid 2',
+                        'lainnya_pencipta' => 'Komite Medis RSUD Koesnandi',
+                        'lainnya_spesifikasi' => 'Edisi 2026 Cetakan Lux Hardcover',
+                        'lainnya_bahan' => 'Kertas Art Paper / Hardcover',
+                        'kondisi' => 'Baik',
+                        'item_volume' => 1,
+                        'item_satuan' => 'Buah',
+                    ]
+                ]
+            ]
+        ];
+
+        $response = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), $payload);
+        $response->assertStatus(200);
+        $response->assertJson(['success' => true]);
+
+        $astap->refresh();
+        $this->assertEquals('KIB E', $astap->category);
+        $this->assertIsArray($astap->spesifikasi_json);
+        $this->assertEquals('KIB E (Aset Tetap Lainnya)', $astap->spesifikasi_json['kategori_kib'] ?? null);
+        $this->assertEquals('buku', $astap->spesifikasi_json['kib_e_type'] ?? null);
+        $this->assertCount(2, $astap->spesifikasi_json['lainnya_items'] ?? []);
+        $this->assertEquals('Pedoman Standar Pelayanan Klinis Jilid 1', $astap->spesifikasi_json['lainnya_items'][0]['lainnya_judul']);
+        $this->assertEquals('Komite Medis RSUD Koesnandi', $astap->spesifikasi_json['lainnya_items'][0]['lainnya_pencipta']);
+        $this->assertArrayNotHasKey('mesin_items', $astap->spesifikasi_json);
+    }
 }
 
 

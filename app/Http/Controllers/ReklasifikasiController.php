@@ -1291,14 +1291,19 @@ class ReklasifikasiController extends Controller
 
                 } elseif ($targetKib === 'KIB E') {
                     $lainnyaItems = [];
+                    $regCursor = 0;
                     foreach ($unitItems as $uIdx => $uItem) {
                         $vol = max(1, (int) ($uItem['item_volume'] ?? ($uItem['lainnya_jumlah_barang'] ?? 1)));
                         $unitItemPrice = isset($uItem['harga_satuan']) && (float)$uItem['harga_satuan'] > 0 
                             ? (float)$uItem['harga_satuan'] 
                             : ($astap->harga_satuan ?: ($astap->total_realisasi / max(1, $astap->jumlah_volume)));
 
+                        $kibEType = $uItem['kib_e_type'] ?? ($rawNew['kib_e_type'] ?? 'buku');
+                        $kondisiVal = $uItem['kondisi'] ?? ($uItem['lainnya_kondisi'] ?? ($rawNew['kondisi'] ?? ($rawNew['lainnya_kondisi'] ?? 'Baik')));
+
                         $l = [
-                            'lainnya_nama_barang'    => $uItem['item_nama'] ?? ($uItem['lainnya_nama_barang'] ?? $astap->nama_barang),
+                            'kib_e_type'             => $kibEType,
+                            'lainnya_nama_barang'    => $uItem['item_nama'] ?? ($uItem['lainnya_nama_barang'] ?? ($uItem['lainnya_judul'] ?? $astap->nama_barang)),
                             'lainnya_judul'          => $uItem['lainnya_judul'] ?? ($uItem['lainnya_judul_pencipta'] ?? ($rawNew['lainnya_judul'] ?? ($rawNew['lainnya_judul_pencipta'] ?? $astap->nama_barang))),
                             'lainnya_judul_pencipta' => $uItem['lainnya_judul_pencipta'] ?? ($uItem['lainnya_judul'] ?? ($rawNew['lainnya_judul_pencipta'] ?? ($rawNew['lainnya_judul'] ?? $astap->nama_barang))),
                             'lainnya_pencipta'       => $uItem['lainnya_pencipta'] ?? ($rawNew['lainnya_pencipta'] ?? '-'),
@@ -1306,7 +1311,7 @@ class ReklasifikasiController extends Controller
                             'lainnya_asal_daerah'    => $uItem['lainnya_asal_daerah'] ?? ($rawNew['lainnya_asal_daerah'] ?? '-'),
                             'lainnya_bahan'          => $uItem['lainnya_bahan'] ?? ($rawNew['lainnya_bahan'] ?? 'Kertas / Kanvas / Lainnya'),
                             'lainnya_ukuran'         => $uItem['lainnya_ukuran'] ?? ($rawNew['lainnya_ukuran'] ?? '-'),
-                            'lainnya_kondisi'        => 'Baik',
+                            'lainnya_kondisi'        => $kondisiVal,
                             'lainnya_jumlah'         => $vol,
                             'lainnya_jumlah_barang'  => $vol,
                             'lainnya_satuan'         => $uItem['item_satuan'] ?? ($astap->satuan ?: 'Buah'),
@@ -1314,13 +1319,33 @@ class ReklasifikasiController extends Controller
                             'lainnya_total_nilai'    => $vol * $unitItemPrice,
                         ];
                         $lainnyaItems[] = $l;
+
+                        // Sinkronkan penempatan ruangan & kondisi ke register yang dicakup
+                        for ($r = 0; $r < $vol; $r++) {
+                            $targetRegister = $astap->registers->skip($regCursor)->first();
+                            if ($targetRegister) {
+                                $targetRegister->update([
+                                    'kondisi' => $kondisiVal,
+                                ]);
+                            }
+                            $regCursor++;
+                        }
                     }
                     $newSpec['lainnya_items']        = $lainnyaItems;
+                    $newSpec['kategori_kib']         = 'KIB E (Aset Tetap Lainnya)';
+                    $newSpec['kib_e_type']           = $lainnyaItems[0]['kib_e_type'] ?? 'buku';
                     $newSpec['judul']                = $lainnyaItems[0]['lainnya_judul'] ?? null;
-                    $newSpec['pencipta']              = $lainnyaItems[0]['lainnya_pencipta'] ?? null;
+                    $newSpec['pencipta']             = $lainnyaItems[0]['lainnya_pencipta'] ?? null;
                     $newSpec['spesifikasi']          = $lainnyaItems[0]['lainnya_spesifikasi'] ?? null;
                     $newSpec['bahan']                = $lainnyaItems[0]['lainnya_bahan'] ?? null;
                     $newSpec['ukuran']               = $lainnyaItems[0]['lainnya_ukuran'] ?? null;
+                    $newSpec['asal_daerah']          = $lainnyaItems[0]['lainnya_asal_daerah'] ?? null;
+                    $newSpec['kondisi']              = $lainnyaItems[0]['lainnya_kondisi'] ?? 'Baik';
+                    $astap->satuan                   = $lainnyaItems[0]['lainnya_satuan'] ?? ($astap->satuan ?: 'Buah');
+                    if (!empty($lainnyaItems[0]['lainnya_judul']) && $targetKib !== 'KEMITRAAN') {
+                        $astap->nama_barang = $lainnyaItems[0]['lainnya_judul'];
+                    }
+                    unset($newSpec['mesin_items']);
 
                 } elseif ($targetKib === 'ATB') {
                     $atbItems = [];
@@ -1390,7 +1415,7 @@ class ReklasifikasiController extends Controller
                     $isTanah = in_array($asalKibAset, ['KIB A', 'A', 'TANAH']) || str_ends_with($tujuanKodeForKemitraan, '.001') || (!empty($specLama['tanah_items']) && empty($specLama['mesin_items'])) || (!empty($rawNew['tanah_luas_m2']) && empty($rawNew['mesin_merk']));
                     $isGedung = in_array($asalKibAset, ['KIB C', 'C', 'GEDUNG', 'BANGUNAN']) || str_ends_with($tujuanKodeForKemitraan, '.003') || (!empty($specLama['gedung_items']) && empty($specLama['mesin_items'])) || (!empty($rawNew['gedung_luas_lantai_m2']) && empty($rawNew['mesin_merk']));
                     $isJaringan = in_array($asalKibAset, ['KIB D', 'D', 'JALAN', 'JARINGAN', 'IRIGASI']) || str_ends_with($tujuanKodeForKemitraan, '.004') || (!empty($specLama['jaringan_items']) && empty($specLama['mesin_items']));
-                    $isLainnya = in_array($asalKibAset, ['KIB E', 'E', 'ASET TETAP LAINNYA', 'LAINNYA']) || str_ends_with($tujuanKodeForKemitraan, '.005') || (!empty($specLama['lainnya_items']) && empty($specLama['mesin_items'])) || !empty($rawNew['lainnya_judul']) || !empty($rawNew['lainnya_pencipta']);
+                    $isLainnya = in_array($asalKibAset, ['KIB E', 'E', 'ASET TETAP LAINNYA', 'LAINNYA']) || str_ends_with($tujuanKodeForKemitraan, '.005') || (!empty($specLama['lainnya_items']) && (!isset($specLama['mesin_items']) || collect($specLama['mesin_items'])->every(fn($m) => empty($m['mesin_nama_barang']) || in_array(trim($m['mesin_nama_barang']), ['-', '--', '- -'])))) || !empty($rawNew['lainnya_judul']) || !empty($rawNew['lainnya_pencipta']);
 
                     $isTargetExtracom = !empty($rawNew['is_extracom']) || ($astap->category === 'EXTRACOM') || ($unitPrice <= 300000);
                     $newSpec['is_extracom'] = $isTargetExtracom;
@@ -1527,11 +1552,14 @@ class ReklasifikasiController extends Controller
                             $lainnyaItems[] = $l;
                         }
                         $newSpec['lainnya_items'] = $lainnyaItems;
+                        $newSpec['kategori_kib']  = 'KIB E (Aset Tetap Lainnya)';
+                        $newSpec['kib_e_type']    = $lainnyaItems[0]['kib_e_type'] ?? 'buku';
                         $newSpec['judul']         = $lainnyaItems[0]['lainnya_judul'] ?? null;
                         $newSpec['pencipta']      = $lainnyaItems[0]['lainnya_pencipta'] ?? null;
                         $newSpec['spesifikasi']   = $lainnyaItems[0]['lainnya_spesifikasi'] ?? null;
-                        $newSpec['bahan']         = $lainnyaItems[0]['lainnya_bahan'] ?? null;
+                        $newSpec['bahan']         = $lainnyaItems[0]['lainnya_bahan'] ?? 'Kertas / Kanvas / Lainnya';
                         $newSpec['ukuran']        = $lainnyaItems[0]['lainnya_ukuran'] ?? null;
+                        unset($newSpec['mesin_items']);
                     } else {
                         // KIB B Mesin & Peralatan
                         $mesinItems = [];

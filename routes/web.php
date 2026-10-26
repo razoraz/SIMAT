@@ -2297,11 +2297,11 @@ Route::middleware('auth')->group(function () {
                 }
 
                 if (!$kibCategory && !empty($kode108Raw)) {
-                    if (str_ends_with($kode108Raw, '.001') || str_starts_with($kode108Raw, '1.3.1') || str_starts_with($kode108Raw, '1.5.2.01')) $kibCategory = 'KIB A';
-                    elseif (str_ends_with($kode108Raw, '.002') || str_starts_with($kode108Raw, '1.3.2') || str_starts_with($kode108Raw, '1.5.2.02')) $kibCategory = 'KIB B';
-                    elseif (str_ends_with($kode108Raw, '.003') || str_starts_with($kode108Raw, '1.3.3') || str_starts_with($kode108Raw, '1.5.2.03')) $kibCategory = 'KIB C';
-                    elseif (str_ends_with($kode108Raw, '.004') || str_starts_with($kode108Raw, '1.3.4') || str_starts_with($kode108Raw, '1.5.2.04')) $kibCategory = 'KIB D';
-                    elseif (str_ends_with($kode108Raw, '.005') || str_starts_with($kode108Raw, '1.3.5') || str_starts_with($kode108Raw, '1.5.2.05')) $kibCategory = 'KIB E';
+                    if (str_ends_with($kode108Raw, '.005') || str_starts_with($kode108Raw, '1.3.5')) $kibCategory = 'KIB E';
+                    elseif (str_ends_with($kode108Raw, '.002') || str_starts_with($kode108Raw, '1.3.2')) $kibCategory = 'KIB B';
+                    elseif (str_ends_with($kode108Raw, '.003') || str_starts_with($kode108Raw, '1.3.3')) $kibCategory = 'KIB C';
+                    elseif (str_ends_with($kode108Raw, '.004') || str_starts_with($kode108Raw, '1.3.4')) $kibCategory = 'KIB D';
+                    elseif (str_ends_with($kode108Raw, '.001') || str_starts_with($kode108Raw, '1.3.1')) $kibCategory = 'KIB A';
                 }
                 if (!$kibCategory) $kibCategory = 'KIB B';
 
@@ -3116,11 +3116,11 @@ Route::middleware('auth')->group(function () {
                 }
 
                 if (!$kibCategory && !empty($kode108Raw)) {
-                    if (str_ends_with($kode108Raw, '.001') || str_starts_with($kode108Raw, '1.3.1') || str_starts_with($kode108Raw, '1.5.2.01')) $kibCategory = 'KIB A';
-                    elseif (str_ends_with($kode108Raw, '.002') || str_starts_with($kode108Raw, '1.3.2') || str_starts_with($kode108Raw, '1.5.2.02')) $kibCategory = 'KIB B';
-                    elseif (str_ends_with($kode108Raw, '.003') || str_starts_with($kode108Raw, '1.3.3') || str_starts_with($kode108Raw, '1.5.2.03')) $kibCategory = 'KIB C';
-                    elseif (str_ends_with($kode108Raw, '.004') || str_starts_with($kode108Raw, '1.3.4') || str_starts_with($kode108Raw, '1.5.2.04')) $kibCategory = 'KIB D';
-                    elseif (str_ends_with($kode108Raw, '.005') || str_starts_with($kode108Raw, '1.3.5') || str_starts_with($kode108Raw, '1.5.2.05')) $kibCategory = 'KIB E';
+                    if (str_ends_with($kode108Raw, '.005') || str_starts_with($kode108Raw, '1.3.5')) $kibCategory = 'KIB E';
+                    elseif (str_ends_with($kode108Raw, '.002') || str_starts_with($kode108Raw, '1.3.2')) $kibCategory = 'KIB B';
+                    elseif (str_ends_with($kode108Raw, '.003') || str_starts_with($kode108Raw, '1.3.3')) $kibCategory = 'KIB C';
+                    elseif (str_ends_with($kode108Raw, '.004') || str_starts_with($kode108Raw, '1.3.4')) $kibCategory = 'KIB D';
+                    elseif (str_ends_with($kode108Raw, '.001') || str_starts_with($kode108Raw, '1.3.1')) $kibCategory = 'KIB A';
                 }
                 if (!$kibCategory) $kibCategory = 'KIB B';
 

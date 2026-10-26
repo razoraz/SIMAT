@@ -11227,8 +11227,21 @@
                             jaringan_alamat: jItem.jaringan_alamat || spec.jaringan_alamat || spec.alamat || it.alamat_barang || defaultAlamat,
 
                             // KIB E - Lainnya
-                            lainnya_judul_pencipta: lItem.lainnya_buku_judul || lItem.lainnya_judul_pencipta || spec.buku_judul || spec.judul || spec.judul_pencipta || itemNama || '',
+                            kib_e_type: (() => {
+                                if (lItem.kib_e_type) return lItem.kib_e_type;
+                                const kode = (this.reklasSubSubRincianKode || this.reklasSubRincianKode || this.reklasTujuanKode || it.kode_108 || it.kode_barang || '').trim();
+                                if (kode.includes('.02') || kode.includes('1.3.5.02') || (lItem.lainnya_asal_daerah && lItem.lainnya_asal_daerah !== '-')) return 'kesenian';
+                                if (kode.includes('.03') || kode.includes('1.3.5.03')) return 'hewan_tumbuhan';
+                                return 'buku';
+                            })(),
+                            lainnya_judul: lItem.lainnya_judul || lItem.lainnya_nama_barang || lItem.lainnya_buku_judul || spec.buku_judul || spec.judul || itemNama || '',
+                            lainnya_pencipta: lItem.lainnya_pencipta || spec.pencipta || (it.pencipta && it.pencipta !== '-' ? it.pencipta : '') || '',
+                            lainnya_spesifikasi: lItem.lainnya_spesifikasi || spec.spesifikasi || (it.spesifikasi && it.spesifikasi !== '-' ? it.spesifikasi : '') || '',
+                            lainnya_asal_daerah: lItem.lainnya_asal_daerah || spec.asal_daerah || (it.asal_daerah && it.asal_daerah !== '-' ? it.asal_daerah : '') || '',
                             lainnya_bahan: lItem.lainnya_bahan || spec.bahan || (it.bahan && it.bahan !== '-' ? it.bahan : 'Kertas / Kanvas / Lainnya'),
+                            lainnya_ukuran: lItem.lainnya_ukuran || spec.ukuran || (it.ukuran && it.ukuran !== '-' ? it.ukuran : '') || '',
+                            lainnya_kondisi: lItem.lainnya_kondisi || reg?.kondisi || it.kondisi || 'Baik',
+                            lainnya_judul_pencipta: lItem.lainnya_buku_judul || lItem.lainnya_judul_pencipta || spec.buku_judul || spec.judul || spec.judul_pencipta || itemNama || '',
 
                             // ATB - Aset Tak Berwujud
                             atb_nama_software: aItem.atb_nama_software || spec.nama_software || itemNama || '',
@@ -11347,9 +11360,15 @@
                     if (this.reklasSpekBaruItems && this.reklasSpekBaruItems[this.activeSpekUnitTab]) {
                         if (this.reklasSpekBaru.kondisi) {
                             this.reklasSpekBaru.mesin_kondisi = this.reklasSpekBaru.kondisi;
+                            this.reklasSpekBaru.lainnya_kondisi = this.reklasSpekBaru.kondisi;
                         }
                         if (this.reklasSpekBaru.mesin_ukuran_cc) {
                             this.reklasSpekBaru.mesin_ukuran = this.reklasSpekBaru.mesin_ukuran_cc;
+                        }
+                        if (this.reklasSpekBaru.lainnya_judul) {
+                            this.reklasSpekBaru.item_nama = this.reklasSpekBaru.lainnya_judul;
+                            this.reklasSpekBaru.lainnya_nama_barang = this.reklasSpekBaru.lainnya_judul;
+                            this.reklasSpekBaru.lainnya_judul_pencipta = (this.reklasSpekBaru.lainnya_judul || '') + (this.reklasSpekBaru.lainnya_pencipta ? ' - ' + this.reklasSpekBaru.lainnya_pencipta : '');
                         }
                         Object.assign(this.reklasSpekBaruItems[this.activeSpekUnitTab], this.reklasSpekBaru);
                     }

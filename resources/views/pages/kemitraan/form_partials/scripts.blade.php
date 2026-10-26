@@ -1589,17 +1589,17 @@
                 const dKode = (d.jenis_astap?.kode || d.kode_108 || spec.kode_108 || '');
                 const dNama = (d.nama_barang || '').toLowerCase();
 
-                let isEditTanah = dCat.includes('KIB A') || dCat.includes('TANAH') || dKode.startsWith('1.3.1') || dKode.endsWith('.001');
-                let isEditMesin = dCat.includes('KIB B') || dCat.includes('MESIN') || dCat.includes('ALAT') || dKode.startsWith('1.3.2') || dKode.endsWith('.002');
-                let isEditGedung = dCat.includes('KIB C') || dCat.includes('GEDUNG') || dCat.includes('BANGUNAN') || dKode.startsWith('1.3.3') || dKode.endsWith('.003');
-                let isEditJaringan = dCat.includes('KIB D') || dCat.includes('JARINGAN') || dCat.includes('JALAN') || dKode.startsWith('1.3.4') || dKode.endsWith('.004');
-                let isEditLainnya = dCat.includes('KIB E') || dCat.includes('LAINNYA') || dKode.startsWith('1.3.5') || dKode.endsWith('.005');
+                let isEditTanah = dKode.endsWith('.001') || dKode.startsWith('1.3.1') || dCat.includes('KIB A') || dCat.includes('TANAH');
+                let isEditGedung = dKode.endsWith('.003') || dKode.startsWith('1.3.3') || dCat.includes('KIB C') || dCat.includes('GEDUNG') || dCat.includes('BANGUNAN');
+                let isEditJaringan = dKode.endsWith('.004') || dKode.startsWith('1.3.4') || dCat.includes('KIB D') || dCat.includes('JARINGAN') || dCat.includes('JALAN');
+                let isEditLainnya = dKode.endsWith('.005') || dKode.startsWith('1.3.5') || dCat.includes('KIB E') || dCat.includes('LAINNYA') || (spec.kategori_kib && String(spec.kategori_kib).toUpperCase().includes('KIB E')) || (Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0 && (!Array.isArray(spec.mesin_items) || spec.mesin_items.every(m => !m.mesin_nama_barang || ['-', '--', '- -'].includes(m.mesin_nama_barang.trim()))));
+                let isEditMesin = !isEditTanah && !isEditGedung && !isEditJaringan && !isEditLainnya && (dKode.endsWith('.002') || dKode.startsWith('1.3.2') || dCat.includes('KIB B') || dCat.includes('MESIN') || dCat.includes('ALAT'));
 
                 if (!isEditTanah && !isEditMesin && !isEditGedung && !isEditJaringan && !isEditLainnya) {
                     if (dNama.includes('tanah') || dNama.includes('lahan')) isEditTanah = true;
                     else if (dNama.includes('gedung') || dNama.includes('bangunan') || dNama.includes('ruang') || dNama.includes('rumah')) isEditGedung = true;
                     else if (dNama.includes('jalan') || dNama.includes('irigasi') || dNama.includes('jaringan') || dNama.includes('pipa')) isEditJaringan = true;
-                    else if (dNama.includes('buku') || dNama.includes('kesenian') || dNama.includes('hewan')) isEditLainnya = true;
+                    else if (dNama.includes('buku') || dNama.includes('kesenian') || dNama.includes('hewan') || dNama.includes('pedoman') || dNama.includes('klinis')) isEditLainnya = true;
                     else isEditMesin = true;
                 }
 
@@ -1997,45 +1997,49 @@
                 const kode = this.selectedKode108;
                 const nama = ((this.selectedSubSub?.nama || '') + ' ' + (this.formData.nama_barang || '')).toLowerCase();
 
-                // 1. Kategori KIB dari data aset yang diedit (window.editAstapData)
-                if (window.editAstapData) {
-                    const cat = (window.editAstapData.category || '').toUpperCase();
-                    if (cat.includes('KIB A') || cat === 'A' || cat.includes('TANAH')) return 'tanah';
-                    if (cat.includes('KIB B') || cat === 'B' || cat.includes('MESIN') || cat.includes('ALAT')) return 'mesin';
-                    if (cat.includes('KIB C') || cat === 'C' || cat.includes('GEDUNG') || cat.includes('BANGUNAN')) return 'gedung';
-                    if (cat.includes('KIB D') || cat === 'D' || cat.includes('JARINGAN') || cat.includes('JALAN')) return 'jaringan';
-                    if (cat.includes('KIB E') || cat === 'E' || cat.includes('LAINNYA')) return 'lainnya';
+                // 1. Berdasarkan Kode 108 Permendagri (Prioritas Utama):
+                // Akun 1.5.2 Kemitraan: .001 (Tanah), .002 (Mesin/Alat), .003 (Gedung), .004 (Jaringan), .005 (Lainnya)
+                if (kode && kode.startsWith('1.5.2')) {
+                    if (kode.endsWith('.005')) return 'lainnya';
+                    if (kode.endsWith('.002')) return 'mesin';
+                    if (kode.endsWith('.003')) return 'gedung';
+                    if (kode.endsWith('.004')) return 'jaringan';
+                    if (kode.endsWith('.001')) return 'tanah';
+                }
 
+                // Akun 1.3 Belanja Modal / Milik RSUD: 1.3.1 (Tanah), 1.3.2 (Mesin), 1.3.3 (Gedung), 1.3.4 (Jaringan), 1.3.5 (Lainnya)
+                if (kode) {
+                    if (kode.startsWith('1.3.5') || kode.endsWith('.005')) return 'lainnya';
+                    if (kode.startsWith('1.3.2') || kode.endsWith('.002')) return 'mesin';
+                    if (kode.startsWith('1.3.3') || kode.endsWith('.003')) return 'gedung';
+                    if (kode.startsWith('1.3.4') || kode.endsWith('.004')) return 'jaringan';
+                    if (kode.startsWith('1.3.1') || kode.endsWith('.001')) return 'tanah';
+                }
+
+                // 2. Kategori KIB dari data aset yang diedit (window.editAstapData)
+                if (window.editAstapData) {
                     const spec = (typeof window.editAstapData.spesifikasi_json === 'object' && window.editAstapData.spesifikasi_json !== null) 
                         ? window.editAstapData.spesifikasi_json 
                         : (typeof window.editAstapData.spesifikasi_json === 'string' ? (JSON.parse(window.editAstapData.spesifikasi_json) || {}) : {});
                     if (spec.kategori_kib) {
                         const sk = String(spec.kategori_kib).toUpperCase();
+                        if (sk.includes('KIB E') || sk.includes('LAINNYA')) return 'lainnya';
                         if (sk.includes('KIB A') || sk.includes('TANAH')) return 'tanah';
-                        if (sk.includes('KIB B') || sk.includes('MESIN')) return 'mesin';
                         if (sk.includes('KIB C') || sk.includes('GEDUNG')) return 'gedung';
                         if (sk.includes('KIB D') || sk.includes('JARINGAN')) return 'jaringan';
-                        if (sk.includes('KIB E') || sk.includes('LAINNYA')) return 'lainnya';
+                        if (sk.includes('KIB B') || sk.includes('MESIN')) return 'mesin';
                     }
-                }
 
-                // 2. Berdasarkan Kode 108 Permendagri:
-                // Akun 1.3 Belanja Modal / Milik RSUD: 1.3.1 (Tanah), 1.3.2 (Mesin), 1.3.3 (Gedung), 1.3.4 (Jaringan), 1.3.5 (Lainnya)
-                if (kode) {
-                    if (kode.startsWith('1.3.1')) return 'tanah';
-                    if (kode.startsWith('1.3.2')) return 'mesin';
-                    if (kode.startsWith('1.3.3')) return 'gedung';
-                    if (kode.startsWith('1.3.4')) return 'jaringan';
-                    if (kode.startsWith('1.3.5')) return 'lainnya';
-
-                    // Akun 1.5.2 Kemitraan: .001 (Tanah), .002 (Mesin/Alat), .003 (Gedung), .004 (Jaringan), .005 (Lainnya)
-                    if (kode.startsWith('1.5.2')) {
-                        if (kode.endsWith('.001')) return 'tanah';
-                        if (kode.endsWith('.002')) return 'mesin';
-                        if (kode.endsWith('.003')) return 'gedung';
-                        if (kode.endsWith('.004')) return 'jaringan';
-                        if (kode.endsWith('.005')) return 'lainnya';
+                    if (Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0 && (!Array.isArray(spec.mesin_items) || spec.mesin_items.every(m => !m.mesin_nama_barang || ['-', '--', '- -'].includes(m.mesin_nama_barang.trim())))) {
+                        return 'lainnya';
                     }
+
+                    const cat = (window.editAstapData.category || '').toUpperCase();
+                    if (cat.includes('KIB E') || cat === 'E' || cat.includes('LAINNYA')) return 'lainnya';
+                    if (cat.includes('KIB A') || cat === 'A' || cat.includes('TANAH')) return 'tanah';
+                    if (cat.includes('KIB C') || cat === 'C' || cat.includes('GEDUNG') || cat.includes('BANGUNAN')) return 'gedung';
+                    if (cat.includes('KIB D') || cat === 'D' || cat.includes('JARINGAN') || cat.includes('JALAN')) return 'jaringan';
+                    if (cat.includes('KIB B') || cat === 'B' || cat.includes('MESIN') || cat.includes('ALAT')) return 'mesin';
                 }
 
                 // 3. Berdasarkan kecocokan teks nama

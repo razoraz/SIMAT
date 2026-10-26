@@ -544,22 +544,29 @@ class Astap extends Model
     {
         $spec = is_array($this->spesifikasi_json) ? $this->spesifikasi_json : (json_decode($this->spesifikasi_json ?? '[]', true) ?: []);
 
-        $hasFilledItem = function ($key, $nameField) use ($spec) {
+        $hasFilledItem = function ($key, ...$nameFields) use ($spec) {
             if (empty($spec[$key]) || !is_array($spec[$key])) return false;
             foreach ($spec[$key] as $row) {
-                if (is_array($row) && !empty($row[$nameField]) && trim((string)$row[$nameField]) !== '') {
-                    return true;
+                if (is_array($row)) {
+                    foreach ($nameFields as $field) {
+                        if (!empty($row[$field])) {
+                            $clean = trim((string)$row[$field]);
+                            if ($clean !== '' && $clean !== '-' && $clean !== '--' && $clean !== '- -') {
+                                return true;
+                            }
+                        }
+                    }
                 }
             }
             return false;
         };
 
-        // 1. Prioritaskan repeater spesifikasi fisik yang nyata dan memiliki nama terisi
-        if ($hasFilledItem('gedung_items', 'gedung_nama_barang')) return 'KIB C';
+        // 1. Prioritaskan repeater spesifikasi fisik yang nyata dan memiliki nama terisi (abaikan nilai dummy '-')
+        if ($hasFilledItem('gedung_items', 'gedung_nama_barang', 'gedung_nama_bangunan')) return 'KIB C';
+        if ($hasFilledItem('lainnya_items', 'lainnya_nama_barang', 'lainnya_judul', 'judul', 'lainnya_judul_pencipta')) return 'KIB E';
         if ($hasFilledItem('mesin_items', 'mesin_nama_barang')) return 'KIB B';
-        if ($hasFilledItem('jaringan_items', 'jaringan_nama_barang')) return 'KIB D';
-        if ($hasFilledItem('lainnya_items', 'lainnya_nama_barang')) return 'KIB E';
-        if ($hasFilledItem('tanah_items', 'tanah_nama_barang')) return 'KIB A';
+        if ($hasFilledItem('jaringan_items', 'jaringan_nama_barang', 'jaringan_nama')) return 'KIB D';
+        if ($hasFilledItem('tanah_items', 'tanah_nama_barang', 'tanah_penggunaan')) return 'KIB A';
 
         // 2. Periksa deklarasi kategori_kib di spesifikasi_json
         if (!empty($spec['kategori_kib'])) {
