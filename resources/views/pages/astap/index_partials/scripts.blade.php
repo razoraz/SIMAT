@@ -10250,6 +10250,12 @@
                     return this.isItemExtracom(this.selectedAstapReklas);
                 },
 
+                isTargetExtracom() {
+                    if (this.reklasJenis === 'extracom') return true;
+                    if (this.reklasJenis === 'intracom') return false;
+                    return this.isCurrentAstapExtracom();
+                },
+
                 isKemitraanAktif() {
                     const it = this.selectedAstapReklas;
                     if (!it) return false;
@@ -11182,9 +11188,14 @@
                             mesin_merk: mItem.mesin_merk || spec.merk || it.merk || (it.merk_type && it.merk_type !== '-' ? it.merk_type : '') || '',
                             mesin_type: mItem.mesin_type || spec.type || it.type || '',
                             mesin_no_pabrik: mItem.mesin_nomor_pabrik || mItem.mesin_no_pabrik || spec.no_pabrik || spec.mesin_no_pabrik || (it.no_pabrik && it.no_pabrik !== '-' ? it.no_pabrik : '') || '',
+                            mesin_ukuran: mItem.mesin_ukuran || mItem.mesin_ukuran_cc || spec.ukuran_cc || spec.ukuran || (it.ukuran && it.ukuran !== '-' ? it.ukuran : '') || '',
                             mesin_ukuran_cc: mItem.mesin_ukuran || mItem.mesin_ukuran_cc || spec.ukuran_cc || spec.ukuran || (it.ukuran && it.ukuran !== '-' ? it.ukuran : '') || '',
                             mesin_bahan: mItem.mesin_bahan || spec.bahan || (it.bahan && it.bahan !== '-' ? it.bahan : 'Logam / Komponen Elektronik'),
+                            mesin_no_rangka: mItem.mesin_no_rangka || spec.no_rangka || spec.mesin_no_rangka || (it.no_rangka && it.no_rangka !== '-' ? it.no_rangka : '') || '',
+                            mesin_no_mesin: mItem.mesin_no_mesin || spec.no_mesin || spec.mesin_no_mesin || (it.no_mesin && it.no_mesin !== '-' ? it.no_mesin : '') || '',
+                            mesin_no_bpkb: mItem.mesin_no_bpkb || spec.no_bpkb || spec.mesin_no_bpkb || (it.no_bpkb && it.no_bpkb !== '-' ? it.no_bpkb : '') || '',
                             mesin_no_polisi: mItem.mesin_nomor_polisi || mItem.mesin_no_polisi || spec.no_polisi || (it.no_polisi && it.no_polisi !== '-' ? it.no_polisi : '') || '',
+                            mesin_kondisi: mItem.mesin_kondisi || reg?.kondisi || it.kondisi || 'Baik',
 
                             // KIB C - Gedung
                             gedung_konstruksi_bertingkat: (() => {
@@ -11334,6 +11345,12 @@
 
                 syncCurrentSpekToActiveItem() {
                     if (this.reklasSpekBaruItems && this.reklasSpekBaruItems[this.activeSpekUnitTab]) {
+                        if (this.reklasSpekBaru.kondisi) {
+                            this.reklasSpekBaru.mesin_kondisi = this.reklasSpekBaru.kondisi;
+                        }
+                        if (this.reklasSpekBaru.mesin_ukuran_cc) {
+                            this.reklasSpekBaru.mesin_ukuran = this.reklasSpekBaru.mesin_ukuran_cc;
+                        }
                         Object.assign(this.reklasSpekBaruItems[this.activeSpekUnitTab], this.reklasSpekBaru);
                     }
                 },
