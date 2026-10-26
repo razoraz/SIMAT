@@ -874,39 +874,10 @@ class RecycleBinController extends Controller
             ];
         });
 
-        // 2) REGISTER NIBAR MUTASI EKSTERNAL (UNIT DARI DOKUMEN BAST TERHAPUS & UNIT INDIVIDUAL TERHAPUS)
+        // 2) REGISTER NIBAR MUTASI EKSTERNAL INDIVIDUAL
+        // Murni khusus unit fisik NIBAR yang dihapus satuan dari aset mutasi eksternal aktif di RSUD (tidak menduplikasi dokumen BAST terhapus)
         $hasMutasiRegTable = Schema::hasTable('mutasi_eksternal_registers');
-        $deletedMutasiEksternalIds = $rawDeletedMutasiEksternals->pluck('id')->all();
-        $masukAstapIds = $rawDeletedMutasiEksternals->where('tipe', '!=', 'keluar')->pluck('astap_id')->filter()->all();
-
-        $rawDeletedMutasiEksternalNibars = collect();
-
-        // 2A. Unit Register dari Dokumen BAST Mutasi Masuk terhapus
-        if (!empty($masukAstapIds)) {
-            $regsMasuk = AstapRegister::whereIn('astap_id', $masukAstapIds)
-                ->where('status', '!=', 'Dibatalkan')
-                ->with(['astap.jenisAstap', 'astap.mutasiEksternals', 'unit'])
-                ->get();
-            foreach ($regsMasuk as $r) {
-                $rawDeletedMutasiEksternalNibars->push($r);
-            }
-        }
-
-        // 2B. Unit Register dari Dokumen BAST Mutasi Keluar terhapus
-        if ($hasMutasiRegTable && !empty($deletedMutasiEksternalIds)) {
-            $keluarPivots = \App\Models\MutasiEksternalRegister::whereIn('mutasi_eksternal_id', $deletedMutasiEksternalIds)
-                ->with(['register.astap.jenisAstap', 'register.unit', 'mutasiEksternal'])
-                ->get();
-            foreach ($keluarPivots as $piv) {
-                if ($piv->register && !$rawDeletedMutasiEksternalNibars->contains('id', $piv->register->id)) {
-                    $piv->register->setRelation('mutasiEksternalPivot', $piv->mutasiEksternal);
-                    $rawDeletedMutasiEksternalNibars->push($piv->register);
-                }
-            }
-        }
-
-        // 2C. Unit Register yang dihapus satuan dari Dokumen Mutasi Aktif
-        $individualDeletedRegs = AstapRegister::onlyDeleted()
+        $rawDeletedMutasiEksternalNibars = AstapRegister::onlyDeleted()
             ->where('status', '!=', 'Dibatalkan')
             ->whereHas('astap', function ($q) {
                 $q->where('is_deleted', 0)
@@ -915,33 +886,39 @@ class RecycleBinController extends Controller
                          ->orWhereHas('mutasiEksternals', fn($m) => $m->where('is_deleted', 0)->where('status', '!=', 'Dibatalkan'));
                   });
             })
-            ->with(['astap.jenisAstap', 'astap.mutasiEksternals', 'unit'])
+            ->where(function ($rootQ) use ($hasMutasiRegTable) {
+                // Skenario 1: Aset Mutasi Masuk aktif
+                $rootQ->whereHas('astap', function ($q) {
+                    $q->whereIn('sumber_dana', ['mutasi_eksternal', 'mutasi_masuk', 'pelimpahan_skpd', 'pelimpahan', 'mutasi'])
+                      ->orWhereHas('mutasiEksternals', fn($m) => $m->where('is_deleted', 0)->where('status', '!=', 'Dibatalkan'));
+                });
+                // Skenario 2: Aset Mutasi Keluar aktif yang unit fisiknya terdaftar di mutasi_eksternal_registers
+                if ($hasMutasiRegTable) {
+                    $rootQ->orWhereHas('mutasiEksternalRegisters.mutasiEksternal', function ($m) {
+                        $m->where('is_deleted', 0)->where('status', '!=', 'Dibatalkan');
+                    });
+                }
+            })
+            ->with(array_filter([
+                'astap.jenisAstap',
+                'astap.mutasiEksternals' => fn($m) => $m->where('is_deleted', 0)->where('status', '!=', 'Dibatalkan'),
+                $hasMutasiRegTable ? 'mutasiEksternalRegisters.mutasiEksternal' : null,
+                'unit'
+            ]))
+            ->latest('deleted_at')
+            ->latest('id')
             ->get();
-
-        foreach ($individualDeletedRegs as $ind) {
-            if (!$rawDeletedMutasiEksternalNibars->contains('id', $ind->id)) {
-                $rawDeletedMutasiEksternalNibars->push($ind);
-            }
-        }
 
         $deletedMutasiEksternalNibars = $rawDeletedMutasiEksternalNibars->map(function ($r) {
             $deletedAt = $r->deleted_at ? Carbon::parse($r->deleted_at)->timezone('Asia/Jakarta') : null;
-            $mut = ($r->relationLoaded('mutasiEksternalPivot') ? $r->getRelation('mutasiEksternalPivot') : null)
-                ?? $r->mutasiEksternalRegisters?->firstWhere('mutasiEksternal.is_deleted', 1)?->mutasiEksternal
+            $mut = $r->mutasiEksternalRegisters?->firstWhere('mutasiEksternal.is_deleted', 0)?->mutasiEksternal
                 ?? $r->mutasiEksternalRegisters?->first()?->mutasiEksternal
-                ?? $r->astap?->mutasiEksternals?->firstWhere('is_deleted', 1)
+                ?? $r->astap?->mutasiEksternals?->firstWhere('is_deleted', 0)
                 ?? $r->astap?->mutasiEksternals?->first();
 
             $tipe = $mut?->tipe ?: ($r->mutasiEksternalRegisters?->isNotEmpty() ? 'keluar' : 'masuk');
             $opdAsal = $tipe === 'keluar' ? 'RSUD Dr. H. Koesnadi' : ($mut?->opd_asal ?: ($r->astap?->mutasi_asal ?: '-'));
             $opdTujuan = $tipe === 'keluar' ? ($mut?->opd_tujuan ?: 'OPD Luar') : 'RSUD Dr. H. Koesnadi';
-
-            // Jika deleted_at pada register null (misal dari mutasi keluar yang terhapus dokumennya), ambil waktu deleted_at dari dokumen mutasi
-            if (!$deletedAt && $mut && $mut->deleted_at) {
-                $deletedAt = Carbon::parse($mut->deleted_at)->timezone('Asia/Jakarta');
-            }
-
-            $deletedBy = $r->deleted_by ?: ($mut?->deleted_by ?: 'Administrator');
 
             return [
                 'id'                  => $r->id,
@@ -960,7 +937,7 @@ class RecycleBinController extends Controller
                 'kondisi'             => $r->kondisi ?: 'Baik',
                 'status'              => $r->status ?: 'Tersedia',
                 'tahun'               => $r->astap?->tahun_perolehan ?: '-',
-                'deleted_by'          => $deletedBy,
+                'deleted_by'          => $r->deleted_by ?: 'Administrator',
                 'deleted_at'          => $deletedAt ? $deletedAt->locale('id')->translatedFormat('d M Y, H:i') . ' WIB' : '-',
                 'deleted_at_relative' => $deletedAt ? $deletedAt->locale('id')->diffForHumans() : '-',
                 'deleted_at_raw'      => $deletedAt ? $deletedAt->toIso8601String() : null,
