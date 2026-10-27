@@ -1124,13 +1124,19 @@ Route::middleware('auth')->group(function () {
                 try {
                     return \App\Models\AstapBelanjaModal::whereNotNull('penyedia_nama')
                         ->where('penyedia_nama', '!=', '')
+                        ->with('astap:id,spesifikasi_json')
                         ->orderBy('id', 'desc')
-                        ->get(['penyedia_nama', 'penyedia_pemilik', 'penyedia_rekening_nama', 'penyedia_rekening_nomor', 'penyedia_alamat'])
+                        ->get(['astap_id', 'penyedia_nama', 'penyedia_pemilik', 'penyedia_rekening_nama', 'penyedia_rekening_nomor', 'penyedia_alamat'])
                         ->map(function($m) {
+                            $spec = $m->astap?->spesifikasi_json;
+                            if (is_string($spec)) {
+                                try { $spec = json_decode($spec, true); } catch (\Throwable $e) { $spec = []; }
+                            }
+                            $tel = is_array($spec) ? ($spec['penyedia_telepon'] ?? ($spec['penyedia_kontak'] ?? '')) : '';
                             return [
                                 'nama'           => trim($m->penyedia_nama),
                                 'pemilik'        => $m->penyedia_pemilik ?? '',
-                                'telepon'        => '',
+                                'telepon'        => $tel ?: '',
                                 'rekening_nama'  => $m->penyedia_rekening_nama ?? '',
                                 'rekening_nomor' => $m->penyedia_rekening_nomor ?? '',
                                 'alamat'         => $m->penyedia_alamat ?? '',
@@ -4149,6 +4155,7 @@ Route::middleware('auth')->group(function () {
                     'no_polisi' => $firstItem['mesin_no_polisi'] ?? null,
                     'bahan' => count($allBahan) > 0 ? implode(', ', array_unique($allBahan)) : ($firstItem['mesin_bahan'] ?? null),
                     'ruang_pemegang' => $firstItem['ruang_pemegang_mesin'] ?? ($firstItem['ruang_pemegang'] ?? null),
+                    'penyedia_telepon' => $data['penyedia_telepon'] ?? null,
                     'mesin_items' => $data['mesin_items']
                 ];
                 $specJson = array_filter($specJson, fn($v) => !is_null($v) && $v !== '');
@@ -4974,6 +4981,7 @@ Route::middleware('auth')->group(function () {
                     'atb_nama_barang' => $namaBarang,
                     'atb_kode_barang' => $kode108Submitted,
                     'ruang_pemegang' => $ruangFirst,
+                    'penyedia_telepon' => $data['penyedia_telepon'] ?? null,
                     'atb_items' => array_values($cleanedAtb)
                 ];
                 $specJson = array_filter($specJson, fn($v) => !is_null($v) && $v !== '');
@@ -5735,6 +5743,7 @@ Route::middleware('auth')->group(function () {
                     'no_polisi' => $firstItem['mesin_no_polisi'] ?? null,
                     'bahan' => count($allBahan) > 0 ? implode(', ', array_unique($allBahan)) : ($firstItem['mesin_bahan'] ?? null),
                     'ruang_pemegang' => $ruangFirst,
+                    'penyedia_telepon' => $data['penyedia_telepon'] ?? ($astap->spesifikasi_json['penyedia_telepon'] ?? null),
                     'mesin_items' => $data['mesin_items']
                 ];
                 $spec = array_filter($spec, fn($v) => !is_null($v) && $v !== '');
@@ -6000,6 +6009,7 @@ Route::middleware('auth')->group(function () {
                     'atb_nama_barang' => $firstItem['atb_nama_barang'] ?? ($data['atb_nama_barang'] ?? null),
                     'atb_kode_barang' => $firstItem['atb_kode_barang'] ?? ($data['atb_kode_barang'] ?? null),
                     'ruang_pemegang' => $ruangFirst,
+                    'penyedia_telepon' => $data['penyedia_telepon'] ?? ($astap->spesifikasi_json['penyedia_telepon'] ?? null),
                     'atb_items' => array_values($cleanedAtb)
                 ];
                 $spec = array_filter($spec, fn($v) => !is_null($v) && $v !== '');
@@ -6068,6 +6078,9 @@ Route::middleware('auth')->group(function () {
             if (isset($data['ppk_nip'])) $astap->ppk_nip = $data['ppk_nip'];
             if (isset($data['keterangan_tambahan']) || isset($data['keterangan'])) {
                 $astap->keterangan_tambahan = $data['keterangan_tambahan'] ?? ($data['keterangan'] ?? null);
+            }
+            if (isset($data['penyedia_telepon']) && !empty($data['penyedia_telepon'])) {
+                $ext['spec']['penyedia_telepon'] = $data['penyedia_telepon'];
             }
             $astap->spesifikasi_json = $ext['spec'];
             $astap->save();

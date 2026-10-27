@@ -1417,18 +1417,39 @@ class ReklasifikasiController extends Controller
                 } elseif ($targetKib === 'ATB') {
                     $atbItems = [];
                     foreach ($unitItems as $uIdx => $uItem) {
+                        $judulNama = $uItem['atb_judul_nama'] ?? ($uItem['atb_nama_software'] ?? ($rawNew['atb_judul_nama'] ?? ($rawNew['atb_nama_software'] ?? $astap->nama_barang)));
+                        $pencipta = $uItem['atb_pencipta'] ?? ($uItem['atb_pengembang'] ?? ($rawNew['atb_pencipta'] ?? ($rawNew['atb_pengembang'] ?? '-')));
+                        $spesifikasi = $uItem['atb_spesifikasi'] ?? ($rawNew['atb_spesifikasi'] ?? '-');
+
                         $atbItems[] = [
-                            'atb_nama_software' => $uItem['atb_nama_software'] ?? ($rawNew['atb_nama_software'] ?? $astap->nama_barang),
+                            'atb_judul_nama'    => $judulNama,
+                            'atb_nama_software' => $judulNama,
+                            'atb_nama_barang'   => $astap->nama_barang,
+                            'atb_pencipta'      => $pencipta,
+                            'atb_pengembang'    => $pencipta,
+                            'atb_spesifikasi'   => $spesifikasi,
                             'atb_jenis'         => $uItem['atb_jenis'] ?? ($rawNew['atb_jenis'] ?? 'Software Aplikasi SIMRS / Lisensi'),
                             'atb_masa_manfaat'  => (int) ($uItem['atb_masa_manfaat'] ?? ($rawNew['atb_masa_manfaat'] ?? 4)),
                             'atb_versi'         => $uItem['atb_versi'] ?? ($rawNew['atb_versi'] ?? 'v1.0'),
-                            'atb_pengembang'    => $uItem['atb_pengembang'] ?? ($rawNew['atb_pengembang'] ?? '-'),
                             'atb_nomor_lisensi' => $uItem['atb_nomor_lisensi'] ?? ($rawNew['atb_nomor_lisensi'] ?? '-'),
                             'atb_nilai_satuan'  => $unitPrice,
+                            'atb_jumlah'        => (int) ($uItem['item_volume'] ?? 1),
+                            'atb_satuan'        => $uItem['item_satuan'] ?? ($astap->satuan ?: 'Lisensi'),
+                            'ruang_pemegang'    => $uItem['ruang_pemegang'] ?? ($astap->ruang_unit ?? '-'),
                         ];
                     }
-                    $newSpec['atb_items']   = $atbItems;
-                    $astap->satuan          = 'Paket / Lisensi';
+                    $newSpec['atb_items']         = $atbItems;
+                    $newSpec['atb_judul_nama']    = $atbItems[0]['atb_judul_nama'];
+                    $newSpec['atb_nama_software'] = $atbItems[0]['atb_nama_software'];
+                    $newSpec['atb_pencipta']      = $atbItems[0]['atb_pencipta'];
+                    $newSpec['atb_pengembang']    = $atbItems[0]['atb_pengembang'];
+                    $newSpec['atb_spesifikasi']   = $atbItems[0]['atb_spesifikasi'];
+                    $newSpec['kategori_kib']      = 'ATB';
+                    $astap->satuan                = 'Paket / Lisensi';
+                    if (!empty($atbItems[0]['atb_judul_nama']) && $targetKib !== 'KEMITRAAN') {
+                        $astap->nama_barang = $atbItems[0]['atb_judul_nama'];
+                    }
+                    unset($newSpec['mesin_items']);
                 } elseif ($targetKib === 'KEMITRAAN') {
                     $kemitraanItems = [];
                     $tujuanKodeForKemitraan = (string) ($validated['tujuan_kode'] ?? ($request->input('tujuan_kode') ?? ($astap->kode_barang ?? '')));
@@ -2006,6 +2027,29 @@ class ReklasifikasiController extends Controller
                             }
                         }
                     }
+                }
+
+                if ($targetKib === 'ATB') {
+                    $targetSpec['kategori_kib'] = 'ATB';
+                    $targetAstap->satuan = 'Paket / Lisensi';
+                    $judulAtb = $targetSpec['atb_judul_nama'] ?? ($targetSpec['atb_nama_software'] ?? null);
+                    if ($judulAtb) {
+                        $targetAstap->nama_barang = $judulAtb;
+                    }
+                    if (empty($targetSpec['atb_items'])) {
+                        $targetSpec['atb_items'] = [[
+                            'atb_judul_nama'    => $judulAtb ?: $targetAstap->nama_barang,
+                            'atb_nama_software' => $judulAtb ?: $targetAstap->nama_barang,
+                            'atb_nama_barang'   => $targetAstap->nama_barang,
+                            'atb_pencipta'      => $targetSpec['atb_pencipta'] ?? ($targetSpec['atb_pengembang'] ?? '-'),
+                            'atb_pengembang'    => $targetSpec['atb_pencipta'] ?? ($targetSpec['atb_pengembang'] ?? '-'),
+                            'atb_spesifikasi'   => $targetSpec['atb_spesifikasi'] ?? '-',
+                            'atb_nilai_satuan'  => $nilaiReklasSplit / max(1, $selectedCount),
+                            'atb_jumlah'        => $selectedCount,
+                            'atb_satuan'        => 'Paket / Lisensi',
+                        ]];
+                    }
+                    unset($targetSpec['mesin_items']);
                 }
 
                 if (in_array($targetKib, ['ASET LAIN', 'ASET LAIN-LAIN', 'ASET LAINNYA'], true)) {

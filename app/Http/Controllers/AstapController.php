@@ -1334,6 +1334,7 @@ class AstapController extends Controller
                     'no_polisi' => $firstItem['mesin_no_polisi'] ?? null,
                     'bahan' => count($allBahan) > 0 ? implode(', ', array_unique($allBahan)) : ($firstItem['mesin_bahan'] ?? null),
                     'ruang_pemegang' => $firstItem['ruang_pemegang_mesin'] ?? null,
+                    'penyedia_telepon' => $data['penyedia_telepon'] ?? null,
                     'mesin_items' => $data['mesin_items']
                 ];
                 $specJson = array_filter($specJson, fn($v) => !is_null($v) && $v !== '');
@@ -2000,6 +2001,7 @@ class AstapController extends Controller
                     'atb_nama_barang' => $namaBarang,
                     'atb_kode_barang' => $kode108Submitted,
                     'ruang_pemegang' => $ruangFirst,
+                    'penyedia_telepon' => $data['penyedia_telepon'] ?? null,
                     'atb_items' => array_values($cleanedAtb)
                 ];
                 $specJson = array_filter($specJson, fn($v) => !is_null($v) && $v !== '');
@@ -2786,6 +2788,7 @@ class AstapController extends Controller
                     'no_polisi' => $firstItem['mesin_no_polisi'] ?? null,
                     'bahan' => count($allBahan) > 0 ? implode(', ', array_unique($allBahan)) : ($firstItem['mesin_bahan'] ?? null),
                     'ruang_pemegang' => $ruangFirst,
+                    'penyedia_telepon' => $data['penyedia_telepon'] ?? ($astap->spesifikasi_json['penyedia_telepon'] ?? null),
                     'mesin_items' => $data['mesin_items']
                 ];
                 $spec = array_filter($spec, fn($v) => !is_null($v) && $v !== '');
@@ -3003,6 +3006,7 @@ class AstapController extends Controller
                     'atb_nama_barang' => $firstItem['atb_nama_barang'] ?? ($data['atb_nama_barang'] ?? null),
                     'atb_kode_barang' => $firstItem['atb_kode_barang'] ?? ($data['atb_kode_barang'] ?? null),
                     'ruang_pemegang' => $ruangFirst,
+                    'penyedia_telepon' => $data['penyedia_telepon'] ?? ($astap->spesifikasi_json['penyedia_telepon'] ?? null),
                     'atb_items' => array_values($cleanedAtb)
                 ];
                 $spec = array_filter($spec, fn($v) => !is_null($v) && $v !== '');
@@ -3071,6 +3075,9 @@ class AstapController extends Controller
             if (isset($data['ppk_nip'])) $astap->ppk_nip = $data['ppk_nip'];
             if (isset($data['keterangan_tambahan']) || isset($data['keterangan'])) {
                 $astap->keterangan_tambahan = $data['keterangan_tambahan'] ?? ($data['keterangan'] ?? null);
+            }
+            if (isset($data['penyedia_telepon']) && !empty($data['penyedia_telepon'])) {
+                $ext['spec']['penyedia_telepon'] = $data['penyedia_telepon'];
             }
             $astap->spesifikasi_json = $ext['spec'];
             $astap->save();

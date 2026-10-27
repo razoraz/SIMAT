@@ -34,6 +34,7 @@ class Astap extends Model
         'penyedia_rekening_nama',
         'penyedia_rekening_nomor',
         'penyedia_alamat',
+        'penyedia_telepon',
 
         // Hibah
         'hibah_pemberi',
@@ -98,6 +99,7 @@ class Astap extends Model
         'penyedia_rekening_nama',
         'penyedia_rekening_nomor',
         'penyedia_alamat',
+        'penyedia_telepon',
         'jenis_pengadaan_id',
         'rekening_belanja_id',
         'category',
@@ -131,6 +133,20 @@ class Astap extends Model
 
     protected static function booted()
     {
+        static::saving(function ($astap) {
+            if (array_key_exists('penyedia_telepon', $astap->pendingExtensionAttributes)) {
+                $tel = $astap->pendingExtensionAttributes['penyedia_telepon'];
+                if ($tel !== null && $tel !== '') {
+                    $spec = $astap->spesifikasi_json ?? [];
+                    if (is_string($spec)) {
+                        $spec = json_decode($spec, true) ?? [];
+                    }
+                    $spec['penyedia_telepon'] = $tel;
+                    $astap->spesifikasi_json = $spec;
+                }
+            }
+        });
+
         static::saved(function ($astap) {
             if ($astap->isBelanjaModal()) {
                 $ext = $astap->pendingExtensionAttributes;
@@ -336,6 +352,11 @@ class Astap extends Model
     public function getPenyediaAlamatAttribute($val = null)
     {
         return $val ?? ($this->pendingExtensionAttributes['penyedia_alamat'] ?? ($this->belanjaModal?->penyedia_alamat ?? null));
+    }
+
+    public function getPenyediaTeleponAttribute($val = null)
+    {
+        return $val ?? ($this->pendingExtensionAttributes['penyedia_telepon'] ?? ($this->spesifikasi_json['penyedia_telepon'] ?? ($this->spesifikasi_json['penyedia_kontak'] ?? null)));
     }
 
     public function getSpkNomorAttribute($val = null)

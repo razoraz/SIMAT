@@ -338,8 +338,11 @@
                     lainnya_keterangan: '',
                     kib_e_type: 'buku',
                     is_extracom: null,
+                    atb_judul_nama: '',
                     atb_nama_software: '',
+                    atb_pencipta: '',
                     atb_pengembang: '',
+                    atb_spesifikasi: '',
                     atb_masa_manfaat: 4,
                     kemitraan_skema: 'Sewa',
                     kemitraan_mitra: '',
@@ -705,8 +708,11 @@
                         jaringan_alamat: 'Kompleks RSUD',
                         lainnya_judul_pencipta: '',
                         lainnya_bahan: 'Kertas / Kanvas / Lainnya',
+                        atb_judul_nama: '',
                         atb_nama_software: '',
+                        atb_pencipta: '',
                         atb_pengembang: '',
+                        atb_spesifikasi: '',
                         atb_masa_manfaat: 4,
                         atb_nomor_lisensi: '',
                     },
@@ -1054,8 +1060,11 @@
                 this.kemitraanSubGroupOverride = null;
 
                 // ATB
-                this.formData.spekBaru.atb_nama_software = spec.nama_software || it.nama_barang || '';
-                this.formData.spekBaru.atb_pengembang = spec.pengembang || '';
+                this.formData.spekBaru.atb_judul_nama = spec.atb_judul_nama || spec.atb_nama_software || spec.nama_software || it.nama_barang || '';
+                this.formData.spekBaru.atb_nama_software = this.formData.spekBaru.atb_judul_nama;
+                this.formData.spekBaru.atb_pencipta = spec.atb_pencipta || spec.atb_pengembang || spec.pengembang || '';
+                this.formData.spekBaru.atb_pengembang = this.formData.spekBaru.atb_pencipta;
+                this.formData.spekBaru.atb_spesifikasi = spec.atb_spesifikasi || spec.spesifikasi || '';
                 this.formData.spekBaru.atb_masa_manfaat = spec.masa_manfaat || 4;
                 this.formData.spekBaru.atb_nomor_lisensi = spec.nomor_lisensi || '';
 
@@ -1556,8 +1565,9 @@
                     if (l.lainnya_kondisi) out['Kondisi Fisik'] = l.lainnya_kondisi;
                 } else if (raw.atb_items && Array.isArray(raw.atb_items) && raw.atb_items[0]) {
                     const a = raw.atb_items[0];
-                    if (a.atb_nama_software) out['Software / Sistem'] = a.atb_nama_software;
-                    if (a.atb_pengembang) out['Pengembang / Vendor'] = a.atb_pengembang;
+                    if (a.atb_judul_nama || a.atb_nama_software) out['Software / Lisensi'] = a.atb_judul_nama || a.atb_nama_software;
+                    if (a.atb_pencipta || a.atb_pengembang) out['Pencipta / Vendor'] = a.atb_pencipta || a.atb_pengembang;
+                    if (a.atb_spesifikasi) out['Spesifikasi'] = a.atb_spesifikasi;
                     if (a.atb_masa_manfaat) out['Masa Manfaat'] = a.atb_masa_manfaat + ' Tahun';
                     if (a.atb_nomor_lisensi) out['No. Lisensi / HAKI'] = a.atb_nomor_lisensi;
                 } else {
@@ -1571,7 +1581,9 @@
                     if (raw.konstruksi_bertingkat || raw.gedung_konstruksi_bertingkat) out['Konstruksi'] = (raw.konstruksi_bertingkat || raw.gedung_konstruksi_bertingkat) + ' (' + (raw.konstruksi_beton || raw.gedung_konstruksi_beton || 'Beton') + ')';
                     if (raw.luas_lantai_m2 || raw.gedung_luas_lantai_m2) out['Luas Lantai'] = (raw.luas_lantai_m2 || raw.gedung_luas_lantai_m2) + ' m²';
                     if (raw.konstruksi || raw.jaringan_konstruksi) out['Konstruksi'] = raw.konstruksi || raw.jaringan_konstruksi;
-                    if (raw.nama_software || raw.atb_nama_software) out['Software'] = raw.nama_software || raw.atb_nama_software;
+                    if (raw.atb_judul_nama || raw.nama_software || raw.atb_nama_software) out['Software / Lisensi'] = raw.atb_judul_nama || raw.nama_software || raw.atb_nama_software;
+                    if (raw.atb_pencipta || raw.atb_pengembang) out['Pencipta / Vendor'] = raw.atb_pencipta || raw.atb_pengembang;
+                    if (raw.atb_spesifikasi) out['Spesifikasi'] = raw.atb_spesifikasi;
                     if (raw.alamat || raw.tanah_alamat || raw.gedung_alamat || raw.jaringan_alamat) out['Alamat Lokasi'] = raw.alamat || raw.tanah_alamat || raw.gedung_alamat || raw.jaringan_alamat;
                 }
 

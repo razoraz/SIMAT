@@ -1482,27 +1482,33 @@
                 <!-- Form Spesifik: ATB - Aset Tak Berwujud -->
                 <template x-if="formData.tujuan_kib === 'ATB'">
                     <div class="space-y-3">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Nama Software / Sistem Informasi:</label>
-                                <input type="text" x-model="formData.spekBaru.atb_nama_software" placeholder="Contoh: Modul SIMRS Radiologi & Bridging BPJS"
-                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Vendor / Pengembang Software:</label>
-                                <input type="text" x-model="formData.spekBaru.atb_pengembang" placeholder="Contoh: PT Medika Teknologi Solusindo"
-                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Estimasi Masa Manfaat (Tahun):</label>
-                                <input type="number" min="1" max="20" x-model="formData.spekBaru.atb_masa_manfaat" placeholder="4"
-                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Nomor Registrasi Lisensi / HAKI:</label>
-                                <input type="text" x-model="formData.spekBaru.atb_nomor_lisensi" placeholder="Contoh: LIC-SIMRS-2026-009"
-                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none">
-                            </div>
+                        <!-- Judul / Nama Software & Lisensi -->
+                        <div>
+                            <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Judul / Nama Software &amp; Lisensi</label>
+                            <input type="text" 
+                                   x-model="formData.spekBaru.atb_judul_nama" 
+                                   @input="formData.spekBaru.atb_nama_software = formData.spekBaru.atb_judul_nama;"
+                                   placeholder="Aplikasi SIMAT-RK (Sistem Informasi Manajemen Aset)..."
+                                   class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500">
+                        </div>
+
+                        <!-- Pencipta / Vendor / Pengembang -->
+                        <div>
+                            <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Pencipta / Vendor / Pengembang</label>
+                            <input type="text" 
+                                   x-model="formData.spekBaru.atb_pencipta" 
+                                   @input="formData.spekBaru.atb_pengembang = formData.spekBaru.atb_pencipta;"
+                                   placeholder="Tim IT SIMRS RSUD & Pengembang Sistem"
+                                   class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500">
+                        </div>
+
+                        <!-- Spesifikasi Software / Hak Cipta -->
+                        <div>
+                            <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Spesifikasi Software / Hak Cipta</label>
+                            <textarea rows="2" 
+                                      x-model="formData.spekBaru.atb_spesifikasi" 
+                                      placeholder="Web-Based, Multi-Role Access, Integrasi SatuSehat & RME..."
+                                      class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-cyan-300 focus:outline-none focus:border-cyan-500 resize-none"></textarea>
                         </div>
                     </div>
                 </template>

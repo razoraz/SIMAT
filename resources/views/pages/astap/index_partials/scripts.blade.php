@@ -10217,8 +10217,11 @@
                     lainnya_bahan: 'Kertas / Kanvas / Lainnya',
 
                     // ATB - Aset Tak Berwujud
+                    atb_judul_nama: '',
                     atb_nama_software: '',
+                    atb_pencipta: '',
                     atb_pengembang: '',
+                    atb_spesifikasi: '',
                     atb_masa_manfaat: '4',
                     atb_nomor_lisensi: '',
 
@@ -10679,12 +10682,12 @@
                         });
                     } else if (Array.isArray(spec.atb_items) && spec.atb_items.length > 0) {
                         this.reklasExtracomItems = spec.atb_items.map((m, idx) => {
-                            const displayName = resolveItemName(m.atb_nama_software || m.atb_nama_barang, '', '', 'Software #' + (idx + 1));
+                            const displayName = resolveItemName(m.atb_judul_nama || m.atb_nama_software || m.atb_nama_barang, '', '', 'Software #' + (idx + 1));
                             return {
                                 nama_barang: displayName,
-                                raw_nama: m.atb_nama_software || m.atb_nama_barang || '',
+                                raw_nama: m.atb_judul_nama || m.atb_nama_software || m.atb_nama_barang || '',
                                 rekening_label: (rekName !== displayName) ? rekName : '',
-                                jumlah_volume: parseInt(m.atb_jumlah_barang) || 1,
+                                jumlah_volume: parseInt(m.atb_jumlah_barang || m.atb_jumlah) || 1,
                                 satuan: m.atb_satuan || item.satuan || 'Unit',
                                 harga_satuan: parseFloat(m.atb_nilai_satuan || m.atb_harga_satuan || item.harga_satuan || 0),
                                 kode_barang: m.atb_kode_barang || item.kode_barang || '',
@@ -10930,23 +10933,14 @@
                     this.searchReklasSubRincian = '';
                     this.isReklasSubRincianOpen = false;
 
-                    // Jika sub-sub rincian sebelumnya tidak cocok dengan sub rincian baru, reset
-                    if (this.reklasSubSubRincianKode && !this.reklasSubSubRincianKode.startsWith(s.kode)) {
-                        this.reklasSubSubRincianKode = '';
-                        this.reklasSubSubRincianNama = '';
-                        this.searchReklasSubSubRincian = '';
-                    }
+                    // Reset Sub-Sub Rincian agar pengguna dapat memilih sendiri secara manual
+                    this.reklasSubSubRincianKode = '';
+                    this.reklasSubSubRincianNama = '';
+                    this.searchReklasSubSubRincian = '';
+                    this.isReklasSubSubRincianOpen = false;
 
-                    // Auto-suggest Sub-Sub Rincian jika ada yang cocok dengan KIB Asal
-                    if (s.subSubRincian && s.subSubRincian.length > 0) {
-                        const matchedSsr = s.subSubRincian.find(ssr => this.getReklas108ItemMeta(ssr).isOriginMatch);
-                        if (matchedSsr) {
-                            this.selectReklasSubSubRincian(matchedSsr);
-                        }
-                    }
-
-                    this.reklasTujuanKode = this.reklasSubSubRincianKode || s.kode;
-                    this.reklasTujuanNama = this.reklasSubSubRincianNama || s.nama;
+                    this.reklasTujuanKode = s.kode;
+                    this.reklasTujuanNama = s.nama;
                     if (this.reklasTujuanKib === 'KEMITRAAN') {
                         this.reklasKemitraanTipeFisik = this.detectKemitraanPhysicalType();
                         this.syncKemitraanSkema(s.kode, s.nama);
@@ -10961,8 +10955,12 @@
                     this.reklasSubRincianNama = '';
                     this.searchReklasSubRincian = '';
                     this.isReklasSubRincianOpen = false;
-                    this.reklasTujuanKode = this.reklasSubSubRincianKode || '';
-                    this.reklasTujuanNama = this.reklasSubSubRincianNama || '';
+                    this.reklasSubSubRincianKode = '';
+                    this.reklasSubSubRincianNama = '';
+                    this.searchReklasSubSubRincian = '';
+                    this.isReklasSubSubRincianOpen = false;
+                    this.reklasTujuanKode = '';
+                    this.reklasTujuanNama = '';
                     if (this.reklasTujuanKib === 'KEMITRAAN') {
                         this.reklasKemitraanTipeFisik = this.detectKemitraanPhysicalType();
                         this.syncKemitraanSkema();
@@ -11377,6 +11375,7 @@
                             currItem.gedung_nama_bangunan,
                             currItem.jaringan_nama,
                             currItem.tanah_nama_barang,
+                            currItem.atb_judul_nama,
                             currItem.atb_nama_software,
                             currItem.nama_barang,
                             (this.reklasExtracomItems && this.reklasExtracomItems[idx] ? this.reklasExtracomItems[idx].nama_barang : null),
@@ -11599,8 +11598,11 @@
                             })(),
 
                             // ATB - Aset Tak Berwujud
-                            atb_nama_software: aItem.atb_nama_software || spec.nama_software || itemNama || '',
-                            atb_pengembang: aItem.atb_pengembang || spec.pengembang || '',
+                            atb_judul_nama: aItem.atb_judul_nama || aItem.atb_nama_software || spec.atb_judul_nama || spec.nama_software || itemNama || '',
+                            atb_nama_software: aItem.atb_judul_nama || aItem.atb_nama_software || spec.atb_judul_nama || spec.nama_software || itemNama || '',
+                            atb_pencipta: aItem.atb_pencipta || aItem.atb_pengembang || spec.atb_pencipta || spec.pengembang || '',
+                            atb_pengembang: aItem.atb_pencipta || aItem.atb_pengembang || spec.atb_pencipta || spec.pengembang || '',
+                            atb_spesifikasi: aItem.atb_spesifikasi || spec.atb_spesifikasi || spec.spesifikasi || '',
                             atb_masa_manfaat: aItem.atb_masa_manfaat || spec.masa_manfaat || '4',
                             atb_nomor_lisensi: aItem.atb_nomor_lisensi || spec.nomor_lisensi || '',
 
@@ -11742,6 +11744,16 @@
                             this.reklasSpekBaru.lainnya_hewan_spesifikasi = this.reklasSpekBaru.lainnya_spesifikasi;
                         }
 
+                        if (this.reklasTujuanKib === 'ATB') {
+                            if (this.reklasSpekBaru.atb_judul_nama) {
+                                this.reklasSpekBaru.atb_nama_software = this.reklasSpekBaru.atb_judul_nama;
+                                this.reklasSpekBaru.item_nama = this.reklasSpekBaru.atb_judul_nama;
+                            }
+                            if (this.reklasSpekBaru.atb_pencipta) {
+                                this.reklasSpekBaru.atb_pengembang = this.reklasSpekBaru.atb_pencipta;
+                            }
+                        }
+
                         if (this.reklasTujuanKib === 'ASET LAIN' || this.reklasTujuanKib === 'ASET LAIN-LAIN' || (this.reklasTargetJenisKode && this.reklasTargetJenisKode.startsWith('1.5.4'))) {
                             const alk = this.reklasSpekBaru.aset_lain_kondisi || 'Rusak Berat (Menunggu Penghapusan)';
                             let std = 'Rusak Berat';
@@ -11829,7 +11841,7 @@
 
                     // ATB
                     if (cat === 'ATB') {
-                        const sw = (item.atb_nama_software || item.item_nama || '').trim();
+                        const sw = (item.atb_judul_nama || item.atb_nama_software || item.item_nama || '').trim();
                         const astapName = (this.selectedAstapReklas?.nama_barang || '').trim();
                         if (sw && sw !== astapName && !sw.toLowerCase().startsWith('software #')) {
                             return `Software #${num}: ${sw}`;
