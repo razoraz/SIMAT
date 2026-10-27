@@ -65,26 +65,21 @@ class RecycleBinController extends Controller
                 ];
             })->values()->toArray();
 
-            $deletedAt = $m->deleted_at ? Carbon::parse($m->deleted_at)->timezone('Asia/Jakarta') : null;
-
             return [
-                'id'                   => $m->id,
-                'kode'                 => $m->nomor_bamb,
-                'jenis'                => $m->jenis_mutasi,
-                'nama'                 => $itemSummary,
-                'kode_barang'          => $firstRegister?->nibar ?? '-',
-                'item_count'           => $itemCount,
-                'items'                => $itemsMapped,
-                'asal'                 => $m->ruangan_asal,
-                'tujuan'               => $m->ruangan_tujuan,
-                'pemohon'              => $m->penanggung_jawab_asal,
-                'penerima_pj'          => $m->penanggung_jawab_tujuan,
-                'status_terakhir'      => $m->status,
-                'alasan_mutasi'        => $m->alasan_mutasi ?: '-',
-                'deleted_by'           => $m->deleted_by ?: 'Administrator',
-                'deleted_at'           => $deletedAt ? $deletedAt->locale('id')->translatedFormat('d M Y, H:i') . ' WIB' : '-',
-                'deleted_at_relative'  => $deletedAt ? $deletedAt->locale('id')->diffForHumans() : '-',
-                'deleted_at_raw'       => $deletedAt ? $deletedAt->toIso8601String() : null,
+                'id'                  => $m->id,
+                'kode'                => $m->nomor_bamb,
+                'jenis'               => $m->jenis_mutasi,
+                'nama'                => $itemSummary,
+                'kode_barang'         => $firstRegister?->nibar ?? '-',
+                'item_count'          => $itemCount,
+                'items'               => $itemsMapped,
+                'asal'                => $m->ruangan_asal,
+                'tujuan'              => $m->ruangan_tujuan,
+                'pemohon'             => $m->penanggung_jawab_asal,
+                'penerima_pj'         => $m->penanggung_jawab_tujuan,
+                'status_terakhir'     => $m->status,
+                'alasan_mutasi'       => $m->alasan_mutasi ?: '-',
+                ...$this->formatDeletedInfo($m->deleted_at, $m->deleted_by),
             ];
         });
 
@@ -154,7 +149,6 @@ class RecycleBinController extends Controller
             }
 
             $itemCount = count($itemsMapped);
-            $deletedAt = $m->deleted_at ? Carbon::parse($m->deleted_at)->timezone('Asia/Jakarta') : null;
             $nilaiReal = (float) ($m->nilai_perolehan ?: ($astap?->total_realisasi ?: 0));
             $firstNibar = $itemsMapped[0]['nibar'] ?? '-';
 
@@ -220,10 +214,7 @@ class RecycleBinController extends Controller
                 'nilai_perolehan_formatted' => 'Rp ' . number_format($nilaiReal, 0, ',', '.'),
                 'dokumen_lampiran'          => $m->dokumen_lampiran,
                 'is_eksternal'              => true,
-                'deleted_by'                => $m->deleted_by ?: 'Administrator',
-                'deleted_at'                => $deletedAt ? $deletedAt->locale('id')->translatedFormat('d M Y, H:i') . ' WIB' : '-',
-                'deleted_at_relative'       => $deletedAt ? $deletedAt->locale('id')->diffForHumans() : '-',
-                'deleted_at_raw'            => $deletedAt ? $deletedAt->toIso8601String() : null,
+                ...$this->formatDeletedInfo($m->deleted_at, $m->deleted_by),
             ];
         });
 
@@ -251,7 +242,6 @@ class RecycleBinController extends Controller
 
         $deletedBelanjaModals = $rawDeletedBelanjaModals->map(function ($a) {
             $regCount = $a->registers->count();
-            $deletedAt = $a->deleted_at ? Carbon::parse($a->deleted_at)->timezone('Asia/Jakarta') : null;
             $bm = $a->belanjaModal;
 
             $registersMapped = $a->registers->map(function ($r, $idx) {
@@ -292,10 +282,7 @@ class RecycleBinController extends Controller
                 'item_count'           => $regCount,
                 'items'                => $registersMapped,
                 'status_terakhir'      => 'Terhapus',
-                'deleted_by'           => $a->deleted_by ?: 'Administrator',
-                'deleted_at'           => $deletedAt ? $deletedAt->locale('id')->translatedFormat('d M Y, H:i') . ' WIB' : '-',
-                'deleted_at_relative'  => $deletedAt ? $deletedAt->locale('id')->diffForHumans() : '-',
-                'deleted_at_raw'       => $deletedAt ? $deletedAt->toIso8601String() : null,
+                ...$this->formatDeletedInfo($a->deleted_at, $a->deleted_by),
             ];
         });
 
@@ -318,7 +305,6 @@ class RecycleBinController extends Controller
             ->get();
 
         $deletedBelanjaModalNibars = $rawDeletedBelanjaModalNibars->map(function ($r) {
-            $deletedAt = $r->deleted_at ? Carbon::parse($r->deleted_at)->timezone('Asia/Jakarta') : null;
             return [
                 'id'                  => $r->id,
                 'astap_id'            => $r->astap_id,
@@ -333,10 +319,7 @@ class RecycleBinController extends Controller
                 'status'              => $r->status ?: 'Tersedia',
                 'spk_nomor'           => $r->astap?->spk_nomor ?: '-',
                 'tahun'               => $r->astap?->tahun_perolehan ?: '-',
-                'deleted_by'          => $r->deleted_by ?: 'Administrator',
-                'deleted_at'          => $deletedAt ? $deletedAt->locale('id')->translatedFormat('d M Y, H:i') . ' WIB' : '-',
-                'deleted_at_relative' => $deletedAt ? $deletedAt->locale('id')->diffForHumans() : '-',
-                'deleted_at_raw'      => $deletedAt ? $deletedAt->toIso8601String() : null,
+                ...$this->formatDeletedInfo($r->deleted_at, $r->deleted_by),
             ];
         });
 
@@ -363,45 +346,12 @@ class RecycleBinController extends Controller
         $deletedAstaps = $rawDeletedAstaps->map(function ($a) {
             $regCount = $a->registers->count();
             $firstReg = $a->registers->first();
-            $deletedAt = $a->deleted_at ? Carbon::parse($a->deleted_at)->timezone('Asia/Jakarta') : null;
 
             $ket = (string) ($a->keterangan_tambahan ?? '');
             $mutBatal = $a->mutasiEksternals ? $a->mutasiEksternals->firstWhere('status', 'Dibatalkan') : null;
             $isBatal = str_contains(strtolower($ket), 'dibatalkan') || !empty($mutBatal);
             $alasanBatal = $mutBatal?->alasan_batal 
                 ?: (str_contains(strtolower($ket), 'dibatalkan') ? preg_replace('/^.*?dibatalkan[:\s]*/i', '', $ket) : null);
-
-            $sumberDana = $a->sumber_dana;
-            if (empty($sumberDana)) {
-                if (str_starts_with((string) $a->kode_108, '1.5.2')) {
-                    $sumberDana = 'kemitraan';
-                } elseif ($a->belanjaBarang) {
-                    $sumberDana = 'belanja_barang';
-                } else {
-                    $sumberDana = 'belanja_modal';
-                }
-            }
-            if (in_array($sumberDana, ['belanja_barang', 'belanja_rekening'])) {
-                $sumberDana = 'belanja_barang';
-            } elseif (in_array($sumberDana, ['mutasi_eksternal', 'pelimpahan_skpd', 'pelimpahan', 'mutasi_masuk', 'mutasi'])) {
-                $sumberDana = 'mutasi';
-            }
-            $sumberDanaLabel = match($sumberDana) {
-                'belanja_modal'  => 'Belanja Modal',
-                'belanja_barang' => 'Belanja Barang',
-                'kemitraan'      => 'Kemitraan (KSO)',
-                'hibah'          => 'Hibah',
-                'mutasi'         => 'Mutasi Eksternal',
-                default          => 'Umum / Lainnya',
-            };
-            $sumberDanaIcon = match($sumberDana) {
-                'belanja_modal'  => '🏛️',
-                'belanja_barang' => '📦',
-                'kemitraan'      => '🤝',
-                'hibah'          => '🎁',
-                'mutasi'         => '🔄',
-                default          => '📦',
-            };
 
             $registersMapped = $a->registers->map(function ($r, $idx) {
                 return [
@@ -423,9 +373,7 @@ class RecycleBinController extends Controller
                 'total_realisasi'     => 'Rp ' . number_format($a->total_realisasi ?: ($a->jumlah_anggaran ?: 0), 0, ',', '.'),
                 'harga_satuan'        => 'Rp ' . number_format($a->harga_satuan ?: 0, 0, ',', '.'),
                 'category'            => $a->category ?: 'KIB B',
-                'sumber_dana'         => $sumberDana,
-                'sumber_dana_label'   => $sumberDanaLabel,
-                'sumber_dana_icon'    => $sumberDanaIcon,
+                ...$this->resolveSumberDana($a->sumber_dana, $a),
                 'penyedia'            => $a->penyedia_nama ?: '-',
                 'spk_nomor'           => $a->spk_nomor ?: '-',
                 'rekening'            => $a->rekeningBelanja?->nama_belanja ?: '-',
@@ -434,10 +382,7 @@ class RecycleBinController extends Controller
                 'is_batal'            => $isBatal,
                 'alasan_batal'        => $alasanBatal,
                 'status_terakhir'     => $isBatal ? 'Dibatalkan' : 'Terhapus',
-                'deleted_by'          => $a->deleted_by ?: 'Administrator',
-                'deleted_at'          => $deletedAt ? $deletedAt->locale('id')->translatedFormat('d M Y, H:i') . ' WIB' : '-',
-                'deleted_at_relative' => $deletedAt ? $deletedAt->locale('id')->diffForHumans() : '-',
-                'deleted_at_raw'      => $deletedAt ? $deletedAt->toIso8601String() : null,
+                ...$this->formatDeletedInfo($a->deleted_at, $a->deleted_by),
             ];
         });
 
@@ -455,40 +400,6 @@ class RecycleBinController extends Controller
             ->get();
 
         $deletedNibars = $rawDeletedNibars->map(function ($r) {
-            $deletedAt = $r->deleted_at ? Carbon::parse($r->deleted_at)->timezone('Asia/Jakarta') : null;
-
-            $astapSumberDana = $r->astap?->sumber_dana;
-            if (empty($astapSumberDana)) {
-                if (str_starts_with((string) $r->astap?->kode_108, '1.5.2')) {
-                    $astapSumberDana = 'kemitraan';
-                } elseif ($r->astap?->belanjaBarang) {
-                    $astapSumberDana = 'belanja_barang';
-                } else {
-                    $astapSumberDana = 'belanja_modal';
-                }
-            }
-            if (in_array($astapSumberDana, ['belanja_barang', 'belanja_rekening'])) {
-                $astapSumberDana = 'belanja_barang';
-            } elseif (in_array($astapSumberDana, ['mutasi_eksternal', 'pelimpahan_skpd', 'pelimpahan', 'mutasi_masuk', 'mutasi'])) {
-                $astapSumberDana = 'mutasi';
-            }
-            $astapSumberDanaLabel = match($astapSumberDana) {
-                'belanja_modal'  => 'Belanja Modal',
-                'belanja_barang' => 'Belanja Barang',
-                'kemitraan'      => 'Kemitraan (KSO)',
-                'hibah'          => 'Hibah',
-                'mutasi'         => 'Mutasi Eksternal',
-                default          => 'Umum / Lainnya',
-            };
-            $astapSumberDanaIcon = match($astapSumberDana) {
-                'belanja_modal'  => '🏛️',
-                'belanja_barang' => '📦',
-                'kemitraan'      => '🤝',
-                'hibah'          => '🎁',
-                'mutasi'         => '🔄',
-                default          => '📦',
-            };
-
             return [
                 'id'                  => $r->id,
                 'astap_id'            => $r->astap_id,
@@ -498,18 +409,13 @@ class RecycleBinController extends Controller
                 'nama_aset_induk'     => $r->astap?->nama_barang,
                 'kode_108'            => $r->astap?->kode_108 ?: ($r->astap?->jenisAstap?->kode_108 ?: '-'),
                 'kategori'            => $r->astap?->category ?: ($r->astap?->jenisAstap?->kategori ?? 'KIB B'),
-                'sumber_dana'         => $astapSumberDana,
-                'sumber_dana_label'   => $astapSumberDanaLabel,
-                'sumber_dana_icon'    => $astapSumberDanaIcon,
+                ...$this->resolveSumberDana($r->astap?->sumber_dana, $r->astap),
                 'ruang'               => $r->ruang_pemegang ?: ($r->unit?->nama ?: 'Gudang Perbekalan'),
                 'kondisi'             => $r->kondisi ?: 'Baik',
                 'status'              => $r->status ?: 'Tersedia',
                 'spk_nomor'           => $r->astap?->spk_nomor ?: '-',
                 'tahun'               => $r->astap?->tahun_perolehan ?: '-',
-                'deleted_by'          => $r->deleted_by ?: 'Administrator',
-                'deleted_at'          => $deletedAt ? $deletedAt->locale('id')->translatedFormat('d M Y, H:i') . ' WIB' : '-',
-                'deleted_at_relative' => $deletedAt ? $deletedAt->locale('id')->diffForHumans() : '-',
-                'deleted_at_raw'      => $deletedAt ? $deletedAt->toIso8601String() : null,
+                ...$this->formatDeletedInfo($r->deleted_at, $r->deleted_by),
             ];
         });
 
@@ -523,7 +429,6 @@ class RecycleBinController extends Controller
             ->get();
 
         $deletedDistribusis = $rawDeletedDistribusis->map(function ($d) {
-            $deletedAt = $d->deleted_at ? Carbon::parse($d->deleted_at)->timezone('Asia/Jakarta') : null;
             $tglCarbon = $d->tanggal_distribusi ? Carbon::parse($d->tanggal_distribusi)->timezone('Asia/Jakarta') : ($d->created_at ? Carbon::parse($d->created_at)->timezone('Asia/Jakarta') : null);
             $totalQty  = $d->items->sum('qty');
             $itemsMapped = $d->items->map(function ($it, $idx) {
@@ -550,10 +455,7 @@ class RecycleBinController extends Controller
                 'item_count'          => $d->items->count(),
                 'items'               => $itemsMapped,
                 'keterangan'          => $d->keterangan ?: '-',
-                'deleted_by'          => $d->deleted_by ?: 'Administrator',
-                'deleted_at'          => $deletedAt ? $deletedAt->locale('id')->translatedFormat('d M Y, H:i') . ' WIB' : '-',
-                'deleted_at_relative' => $deletedAt ? $deletedAt->locale('id')->diffForHumans() : '-',
-                'deleted_at_raw'      => $deletedAt ? $deletedAt->toIso8601String() : null,
+                ...$this->formatDeletedInfo($d->deleted_at, $d->deleted_by),
             ];
         });
 
@@ -567,7 +469,6 @@ class RecycleBinController extends Controller
             ->get();
 
         $deletedHibahs = $rawDeletedHibahs->map(function ($h) {
-            $deletedAt = $h->deleted_at ? Carbon::parse($h->deleted_at)->timezone('Asia/Jakarta') : null;
             $tglBast = $h->tanggal_bast ? Carbon::parse($h->tanggal_bast)->timezone('Asia/Jakarta') : null;
 
             $namaBarang = $h->astap?->nama_barang ?: ($h->nama_barang ?: 'Barang Hibah');
@@ -588,10 +489,7 @@ class RecycleBinController extends Controller
                 'triwulan'            => $h->triwulan ?: '-',
                 'keterangan'          => $h->keterangan ?: '-',
                 'alasan_hapus'        => 'Dipindahkan ke Tong Sampah',
-                'deleted_by'          => $h->deleted_by ?: 'Administrator',
-                'deleted_at'          => $deletedAt ? $deletedAt->locale('id')->translatedFormat('d M Y, H:i') . ' WIB' : '-',
-                'deleted_at_relative' => $deletedAt ? $deletedAt->locale('id')->diffForHumans() : '-',
-                'deleted_at_raw'      => $deletedAt ? $deletedAt->toIso8601String() : null,
+                ...$this->formatDeletedInfo($h->deleted_at, $h->deleted_by),
             ];
         });
 
@@ -605,7 +503,6 @@ class RecycleBinController extends Controller
             ->get();
 
         $deletedUnits = $rawDeletedUnits->map(function ($u) {
-            $deletedAt = $u->deleted_at ? Carbon::parse($u->deleted_at)->timezone('Asia/Jakarta') : null;
             $bastCount = \App\Models\Distribusi::where('unit_id', $u->id)->count();
             return [
                 'id'                  => $u->id,
@@ -617,10 +514,7 @@ class RecycleBinController extends Controller
                 'email'               => $u->email ?: ($u->user?->email ?: '-'),
                 'total_aset'          => $u->total_aset ?: 0,
                 'total_bast'          => $bastCount,
-                'deleted_by'          => $u->deleted_by ?: 'Administrator',
-                'deleted_at'          => $deletedAt ? $deletedAt->locale('id')->translatedFormat('d M Y, H:i') . ' WIB' : '-',
-                'deleted_at_relative' => $deletedAt ? $deletedAt->locale('id')->diffForHumans() : '-',
-                'deleted_at_raw'      => $deletedAt ? $deletedAt->toIso8601String() : null,
+                ...$this->formatDeletedInfo($u->deleted_at, $u->deleted_by),
             ];
         });
 
@@ -634,7 +528,6 @@ class RecycleBinController extends Controller
             ->get();
 
         $deletedUsers = $rawDeletedUsers->map(function ($u) {
-            $deletedAt = $u->deleted_at ? Carbon::parse($u->deleted_at)->timezone('Asia/Jakarta') : null;
             return [
                 'id'                  => $u->id,
                 'name'                => $u->name,
@@ -646,10 +539,7 @@ class RecycleBinController extends Controller
                 'penugasan'           => $u->penugasan ?: '-',
                 'status'              => $u->status ?: 'Aktif',
                 'permissions'         => $u->permissions ?? [],
-                'deleted_by'          => $u->deleted_by ?: 'Administrator',
-                'deleted_at'          => $deletedAt ? $deletedAt->locale('id')->translatedFormat('d M Y, H:i') . ' WIB' : '-',
-                'deleted_at_relative' => $deletedAt ? $deletedAt->locale('id')->diffForHumans() : '-',
-                'deleted_at_raw'      => $deletedAt ? $deletedAt->toIso8601String() : null,
+                ...$this->formatDeletedInfo($u->deleted_at, $u->deleted_by),
             ];
         });
 
@@ -729,10 +619,7 @@ class RecycleBinController extends Controller
                 'keterangan'          => $k->keterangan ?: '-',
                 'alasan_hapus'        => 'Dipindahkan ke Tong Sampah',
                 'registers'           => $registersMapped,
-                'deleted_by'          => $k->deleted_by ?: 'Administrator',
-                'deleted_at'          => $deletedAt ? $deletedAt->locale('id')->translatedFormat('d M Y, H:i') . ' WIB' : '-',
-                'deleted_at_relative' => $deletedAt ? $deletedAt->locale('id')->diffForHumans() : '-',
-                'deleted_at_raw'      => $deletedAt ? $deletedAt->toIso8601String() : null,
+                ...$this->formatDeletedInfo($k->deleted_at, $k->deleted_by),
             ];
         });
 
@@ -746,7 +633,6 @@ class RecycleBinController extends Controller
             ->get();
 
         $deletedBelanjaBarangs = $rawDeletedBelanjaBarangs->map(function ($b) {
-            $deletedAt  = $b->deleted_at ? Carbon::parse($b->deleted_at)->timezone('Asia/Jakarta') : null;
             $tglFaktur  = $b->tanggal_faktur ? Carbon::parse($b->tanggal_faktur)->timezone('Asia/Jakarta') : null;
 
             $namaBarang = $b->astap?->nama_barang ?: 'Barang Belanja';
@@ -782,10 +668,7 @@ class RecycleBinController extends Controller
                 'keterangan'          => $b->keterangan ?: '-',
                 'alasan_hapus'        => 'Dipindahkan ke Tong Sampah',
                 'registers'           => $registersMapped,
-                'deleted_by'          => $b->deleted_by ?: 'Administrator',
-                'deleted_at'          => $deletedAt ? $deletedAt->locale('id')->translatedFormat('d M Y, H:i') . ' WIB' : '-',
-                'deleted_at_relative' => $deletedAt ? $deletedAt->locale('id')->diffForHumans() : '-',
-                'deleted_at_raw'      => $deletedAt ? $deletedAt->toIso8601String() : null,
+                ...$this->formatDeletedInfo($b->deleted_at, $b->deleted_by),
             ];
         });
 
@@ -799,7 +682,6 @@ class RecycleBinController extends Controller
             ->get();
 
         $deletedReklas = $rawDeletedReklas->map(function ($r) {
-            $deletedAt  = $r->deleted_at ? Carbon::parse($r->deleted_at)->timezone('Asia/Jakarta') : null;
             $tglReklas  = $r->tanggal_reklas ? Carbon::parse($r->tanggal_reklas)->timezone('Asia/Jakarta') : null;
             $namaBarang = $r->astap?->nama_barang ?: ($r->tujuan_nama ?: 'Aset Reklasifikasi');
             $kodeBarang = $r->tujuan_kode ?: ($r->astap?->kode_108 ?: ($r->asal_kode ?: '-'));
@@ -822,10 +704,7 @@ class RecycleBinController extends Controller
                 'triwulan'            => $r->triwulan ?: '-',
                 'keterangan'          => $r->alasan_reklas ?: ($r->keterangan ?: '-'),
                 'alasan_hapus'        => 'Dipindahkan ke Tong Sampah',
-                'deleted_by'          => $r->deleted_by ?: 'Administrator',
-                'deleted_at'          => $deletedAt ? $deletedAt->locale('id')->translatedFormat('d M Y, H:i') . ' WIB' : '-',
-                'deleted_at_relative' => $deletedAt ? $deletedAt->locale('id')->diffForHumans() : '-',
-                'deleted_at_raw'      => $deletedAt ? $deletedAt->toIso8601String() : null,
+                ...$this->formatDeletedInfo($r->deleted_at, $r->deleted_by),
             ];
         });
 
@@ -849,7 +728,6 @@ class RecycleBinController extends Controller
             ->get();
 
         $deletedKemitraanNibars = $rawDeletedKemitraanNibars->map(function ($r) {
-            $deletedAt = $r->deleted_at ? Carbon::parse($r->deleted_at)->timezone('Asia/Jakarta') : null;
             $kem = $r->astap?->kemitraan ?: ($r->astap?->objekKemitraans?->first());
             return [
                 'id'                  => $r->id,
@@ -867,10 +745,7 @@ class RecycleBinController extends Controller
                 'kondisi'             => $r->kondisi ?: 'Baik',
                 'status'              => $r->status ?: 'Tersedia',
                 'tahun'               => $r->astap?->tahun_perolehan ?: '-',
-                'deleted_by'          => $r->deleted_by ?: 'Administrator',
-                'deleted_at'          => $deletedAt ? $deletedAt->locale('id')->translatedFormat('d M Y, H:i') . ' WIB' : '-',
-                'deleted_at_relative' => $deletedAt ? $deletedAt->locale('id')->diffForHumans() : '-',
-                'deleted_at_raw'      => $deletedAt ? $deletedAt->toIso8601String() : null,
+                ...$this->formatDeletedInfo($r->deleted_at, $r->deleted_by),
             ];
         });
 
@@ -910,7 +785,6 @@ class RecycleBinController extends Controller
             ->get();
 
         $deletedMutasiEksternalNibars = $rawDeletedMutasiEksternalNibars->map(function ($r) {
-            $deletedAt = $r->deleted_at ? Carbon::parse($r->deleted_at)->timezone('Asia/Jakarta') : null;
             $mut = $r->mutasiEksternalRegisters?->firstWhere('mutasiEksternal.is_deleted', 0)?->mutasiEksternal
                 ?? $r->mutasiEksternalRegisters?->first()?->mutasiEksternal
                 ?? $r->astap?->mutasiEksternals?->firstWhere('is_deleted', 0)
@@ -937,10 +811,7 @@ class RecycleBinController extends Controller
                 'kondisi'             => $r->kondisi ?: 'Baik',
                 'status'              => $r->status ?: 'Tersedia',
                 'tahun'               => $r->astap?->tahun_perolehan ?: '-',
-                'deleted_by'          => $r->deleted_by ?: 'Administrator',
-                'deleted_at'          => $deletedAt ? $deletedAt->locale('id')->translatedFormat('d M Y, H:i') . ' WIB' : '-',
-                'deleted_at_relative' => $deletedAt ? $deletedAt->locale('id')->diffForHumans() : '-',
-                'deleted_at_raw'      => $deletedAt ? $deletedAt->toIso8601String() : null,
+                ...$this->formatDeletedInfo($r->deleted_at, $r->deleted_by),
             ];
         });
 
@@ -959,7 +830,6 @@ class RecycleBinController extends Controller
             ->get();
 
         $deletedHibahNibars = $rawDeletedHibahNibars->map(function ($r) {
-            $deletedAt = $r->deleted_at ? Carbon::parse($r->deleted_at)->timezone('Asia/Jakarta') : null;
             $hib = $r->astap?->hibahs?->first();
             return [
                 'id'                  => $r->id,
@@ -977,10 +847,7 @@ class RecycleBinController extends Controller
                 'kondisi'             => $r->kondisi ?: 'Baik',
                 'status'              => $r->status ?: 'Tersedia',
                 'tahun'               => $r->astap?->tahun_perolehan ?: '-',
-                'deleted_by'          => $r->deleted_by ?: 'Administrator',
-                'deleted_at'          => $deletedAt ? $deletedAt->locale('id')->translatedFormat('d M Y, H:i') . ' WIB' : '-',
-                'deleted_at_relative' => $deletedAt ? $deletedAt->locale('id')->diffForHumans() : '-',
-                'deleted_at_raw'      => $deletedAt ? $deletedAt->toIso8601String() : null,
+                ...$this->formatDeletedInfo($r->deleted_at, $r->deleted_by),
             ];
         });
 
@@ -999,7 +866,6 @@ class RecycleBinController extends Controller
             ->get();
 
         $deletedBelanjaBarangNibars = $rawDeletedBelanjaBarangNibars->map(function ($r) {
-            $deletedAt = $r->deleted_at ? Carbon::parse($r->deleted_at)->timezone('Asia/Jakarta') : null;
             $bb = $r->astap?->belanjaBarang;
             return [
                 'id'                  => $r->id,
@@ -1016,10 +882,7 @@ class RecycleBinController extends Controller
                 'kondisi'             => $r->kondisi ?: 'Baik',
                 'status'              => $r->status ?: 'Tersedia',
                 'tahun'               => $r->astap?->tahun_perolehan ?: '-',
-                'deleted_by'          => $r->deleted_by ?: 'Administrator',
-                'deleted_at'          => $deletedAt ? $deletedAt->locale('id')->translatedFormat('d M Y, H:i') . ' WIB' : '-',
-                'deleted_at_relative' => $deletedAt ? $deletedAt->locale('id')->diffForHumans() : '-',
-                'deleted_at_raw'      => $deletedAt ? $deletedAt->toIso8601String() : null,
+                ...$this->formatDeletedInfo($r->deleted_at, $r->deleted_by),
             ];
         });
 
@@ -1215,8 +1078,7 @@ class RecycleBinController extends Controller
         switch ($module) {
             case 'belanja_modal':
                 $astap = Astap::with('mutasiEksternals')->findOrFail($id);
-                $hasCancelledMutasi = $astap->mutasiEksternals ? $astap->mutasiEksternals->contains('status', 'Dibatalkan') : false;
-                if ($hasCancelledMutasi || str_contains(strtolower((string) $astap->keterangan_tambahan), 'dibatalkan')) {
+                if ($this->isCancelledAstap($astap)) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Data Belanja Modal ini bersumber dari transaksi yang telah Dibatalkan dan tidak dapat dipulihkan kembali.'
@@ -1224,43 +1086,9 @@ class RecycleBinController extends Controller
                 }
                 $nama = $astap->nama_barang ?: 'Aset Belanja Modal';
                 DB::transaction(function () use ($astap) {
-                    $astap->restoreData();
-                    $astap->allRegisters()->update([
-                        'is_deleted'    => 0,
-                        'deleted_by'    => null,
-                        'deleted_by_id' => null,
-                        'deleted_at'    => null,
-                    ]);
-                    $astap->jumlah_volume = max(1, $astap->allRegisters()->where('is_deleted', 0)->count());
-                    $astap->save();
+                    $this->restoreAstapWithRegisters($astap);
                 });
                 $msg = "Paket Belanja Modal \"{$nama}\" dan seluruh register NIBAR berhasil dipulihkan ke status aktif.";
-                break;
-
-            case 'belanja_modal_nibar':
-                $reg = AstapRegister::findOrFail($id);
-                $nibar = $reg->nibar ?: $reg->no_register;
-                $astap = $reg->astap;
-                $astapRestored = false;
-
-                DB::transaction(function () use ($reg, $astap, &$astapRestored) {
-                    $reg->restoreData();
-                    if ($astap && $astap->is_deleted) {
-                        $astap->restoreData();
-                        $astapRestored = true;
-                    }
-                    if ($astap) {
-                        $this->syncAstapAfterRegisterChange($astap);
-                    }
-                });
-
-                if ($astapRestored) {
-                    $msg = "Unit Register NIBAR \"{$nibar}\" dan paket Belanja Modal induknya \"{$astap->nama_barang}\" berhasil dipulihkan ke status aktif.";
-                } elseif ($astap) {
-                    $msg = "Unit Register NIBAR \"{$nibar}\" berhasil dipulihkan ke paket Belanja Modal \"{$astap->nama_barang}\" (Volume aktif: {$astap->jumlah_volume}).";
-                } else {
-                    $msg = "Unit Register NIBAR \"{$nibar}\" berhasil dipulihkan ke katalog aktif.";
-                }
                 break;
             case 'mutasi':
             case 'mutasi_internal':
@@ -1317,15 +1145,7 @@ class RecycleBinController extends Controller
                     } else {
                         // Mutasi Masuk: Pulihkan aset pelimpahan SKPD ke katalog aktif RSUD
                         if ($mEksternal->astap) {
-                            $mEksternal->astap->restoreData();
-                            $mEksternal->astap->allRegisters()->update([
-                                'is_deleted'    => 0,
-                                'deleted_by'    => null,
-                                'deleted_by_id' => null,
-                                'deleted_at'    => null,
-                            ]);
-                            $mEksternal->astap->jumlah_volume = max(1, $mEksternal->astap->allRegisters()->where('is_deleted', 0)->count());
-                            $mEksternal->astap->save();
+                            $this->restoreAstapWithRegisters($mEksternal->astap);
                         }
                     }
                 });
@@ -1334,8 +1154,7 @@ class RecycleBinController extends Controller
 
             case 'astap':
                 $astap = Astap::with('mutasiEksternals')->findOrFail($id);
-                $hasCancelledMutasi = $astap->mutasiEksternals ? $astap->mutasiEksternals->contains('status', 'Dibatalkan') : false;
-                if ($hasCancelledMutasi || str_contains(strtolower((string) $astap->keterangan_tambahan), 'dibatalkan')) {
+                if ($this->isCancelledAstap($astap)) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Data Master ASTAP ini bersumber dari transaksi yang telah Dibatalkan dan tidak dapat dipulihkan kembali.'
@@ -1343,13 +1162,7 @@ class RecycleBinController extends Controller
                 }
                 $nama = $astap->nama_barang ?: 'Aset ASTAP';
                 DB::transaction(function () use ($astap) {
-                    $astap->restoreData();
-                    $astap->allRegisters()->update([
-                        'is_deleted'    => 0,
-                        'deleted_by'    => null,
-                        'deleted_by_id' => null,
-                        'deleted_at'    => null,
-                    ]);
+                    $this->restoreAstapWithRegisters($astap);
                     // Pulihkan seluruh mutasi eksternal (masuk/keluar) terkait
                     if ($astap->mutasiEksternals()->exists()) {
                         $astap->mutasiEksternals()->where('is_deleted', 1)->update([
@@ -1377,9 +1190,6 @@ class RecycleBinController extends Controller
                             'deleted_by_id' => null,
                             'deleted_at'    => null,
                         ]);
-                    // Sinkronkan jumlah volume paket dengan total register aktif
-                    $astap->jumlah_volume = max(1, $astap->allRegisters()->where('is_deleted', 0)->count());
-                    $astap->save();
                 });
                 $msg = "Data Master Aset ASTAP \"{$nama}\" dan seluruh register NIBAR berhasil dipulihkan.";
                 break;
@@ -1629,15 +1439,7 @@ class RecycleBinController extends Controller
                 DB::transaction(function () use ($belanja) {
                     $belanja->restoreData();
                     if ($belanja->astap) {
-                        $belanja->astap->restoreData();
-                        $belanja->astap->allRegisters()->update([
-                            'is_deleted'    => 0,
-                            'deleted_by'    => null,
-                            'deleted_by_id' => null,
-                            'deleted_at'    => null,
-                        ]);
-                        $belanja->astap->jumlah_volume = max(1, $belanja->astap->allRegisters()->where('is_deleted', 0)->count());
-                        $belanja->astap->save();
+                        $this->restoreAstapWithRegisters($belanja->astap);
                     }
                 });
                 $msg = "Data Belanja Barang {$faktur} beserta aset terkait berhasil dipulihkan ke daftar aktif.";
@@ -1713,10 +1515,13 @@ class RecycleBinController extends Controller
 
                 });
 
+                $isBelanjaModal = ($module === 'belanja_modal_nibar') || ($astap && $astap->sumber_dana === 'belanja_modal');
+                $tipeLabel = $isBelanjaModal ? 'paket Belanja Modal' : 'paket pengadaan';
+
                 if ($astapRestored) {
-                    $msg = "Unit Register NIBAR \"{$nibar}\" dan paket pengadaan induknya \"{$astap->nama_barang}\" berhasil dipulihkan ke katalog aktif.";
+                    $msg = "Unit Register NIBAR \"{$nibar}\" dan {$tipeLabel} induknya \"{$astap->nama_barang}\" berhasil dipulihkan ke status aktif.";
                 } elseif ($astap) {
-                    $msg = "Unit Register NIBAR \"{$nibar}\" berhasil dipulihkan ke paket pengadaan \"{$astap->nama_barang}\" (Volume aktif: {$astap->jumlah_volume}).";
+                    $msg = "Unit Register NIBAR \"{$nibar}\" berhasil dipulihkan ke {$tipeLabel} \"{$astap->nama_barang}\" (Volume aktif: {$astap->jumlah_volume}).";
                 } else {
                     $msg = "Unit Register NIBAR \"{$nibar}\" berhasil dipulihkan ke katalog aktif.";
                 }
@@ -1825,15 +1630,7 @@ class RecycleBinController extends Controller
                             }
                         } else {
                             if ($mEksternal->astap) {
-                                $mEksternal->astap->restoreData();
-                                $mEksternal->astap->allRegisters()->update([
-                                    'is_deleted'    => 0,
-                                    'deleted_by'    => null,
-                                    'deleted_by_id' => null,
-                                    'deleted_at'    => null,
-                                ]);
-                                $mEksternal->astap->jumlah_volume = max(1, $mEksternal->astap->allRegisters()->where('is_deleted', 0)->count());
-                                $mEksternal->astap->save();
+                                $this->restoreAstapWithRegisters($mEksternal->astap);
                             }
                         }
                         $restoredCount++;
@@ -1853,25 +1650,15 @@ class RecycleBinController extends Controller
                 $blockedBatalCount = 0;
                 DB::transaction(function () use ($astaps, &$restoredCount, &$blockedBatalCount) {
                     foreach ($astaps as $a) {
-                        $ket = (string) ($a->keterangan_tambahan ?? '');
-                        $hasCancelledMutasi = $a->mutasiEksternals ? $a->mutasiEksternals->contains('status', 'Dibatalkan') : false;
-                        if (str_contains(strtolower($ket), 'dibatalkan') || $hasCancelledMutasi) {
+                        if ($this->isCancelledAstap($a)) {
                             $blockedBatalCount++;
                             continue;
                         }
 
-                        $a->restoreData();
-                        $a->allRegisters()->update([
-                            'is_deleted'    => 0,
-                            'deleted_by'    => null,
-                            'deleted_by_id' => null,
-                            'deleted_at'    => null,
-                        ]);
+                        $this->restoreAstapWithRegisters($a);
                         if ($a->mutasiEksternals()->exists()) {
                             $a->mutasiEksternals()->where('is_deleted', 1)->get()->each->restoreData();
                         }
-                        $a->jumlah_volume = max(1, $a->allRegisters()->where('is_deleted', 0)->count());
-                        $a->save();
                         $restoredCount++;
                     }
                 });
@@ -1889,22 +1676,12 @@ class RecycleBinController extends Controller
                 $blockedBatalCount = 0;
                 DB::transaction(function () use ($astaps, &$restoredCount, &$blockedBatalCount) {
                     foreach ($astaps as $a) {
-                        $ket = (string) ($a->keterangan_tambahan ?? '');
-                        $hasCancelledMutasi = $a->mutasiEksternals ? $a->mutasiEksternals->contains('status', 'Dibatalkan') : false;
-                        if (str_contains(strtolower($ket), 'dibatalkan') || $hasCancelledMutasi) {
+                        if ($this->isCancelledAstap($a)) {
                             $blockedBatalCount++;
                             continue;
                         }
 
-                        $a->restoreData();
-                        $a->allRegisters()->update([
-                            'is_deleted'    => 0,
-                            'deleted_by'    => null,
-                            'deleted_by_id' => null,
-                            'deleted_at'    => null,
-                        ]);
-                        $a->jumlah_volume = max(1, $a->allRegisters()->where('is_deleted', 0)->count());
-                        $a->save();
+                        $this->restoreAstapWithRegisters($a);
                         $restoredCount++;
                     }
                 });
@@ -2139,15 +1916,7 @@ class RecycleBinController extends Controller
                     foreach ($belanjas as $b) {
                         $b->restoreData();
                         if ($b->astap) {
-                            $b->astap->restoreData();
-                            $b->astap->allRegisters()->update([
-                                'is_deleted'    => 0,
-                                'deleted_by'    => null,
-                                'deleted_by_id' => null,
-                                'deleted_at'    => null,
-                            ]);
-                            $b->astap->jumlah_volume = max(1, $b->astap->allRegisters()->where('is_deleted', 0)->count());
-                            $b->astap->save();
+                            $this->restoreAstapWithRegisters($b->astap);
                         }
                         $restoredCount++;
                     }
@@ -2184,34 +1953,6 @@ class RecycleBinController extends Controller
                     $restoredCount++;
                 }
                 $msg = "Sebanyak {$restoredCount} Unit & Paviliun beserta akun pengguna terkait berhasil dipulihkan ke katalog aktif.";
-                break;
-
-            case 'nibar':
-                $regs = AstapRegister::whereIn('id', $ids)->get();
-                $astapParents = [];
-                $parentRestoredCount = 0;
-
-                DB::transaction(function () use ($regs, &$astapParents, &$restoredCount, &$parentRestoredCount) {
-                    foreach ($regs as $r) {
-                        $r->restoreData();
-                        if ($r->astap) {
-                            if ($r->astap->is_deleted && !isset($astapParents[$r->astap_id])) {
-                                $r->astap->restoreData();
-                                $parentRestoredCount++;
-                            }
-                            $astapParents[$r->astap_id] = $r->astap;
-                        }
-                        $restoredCount++;
-                    }
-                    foreach ($astapParents as $parent) {
-                        $this->syncAstapAfterRegisterChange($parent);
-                    }
-                });
-
-                $msg = "Sebanyak {$restoredCount} unit register NIBAR berhasil dipulihkan ke katalog aktif.";
-                if ($parentRestoredCount > 0) {
-                    $msg .= " ({$parentRestoredCount} paket pengadaan induk otomatis diaktifkan kembali).";
-                }
                 break;
 
             case 'users':
@@ -2284,12 +2025,8 @@ class RecycleBinController extends Controller
                 foreach ($items as $mEksternal) {
                     if ($mEksternal->tipe !== 'keluar' && $mEksternal->astap) {
                         $regIds = $mEksternal->astap->allRegisters->pluck('id')->toArray();
-                        if (!empty($regIds)) {
-                            $hasDistribusi = \App\Models\DistribusiItemRegister::whereIn('astap_register_id', $regIds)->exists();
-                            $hasInternalMutasi = \App\Models\AstapMutasiRegister::whereIn('astap_register_id', $regIds)->exists();
-                            if ($hasDistribusi || $hasInternalMutasi) {
-                                $blockedMutasis[] = $mEksternal->astap->nama_barang ?: ($mEksternal->nomor_bamb ?: "ID #{$mEksternal->id}");
-                            }
+                        if (!empty($regIds) && $this->hasAuditProtection($regIds)) {
+                            $blockedMutasis[] = $mEksternal->astap->nama_barang ?: ($mEksternal->nomor_bamb ?: "ID #{$mEksternal->id}");
                         }
                     }
                 }
@@ -2341,42 +2078,6 @@ class RecycleBinController extends Controller
                 $msg = "Sebanyak {$deletedCount} data mutasi eksternal telah dihapus permanen dari database.";
                 break;
 
-            case 'kemitraan':
-                $kemitraans = AstapKemitraan::whereIn('id', $ids)->get();
-                DB::transaction(function () use ($kemitraans, &$deletedCount) {
-                    foreach ($kemitraans as $k) {
-                        $astap = $k->astap;
-                        if ($astap) {
-                            $astap->registers()->delete();
-                            $k->delete();
-                            $astap->delete();
-                        } else {
-                            $k->delete();
-                        }
-                        $deletedCount++;
-                    }
-                });
-                $msg = "Sebanyak {$deletedCount} data kemitraan aset telah dihapus permanen dari database.";
-                break;
-
-            case 'belanja_barang':
-                $belanjas = AstapBelanjaBarang::whereIn('id', $ids)->get();
-                DB::transaction(function () use ($belanjas, &$deletedCount) {
-                    foreach ($belanjas as $b) {
-                        $astap = $b->astap;
-                        if ($astap) {
-                            $astap->registers()->delete();
-                            $b->delete();
-                            $astap->delete();
-                        } else {
-                            $b->delete();
-                        }
-                        $deletedCount++;
-                    }
-                });
-                $msg = "Sebanyak {$deletedCount} data belanja barang telah dihapus permanen dari database.";
-                break;
-
             case 'reklas':
             case 'reklasifikasi':
                 $reklasItems = AstapReklas::whereIn('id', $ids)->get();
@@ -2392,12 +2093,8 @@ class RecycleBinController extends Controller
                 $blockedAstaps = [];
                 foreach ($astaps as $a) {
                     $regIds = $a->registers()->pluck('id')->toArray();
-                    if (!empty($regIds)) {
-                        $hasDistribusi = \App\Models\DistribusiItemRegister::whereIn('astap_register_id', $regIds)->exists();
-                        $hasMutasi = \App\Models\AstapMutasiRegister::whereIn('astap_register_id', $regIds)->exists();
-                        if ($hasDistribusi || $hasMutasi) {
-                            $blockedAstaps[] = $a->nama_barang ?: "ASTAP-{$a->id}";
-                        }
+                    if (!empty($regIds) && $this->hasAuditProtection($regIds)) {
+                        $blockedAstaps[] = $a->nama_barang ?: "ASTAP-{$a->id}";
                     }
                 }
                 if (!empty($blockedAstaps)) {
@@ -2427,12 +2124,8 @@ class RecycleBinController extends Controller
                 $blockedAstaps = [];
                 foreach ($astaps as $a) {
                     $regIds = $a->registers()->pluck('id')->toArray();
-                    if (!empty($regIds)) {
-                        $hasDistribusi = \App\Models\DistribusiItemRegister::whereIn('astap_register_id', $regIds)->exists();
-                        $hasMutasi = \App\Models\AstapMutasiRegister::whereIn('astap_register_id', $regIds)->exists();
-                        if ($hasDistribusi || $hasMutasi) {
-                            $blockedAstaps[] = $a->nama_barang ?: "ASTAP-{$a->id}";
-                        }
+                    if (!empty($regIds) && $this->hasAuditProtection($regIds)) {
+                        $blockedAstaps[] = $a->nama_barang ?: "ASTAP-{$a->id}";
                     }
                 }
                 if (!empty($blockedAstaps)) {
@@ -2467,9 +2160,7 @@ class RecycleBinController extends Controller
                 $regs = AstapRegister::whereIn('id', $ids)->get();
                 $blockedNibars = [];
                 foreach ($regs as $r) {
-                    $hasDistribusi = \App\Models\DistribusiItemRegister::where('astap_register_id', $r->id)->exists();
-                    $hasMutasi = \App\Models\AstapMutasiRegister::where('astap_register_id', $r->id)->exists();
-                    if ($hasDistribusi || $hasMutasi) {
+                    if ($this->hasAuditProtection($r->id)) {
                         $blockedNibars[] = $r->nibar ?: $r->no_register;
                     }
                 }
@@ -2486,16 +2177,22 @@ class RecycleBinController extends Controller
                 }
 
                 $astapParents = [];
-                foreach ($regs as $r) {
-                    if ($r->astap) {
-                        $astapParents[$r->astap_id] = $r->astap;
+                DB::transaction(function () use ($regs, &$astapParents, &$deletedCount) {
+                    $regIds = $regs->pluck('id')->toArray();
+                    if (Schema::hasTable('mutasi_eksternal_registers')) {
+                        \App\Models\MutasiEksternalRegister::whereIn('astap_register_id', $regIds)->delete();
                     }
-                    $r->delete();
-                    $deletedCount++;
-                }
-                foreach ($astapParents as $parent) {
-                    $this->syncAstapAfterRegisterChange($parent);
-                }
+                    foreach ($regs as $r) {
+                        if ($r->astap) {
+                            $astapParents[$r->astap_id] = $r->astap;
+                        }
+                        $r->delete();
+                        $deletedCount++;
+                    }
+                    foreach ($astapParents as $parent) {
+                        $this->syncAstapAfterRegisterChange($parent);
+                    }
+                });
                 $msg = "Sebanyak {$deletedCount} register NIBAR telah dihapus permanen dari database.";
                 break;
 
@@ -2642,42 +2339,6 @@ class RecycleBinController extends Controller
                 $msg = "Sebanyak {$deletedCount} Unit & Paviliun telah dihapus permanen dari database.";
                 break;
 
-            case 'nibar':
-                $regs = AstapRegister::whereIn('id', $ids)->get();
-                $blockedNibars = [];
-                foreach ($regs as $r) {
-                    $hasDistribusi = \App\Models\DistribusiItemRegister::where('astap_register_id', $r->id)->exists();
-                    $hasMutasi = \App\Models\AstapMutasiRegister::where('astap_register_id', $r->id)->exists();
-                    if ($hasDistribusi || $hasMutasi) {
-                        $blockedNibars[] = $r->nibar ?: $r->no_register;
-                    }
-                }
-                if (!empty($blockedNibars)) {
-                    $listStr = implode(', ', array_slice($blockedNibars, 0, 3));
-                    if (count($blockedNibars) > 3) {
-                        $listStr .= '... dan ' . (count($blockedNibars) - 3) . ' NIBAR lainnya';
-                    }
-                    $msg = "Penghapusan permanen ditolak: Terdapat register NIBAR [{$listStr}] yang memiliki riwayat transaksi distribusi/mutasi aktif yang dilindungi audit.";
-                    if ($request->wantsJson()) {
-                        return response()->json(['success' => false, 'message' => $msg], 422);
-                    }
-                    return back()->with('error', $msg);
-                }
-
-                $astapParents = [];
-                foreach ($regs as $r) {
-                    if ($r->astap) {
-                        $astapParents[$r->astap_id] = $r->astap;
-                    }
-                    $r->delete();
-                    $deletedCount++;
-                }
-                foreach ($astapParents as $parent) {
-                    $this->syncAstapAfterRegisterChange($parent);
-                }
-                $msg = "Sebanyak {$deletedCount} register NIBAR telah dihapus permanen dari database.";
-                break;
-
             case 'users':
             case 'user':
                 $users = User::whereIn('id', $ids)->get();
@@ -2733,17 +2394,12 @@ class RecycleBinController extends Controller
                 // Jika aset mutasi masuk pernah didistribusikan ke ruangan via BAST Distribusi internal RSUD, tolak hapus permanen
                 if (!$isKeluar && $mEksternal->astap) {
                     $regIds = $mEksternal->astap->allRegisters()->pluck('id')->toArray();
-                    if (!empty($regIds)) {
-                        $hasDistribusi = \App\Models\DistribusiItemRegister::whereIn('astap_register_id', $regIds)->exists();
-                        $hasInternalMutasi = \App\Models\AstapMutasiRegister::whereIn('astap_register_id', $regIds)->exists();
-                        if ($hasDistribusi || $hasInternalMutasi) {
-                            $reason = $hasDistribusi ? 'telah resmi diserahterimakan via dokumen BAST Distribusi' : 'memiliki riwayat mutasi aset internal';
-                            $msg = "Penghapusan permanen ditolak: Aset Mutasi Masuk \"{$mEksternal->astap->nama_barang}\" memiliki unit yang {$reason}. Data dilindungi undang-undang untuk audit BPK & Inspektorat.";
-                            if ($request->wantsJson()) {
-                                return response()->json(['success' => false, 'message' => $msg], 422);
-                            }
-                            return back()->with('error', $msg);
+                    if (!empty($regIds) && $this->hasAuditProtection($regIds)) {
+                        $msg = "Penghapusan permanen ditolak: Aset Mutasi Masuk \"{$mEksternal->astap->nama_barang}\" memiliki unit dengan riwayat transaksi aktif. Data dilindungi undang-undang untuk audit BPK & Inspektorat.";
+                        if ($request->wantsJson()) {
+                            return response()->json(['success' => false, 'message' => $msg], 422);
                         }
+                        return back()->with('error', $msg);
                     }
                 }
 
@@ -2783,17 +2439,12 @@ class RecycleBinController extends Controller
                 $nama = $astap->nama_barang ?: 'Aset ASTAP';
                 // Proteksi BAST Distribusi & Mutasi Aset untuk seluruh register di bawah paket ini
                 $regIds = $astap->registers()->pluck('id')->toArray();
-                if (!empty($regIds)) {
-                    $hasDistribusi = \App\Models\DistribusiItemRegister::whereIn('astap_register_id', $regIds)->exists();
-                    $hasMutasi = \App\Models\AstapMutasiRegister::whereIn('astap_register_id', $regIds)->exists();
-                    if ($hasDistribusi || $hasMutasi) {
-                        $reason = $hasDistribusi ? 'telah resmi diserahterimakan via dokumen BAST Distribusi' : 'memiliki riwayat mutasi aset';
-                        $msg = "Penghapusan permanen ditolak: Paket ASTAP \"{$nama}\" memiliki unit yang {$reason}. Data dilindungi undang-undang untuk audit BPK & Inspektorat.";
-                        if ($request->wantsJson()) {
-                            return response()->json(['success' => false, 'message' => $msg], 422);
-                        }
-                        return back()->with('error', $msg);
+                if (!empty($regIds) && $this->hasAuditProtection($regIds)) {
+                    $msg = "Penghapusan permanen ditolak: Paket ASTAP \"{$nama}\" memiliki unit dengan riwayat transaksi aktif. Data dilindungi undang-undang untuk audit BPK & Inspektorat.";
+                    if ($request->wantsJson()) {
+                        return response()->json(['success' => false, 'message' => $msg], 422);
                     }
+                    return back()->with('error', $msg);
                 }
 
                 DB::transaction(function () use ($astap) {
@@ -2807,17 +2458,12 @@ class RecycleBinController extends Controller
                 $astap = Astap::findOrFail($id);
                 $nama = $astap->nama_barang ?: 'Aset Belanja Modal';
                 $regIds = $astap->registers()->pluck('id')->toArray();
-                if (!empty($regIds)) {
-                    $hasDistribusi = \App\Models\DistribusiItemRegister::whereIn('astap_register_id', $regIds)->exists();
-                    $hasMutasi = \App\Models\AstapMutasiRegister::whereIn('astap_register_id', $regIds)->exists();
-                    if ($hasDistribusi || $hasMutasi) {
-                        $reason = $hasDistribusi ? 'telah resmi diserahterimakan via dokumen BAST Distribusi' : 'memiliki riwayat mutasi aset';
-                        $msg = "Penghapusan permanen ditolak: Paket Belanja Modal \"{$nama}\" memiliki unit yang {$reason}. Data dilindungi undang-undang untuk audit BPK & Inspektorat.";
-                        if ($request->wantsJson()) {
-                            return response()->json(['success' => false, 'message' => $msg], 422);
-                        }
-                        return back()->with('error', $msg);
+                if (!empty($regIds) && $this->hasAuditProtection($regIds)) {
+                    $msg = "Penghapusan permanen ditolak: Paket Belanja Modal \"{$nama}\" memiliki unit dengan riwayat transaksi aktif. Data dilindungi undang-undang untuk audit BPK & Inspektorat.";
+                    if ($request->wantsJson()) {
+                        return response()->json(['success' => false, 'message' => $msg], 422);
                     }
+                    return back()->with('error', $msg);
                 }
 
                 DB::transaction(function () use ($astap) {
@@ -2826,29 +2472,6 @@ class RecycleBinController extends Controller
                     $astap->delete();
                 });
                 $msg = "Data Belanja Modal \"{$nama}\" telah dihapus secara permanen dari database.";
-                break;
-
-            case 'nibar':
-            case 'belanja_modal_nibar':
-            case 'kemitraan_nibar':
-            case 'mutasi_eksternal_nibar':
-            case 'hibah_nibar':
-            case 'belanja_barang_nibar':
-                $reg = AstapRegister::findOrFail($id);
-                $nibar = $reg->nibar ?: $reg->no_register;
-                $hasDistribusi = \App\Models\DistribusiItemRegister::where('astap_register_id', $reg->id)->exists();
-                $hasMutasi = \App\Models\AstapMutasiRegister::where('astap_register_id', $reg->id)->exists();
-                if ($hasDistribusi || $hasMutasi) {
-                    $msg = "Penghapusan permanen ditolak: Register NIBAR \"{$nibar}\" memiliki riwayat transaksi BAST/mutasi aktif yang dilindungi audit.";
-                    if ($request->wantsJson()) {
-                        return response()->json(['success' => false, 'message' => $msg], 422);
-                    }
-                    return back()->with('error', $msg);
-                }
-                $parentAstap = $reg->astap;
-                $reg->delete();
-                $this->syncAstapAfterRegisterChange($parentAstap);
-                $msg = "Register NIBAR \"{$nibar}\" telah dihapus secara permanen dari database.";
                 break;
 
             case 'distribusi':
@@ -2973,9 +2596,7 @@ class RecycleBinController extends Controller
             case 'belanja_barang_nibar':
                 $reg = AstapRegister::findOrFail($id);
                 $nibar = $reg->nibar ?: $reg->no_register;
-                $hasDistribusi = \App\Models\DistribusiItemRegister::where('astap_register_id', $reg->id)->exists();
-                $hasMutasi = \App\Models\AstapMutasiRegister::where('astap_register_id', $reg->id)->exists();
-                if ($hasDistribusi || $hasMutasi) {
+                if ($this->hasAuditProtection($reg->id)) {
                     $msg = "Penghapusan permanen ditolak: Register NIBAR \"{$nibar}\" memiliki riwayat transaksi BAST/mutasi aktif yang dilindungi audit.";
                     if ($request->wantsJson()) {
                         return response()->json(['success' => false, 'message' => $msg], 422);
@@ -3103,5 +2724,117 @@ class RecycleBinController extends Controller
             $astap->spesifikasi_json = $spec;
         }
         $astap->save();
+    }
+
+    /**
+     * Format metadata penghapusan (deleted_by & deleted_at) secara konsisten
+     */
+    private function formatDeletedInfo($deletedAt, ?string $deletedBy = 'Administrator'): array
+    {
+        $carbon = $deletedAt ? Carbon::parse($deletedAt)->timezone('Asia/Jakarta') : null;
+
+        return [
+            'deleted_by'          => $deletedBy ?: 'Administrator',
+            'deleted_at'          => $carbon ? $carbon->locale('id')->translatedFormat('d M Y, H:i') . ' WIB' : '-',
+            'deleted_at_relative' => $carbon ? $carbon->locale('id')->diffForHumans() : '-',
+            'deleted_at_raw'      => $carbon ? $carbon->toIso8601String() : null,
+        ];
+    }
+
+    /**
+     * Tentukan klasifikasi sumber dana, label, dan ikon aset
+     */
+    private function resolveSumberDana(?string $rawSumber, $astap = null): array
+    {
+        $sumberDana = $rawSumber;
+        if (empty($sumberDana) && $astap) {
+            if (str_starts_with((string) ($astap->kode_108 ?? ''), '1.5.2')) {
+                $sumberDana = 'kemitraan';
+            } elseif (!empty($astap->belanjaBarang)) {
+                $sumberDana = 'belanja_barang';
+            } else {
+                $sumberDana = 'belanja_modal';
+            }
+        }
+        if (in_array($sumberDana, ['belanja_barang', 'belanja_rekening'])) {
+            $sumberDana = 'belanja_barang';
+        } elseif (in_array($sumberDana, ['mutasi_eksternal', 'pelimpahan_skpd', 'pelimpahan', 'mutasi_masuk', 'mutasi'])) {
+            $sumberDana = 'mutasi';
+        }
+
+        $label = match ($sumberDana) {
+            'belanja_modal'  => 'Belanja Modal',
+            'belanja_barang' => 'Belanja Barang',
+            'kemitraan'      => 'Kemitraan (KSO)',
+            'hibah'          => 'Hibah',
+            'mutasi'         => 'Mutasi Eksternal',
+            default          => 'Umum / Lainnya',
+        };
+
+        $icon = match ($sumberDana) {
+            'belanja_modal'  => '🏛️',
+            'belanja_barang' => '📦',
+            'kemitraan'      => '🤝',
+            'hibah'          => '🎁',
+            'mutasi'         => '🔄',
+            default          => '📦',
+        };
+
+        return [
+            'sumber_dana'       => $sumberDana,
+            'sumber_dana_label' => $label,
+            'sumber_dana_icon'  => $icon,
+        ];
+    }
+
+    /**
+     * Pulihkan data aset induk ASTAP beserta seluruh register NIBAR dan update volume
+     */
+    private function restoreAstapWithRegisters(?Astap $astap): int
+    {
+        if (!$astap) {
+            return 0;
+        }
+
+        $astap->restoreData();
+        $astap->allRegisters()->update([
+            'is_deleted'    => 0,
+            'deleted_by'    => null,
+            'deleted_by_id' => null,
+            'deleted_at'    => null,
+        ]);
+
+        $count = max(1, $astap->allRegisters()->where('is_deleted', 0)->count());
+        $astap->jumlah_volume = $count;
+        $astap->save();
+
+        return $count;
+    }
+
+    /**
+     * Cek apakah aset ASTAP bersumber dari transaksi yang dibatalkan
+     */
+    private function isCancelledAstap(?Astap $astap): bool
+    {
+        if (!$astap) {
+            return false;
+        }
+
+        $hasCancelledMutasi = $astap->mutasiEksternals ? $astap->mutasiEksternals->contains('status', 'Dibatalkan') : false;
+        return $hasCancelledMutasi || str_contains(strtolower((string) $astap->keterangan_tambahan), 'dibatalkan');
+    }
+
+    /**
+     * Cek apakah satu atau banyak ID register memiliki transaksi aktif yang dilindungi audit
+     */
+    private function hasAuditProtection(array|int $regIds): bool
+    {
+        $ids = is_array($regIds) ? array_filter($regIds) : [$regIds];
+        if (empty($ids)) {
+            return false;
+        }
+
+        return \App\Models\DistribusiItemRegister::whereIn('astap_register_id', $ids)->exists()
+            || \App\Models\AstapMutasiRegister::whereIn('astap_register_id', $ids)->exists();
     }
 }
