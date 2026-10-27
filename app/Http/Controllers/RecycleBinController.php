@@ -1558,7 +1558,7 @@ class RecycleBinController extends Controller
             ]);
         }
 
-        return redirect()->route('recycle_bin.index', ['tab' => $module === 'nibar' ? 'astap' : $module])->with('success', $msg);
+        return redirect()->route('recycle_bin.index', ['tab' => $this->resolveRedirectTab($module)])->with('success', $msg);
     }
 
     /**
@@ -1982,7 +1982,7 @@ class RecycleBinController extends Controller
             ]);
         }
 
-        return redirect()->route('recycle_bin.index', ['tab' => $module === 'nibar' ? 'astap' : ($module === 'belanja_modal_nibar' ? 'belanja_modal' : $module)])->with('success', $msg);
+        return redirect()->route('recycle_bin.index', ['tab' => $this->resolveRedirectTab($module)])->with('success', $msg);
     }
 
     /**
@@ -2358,7 +2358,7 @@ class RecycleBinController extends Controller
             return response()->json(['success' => true, 'message' => $msg, 'count' => $deletedCount]);
         }
 
-        return redirect()->route('recycle_bin.index', ['tab' => $module === 'nibar' ? 'astap' : ($module === 'belanja_modal_nibar' ? 'belanja_modal' : $module)])->with('success', $msg);
+        return redirect()->route('recycle_bin.index', ['tab' => $this->resolveRedirectTab($module)])->with('success', $msg);
     }
 
     /**
@@ -2631,17 +2631,7 @@ class RecycleBinController extends Controller
             return response()->json(['success' => true, 'message' => $msg]);
         }
 
-        $tabRedirect = match ($module) {
-            'nibar'                  => 'astap',
-            'belanja_modal_nibar'    => 'belanja_modal',
-            'mutasi_eksternal_nibar' => 'mutasi',
-            'kemitraan_nibar'        => 'kemitraan',
-            'hibah_nibar'            => 'hibah',
-            'belanja_barang_nibar'   => 'belanja_barang',
-            default                  => $module,
-        };
-
-        return redirect()->route('recycle_bin.index', ['tab' => $tabRedirect])->with('success', $msg);
+        return redirect()->route('recycle_bin.index', ['tab' => $this->resolveRedirectTab($module)])->with('success', $msg);
     }
 
     /**
@@ -2836,5 +2826,21 @@ class RecycleBinController extends Controller
 
         return \App\Models\DistribusiItemRegister::whereIn('astap_register_id', $ids)->exists()
             || \App\Models\AstapMutasiRegister::whereIn('astap_register_id', $ids)->exists();
+    }
+
+    /**
+     * Tentukan tab halaman Recycle Bin yang sesuai untuk redirect setelah aksi modul tertentu
+     */
+    private function resolveRedirectTab(string $module): string
+    {
+        return match ($module) {
+            'nibar'                  => 'astap',
+            'belanja_modal_nibar'    => 'belanja_modal',
+            'mutasi_eksternal_nibar' => 'mutasi',
+            'kemitraan_nibar'        => 'kemitraan',
+            'hibah_nibar'            => 'hibah',
+            'belanja_barang_nibar'   => 'belanja_barang',
+            default                  => $module,
+        };
     }
 }
