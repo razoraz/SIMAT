@@ -1669,6 +1669,33 @@
             async submitFormTambah() {
                 if (this.isSubmitting) return;
 
+                // Validasi khusus Koreksi Nilai Realisasi (KOREKSI_LAIN)
+                if (this.formData.jenis_reklas === 'KOREKSI_LAIN') {
+                    const nom = parseFloat(this.formData.nilai_reklas || 0);
+                    if (nom <= 0) {
+                        const errMsg = '⚠️ Nilai realisasi baru sama dengan nilai semula (selisih Rp 0). Tidak ada nominal perubahan untuk disimpan!';
+                        if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'error');
+                        else alert(errMsg);
+                        return;
+                    }
+                    if (this.formData.sub_koreksi === 'lkd' || this.formData.sub_koreksi === 'manset') {
+                        const noDok = (this.formData.nomor_ba_reklas || '').trim();
+                        if (!noDok) {
+                            const docLabel = (this.formData.sub_koreksi === 'lkd') ? 'Nomor LHP BPK RI / Rekomendasi' : 'Nomor BA Rekonsiliasi Manset BPKAD';
+                            const errMsg = `⚠️ ${docLabel} wajib diisi sebagai dasar penyesuaian nilai!`;
+                            if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'warning');
+                            else alert(errMsg);
+                            return;
+                        }
+                        if (!this.formData.tanggal_reklas) {
+                            const errMsg = '⚠️ Tanggal Dokumen Dasar Koreksi wajib dipilih!';
+                            if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'warning');
+                            else alert(errMsg);
+                            return;
+                        }
+                    }
+                }
+
                 // Validasi form Kemitraan Pihak Ketiga jika tujuan KIB adalah KEMITRAAN
                 if (this.formData.tujuan_kib === 'KEMITRAAN') {
                     const spek = this.formData.spekBaru || {};

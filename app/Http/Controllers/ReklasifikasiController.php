@@ -596,6 +596,53 @@ class ReklasifikasiController extends Controller
             }
         }
 
+        // Proteksi Validasi Aturan Bisnis: Aset Konstruksi Dalam Pengerjaan (KDP / KIB F / Akun 1.3.6)
+        // KDP merupakan bangunan/proyek fisik yang belum selesai dan belum berwujud barang definitif.
+        // Aset KDP tidak dapat dipindah KIB biasa, dihibahkan, dimutasi ke luar OPD, atau diekstrakomptabelkan.
+        $kodeAsetAsal = (string) ($astap->kode_108 ?: ($astap->jenisAstap?->sub_sub_rincian_objek ?: ($astap->jenisAstap?->jenis ?? '')));
+        $isKdpAsset = ($astap->category === 'KIB F' || $astap->category === 'KDP' || str_starts_with($kodeAsetAsal, '1.3.6'));
+
+        if ($isKdpAsset && in_array($validated['jenis_reklas'], ['KOREKSI_REKENING', 'HIBAH_MASUK', 'HIBAH_KELUAR', 'MUTASI_EKSTERNAL', 'EKSTRAKOMPTABEL', 'KAPITALISASI_INTRAKOM'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => "Aset '{$astap->nama_barang}' merupakan aset Konstruksi Dalam Pengerjaan (KDP / KIB F) yang belum selesai. Aset KDP tidak dapat dipindah KIB, dihibahkan, atau dimutasikan ke luar OPD. Silakan gunakan opsi 'Kapitalisasi KDP Selesai' jika fisik pekerjaan telah rampung 100%, atau opsi 'Koreksi Nilai Realisasi / BPK'.",
+            ], 422);
+        }
+
+        // Proteksi Validasi Koreksi Nilai Realisasi / BPK / Manset (KOREKSI_LAIN)
+        if ($validated['jenis_reklas'] === 'KOREKSI_LAIN') {
+            $selisihCheck = (float) ($validated['nilai_reklas'] ?? 0);
+            $subKoreksiCheck = in_array($request->input('sub_koreksi'), ['biasa', 'lkd', 'manset']) ? $request->input('sub_koreksi') : 'biasa';
+
+            if ($request->has('reklas_items') && is_array($request->reklas_items) && count($request->reklas_items) > 0) {
+                $totalBaruCheck = 0;
+                foreach ($request->reklas_items as $rItem) {
+                    $vol = (int) ($rItem['jumlah_volume'] ?? 1);
+                    $hrg = (float) ($rItem['harga_satuan'] ?? 0);
+                    $totalBaruCheck += ($vol * $hrg);
+                }
+                $selisihCheck = abs($totalBaruCheck - (float) $astap->total_realisasi);
+            } elseif ($request->filled('nilai_realisasi_baru')) {
+                $nilaiBaruCheck = (float) $request->input('nilai_realisasi_baru');
+                $selisihCheck = abs($nilaiBaruCheck - (float) $astap->total_realisasi);
+            }
+
+            if ($selisihCheck <= 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Nilai realisasi baru sama dengan nilai semula (selisih Rp 0). Tidak ada perubahan nominal untuk disimpan.'
+                ], 422);
+            }
+
+            if (in_array($subKoreksiCheck, ['lkd', 'manset']) && empty(trim((string)($validated['nomor_ba_reklas'] ?? '')))) {
+                $docName = ($subKoreksiCheck === 'lkd') ? 'Nomor LHP BPK RI / Rekomendasi' : 'Nomor BA Rekonsiliasi Manset BPKAD';
+                return response()->json([
+                    'success' => false,
+                    'message' => "{$docName} wajib diisi sebagai dasar hukum penyesuaian nilai."
+                ], 422);
+            }
+        }
+
         DB::beginTransaction();
         try {
             $specLama = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?? []);
@@ -810,6 +857,33 @@ class ReklasifikasiController extends Controller
                 $subKoreksi = in_array($request->input('sub_koreksi'), ['biasa', 'lkd', 'manset']) ? $request->input('sub_koreksi') : 'biasa';
                 $validated['sub_koreksi'] = $subKoreksi;
 
+                // Defensive validation: Cegah koreksi nilai dengan selisih 0 jika bukan dari reklas_items
+                if ($selisih <= 0 && !$request->has('reklas_items') && !$request->filled('nilai_realisasi_baru')) {
+                    DB::rollBack();
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Nilai realisasi baru sama dengan nilai semula (selisih Rp 0). Tidak ada perubahan nominal untuk disimpan.'
+                    ], 422);
+                }
+
+                // Defensive validation: Wajibkan nomor dokumen untuk LKD dan Manset
+                if (in_array($subKoreksi, ['lkd', 'manset']) && empty(trim((string)($validated['nomor_ba_reklas'] ?? '')))) {
+                    DB::rollBack();
+                    $docName = ($subKoreksi === 'lkd') ? 'Nomor LHP BPK RI / Rekomendasi' : 'Nomor BA Rekonsiliasi Manset BPKAD';
+                    return response()->json([
+                        'success' => false,
+                        'message' => "{$docName} wajib diisi sebagai dasar hukum penyesuaian nilai."
+                    ], 422);
+                }
+
+                // Handle berkas lampiran LHP / BA jika diunggah
+                $dokumenLampiranPath = null;
+                if ($request->hasFile('dokumen_file')) {
+                    $docFile = $request->file('dokumen_file');
+                    $docFilename = 'KOREKSI_' . time() . '_' . preg_replace('/[^A-Za-z0-9_\-\.]/', '_', $docFile->getClientOriginalName());
+                    $dokumenLampiranPath = $docFile->storeAs('dokumen_reklasifikasi', $docFilename, 'public');
+                }
+
                 // Nilai anggaran hanya berlaku untuk Belanja Modal APBD/BLUD (bukan Hibah/Kemitraan)
                 if ($astap->isBelanjaModal() && $request->filled('jumlah_anggaran')) {
                     $astap->jumlah_anggaran = (float) $request->input('jumlah_anggaran');
@@ -867,6 +941,13 @@ class ReklasifikasiController extends Controller
                             $astap->harga_satuan = $totalBaru / $astap->jumlah_volume;
                         }
                         $selisih = abs($totalBaru - $oldRealisasi);
+                        if ($selisih <= 0) {
+                            DB::rollBack();
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'Nilai realisasi baru sama dengan nilai semula (selisih Rp 0). Tidak ada perubahan nominal untuk disimpan.'
+                            ], 422);
+                        }
                         $validated['nilai_reklas'] = $selisih;
                         $tipe = ($totalBaru >= $oldRealisasi) ? 'tambah' : 'kurang';
                     }
@@ -880,6 +961,7 @@ class ReklasifikasiController extends Controller
                         'nomor_dokumen'          => $validated['nomor_ba_reklas'] ?? null,
                         'tanggal_dokumen'        => $request->input('tanggal_dokumen_koreksi') ?? ($validated['tanggal_reklas'] ?? null),
                         'alasan'                 => $validated['alasan_reklas'] ?? null,
+                        'dokumen_path'           => $dokumenLampiranPath ?? null,
                     ];
                     $astap->spesifikasi_json = $spec;
                     $specBaru = $spec;
@@ -888,6 +970,13 @@ class ReklasifikasiController extends Controller
                     if ($request->filled('nilai_realisasi_baru')) {
                         $totalBaru = (float) $request->input('nilai_realisasi_baru');
                         $selisih = abs($totalBaru - $oldRealisasi);
+                        if ($selisih <= 0) {
+                            DB::rollBack();
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'Nilai realisasi baru sama dengan nilai semula (selisih Rp 0). Tidak ada perubahan nominal untuk disimpan.'
+                            ], 422);
+                        }
                         $tipe = ($totalBaru >= $oldRealisasi) ? 'tambah' : 'kurang';
                         $astap->total_realisasi = $totalBaru;
                     } else {
@@ -912,6 +1001,7 @@ class ReklasifikasiController extends Controller
                         'nomor_dokumen'          => $validated['nomor_ba_reklas'] ?? null,
                         'tanggal_dokumen'        => $request->input('tanggal_dokumen_koreksi') ?? ($validated['tanggal_reklas'] ?? null),
                         'alasan'                 => $validated['alasan_reklas'] ?? null,
+                        'dokumen_path'           => $dokumenLampiranPath ?? null,
                     ];
                     $astap->spesifikasi_json = $currSpec;
                     $specBaru = $currSpec;
@@ -1892,6 +1982,15 @@ class ReklasifikasiController extends Controller
             $asalKibFinal = $validated['asal_kib'] ?? ($asalKibAset ?? null);
             $tujuanKibFinal = $validated['tujuan_kib'] ?? null;
 
+            // Upload berkas lampiran jika diunggah dan belum diproses sebelumnya
+            if (empty($dokumenLampiranPath) && $request->hasFile('dokumen_file')) {
+                $docFile = $request->file('dokumen_file');
+                $prefix = ($validated['jenis_reklas'] === 'MUTASI_EKSTERNAL') ? 'BAST_KELUAR_' : 'REKLAS_';
+                $subFolder = ($validated['jenis_reklas'] === 'MUTASI_EKSTERNAL') ? 'dokumen_mutasi_eksternal' : 'dokumen_reklasifikasi';
+                $docFilename = $prefix . time() . '_' . preg_replace('/[^A-Za-z0-9_\-\.]/', '_', $docFile->getClientOriginalName());
+                $dokumenLampiranPath = $docFile->storeAs($subFolder, $docFilename, 'public');
+            }
+
             // Resolusi otomatis ID Baris Asal jika belum disertakan
             if (empty($asalId)) {
                 if ($validated['jenis_reklas'] === 'HIBAH_MASUK' || $asalKibFinal === 'HIBAH') {
@@ -2205,6 +2304,7 @@ class ReklasifikasiController extends Controller
                         . "Reklasifikasi Parsial dari {$astap->nama_barang} (ID Asal: #{$astap->id}) - {$selectedCount} dari {$effectiveTotalVol} unit dipisahkan ke " . ($targetKib ?: $tujuanKibFinal),
                     'spesifikasi_lama'              => $specLama,
                     'spesifikasi_baru'              => $targetSpec,
+                    'dokumen_path'                  => $dokumenLampiranPath ?? null,
                     'user_id'                       => Auth::id(),
                 ];
                 $reklas = AstapReklas::create($reklasData);
@@ -2298,6 +2398,7 @@ class ReklasifikasiController extends Controller
                     'keterangan'                    => $validated['keterangan'] ?? null,
                     'spesifikasi_lama'              => $specLama,
                     'spesifikasi_baru'              => $specBaru,
+                    'dokumen_path'                  => $dokumenLampiranPath ?? null,
                     'user_id'                       => Auth::id(),
                 ];
                 $reklas = AstapReklas::create($reklasData);

@@ -324,6 +324,95 @@
                             </template>
                         </div>
 
+                        <!-- DOKUMEN & RIWAYAT KOREKSI NILAI REALISASI (BPK RI / BPKAD / BIASA) -->
+                        <template x-if="selectedAstapDetail?.spesifikasi_json?.koreksi_info || selectedAstapDetail?.jenis_reklas === 'KOREKSI_LAIN'">
+                            <div class="p-4 rounded-2xl border space-y-3 shadow-lg backdrop-blur-sm transition-all"
+                                 :class="{
+                                     'bg-cyan-950/30 border-cyan-500/40': selectedAstapDetail?.spesifikasi_json?.koreksi_info?.sub_koreksi === 'lkd',
+                                     'bg-emerald-950/30 border-emerald-500/40': selectedAstapDetail?.spesifikasi_json?.koreksi_info?.sub_koreksi === 'manset',
+                                     'bg-indigo-950/30 border-indigo-500/40': !selectedAstapDetail?.spesifikasi_json?.koreksi_info?.sub_koreksi || selectedAstapDetail?.spesifikasi_json?.koreksi_info?.sub_koreksi === 'biasa'
+                                 }">
+                                <!-- Header Kartu -->
+                                <div class="flex flex-wrap items-center justify-between gap-2 border-b pb-2.5"
+                                     :class="{
+                                         'border-cyan-500/20': selectedAstapDetail?.spesifikasi_json?.koreksi_info?.sub_koreksi === 'lkd',
+                                         'border-emerald-500/20': selectedAstapDetail?.spesifikasi_json?.koreksi_info?.sub_koreksi === 'manset',
+                                         'border-indigo-500/20': !selectedAstapDetail?.spesifikasi_json?.koreksi_info?.sub_koreksi || selectedAstapDetail?.spesifikasi_json?.koreksi_info?.sub_koreksi === 'biasa'
+                                     }">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-base" x-text="selectedAstapDetail?.spesifikasi_json?.koreksi_info?.sub_koreksi === 'lkd' ? '⚖️' : (selectedAstapDetail?.spesifikasi_json?.koreksi_info?.sub_koreksi === 'manset' ? '🏢' : '📝')"></span>
+                                        <span class="font-extrabold text-xs uppercase tracking-wider"
+                                              :class="{
+                                                  'text-cyan-300': selectedAstapDetail?.spesifikasi_json?.koreksi_info?.sub_koreksi === 'lkd',
+                                                  'text-emerald-300': selectedAstapDetail?.spesifikasi_json?.koreksi_info?.sub_koreksi === 'manset',
+                                                  'text-indigo-300': !selectedAstapDetail?.spesifikasi_json?.koreksi_info?.sub_koreksi || selectedAstapDetail?.spesifikasi_json?.koreksi_info?.sub_koreksi === 'biasa'
+                                              }"
+                                              x-text="selectedAstapDetail?.spesifikasi_json?.koreksi_info?.sub_koreksi === 'lkd' ? 'Riwayat Koreksi Nilai LKD (Audit BPK RI)' : (selectedAstapDetail?.spesifikasi_json?.koreksi_info?.sub_koreksi === 'manset' ? 'Riwayat Koreksi Nilai Manset (Bidang Aset BPKAD)' : 'Riwayat Koreksi Nilai Biasa (Internal RSUD)')"></span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="px-2.5 py-0.5 rounded-lg text-[9.5px] font-mono font-bold uppercase tracking-wider border shadow-xs"
+                                              :class="{
+                                                  'bg-cyan-500/20 text-cyan-200 border-cyan-400/40': selectedAstapDetail?.spesifikasi_json?.koreksi_info?.sub_koreksi === 'lkd',
+                                                  'bg-emerald-500/20 text-emerald-200 border-emerald-400/40': selectedAstapDetail?.spesifikasi_json?.koreksi_info?.sub_koreksi === 'manset',
+                                                  'bg-indigo-500/20 text-indigo-200 border-indigo-400/40': !selectedAstapDetail?.spesifikasi_json?.koreksi_info?.sub_koreksi || selectedAstapDetail?.spesifikasi_json?.koreksi_info?.sub_koreksi === 'biasa'
+                                              }"
+                                              x-text="selectedAstapDetail?.spesifikasi_json?.koreksi_info?.sub_koreksi === 'lkd' ? 'RMB: Kolom 16 (−) / 6 (+)' : (selectedAstapDetail?.spesifikasi_json?.koreksi_info?.sub_koreksi === 'manset' ? 'RMB: Kolom 17 (−) / 7 (+)' : 'RMB: Kolom 15 (−) / 5 (+)')"></span>
+
+                                        <template x-if="selectedAstapDetail?.spesifikasi_json?.koreksi_info?.dokumen_path">
+                                            <a :href="'/storage/' + selectedAstapDetail.spesifikasi_json.koreksi_info.dokumen_path" target="_blank"
+                                               class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/35 border border-cyan-400/40 text-cyan-200 text-[10.5px] font-bold transition shadow-sm active:scale-95">
+                                                <span>📎 Lihat Dokumen PDF</span>
+                                            </a>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <!-- Rincian Dokumen Dasar & Dampak Nilai -->
+                                <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+                                    <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800">
+                                        <span class="text-slate-400 block text-[9.5px] uppercase font-bold mb-0.5">📄 Dokumen Dasar</span>
+                                        <span class="font-mono text-cyan-300 font-bold block truncate"
+                                              :title="selectedAstapDetail?.spesifikasi_json?.koreksi_info?.nomor_dokumen || selectedAstapDetail?.reklas_nomor_ba || '-'"
+                                              x-text="selectedAstapDetail?.spesifikasi_json?.koreksi_info?.nomor_dokumen || selectedAstapDetail?.reklas_nomor_ba || '-'"></span>
+                                        <span class="text-slate-400 text-[9.5px] block mt-0.5"
+                                              x-text="'Tgl: ' + (formatTanggalIndo(selectedAstapDetail?.spesifikasi_json?.koreksi_info?.tanggal_dokumen || selectedAstapDetail?.reklas_tanggal))"></span>
+                                    </div>
+
+                                    <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800">
+                                        <span class="text-slate-400 block text-[9.5px] uppercase font-bold mb-0.5">💰 Nilai Semula</span>
+                                        <span class="font-mono text-slate-300 font-bold block"
+                                              x-text="'Rp ' + Number(selectedAstapDetail?.spesifikasi_json?.koreksi_info?.nilai_semula || 0).toLocaleString('id-ID')"></span>
+                                        <span class="text-slate-500 text-[9px] block">Sebelum penyesuaian</span>
+                                    </div>
+
+                                    <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800">
+                                        <span class="text-slate-400 block text-[9.5px] uppercase font-bold mb-0.5">🔄 Dampak Selisih</span>
+                                        <span class="font-mono font-extrabold block text-xs"
+                                              :class="(selectedAstapDetail?.spesifikasi_json?.koreksi_info?.tipe_koreksi === 'kurang') ? 'text-rose-400' : 'text-emerald-400'"
+                                              x-text="((selectedAstapDetail?.spesifikasi_json?.koreksi_info?.tipe_koreksi === 'kurang') ? '🔻 (-) Rp ' : '🔺 (+) Rp ') + Number(selectedAstapDetail?.spesifikasi_json?.koreksi_info?.selisih || selectedAstapDetail?.reklas_nilai || 0).toLocaleString('id-ID')"></span>
+                                        <span class="text-[9px] font-semibold"
+                                              :class="(selectedAstapDetail?.spesifikasi_json?.koreksi_info?.tipe_koreksi === 'kurang') ? 'text-rose-300/80' : 'text-emerald-300/80'"
+                                              x-text="(selectedAstapDetail?.spesifikasi_json?.koreksi_info?.tipe_koreksi === 'kurang') ? 'Pengurangan Nilai Buku' : 'Penambahan Nilai Buku'"></span>
+                                    </div>
+
+                                    <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800">
+                                        <span class="text-slate-400 block text-[9.5px] uppercase font-bold mb-0.5">✅ Nilai Baru Hasil Koreksi</span>
+                                        <span class="font-mono text-emerald-300 font-black block text-xs"
+                                              x-text="'Rp ' + Number(selectedAstapDetail?.spesifikasi_json?.koreksi_info?.nilai_baru || selectedAstapDetail?.total_realisasi || 0).toLocaleString('id-ID')"></span>
+                                        <span class="text-emerald-400/80 text-[9px] block font-mono">Saldo Buku Terkini</span>
+                                    </div>
+                                </div>
+
+                                <!-- Uraian Alasan Koreksi jika ada -->
+                                <template x-if="selectedAstapDetail?.spesifikasi_json?.koreksi_info?.alasan">
+                                    <div class="pt-1 text-[11px] text-slate-300 flex items-start gap-1.5">
+                                        <span class="text-slate-400 font-bold shrink-0">💡 Uraian Rekomendasi / Alasan:</span>
+                                        <span class="italic text-slate-200" x-text="selectedAstapDetail.spesifikasi_json.koreksi_info.alasan"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+
                         <!-- DYNAMIC LANGKAH 3 SPESIFIKASI BERDASARKAN JENIS ASET (KIB A - F, ATB, EXTRACOM) -->
                         <div class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3">
                             <div class="flex items-center justify-between border-b border-slate-800 pb-2">

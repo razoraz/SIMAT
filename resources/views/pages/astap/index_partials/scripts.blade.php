@@ -10483,9 +10483,10 @@
                     const isKemitraanOrSewa = (cat === 'KEMITRAAN' || kode.startsWith('1.5.2') || kode.startsWith('1.4') || namaBarang.includes('kemitraan') || namaBarang.startsWith('sewa '));
                     const isNonExtracom = (kode.startsWith('1.3.1') || kode.startsWith('1.3.3') || kode.startsWith('1.3.4') || kode.startsWith('1.3.6') || kode.startsWith('1.5.3') || isKemitraanOrSewa || cat === 'KIB A' || cat === 'KIB C' || cat === 'KIB D' || cat === 'KIB F' || cat === 'ATB' || cat === 'KEMITRAAN');
                     const isAlreadyOut = this.isCurrentAstapMutasiKeluarFull();
+                    const isKdp = (cat === 'KIB F' || kode.startsWith('1.3.6'));
 
-                    // Inisialisasi NIBAR yang dipilih untuk mutasi eksternal
-                    if (specificReg && specificReg.id && !isAlreadyOut) {
+                    // Inisialisasi NIBAR yang dipilih untuk mutasi eksternal (KDP belum selesai, tidak boleh mutasi eksternal)
+                    if (specificReg && specificReg.id && !isAlreadyOut && !isKdp) {
                         this.reklasSelectedNibarIds = [specificReg.id];
                         this.reklasJenis = 'mutasi_eksternal';
                         this.reklasTujuanKib = 'MUTASI_OPD';
@@ -10708,6 +10709,29 @@
                         }];
                     }
 
+                    // Rekonsiliasi & validasi konsistensi rincian barang terhadap total_realisasi buku aset riil:
+                    // Jika total rincian kartu berbeda dari total_realisasi riil (misal aset hasil split/pemecahan atau spesifikasi usang),
+                    // lakukan rekonsiliasi agar nilai kartu dan ringkasan buku aset 100% klop dan sinkron.
+                    const actualTotalRealisasi = parseFloat(item.total_realisasi_num || item.harga_satuan || 0);
+                    const actualVolume = parseInt(item.jumlah_volume) || 1;
+                    const currentExtracomSum = this.reklasExtracomItems.reduce((acc, itm) => acc + ((parseInt(itm.jumlah_volume) || 1) * (parseFloat(itm.harga_satuan) || 0)), 0);
+                    const diffSum = Math.abs(currentExtracomSum - actualTotalRealisasi);
+
+                    if (diffSum > 0.01) {
+                        if (this.reklasExtracomItems.length === 1) {
+                            // Untuk aset tunggal (1 rincian item), sinkronkan langsung ke nilai buku riil
+                            this.reklasExtracomItems[0].jumlah_volume = actualVolume;
+                            this.reklasExtracomItems[0].satuan = item.satuan || this.reklasExtracomItems[0].satuan || 'Unit';
+                            this.reklasExtracomItems[0].harga_satuan = actualVolume > 0 ? (actualTotalRealisasi / actualVolume) : actualTotalRealisasi;
+                        } else if (currentExtracomSum === 0 && actualTotalRealisasi > 0) {
+                            // Jika semua item bernilai 0, bagi rata
+                            const perItem = actualTotalRealisasi / this.reklasExtracomItems.length;
+                            this.reklasExtracomItems.forEach(itm => {
+                                itm.harga_satuan = perItem / (parseInt(itm.jumlah_volume) || 1);
+                            });
+                        }
+                    }
+
                     // Sinkronisasi nilai awal realisasi baru dari rincian barang jika koreksi nilai
                     if (this.reklasJenis === 'koreksi_nilai') {
                         this.onReklasItemPriceChanged();
@@ -10820,6 +10844,9 @@
                         this.reklasTujuanKib = 'HIBAH';
                     } else if (this.reklasJenis === 'mutasi_eksternal') {
                         this.reklasTujuanKib = 'MUTASI_OPD';
+                    } else if (this.reklasJenis === 'koreksi_nilai') {
+                        this.reklasTujuanKib = (cat && cat !== 'EXTRACOM') ? cat : 'KIB B';
+                        this.onReklasItemPriceChanged();
                     }
                     this.initReklasSpekBaru();
                 },
@@ -12280,6 +12307,8 @@
                     this.selectedDokumenFile = null;
                     const el = document.getElementById('astap_reklas_dokumen_file_input');
                     if (el) el.value = '';
+                    const elKor = document.getElementById('astap_reklas_koreksi_dokumen_file');
+                    if (elKor) elKor.value = '';
                 },
 
                 isTanggalBastInvalid() {
@@ -12443,6 +12472,15 @@
                         }
                     }
 
+                    // Proteksi KDP (Konstruksi Dalam Pengerjaan / KIB F):
+                    // Aset KDP belum selesai dan tidak boleh dipindah KIB, dihibahkan, atau dimutasikan keluar OPD
+                    if (this.isCurrentAstapKdp()) {
+                        if (['pindah_kib', 'hibah', 'mutasi_eksternal', 'extracom', 'intracom'].includes(this.reklasJenis)) {
+                            this.showToast('Aset Konstruksi Dalam Pengerjaan (KDP / KIB F) belum berwujud barang jadi dan tidak dapat dipindah KIB, dihibahkan, atau dimutasi ke luar OPD. Silakan gunakan opsi Kapitalisasi KDP Selesai atau Koreksi Nilai.', 'error');
+                            return;
+                        }
+                    }
+
                     // Validasi Ekstrakomptabel vs Intrakomptabel
                     if (this.reklasJenis === 'extracom') {
                         if (!this.reklasExtracomItems || this.reklasExtracomItems.length === 0) {
@@ -12493,9 +12531,27 @@
                         const it = this.selectedAstapReklas;
                         const baseVal = parseFloat(it.total_realisasi_num || it.total_realisasi || it.harga_satuan || 0);
 
+                        if (nom <= 0) {
+                            this.showToast('Nilai realisasi baru sama dengan nilai semula (selisih Rp 0). Tidak ada perubahan nominal untuk disimpan!', 'error');
+                            return;
+                        }
+
                         if (this.reklasTipeKoreksiNilai === 'kurang' && nom >= baseVal && baseVal > 0) {
                             this.showToast('Nominal pengurangan nilai tidak boleh melebihi atau sama dengan total nilai barang saat ini!', 'error');
                             return;
+                        }
+
+                        if (this.reklasSubKoreksi === 'lkd' || this.reklasSubKoreksi === 'manset') {
+                            const noDok = (this.reklasNoDokumenKoreksi || '').trim();
+                            if (!noDok) {
+                                const docLabel = (this.reklasSubKoreksi === 'lkd') ? 'Nomor LHP BPK RI / Rekomendasi' : 'Nomor BA Rekonsiliasi Manset BPKAD';
+                                this.showToast(`${docLabel} wajib diisi sebagai dasar hukum penyesuaian nilai!`, 'warning');
+                                return;
+                            }
+                            if (!this.reklasDokumenTglKoreksi) {
+                                this.showToast('Tanggal Dokumen Dasar Koreksi wajib dipilih!', 'warning');
+                                return;
+                            }
                         }
                     } else if (this.reklasJenis === 'hibah') {
                         if (!this.reklasNomorBastHibah || !this.reklasNomorBastHibah.trim()) {

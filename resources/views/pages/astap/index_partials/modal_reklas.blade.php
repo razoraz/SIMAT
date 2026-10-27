@@ -132,7 +132,7 @@
                                        'cursor-pointer bg-emerald-500/10 border-emerald-500/50 shadow-sm shadow-emerald-500/10': !(isReklasExtracomDisabled() || isKemitraanAktif()) && reklasJenis === 'intracom',
                                        'cursor-pointer bg-slate-950/60 border-slate-800 hover:border-slate-700': !(isReklasExtracomDisabled() || isKemitraanAktif()) && reklasJenis !== 'extracom' && reklasJenis !== 'intracom'
                                    }">
-                                <input type="radio" name="reklas_jenis" :value="isCurrentAstapExtracom() ? 'intracom' : 'extracom'" x-model="reklasJenis" :disabled="isReklasExtracomDisabled() || isKemitraanAktif()" class="hidden" style="display: none;">
+                                <input type="radio" name="reklas_jenis" :value="isCurrentAstapExtracom() ? 'intracom' : 'extracom'" x-model="reklasJenis" @change="onReklasJenisChange()" :disabled="isReklasExtracomDisabled() || isKemitraanAktif()" class="hidden" style="display: none;">
                                 <div class="flex items-center justify-center rounded-full border shrink-0 transition-all"
                                      style="width: 18px; height: 18px; min-width: 18px; margin-right: 6px;"
                                      :class="{
@@ -166,25 +166,40 @@
                             </label>
 
                             <!-- 2. Pindah KIB / Koreksi Rekening (Salah Kamar / Salah Akun 108) -->
-                            <label class="relative flex items-center p-3.5 rounded-2xl border cursor-pointer transition-all select-none"
+                            <label class="relative flex items-center p-3.5 rounded-2xl border transition-all select-none"
                                    style="gap: 12px;"
-                                   :class="reklasJenis === 'pindah_kib' ? 'bg-indigo-500/10 border-indigo-500/50 shadow-sm shadow-indigo-500/10 ring-1 ring-indigo-500/20' : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'">
-                                <input type="radio" name="reklas_jenis" value="pindah_kib" x-model="reklasJenis" class="hidden" style="display: none;">
+                                   :class="{
+                                       'opacity-40 cursor-not-allowed bg-slate-950/30 border-slate-800': isCurrentAstapKdp(),
+                                       'cursor-pointer bg-indigo-500/10 border-indigo-500/50 shadow-sm shadow-indigo-500/10 ring-1 ring-indigo-500/20': !isCurrentAstapKdp() && reklasJenis === 'pindah_kib',
+                                       'cursor-pointer bg-slate-950/60 border-slate-800 hover:border-slate-700': !isCurrentAstapKdp() && reklasJenis !== 'pindah_kib'
+                                   }">
+                                <input type="radio" name="reklas_jenis" value="pindah_kib" x-model="reklasJenis" @change="onReklasJenisChange()" :disabled="isCurrentAstapKdp()" class="hidden" style="display: none;">
                                 <div class="flex items-center justify-center rounded-full border shrink-0 transition-all"
                                      style="width: 18px; height: 18px; min-width: 18px; margin-right: 6px;"
-                                     :class="reklasJenis === 'pindah_kib' ? 'border-indigo-400 bg-indigo-500/20' : 'border-slate-700 bg-slate-900'">
-                                    <div x-show="reklasJenis === 'pindah_kib'" class="rounded-full bg-indigo-400" style="width: 8px; height: 8px;"></div>
+                                     :class="{
+                                         'border-indigo-400 bg-indigo-500/20': !isCurrentAstapKdp() && reklasJenis === 'pindah_kib',
+                                         'border-slate-700 bg-slate-900': isCurrentAstapKdp() || reklasJenis !== 'pindah_kib'
+                                     }">
+                                    <div x-show="!isCurrentAstapKdp() && reklasJenis === 'pindah_kib'" class="rounded-full bg-indigo-400" style="width: 8px; height: 8px;"></div>
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-center space-x-2">
-                                        <span class="font-bold text-xs" :class="reklasJenis === 'pindah_kib' ? 'text-indigo-300' : 'text-white'"
+                                        <span class="font-bold text-xs" 
+                                              :class="{
+                                                  'text-indigo-300': !isCurrentAstapKdp() && reklasJenis === 'pindah_kib',
+                                                  'text-white': !isCurrentAstapKdp() && reklasJenis !== 'pindah_kib',
+                                                  'text-slate-500': isCurrentAstapKdp()
+                                              }"
                                               x-text="isKemitraanAktif() ? 'Pindah Sub-Rekening 108 Kemitraan' : 'Pindah KIB / Koreksi Rekening'"></span>
                                         <template x-if="isKemitraanAktif()">
                                             <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">1.5.2 Kemitraan</span>
                                         </template>
+                                        <template x-if="isCurrentAstapKdp()">
+                                            <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">Terkunci (KDP)</span>
+                                        </template>
                                     </div>
                                     <div class="text-[10px] text-slate-400 mt-0.5" 
-                                         x-text="isKemitraanAktif() ? 'Perbaikan sub-rincian 108 seputar Akun 1.5.2 Kemitraan (Sewa, KSP, BGS/BSG)' : 'Salah kamar KIB atau perbaikan sub-rincian Simda 108'"></div>
+                                         x-text="isCurrentAstapKdp() ? 'Terkunci: KDP belum selesai, pengalihan definitif hanya lewat Kapitalisasi KDP Selesai' : (isKemitraanAktif() ? 'Perbaikan sub-rincian 108 seputar Akun 1.5.2 Kemitraan (Sewa, KSP, BGS/BSG)' : 'Salah kamar KIB atau perbaikan sub-rincian Simda 108')"></div>
                                 </div>
                             </label>
 
@@ -196,7 +211,7 @@
                                        'cursor-pointer bg-rose-500/10 border-rose-500/50 shadow-sm shadow-rose-500/10': !(isReklasKdpDisabled() || isKemitraanAktif()) && reklasJenis === 'kdp',
                                        'cursor-pointer bg-slate-950/60 border-slate-800 hover:border-slate-700': !(isReklasKdpDisabled() || isKemitraanAktif()) && reklasJenis !== 'kdp'
                                    }">
-                                <input type="radio" name="reklas_jenis" value="kdp" x-model="reklasJenis" :disabled="isReklasKdpDisabled() || isKemitraanAktif()" class="hidden" style="display: none;">
+                                <input type="radio" name="reklas_jenis" value="kdp" x-model="reklasJenis" @change="onReklasJenisChange()" :disabled="isReklasKdpDisabled() || isKemitraanAktif()" class="hidden" style="display: none;">
                                 <div class="flex items-center justify-center rounded-full border shrink-0 transition-all"
                                      style="width: 18px; height: 18px; min-width: 18px; margin-right: 6px;"
                                      :class="{
@@ -232,7 +247,7 @@
                             <label class="relative flex items-center p-3.5 rounded-2xl border cursor-pointer transition-all select-none"
                                    style="gap: 12px;"
                                    :class="reklasJenis === 'koreksi_nilai' ? 'bg-cyan-500/10 border-cyan-500/50 shadow-sm shadow-cyan-500/10' : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'">
-                                <input type="radio" name="reklas_jenis" value="koreksi_nilai" x-model="reklasJenis" class="hidden" style="display: none;">
+                                <input type="radio" name="reklas_jenis" value="koreksi_nilai" x-model="reklasJenis" @change="onReklasJenisChange()" class="hidden" style="display: none;">
                                 <div class="flex items-center justify-center rounded-full border shrink-0 transition-all"
                                      style="width: 18px; height: 18px; min-width: 18px; margin-right: 6px;"
                                      :class="reklasJenis === 'koreksi_nilai' ? 'border-cyan-400 bg-cyan-500/20' : 'border-slate-700 bg-slate-900'">
@@ -248,27 +263,30 @@
                             <label class="relative flex items-center p-3.5 rounded-2xl border transition-all select-none"
                                    style="gap: 12px;"
                                    :class="{
-                                       'opacity-40 cursor-not-allowed bg-slate-950/30 border-slate-800': isKemitraanAktif(),
-                                       'cursor-pointer bg-purple-500/10 border-purple-500/50 shadow-sm shadow-purple-500/10': !isKemitraanAktif() && reklasJenis === 'hibah',
-                                       'cursor-pointer bg-slate-950/60 border-slate-800 hover:border-slate-700': !isKemitraanAktif() && reklasJenis !== 'hibah'
+                                       'opacity-40 cursor-not-allowed bg-slate-950/30 border-slate-800': isKemitraanAktif() || isCurrentAstapKdp(),
+                                       'cursor-pointer bg-purple-500/10 border-purple-500/50 shadow-sm shadow-purple-500/10': !isKemitraanAktif() && !isCurrentAstapKdp() && reklasJenis === 'hibah',
+                                       'cursor-pointer bg-slate-950/60 border-slate-800 hover:border-slate-700': !isKemitraanAktif() && !isCurrentAstapKdp() && reklasJenis !== 'hibah'
                                    }">
-                                <input type="radio" name="reklas_jenis" value="hibah" x-model="reklasJenis" :disabled="isKemitraanAktif()" class="hidden" style="display: none;">
+                                <input type="radio" name="reklas_jenis" value="hibah" x-model="reklasJenis" @change="onReklasJenisChange()" :disabled="isKemitraanAktif() || isCurrentAstapKdp()" class="hidden" style="display: none;">
                                 <div class="flex items-center justify-center rounded-full border shrink-0 transition-all"
                                      style="width: 18px; height: 18px; min-width: 18px; margin-right: 6px;"
                                      :class="{
-                                         'border-purple-400 bg-purple-500/20': !isKemitraanAktif() && reklasJenis === 'hibah',
-                                         'border-slate-700 bg-slate-900': isKemitraanAktif() || reklasJenis !== 'hibah'
+                                         'border-purple-400 bg-purple-500/20': !isKemitraanAktif() && !isCurrentAstapKdp() && reklasJenis === 'hibah',
+                                         'border-slate-700 bg-slate-900': isKemitraanAktif() || isCurrentAstapKdp() || reklasJenis !== 'hibah'
                                      }">
-                                    <div x-show="!isKemitraanAktif() && reklasJenis === 'hibah'" class="rounded-full bg-purple-400" style="width: 8px; height: 8px;"></div>
+                                    <div x-show="!isKemitraanAktif() && !isCurrentAstapKdp() && reklasJenis === 'hibah'" class="rounded-full bg-purple-400" style="width: 8px; height: 8px;"></div>
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-center space-x-2">
-                                        <span class="font-bold text-xs" :class="(!isKemitraanAktif() && reklasJenis === 'hibah') ? 'text-purple-300' : (isKemitraanAktif() ? 'text-slate-500' : 'text-white')">Hibah (Bantuan Pemerintah)</span>
+                                        <span class="font-bold text-xs" :class="(!isKemitraanAktif() && !isCurrentAstapKdp() && reklasJenis === 'hibah') ? 'text-purple-300' : ((isKemitraanAktif() || isCurrentAstapKdp()) ? 'text-slate-500' : 'text-white')">Hibah (Bantuan Pemerintah)</span>
                                         <template x-if="isKemitraanAktif()">
                                             <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">PKS Aktif</span>
                                         </template>
+                                        <template x-if="!isKemitraanAktif() && isCurrentAstapKdp()">
+                                            <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">Terkunci (KDP)</span>
+                                        </template>
                                     </div>
-                                    <div class="text-[10px] text-slate-400 mt-0.5" x-text="isKemitraanAktif() ? 'Terkunci: Aset sedang dalam kemitraan aktif' : 'Penyerahan hibah keluar (BAST) atau penerimaan hibah masuk tanpa kas'"></div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5" x-text="isCurrentAstapKdp() ? 'Terkunci: Aset KDP (belum selesai) tidak dapat dihibahkan' : (isKemitraanAktif() ? 'Terkunci: Aset sedang dalam kemitraan aktif' : 'Penyerahan hibah keluar (BAST) atau penerimaan hibah masuk tanpa kas')"></div>
                                 </div>
                             </label>
 
@@ -276,30 +294,33 @@
                             <label class="relative flex items-center p-3.5 rounded-2xl border transition-all select-none"
                                    style="gap: 12px;"
                                    :class="{
-                                       'opacity-40 cursor-not-allowed bg-slate-950/30 border-slate-800': isKemitraanAktif() || (typeof isCurrentAstapMutasiKeluarFull === 'function' && isCurrentAstapMutasiKeluarFull()),
-                                       'cursor-pointer bg-teal-500/10 border-teal-500/50 shadow-sm shadow-teal-500/10': !isKemitraanAktif() && !(typeof isCurrentAstapMutasiKeluarFull === 'function' && isCurrentAstapMutasiKeluarFull()) && reklasJenis === 'mutasi_eksternal',
-                                       'cursor-pointer bg-slate-950/60 border-slate-800 hover:border-slate-700': !isKemitraanAktif() && !(typeof isCurrentAstapMutasiKeluarFull === 'function' && isCurrentAstapMutasiKeluarFull()) && reklasJenis !== 'mutasi_eksternal'
+                                       'opacity-40 cursor-not-allowed bg-slate-950/30 border-slate-800': isKemitraanAktif() || isCurrentAstapKdp() || (typeof isCurrentAstapMutasiKeluarFull === 'function' && isCurrentAstapMutasiKeluarFull()),
+                                       'cursor-pointer bg-teal-500/10 border-teal-500/50 shadow-sm shadow-teal-500/10': !isKemitraanAktif() && !isCurrentAstapKdp() && !(typeof isCurrentAstapMutasiKeluarFull === 'function' && isCurrentAstapMutasiKeluarFull()) && reklasJenis === 'mutasi_eksternal',
+                                       'cursor-pointer bg-slate-950/60 border-slate-800 hover:border-slate-700': !isKemitraanAktif() && !isCurrentAstapKdp() && !(typeof isCurrentAstapMutasiKeluarFull === 'function' && isCurrentAstapMutasiKeluarFull()) && reklasJenis !== 'mutasi_eksternal'
                                    }">
-                                <input type="radio" name="reklas_jenis" value="mutasi_eksternal" x-model="reklasJenis" :disabled="isKemitraanAktif() || (typeof isCurrentAstapMutasiKeluarFull === 'function' && isCurrentAstapMutasiKeluarFull())" class="hidden" style="display: none;">
+                                <input type="radio" name="reklas_jenis" value="mutasi_eksternal" x-model="reklasJenis" @change="onReklasJenisChange()" :disabled="isKemitraanAktif() || isCurrentAstapKdp() || (typeof isCurrentAstapMutasiKeluarFull === 'function' && isCurrentAstapMutasiKeluarFull())" class="hidden" style="display: none;">
                                 <div class="flex items-center justify-center rounded-full border shrink-0 transition-all"
                                      style="width: 18px; height: 18px; min-width: 18px; margin-right: 6px;"
                                      :class="{
-                                         'border-teal-400 bg-teal-500/20': !isKemitraanAktif() && !(typeof isCurrentAstapMutasiKeluarFull === 'function' && isCurrentAstapMutasiKeluarFull()) && reklasJenis === 'mutasi_eksternal',
-                                         'border-slate-700 bg-slate-900': isKemitraanAktif() || (typeof isCurrentAstapMutasiKeluarFull === 'function' && isCurrentAstapMutasiKeluarFull()) || reklasJenis !== 'mutasi_eksternal'
+                                         'border-teal-400 bg-teal-500/20': !isKemitraanAktif() && !isCurrentAstapKdp() && !(typeof isCurrentAstapMutasiKeluarFull === 'function' && isCurrentAstapMutasiKeluarFull()) && reklasJenis === 'mutasi_eksternal',
+                                         'border-slate-700 bg-slate-900': isKemitraanAktif() || isCurrentAstapKdp() || (typeof isCurrentAstapMutasiKeluarFull === 'function' && isCurrentAstapMutasiKeluarFull()) || reklasJenis !== 'mutasi_eksternal'
                                      }">
-                                    <div x-show="!isKemitraanAktif() && !(typeof isCurrentAstapMutasiKeluarFull === 'function' && isCurrentAstapMutasiKeluarFull()) && reklasJenis === 'mutasi_eksternal'" class="rounded-full bg-teal-400" style="width: 8px; height: 8px;"></div>
+                                    <div x-show="!isKemitraanAktif() && !isCurrentAstapKdp() && !(typeof isCurrentAstapMutasiKeluarFull === 'function' && isCurrentAstapMutasiKeluarFull()) && reklasJenis === 'mutasi_eksternal'" class="rounded-full bg-teal-400" style="width: 8px; height: 8px;"></div>
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-center space-x-2">
-                                        <span class="font-bold text-xs" :class="(!isKemitraanAktif() && !(typeof isCurrentAstapMutasiKeluarFull === 'function' && isCurrentAstapMutasiKeluarFull()) && reklasJenis === 'mutasi_eksternal') ? 'text-teal-300' : ((isKemitraanAktif() || (typeof isCurrentAstapMutasiKeluarFull === 'function' && isCurrentAstapMutasiKeluarFull())) ? 'text-slate-500' : 'text-white')">Mutasi Eksternal Antar-OPD</span>
+                                        <span class="font-bold text-xs" :class="(!isKemitraanAktif() && !isCurrentAstapKdp() && !(typeof isCurrentAstapMutasiKeluarFull === 'function' && isCurrentAstapMutasiKeluarFull()) && reklasJenis === 'mutasi_eksternal') ? 'text-teal-300' : ((isKemitraanAktif() || isCurrentAstapKdp() || (typeof isCurrentAstapMutasiKeluarFull === 'function' && isCurrentAstapMutasiKeluarFull())) ? 'text-slate-500' : 'text-white')">Mutasi Eksternal Antar-OPD</span>
                                         <template x-if="isKemitraanAktif()">
                                             <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">PKS Aktif</span>
                                         </template>
-                                        <template x-if="typeof isCurrentAstapMutasiKeluarFull === 'function' && isCurrentAstapMutasiKeluarFull()">
+                                        <template x-if="!isKemitraanAktif() && isCurrentAstapKdp()">
+                                            <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">Terkunci (KDP)</span>
+                                        </template>
+                                        <template x-if="!isKemitraanAktif() && !isCurrentAstapKdp() && typeof isCurrentAstapMutasiKeluarFull === 'function' && isCurrentAstapMutasiKeluarFull()">
                                             <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">Sudah Keluar OPD</span>
                                         </template>
                                     </div>
-                                    <div class="text-[10px] text-slate-400 mt-0.5" x-text="isKemitraanAktif() ? 'Terkunci: Aset sedang dalam kemitraan aktif' : ((typeof isCurrentAstapMutasiKeluarFull === 'function' && isCurrentAstapMutasiKeluarFull()) ? 'Terkunci: Aset telah dimutasi keluar ke OPD lain dan tidak dapat dimutasi lagi' : 'Pengalihan barang RSUD ke dinas/SKPD lain di lingkungan Pemkab')">
+                                    <div class="text-[10px] text-slate-400 mt-0.5" x-text="isCurrentAstapKdp() ? 'Terkunci: Aset KDP (belum selesai) tidak dapat dimutasi keluar OPD' : (isKemitraanAktif() ? 'Terkunci: Aset sedang dalam kemitraan aktif' : ((typeof isCurrentAstapMutasiKeluarFull === 'function' && isCurrentAstapMutasiKeluarFull()) ? 'Terkunci: Aset telah dimutasi keluar ke OPD lain dan tidak dapat dimutasi lagi' : 'Pengalihan barang RSUD ke dinas/SKPD lain di lingkungan Pemkab'))">
                                         Pengalihan barang RSUD ke dinas/SKPD lain di lingkungan Pemkab
                                     </div>
                                 </div>
@@ -2006,24 +2027,66 @@
                                 </div>
                             </div>
 
-                            <!-- 3. Dokumen Dasar Penyesuaian (Contextual Inputs) -->
+                            <!-- 3. Dokumen Dasar Penyesuaian (Contextual Inputs & Upload Scan) -->
                             <div class="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3">
-                                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                                    <span>📄</span>
-                                    <span>Dokumen Dasar Penyesuaian Nilai:</span>
+                                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                                    <div class="flex items-center gap-1.5">
+                                        <span>📄</span>
+                                        <span>Dokumen Dasar Penyesuaian Nilai:</span>
+                                    </div>
+                                    <span x-show="reklasSubKoreksi === 'lkd' || reklasSubKoreksi === 'manset'" class="text-[9px] font-semibold text-rose-400">
+                                        * Wajib Berdasar LHP / BA Rekon
+                                    </span>
                                 </div>
                                 <div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
                                     <div class="sm:col-span-8 space-y-1">
-                                        <label class="block text-[10px] font-bold text-slate-300"
-                                               x-text="reklasSubKoreksi === 'lkd' ? 'Nomor LHP BPK RI / Rekomendasi' : (reklasSubKoreksi === 'manset' ? 'Nomor BA Rekonsiliasi Manset BPKAD' : 'Nomor Dokumen / Nota Rekonsiliasi Internal')"></label>
+                                        <label class="block text-[10px] font-bold text-slate-300">
+                                            <span x-text="reklasSubKoreksi === 'lkd' ? 'Nomor LHP BPK RI / Rekomendasi' : (reklasSubKoreksi === 'manset' ? 'Nomor BA Rekonsiliasi Manset BPKAD' : 'Nomor Dokumen / Nota Rekonsiliasi Internal')"></span>
+                                            <span x-show="reklasSubKoreksi === 'lkd' || reklasSubKoreksi === 'manset'" class="text-rose-400 font-black">*</span>
+                                        </label>
                                         <input type="text" x-model="reklasNoDokumenKoreksi"
                                                :placeholder="reklasSubKoreksi === 'lkd' ? 'Contoh: 12/LHP/XVIII.SBY/05/2026' : (reklasSubKoreksi === 'manset' ? 'Contoh: 000.2/BA-MANSET/BPKAD/2026' : 'Contoh: 000.1.2/BA-REKON/RSUD/2026')"
                                                class="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl text-xs font-mono text-white focus:outline-none">
                                     </div>
                                     <div class="sm:col-span-4 space-y-1">
-                                        <label class="block text-[10px] font-bold text-slate-300">Tanggal Dokumen</label>
+                                        <label class="block text-[10px] font-bold text-slate-300">
+                                            <span>Tanggal Dokumen</span>
+                                            <span x-show="reklasSubKoreksi === 'lkd' || reklasSubKoreksi === 'manset'" class="text-rose-400 font-black">*</span>
+                                        </label>
                                         <input type="date" x-model="reklasDokumenTglKoreksi"
                                                class="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl text-xs font-mono text-white focus:outline-none">
+                                    </div>
+                                </div>
+
+                                <!-- Slot Upload Scan PDF LHP BPK / BA Rekonsiliasi (Opsional) -->
+                                <div class="pt-2.5 border-t border-slate-800/80">
+                                    <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                                        <span class="flex items-center gap-1.5">
+                                            <span>📎</span>
+                                            <span>Unggah Scan PDF Dokumen (LHP BPK / BA Rekonsiliasi / Bukti Kas):</span>
+                                        </span>
+                                        <span class="text-[9px] font-normal text-slate-400">PDF, JPG, PNG (Maks. 10 MB)</span>
+                                    </label>
+                                    <div class="p-3 rounded-xl bg-slate-900/80 border-2 border-dashed border-slate-700 hover:border-cyan-400/60 transition-all text-center relative group">
+                                        <input type="file" id="astap_reklas_koreksi_dokumen_file" @change="handleDokumenFile" accept=".pdf,.jpg,.jpeg,.png"
+                                               class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                                        <div class="space-y-1 pointer-events-none">
+                                            <p class="text-xs font-bold text-slate-300 group-hover:text-cyan-300 transition-colors">
+                                                <span x-show="!selectedDokumenFile">Klik atau seret file PDF / scan bukti ke sini (Opsional)</span>
+                                                <span x-show="selectedDokumenFile" class="text-cyan-300 font-mono" x-text="selectedDokumenFile ? selectedDokumenFile.name : ''"></span>
+                                            </p>
+                                            <p class="text-[9.5px] text-slate-500">Bukti resmi pendukung pemeriksaan auditor & pembukuan BPKAD</p>
+                                        </div>
+                                    </div>
+                                    <div x-show="selectedDokumenFile" class="mt-2 flex items-center justify-between p-2 rounded-xl bg-cyan-950/40 border border-cyan-500/30 text-xs">
+                                        <span class="text-cyan-200 font-mono truncate flex items-center gap-2">
+                                            <span>📄</span>
+                                            <strong x-text="selectedDokumenFile?.name"></strong>
+                                            <span class="text-slate-400" x-text="'(' + ((selectedDokumenFile?.size || 0) / 1024).toFixed(1) + ' KB)'"></span>
+                                        </span>
+                                        <button type="button" @click="clearDokumenFile()" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 text-[10.5px] font-bold transition-all ml-2 cursor-pointer">
+                                            ✕ Batal
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -2072,6 +2135,22 @@
                                     <p class="text-[9.5px] text-slate-400 leading-tight">Terkalkulasi otomatis dari akumulasi nilai barang (Barang 1, 2, dst) di bawah.</p>
                                 </div>
                             </div>
+
+                            <!-- Peringatan Visual Pagu Belanja Modal DPA (Jika Tambah Nilai Melampaui DPA) -->
+                            <template x-if="isReklasBelanjaModal() && reklasTipeKoreksiNilai === 'tambah' && parseFloat(reklasNilaiRealisasiBaru || 0) > parseFloat(reklasNilaiAnggaran || 0)">
+                                <div class="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/40 text-amber-200 text-xs flex items-start gap-2.5 shadow-md">
+                                    <span class="text-base shrink-0 mt-0.5">⚠️</span>
+                                    <div class="space-y-1 flex-1 leading-relaxed">
+                                        <strong class="text-amber-300 font-extrabold uppercase tracking-wide text-[11px] block">Peringatan Pagu Belanja Modal DPA:</strong>
+                                        <div>
+                                            Nilai realisasi baru (<span class="font-mono font-bold text-amber-300" x-text="'Rp ' + Number(reklasNilaiRealisasiBaru || 0).toLocaleString('id-ID')"></span>) melampaui Pagu Anggaran DPA (<span class="font-mono font-bold text-slate-300" x-text="'Rp ' + Number(reklasNilaiAnggaran || 0).toLocaleString('id-ID')"></span>) sebesar <span class="font-mono font-bold text-rose-300" x-text="'Rp ' + Number((parseFloat(reklasNilaiRealisasiBaru || 0) - parseFloat(reklasNilaiAnggaran || 0))).toLocaleString('id-ID')"></span>.
+                                        </div>
+                                        <p class="text-[10px] text-amber-300/80">
+                                            Pastikan penambahan realisasi belanja modal ini telah memiliki dasar otorisasi Pergeseran Anggaran atau Perubahan DPA (PAK APBD/BLUD).
+                                        </p>
+                                    </div>
+                                </div>
+                            </template>
 
                             <!-- 2. Rincian Barang & Nilai Kapitalisasi (Barang 1, Barang 2, dst) -->
                             <div class="space-y-3 pt-2">

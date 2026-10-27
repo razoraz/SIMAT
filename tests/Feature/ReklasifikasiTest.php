@@ -527,6 +527,173 @@ class ReklasifikasiTest extends TestCase
         $this->assertEquals('KOREKSI_LAIN', $astap->jenis_reklas);
     }
 
+    public function test_koreksi_nilai_rejects_zero_difference()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        $jenisB = JenisAstap::firstOrCreate(
+            ['jenis' => '1.3.2.05'],
+            [
+                'nama_jenis' => 'Peralatan dan Mesin',
+                'sub_rincian_objek' => '1.3.2.05.01',
+                'uraian_sub_rincian' => 'Alat Rumah Tangga',
+                'sub_sub_rincian_objek' => '1.3.2.05.01.01',
+                'uraian_sub_sub_rincian' => 'Mebel',
+                'kelompok_kib' => 'KIB B',
+            ]
+        );
+
+        $astap = Astap::create([
+            'nama_barang' => 'Kursi Kerja Staff',
+            'jenis_astap_id' => $jenisB->id,
+            'tahun_perolehan' => 2026,
+            'jumlah_volume' => 1,
+            'satuan' => 'Unit',
+            'harga_satuan' => 2000000,
+            'total_realisasi' => 2000000,
+            'jumlah_anggaran' => 2000000,
+            'sumber_dana' => 'belanja_modal',
+            'is_reklas' => 0,
+        ]);
+
+        $payload = [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'KOREKSI_LAIN',
+            'tipe_koreksi' => 'kurang',
+            'sub_koreksi' => 'biasa',
+            'nilai_reklas' => 0, // Selisih 0
+            'tanggal_reklas' => '2026-03-21',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'nomor_ba_reklas' => 'BA-REKON-001',
+            'alasan_reklas' => 'Uji coba alasan reklasifikasi selisih nol',
+        ];
+
+        $response = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), $payload);
+        $response->assertStatus(422);
+        $response->assertJson([
+            'success' => false,
+        ]);
+        $this->assertStringContainsString('selisih Rp 0', $response->json('message'));
+    }
+
+    public function test_koreksi_nilai_lkd_requires_document_number()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        $jenisB = JenisAstap::firstOrCreate(
+            ['jenis' => '1.3.2.05'],
+            [
+                'nama_jenis' => 'Peralatan dan Mesin',
+                'sub_rincian_objek' => '1.3.2.05.01',
+                'uraian_sub_rincian' => 'Alat Rumah Tangga',
+                'sub_sub_rincian_objek' => '1.3.2.05.01.01',
+                'uraian_sub_sub_rincian' => 'Mebel',
+                'kelompok_kib' => 'KIB B',
+            ]
+        );
+
+        $astap = Astap::create([
+            'nama_barang' => 'Kursi Kerja Staff LKD',
+            'jenis_astap_id' => $jenisB->id,
+            'tahun_perolehan' => 2026,
+            'jumlah_volume' => 1,
+            'satuan' => 'Unit',
+            'harga_satuan' => 2000000,
+            'total_realisasi' => 2000000,
+            'jumlah_anggaran' => 2000000,
+            'sumber_dana' => 'belanja_modal',
+            'is_reklas' => 0,
+        ]);
+
+        // Kirim tanpa nomor dokumen
+        $payload = [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'KOREKSI_LAIN',
+            'tipe_koreksi' => 'kurang',
+            'sub_koreksi' => 'lkd',
+            'nilai_reklas' => 500000,
+            'tanggal_reklas' => '2026-03-21',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'nomor_ba_reklas' => '', // Kosong
+            'alasan_reklas' => 'Uji coba alasan reklasifikasi LKD',
+        ];
+
+        $response = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), $payload);
+        $response->assertStatus(422);
+        $response->assertJson([
+            'success' => false,
+        ]);
+        $this->assertStringContainsString('Nomor LHP BPK RI', $response->json('message'));
+    }
+
+    public function test_koreksi_nilai_can_upload_supporting_document_file()
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        $jenisB = JenisAstap::firstOrCreate(
+            ['jenis' => '1.3.2.05'],
+            [
+                'nama_jenis' => 'Peralatan dan Mesin',
+                'sub_rincian_objek' => '1.3.2.05.01',
+                'uraian_sub_rincian' => 'Alat Rumah Tangga',
+                'sub_sub_rincian_objek' => '1.3.2.05.01.01',
+                'uraian_sub_sub_rincian' => 'Mebel',
+                'kelompok_kib' => 'KIB B',
+            ]
+        );
+
+        $astap = Astap::create([
+            'nama_barang' => 'Kursi Kerja Staff Scan Test',
+            'jenis_astap_id' => $jenisB->id,
+            'tahun_perolehan' => 2026,
+            'jumlah_volume' => 1,
+            'satuan' => 'Unit',
+            'harga_satuan' => 2000000,
+            'total_realisasi' => 2000000,
+            'jumlah_anggaran' => 2000000,
+            'sumber_dana' => 'belanja_modal',
+            'is_reklas' => 0,
+        ]);
+
+        $fakePdf = \Illuminate\Http\UploadedFile::fake()->create('lhp_bpk_rekomendasi.pdf', 500, 'application/pdf');
+
+        $payload = [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'KOREKSI_LAIN',
+            'tipe_koreksi' => 'kurang',
+            'sub_koreksi' => 'lkd',
+            'nilai_reklas' => 300000,
+            'tanggal_reklas' => '2026-03-21',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'nomor_ba_reklas' => 'LHP/BPK/2026/01/TEST',
+            'alasan_reklas' => 'Uji coba upload dokumen scan LHP BPK',
+            'dokumen_file' => $fakePdf,
+        ];
+
+        $response = $this->actingAs($admin)->post(route('master.reklasifikasi.store'), $payload, [
+            'Accept' => 'application/json',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+        ]);
+
+        $reklas = AstapReklas::where('astap_id', $astap->id)->first();
+        $this->assertNotNull($reklas);
+        $this->assertNotNull($reklas->dokumen_path);
+        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($reklas->dokumen_path);
+
+        $astap->refresh();
+        $this->assertEquals(1700000, (float)$astap->total_realisasi);
+        $this->assertNotNull($astap->spesifikasi_json['koreksi_info']['dokumen_path']);
+    }
+
     public function test_can_reklas_pindah_kib_rekening()
     {
         $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
@@ -2524,6 +2691,81 @@ class ReklasifikasiTest extends TestCase
         $reg->refresh();
         $this->assertEquals('Baik', $reg->kondisi);
         $this->assertEquals('Tersedia', $reg->status);
+    }
+
+    public function test_kdp_asset_cannot_reklas_to_pindah_kib_hibah_or_mutasi()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        $jenisKdp = JenisAstap::firstOrCreate(
+            ['sub_sub_rincian_objek' => '1.3.6.01.01.01.001'],
+            [
+                'jenis' => '1.3.6',
+                'sub_rincian_objek' => '1.3.6.01.01',
+                'uraian_sub_rincian' => 'Konstruksi Dalam Pengerjaan',
+                'uraian_sub_sub_rincian' => 'Pembangunan Gedung Rawat Inap',
+                'nama_jenis' => 'KDP Bangunan Gedung',
+            ]
+        );
+
+        $astapKdp = Astap::create([
+            'nama_barang' => 'Pembangunan Gedung Bedah Terpadu (Tahap 1)',
+            'tahun_perolehan' => 2026,
+            'category' => 'KIB F',
+            'kode_108' => '1.3.6.01.01.01.001',
+            'jenis_astap_id' => $jenisKdp->id,
+            'jumlah_volume' => 1,
+            'harga_satuan' => 500000000,
+            'total_realisasi' => 500000000,
+            'jumlah_anggaran' => 600000000,
+            'user_id' => $admin->id,
+        ]);
+
+        // 1. Coba Pindah KIB (KOREKSI_REKENING) -> Ditolak (422)
+        $respPindah = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), [
+            'astap_id' => $astapKdp->id,
+            'jenis_reklas' => 'KOREKSI_REKENING',
+            'asal_kib' => 'KIB F',
+            'tujuan_kib' => 'KIB C',
+            'nilai_reklas' => 500000000,
+            'tanggal_reklas' => '2026-03-25',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'alasan_reklas' => 'Coba pindah KIB akun biasa',
+        ]);
+        $respPindah->assertStatus(422);
+        $respPindah->assertJson(['success' => false]);
+        $this->assertStringContainsString('Konstruksi Dalam Pengerjaan', $respPindah->json('message'));
+
+        // 2. Coba Hibah (HIBAH_KELUAR) -> Ditolak (422)
+        $respHibah = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), [
+            'astap_id' => $astapKdp->id,
+            'jenis_reklas' => 'HIBAH_KELUAR',
+            'asal_kib' => 'KIB F',
+            'tujuan_kib' => 'HIBAH',
+            'nilai_reklas' => 500000000,
+            'tanggal_reklas' => '2026-03-25',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'alasan_reklas' => 'Coba hibah KDP',
+        ]);
+        $respHibah->assertStatus(422);
+        $respHibah->assertJson(['success' => false]);
+
+        // 3. Coba Mutasi Eksternal (MUTASI_EKSTERNAL) -> Ditolak (422)
+        $respMutasi = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), [
+            'astap_id' => $astapKdp->id,
+            'jenis_reklas' => 'MUTASI_EKSTERNAL',
+            'asal_kib' => 'KIB F',
+            'tujuan_kib' => 'MUTASI_OPD',
+            'nilai_reklas' => 500000000,
+            'tanggal_reklas' => '2026-03-25',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'alasan_reklas' => 'Coba mutasi KDP ke OPD lain',
+        ]);
+        $respMutasi->assertStatus(422);
+        $respMutasi->assertJson(['success' => false]);
     }
 }
 
