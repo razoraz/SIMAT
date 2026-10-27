@@ -1300,209 +1300,323 @@
                                                     <span class="text-[11px] font-extrabold text-purple-300 uppercase tracking-wider">
                                                         <span x-text="reklasTujuanKib === 'KEMITRAAN' ? 'Spesifikasi Fisik Aset Tetap Lainnya (Kemitraan):' : 'Spesifikasi Aset Tetap Lainnya (KIB E):'"></span>
                                                     </span>
-                                                    <p class="text-[10px] text-slate-400">Buku Perpustakaan Medis, Kesenian/Budaya & Ornamen, atau Hewan &amp; Tanaman RSUD.</p>
+                                                    <p class="text-[10px] text-slate-400">Buku Perpustakaan Medis, Kesenian/Budaya &amp; Ornamen, atau Hewan &amp; Tanaman RSUD.</p>
                                                 </div>
                                             </div>
-                                            <span class="text-[9.5px] px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold font-mono">
-                                                KIB E &bull; 1.3.5 / 1.5.2
-                                            </span>
-                                        </div>
-
-                                        <!-- Selector Sub-Kategori KIB E (Interactive Pill Buttons) -->
-                                        <div class="space-y-1.5">
-                                            <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider flex items-center justify-between">
-                                                <span>PILIH SUB-KATEGORI KIB E:</span>
-                                                <span class="text-[9px] text-purple-400 font-mono" x-text="'Aktif: ' + ((reklasSpekBaru.kib_e_type === 'kesenian') ? 'Kesenian (1.3.5.02)' : ((reklasSpekBaru.kib_e_type === 'hewan_tumbuhan') ? 'Hewan/Tanaman (1.3.5.03)' : 'Buku Perpustakaan (1.3.5.01)'))"></span>
-                                            </label>
-                                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                                <button type="button" @click="reklasSpekBaru.kib_e_type = 'buku'; syncCurrentSpekToActiveItem();"
-                                                        :class="(reklasSpekBaru.kib_e_type || 'buku') === 'buku' ? 'border-amber-500/80 bg-amber-950/40 text-amber-200 ring-1 ring-amber-500/50 shadow-sm' : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:text-slate-200'"
-                                                        class="p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between text-left">
-                                                    <div class="flex items-center space-x-2">
-                                                        <span class="text-base">📚</span>
-                                                        <div>
-                                                            <div class="text-xs font-bold">Buku Perpustakaan</div>
-                                                            <div class="text-[9px] font-mono text-slate-400">Kode 1.3.5.01</div>
-                                                        </div>
-                                                    </div>
-                                                    <span x-show="(reklasSpekBaru.kib_e_type || 'buku') === 'buku'" class="text-amber-400 font-bold text-xs">✓</span>
+                                            <div class="flex items-center gap-2">
+                                                <!-- Extracom vs Reguler Indicator Badge Toggle -->
+                                                <button type="button" 
+                                                        class="px-2.5 py-0.5 rounded-md text-[10px] font-bold border transition-all flex items-center gap-1 cursor-pointer"
+                                                        :class="isTargetExtracom() ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 shadow-sm hover:bg-cyan-500/30' : 'bg-purple-500/20 text-purple-300 border-purple-500/40 hover:bg-purple-500/30'"
+                                                        @click="if (reklasSpekBaru) { reklasSpekBaru.is_extracom = !isTargetExtracom(); syncCurrentSpekToActiveItem(); }"
+                                                        title="Klik untuk beralih mode Extracom / Reguler secara manual">
+                                                    <span x-text="isTargetExtracom() ? '📦 Ekstrakomtabel (≤ 300rb)' : '⚙️ Aset Tetap Reguler'"></span>
+                                                    <span class="text-[9px] opacity-60">⇄ Ubah</span>
                                                 </button>
-                                                <button type="button" @click="reklasSpekBaru.kib_e_type = 'kesenian'; syncCurrentSpekToActiveItem();"
-                                                        :class="reklasSpekBaru.kib_e_type === 'kesenian' ? 'border-purple-500/80 bg-purple-950/40 text-purple-200 ring-1 ring-purple-500/50 shadow-sm' : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:text-slate-200'"
-                                                        class="p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between text-left">
-                                                    <div class="flex items-center space-x-2">
-                                                        <span class="text-base">🎨</span>
-                                                        <div>
-                                                            <div class="text-xs font-bold">Kesenian &amp; Budaya</div>
-                                                            <div class="text-[9px] font-mono text-slate-400">Kode 1.3.5.02</div>
-                                                        </div>
+                                                <span class="text-[9.5px] px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold font-mono">
+                                                    KIB E &bull; 1.3.5 / 1.5.2
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <!-- KASUS A: EXTRACOM (KIB E EKSTRAKOMTABEL) -->
+                                        <div x-show="isTargetExtracom()" class="space-y-4">
+                                            <!-- Single Cohesive Card: Spesifikasi Fisik KIB E Extracom -->
+                                            <div class="p-4 sm:p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4 shadow-md">
+                                                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                                                    <span class="text-xs font-bold text-amber-400 block uppercase tracking-wider flex items-center space-x-1.5">
+                                                        <span>📚 SPESIFIKASI &amp; IDENTITAS FISIK (EKSTRAKOMTABEL KIB E):</span>
+                                                    </span>
+                                                    <span class="text-[9px] px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 font-bold">
+                                                        Ekstrakomtabel KIB E (≤ 300rb)
+                                                    </span>
+                                                </div>
+
+                                                <!-- Nama Barang (PMDN 108) Khusus Extracom KIB E -->
+                                                <div>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold flex items-center justify-between">
+                                                        <span>Nama Barang (PMDN 108)</span>
+                                                        <span class="text-[9px] text-amber-400 font-bold flex items-center space-x-1">
+                                                            <span>🔒</span>
+                                                            <span>Otomatis Sesuai Akun 108</span>
+                                                        </span>
+                                                    </label>
+                                                    <input type="text" 
+                                                           :value="reklasSubSubRincianNama || reklasSubRincianNama || reklasSpekBaru.item_nama || selectedAstapReklas?.nama_barang || 'Aset Tetap Lainnya'"
+                                                           readonly
+                                                           class="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 font-bold cursor-not-allowed select-none focus:outline-none">
+                                                </div>
+
+                                                <!-- Baris 1: Merk/Penerbit, Type/Model & Ukuran (3 Kolom Seimbang) -->
+                                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
+                                                            Merk / Penerbit / Pengarang <span class="text-rose-400">*</span>
+                                                        </label>
+                                                        <input type="text" x-model="reklasSpekBaru.lainnya_pencipta"
+                                                               @input="reklasSpekBaru.lainnya_judul_pencipta = (reklasSpekBaru.lainnya_judul || reklasSpekBaru.item_nama || '') + (reklasSpekBaru.lainnya_pencipta ? ' - ' + reklasSpekBaru.lainnya_pencipta : ''); syncCurrentSpekToActiveItem();"
+                                                               placeholder="Contoh: Tim Komite Medik / EGC / Olympic"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:border-amber-500 focus:outline-none transition-all">
                                                     </div>
-                                                    <span x-show="reklasSpekBaru.kib_e_type === 'kesenian'" class="text-purple-400 font-bold text-xs">✓</span>
-                                                </button>
-                                                <button type="button" @click="reklasSpekBaru.kib_e_type = 'hewan_tumbuhan'; syncCurrentSpekToActiveItem();"
-                                                        :class="reklasSpekBaru.kib_e_type === 'hewan_tumbuhan' ? 'border-emerald-500/80 bg-emerald-950/40 text-emerald-200 ring-1 ring-emerald-500/50 shadow-sm' : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:text-slate-200'"
-                                                        class="p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between text-left">
-                                                    <div class="flex items-center space-x-2">
-                                                        <span class="text-base">🌿</span>
-                                                        <div>
-                                                            <div class="text-xs font-bold">Hewan &amp; Tanaman</div>
-                                                            <div class="text-[9px] font-mono text-slate-400">Kode 1.3.5.03</div>
-                                                        </div>
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
+                                                            Type / Model / Edisi <span class="text-rose-400">*</span>
+                                                        </label>
+                                                        <input type="text" x-model="reklasSpekBaru.lainnya_spesifikasi"
+                                                               @input="syncCurrentSpekToActiveItem();"
+                                                               placeholder="Contoh: Buku Saku / Pedoman / Revisi 2026"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-mono focus:border-amber-500 focus:outline-none transition-all">
                                                     </div>
-                                                    <span x-show="reklasSpekBaru.kib_e_type === 'hewan_tumbuhan'" class="text-emerald-400 font-bold text-xs">✓</span>
-                                                </button>
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Ukuran / Format</label>
+                                                        <input type="text" x-model="reklasSpekBaru.lainnya_ukuran"
+                                                               @input="syncCurrentSpekToActiveItem();"
+                                                               placeholder="Contoh: A4 / Folio / 120x60 cm"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:border-amber-500 focus:outline-none transition-all">
+                                                    </div>
+                                                </div>
+
+                                                <!-- Baris 2: No Pabrik/SN/ISBN, Bahan & Kondisi (3 Kolom Seimbang) -->
+                                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">No Pabrik / Serial / ISBN</label>
+                                                        <input type="text" x-model="reklasSpekBaru.lainnya_no_pabrik"
+                                                               @input="syncCurrentSpekToActiveItem();"
+                                                               placeholder="ISBN 978-602-xxx / SN-EXT-2026"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono focus:border-cyan-500 focus:outline-none transition-all">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Bahan Pembuatan</label>
+                                                        <input type="text" x-model="reklasSpekBaru.lainnya_bahan"
+                                                               @input="syncCurrentSpekToActiveItem();"
+                                                               placeholder="Kertas / Art Paper / Kanvas / Plastik"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-cyan-500 focus:outline-none transition-all">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
+                                                            Kondisi Barang <span class="text-rose-400">*</span>
+                                                        </label>
+                                                        <select x-model="reklasSpekBaru.kondisi"
+                                                                @change="if (reklasSpekBaru) { reklasSpekBaru.lainnya_kondisi = reklasSpekBaru.kondisi; } syncCurrentSpekToActiveItem();"
+                                                                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold focus:border-cyan-500 focus:outline-none transition-all cursor-pointer">
+                                                            <option value="Baik">🟢 Baik (B)</option>
+                                                            <option value="Kurang Baik">🟡 Kurang Baik (KB)</option>
+                                                            <option value="Rusak Berat">🔴 Rusak Berat (RB)</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Keterangan / Catatan Khusus Extracom KIB E -->
+                                            <div class="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-1.5 shadow-md">
+                                                <label class="block text-slate-300 font-bold text-[10.5px] uppercase tracking-wider">
+                                                    📝 Keterangan / Catatan Khusus Barang:
+                                                </label>
+                                                <input type="text" x-model="reklasSpekBaru.lainnya_keterangan"
+                                                       @input="syncCurrentSpekToActiveItem();"
+                                                       placeholder="Contoh: Koleksi literatur medis kemitraan / Spesifikasi khusus"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-purple-500 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
                                             </div>
                                         </div>
 
-                                        <!-- 1. Form Sub-Kategori: Buku Perpustakaan / Literatur Medis -->
-                                        <div x-show="(reklasSpekBaru.kib_e_type || 'buku') === 'buku'" class="p-3.5 rounded-2xl bg-slate-950/70 border border-amber-500/30 space-y-3">
-                                            <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
-                                                <span class="text-[10.5px] font-extrabold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
-                                                    <span>📚</span>
-                                                    <span>Atribut Buku Perpustakaan / Literatur Medis:</span>
-                                                </span>
-                                                <span class="text-[9px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 font-bold">KIB E Buku</span>
-                                            </div>
-                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                <div class="sm:col-span-2">
-                                                    <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
-                                                        Judul Buku / Nama Literatur <span class="text-rose-400">*</span>
-                                                    </label>
-                                                    <input type="text" x-model="reklasSpekBaru.lainnya_judul"
-                                                           @input="reklasSpekBaru.lainnya_nama_barang = reklasSpekBaru.lainnya_judul; reklasSpekBaru.lainnya_judul_pencipta = (reklasSpekBaru.lainnya_judul || '') + (reklasSpekBaru.lainnya_pencipta ? ' - ' + reklasSpekBaru.lainnya_pencipta : ''); syncCurrentSpekToActiveItem();"
-                                                           placeholder="Contoh: Pedoman Standar Pelayanan Klinis & Formularium RSUD..."
-                                                           class="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none transition-all">
-                                                </div>
-                                                <div>
-                                                    <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Pengarang / Pencipta / Penerbit:</label>
-                                                    <input type="text" x-model="reklasSpekBaru.lainnya_pencipta"
-                                                           @input="reklasSpekBaru.lainnya_judul_pencipta = (reklasSpekBaru.lainnya_judul || '') + (reklasSpekBaru.lainnya_pencipta ? ' - ' + reklasSpekBaru.lainnya_pencipta : ''); syncCurrentSpekToActiveItem();"
-                                                           placeholder="Contoh: Tim Komite Medik RSUD / Penerbit EGC"
-                                                           class="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
-                                                </div>
-                                                <div>
-                                                    <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Spesifikasi / Edisi / Cetakan:</label>
-                                                    <input type="text" x-model="reklasSpekBaru.lainnya_spesifikasi"
-                                                           @input="syncCurrentSpekToActiveItem();"
-                                                           placeholder="Contoh: Edisi Revisi 2026 / Cetakan Lux Hardcover"
-                                                           class="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
-                                                </div>
-                                                <div>
-                                                    <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Bahan Pembuatan / Cover:</label>
-                                                    <input type="text" x-model="reklasSpekBaru.lainnya_bahan"
-                                                           @input="syncCurrentSpekToActiveItem();"
-                                                           placeholder="Contoh: Kertas Art Paper / Hardcover / HVS"
-                                                           class="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
-                                                </div>
-                                                <div>
-                                                    <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Kondisi Fisik Buku:</label>
-                                                    <select x-model="reklasSpekBaru.kondisi"
-                                                            @change="if (reklasSpekBaru) { reklasSpekBaru.lainnya_kondisi = reklasSpekBaru.kondisi; } syncCurrentSpekToActiveItem();"
-                                                            class="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white font-bold focus:outline-none transition-all cursor-pointer">
-                                                        <option value="Baik">🟢 Baik (B) — Lengkap & Layak Baca</option>
-                                                        <option value="Kurang Baik">🟡 Kurang Baik (KB) — Sebagian Rusak/Sobek</option>
-                                                        <option value="Rusak Berat">🔴 Rusak Berat (RB) — Rusak Total/Lapuk</option>
-                                                    </select>
+                                        <!-- KASUS B: REGULER (KIB E INTRAKOMTABEL) -->
+                                        <div x-show="!isTargetExtracom()" class="space-y-4">
+                                            <!-- Selector Sub-Kategori KIB E (Interactive Pill Buttons) -->
+                                            <div class="space-y-1.5">
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider flex items-center justify-between">
+                                                    <span>PILIH SUB-KATEGORI KIB E:</span>
+                                                    <span class="text-[9px] text-purple-400 font-mono" x-text="'Aktif: ' + ((reklasSpekBaru.kib_e_type === 'kesenian') ? 'Kesenian (1.3.5.02)' : ((reklasSpekBaru.kib_e_type === 'hewan_tumbuhan') ? 'Hewan/Tanaman (1.3.5.03)' : 'Buku Perpustakaan (1.3.5.01)'))"></span>
+                                                </label>
+                                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                                    <button type="button" @click="reklasSpekBaru.kib_e_type = 'buku'; syncCurrentSpekToActiveItem();"
+                                                            :class="(reklasSpekBaru.kib_e_type || 'buku') === 'buku' ? 'border-amber-500/80 bg-amber-950/40 text-amber-200 ring-1 ring-amber-500/50 shadow-sm' : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:text-slate-200'"
+                                                            class="p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between text-left">
+                                                        <div class="flex items-center space-x-2">
+                                                            <span class="text-base">📚</span>
+                                                            <div>
+                                                                <div class="text-xs font-bold">Buku Perpustakaan</div>
+                                                                <div class="text-[9px] font-mono text-slate-400">Kode 1.3.5.01</div>
+                                                            </div>
+                                                        </div>
+                                                        <span x-show="(reklasSpekBaru.kib_e_type || 'buku') === 'buku'" class="text-amber-400 font-bold text-xs">✓</span>
+                                                    </button>
+                                                    <button type="button" @click="reklasSpekBaru.kib_e_type = 'kesenian'; syncCurrentSpekToActiveItem();"
+                                                            :class="reklasSpekBaru.kib_e_type === 'kesenian' ? 'border-purple-500/80 bg-purple-950/40 text-purple-200 ring-1 ring-purple-500/50 shadow-sm' : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:text-slate-200'"
+                                                            class="p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between text-left">
+                                                        <div class="flex items-center space-x-2">
+                                                            <span class="text-base">🎨</span>
+                                                            <div>
+                                                                <div class="text-xs font-bold">Kesenian &amp; Budaya</div>
+                                                                <div class="text-[9px] font-mono text-slate-400">Kode 1.3.5.02</div>
+                                                            </div>
+                                                        </div>
+                                                        <span x-show="reklasSpekBaru.kib_e_type === 'kesenian'" class="text-purple-400 font-bold text-xs">✓</span>
+                                                    </button>
+                                                    <button type="button" @click="reklasSpekBaru.kib_e_type = 'hewan_tumbuhan'; syncCurrentSpekToActiveItem();"
+                                                            :class="reklasSpekBaru.kib_e_type === 'hewan_tumbuhan' ? 'border-emerald-500/80 bg-emerald-950/40 text-emerald-200 ring-1 ring-emerald-500/50 shadow-sm' : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:text-slate-200'"
+                                                            class="p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between text-left">
+                                                        <div class="flex items-center space-x-2">
+                                                            <span class="text-base">🌿</span>
+                                                            <div>
+                                                                <div class="text-xs font-bold">Hewan &amp; Tanaman</div>
+                                                                <div class="text-[9px] font-mono text-slate-400">Kode 1.3.5.03</div>
+                                                            </div>
+                                                        </div>
+                                                        <span x-show="reklasSpekBaru.kib_e_type === 'hewan_tumbuhan'" class="text-emerald-400 font-bold text-xs">✓</span>
+                                                    </button>
                                                 </div>
                                             </div>
-                                        </div>
 
-                                        <!-- 2. Form Sub-Kategori: Kesenian & Budaya / Ornamen -->
-                                        <div x-show="reklasSpekBaru.kib_e_type === 'kesenian'" class="p-3.5 rounded-2xl bg-slate-950/70 border border-purple-500/30 space-y-3">
-                                            <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
-                                                <span class="text-[10.5px] font-extrabold text-purple-300 uppercase tracking-wider flex items-center gap-1.5">
-                                                    <span>🎨</span>
-                                                    <span>Atribut Benda Seni, Budaya &amp; Ornamen:</span>
-                                                </span>
-                                                <span class="text-[9px] px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20 font-bold">KIB E Kesenian</span>
-                                            </div>
-                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                <div class="sm:col-span-2">
-                                                    <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
-                                                        Judul Karya Seni / Nama Barang <span class="text-rose-400">*</span>
-                                                    </label>
-                                                    <input type="text" x-model="reklasSpekBaru.lainnya_judul"
-                                                           @input="reklasSpekBaru.lainnya_nama_barang = reklasSpekBaru.lainnya_judul; reklasSpekBaru.lainnya_judul_pencipta = (reklasSpekBaru.lainnya_judul || '') + (reklasSpekBaru.lainnya_pencipta ? ' - ' + reklasSpekBaru.lainnya_pencipta : ''); syncCurrentSpekToActiveItem();"
-                                                           placeholder="Contoh: Lukisan Sejarah Pelayanan RSUD Bondowoso / Patung Ornamen Medis"
-                                                           class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none transition-all">
+                                            <!-- 1. Form Sub-Kategori: Buku Perpustakaan / Literatur Medis -->
+                                            <div x-show="(reklasSpekBaru.kib_e_type || 'buku') === 'buku'" class="p-3.5 rounded-2xl bg-slate-950/70 border border-amber-500/30 space-y-3">
+                                                <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
+                                                    <span class="text-[10.5px] font-extrabold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+                                                        <span>📚</span>
+                                                        <span>Atribut Buku Perpustakaan / Literatur Medis:</span>
+                                                    </span>
+                                                    <span class="text-[9px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 font-bold">KIB E Buku</span>
                                                 </div>
-                                                <div>
-                                                    <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Pencipta / Seniman:</label>
-                                                    <input type="text" x-model="reklasSpekBaru.lainnya_pencipta"
-                                                           @input="reklasSpekBaru.lainnya_judul_pencipta = (reklasSpekBaru.lainnya_judul || '') + (reklasSpekBaru.lainnya_pencipta ? ' - ' + reklasSpekBaru.lainnya_pencipta : ''); syncCurrentSpekToActiveItem();"
-                                                           placeholder="Contoh: Sanggar Seni Rupa Bondowoso"
-                                                           class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
-                                                </div>
-                                                <div>
-                                                    <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Asal Daerah / Wilayah:</label>
-                                                    <input type="text" x-model="reklasSpekBaru.lainnya_asal_daerah"
-                                                           @input="syncCurrentSpekToActiveItem();"
-                                                           placeholder="Contoh: Bondowoso, Jawa Timur"
-                                                           class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
-                                                </div>
-                                                <div>
-                                                    <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Bahan Pembuatan:</label>
-                                                    <input type="text" x-model="reklasSpekBaru.lainnya_bahan"
-                                                           @input="syncCurrentSpekToActiveItem();"
-                                                           placeholder="Contoh: Kanvas Cat Minyak / Logam Perunggu / Kayu Jati"
-                                                           class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
-                                                </div>
-                                                <div>
-                                                    <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Ukuran / Dimensi:</label>
-                                                    <input type="text" x-model="reklasSpekBaru.lainnya_ukuran"
-                                                           @input="syncCurrentSpekToActiveItem();"
-                                                           placeholder="Contoh: 150 x 200 cm / Tinggi 1.8 Meter"
-                                                           class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
-                                                </div>
-                                                <div class="sm:col-span-2">
-                                                    <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Spesifikasi / Deskripsi Karya:</label>
-                                                    <input type="text" x-model="reklasSpekBaru.lainnya_spesifikasi"
-                                                           @input="syncCurrentSpekToActiveItem();"
-                                                           placeholder="Contoh: Pigura ukir kayu mahoni gold, terpajang di lobi utama RSUD"
-                                                           class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
+                                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                    <div class="sm:col-span-2">
+                                                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                                                            Judul Buku / Nama Literatur <span class="text-rose-400">*</span>
+                                                        </label>
+                                                        <input type="text" x-model="reklasSpekBaru.lainnya_judul"
+                                                               @input="reklasSpekBaru.lainnya_nama_barang = reklasSpekBaru.lainnya_judul; reklasSpekBaru.lainnya_judul_pencipta = (reklasSpekBaru.lainnya_judul || '') + (reklasSpekBaru.lainnya_pencipta ? ' - ' + reklasSpekBaru.lainnya_pencipta : ''); syncCurrentSpekToActiveItem();"
+                                                               placeholder="Contoh: Pedoman Standar Pelayanan Klinis & Formularium RSUD..."
+                                                               class="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none transition-all">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Pengarang / Pencipta / Penerbit:</label>
+                                                        <input type="text" x-model="reklasSpekBaru.lainnya_pencipta"
+                                                               @input="reklasSpekBaru.lainnya_judul_pencipta = (reklasSpekBaru.lainnya_judul || '') + (reklasSpekBaru.lainnya_pencipta ? ' - ' + reklasSpekBaru.lainnya_pencipta : ''); syncCurrentSpekToActiveItem();"
+                                                               placeholder="Contoh: Tim Komite Medik RSUD / Penerbit EGC"
+                                                               class="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Spesifikasi / Edisi / Cetakan:</label>
+                                                        <input type="text" x-model="reklasSpekBaru.lainnya_spesifikasi"
+                                                               @input="syncCurrentSpekToActiveItem();"
+                                                               placeholder="Contoh: Edisi Revisi 2026 / Cetakan Lux Hardcover"
+                                                               class="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Bahan Pembuatan / Cover:</label>
+                                                        <input type="text" x-model="reklasSpekBaru.lainnya_bahan"
+                                                               @input="syncCurrentSpekToActiveItem();"
+                                                               placeholder="Contoh: Kertas Art Paper / Hardcover / HVS"
+                                                               class="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Kondisi Fisik Buku:</label>
+                                                        <select x-model="reklasSpekBaru.kondisi"
+                                                                @change="if (reklasSpekBaru) { reklasSpekBaru.lainnya_kondisi = reklasSpekBaru.kondisi; } syncCurrentSpekToActiveItem();"
+                                                                class="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white font-bold focus:outline-none transition-all cursor-pointer">
+                                                            <option value="Baik">🟢 Baik (B) — Lengkap & Layak Baca</option>
+                                                            <option value="Kurang Baik">🟡 Kurang Baik (KB) — Sebagian Rusak/Sobek</option>
+                                                            <option value="Rusak Berat">🔴 Rusak Berat (RB) — Rusak Total/Lapuk</option>
+                                                        </select>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
 
-                                        <!-- 3. Form Sub-Kategori: Hewan & Tanaman -->
-                                        <div x-show="reklasSpekBaru.kib_e_type === 'hewan_tumbuhan'" class="p-3.5 rounded-2xl bg-slate-950/70 border border-emerald-500/30 space-y-3">
-                                            <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
-                                                <span class="text-[10.5px] font-extrabold text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
-                                                    <span>🌿</span>
-                                                    <span>Atribut Hewan, Ternak &amp; Tanaman:</span>
-                                                </span>
-                                                <span class="text-[9px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-bold">KIB E Flora/Fauna</span>
+                                            <!-- 2. Form Sub-Kategori: Kesenian & Budaya / Ornamen -->
+                                            <div x-show="reklasSpekBaru.kib_e_type === 'kesenian'" class="p-3.5 rounded-2xl bg-slate-950/70 border border-purple-500/30 space-y-3">
+                                                <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
+                                                    <span class="text-[10.5px] font-extrabold text-purple-300 uppercase tracking-wider flex items-center gap-1.5">
+                                                        <span>🎨</span>
+                                                        <span>Atribut Benda Seni, Budaya &amp; Ornamen:</span>
+                                                    </span>
+                                                    <span class="text-[9px] px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20 font-bold">KIB E Kesenian</span>
+                                                </div>
+                                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                    <div class="sm:col-span-2">
+                                                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                                                            Judul Karya Seni / Nama Barang <span class="text-rose-400">*</span>
+                                                        </label>
+                                                        <input type="text" x-model="reklasSpekBaru.lainnya_judul"
+                                                               @input="reklasSpekBaru.lainnya_nama_barang = reklasSpekBaru.lainnya_judul; reklasSpekBaru.lainnya_judul_pencipta = (reklasSpekBaru.lainnya_judul || '') + (reklasSpekBaru.lainnya_pencipta ? ' - ' + reklasSpekBaru.lainnya_pencipta : ''); syncCurrentSpekToActiveItem();"
+                                                               placeholder="Contoh: Lukisan Sejarah Pelayanan RSUD Bondowoso / Patung Ornamen Medis"
+                                                               class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none transition-all">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Pencipta / Seniman:</label>
+                                                        <input type="text" x-model="reklasSpekBaru.lainnya_pencipta"
+                                                               @input="reklasSpekBaru.lainnya_judul_pencipta = (reklasSpekBaru.lainnya_judul || '') + (reklasSpekBaru.lainnya_pencipta ? ' - ' + reklasSpekBaru.lainnya_pencipta : ''); syncCurrentSpekToActiveItem();"
+                                                               placeholder="Contoh: Sanggar Seni Rupa Bondowoso"
+                                                               class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Asal Daerah / Wilayah:</label>
+                                                        <input type="text" x-model="reklasSpekBaru.lainnya_asal_daerah"
+                                                               @input="syncCurrentSpekToActiveItem();"
+                                                               placeholder="Contoh: Bondowoso, Jawa Timur"
+                                                               class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Bahan Pembuatan:</label>
+                                                        <input type="text" x-model="reklasSpekBaru.lainnya_bahan"
+                                                               @input="syncCurrentSpekToActiveItem();"
+                                                               placeholder="Contoh: Kanvas Cat Minyak / Logam Perunggu / Kayu Jati"
+                                                               class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Ukuran / Dimensi:</label>
+                                                        <input type="text" x-model="reklasSpekBaru.lainnya_ukuran"
+                                                               @input="syncCurrentSpekToActiveItem();"
+                                                               placeholder="Contoh: 150 x 200 cm / Tinggi 1.8 Meter"
+                                                               class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
+                                                    </div>
+                                                    <div class="sm:col-span-2">
+                                                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Spesifikasi / Deskripsi Karya:</label>
+                                                        <input type="text" x-model="reklasSpekBaru.lainnya_spesifikasi"
+                                                               @input="syncCurrentSpekToActiveItem();"
+                                                               placeholder="Contoh: Pigura ukir kayu mahoni gold, terpajang di lobi utama RSUD"
+                                                               class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                <div class="sm:col-span-2">
-                                                    <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
-                                                        Jenis Hewan / Tanaman <span class="text-rose-400">*</span>
-                                                    </label>
-                                                    <input type="text" x-model="reklasSpekBaru.lainnya_judul"
-                                                           @input="reklasSpekBaru.lainnya_nama_barang = reklasSpekBaru.lainnya_judul; reklasSpekBaru.lainnya_judul_pencipta = (reklasSpekBaru.lainnya_judul || '') + (reklasSpekBaru.lainnya_pencipta ? ' - ' + reklasSpekBaru.lainnya_pencipta : ''); syncCurrentSpekToActiveItem();"
-                                                           placeholder="Contoh: Pohon Ketapang Kencana / Palem Raja / Tanaman Hias Lanskap"
-                                                           class="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none transition-all">
+
+                                            <!-- 3. Form Sub-Kategori: Hewan & Tanaman -->
+                                            <div x-show="reklasSpekBaru.kib_e_type === 'hewan_tumbuhan'" class="p-3.5 rounded-2xl bg-slate-950/70 border border-emerald-500/30 space-y-3">
+                                                <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
+                                                    <span class="text-[10.5px] font-extrabold text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
+                                                        <span>🌿</span>
+                                                        <span>Atribut Hewan, Ternak &amp; Tanaman:</span>
+                                                    </span>
+                                                    <span class="text-[9px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-bold">KIB E Flora/Fauna</span>
                                                 </div>
-                                                <div>
-                                                    <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Ukuran / Tinggi / Usia:</label>
-                                                    <input type="text" x-model="reklasSpekBaru.lainnya_ukuran"
-                                                           @input="syncCurrentSpekToActiveItem();"
-                                                           placeholder="Contoh: Tinggi 3.5 Meter / Usia 2 Tahun"
-                                                           class="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
-                                                </div>
-                                                <div>
-                                                    <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Asal Usul / Bibit:</label>
-                                                    <input type="text" x-model="reklasSpekBaru.lainnya_asal_daerah"
-                                                           @input="syncCurrentSpekToActiveItem();"
-                                                           placeholder="Contoh: Balai Pembibitan Pertanian Jawa Timur"
-                                                           class="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
-                                                </div>
-                                                <div class="sm:col-span-2">
-                                                    <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Keterangan / Lokasi Penghijauan:</label>
-                                                    <input type="text" x-model="reklasSpekBaru.lainnya_spesifikasi"
-                                                           @input="syncCurrentSpekToActiveItem();"
-                                                           placeholder="Contoh: Penghijauan Taman Lobi Rawat Jalan RSUD Dr. H. Koesnandi"
-                                                           class="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
+                                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                    <div class="sm:col-span-2">
+                                                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                                                            Jenis Hewan / Tanaman <span class="text-rose-400">*</span>
+                                                        </label>
+                                                        <input type="text" x-model="reklasSpekBaru.lainnya_judul"
+                                                               @input="reklasSpekBaru.lainnya_nama_barang = reklasSpekBaru.lainnya_judul; reklasSpekBaru.lainnya_judul_pencipta = (reklasSpekBaru.lainnya_judul || '') + (reklasSpekBaru.lainnya_pencipta ? ' - ' + reklasSpekBaru.lainnya_pencipta : ''); syncCurrentSpekToActiveItem();"
+                                                               placeholder="Contoh: Pohon Ketapang Kencana / Palem Raja / Tanaman Hias Lanskap"
+                                                               class="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none transition-all">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Ukuran / Tinggi / Usia:</label>
+                                                        <input type="text" x-model="reklasSpekBaru.lainnya_ukuran"
+                                                               @input="syncCurrentSpekToActiveItem();"
+                                                               placeholder="Contoh: Tinggi 3.5 Meter / Usia 2 Tahun"
+                                                               class="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Asal Usul / Bibit:</label>
+                                                        <input type="text" x-model="reklasSpekBaru.lainnya_asal_daerah"
+                                                               @input="syncCurrentSpekToActiveItem();"
+                                                               placeholder="Contoh: Balai Pembibitan Pertanian Jawa Timur"
+                                                               class="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
+                                                    </div>
+                                                    <div class="sm:col-span-2">
+                                                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Keterangan / Lokasi Penghijauan:</label>
+                                                        <input type="text" x-model="reklasSpekBaru.lainnya_spesifikasi"
+                                                               @input="syncCurrentSpekToActiveItem();"
+                                                               placeholder="Contoh: Penghijauan Taman Lobi Rawat Jalan RSUD Dr. H. Koesnandi"
+                                                               class="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>

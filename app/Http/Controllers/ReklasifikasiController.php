@@ -1298,25 +1298,52 @@ class ReklasifikasiController extends Controller
                             ? (float)$uItem['harga_satuan'] 
                             : ($astap->harga_satuan ?: ($astap->total_realisasi / max(1, $astap->jumlah_volume)));
 
-                        $kibEType = $uItem['kib_e_type'] ?? ($rawNew['kib_e_type'] ?? 'buku');
+                        $kibEType = $uItem['kib_e_type'] ?? ($uItem['kib_e_sub_type'] ?? ($rawNew['kib_e_type'] ?? ($rawNew['kib_e_sub_type'] ?? 'buku')));
                         $kondisiVal = $uItem['kondisi'] ?? ($uItem['lainnya_kondisi'] ?? ($rawNew['kondisi'] ?? ($rawNew['lainnya_kondisi'] ?? 'Baik')));
+
+                        $isTargetExtracom = !empty($rawNew['is_extracom']) || !empty($uItem['is_extracom']) || ($astap->category === 'EXTRACOM') || ($unitItemPrice <= 300000);
+
+                        $itemJudul = $uItem['lainnya_buku_judul'] ?? ($uItem['lainnya_kesenian_judul'] ?? ($uItem['lainnya_hewan_judul'] ?? ($uItem['lainnya_hewan_jenis'] ?? ($uItem['lainnya_judul'] ?? ($rawNew['lainnya_buku_judul'] ?? ($rawNew['lainnya_kesenian_judul'] ?? ($rawNew['lainnya_hewan_judul'] ?? ($rawNew['lainnya_judul'] ?? ($uItem['item_nama'] ?? $astap->nama_barang)))))))));
+                        $itemPencipta = $uItem['lainnya_buku_pencipta'] ?? ($uItem['lainnya_kesenian_pencipta'] ?? ($uItem['lainnya_pencipta'] ?? ($rawNew['lainnya_buku_pencipta'] ?? ($rawNew['lainnya_kesenian_pencipta'] ?? ($rawNew['lainnya_pencipta'] ?? '-')))));
+                        $itemSpesifikasi = $uItem['lainnya_buku_spesifikasi'] ?? ($uItem['lainnya_kesenian_spesifikasi'] ?? ($uItem['lainnya_hewan_spesifikasi'] ?? ($uItem['lainnya_spesifikasi'] ?? ($rawNew['lainnya_buku_spesifikasi'] ?? ($rawNew['lainnya_kesenian_spesifikasi'] ?? ($rawNew['lainnya_hewan_spesifikasi'] ?? ($rawNew['lainnya_spesifikasi'] ?? '-')))))));
+                        $itemAsalDaerah = $uItem['lainnya_kesenian_asal'] ?? ($uItem['lainnya_asal_daerah'] ?? ($rawNew['lainnya_kesenian_asal'] ?? ($rawNew['lainnya_asal_daerah'] ?? '-')));
+                        $itemBahan = $uItem['lainnya_kesenian_bahan'] ?? ($uItem['lainnya_bahan'] ?? ($rawNew['lainnya_kesenian_bahan'] ?? ($rawNew['lainnya_bahan'] ?? 'Kertas / Kanvas / Lainnya')));
+                        $itemUkuran = $uItem['lainnya_kesenian_ukuran'] ?? ($uItem['lainnya_ukuran'] ?? ($rawNew['lainnya_kesenian_ukuran'] ?? ($rawNew['lainnya_ukuran'] ?? '-')));
 
                         $l = [
                             'kib_e_type'             => $kibEType,
+                            'kib_e_sub_type'         => $kibEType,
                             'lainnya_nama_barang'    => $uItem['item_nama'] ?? ($uItem['lainnya_nama_barang'] ?? ($uItem['lainnya_judul'] ?? $astap->nama_barang)),
-                            'lainnya_judul'          => $uItem['lainnya_judul'] ?? ($uItem['lainnya_judul_pencipta'] ?? ($rawNew['lainnya_judul'] ?? ($rawNew['lainnya_judul_pencipta'] ?? $astap->nama_barang))),
-                            'lainnya_judul_pencipta' => $uItem['lainnya_judul_pencipta'] ?? ($uItem['lainnya_judul'] ?? ($rawNew['lainnya_judul_pencipta'] ?? ($rawNew['lainnya_judul'] ?? $astap->nama_barang))),
-                            'lainnya_pencipta'       => $uItem['lainnya_pencipta'] ?? ($rawNew['lainnya_pencipta'] ?? '-'),
-                            'lainnya_spesifikasi'    => $uItem['lainnya_spesifikasi'] ?? ($rawNew['lainnya_spesifikasi'] ?? '-'),
-                            'lainnya_asal_daerah'    => $uItem['lainnya_asal_daerah'] ?? ($rawNew['lainnya_asal_daerah'] ?? '-'),
-                            'lainnya_bahan'          => $uItem['lainnya_bahan'] ?? ($rawNew['lainnya_bahan'] ?? 'Kertas / Kanvas / Lainnya'),
-                            'lainnya_ukuran'         => $uItem['lainnya_ukuran'] ?? ($rawNew['lainnya_ukuran'] ?? '-'),
+                            'lainnya_judul'          => $itemJudul,
+                            'lainnya_judul_pencipta' => $uItem['lainnya_judul_pencipta'] ?? (($itemJudul && $itemPencipta && $itemPencipta !== '-') ? "{$itemJudul} - {$itemPencipta}" : $itemJudul),
+                            'lainnya_pencipta'       => $itemPencipta,
+                            'lainnya_spesifikasi'    => $itemSpesifikasi,
+                            'lainnya_asal_daerah'    => $itemAsalDaerah,
+                            'lainnya_bahan'          => $itemBahan,
+                            'lainnya_ukuran'         => $itemUkuran,
+                            'lainnya_no_pabrik'      => $uItem['lainnya_no_pabrik'] ?? ($rawNew['lainnya_no_pabrik'] ?? null),
+                            'lainnya_keterangan'     => $uItem['lainnya_keterangan'] ?? ($rawNew['lainnya_keterangan'] ?? null),
+                            'is_extracom'            => $isTargetExtracom,
                             'lainnya_kondisi'        => $kondisiVal,
                             'lainnya_jumlah'         => $vol,
                             'lainnya_jumlah_barang'  => $vol,
                             'lainnya_satuan'         => $uItem['item_satuan'] ?? ($astap->satuan ?: 'Buah'),
                             'lainnya_nilai_satuan'   => $unitItemPrice,
                             'lainnya_total_nilai'    => $vol * $unitItemPrice,
+
+                            // Sub-category alias keys for compatibility with ASTAP detail modal & input form:
+                            'lainnya_buku_judul'           => $itemJudul,
+                            'lainnya_buku_pencipta'        => $itemPencipta,
+                            'lainnya_buku_spesifikasi'     => $itemSpesifikasi,
+                            'lainnya_kesenian_judul'       => $itemJudul,
+                            'lainnya_kesenian_asal'        => $itemAsalDaerah,
+                            'lainnya_kesenian_pencipta'    => $itemPencipta,
+                            'lainnya_kesenian_spesifikasi' => $itemSpesifikasi,
+                            'lainnya_kesenian_bahan'       => $itemBahan,
+                            'lainnya_kesenian_ukuran'      => $itemUkuran,
+                            'lainnya_hewan_jenis'          => $itemJudul,
+                            'lainnya_hewan_judul'          => $itemJudul,
+                            'lainnya_hewan_spesifikasi'    => $itemSpesifikasi,
                         ];
                         $lainnyaItems[] = $l;
 
@@ -1334,6 +1361,7 @@ class ReklasifikasiController extends Controller
                     $newSpec['lainnya_items']        = $lainnyaItems;
                     $newSpec['kategori_kib']         = 'KIB E (Aset Tetap Lainnya)';
                     $newSpec['kib_e_type']           = $lainnyaItems[0]['kib_e_type'] ?? 'buku';
+                    $newSpec['kib_e_sub_type']       = $lainnyaItems[0]['kib_e_type'] ?? 'buku';
                     $newSpec['judul']                = $lainnyaItems[0]['lainnya_judul'] ?? null;
                     $newSpec['pencipta']             = $lainnyaItems[0]['lainnya_pencipta'] ?? null;
                     $newSpec['spesifikasi']          = $lainnyaItems[0]['lainnya_spesifikasi'] ?? null;
@@ -1341,6 +1369,23 @@ class ReklasifikasiController extends Controller
                     $newSpec['ukuran']               = $lainnyaItems[0]['lainnya_ukuran'] ?? null;
                     $newSpec['asal_daerah']          = $lainnyaItems[0]['lainnya_asal_daerah'] ?? null;
                     $newSpec['kondisi']              = $lainnyaItems[0]['lainnya_kondisi'] ?? 'Baik';
+                    $newSpec['is_extracom']          = $isTargetExtracom;
+                    $newSpec['is_extracomtable']     = $isTargetExtracom;
+
+                    // Sub-category alias keys on root spec:
+                    $newSpec['buku_judul']           = $lainnyaItems[0]['lainnya_judul'] ?? null;
+                    $newSpec['buku_pencipta']        = $lainnyaItems[0]['lainnya_pencipta'] ?? null;
+                    $newSpec['buku_spesifikasi']     = $lainnyaItems[0]['lainnya_spesifikasi'] ?? null;
+                    $newSpec['kesenian_judul']       = $lainnyaItems[0]['lainnya_judul'] ?? null;
+                    $newSpec['kesenian_asal']        = $lainnyaItems[0]['lainnya_asal_daerah'] ?? null;
+                    $newSpec['kesenian_pencipta']    = $lainnyaItems[0]['lainnya_pencipta'] ?? null;
+                    $newSpec['kesenian_spesifikasi'] = $lainnyaItems[0]['lainnya_spesifikasi'] ?? null;
+                    $newSpec['kesenian_bahan']       = $lainnyaItems[0]['lainnya_bahan'] ?? null;
+                    $newSpec['kesenian_ukuran']      = $lainnyaItems[0]['lainnya_ukuran'] ?? null;
+                    $newSpec['hewan_jenis']          = $lainnyaItems[0]['lainnya_judul'] ?? null;
+                    $newSpec['hewan_judul']          = $lainnyaItems[0]['lainnya_judul'] ?? null;
+                    $newSpec['hewan_spesifikasi']    = $lainnyaItems[0]['lainnya_spesifikasi'] ?? null;
+
                     $astap->satuan                   = $lainnyaItems[0]['lainnya_satuan'] ?? ($astap->satuan ?: 'Buah');
                     if (!empty($lainnyaItems[0]['lainnya_judul']) && $targetKib !== 'KEMITRAAN') {
                         $astap->nama_barang = $lainnyaItems[0]['lainnya_judul'];

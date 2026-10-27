@@ -2067,6 +2067,206 @@ class ReklasifikasiTest extends TestCase
         $this->assertEquals('Komite Medis RSUD Koesnandi', $astap->spesifikasi_json['lainnya_items'][0]['lainnya_pencipta']);
         $this->assertArrayNotHasKey('mesin_items', $astap->spesifikasi_json);
     }
+
+    public function test_can_reklas_kib_e_extracomtable_with_dedicated_fields()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        $astap = Astap::create([
+            'nama_barang' => 'Pedoman Standar Pelayanan Klinis RSUD',
+            'tahun_perolehan' => 2025,
+            'jumlah_volume' => 2,
+            'satuan' => 'Buah',
+            'harga_satuan' => 1666.5,
+            'total_realisasi' => 3333,
+            'is_extracomtable' => 1,
+            'category' => 'KIB E',
+            'kode_108' => '1.5.2.01.01.01.005',
+            'spesifikasi_json' => [
+                'is_extracomtable' => true,
+                'kategori_kib' => 'KIB E (Aset Tetap Lainnya)',
+                'lainnya_items' => [
+                    [
+                        'is_extracom' => true,
+                        'lainnya_nama_barang' => 'Pedoman Standar Pelayanan Klinis RSUD',
+                        'lainnya_nilai_satuan' => 0,
+                    ],
+                    [
+                        'is_extracom' => true,
+                        'lainnya_nama_barang' => 'Pedoman Standar Pelayanan Klinis RSUD',
+                        'lainnya_nilai_satuan' => 3333,
+                    ],
+                ]
+            ]
+        ]);
+
+        $payload = [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'KOREKSI_REKENING',
+            'asal_kib' => 'KIB E',
+            'tujuan_kib' => 'KIB E',
+            'tujuan_kode' => '1.5.2.01.01.01.005',
+            'tujuan_nama' => 'Sewa Aset Tetap Lainnya',
+            'nilai_reklas' => 3333,
+            'tanggal_reklas' => '2026-04-10',
+            'triwulan' => 2,
+            'tahun' => 2026,
+            'nomor_ba_reklas' => 'BA/REKLAS/KIBE/EXT-001',
+            'alasan_reklas' => 'Penyesuaian spesifikasi fisik ekstrakomtabel KIB E',
+            'keterangan' => 'Ekstrakomtabel KIB E Pedoman',
+            'spesifikasi_baru' => [
+                'is_extracom' => true,
+                'items' => [
+                    [
+                        'is_extracom' => true,
+                        'item_nama' => 'Pedoman Standar Pelayanan Klinis RSUD',
+                        'lainnya_judul' => 'Pedoman Standar Pelayanan Klinis RSUD',
+                        'lainnya_pencipta' => 'Tim Komite Medik RSUD',
+                        'lainnya_spesifikasi' => 'Buku Saku Revisi 2026',
+                        'lainnya_ukuran' => 'A5 / 150 Halaman',
+                        'lainnya_no_pabrik' => 'ISBN 978-602-001-A',
+                        'lainnya_bahan' => 'Kertas Art Paper / Hardcover',
+                        'lainnya_keterangan' => 'Koleksi literatur klinis kemitraan',
+                        'kondisi' => 'Baik',
+                        'item_volume' => 1,
+                        'item_satuan' => 'Buah',
+                    ],
+                    [
+                        'is_extracom' => true,
+                        'item_nama' => 'Pedoman Standar Pelayanan Klinis RSUD',
+                        'lainnya_judul' => 'Pedoman Standar Pelayanan Klinis RSUD',
+                        'lainnya_pencipta' => 'Tim Komite Medik RSUD',
+                        'lainnya_spesifikasi' => 'Buku Saku Revisi 2026',
+                        'lainnya_ukuran' => 'A5 / 150 Halaman',
+                        'lainnya_no_pabrik' => 'ISBN 978-602-001-B',
+                        'lainnya_bahan' => 'Kertas Art Paper / Hardcover',
+                        'lainnya_keterangan' => 'Koleksi literatur klinis kemitraan',
+                        'kondisi' => 'Kurang Baik',
+                        'item_volume' => 1,
+                        'item_satuan' => 'Buah',
+                    ]
+                ]
+            ]
+        ];
+
+        $response = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), $payload);
+        $response->assertStatus(200);
+        $response->assertJson(['success' => true]);
+
+        $astap->refresh();
+        $this->assertEquals('KIB E', $astap->category);
+        $this->assertTrue((bool)$astap->is_extracomtable);
+        $this->assertIsArray($astap->spesifikasi_json);
+        $this->assertTrue($astap->spesifikasi_json['is_extracomtable']);
+        $this->assertCount(2, $astap->spesifikasi_json['lainnya_items'] ?? []);
+
+        $item1 = $astap->spesifikasi_json['lainnya_items'][0];
+        $this->assertTrue($item1['is_extracom']);
+        $this->assertEquals('Tim Komite Medik RSUD', $item1['lainnya_pencipta']);
+        $this->assertEquals('Buku Saku Revisi 2026', $item1['lainnya_spesifikasi']);
+        $this->assertEquals('A5 / 150 Halaman', $item1['lainnya_ukuran']);
+        $this->assertEquals('ISBN 978-602-001-A', $item1['lainnya_no_pabrik']);
+        $this->assertEquals('Kertas Art Paper / Hardcover', $item1['lainnya_bahan']);
+        $this->assertEquals('Baik', $item1['lainnya_kondisi']);
+    }
+
+    public function test_can_reklas_kib_e_reguler_with_buku_and_kesenian_sub_category_fields()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        JenisAstap::firstOrCreate(
+            ['sub_sub_rincian_objek' => '1.3.5.01.01.01.001'],
+            [
+                'jenis' => '1.3.5',
+                'sub_rincian_objek' => '1.3.5.01.01',
+                'uraian_sub_rincian' => 'Buku dan Kepustakaan',
+                'uraian_sub_sub_rincian' => 'Buku Kedokteran dan Kesehatan',
+                'nama_jenis' => 'Aset Tetap Lainnya',
+            ]
+        );
+
+        $astap = Astap::create([
+            'nama_barang' => 'Pengadaan Buku Medis Perpustakaan',
+            'tahun_perolehan' => 2026,
+            'category' => 'KIB B',
+            'jumlah_volume' => 1,
+            'harga_satuan' => 999999,
+            'total_realisasi' => 999999,
+            'jumlah_anggaran' => 1000000,
+            'sumber_dana' => 'blud',
+            'user_id' => $admin->id,
+            'spesifikasi_json' => [
+                'lainnya_items' => [
+                    [
+                        'kib_e_sub_type' => 'buku',
+                        'lainnya_nama_barang' => 'Monograf',
+                        'lainnya_buku_judul' => 'Mono',
+                        'lainnya_buku_pencipta' => 'Komite Medik',
+                        'lainnya_buku_spesifikasi' => 'Edisi Revisi 2026',
+                        'lainnya_bahan' => 'Kertas / Kanvas / Lainnya',
+                        'lainnya_kondisi' => 'Baik',
+                        'lainnya_jumlah_barang' => 1,
+                        'lainnya_satuan' => 'Eksemplar',
+                        'lainnya_nilai_satuan' => 999999,
+                    ]
+                ]
+            ]
+        ]);
+
+        $payload = [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'PINDAH_KIB',
+            'asal_kib' => 'KIB B',
+            'tujuan_kib' => 'KIB E',
+            'tujuan_kode' => '1.3.5.01.01.01.001',
+            'tujuan_nama' => 'Buku Kedokteran dan Kesehatan',
+            'nilai_reklas' => 999999,
+            'tanggal_reklas' => '2026-03-25',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'nomor_ba_reklas' => 'BA-REKLAS/KIB-E-REG/2026/01',
+            'alasan_reklas' => 'Reklasifikasi ke KIB E Reguler dengan atribut buku',
+            'spesifikasi_baru' => [
+                'kib_e_type' => 'buku',
+                'lainnya_buku_judul' => 'Mono',
+                'lainnya_buku_pencipta' => 'Komite Medik',
+                'lainnya_buku_spesifikasi' => 'Edisi Revisi 2026',
+                'unit_items' => [
+                    [
+                        'kib_e_type' => 'buku',
+                        'item_nama' => 'Mono',
+                        'lainnya_buku_judul' => 'Mono',
+                        'lainnya_buku_pencipta' => 'Komite Medik',
+                        'lainnya_buku_spesifikasi' => 'Edisi Revisi 2026',
+                        'lainnya_bahan' => 'Kertas / Kanvas / Lainnya',
+                        'kondisi' => 'Baik',
+                        'item_volume' => 1,
+                        'item_satuan' => 'Eksemplar',
+                        'harga_satuan' => 999999,
+                    ]
+                ]
+            ]
+        ];
+
+        $response = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), $payload);
+        $response->assertStatus(200);
+        $response->assertJson(['success' => true]);
+
+        $astap->refresh();
+        $this->assertEquals('KIB E', $astap->category);
+        $this->assertEquals('Mono', $astap->nama_barang);
+        $this->assertIsArray($astap->spesifikasi_json);
+        $this->assertEquals('buku', $astap->spesifikasi_json['kib_e_type']);
+        $this->assertEquals('Mono', $astap->spesifikasi_json['buku_judul']);
+        $this->assertEquals('Komite Medik', $astap->spesifikasi_json['buku_pencipta']);
+        $this->assertEquals('Edisi Revisi 2026', $astap->spesifikasi_json['buku_spesifikasi']);
+
+        $item0 = $astap->spesifikasi_json['lainnya_items'][0];
+        $this->assertEquals('Mono', $item0['lainnya_judul']);
+        $this->assertEquals('Komite Medik', $item0['lainnya_pencipta']);
+        $this->assertEquals('Mono', $item0['lainnya_buku_judul']);
+        $this->assertEquals('Komite Medik', $item0['lainnya_buku_pencipta']);
+    }
 }
 
 
