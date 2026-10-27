@@ -502,15 +502,37 @@ class ReklasifikasiController extends Controller
         }
 
         if (!empty($validated['nomor_ba_reklas'])) {
+            $baseBa = trim($validated['nomor_ba_reklas']);
             $duplicateBa = AstapReklas::where('astap_id', $astap->id)
-                ->where('nomor_ba_reklas', trim($validated['nomor_ba_reklas']))
+                ->where('nomor_ba_reklas', $baseBa)
                 ->where('is_deleted', 0)
                 ->exists();
+
             if ($duplicateBa) {
-                return response()->json([
-                    'success' => false,
-                    'message' => "Nomor Berita Acara '{$validated['nomor_ba_reklas']}' sudah pernah digunakan untuk transaksi reklasifikasi aset ini.",
-                ], 422);
+                // Cek apakah nomor BA ini merupakan rujukan dokumen pengadaan (BAST / SPK / SP / Faktur / Kwitansi / SP2D)
+                // atau nomor bawaan pengadaan aset. Jika ya, jangan memblokir transaksi reklasifikasi lanjutan aset ini,
+                // melainkan beri suffix urutan reklas secara otomatis agar tetap unik dan terdata rapi di audit log.
+                $isAutoProcurementDoc = str_starts_with($baseBa, 'BAST:') 
+                    || str_starts_with($baseBa, 'SPK:') 
+                    || str_starts_with($baseBa, 'SP:') 
+                    || str_starts_with($baseBa, 'Faktur:') 
+                    || str_starts_with($baseBa, 'Kwitansi:') 
+                    || str_starts_with($baseBa, 'SP2D:')
+                    || ($astap->bast_dokumen_nomor && str_contains($baseBa, trim($astap->bast_dokumen_nomor)))
+                    || ($astap->spk_nomor && str_contains($baseBa, trim($astap->spk_nomor)));
+
+                if ($isAutoProcurementDoc) {
+                    $existingCount = AstapReklas::where('astap_id', $astap->id)
+                        ->where('nomor_ba_reklas', 'like', $baseBa . '%')
+                        ->where('is_deleted', 0)
+                        ->count();
+                    $validated['nomor_ba_reklas'] = "{$baseBa} (Reklas #" . ($existingCount + 1) . ")";
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Nomor Berita Acara '{$validated['nomor_ba_reklas']}' sudah pernah digunakan untuk transaksi reklasifikasi aset ini.",
+                    ], 422);
+                }
             }
         }
 
@@ -1656,17 +1678,34 @@ class ReklasifikasiController extends Controller
                         }
                     }
                 } elseif ($targetKib === 'ASET LAIN' || $targetKib === 'ASET LAIN-LAIN' || $targetKib === 'ASET LAINNYA') {
+                    $rawKondisi = $rawNew['aset_lain_kondisi'] ?? ($rawNew['kondisi'] ?? 'Rusak Berat (Menunggu Penghapusan)');
+                    $stdKondisi = 'Rusak Berat';
+                    if (stripos($rawKondisi, 'Baik') !== false && stripos($rawKondisi, 'Kurang') === false && stripos($rawKondisi, 'Rusak') === false) {
+                        $stdKondisi = 'Baik';
+                    } elseif (stripos($rawKondisi, 'Kurang') !== false) {
+                        $stdKondisi = 'Kurang Baik';
+                    }
+
                     $asetLainItems = [];
                     foreach ($unitItems as $uIdx => $uItem) {
+                        $uKondisi = $uItem['aset_lain_kondisi'] ?? $rawKondisi;
                         $asetLainItems[] = [
-                            'aset_lain_kondisi'    => $uItem['aset_lain_kondisi'] ?? ($rawNew['aset_lain_kondisi'] ?? 'Rusak Berat (Menunggu Penghapusan)'),
-                            'aset_lain_alasan'     => $validated['alasan_reklas'] ?? 'Dialihkan ke Akun 1.5.4 Aset Lain-Lain',
+                            'item_nama'            => $uItem['item_nama'] ?? $astap->nama_barang,
+                            'item_volume'          => $uItem['item_volume'] ?? 1,
+                            'item_satuan'          => $uItem['item_satuan'] ?? ($astap->satuan ?? 'Unit'),
+                            'aset_lain_kondisi'    => $uKondisi,
+                            'aset_lain_alasan'     => $uItem['aset_lain_alasan'] ?? ($validated['alasan_reklas'] ?? 'Dialihkan ke Akun 1.5.4 Aset Lain-Lain'),
                             'aset_lain_nilai'      => $unitPrice,
+                            'ruang_pemegang'       => $uItem['ruang_pemegang'] ?? ($astap->ruang_unit ?? '-'),
                         ];
                     }
                     $newSpec['aset_lain_items'] = $asetLainItems;
-                    $newSpec['kondisi_barang']  = $asetLainItems[0]['aset_lain_kondisi'] ?? 'Rusak Berat (Menunggu Penghapusan)';
-                    $newSpec['aset_lain_kondisi'] = $asetLainItems[0]['aset_lain_kondisi'] ?? 'Rusak Berat (Menunggu Penghapusan)';
+                    $newSpec['kondisi_barang']  = $asetLainItems[0]['aset_lain_kondisi'] ?? $rawKondisi;
+                    $newSpec['aset_lain_kondisi'] = $asetLainItems[0]['aset_lain_kondisi'] ?? $rawKondisi;
+                    $newSpec['kategori_kib']    = 'ASET LAIN';
+                    if (\Illuminate\Support\Facades\Schema::hasColumn('astaps', 'kondisi')) {
+                        $astap->kondisi = $stdKondisi;
+                    }
                 }
 
                 if ($validated['jenis_reklas'] === 'KDP_TO_DEFINITIF') {
@@ -1969,6 +2008,49 @@ class ReklasifikasiController extends Controller
                     }
                 }
 
+                if (in_array($targetKib, ['ASET LAIN', 'ASET LAIN-LAIN', 'ASET LAINNYA'], true)) {
+                    $targetSpec['kategori_kib'] = 'ASET LAIN';
+                    $rawKnd = $targetSpec['kondisi_barang'] ?? ($targetSpec['aset_lain_kondisi'] ?? ($validated['spesifikasi_baru']['aset_lain_kondisi'] ?? 'Rusak Berat (Menunggu Penghapusan)'));
+                    $stdKondisi = 'Rusak Berat';
+                    if (stripos($rawKnd, 'Baik') !== false && stripos($rawKnd, 'Kurang') === false && stripos($rawKnd, 'Rusak') === false) {
+                        $stdKondisi = 'Baik';
+                    } elseif (stripos($rawKnd, 'Kurang') !== false) {
+                        $stdKondisi = 'Kurang Baik';
+                    }
+
+                    $targetSpec['kondisi_barang'] = $rawKnd;
+                    $targetSpec['aset_lain_kondisi'] = $rawKnd;
+
+                    if (empty($targetSpec['aset_lain_items'])) {
+                        $targetSpec['aset_lain_items'] = [[
+                            'item_nama'         => $targetAstap->nama_barang,
+                            'item_volume'       => $selectedCount,
+                            'item_satuan'       => $targetAstap->satuan ?? 'Unit',
+                            'aset_lain_kondisi' => $rawKnd,
+                            'aset_lain_alasan'  => $validated['alasan_reklas'] ?? 'Dialihkan ke Akun 1.5.4 Aset Lain-Lain',
+                            'aset_lain_nilai'   => $nilaiReklasSplit,
+                            'ruang_pemegang'    => $targetAstap->ruang_unit ?? '-',
+                        ]];
+                    }
+
+                    foreach (['lainnya_items', 'mesin_items', 'gedung_items', 'jaringan_items', 'tanah_items', 'atb_items'] as $rk) {
+                        if (!empty($targetSpec[$rk]) && is_array($targetSpec[$rk])) {
+                            foreach ($targetSpec[$rk] as &$tItem) {
+                                if (isset($tItem['lainnya_kondisi'])) $tItem['lainnya_kondisi'] = $stdKondisi;
+                                if (isset($tItem['mesin_kondisi'])) $tItem['mesin_kondisi'] = $stdKondisi;
+                                if (isset($tItem['gedung_kondisi'])) $tItem['gedung_kondisi'] = $stdKondisi;
+                                if (isset($tItem['jaringan_kondisi'])) $tItem['jaringan_kondisi'] = $stdKondisi;
+                                if (isset($tItem['kondisi'])) $tItem['kondisi'] = $stdKondisi;
+                            }
+                            unset($tItem);
+                        }
+                    }
+
+                    if (\Illuminate\Support\Facades\Schema::hasColumn('astaps', 'kondisi')) {
+                        $targetAstap->kondisi = $stdKondisi;
+                    }
+                }
+
                 $targetAstap->spesifikasi_json = $targetSpec;
                 $targetAstap->save();
 
@@ -1992,6 +2074,16 @@ class ReklasifikasiController extends Controller
                             $regToMove->unit_id = null; // Lepaskan dari unit ruangan KIR
                             $mName = $targetSpec['mitra_nama'] ?? ($validated['spesifikasi_baru']['kemitraan_mitra'] ?? 'Pihak Ketiga');
                             $regToMove->ruang_pemegang = 'Kemitraan: ' . $mName;
+                        } elseif (in_array($targetKib, ['ASET LAIN', 'ASET LAIN-LAIN', 'ASET LAINNYA'], true)) {
+                            $rawKnd = $targetSpec['kondisi_barang'] ?? ($targetSpec['aset_lain_kondisi'] ?? 'Rusak Berat (Menunggu Penghapusan)');
+                            $stdKondisi = 'Rusak Berat';
+                            if (stripos($rawKnd, 'Baik') !== false && stripos($rawKnd, 'Kurang') === false && stripos($rawKnd, 'Rusak') === false) {
+                                $stdKondisi = 'Baik';
+                            } elseif (stripos($rawKnd, 'Kurang') !== false) {
+                                $stdKondisi = 'Kurang Baik';
+                            }
+                            $regToMove->kondisi = $stdKondisi;
+                            $regToMove->status  = ($stdKondisi === 'Baik') ? 'Tersedia' : 'Rusak Berat';
                         }
                         $regToMove->save();
                         if (!$firstTransferredReg) {
@@ -2123,8 +2215,17 @@ class ReklasifikasiController extends Controller
                     if (\Illuminate\Support\Facades\Schema::hasColumn('astap_registers', 'ruang_pemegang') && !empty($astap->ruang_unit)) {
                         $regUpdate['ruang_pemegang'] = $astap->ruang_unit;
                     }
-                    if (\Illuminate\Support\Facades\Schema::hasColumn('astap_registers', 'kondisi') && !empty($astap->kondisi)) {
-                        $regUpdate['kondisi'] = $astap->kondisi;
+                    if (\Illuminate\Support\Facades\Schema::hasColumn('astap_registers', 'kondisi')) {
+                        if (in_array($targetKib, ['ASET LAIN', 'ASET LAIN-LAIN', 'ASET LAINNYA'], true)) {
+                            $rawK = $newSpec['aset_lain_kondisi'] ?? ($newSpec['kondisi_barang'] ?? 'Rusak Berat');
+                            $stdK = (stripos($rawK, 'Baik') !== false && stripos($rawK, 'Kurang') === false && stripos($rawK, 'Rusak') === false) ? 'Baik' : ((stripos($rawK, 'Kurang') !== false) ? 'Kurang Baik' : 'Rusak Berat');
+                            $regUpdate['kondisi'] = $stdK;
+                            if (\Illuminate\Support\Facades\Schema::hasColumn('astap_registers', 'status')) {
+                                $regUpdate['status']  = ($stdK === 'Baik') ? 'Tersedia' : 'Rusak Berat';
+                            }
+                        } elseif (!empty($astap->kondisi)) {
+                            $regUpdate['kondisi'] = $astap->kondisi;
+                        }
                     }
                     if (!empty($regUpdate)) {
                         $astap->registers()->update($regUpdate);
@@ -2424,7 +2525,9 @@ class ReklasifikasiController extends Controller
                 $isFullTransferFinal = ($remainingActiveCount === 0);
                 if ($isFullTransferFinal) {
                     $astap->jenis_reklas = 'MUTASI_EKSTERNAL';
-                    $astap->unit_id = null; // Lepaskan dari unit ruangan KIR
+                    if (\Illuminate\Support\Facades\Schema::hasColumn('astaps', 'unit_id')) {
+                        $astap->unit_id = null; // Lepaskan dari unit ruangan KIR
+                    }
                     $astap->save();
                 }
             }
