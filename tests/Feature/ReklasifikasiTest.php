@@ -2267,6 +2267,264 @@ class ReklasifikasiTest extends TestCase
         $this->assertEquals('Mono', $item0['lainnya_buku_judul']);
         $this->assertEquals('Komite Medik', $item0['lainnya_buku_pencipta']);
     }
+
+    public function test_reklas_subsequent_with_same_procurement_bast_auto_disambiguates()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        JenisAstap::firstOrCreate(
+            ['sub_sub_rincian_objek' => '1.5.4.01.01.01.001'],
+            [
+                'jenis' => '1.5.4',
+                'sub_rincian_objek' => '1.5.4.01.01',
+                'uraian_sub_rincian' => 'Aset Lain-Lain Rusak Berat',
+                'uraian_sub_sub_rincian' => 'Aset Rusak Berat Menunggu Usulan Penghapusan',
+                'nama_jenis' => 'Aset Lain-Lain',
+            ]
+        );
+
+        $astap = Astap::create([
+            'nama_barang' => 'Mono',
+            'tahun_perolehan' => 2026,
+            'category' => 'KIB E',
+            'jumlah_volume' => 1,
+            'harga_satuan' => 999999,
+            'total_realisasi' => 999999,
+            'jumlah_anggaran' => 1000000,
+            'sumber_dana' => 'blud',
+            'bast_dokumen_nomor' => 'BAMB-SKPD-0030',
+            'spk_nomor' => 'ksdw',
+            'user_id' => $admin->id,
+        ]);
+
+        $defaultBa = 'BAST: BAMB-SKPD-0030 | SPK: ksdw';
+
+        // Buat transaksi reklas pertama dengan nomor BA pengadaan tersebut
+        AstapReklas::create([
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'KOREKSI_REKENING',
+            'asal_kib' => 'KIB E',
+            'tujuan_kib' => 'KIB E',
+            'nilai_reklas' => 999999,
+            'tanggal_reklas' => '2026-03-20',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'nomor_ba_reklas' => $defaultBa,
+            'alasan_reklas' => 'Reklas pertama',
+            'user_id' => $admin->id,
+            'is_deleted' => 0,
+        ]);
+
+        // Transaksi reklas kedua dengan aset yang sama dan BA pengadaan yang sama (harus auto-disambiguate dan berhasil)
+        $payload = [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'RUSAK_BERAT',
+            'asal_kib' => 'KIB E',
+            'tujuan_kib' => 'ASET_LAIN',
+            'tujuan_kode' => '1.5.4.01.01.01.001',
+            'tujuan_nama' => 'Aset Rusak Berat Menunggu Usulan Penghapusan',
+            'nilai_reklas' => 999999,
+            'tanggal_reklas' => '2026-03-25',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'nomor_ba_reklas' => $defaultBa,
+            'alasan_reklas' => 'Kondisi rusak berat menanti pemusnahan',
+        ];
+
+        $response = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), $payload);
+        $response->assertStatus(200);
+        $response->assertJson(['success' => true]);
+
+        $reklas2 = AstapReklas::where('astap_id', $astap->id)->latest('id')->first();
+        $this->assertNotNull($reklas2);
+        $this->assertEquals("{$defaultBa} (Reklas #2)", $reklas2->nomor_ba_reklas);
+    }
+
+    public function test_reklas_to_aset_lain_categorizes_as_aset_lain_and_never_kib_e()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        $astap = Astap::create([
+            'nama_barang' => 'Mono',
+            'tahun_perolehan' => 2026,
+            'jumlah_volume' => 1,
+            'satuan' => 'Eksemplar',
+            'harga_satuan' => 4999995,
+            'total_realisasi' => 4999995,
+            'jumlah_anggaran' => 5000000,
+            'user_id' => $admin->id,
+            'kode_108' => '1.5.4.01.01.01.005',
+            'spesifikasi_json' => [
+                'kategori_kib' => 'ASET LAIN',
+                'aset_lain_items' => [
+                    [
+                        'aset_lain_kondisi' => 'Rusak Berat (Menunggu Penghapusan)',
+                        'aset_lain_nilai' => 4999995,
+                    ]
+                ],
+                'lainnya_items' => [
+                    [
+                        'lainnya_nama_barang' => 'Mono',
+                        'lainnya_judul' => 'Mono',
+                    ]
+                ]
+            ]
+        ]);
+
+        $this->assertEquals('ASET LAIN', $astap->category);
+    }
+
+    public function test_reklas_rusak_berat_to_aset_lain_updates_register_condition_to_rusak_berat()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        JenisAstap::firstOrCreate(
+            ['sub_sub_rincian_objek' => '1.5.4.01.01.01.005'],
+            [
+                'jenis' => '1.5.4',
+                'sub_rincian_objek' => '1.5.4.01.01',
+                'uraian_sub_rincian' => 'Aset Lain-Lain Rusak Berat',
+                'uraian_sub_sub_rincian' => 'Aset Rusak Berat Menunggu Usulan Penghapusan',
+                'nama_jenis' => 'Aset Lain-Lain',
+            ]
+        );
+
+        $astap = Astap::create([
+            'nama_barang' => 'Mesin Fotocopy Rusak',
+            'tahun_perolehan' => 2026,
+            'category' => 'KIB B',
+            'jumlah_volume' => 1,
+            'satuan' => 'Unit',
+            'harga_satuan' => 15000000,
+            'total_realisasi' => 15000000,
+            'jumlah_anggaran' => 15000000,
+            'user_id' => $admin->id,
+            'kode_108' => '1.3.2.05.01.01.001',
+        ]);
+
+        $reg = $astap->registers()->create([
+            'tahun_perolehan' => 2026,
+            'no_register_int' => 1,
+            'no_register' => '000001',
+            'nibar' => 'NIBAR-TEST-RB-001',
+            'kondisi' => 'Baik',
+            'status' => 'Tersedia',
+            'is_deleted' => 0,
+        ]);
+
+        $payload = [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'RUSAK_BERAT',
+            'asal_kib' => 'KIB B',
+            'tujuan_kib' => 'ASET LAIN',
+            'tujuan_kode' => '1.5.4.01.01.01.005',
+            'tujuan_nama' => 'Aset Rusak Berat Menunggu Usulan Penghapusan',
+            'nilai_reklas' => 15000000,
+            'tanggal_reklas' => '2026-03-25',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'nomor_ba_reklas' => 'BA/REKLAS/RB/2026/001',
+            'alasan_reklas' => 'Kondisi rusak berat menanti pemusnahan',
+            'spesifikasi_baru' => [
+                'aset_lain_kondisi' => 'Rusak Berat (Menunggu Usulan Penghapusan)',
+                'aset_lain_alasan' => 'Rusak total komponen terbakar',
+                'unit_items' => [
+                    [
+                        'item_nama' => 'Mesin Fotocopy Rusak',
+                        'item_volume' => 1,
+                        'item_satuan' => 'Unit',
+                        'aset_lain_kondisi' => 'Rusak Berat (Menunggu Usulan Penghapusan)',
+                        'aset_lain_alasan' => 'Rusak total komponen terbakar',
+                        'kondisi' => 'Rusak Berat',
+                    ]
+                ]
+            ]
+        ];
+
+        $response = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), $payload);
+        $response->assertStatus(200);
+        $response->assertJson(['success' => true]);
+
+        $reg->refresh();
+        $this->assertEquals('Rusak Berat', $reg->kondisi);
+        $this->assertEquals('Rusak Berat', $reg->status);
+    }
+
+    public function test_reklas_sewa_dibayar_dimuka_to_aset_lain_preserves_register_condition_baik()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        JenisAstap::firstOrCreate(
+            ['sub_sub_rincian_objek' => '1.5.4.01.01.03.019'],
+            [
+                'jenis' => '1.5.4',
+                'sub_rincian_objek' => '1.5.4.01.01',
+                'uraian_sub_rincian' => 'Aset Lain-Lain',
+                'uraian_sub_sub_rincian' => 'Sewa Dibayar Dimuka',
+                'nama_jenis' => 'Aset Lain-Lain',
+            ]
+        );
+
+        $astap = Astap::create([
+            'nama_barang' => 'Sewa Gedung Klinik 5 Tahun',
+            'tahun_perolehan' => 2026,
+            'category' => 'KIB C',
+            'jumlah_volume' => 1,
+            'satuan' => 'Paket',
+            'harga_satuan' => 50000000,
+            'total_realisasi' => 50000000,
+            'jumlah_anggaran' => 50000000,
+            'user_id' => $admin->id,
+            'kode_108' => '1.3.3.01.01.01.001',
+        ]);
+
+        $reg = $astap->registers()->create([
+            'tahun_perolehan' => 2026,
+            'no_register_int' => 1,
+            'no_register' => '000001',
+            'nibar' => 'NIBAR-TEST-SEWA-001',
+            'kondisi' => 'Baik',
+            'status' => 'Tersedia',
+            'is_deleted' => 0,
+        ]);
+
+        $payload = [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'PINDAH_KIB',
+            'asal_kib' => 'KIB C',
+            'tujuan_kib' => 'ASET LAIN',
+            'tujuan_kode' => '1.5.4.01.01.03.019',
+            'tujuan_nama' => 'Sewa Dibayar Dimuka',
+            'nilai_reklas' => 50000000,
+            'tanggal_reklas' => '2026-03-25',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'nomor_ba_reklas' => 'BA/REKLAS/SEWA/2026/001',
+            'alasan_reklas' => 'Reklasifikasi ke Sewa Dibayar Dimuka',
+            'spesifikasi_baru' => [
+                'aset_lain_kondisi' => 'Baik (Sewa Dibayar Dimuka / Pinjam Pakai / Non-Operasional)',
+                'aset_lain_alasan' => 'Kontrak sewa gedung multiyears',
+                'unit_items' => [
+                    [
+                        'item_nama' => 'Sewa Gedung Klinik 5 Tahun',
+                        'item_volume' => 1,
+                        'item_satuan' => 'Paket',
+                        'aset_lain_kondisi' => 'Baik (Sewa Dibayar Dimuka / Pinjam Pakai / Non-Operasional)',
+                        'aset_lain_alasan' => 'Kontrak sewa gedung multiyears',
+                        'kondisi' => 'Baik',
+                    ]
+                ]
+            ]
+        ];
+
+        $response = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), $payload);
+        $response->assertStatus(200);
+        $response->assertJson(['success' => true]);
+
+        $reg->refresh();
+        $this->assertEquals('Baik', $reg->kondisi);
+        $this->assertEquals('Tersedia', $reg->status);
+    }
 }
 
 

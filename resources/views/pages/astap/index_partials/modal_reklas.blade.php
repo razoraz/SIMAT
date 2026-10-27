@@ -387,38 +387,67 @@
                                         </button>
                                     </div>
                                 </div>
-                                <div class="relative">
+
+                                <!-- State 1: Terpilih (Selected Card - Bebas Truncate, Terlihat Lengkap) -->
+                                <div x-show="reklasSubRincianKode && !isReklasSubRincianOpen"
+                                     @click="isReklasSubRincianOpen = true; searchReklasSubRincian = ''"
+                                     class="w-full bg-slate-950/80 hover:bg-slate-900 border border-emerald-500/50 hover:border-emerald-400 rounded-xl p-2.5 transition-all shadow-md flex items-center justify-between gap-3 group cursor-pointer">
+                                    <div class="min-w-0 flex-1 space-y-1">
+                                        <div class="flex items-center flex-wrap gap-1.5">
+                                            <span class="font-mono text-[10.5px] font-black px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-200 border border-emerald-500/40 tracking-wider" x-text="reklasSubRincianKode"></span>
+                                            <template x-if="getReklas108ItemMeta({kode: reklasSubRincianKode, nama: reklasSubRincianNama}).kibTag">
+                                                <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider border"
+                                                      :class="getReklas108ItemMeta({kode: reklasSubRincianKode, nama: reklasSubRincianNama}).badgeClass"
+                                                      x-text="getReklas108ItemMeta({kode: reklasSubRincianKode, nama: reklasSubRincianNama}).kibTag"></span>
+                                            </template>
+                                        </div>
+                                        <p class="text-xs font-bold text-white group-hover:text-emerald-200 leading-snug break-words" x-text="reklasSubRincianNama"></p>
+                                    </div>
+                                    <div class="shrink-0 flex items-center gap-1.5">
+                                        <span class="text-[10px] font-bold text-emerald-300 bg-emerald-500/10 px-2 py-1 rounded-lg border border-emerald-500/30 group-hover:bg-emerald-500 group-hover:text-slate-950 transition-all flex items-center gap-1">
+                                            <span>✏️ Ganti</span>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- State 2: Input Pencarian (Muncul saat belum memilih atau ingin mencari/ganti) -->
+                                <div x-show="!reklasSubRincianKode || isReklasSubRincianOpen" class="relative">
                                     <input type="text" 
-                                           :value="(!isReklasSubRincianOpen && reklasSubRincianKode) ? (reklasSubRincianKode + ' - ' + reklasSubRincianNama) : searchReklasSubRincian"
-                                           @input="searchReklasSubRincian = $event.target.value; isReklasSubRincianOpen = true"
+                                           x-model="searchReklasSubRincian"
                                            @focus="isReklasSubRincianOpen = true"
-                                           :placeholder="reklasSubRincianKode ? (reklasSubRincianKode + ' - ' + reklasSubRincianNama) : (reklasTujuanKib ? 'Ketik untuk memfilter sub rincian pada ' + reklasTujuanKib + '...' : 'Pilih KIB tujuan atau ketik sub rincian 108...')" 
-                                           class="w-full bg-slate-900 border rounded-xl px-3.5 py-2.5 pl-9 pr-9 text-xs font-bold transition-all shadow-inner"
-                                           :class="reklasSubRincianKode && !isReklasSubRincianOpen ? 'border-emerald-500/60 text-emerald-200 ring-1 ring-emerald-500/20' : 'border-slate-700 text-white focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/30'">
-                                    <svg class="w-4 h-4 absolute left-3 top-3 transition-colors" :class="reklasSubRincianKode ? 'text-emerald-400' : 'text-slate-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                           :placeholder="reklasSubRincianKode ? 'Ketik nama / kode rekening untuk ganti...' : (reklasTujuanKib ? 'Ketik untuk memfilter sub rincian pada ' + reklasTujuanKib + '...' : 'Pilih KIB tujuan atau ketik sub rincian 108...')" 
+                                           class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl px-3.5 py-2.5 pl-9 pr-9 text-xs font-bold transition-all shadow-inner focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/30">
+                                    <svg class="w-4 h-4 absolute left-3 top-3 transition-colors text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
 
                                     <!-- Quick clear reset icon inside input -->
                                     <button type="button" 
-                                            x-show="reklasSubRincianKode || searchReklasSubRincian" 
-                                            @click.stop="clearReklasSubRincian(); searchReklasSubRincian = ''" 
-                                            title="Hapus / Reset Pilihan"
+                                            x-show="searchReklasSubRincian || (reklasSubRincianKode && isReklasSubRincianOpen)" 
+                                            @click.stop="if (searchReklasSubRincian) { searchReklasSubRincian = ''; } else { isReklasSubRincianOpen = false; }" 
+                                            title="Hapus / Tutup Pencarian"
                                             class="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full flex items-center justify-center text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition-all cursor-pointer">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                     </button>
                                 </div>
 
                                 <!-- Dropdown List Sub Rincian -->
-                                <div x-show="isReklasSubRincianOpen" x-transition x-cloak style="max-height: 190px !important; overflow-y: auto !important;" class="absolute z-30 mt-1.5 w-full space-y-1 custom-scrollbar p-2 bg-slate-900/95 border border-emerald-500/50 rounded-xl shadow-2xl backdrop-blur-xl">
+                                <div x-show="isReklasSubRincianOpen" x-transition x-cloak style="max-height: 220px !important; overflow-y: auto !important;" class="absolute z-30 mt-1.5 w-full space-y-1.5 custom-scrollbar p-2 bg-slate-900/95 border border-emerald-500/50 rounded-xl shadow-2xl backdrop-blur-xl">
                                     <template x-for="s in filteredReklasSubRincian108" :key="s.kode">
                                         <div @click="selectReklasSubRincian(s)"
-                                             class="p-2.5 rounded-xl bg-slate-950 border transition-all flex items-center justify-between gap-2 group cursor-pointer"
-                                             :class="s.kode === reklasSubRincianKode ? 'border-emerald-500 bg-emerald-950/40 shadow-md' : 'border-slate-800 hover:border-emerald-500/50 hover:bg-slate-900/80'">
-                                            <div class="min-w-0 flex-1 pr-2">
-                                                <h4 class="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors truncate" x-text="s.kode + ' - ' + s.nama"></h4>
-                                                <p class="text-[10px] text-slate-400 truncate" x-text="'SUB RINCIAN 108'"></p>
+                                             class="p-2.5 rounded-xl bg-slate-950 border transition-all flex items-start justify-between gap-3 group cursor-pointer"
+                                             :class="s.kode === reklasSubRincianKode ? 'border-emerald-500 bg-emerald-950/40 shadow-md ring-1 ring-emerald-500/30' : 'border-slate-800 hover:border-emerald-500/50 hover:bg-slate-900/80'">
+                                            <div class="min-w-0 flex-1 space-y-1">
+                                                <div class="flex items-center flex-wrap gap-1.5">
+                                                    <span class="font-mono text-[10px] font-black px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 text-emerald-300 tracking-wider" x-text="s.kode"></span>
+                                                    <template x-if="getReklas108ItemMeta(s).kibTag">
+                                                        <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider border"
+                                                              :class="getReklas108ItemMeta(s).badgeClass"
+                                                              x-text="getReklas108ItemMeta(s).kibTag"></span>
+                                                    </template>
+                                                </div>
+                                                <h4 class="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors leading-snug break-words" x-text="s.nama"></h4>
                                             </div>
                                             <button type="button" 
-                                                    class="shrink-0 px-2.5 py-1 rounded-lg text-[10.5px] font-bold whitespace-nowrap transition-all"
+                                                    class="shrink-0 mt-0.5 px-2.5 py-1 rounded-lg text-[10.5px] font-bold whitespace-nowrap transition-all"
                                                     :class="s.kode === reklasSubRincianKode ? 'bg-emerald-500 text-slate-950 shadow-xs font-extrabold' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 group-hover:bg-emerald-500 group-hover:text-slate-950'">
                                                 <span x-text="s.kode === reklasSubRincianKode ? '✓ Terpilih' : 'Pilih →'"></span>
                                             </button>
@@ -456,38 +485,77 @@
                                         </button>
                                     </div>
                                 </div>
-                                <div class="relative">
+
+                                <!-- State 1: Terpilih (Selected Card - Bebas Truncate, Terlihat Jelas & Lengkap) -->
+                                <div x-show="reklasSubSubRincianKode && !isReklasSubSubRincianOpen"
+                                     @click="isReklasSubSubRincianOpen = true; searchReklasSubSubRincian = ''"
+                                     class="w-full bg-slate-950/80 hover:bg-slate-900 border border-purple-500/50 hover:border-purple-400 rounded-xl p-2.5 transition-all shadow-md flex items-center justify-between gap-3 group cursor-pointer">
+                                    <div class="min-w-0 flex-1 space-y-1">
+                                        <div class="flex items-center flex-wrap gap-1.5">
+                                            <span class="font-mono text-[10.5px] font-black px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-200 border border-purple-500/40 tracking-wider" x-text="reklasSubSubRincianKode"></span>
+                                            <template x-if="getReklas108ItemMeta({kode: reklasSubSubRincianKode, nama: reklasSubSubRincianNama}).kibTag">
+                                                <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider border"
+                                                      :class="getReklas108ItemMeta({kode: reklasSubSubRincianKode, nama: reklasSubSubRincianNama}).badgeClass"
+                                                      x-text="getReklas108ItemMeta({kode: reklasSubSubRincianKode, nama: reklasSubSubRincianNama}).kibTag"></span>
+                                            </template>
+                                            <template x-if="getReklas108ItemMeta({kode: reklasSubSubRincianKode, nama: reklasSubSubRincianNama}).isOriginMatch">
+                                                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 inline-flex items-center gap-1">
+                                                    <span>★</span> Sesuai Asal (<span x-text="selectedAstapReklas?.category || 'KIB'"></span>)
+                                                </span>
+                                            </template>
+                                        </div>
+                                        <p class="text-xs font-bold text-white group-hover:text-purple-200 leading-snug break-words" x-text="reklasSubSubRincianNama"></p>
+                                    </div>
+                                    <div class="shrink-0 flex items-center gap-1.5">
+                                        <span class="text-[10px] font-bold text-purple-300 bg-purple-500/10 px-2 py-1 rounded-lg border border-purple-500/30 group-hover:bg-purple-500 group-hover:text-slate-950 transition-all flex items-center gap-1">
+                                            <span>✏️ Ganti</span>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- State 2: Input Pencarian (Muncul saat dropdown dibuka atau belum ada pilihan) -->
+                                <div x-show="!reklasSubSubRincianKode || isReklasSubSubRincianOpen" class="relative">
                                     <input type="text" 
-                                           :value="(!isReklasSubSubRincianOpen && reklasSubSubRincianKode) ? (reklasSubSubRincianKode + ' - ' + reklasSubSubRincianNama) : searchReklasSubSubRincian"
-                                           @input="searchReklasSubSubRincian = $event.target.value; isReklasSubSubRincianOpen = true"
+                                           x-model="searchReklasSubSubRincian"
                                            @focus="isReklasSubSubRincianOpen = true"
-                                           :placeholder="reklasSubSubRincianKode ? (reklasSubSubRincianKode + ' - ' + reklasSubSubRincianNama) : 'Ketik nama / kode barang untuk mencari spesifik...'" 
-                                           class="w-full bg-slate-900 border rounded-xl px-3.5 py-2.5 pl-9 pr-9 text-xs font-bold transition-all shadow-inner"
-                                           :class="reklasSubSubRincianKode && !isReklasSubSubRincianOpen ? 'border-purple-500/60 text-purple-200 ring-1 ring-purple-500/20' : 'border-slate-700 text-white focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30'">
-                                    <svg class="w-4 h-4 absolute left-3 top-3 transition-colors" :class="reklasSubSubRincianKode ? 'text-purple-400' : 'text-slate-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                           :placeholder="reklasSubSubRincianKode ? 'Ketik nama / kode untuk ganti pilihan...' : 'Ketik nama / kode barang untuk mencari spesifik...'" 
+                                           class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl px-3.5 py-2.5 pl-9 pr-9 text-xs font-bold transition-all shadow-inner focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30">
+                                    <svg class="w-4 h-4 absolute left-3 top-3 transition-colors text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
 
                                     <!-- Quick clear reset icon inside input -->
                                     <button type="button" 
-                                            x-show="reklasSubSubRincianKode || searchReklasSubSubRincian" 
-                                            @click.stop="clearReklasSubSubRincian(); searchReklasSubSubRincian = ''" 
-                                            title="Hapus / Reset Pilihan"
+                                            x-show="searchReklasSubSubRincian || (reklasSubSubRincianKode && isReklasSubSubRincianOpen)" 
+                                            @click.stop="if (searchReklasSubSubRincian) { searchReklasSubSubRincian = ''; } else { isReklasSubSubRincianOpen = false; }" 
+                                            title="Hapus / Tutup Pencarian"
                                             class="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full flex items-center justify-center text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition-all cursor-pointer">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                     </button>
                                 </div>
 
                                 <!-- Dropdown List Sub-Sub Rincian -->
-                                <div x-show="isReklasSubSubRincianOpen" x-transition x-cloak style="max-height: 190px !important; overflow-y: auto !important;" class="absolute z-30 mt-1.5 w-full space-y-1 custom-scrollbar p-2 bg-slate-900/95 border border-purple-500/50 rounded-xl shadow-2xl backdrop-blur-xl">
+                                <div x-show="isReklasSubSubRincianOpen" x-transition x-cloak style="max-height: 240px !important; overflow-y: auto !important;" class="absolute z-30 mt-1.5 w-full space-y-1.5 custom-scrollbar p-2 bg-slate-900/95 border border-purple-500/50 rounded-xl shadow-2xl backdrop-blur-xl">
                                     <template x-for="item in filteredReklasSubSubRincian108" :key="item.kode">
                                         <div @click="selectReklasSubSubRincian(item)"
-                                             class="p-2.5 rounded-xl bg-slate-950 border transition-all flex items-center justify-between gap-2 group cursor-pointer"
-                                             :class="item.kode === reklasSubSubRincianKode ? 'border-purple-500 bg-purple-950/40 shadow-md' : 'border-slate-800 hover:border-purple-500/50 hover:bg-slate-900/80'">
-                                            <div class="min-w-0 flex-1 pr-2">
-                                                <h4 class="text-xs font-bold text-white group-hover:text-purple-300 transition-colors truncate" x-text="item.kode + ' - ' + item.nama"></h4>
-                                                <p class="text-[10px] text-slate-400 truncate" x-text="'KODE 108 • Identitas Barang Simda BMD'"></p>
+                                             class="p-2.5 rounded-xl bg-slate-950 border transition-all flex items-start justify-between gap-3 group cursor-pointer"
+                                             :class="item.kode === reklasSubSubRincianKode ? 'border-purple-500 bg-purple-950/40 shadow-md ring-1 ring-purple-500/40' : 'border-slate-800 hover:border-purple-500/50 hover:bg-slate-900/90'">
+                                            <div class="min-w-0 flex-1 space-y-1">
+                                                <div class="flex items-center flex-wrap gap-1.5">
+                                                    <span class="font-mono text-[10px] font-black px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 text-purple-300 tracking-wider" x-text="item.kode"></span>
+                                                    <template x-if="getReklas108ItemMeta(item).kibTag">
+                                                        <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider border"
+                                                              :class="getReklas108ItemMeta(item).badgeClass"
+                                                              x-text="getReklas108ItemMeta(item).kibTag"></span>
+                                                    </template>
+                                                    <template x-if="getReklas108ItemMeta(item).isOriginMatch">
+                                                        <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 inline-flex items-center gap-1">
+                                                            <span>★</span> Sesuai Asal (<span x-text="selectedAstapReklas?.category || 'KIB'"></span>)
+                                                        </span>
+                                                    </template>
+                                                </div>
+                                                <h4 class="text-xs font-bold text-white group-hover:text-purple-200 transition-colors leading-snug break-words" x-text="item.nama"></h4>
                                             </div>
                                             <button type="button" 
-                                                    class="shrink-0 px-2.5 py-1 rounded-lg text-[10.5px] font-bold whitespace-nowrap transition-all"
+                                                    class="shrink-0 mt-0.5 px-2.5 py-1 rounded-lg text-[10.5px] font-bold whitespace-nowrap transition-all"
                                                     :class="item.kode === reklasSubSubRincianKode ? 'bg-purple-500 text-slate-950 shadow-xs font-extrabold' : 'bg-purple-500/20 text-purple-300 border border-purple-500/40 group-hover:bg-purple-500 group-hover:text-slate-950'">
                                                 <span x-text="item.kode === reklasSubSubRincianKode ? '✓ Terpilih' : 'Pilih →'"></span>
                                             </button>
@@ -1654,15 +1722,62 @@
                                 <!-- Form Spesifik: ASET LAIN - Aset Lain-Lain (1.5.4) -->
                                 <template x-if="reklasTujuanKib === 'ASET LAIN' || reklasTujuanKib === 'ASET LAIN-LAIN'">
                                     <div class="space-y-3">
-                                        <div>
-                                            <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Kondisi Fisik Barang:</label>
-                                            <select x-model="reklasSpekBaru.aset_lain_kondisi"
-                                                    class="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                                <option value="Rusak Berat (Menunggu Penghapusan)">Rusak Berat (Menunggu Usulan Penghapusan)</option>
-                                                <option value="Tidak Dapat Digunakan Lagi">Tidak Dapat Digunakan Lagi / Usang</option>
-                                                <option value="Hilang / Tidak Ditemukan">Hilang / Tidak Ditemukan</option>
-                                                <option value="Sengketa / Status Hukum">Sengketa / Status Hukum</option>
-                                            </select>
+                                        <div class="p-3.5 rounded-2xl bg-slate-950/70 border border-violet-500/30 space-y-3 shadow-inner">
+                                            <div class="flex items-center justify-between">
+                                                <label class="block text-[11px] font-extrabold text-violet-300 uppercase tracking-wider flex items-center gap-1.5">
+                                                    <span>📦</span>
+                                                    <span>Kondisi &amp; Status Aset Lain-Lain (Akun 1.5.4):</span>
+                                                </label>
+                                                <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-extrabold"
+                                                      :class="(reklasSpekBaru.aset_lain_kondisi === 'Baik' || reklasSpekBaru.kondisi === 'Baik') ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : ((reklasSpekBaru.aset_lain_kondisi === 'Kurang Baik' || reklasSpekBaru.kondisi === 'Kurang Baik') ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-rose-500/20 text-rose-300 border border-rose-500/40')"
+                                                      x-text="'Kondisi Terpilih: ' + (reklasSpekBaru.kondisi || 'Rusak Berat')"></span>
+                                            </div>
+
+                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                <div>
+                                                    <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Kondisi Fisik / Status Barang:</label>
+                                                    <select x-model="reklasSpekBaru.aset_lain_kondisi"
+                                                            @change="onAsetLainKondisiChange()"
+                                                            class="w-full bg-slate-950 border border-slate-700 focus:border-violet-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                                        <option value="Rusak Berat (Menunggu Penghapusan)">🔴 Rusak Berat (Menunggu Usulan Penghapusan)</option>
+                                                        <option value="Baik">🟢 Baik (Sewa Dibayar Dimuka / Pinjam Pakai / Non-Operasional)</option>
+                                                        <option value="Kurang Baik">🟡 Kurang Baik (Dihentikan dari Operasional)</option>
+                                                        <option value="Tidak Dapat Digunakan Lagi">⚪ Tidak Dapat Digunakan Lagi / Usang</option>
+                                                        <option value="Hilang / Tidak Ditemukan">🟣 Hilang / Tidak Ditemukan</option>
+                                                        <option value="Sengketa / Status Hukum">⚖️ Sengketa / Status Hukum</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Catatan / Alasan Khusus Pengalihan:</label>
+                                                    <input type="text" x-model="reklasSpekBaru.aset_lain_alasan"
+                                                           @input="syncCurrentSpekToActiveItem()"
+                                                           placeholder="Contoh: Dihentikan dari operasional / Rusak berat / Sewa dibayar dimuka"
+                                                           class="w-full bg-slate-950 border border-slate-700 focus:border-violet-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                                </div>
+                                            </div>
+
+                                            <!-- Hint Keterangan Otomatis -->
+                                            <div class="p-2.5 rounded-xl bg-violet-950/30 border border-violet-500/20 text-[11px] text-slate-300 flex items-start gap-2">
+                                                <span class="text-sm shrink-0">💡</span>
+                                                <div class="leading-relaxed space-y-1">
+                                                    <p class="font-bold text-violet-300">Pedoman Akuntansi Permendagri 108 (Akun 1.5.4):</p>
+                                                    <template x-if="reklasSubSubRincianKode && reklasSubSubRincianKode.includes('.019')">
+                                                        <p class="text-emerald-300">
+                                                            Rekening <strong>1.5.4.01.01.03.019 (Sewa Dibayar Dimuka)</strong> otomatis diset kondisi <strong>Baik</strong> karena mencatat hak manfaat persekot sewa aktif jangka panjang (&gt; 12 bulan).
+                                                        </p>
+                                                    </template>
+                                                    <template x-if="reklasSubRincianKode && reklasSubRincianKode.startsWith('1.5.4.01.01.01')">
+                                                        <p class="text-rose-300">
+                                                            Rekening <strong>1.5.4.01.01.01 (ASET RUSAK BERAT/USANG)</strong> otomatis diset kondisi <strong>Rusak Berat</strong> untuk proses pemindahtanganan / pemusnahan BMD.
+                                                        </p>
+                                                    </template>
+                                                    <template x-if="!reklasSubSubRincianKode?.includes('.019') && !reklasSubRincianKode?.startsWith('1.5.4.01.01.01')">
+                                                        <p class="text-slate-300">
+                                                            Barang yang dialihkan ke Akun 1.5.4 dibekukan dari neraca aset tetap operasional RSUD. Anda dapat menyesuaikan opsi kondisi fisik di atas sesuai fakta riil di lapangan.
+                                                        </p>
+                                                    </template>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </template>
@@ -2911,6 +3026,22 @@
                                     </div>
                                 </div>
                             </div>
+                        </div>
+
+                        <!-- Nomor Dokumen / Berita Acara Reklasifikasi (Dapat Disesuaikan / Otomatis) -->
+                        <div x-show="reklasJenis !== 'hibah' && reklasJenis !== 'mutasi_eksternal' && reklasJenis !== 'koreksi_nilai'" class="space-y-1.5">
+                            <div class="flex items-center justify-between">
+                                <label class="block text-indigo-300 font-bold text-[10.5px] uppercase tracking-wider flex items-center space-x-1.5">
+                                    <span>📄</span>
+                                    <span>Nomor Berita Acara / Dokumen Reklasifikasi:</span>
+                                </label>
+                                <span class="text-[9.5px] text-slate-400 font-medium">
+                                    (Otomatis BAST/Pengadaan atau Sesuaikan BA Fisik)
+                                </span>
+                            </div>
+                            <input type="text" x-model="reklasNomorBa"
+                                   placeholder="Contoh: 028/BA-REKLAS/RSUD/2026 atau rujukan dokumen BAST/SPK"
+                                   class="w-full bg-slate-900/90 border border-slate-700 focus:border-indigo-400 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none transition-all">
                         </div>
 
                         <!-- Alasan Reklasifikasi (Wajib Diisi untuk Semua Jenis Reklas) -->

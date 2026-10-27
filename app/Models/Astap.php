@@ -542,7 +542,35 @@ class Astap extends Model
 
     public function getCategoryAttribute(): string
     {
+        $jenisKode = $this->jenisAstap ? (string) ($this->jenisAstap->jenis ?? '') : '';
+        $subSubKode = $this->jenisAstap ? (string) ($this->jenisAstap->sub_sub_rincian_objek ?? '') : '';
+        $fullKode = (string) ($this->kode_108 ?: ($this->kode_barang ?: ($subSubKode ?: $jenisKode)));
+
+        // 0. Akun 1.5.4 (Aset Lain-Lain) & 1.5.3 (ATB) memiliki hirarki mutlak di luar Aset Tetap Operasional (1.3.x)
+        if (str_starts_with($fullKode, '1.5.4') || str_starts_with($jenisKode, '1.5.4')) {
+            return 'ASET LAIN';
+        }
+        if (str_starts_with($fullKode, '1.5.3') || str_starts_with($jenisKode, '1.5.3')) {
+            return 'ATB';
+        }
+
         $spec = is_array($this->spesifikasi_json) ? $this->spesifikasi_json : (json_decode($this->spesifikasi_json ?? '[]', true) ?: []);
+
+        // Jika dideklarasikan secara eksplisit di spesifikasi sebagai ASET LAIN atau ATB
+        if (!empty($spec['kategori_kib'])) {
+            $kib = strtoupper(trim((string) $spec['kategori_kib']));
+            if ($kib === 'ASET LAIN' || $kib === 'ASET LAIN-LAIN' || $kib === 'ASET LAINNYA' || str_contains($kib, '1.5.4')) {
+                return 'ASET LAIN';
+            }
+            if ($kib === 'ATB' || str_contains($kib, 'TIDAK BERWUJUD') || str_contains($kib, '1.5.3')) {
+                return 'ATB';
+            }
+        }
+
+        // Jika transaksi aset secara eksplisit merupakan Reklasifikasi Ekstrakomptabel
+        if ($this->jenis_reklas === 'EKSTRAKOMPTABEL') {
+            return 'EXTRACOM';
+        }
 
         $hasFilledItem = function ($key, ...$nameFields) use ($spec) {
             if (empty($spec[$key]) || !is_array($spec[$key])) return false;
@@ -575,22 +603,17 @@ class Astap extends Model
             if (str_contains($kib, 'KIB B') || str_contains($kib, 'MESIN') || str_contains($kib, 'PERALATAN')) return 'KIB B';
             if (str_contains($kib, 'KIB A') || str_contains($kib, 'TANAH')) return 'KIB A';
             if (str_contains($kib, 'KIB D') || str_contains($kib, 'JARINGAN') || str_contains($kib, 'JALAN')) return 'KIB D';
-            if (str_contains($kib, 'KIB E') || str_contains($kib, 'LAINNYA')) return 'KIB E';
+            if (str_contains($kib, 'KIB E') || (str_contains($kib, 'LAINNYA') && !str_contains($kib, 'ASET LAIN'))) return 'KIB E';
         }
 
-        $jenisKode = $this->jenisAstap ? $this->jenisAstap->jenis : '';
-
         // KIB yang TIDAK PERNAH boleh menjadi EXTRACOM menurut Standar Akuntansi Pemerintahan (SAP)
-        if (str_starts_with($jenisKode, '1.3.1')) return 'KIB A';
-        if (str_starts_with($jenisKode, '1.3.3')) return 'KIB C';
-        if (str_starts_with($jenisKode, '1.3.4')) return 'KIB D';
-        if (str_starts_with($jenisKode, '1.3.6')) return 'KIB F';
+        if (str_starts_with($jenisKode, '1.3.1') || str_starts_with($fullKode, '1.3.1')) return 'KIB A';
+        if (str_starts_with($jenisKode, '1.3.3') || str_starts_with($fullKode, '1.3.3')) return 'KIB C';
+        if (str_starts_with($jenisKode, '1.3.4') || str_starts_with($fullKode, '1.3.4')) return 'KIB D';
+        if (str_starts_with($jenisKode, '1.3.6') || str_starts_with($fullKode, '1.3.6')) return 'KIB F';
         
         // Akun 1.5.2 (Kemitraan Dengan Pihak Ketiga) -> Petakan ke wujud fisik KIB-nya
-        if (str_starts_with($jenisKode, '1.5.2')) {
-            $subSubKode = $this->jenisAstap ? ($this->jenisAstap->sub_sub_rincian_objek ?? '') : '';
-            $fullKode = $this->kode_108 ?: $subSubKode;
-            
+        if (str_starts_with($jenisKode, '1.5.2') || str_starts_with($fullKode, '1.5.2')) {
             // Cek kode sub-sub rincian:
             // 001 = Tanah, 002 = Peralatan & Mesin, 003 = Gedung & Bangunan, 004 = Jalan/Irigasi/Jaringan, 005 = Aset Tetap Lainnya
             if (str_contains($fullKode, '.01.01.001') || str_contains($fullKode, '.01.02.001') || str_ends_with($fullKode, '.001') || stripos($this->nama_barang, 'tanah') !== false) {
@@ -612,16 +635,15 @@ class Astap extends Model
             return 'KIB B';
         }
 
-        if (str_starts_with($jenisKode, '1.5.3')) return 'ATB';
-        if (str_starts_with($jenisKode, '1.5.4')) return 'ASET LAIN';
+        if (str_starts_with($jenisKode, '1.5.3') || str_starts_with($fullKode, '1.5.3')) return 'ATB';
+        if (str_starts_with($jenisKode, '1.5.4') || str_starts_with($fullKode, '1.5.4')) return 'ASET LAIN';
 
-        // Hanya KIB B (Peralatan & Mesin) atau KIB E (Aset Tetap Lainnya) yang bisa EXTRACOM
         if ($this->is_extracomtable) {
             return 'EXTRACOM';
         }
 
-        if (str_starts_with($jenisKode, '1.3.2')) return 'KIB B';
-        if (str_starts_with($jenisKode, '1.3.5')) return 'KIB E';
+        if (str_starts_with($jenisKode, '1.3.2') || str_starts_with($fullKode, '1.3.2')) return 'KIB B';
+        if (str_starts_with($jenisKode, '1.3.5') || str_starts_with($fullKode, '1.3.5')) return 'KIB E';
 
         return 'KIB B';
     }

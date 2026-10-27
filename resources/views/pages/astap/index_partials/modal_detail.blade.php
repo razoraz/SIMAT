@@ -336,6 +336,7 @@
                                         'text-orange-400': getEffectiveKibCategory(selectedAstapDetail) === 'KIB E',
                                         'text-rose-400':  getEffectiveKibCategory(selectedAstapDetail) === 'KIB F',
                                         'text-indigo-400': getEffectiveKibCategory(selectedAstapDetail) === 'ATB',
+                                        'text-violet-400': getEffectiveKibCategory(selectedAstapDetail) === 'ASET LAIN' || getEffectiveKibCategory(selectedAstapDetail) === 'ASET LAINNYA',
                                         'text-amber-300': selectedAstapDetail.category === 'EXTRACOM'
                                     }">
                                     <span x-text="(() => {
@@ -1025,6 +1026,92 @@
                                                         <span class="text-violet-300 font-medium block truncate"
                                                               :title="aItem.atb_ruang_pemegang || selectedAstapDetail.ruang_pemegang || selectedAstapDetail.ruang_unit"
                                                               x-text="aItem.atb_ruang_pemegang || selectedAstapDetail.ruang_pemegang || selectedAstapDetail.ruang_unit || '-'"></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- 8. ASET LAIN (AKUN 1.5.4) - Multi-Item / Spesifikasi Khusus Aset Lain-Lain -->
+                            <template x-if="getEffectiveKibCategory(selectedAstapDetail) === 'ASET LAIN' || getEffectiveKibCategory(selectedAstapDetail) === 'ASET LAIN-LAIN' || getEffectiveKibCategory(selectedAstapDetail) === 'ASET LAINNYA'">
+                                <div class="space-y-3">
+                                    <!-- Header Aset Lain -->
+                                    <div class="flex items-center justify-between text-xs font-semibold text-slate-300 px-1">
+                                        <span class="flex items-center gap-1.5 text-violet-400 font-bold uppercase tracking-wider text-[11px]">
+                                            <span>📦</span>
+                                            <span>Rincian Item Aset Lain-Lain (1.5.4) Terdaftar (<span x-text="getAsetLainItemsForDetail(selectedAstapDetail).length"></span> Item)</span>
+                                        </span>
+                                        <span class="text-[11px] text-slate-400 font-mono" x-text="'Total Vol: ' + (selectedAstapDetail.jumlah_volume || getAsetLainItemsForDetail(selectedAstapDetail).length) + ' ' + (selectedAstapDetail.satuan || 'Unit')"></span>
+                                    </div>
+
+                                    <!-- Cards per Item Aset Lain -->
+                                    <div class="space-y-2.5">
+                                        <template x-for="(alItem, alIdx) in getAsetLainItemsForDetail(selectedAstapDetail)" :key="alIdx">
+                                            <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-violet-500/30 space-y-2.5 shadow-sm hover:border-violet-400/50 transition-all">
+                                                <!-- Header Card Item -->
+                                                <div class="flex flex-wrap items-center justify-between border-b border-slate-800 pb-2 gap-2">
+                                                    <div class="flex flex-wrap items-center gap-2">
+                                                        <span class="px-2.5 py-0.5 rounded-lg bg-violet-500/20 text-violet-300 font-mono font-bold text-[11px] border border-violet-500/30"
+                                                              x-text="'ASET LAIN #' + (alIdx + 1)"></span>
+                                                        <span class="text-white font-bold text-xs" x-text="alItem.item_nama || alItem.aset_lain_nama_barang || selectedAstapDetail.nama_barang"></span>
+                                                        <span class="px-2 py-0.5 rounded-lg bg-slate-800 text-slate-300 font-mono font-bold text-[10px] border border-slate-700"
+                                                              x-text="(alItem.item_volume || alItem.aset_lain_volume || 1) + ' ' + (alItem.item_satuan || alItem.aset_lain_satuan || selectedAstapDetail.satuan || 'Unit')"></span>
+                                                        
+                                                        <!-- Badge Kondisi Fisik Item -->
+                                                        <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-semibold border inline-flex items-center gap-1.5"
+                                                              :class="getRincianKondisiStats(selectedAstapDetail, alIdx, 'aset_lain_items').badge_class">
+                                                            <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="getRincianKondisiStats(selectedAstapDetail, alIdx, 'aset_lain_items').dot_class"></span>
+                                                            <span x-text="'Kondisi: ' + getRincianKondisiStats(selectedAstapDetail, alIdx, 'aset_lain_items').text"></span>
+                                                        </span>
+
+                                                        <template x-if="getRincianNibar(selectedAstapDetail, alIdx, 'aset_lain_items')">
+                                                            <span class="text-[11px] text-cyan-400 font-mono font-bold"
+                                                                  :title="getRincianNibar(selectedAstapDetail, alIdx, 'aset_lain_items').tooltip"
+                                                                  x-text="getRincianNibar(selectedAstapDetail, alIdx, 'aset_lain_items').label"></span>
+                                                        </template>
+                                                    </div>
+                                                    <div class="text-[11px] font-mono">
+                                                        <span class="text-slate-400">Nilai Tercatat: </span>
+                                                        <strong class="text-emerald-400 font-bold" x-text="'Rp ' + Number(alItem.aset_lain_nilai || selectedAstapDetail.harga_satuan || (selectedAstapDetail.total_realisasi / (getAsetLainItemsForDetail(selectedAstapDetail).length || 1)) || 0).toLocaleString('id-ID')"></strong>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Grid Informasi 4 Kolom -->
+                                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[10.5px]">
+                                                    <!-- Kolom 1: Status Akun 1.5.4 -->
+                                                    <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                        <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">📋 Kelompok Rekening</span>
+                                                        <span class="text-violet-300 font-bold block truncate" x-text="selectedAstapDetail.jenis_astap?.uraian_sub_rincian || 'ASET LAIN-LAIN (1.5.4)'"></span>
+                                                        <span class="text-slate-400 font-mono text-[9.5px] block truncate" x-text="selectedAstapDetail.kode_barang || selectedAstapDetail.kode_108 || '1.5.4'"></span>
+                                                    </div>
+
+                                                    <!-- Kolom 2: Status Penggunaan Operasional -->
+                                                    <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                        <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">⚠️ Status Operasional</span>
+                                                        <span class="font-semibold block truncate"
+                                                              :class="(alItem.aset_lain_kondisi === 'Baik' || (selectedAstapDetail.kode_108 && selectedAstapDetail.kode_108.includes('.019'))) ? 'text-cyan-300' : 'text-amber-300'"
+                                                              x-text="(selectedAstapDetail.kode_108 && selectedAstapDetail.kode_108.includes('.019')) ? 'Hak Sewa / Persekot Aktif' : 'Dihentikan Dari Operasional'"></span>
+                                                        <span class="text-slate-400 text-[9px] block truncate" x-text="alItem.aset_lain_kondisi || selectedAstapDetail.spesifikasi_json?.aset_lain_kondisi || 'Rusak Berat'"></span>
+                                                    </div>
+
+                                                    <!-- Kolom 3: Alasan Pengalihan -->
+                                                    <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                        <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">📝 Alasan Pengalihan</span>
+                                                        <span class="text-slate-200 block truncate"
+                                                              :title="alItem.aset_lain_alasan || selectedAstapDetail.keterangan_tambahan || 'Pengalihan ke Akun 1.5.4'"
+                                                              x-text="alItem.aset_lain_alasan || selectedAstapDetail.keterangan_tambahan || 'Pengalihan ke Akun 1.5.4'"></span>
+                                                        <span class="text-slate-400 text-[9px]" x-text="'Tanggal: ' + formatTanggalIndo(selectedAstapDetail.created_at || selectedAstapDetail.spk_tanggal)"></span>
+                                                    </div>
+
+                                                    <!-- Kolom 4: Ruang / Unit Pemegang Terakhir -->
+                                                    <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                        <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🏥 Ruang / Unit Terakhir</span>
+                                                        <span class="text-amber-300 font-medium block truncate"
+                                                              :title="alItem.ruang_pemegang || selectedAstapDetail.ruang_unit"
+                                                              x-text="alItem.ruang_pemegang || selectedAstapDetail.ruang_unit || '-'"></span>
+                                                        <span class="text-slate-400 text-[9px] block" x-text="'NIBAR: ' + (alItem.nibar || '-')"></span>
                                                     </div>
                                                 </div>
                                             </div>

@@ -531,21 +531,23 @@
         if (!item) return 'KIB B';
 
         // 1. Cek kode barang / jenis aset terlebih dahulu untuk KIB yang mutlak Intrakomptabel (SAP)
-        const kode = item.jenis_aset_kode || item.kode_barang || '';
+        const kode = String(item.jenis_aset_kode || item.kode_barang || '').trim();
+        if (kode.startsWith('1.5.4')) return 'ASET LAIN';
+        if (kode.startsWith('1.5.3')) return 'ATB';
         if (kode.startsWith('1.3.1')) return 'KIB A';
         if (kode.startsWith('1.3.3')) return 'KIB C';
         if (kode.startsWith('1.3.4')) return 'KIB D';
         if (kode.startsWith('1.3.6')) return 'KIB F';
-        if (kode.startsWith('1.5.3')) return 'ATB';
 
         // 2. Kategori tekstual eksplisit (kecuali EXTRACOM yang nanti dicek validitasnya)
         if (item.category) {
             const cUpper = item.category.toUpperCase().trim();
+            if (cUpper === 'ASET LAIN' || cUpper === 'ASET LAINNYA' || cUpper === 'ASET LAIN-LAIN' || cUpper.includes('1.5.4')) return 'ASET LAIN';
             if (cUpper === 'KIB A' || cUpper === 'A' || cUpper.includes('TANAH')) return 'KIB A';
             if (cUpper === 'KIB C' || cUpper === 'C' || cUpper.includes('GEDUNG') || cUpper.includes('BANGUNAN')) return 'KIB C';
             if (cUpper === 'KIB D' || cUpper === 'D' || cUpper.includes('JALAN') || cUpper.includes('JARINGAN')) return 'KIB D';
             if (cUpper === 'KIB F' || cUpper === 'F' || cUpper.includes('KDP') || cUpper.includes('KONSTRUKSI')) return 'KIB F';
-            if (cUpper === 'ATB' || cUpper.includes('TIDAK BERWUJUD')) return 'ATB';
+            if (cUpper === 'ATB' || cUpper.includes('TIDAK BERWUJUD') || cUpper.includes('1.5.3')) return 'ATB';
         }
 
         // 3. Hanya KIB B (Peralatan & Mesin) atau KIB E (Aset Tetap Lainnya) yang boleh menjadi EXTRACOM
@@ -557,7 +559,7 @@
         if (item.category) {
             const cUpper = item.category.toUpperCase().trim();
             if (cUpper === 'KIB B' || cUpper === 'B' || cUpper.includes('MESIN') || cUpper.includes('PERALATAN')) return 'KIB B';
-            if (cUpper === 'KIB E' || cUpper === 'E' || cUpper.includes('LAINNYA')) return 'KIB E';
+            if (cUpper === 'KIB E' || cUpper === 'E' || (cUpper.includes('LAINNYA') && !cUpper.includes('ASET LAIN'))) return 'KIB E';
         }
 
         if (kode.startsWith('1.3.2')) return 'KIB B';
@@ -10934,11 +10936,23 @@
                         this.reklasSubSubRincianNama = '';
                         this.searchReklasSubSubRincian = '';
                     }
+
+                    // Auto-suggest Sub-Sub Rincian jika ada yang cocok dengan KIB Asal
+                    if (s.subSubRincian && s.subSubRincian.length > 0) {
+                        const matchedSsr = s.subSubRincian.find(ssr => this.getReklas108ItemMeta(ssr).isOriginMatch);
+                        if (matchedSsr) {
+                            this.selectReklasSubSubRincian(matchedSsr);
+                        }
+                    }
+
                     this.reklasTujuanKode = this.reklasSubSubRincianKode || s.kode;
                     this.reklasTujuanNama = this.reklasSubSubRincianNama || s.nama;
                     if (this.reklasTujuanKib === 'KEMITRAAN') {
                         this.reklasKemitraanTipeFisik = this.detectKemitraanPhysicalType();
                         this.syncKemitraanSkema(s.kode, s.nama);
+                    }
+                    if (this.reklasTujuanKib === 'ASET LAIN' || this.reklasTujuanKib === 'ASET LAIN-LAIN' || s.kode.startsWith('1.5.4')) {
+                        this.syncAsetLainConditionFromAccount(s.kode, s.nama);
                     }
                 },
 
@@ -10992,10 +11006,151 @@
                     return all;
                 },
 
+                getReklas108ItemMeta(item) {
+                    if (!item) return { kibTag: '', badgeClass: '', isOriginMatch: false };
+                    const cd = (item.kode || '').trim();
+                    const nm = (item.nama || '').toLowerCase().trim();
+                    const originCat = (this.selectedAstapReklas?.category || '').toUpperCase().trim();
+
+                    let kibTag = '';
+                    let badgeClass = 'bg-slate-800 text-slate-300 border-slate-700';
+                    let targetKib = '';
+
+                    // 1. Akun 1.5.4.01.01.02 (Tidak Digunakan dalam Operasional)
+                    if (cd.startsWith('1.5.4.01.01.02') || (cd.startsWith('1.5.4') && nm.includes('tidak digunakan'))) {
+                        if (cd.endsWith('.001') || nm.includes('tanah')) {
+                            kibTag = 'EKS KIB A • TANAH';
+                            badgeClass = 'bg-rose-500/20 text-rose-300 border-rose-500/40';
+                            targetKib = 'KIB A';
+                        } else if (cd.endsWith('.002') || nm.includes('mesin') || nm.includes('peralatan')) {
+                            kibTag = 'EKS KIB B • PERALATAN & MESIN';
+                            badgeClass = 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40';
+                            targetKib = 'KIB B';
+                        } else if (cd.endsWith('.003') || nm.includes('gedung') || nm.includes('bangunan')) {
+                            kibTag = 'EKS KIB C • GEDUNG & BANGUNAN';
+                            badgeClass = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
+                            targetKib = 'KIB C';
+                        } else if (cd.endsWith('.004') || nm.includes('jalan') || nm.includes('irigasi') || nm.includes('jaringan')) {
+                            kibTag = 'EKS KIB D • JALAN & JARINGAN';
+                            badgeClass = 'bg-blue-500/20 text-blue-300 border-blue-500/40';
+                            targetKib = 'KIB D';
+                        } else if (cd.endsWith('.005') || nm.includes('lainnya')) {
+                            kibTag = 'EKS KIB E • ASET TETAP LAINNYA';
+                            badgeClass = 'bg-violet-500/20 text-violet-300 border-violet-500/40';
+                            targetKib = 'KIB E';
+                        } else if (cd.endsWith('.006') || nm.includes('konstruksi') || nm.includes('pengerjaan') || nm.includes('kdp')) {
+                            kibTag = 'EKS KIB F • KONSTRUKSI (KDP)';
+                            badgeClass = 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+                            targetKib = 'KIB F';
+                        } else {
+                            kibTag = 'ASET NON-OPERASIONAL';
+                            badgeClass = 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+                        }
+                    } 
+                    // 2. Akun 1.5.4.01.01.01 (Rusak Berat / Usang)
+                    else if (cd.startsWith('1.5.4.01.01.01') || (cd.startsWith('1.5.4') && (nm.includes('rusak berat') || nm.includes('usang')))) {
+                        if (cd.endsWith('.001') || nm.includes('tanah')) {
+                            kibTag = 'KIB A • TANAH (RUSAK)';
+                            badgeClass = 'bg-rose-500/20 text-rose-300 border-rose-500/40';
+                            targetKib = 'KIB A';
+                        } else if (cd.endsWith('.002') || nm.includes('mesin') || nm.includes('peralatan')) {
+                            kibTag = 'KIB B • MESIN (RUSAK)';
+                            badgeClass = 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40';
+                            targetKib = 'KIB B';
+                        } else if (cd.endsWith('.003') || nm.includes('gedung') || nm.includes('bangunan')) {
+                            kibTag = 'KIB C • GEDUNG (RUSAK)';
+                            badgeClass = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
+                            targetKib = 'KIB C';
+                        } else if (cd.endsWith('.004') || nm.includes('jalan') || nm.includes('jaringan')) {
+                            kibTag = 'KIB D • JARINGAN (RUSAK)';
+                            badgeClass = 'bg-blue-500/20 text-blue-300 border-blue-500/40';
+                            targetKib = 'KIB D';
+                        } else if (cd.endsWith('.005') || nm.includes('lainnya')) {
+                            kibTag = 'KIB E • LAINNYA (RUSAK)';
+                            badgeClass = 'bg-violet-500/20 text-violet-300 border-violet-500/40';
+                            targetKib = 'KIB E';
+                        } else if (cd.endsWith('.006') || nm.includes('konstruksi') || nm.includes('kdp')) {
+                            kibTag = 'KIB F • KDP (RUSAK)';
+                            badgeClass = 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+                            targetKib = 'KIB F';
+                        } else {
+                            kibTag = 'RUSAK BERAT / USANG';
+                            badgeClass = 'bg-red-500/20 text-red-300 border-red-500/40';
+                        }
+                    }
+                    // 3. Akun 1.5.4 Lainnya (Sewa Dimuka, Pinjam Pakai, Hilang, dll)
+                    else if (cd.startsWith('1.5.4')) {
+                        if (cd.includes('.03.019') || nm.includes('sewa dibayar dimuka')) {
+                            kibTag = 'HAK SEWA • DIBAYAR DIMUKA';
+                            badgeClass = 'bg-teal-500/20 text-teal-300 border-teal-500/40';
+                        } else if (cd.includes('.03.003') || nm.includes('hilang')) {
+                            kibTag = 'TGR • HILANG / TIDAK DITEMUKAN';
+                            badgeClass = 'bg-rose-500/20 text-rose-300 border-rose-500/40';
+                        } else if (nm.includes('pinjam pakai')) {
+                            kibTag = 'PINJAM PAKAI';
+                            badgeClass = 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40';
+                        } else {
+                            kibTag = 'ASET LAIN-LAIN';
+                            badgeClass = 'bg-violet-500/20 text-violet-300 border-violet-500/40';
+                        }
+                    }
+                    // 4. Kemitraan (1.5.2)
+                    else if (cd.startsWith('1.5.2')) {
+                        kibTag = 'KEMITRAAN DENGAN PIHAK KETIGA';
+                        badgeClass = 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40';
+                        targetKib = 'KEMITRAAN';
+                    }
+                    // 5. ATB (1.5.3)
+                    else if (cd.startsWith('1.5.3')) {
+                        kibTag = 'ATB • ASET TAK BERWUJUD';
+                        badgeClass = 'bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/40';
+                        targetKib = 'ATB';
+                    }
+                    // 6. KIB Operasional Standard (1.3.x)
+                    else if (cd.startsWith('1.3.1')) {
+                        kibTag = 'KIB A • TANAH';
+                        badgeClass = 'bg-rose-500/20 text-rose-300 border-rose-500/40';
+                        targetKib = 'KIB A';
+                    } else if (cd.startsWith('1.3.2')) {
+                        kibTag = 'KIB B • PERALATAN & MESIN';
+                        badgeClass = 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40';
+                        targetKib = 'KIB B';
+                    } else if (cd.startsWith('1.3.3')) {
+                        kibTag = 'KIB C • GEDUNG & BANGUNAN';
+                        badgeClass = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
+                        targetKib = 'KIB C';
+                    } else if (cd.startsWith('1.3.4')) {
+                        kibTag = 'KIB D • JALAN, IRIGASI & JARINGAN';
+                        badgeClass = 'bg-blue-500/20 text-blue-300 border-blue-500/40';
+                        targetKib = 'KIB D';
+                    } else if (cd.startsWith('1.3.5')) {
+                        kibTag = 'KIB E • ASET TETAP LAINNYA';
+                        badgeClass = 'bg-violet-500/20 text-violet-300 border-violet-500/40';
+                        targetKib = 'KIB E';
+                    } else if (cd.startsWith('1.3.6')) {
+                        kibTag = 'KIB F • KONSTRUKSI (KDP)';
+                        badgeClass = 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+                        targetKib = 'KIB F';
+                    }
+
+                    const isOriginMatch = !!(targetKib && originCat && (
+                        targetKib === originCat ||
+                        (originCat === 'EXTRACOM' && (targetKib === 'KIB B' || targetKib === 'KIB E'))
+                    ));
+
+                    return { kibTag, badgeClass, isOriginMatch };
+                },
+
                 get filteredReklasSubSubRincian108() {
                     const list = this.availableReklasSubSubRincian108 || [];
                     const q = (this.searchReklasSubSubRincian || '').toLowerCase().trim();
-                    if (!q) return list.slice(0, 30);
+                    if (!q) {
+                        return [...list].sort((a, b) => {
+                            const aMatch = this.getReklas108ItemMeta(a).isOriginMatch ? 1 : 0;
+                            const bMatch = this.getReklas108ItemMeta(b).isOriginMatch ? 1 : 0;
+                            return bMatch - aMatch;
+                        }).slice(0, 30);
+                    }
                     return list.filter(item => 
                         (item.nama && item.nama.toLowerCase().includes(q)) || 
                         (item.kode && item.kode.toLowerCase().includes(q))
@@ -11042,6 +11197,9 @@
                         this.reklasKemitraanTipeFisik = this.detectKemitraanPhysicalType();
                         this.syncKemitraanSkema(item.kode, item.nama);
                     }
+                    if (this.reklasTujuanKib === 'ASET LAIN' || this.reklasTujuanKib === 'ASET LAIN-LAIN' || item.kode.startsWith('1.5.4')) {
+                        this.syncAsetLainConditionFromAccount(item.kode, item.nama);
+                    }
                 },
 
                 clearReklasSubSubRincian() {
@@ -11054,6 +11212,56 @@
                     if (this.reklasTujuanKib === 'KEMITRAAN') {
                         this.reklasKemitraanTipeFisik = this.detectKemitraanPhysicalType();
                         this.syncKemitraanSkema();
+                    }
+                },
+
+                syncAsetLainConditionFromAccount(kode, nama) {
+                    if (!this.reklasSpekBaru) this.reklasSpekBaru = {};
+                    const cd = (kode || this.reklasSubSubRincianKode || this.reklasSubRincianKode || this.reklasTujuanKode || '').trim();
+                    const nm = (nama || this.reklasSubSubRincianNama || this.reklasSubRincianNama || this.reklasTujuanNama || '').toLowerCase().trim();
+
+                    let targetKondisi = 'Rusak Berat (Menunggu Penghapusan)';
+                    let mappedStd = 'Rusak Berat';
+
+                    if (cd.startsWith('1.5.4.01.01.01') || nm.includes('rusak berat') || nm.includes('usang')) {
+                        targetKondisi = 'Rusak Berat (Menunggu Penghapusan)';
+                        mappedStd = 'Rusak Berat';
+                    } else if (cd.startsWith('1.5.4.01.01.03.019') || nm.includes('sewa dibayar dimuka') || nm.includes('pinjam pakai') || nm.includes('akan diserahkan')) {
+                        targetKondisi = 'Baik';
+                        mappedStd = 'Baik';
+                    } else if (cd.startsWith('1.5.4.01.01.03.003') || nm.includes('hilang')) {
+                        targetKondisi = 'Hilang / Tidak Ditemukan';
+                        mappedStd = 'Rusak Berat';
+                    } else if (cd.startsWith('1.5.4.01.01.02') || nm.includes('tidak digunakan')) {
+                        const oldK = this.selectedAstapReklas?.kondisi || 'Baik';
+                        targetKondisi = (oldK === 'Rusak Berat' || oldK.includes('Rusak')) ? 'Rusak Berat (Menunggu Penghapusan)' : oldK;
+                        mappedStd = (oldK === 'Kurang Baik' || oldK === 'Rusak Berat') ? oldK : 'Baik';
+                    }
+
+                    this.reklasSpekBaru.aset_lain_kondisi = targetKondisi;
+                    this.reklasSpekBaru.kondisi = mappedStd;
+
+                    if (Array.isArray(this.reklasSpekBaruItems)) {
+                        this.reklasSpekBaruItems.forEach(item => {
+                            if (item.is_selected !== false) {
+                                item.aset_lain_kondisi = targetKondisi;
+                                item.kondisi = mappedStd;
+                            }
+                        });
+                    }
+                },
+
+                onAsetLainKondisiChange() {
+                    if (!this.reklasSpekBaru) return;
+                    const val = this.reklasSpekBaru.aset_lain_kondisi || 'Rusak Berat (Menunggu Penghapusan)';
+                    let mappedStd = 'Rusak Berat';
+                    if (val === 'Baik' || val.startsWith('Baik')) mappedStd = 'Baik';
+                    else if (val === 'Kurang Baik' || val.startsWith('Kurang Baik')) mappedStd = 'Kurang Baik';
+
+                    this.reklasSpekBaru.kondisi = mappedStd;
+                    if (Array.isArray(this.reklasSpekBaruItems) && this.reklasSpekBaruItems[this.activeSpekUnitTab]) {
+                        this.reklasSpekBaruItems[this.activeSpekUnitTab].aset_lain_kondisi = val;
+                        this.reklasSpekBaruItems[this.activeSpekUnitTab].kondisi = mappedStd;
                     }
                 },
 
@@ -11077,6 +11285,9 @@
                     this.reklasTujuanNama = this.reklasSubSubRincianNama || this.reklasSubRincianNama || '';
                     if (this.reklasTujuanKib === 'KEMITRAAN') {
                         this.reklasKemitraanTipeFisik = this.detectKemitraanPhysicalType();
+                    }
+                    if (this.reklasTujuanKib === 'ASET LAIN' || this.reklasTujuanKib === 'ASET LAIN-LAIN') {
+                        this.syncAsetLainConditionFromAccount();
                     }
                     this.initReklasSpekBaru();
                 },
@@ -11176,6 +11387,33 @@
                         const itemVol = parseInt(currItem.mesin_jumlah_barang || currItem.lainnya_jumlah || currItem.gedung_jumlah_bangunan || currItem.jaringan_jumlah || currItem.tanah_jumlah_bidang || currItem.atb_jumlah_barang || currItem.jumlah_volume || (this.reklasExtracomItems && this.reklasExtracomItems[idx] ? this.reklasExtracomItems[idx].jumlah_volume : 1));
                         const itemSatuan = currItem.mesin_satuan || currItem.lainnya_satuan || currItem.gedung_satuan || currItem.jaringan_satuan || currItem.tanah_satuan || currItem.atb_satuan || (this.reklasExtracomItems && this.reklasExtracomItems[idx] ? this.reklasExtracomItems[idx].satuan : null) || it.satuan || 'Unit';
 
+                        const targetIsAsetLain = (target === 'ASET LAIN' || target === 'ASET LAIN-LAIN' || (this.reklasTargetJenisKode && this.reklasTargetJenisKode.startsWith('1.5.4')));
+                        const cd108 = (this.reklasSubSubRincianKode || this.reklasSubRincianKode || this.reklasTujuanKode || '').trim();
+                        const nm108 = (this.reklasSubSubRincianNama || this.reklasSubRincianNama || this.reklasTujuanNama || '').toLowerCase().trim();
+
+                        const defAsetLainKondisi = (() => {
+                            if (spec.aset_lain_kondisi) return spec.aset_lain_kondisi;
+                            if (cd108.startsWith('1.5.4.01.01.01') || nm108.includes('rusak berat') || nm108.includes('usang')) {
+                                return 'Rusak Berat (Menunggu Penghapusan)';
+                            }
+                            if (cd108.startsWith('1.5.4.01.01.03.019') || nm108.includes('sewa dibayar dimuka') || nm108.includes('pinjam pakai')) {
+                                return 'Baik';
+                            }
+                            if (cd108.startsWith('1.5.4.01.01.03.003') || nm108.includes('hilang')) {
+                                return 'Hilang / Tidak Ditemukan';
+                            }
+                            return targetIsAsetLain ? 'Rusak Berat (Menunggu Penghapusan)' : (reg?.kondisi || it.kondisi || 'Baik');
+                        })();
+
+                        const defUnitKondisi = (() => {
+                            if (targetIsAsetLain) {
+                                if (defAsetLainKondisi === 'Baik' || defAsetLainKondisi.startsWith('Baik')) return 'Baik';
+                                if (defAsetLainKondisi === 'Kurang Baik' || defAsetLainKondisi.startsWith('Kurang Baik')) return 'Kurang Baik';
+                                return 'Rusak Berat';
+                            }
+                            return reg?.kondisi || it.kondisi || 'Baik';
+                        })();
+
                         return {
                             unit_index: idx,
                             is_selected: true,
@@ -11184,7 +11422,7 @@
                             item_satuan: itemSatuan,
                             nibar: reg?.nibar || reg?.no_register || `Unit #${idx + 1}`,
                             ruang_pemegang: reg?.ruang_pemegang || it.ruang_unit || '-',
-                            kondisi: reg?.kondisi || 'Baik',
+                            kondisi: defUnitKondisi,
 
                             // KIB A - Tanah
                             tanah_luas_m2: tItem.tanah_luas_m2 || tItem.tanah_luas || spec.luas_m2 || spec.tanah_luas_m2 || (it.luas_m2 && it.luas_m2 > 0 ? it.luas_m2 : '') || '',
@@ -11382,7 +11620,7 @@
                             kemitraan_keterangan_kontribusi: spec.keterangan_kontribusi || spec.kemitraan_keterangan_kontribusi || '',
 
                             // ASET LAIN
-                            aset_lain_kondisi: spec.kondisi_barang || spec.aset_lain_kondisi || (it.kondisi && it.kondisi !== '-' ? it.kondisi : 'Rusak Berat (Menunggu Penghapusan)'),
+                            aset_lain_kondisi: defAsetLainKondisi,
                             aset_lain_alasan: spec.alasan || spec.aset_lain_alasan || 'Pengalihan ke Akun 1.5.4 Aset Lain-Lain',
                         };
                     };
@@ -11502,6 +11740,14 @@
                             this.reklasSpekBaru.lainnya_hewan_jenis = this.reklasSpekBaru.lainnya_judul;
                             this.reklasSpekBaru.lainnya_hewan_judul = this.reklasSpekBaru.lainnya_judul;
                             this.reklasSpekBaru.lainnya_hewan_spesifikasi = this.reklasSpekBaru.lainnya_spesifikasi;
+                        }
+
+                        if (this.reklasTujuanKib === 'ASET LAIN' || this.reklasTujuanKib === 'ASET LAIN-LAIN' || (this.reklasTargetJenisKode && this.reklasTargetJenisKode.startsWith('1.5.4'))) {
+                            const alk = this.reklasSpekBaru.aset_lain_kondisi || 'Rusak Berat (Menunggu Penghapusan)';
+                            let std = 'Rusak Berat';
+                            if (alk === 'Baik' || alk.startsWith('Baik')) std = 'Baik';
+                            else if (alk === 'Kurang Baik' || alk.startsWith('Kurang Baik')) std = 'Kurang Baik';
+                            this.reklasSpekBaru.kondisi = std;
                         }
                         Object.assign(this.reklasSpekBaruItems[this.activeSpekUnitTab], this.reklasSpekBaru);
                     }
@@ -13775,6 +14021,33 @@
                     }];
                 },
 
+                getAsetLainItemsForDetail(astap) {
+                    if (!astap) return [];
+                    let spec = astap.spesifikasi_json;
+                    if (typeof spec === 'string') {
+                        try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
+                    }
+                    const targetTotal = (this.getActiveRegisters(astap).length > 0) ? this.getActiveRegisters(astap).length : (parseInt(astap.jumlah_volume) || 1);
+                    if (spec && Array.isArray(spec.aset_lain_items) && spec.aset_lain_items.length > 0) {
+                        return this.syncRepeaterItemsWithVolume(spec.aset_lain_items, targetTotal, ['item_volume', 'volume', 'jumlah']);
+                    }
+                    const cat = String(astap.category || '').toUpperCase();
+                    const kd = String(astap.kode_barang || astap.kode_108 || '');
+                    const isAsetLain = cat.includes('ASET LAIN') || kd.startsWith('1.5.4');
+                    if (!isAsetLain) return [];
+
+                    const knd = (spec && (spec.aset_lain_kondisi || spec.kondisi_barang)) || astap.kondisi || 'Rusak Berat (Menunggu Penghapusan)';
+                    return [{
+                        aset_lain_nama_barang: astap.nama_barang || 'Aset Lain-Lain',
+                        aset_lain_kondisi: knd,
+                        aset_lain_alasan: (spec && (spec.aset_lain_alasan || spec.alasan)) || astap.keterangan_tambahan || 'Pengalihan ke Akun 1.5.4 Aset Lain-Lain',
+                        aset_lain_nilai: astap.harga_satuan || astap.total_realisasi || 0,
+                        item_volume: targetTotal,
+                        item_satuan: astap.satuan || 'Unit',
+                        ruang_pemegang: (spec && spec.ruang_pemegang) || astap.ruang_unit || '-'
+                    }];
+                },
+
                 getAtbItemsForDetail(astap) {
                     if (!astap) return [];
                     let spec = astap.spesifikasi_json;
@@ -13898,9 +14171,9 @@
                     const regs = this.getActiveRegisters(item);
                     const total = regs.length;
                     if (total === 0) {
-                        const k = item.kondisi || item.kondisi_barang || 'Baik';
+                        const k = item.kondisi || item.kondisi_barang || item.spesifikasi_json?.aset_lain_kondisi || 'Baik';
                         const isKb = k === 'Kurang Baik' || k === 'KB' || k === 'Rusak Ringan' || k === 'RR';
-                        const isRb = k === 'Rusak Berat' || k === 'RB' || k === 'Rusak';
+                        const isRb = k === 'Rusak Berat' || k === 'RB' || k === 'Rusak' || String(k).includes('Rusak') || String(k).includes('Usang') || String(k).includes('Hilang');
                         const dominan = isKb ? 'Kurang Baik' : (isRb ? 'Rusak Berat' : 'Baik');
                         const badgeClass = dominan === 'Baik' ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : (dominan === 'Kurang Baik' ? 'bg-amber-500/15 text-amber-300 border-amber-500/30' : 'bg-rose-500/15 text-rose-300 border-rose-500/30');
                         const dotClass = dominan === 'Baik' ? 'bg-emerald-400' : (dominan === 'Kurang Baik' ? 'bg-amber-400' : 'bg-rose-400');
@@ -13923,7 +14196,7 @@
                     }
                     const baik = regs.filter(r => (r.kondisi || 'Baik') === 'Baik' || r.kondisi === 'B').length;
                     const kb   = regs.filter(r => r.kondisi === 'Kurang Baik' || r.kondisi === 'KB' || r.kondisi === 'Rusak Ringan' || r.kondisi === 'RR').length;
-                    const rb   = regs.filter(r => r.kondisi === 'Rusak Berat' || r.kondisi === 'RB' || r.kondisi === 'Rusak').length;
+                    const rb   = regs.filter(r => r.kondisi === 'Rusak Berat' || r.kondisi === 'RB' || r.kondisi === 'Rusak' || (r.kondisi && (r.kondisi.includes('Rusak') || r.kondisi.includes('Usang') || r.kondisi.includes('Hilang')))).length;
                     const dominan = (baik >= kb && baik >= rb) ? 'Baik' : ((kb >= rb) ? 'Kurang Baik' : 'Rusak Berat');
                     const isSingle = (baik === total) || (kb === total) || (rb === total);
 
@@ -13984,6 +14257,7 @@
                         else if (type === 'lainnya_items') items = this.getLainnyaItemsForDetail(astap);
                         else if (type === 'kdp_items') items = this.getKdpItemsForDetail(astap);
                         else if (type === 'atb_items') items = this.getAtbItemsForDetail(astap);
+                        else if (type === 'aset_lain_items') items = this.getAsetLainItemsForDetail(astap);
 
                         if (items && items.length > 0 && regs.length > 0) {
                             const qtyKeyMap = {
@@ -13993,7 +14267,8 @@
                                 'jaringan_items': 'jaringan_jumlah',
                                 'lainnya_items': 'lainnya_jumlah_barang',
                                 'kdp_items': 'kdp_jumlah_bangunan',
-                                'atb_items': 'atb_jumlah'
+                                'atb_items': 'atb_jumlah',
+                                'aset_lain_items': 'item_volume'
                             };
                             const qtyKey = qtyKeyMap[type] || 'jumlah';
                             
@@ -14113,6 +14388,7 @@
                         else if (type === 'lainnya_items') items = this.getLainnyaItemsForDetail(astap);
                         else if (type === 'kdp_items') items = this.getKdpItemsForDetail(astap);
                         else if (type === 'atb_items') items = this.getAtbItemsForDetail(astap);
+                        else if (type === 'aset_lain_items') items = this.getAsetLainItemsForDetail(astap);
 
                         if (items && items.length > 0) {
                             const qtyKeyMap = {
@@ -14122,7 +14398,8 @@
                                 'jaringan_items': 'jaringan_jumlah',
                                 'lainnya_items': 'lainnya_jumlah_barang',
                                 'kdp_items': 'kdp_jumlah_bangunan',
-                                'atb_items': 'atb_jumlah'
+                                'atb_items': 'atb_jumlah',
+                                'aset_lain_items': 'item_volume'
                             };
                             const qtyKey = qtyKeyMap[type] || 'jumlah';
 
@@ -14181,18 +14458,24 @@
                         let matchCategory = true;
                         if (this.categoryFilter !== 'all') {
                             const isExtracom = this.isItemExtracom(item);
+                            const resolvedCat = typeof resolveItemCategory === 'function' ? resolveItemCategory(item) : item.category;
+                            const isAsetLain = resolvedCat === 'ASET LAIN' || 
+                                               item.category === 'ASET LAIN' || 
+                                               item.category === 'ASET LAINNYA' || 
+                                               item.category === 'ASET LAIN-LAIN' || 
+                                               item.category === '1.5.4' || 
+                                               (item.kode_barang && String(item.kode_barang).startsWith('1.5.4'));
+
                             if (this.categoryFilter === 'EXTRACOM') {
                                 matchCategory = isExtracom;
                             } else if (this.categoryFilter === 'ASET LAIN') {
-                                matchCategory = !isExtracom && (
-                                    item.category === 'ASET LAIN' || 
-                                    item.category === 'ASET LAINNYA' || 
-                                    item.category === '1.5.4' || 
-                                    (item.kode_barang && String(item.kode_barang).startsWith('1.5.4'))
-                                );
+                                matchCategory = !isExtracom && isAsetLain;
                             } else {
-                                const resolvedCat = typeof resolveItemCategory === 'function' ? resolveItemCategory(item) : item.category;
-                                matchCategory = !isExtracom && (resolvedCat === this.categoryFilter || item.category === this.categoryFilter);
+                                if (isAsetLain) {
+                                    matchCategory = false;
+                                } else {
+                                    matchCategory = !isExtracom && (resolvedCat === this.categoryFilter || item.category === this.categoryFilter);
+                                }
                             }
                         }
                         // Filter kondisi: mencakup jika ada unit dengan kondisi tsb
