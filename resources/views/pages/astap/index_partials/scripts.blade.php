@@ -9934,6 +9934,55 @@
                     });
                 },
 
+                // Helper Cek Status Hibah Keluar: Apakah Aset Telah Dihibahkan Keluar dari RSUD
+                isHibahKeluar(item) {
+                    if (!item) return false;
+                    if (item.is_hibah_keluar) return true;
+                    if (item.keterangan_tambahan && item.keterangan_tambahan.toLowerCase().includes('dihibahkan')) return true;
+                    if (item.registers && Array.isArray(item.registers) && item.registers.length > 0) {
+                        const hasHibah = item.registers.some(r => r.status === 'Dihibahkan');
+                        const activeCount = item.registers.filter(r => r.status !== 'Dihibahkan' && r.is_deleted != 1).length;
+                        if (hasHibah && activeCount === 0) return true;
+                    }
+                    return false;
+                },
+
+                // Modal Peringatan Interaktif saat Tombol Aset Hibah Keluar Diklik
+                showHibahKeluarLockedWarning(item, actionType = 'reklas') {
+                    if (!item) return;
+                    const name = item.nama_barang || 'Aset';
+                    const penerima = item.hibah_keluar?.penerima || 'Pihak Luar RSUD';
+                    const noBast = item.hibah_keluar?.nomor_bast || '-';
+
+                    let title = 'Aset Telah Dihibahkan Keluar (Terkunci)';
+                    let msgAction = 'mengubah data pokok aset ini';
+                    if (actionType === 'reklas') {
+                        title = 'Aset Tidak Dapat Direklasifikasi';
+                        msgAction = 'melakukan reklasifikasi pada aset ini';
+                    }
+
+                    this.askConfirmation({
+                        title: title,
+                        message: `Aset "${name}" telah resmi diserahkan / dihibahkan ke luar RSUD kepada "${penerima}" berdasarkan BAST No. ${noBast}. Seluruh unit telah berstatus non-aktif permanen sehingga terkunci dari ${msgAction}.`,
+                        itemName: `${name} (${penerima})`,
+                        itemDetails: {
+                            nama: name,
+                            kode: item.kode_barang || '-',
+                            badgeText: '📤 TELAH DIHIBAHKAN KELUAR',
+                            totalAset: item.jumlah_volume || 1,
+                            nilaiFmt: item.total_realisasi || 'Rp 0'
+                        },
+                        type: 'danger',
+                        isBlocked: true,
+                        actionUrl: '/master-data/hibah',
+                        actionText: 'Buka Menu Hibah Aset',
+                        actionIcon: '🎁',
+                        assetWarning: `Aset yang telah diserahterimakan ke pihak luar statusnya telah diproses sebagai pengurangan aset tetap RSUD, sehingga Anda tidak dapat ${msgAction}. Jika ingin membatalkan hibah keluar, silakan lakukan pembatalan/hapus transaksi melalui Menu Kelola Hibah.`,
+                        btnText: null,
+                        onConfirm: null
+                    });
+                },
+
                 isReklasBelanjaModal() {
                     const it = this.selectedAstapReklas;
                     if (!it) return true;

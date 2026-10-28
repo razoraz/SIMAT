@@ -1,22 +1,42 @@
 <!-- ========================================================================= -->
 <!-- TABEL MASTER TRANSAKSI HIBAH ASET (DARK LUXURY AMBER / GOLD)              -->
 <!-- ========================================================================= -->
+<style>
+    /* Freeze Sticky Column Aksi Hibah (Opaque & Anti-Bocor saat Scroll) */
+    .hibah-sticky-aksi {
+        position: sticky !important;
+        right: 0 !important;
+        z-index: 10 !important;
+        background-color: #0f172a !important;
+        box-shadow: -6px 0 12px rgba(0, 0, 0, 0.6) !important;
+    }
+    tr:hover .hibah-sticky-aksi {
+        background-color: #1e293b !important;
+    }
+    th.hibah-sticky-aksi {
+        position: sticky !important;
+        top: 0 !important;
+        right: 0 !important;
+        z-index: 30 !important;
+        background-color: #020617 !important;
+    }
+</style>
+
 <div class="bg-slate-900/90 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl relative">
-    <div class="overflow-x-auto custom-scrollbar">
+    <div class="overflow-x-auto overflow-y-auto custom-scrollbar max-h-[540px] relative">
         <table class="w-full text-left text-xs text-slate-300 min-w-[1100px]">
-            <thead class="bg-slate-950 text-slate-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-800 select-none">
+            <thead class="bg-slate-950 text-slate-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-800 select-none sticky top-0 z-20" style="background-color: #020617;">
                 <tr>
-                    <th class="px-4 py-3.5 text-center w-12">No</th>
-                    <th class="px-4 py-3.5 text-left min-w-[170px]">Tipe &amp; BAST</th>
-                    <th class="px-4 py-3.5 text-left min-w-[180px]">Pemberi / Penerima</th>
-                    <th class="px-5 py-3.5 text-left min-w-[220px]">Identitas Barang &amp; 108</th>
-                    <th class="px-4 py-3.5 text-center min-w-[140px]">Kondisi Fisik</th>
-                    <th class="px-4 py-3.5 text-left min-w-[160px]">Ruangan / Penempatan</th>
-                    <th class="px-4 py-3.5 text-center w-24">Volume</th>
-                    <th class="px-5 py-3.5 text-right min-w-[140px]">Nilai Aset (Rp)</th>
-                    <th class="px-4 py-3.5 text-center w-28">Periode</th>
-                    <th class="px-4 py-3.5 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[240px] w-[240px]" 
-                        style="position: sticky; right: 0; z-index: 2; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
+                    <th class="px-4 py-3.5 text-center w-12 bg-slate-950">No</th>
+                    <th class="px-4 py-3.5 text-left min-w-[170px] bg-slate-950">Tipe &amp; BAST</th>
+                    <th class="px-4 py-3.5 text-left min-w-[180px] bg-slate-950">Pemberi / Penerima</th>
+                    <th class="px-5 py-3.5 text-left min-w-[220px] bg-slate-950">Identitas Barang &amp; 108</th>
+                    <th class="px-4 py-3.5 text-center min-w-[140px] bg-slate-950">Kondisi Fisik</th>
+                    <th class="px-4 py-3.5 text-left min-w-[160px] bg-slate-950">Ruangan / Penempatan</th>
+                    <th class="px-4 py-3.5 text-center w-24 bg-slate-950">Volume</th>
+                    <th class="px-5 py-3.5 text-right min-w-[140px] bg-slate-950">Nilai Aset (Rp)</th>
+                    <th class="px-4 py-3.5 text-center w-28 bg-slate-950">Periode</th>
+                    <th class="px-4 py-3.5 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[240px] w-[240px] hibah-sticky-aksi">
                         Aksi
                     </th>
                 </tr>
@@ -145,8 +165,7 @@
                         </td>
 
                         <!-- 10. Aksi (Detail, Cetak, Ubah, Hapus) — FREEZE STICKY RIGHT -->
-                        <td class="px-4 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[240px] w-[240px]" 
-                            style="position: sticky; right: 0; z-index: 2; background-color: #0f172a !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
+                        <td class="px-4 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[240px] w-[240px] hibah-sticky-aksi">
                             <div class="flex items-center justify-center gap-1.5">
                                 <!-- 1. Tombol Detail -->
                                 <button type="button" @click="openDetail(item)"
@@ -159,17 +178,31 @@
                                     <span>Detail</span>
                                 </button>
 
-                                <!-- 2. Tombol Cetak BAST -->
-                                <button type="button" @click="openPrintBast(item)"
-                                    title="Cetak Lembar Dokumen BAST Resmi"
-                                    class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-500/30 hover:border-amber-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-amber-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
-                                    <svg class="w-3.5 h-3.5 text-amber-400 group-hover/btn:text-white transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                                    </svg>
-                                    <span>BAST</span>
-                                </button>
+                                <!-- 2. Tombol Reklas (Aktif untuk Hibah Masuk, Terkunci untuk Hibah Keluar) -->
+                                <template x-if="item.tipe_hibah === 'masuk' && item.astap_id">
+                                    <a :href="'/astap?open_reklas=' + item.astap_id"
+                                        title="Reklasifikasi Aset Hibah Masuk (Pindah KIB / Ekstrakom / Koreksi)"
+                                        class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 hover:border-indigo-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-indigo-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
+                                        <svg class="w-3.5 h-3.5 text-indigo-400 group-hover/btn:text-white group-hover/btn:rotate-180 transition-all duration-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                                        </svg>
+                                        <span>Reklas</span>
+                                    </a>
+                                </template>
 
-                                <!-- 3. Tombol Ubah (Form Edit ASTAP Hibah — Khusus Hibah Masuk) -->
+                                <!-- Tombol Reklas Terkunci (Khusus Hibah Keluar) -->
+                                <template x-if="item.tipe_hibah === 'keluar' || !item.astap_id">
+                                    <button type="button" disabled
+                                        title="Transaksi Hibah Keluar terkunci dari reklasifikasi"
+                                        class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-800/40 text-slate-500 border border-slate-700/50 font-bold text-xs cursor-not-allowed opacity-60 select-none leading-none">
+                                        <svg class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                        </svg>
+                                        <span>Reklas</span>
+                                    </button>
+                                </template>
+
+                                <!-- 3. Tombol Ubah (Aktif untuk Hibah Masuk, Terkunci untuk Hibah Keluar) -->
                                 <template x-if="item.tipe_hibah === 'masuk' && item.astap_id">
                                     <a :href="'/astap/' + item.astap_id + '/edit-hibah'"
                                         title="Ubah Data Aset Hibah (Form Lengkap)"
@@ -179,6 +212,18 @@
                                         </svg>
                                         <span>Ubah</span>
                                     </a>
+                                </template>
+
+                                <!-- Tombol Ubah Terkunci (Khusus Hibah Keluar) -->
+                                <template x-if="item.tipe_hibah === 'keluar'">
+                                    <button type="button" disabled
+                                        title="Transaksi Hibah Keluar terkunci dari perubahan (Gunakan tombol Hapus jika ingin membatalkan pengurangan barang)"
+                                        class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-800/40 text-slate-500 border border-slate-700/50 font-bold text-xs cursor-not-allowed opacity-60 select-none leading-none">
+                                        <svg class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                        </svg>
+                                        <span>Ubah</span>
+                                    </button>
                                 </template>
 
                                 <!-- 4. Tombol Hapus -->

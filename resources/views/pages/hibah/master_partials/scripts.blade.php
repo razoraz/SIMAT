@@ -122,6 +122,14 @@
                 return this.filteredHibahList.reduce((acc, h) => acc + (parseFloat(h.nilai_aset) || 0), 0);
             },
 
+            resetFilter() {
+                this.activeTab = 'all';
+                this.selectedYear = 'all';
+                this.selectedTw = 'all';
+                this.searchQuery = '';
+            },
+
+
             get filteredActiveAstaps() {
                 if (!this.searchAsetKeluar || this.searchAsetKeluar.trim() === '') {
                     return (this.activeAstaps || []).slice(0, 30);

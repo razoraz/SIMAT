@@ -68,6 +68,9 @@ class AstapController extends Controller
                 'kemitraan',
                 'mutasiEksternals' => function($q) {
                     $q->where('is_deleted', 0)->orderBy('id', 'desc');
+                },
+                'hibahs' => function($q) {
+                    $q->where('is_deleted', 0)->orderBy('id', 'desc');
                 }
             ])
             ->orderBy('id', 'desc')
@@ -140,12 +143,17 @@ class AstapController extends Controller
                 $hasEverReklas = $reklasCount > 0 || (bool) $a->is_reklas || !empty($a->jenis_reklas);
 
                 $latestMutasiKeluar = $a->mutasiEksternals ? $a->mutasiEksternals->where('tipe', 'keluar')->first() : null;
+                $latestHibahKeluar = $a->hibahs ? $a->hibahs->where('tipe_hibah', 'keluar')->first() : null;
                 $activeRegsCount = $a->registers ? $a->registers->where('status', '!=', 'Mutasi Keluar OPD')->count() : 0;
                 $mutatedRegsCount = $a->registers ? $a->registers->where('status', 'Mutasi Keluar OPD')->count() : 0;
                 $isFullMutasiKeluar = ($a->jenis_reklas === 'MUTASI_EKSTERNAL') || ($mutatedRegsCount > 0 && $activeRegsCount === 0);
                 $isPartialMutasiKeluar = ($mutatedRegsCount > 0 && $activeRegsCount > 0);
                 $isMutasiKeluar = $isFullMutasiKeluar || $isPartialMutasiKeluar;
                 $skpdTujuanNama = $latestMutasiKeluar?->opd_tujuan ?: ($spec['mutasi_info']['skpd_tujuan'] ?? ($latestReklas?->tujuan_nama ?? null));
+
+                $isHibahKeluar = !is_null($latestHibahKeluar) 
+                    || str_contains(strtolower($a->keterangan_tambahan ?? ''), 'dihibahkan')
+                    || ($a->registers && $a->registers->count() > 0 && $a->registers->every(fn($r) => $r->status === 'Dihibahkan'));
 
                 $mutasiKeluarData = null;
                 if ($latestMutasiKeluar) {
@@ -199,6 +207,13 @@ class AstapController extends Controller
                     'mutasi_keluar_count' => $mutatedRegsCount,
                     'active_regs_count' => $activeRegsCount,
                     'mutasi_keluar' => $mutasiKeluarData,
+                    'is_hibah_keluar' => (bool) $isHibahKeluar,
+                    'hibah_keluar' => $latestHibahKeluar ? [
+                        'id' => $latestHibahKeluar->id,
+                        'nomor_bast' => $latestHibahKeluar->nomor_bast,
+                        'tanggal_bast' => $latestHibahKeluar->tanggal_bast ? $latestHibahKeluar->tanggal_bast->format('d M Y') : '-',
+                        'penerima' => $latestHibahKeluar->pihak_hibah,
+                    ] : null,
                     'opd_tujuan' => $skpdTujuanNama,
                     'tujuan_kib' => $latestReklas?->tujuan_kib,
                     'tujuan_kode' => $latestReklas?->tujuan_kode,
