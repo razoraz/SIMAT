@@ -346,56 +346,91 @@
             <!-- Slot Konten Utama -->
             <main class="flex-1 p-3 sm:p-6 lg:p-8 page-fade-in {{ ($fullWidth ?? false) ? 'w-full max-w-none' : 'max-w-7xl mx-auto w-full' }}">
                 
-                <!-- BANNER NOTIFIKASI PEMBERITAHUAN SISTEM (Murni Blade Server-Side, Zero JS Bug) -->
+                <!-- BANNER NOTIFIKASI PEMBERITAHUAN SISTEM (Murni Blade Server-Side, Smart Context Heuristics) -->
                 @if (session('success') || session('error') || session('warning') || session('info') || session('status'))
                     @php
                         $msg = session('success') ?? session('error') ?? session('warning') ?? session('info') ?? session('status');
                         $msgLower = strtolower($msg);
+                        $subTitle = 'Berhasil Diproses';
 
                         if (session('error')) {
                             $type = 'error';
                             $title = 'TERJADI KESALAHAN';
+                            $subTitle = 'Gagal Diproses';
                             $icon = '⚠️';
                         } elseif (session('warning')) {
                             $type = 'warning';
                             $title = 'PERHATIAN';
+                            $subTitle = 'Peringatan Sistem';
                             $icon = '⚠️';
                         } elseif (session('info') || session('status')) {
                             $type = 'info';
                             $title = 'PEMBERITAHUAN SISTEM';
+                            $subTitle = 'Informasi Resmi';
                             $icon = 'ℹ️';
-                        } elseif (str_contains($msgLower, 'dihapus') || str_contains($msgLower, 'hapus')) {
+                        } elseif (str_contains($msgLower, 'sesi') || str_contains($msgLower, 'impersonasi') || str_contains($msgLower, 'login') || str_contains($msgLower, 'logout') || str_contains($msgLower, 'mengakses simat')) {
+                            $type = 'session';
+                            $title = 'SESI DIAKTIFKAN';
+                            $subTitle = 'Autentikasi Sistem';
+                            $icon = '👤';
+                        } elseif (str_contains($msgLower, 'dipulihkan') || str_contains($msgLower, 'pulih') || str_contains($msgLower, 'restore') || str_contains($msgLower, 'kembalikan')) {
+                            $type = 'restore';
+                            $title = 'BERHASIL DIPULIHKAN';
+                            $subTitle = 'Data Aktif Kembali';
+                            $icon = '♻️';
+                        } elseif (str_contains($msgLower, 'disahkan') || str_contains($msgLower, 'disetujui') || str_contains($msgLower, 'diverifikasi') || str_contains($msgLower, 'validasi')) {
+                            $type = 'approve';
+                            $title = 'BERHASIL DISAHKAN';
+                            $subTitle = 'Dokumen Resmi';
+                            $icon = '✅';
+                        } elseif (str_contains($msgLower, 'dihapus') || str_contains($msgLower, 'hapus') || str_contains($msgLower, 'musnahkan')) {
                             $type = 'delete';
                             $title = 'BERHASIL DIHAPUS';
+                            $subTitle = 'Dihapus dari Sistem';
                             $icon = '🗑️';
-                        } elseif (str_contains($msgLower, 'diperbarui') || str_contains($msgLower, 'diubah') || str_contains($msgLower, 'update') || str_contains($msgLower, 'ubah')) {
+                        } elseif (str_contains($msgLower, 'diperbarui') || str_contains($msgLower, 'diubah') || str_contains($msgLower, 'update') || str_contains($msgLower, 'ubah') || str_contains($msgLower, 'diedit') || str_contains($msgLower, 'disinkron')) {
                             $type = 'update';
                             $title = 'BERHASIL DIPERBARUI';
+                            $subTitle = 'Data Disimpan';
                             $icon = '✏️';
-                        } else {
+                        } elseif (str_contains($msgLower, 'ditambahkan') || str_contains($msgLower, 'dibuat') || str_contains($msgLower, 'tambah') || str_contains($msgLower, 'buat baru') || str_contains($msgLower, 'diinput')) {
                             $type = 'create';
                             $title = 'BERHASIL DITAMBAHKAN';
+                            $subTitle = 'Terdaftar di Katalog';
                             $icon = '➕';
+                        } else {
+                            $type = 'success';
+                            $title = 'BERHASIL DIPROSES';
+                            $subTitle = 'Selesai Diproses';
+                            $icon = '✨';
                         }
                     @endphp
 
                     <div id="simat-flash-banner" x-data="{ showBanner: true }" x-show="showBanner"
                          class="mb-6 w-full bg-slate-900/95 border backdrop-blur-2xl rounded-3xl p-4 sm:p-5 shadow-2xl space-y-3 relative overflow-hidden transition-all duration-300
-                         @if($type === 'create') border-emerald-500/40 shadow-emerald-950/30 bg-gradient-to-r from-emerald-500/15 via-slate-900/95 to-slate-900/95
+                         @if($type === 'session') border-cyan-500/40 shadow-cyan-950/30 bg-gradient-to-r from-cyan-500/15 via-slate-900/95 to-slate-900/95
+                         @elseif($type === 'restore') border-teal-500/40 shadow-teal-950/30 bg-gradient-to-r from-teal-500/15 via-slate-900/95 to-slate-900/95
+                         @elseif($type === 'approve') border-sky-500/40 shadow-sky-950/30 bg-gradient-to-r from-sky-500/15 via-slate-900/95 to-slate-900/95
+                         @elseif($type === 'create') border-emerald-500/40 shadow-emerald-950/30 bg-gradient-to-r from-emerald-500/15 via-slate-900/95 to-slate-900/95
                          @elseif($type === 'update') border-amber-500/40 shadow-amber-950/30 bg-gradient-to-r from-amber-500/15 via-slate-900/95 to-slate-900/95
                          @elseif($type === 'delete' || $type === 'error') border-rose-500/40 shadow-rose-950/30 bg-gradient-to-r from-rose-500/15 via-slate-900/95 to-slate-900/95
                          @elseif($type === 'warning') border-amber-500/40 shadow-amber-950/30 bg-gradient-to-r from-amber-500/15 via-slate-900/95 to-slate-900/95
-                         @else border-cyan-500/40 shadow-cyan-950/30 bg-gradient-to-r from-cyan-500/15 via-slate-900/95 to-slate-900/95 @endif">
+                         @elseif($type === 'info') border-indigo-500/40 shadow-indigo-950/30 bg-gradient-to-r from-indigo-500/15 via-slate-900/95 to-slate-900/95
+                         @else border-emerald-500/40 shadow-emerald-950/30 bg-gradient-to-r from-emerald-500/15 via-slate-900/95 to-slate-900/95 @endif">
                         
                         <div class="flex items-start justify-between gap-4">
                             <div class="flex items-start space-x-3.5 min-w-0 flex-1">
                                 <!-- Icon Badge 3D Glow -->
                                 <div class="w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0 border shadow-lg
-                                     @if($type === 'create') bg-emerald-500/20 text-emerald-300 border-emerald-500/30 shadow-emerald-500/10
+                                     @if($type === 'session') bg-cyan-500/20 text-cyan-300 border-cyan-500/30 shadow-cyan-500/10
+                                     @elseif($type === 'restore') bg-teal-500/20 text-teal-300 border-teal-500/30 shadow-teal-500/10
+                                     @elseif($type === 'approve') bg-sky-500/20 text-sky-300 border-sky-500/30 shadow-sky-500/10
+                                     @elseif($type === 'create') bg-emerald-500/20 text-emerald-300 border-emerald-500/30 shadow-emerald-500/10
                                      @elseif($type === 'update') bg-amber-500/20 text-amber-300 border-amber-500/30 shadow-amber-500/10
                                      @elseif($type === 'delete' || $type === 'error') bg-rose-500/20 text-rose-400 border-rose-500/30 shadow-rose-500/10
                                      @elseif($type === 'warning') bg-amber-500/20 text-amber-300 border-amber-500/30 shadow-amber-500/10
-                                     @else bg-cyan-500/20 text-cyan-300 border-cyan-500/30 shadow-cyan-500/10 @endif">
+                                     @elseif($type === 'info') bg-indigo-500/20 text-indigo-300 border-indigo-500/30 shadow-indigo-500/10
+                                     @else bg-emerald-500/20 text-emerald-300 border-emerald-500/30 shadow-emerald-500/10 @endif">
                                     {{ $icon }}
                                 </div>
 
@@ -403,14 +438,18 @@
                                 <div class="min-w-0 flex-1 space-y-0.5 pt-0.5">
                                     <div class="flex items-center space-x-2">
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border
-                                             @if($type === 'create') bg-emerald-500/20 text-emerald-300 border-emerald-500/30
+                                             @if($type === 'session') bg-cyan-500/20 text-cyan-300 border-cyan-500/30
+                                             @elseif($type === 'restore') bg-teal-500/20 text-teal-300 border-teal-500/30
+                                             @elseif($type === 'approve') bg-sky-500/20 text-sky-300 border-sky-500/30
+                                             @elseif($type === 'create') bg-emerald-500/20 text-emerald-300 border-emerald-500/30
                                              @elseif($type === 'update') bg-amber-500/20 text-amber-300 border-amber-500/30
                                              @elseif($type === 'delete' || $type === 'error') bg-rose-500/20 text-rose-300 border-rose-500/30
                                              @elseif($type === 'warning') bg-amber-500/20 text-amber-300 border-amber-500/30
-                                             @else bg-cyan-500/20 text-cyan-300 border-cyan-500/30 @endif">
+                                             @elseif($type === 'info') bg-indigo-500/20 text-indigo-300 border-indigo-500/30
+                                             @else bg-emerald-500/20 text-emerald-300 border-emerald-500/30 @endif">
                                             {{ $title }}
                                         </span>
-                                        <span class="text-[10px] text-slate-400 font-semibold">• Berhasil Diproses</span>
+                                        <span class="text-[10px] text-slate-400 font-semibold">• {{ $subTitle }}</span>
                                     </div>
                                     <p class="text-xs sm:text-sm font-bold text-white leading-relaxed">{{ $msg }}</p>
                                 </div>
@@ -425,11 +464,15 @@
                         <!-- Bottom Glowing Accent Line Bar -->
                         <div class="w-full bg-slate-800/80 rounded-full h-1 overflow-hidden">
                             <div class="h-full rounded-full w-full animate-pulse
-                                 @if($type === 'create') bg-emerald-500
+                                 @if($type === 'session') bg-cyan-500
+                                 @elseif($type === 'restore') bg-teal-500
+                                 @elseif($type === 'approve') bg-sky-500
+                                 @elseif($type === 'create') bg-emerald-500
                                  @elseif($type === 'update') bg-amber-500
                                  @elseif($type === 'delete' || $type === 'error') bg-rose-500
                                  @elseif($type === 'warning') bg-amber-500
-                                 @else bg-cyan-500 @endif"></div>
+                                 @elseif($type === 'info') bg-indigo-500
+                                 @else bg-emerald-500 @endif"></div>
                         </div>
                     </div>
 
@@ -446,36 +489,83 @@
                         const clientMsg = sessionStorage.getItem('flash_success') || sessionStorage.getItem('flash_error') || sessionStorage.getItem('flash_info');
                         if (clientMsg) {
                             const isError = !!sessionStorage.getItem('flash_error');
-                            const isDelete = clientMsg.toLowerCase().includes('hapus') || clientMsg.toLowerCase().includes('dihapus');
-                            const isUpdate = clientMsg.toLowerCase().includes('perbarui') || clientMsg.toLowerCase().includes('ubah') || clientMsg.toLowerCase().includes('update');
+                            const msgLower = clientMsg.toLowerCase();
                             
                             sessionStorage.removeItem('flash_success');
                             sessionStorage.removeItem('flash_error');
                             sessionStorage.removeItem('flash_info');
 
                             if (!document.getElementById('simat-flash-banner')) {
+                                let type = 'success';
+                                let titleText = 'BERHASIL DIPROSES';
+                                let subTitleText = 'Selesai Diproses';
+                                let iconText = '✨';
+
+                                if (isError) {
+                                    type = 'error';
+                                    titleText = 'TERJADI KESALAHAN';
+                                    subTitleText = 'Gagal Diproses';
+                                    iconText = '⚠️';
+                                } else if (msgLower.includes('sesi') || msgLower.includes('impersonasi') || msgLower.includes('login') || msgLower.includes('logout') || msgLower.includes('mengakses simat')) {
+                                    type = 'session';
+                                    titleText = 'SESI DIAKTIFKAN';
+                                    subTitleText = 'Autentikasi Sistem';
+                                    iconText = '👤';
+                                } else if (msgLower.includes('dipulihkan') || msgLower.includes('pulih') || msgLower.includes('restore') || msgLower.includes('kembalikan')) {
+                                    type = 'restore';
+                                    titleText = 'BERHASIL DIPULIHKAN';
+                                    subTitleText = 'Data Aktif Kembali';
+                                    iconText = '♻️';
+                                } else if (msgLower.includes('disahkan') || msgLower.includes('disetujui') || msgLower.includes('diverifikasi') || msgLower.includes('validasi')) {
+                                    type = 'approve';
+                                    titleText = 'BERHASIL DISAHKAN';
+                                    subTitleText = 'Dokumen Resmi';
+                                    iconText = '✅';
+                                } else if (msgLower.includes('hapus') || msgLower.includes('dihapus') || msgLower.includes('musnahkan')) {
+                                    type = 'delete';
+                                    titleText = 'BERHASIL DIHAPUS';
+                                    subTitleText = 'Dihapus dari Sistem';
+                                    iconText = '🗑️';
+                                } else if (msgLower.includes('perbarui') || msgLower.includes('ubah') || msgLower.includes('update') || msgLower.includes('diedit') || msgLower.includes('disinkron')) {
+                                    type = 'update';
+                                    titleText = 'BERHASIL DIPERBARUI';
+                                    subTitleText = 'Data Disimpan';
+                                    iconText = '✏️';
+                                } else if (msgLower.includes('tambah') || msgLower.includes('ditambahkan') || msgLower.includes('dibuat') || msgLower.includes('buat baru') || msgLower.includes('diinput')) {
+                                    type = 'create';
+                                    titleText = 'BERHASIL DITAMBAHKAN';
+                                    subTitleText = 'Terdaftar di Katalog';
+                                    iconText = '➕';
+                                }
+
+                                const styles = {
+                                    session: { border: 'border-cyan-500/40 shadow-cyan-950/20 bg-gradient-to-r from-cyan-500/15 via-slate-900/95 to-slate-900/95', badge: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30', icon: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30 shadow-cyan-500/10', line: 'bg-cyan-500' },
+                                    restore: { border: 'border-teal-500/40 shadow-teal-950/20 bg-gradient-to-r from-teal-500/15 via-slate-900/95 to-slate-900/95', badge: 'bg-teal-500/20 text-teal-300 border-teal-500/30', icon: 'bg-teal-500/20 text-teal-300 border-teal-500/30 shadow-teal-500/10', line: 'bg-teal-500' },
+                                    approve: { border: 'border-sky-500/40 shadow-sky-950/20 bg-gradient-to-r from-sky-500/15 via-slate-900/95 to-slate-900/95', badge: 'bg-sky-500/20 text-sky-300 border-sky-500/30', icon: 'bg-sky-500/20 text-sky-300 border-sky-500/30 shadow-sky-500/10', line: 'bg-sky-500' },
+                                    create:  { border: 'border-emerald-500/40 shadow-emerald-950/20 bg-gradient-to-r from-emerald-500/15 via-slate-900/95 to-slate-900/95', badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30', icon: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30 shadow-emerald-500/10', line: 'bg-emerald-500' },
+                                    update:  { border: 'border-amber-500/40 shadow-amber-950/20 bg-gradient-to-r from-amber-500/15 via-slate-900/95 to-slate-900/95', badge: 'bg-amber-500/20 text-amber-300 border-amber-500/30', icon: 'bg-amber-500/20 text-amber-300 border-amber-500/30 shadow-amber-500/10', line: 'bg-amber-500' },
+                                    delete:  { border: 'border-rose-500/40 shadow-rose-950/20 bg-gradient-to-r from-rose-500/15 via-slate-900/95 to-slate-900/95', badge: 'bg-rose-500/20 text-rose-300 border-rose-500/30', icon: 'bg-rose-500/20 text-rose-400 border-rose-500/30 shadow-rose-500/10', line: 'bg-rose-500' },
+                                    error:   { border: 'border-rose-500/40 shadow-rose-950/20 bg-gradient-to-r from-rose-500/15 via-slate-900/95 to-slate-900/95', badge: 'bg-rose-500/20 text-rose-300 border-rose-500/30', icon: 'bg-rose-500/20 text-rose-400 border-rose-500/30 shadow-rose-500/10', line: 'bg-rose-500' },
+                                    success: { border: 'border-emerald-500/40 shadow-emerald-950/20 bg-gradient-to-r from-emerald-500/15 via-slate-900/95 to-slate-900/95', badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30', icon: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30 shadow-emerald-500/10', line: 'bg-emerald-500' }
+                                };
+                                const currentStyle = styles[type] || styles.success;
+
                                 const bannerDiv = document.createElement('div');
                                 bannerDiv.id = 'simat-flash-banner';
-                                bannerDiv.className = 'mb-6 w-full bg-slate-900/95 border backdrop-blur-2xl rounded-3xl p-4 sm:p-5 shadow-2xl space-y-3 relative overflow-hidden transition-all duration-300 ' + 
-                                    (isError ? 'border-rose-500/40 shadow-rose-950/20' : (isDelete ? 'border-rose-500/40 shadow-rose-950/20' : (isUpdate ? 'border-amber-500/40 shadow-amber-950/20' : 'border-emerald-500/40 shadow-emerald-950/20')));
+                                bannerDiv.className = `mb-6 w-full bg-slate-900/95 border backdrop-blur-2xl rounded-3xl p-4 sm:p-5 shadow-2xl space-y-3 relative overflow-hidden transition-all duration-300 ${currentStyle.border}`;
                                 
-                                const titleText = isError ? 'TERJADI KESALAHAN' : (isDelete ? 'BERHASIL DIHAPUS' : (isUpdate ? 'BERHASIL DIPERBARUI' : 'BERHASIL DITAMBAHKAN'));
-                                const iconText = isError ? '⚠️' : (isDelete ? '🗑️' : (isUpdate ? '✏️' : '➕'));
-                                const badgeClass = isError ? 'bg-rose-500/20 text-rose-300 border-rose-500/30' : (isDelete ? 'bg-rose-500/20 text-rose-300 border-rose-500/30' : (isUpdate ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'));
-                                const lineClass = isError ? 'bg-rose-500' : (isDelete ? 'bg-rose-500' : (isUpdate ? 'bg-amber-500' : 'bg-emerald-500'));
-
                                 bannerDiv.innerHTML = `
-                                    <div class="flex items-start justify-between space-x-3">
-                                        <div class="flex items-start space-x-3.5 min-w-0">
-                                            <div class="p-2.5 sm:p-3 rounded-2xl bg-slate-800/80 border border-slate-700/60 text-xl sm:text-2xl shrink-0">
+                                    <div class="flex items-start justify-between gap-4">
+                                        <div class="flex items-start space-x-3.5 min-w-0 flex-1">
+                                            <div class="w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0 border shadow-lg ${currentStyle.icon}">
                                                 ${iconText}
                                             </div>
                                             <div class="min-w-0 flex-1 space-y-0.5 pt-0.5">
                                                 <div class="flex items-center space-x-2">
-                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${badgeClass}">
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${currentStyle.badge}">
                                                         ${titleText}
                                                     </span>
-                                                    <span class="text-[10px] text-slate-400 font-semibold">• Berhasil Diproses</span>
+                                                    <span class="text-[10px] text-slate-400 font-semibold">• ${subTitleText}</span>
                                                 </div>
                                                 <p class="text-xs sm:text-sm font-bold text-white leading-relaxed">${clientMsg}</p>
                                             </div>
@@ -483,7 +573,7 @@
                                         <button type="button" onclick="this.closest('#simat-flash-banner').remove()" class="text-slate-400 hover:text-white hover:bg-slate-800/80 rounded-xl w-8 h-8 flex items-center justify-center transition-all shrink-0 font-bold text-lg cursor-pointer">&times;</button>
                                     </div>
                                     <div class="w-full bg-slate-800/80 rounded-full h-1 overflow-hidden">
-                                        <div class="h-full rounded-full w-full animate-pulse ${lineClass}"></div>
+                                        <div class="h-full rounded-full w-full animate-pulse ${currentStyle.line}"></div>
                                     </div>
                                 `;
 
