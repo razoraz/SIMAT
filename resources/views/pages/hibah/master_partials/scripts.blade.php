@@ -318,21 +318,27 @@
                 if (typeof spec === 'string') {
                     try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
                 }
+                const firstMesin = (Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0) ? spec.mesin_items[0] : {};
+                const firstGedung = (Array.isArray(spec.gedung_items) && spec.gedung_items.length > 0) ? spec.gedung_items[0] : {};
+                const firstTanah = (Array.isArray(spec.tanah_items) && spec.tanah_items.length > 0) ? spec.tanah_items[0] : {};
+
                 return {
-                    merk: spec.merk || spec.mesin_merk || item.astap?.merk_type || '',
-                    type: spec.type || spec.mesin_type || '',
-                    ukuran: spec.ukuran || spec.ukuran_cc || spec.mesin_ukuran_cc || '',
-                    bahan: spec.bahan || spec.mesin_bahan || '',
-                    no_pabrik: spec.no_pabrik || spec.mesin_no_pabrik || '',
-                    no_rangka: spec.no_rangka || spec.mesin_no_rangka || '',
-                    no_mesin: spec.no_mesin || spec.mesin_no_mesin || '',
-                    no_polisi: spec.no_polisi || spec.mesin_no_polisi || '',
-                    no_bpkb: spec.no_bpkb || spec.mesin_no_bpkb || '',
-                    tanah_luas_m2: spec.tanah_luas_m2 || spec.luas_m2 || '',
-                    tanah_sertifikat_no: spec.tanah_sertifikat_no || spec.sertifikat_no || '',
-                    gedung_luas_m2: spec.gedung_luas_m2 || spec.luas_lantai_m2 || '',
-                    gedung_bertingkat: spec.gedung_bertingkat || spec.konstruksi_bertingkat || '',
-                    gedung_beton: spec.gedung_beton || spec.konstruksi_beton || ''
+                    merk: firstMesin.mesin_merk || spec.merk || spec.mesin_merk || item.astap?.merk_type || '',
+                    type: firstMesin.mesin_type || spec.type || spec.mesin_type || '',
+                    ukuran: firstMesin.mesin_ukuran || spec.ukuran || spec.ukuran_cc || spec.mesin_ukuran_cc || '',
+                    bahan: firstMesin.mesin_bahan || spec.bahan || spec.mesin_bahan || '',
+                    no_pabrik: firstMesin.mesin_no_pabrik || spec.no_pabrik || spec.mesin_no_pabrik || '',
+                    no_rangka: firstMesin.mesin_no_rangka || spec.no_rangka || spec.mesin_no_rangka || '',
+                    no_mesin: firstMesin.mesin_no_mesin || spec.no_mesin || spec.mesin_no_mesin || '',
+                    no_polisi: firstMesin.mesin_no_polisi || spec.no_polisi || spec.mesin_no_polisi || '',
+                    no_bpkb: firstMesin.mesin_no_bpkb || spec.no_bpkb || spec.mesin_no_bpkb || '',
+                    is_extracom: Boolean(firstMesin.is_extracom || spec.is_extracom || item.astap?.is_extracomtable),
+                    tanah_luas_m2: firstTanah.tanah_luas_m2 || spec.tanah_luas_m2 || spec.luas_m2 || '',
+                    tanah_sertifikat_no: firstTanah.tanah_sertifikat_no || spec.tanah_sertifikat_no || spec.sertifikat_no || '',
+                    gedung_luas_m2: firstGedung.gedung_luas_m2 || firstGedung.gedung_luas_lantai || spec.gedung_luas_m2 || spec.luas_lantai_m2 || '',
+                    gedung_bertingkat: firstGedung.gedung_bertingkat || spec.gedung_bertingkat || spec.konstruksi_bertingkat || '',
+                    gedung_beton: firstGedung.gedung_beton || spec.gedung_beton || spec.konstruksi_beton || '',
+                    gedung_is_baru: firstGedung.gedung_is_baru || spec.gedung_is_baru || ''
                 };
             },
 

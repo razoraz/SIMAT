@@ -191,6 +191,19 @@
                                     </select>
                                 </div>
                             </div>
+
+                            <!-- Status Fisik Bangunan (Baru / Lama) -->
+                            <div class="pt-1 border-t border-slate-800/60">
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold flex items-center justify-between">
+                                    <span>Status Fisik Bangunan</span>
+                                    <span class="text-[9.5px] text-amber-400 font-bold" x-text="item.gedung_is_baru === 'Lama' ? '🏛️ Bangunan Lama (Eksisting)' : '✨ Bangunan Baru'"></span>
+                                </label>
+                                <select x-model="item.gedung_is_baru"
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-semibold focus:border-amber-500 focus:outline-none transition-all">
+                                    <option value="Lama">🏛️ Lama &mdash; Bangunan Eksisting / Sebelum Hibah</option>
+                                    <option value="Baru">✨ Baru &mdash; Dibangun Baru dari Hibah</option>
+                                </select>
+                            </div>
                         </div>
 
                         <!-- 2. Status Tanah & Dokumen Kepemilikan -->

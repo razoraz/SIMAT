@@ -147,4 +147,124 @@ class HibahModuleTest extends TestCase
         $this->assertNull(Astap::find($astap->id));
         $this->assertEquals(0, AstapRegister::where('astap_id', $astap->id)->count());
     }
+
+    public function test_hibah_kib_b_extracom_and_kib_c_gedung_status_fisik(): void
+    {
+        $this->actingAs($this->user);
+
+        // 1. Test KIB B Peralatan Mesin dengan Extrakomtabel & Kondisi
+        $mesinPayload = [
+            'nama_barang'        => 'Kursi Roda Pasien Hibah',
+            'jenis_astap_id'     => $this->jenisAstap->id,
+            'tahun_perolehan'    => 2026,
+            'jumlah_volume'      => 1,
+            'satuan'             => 'Unit',
+            'total_realisasi'    => 250000,
+            'triwulan'           => 'TW I',
+            'hibah_pemberi'      => 'CSR PT Bank Jatim',
+            'hibah_nomor_bast'   => 'BAST-MESIN-001',
+            'hibah_tanggal_bast' => '2026-02-10',
+            'is_extracomtable'   => true,
+            'spesifikasi_json'   => json_encode([
+                'mesin_items' => [
+                    [
+                        'mesin_nama_barang' => 'Kursi Roda Pasien Hibah',
+                        'mesin_merk'        => 'Standard',
+                        'mesin_type'        => 'Manual',
+                        'mesin_ukuran'      => 'Sedang',
+                        'mesin_bahan'       => 'Stainless Steel',
+                        'mesin_no_pabrik'   => 'SN-EXT-9988',
+                        'mesin_kondisi'     => 'Baik',
+                        'is_extracom'       => true,
+                    ]
+                ]
+            ])
+        ];
+
+        $respB = $this->postJson(route('astap.store_hibah'), $mesinPayload);
+        $respB->assertStatus(200);
+
+        $astapB = Astap::where('nama_barang', 'Kursi Roda Pasien Hibah')->first();
+        $this->assertNotNull($astapB);
+        $this->assertEquals(1, $astapB->is_extracomtable);
+        $this->assertEquals('Baik', $astapB->spesifikasi_json['kondisi']);
+        $this->assertEquals('Standard', $astapB->spesifikasi_json['merk']);
+        $this->assertEquals('SN-EXT-9988', $astapB->spesifikasi_json['no_pabrik']);
+
+        // 2. Test KIB C Gedung & Bangunan dengan Status Fisik Bangunan (gedung_is_baru)
+        $jenisGedung = JenisAstap::create([
+            'jenis'                  => '1.3.3',
+            'nama_jenis'             => 'Gedung dan Bangunan',
+            'sub_rincian_objek'      => '1.3.3.01',
+            'uraian_sub_rincian'     => 'Bangunan Gedung',
+            'sub_sub_rincian_objek'  => '1.3.3.01.01.01.001',
+            'uraian_sub_sub_rincian' => 'Gedung Hibah Paviliun',
+        ]);
+
+        $gedungPayload = [
+            'nama_barang'        => 'Gedung Paviliun Rawat Inap Hibah',
+            'jenis_astap_id'     => $jenisGedung->id,
+            'tahun_perolehan'    => 2026,
+            'jumlah_volume'      => 1,
+            'satuan'             => 'Gedung',
+            'total_realisasi'    => 500000000,
+            'triwulan'           => 'TW I',
+            'hibah_pemberi'      => 'Yayasan Kesehatan Mandiri',
+            'hibah_nomor_bast'   => 'BAST-GDG-8877',
+            'hibah_tanggal_bast' => '2026-03-01',
+            'spesifikasi_json'   => json_encode([
+                'gedung_items' => [
+                    [
+                        'gedung_nama_barang' => 'Gedung Paviliun Rawat Inap Hibah',
+                        'gedung_luas_m2'     => 450,
+                        'gedung_kondisi'     => 'Baik',
+                        'gedung_bertingkat'  => 'Bertingkat',
+                        'gedung_beton'       => 'Beton',
+                        'gedung_is_baru'     => 'Lama',
+                    ]
+                ]
+            ])
+        ];
+
+        $respC = $this->postJson(route('astap.store_hibah'), $gedungPayload);
+        $respC->assertStatus(200);
+
+        $astapC = Astap::where('nama_barang', 'Gedung Paviliun Rawat Inap Hibah')->first();
+        $this->assertNotNull($astapC);
+        $this->assertEquals(450, $astapC->spesifikasi_json['gedung_luas_m2']);
+        $this->assertEquals('Bertingkat', $astapC->spesifikasi_json['gedung_bertingkat']);
+        $this->assertEquals('Lama', $astapC->spesifikasi_json['gedung_is_baru']);
+
+        // Update KIB C menjadi status 'Baru'
+        $updateGedungPayload = [
+            'nama_barang'        => 'Gedung Paviliun Rawat Inap Hibah (Revisi)',
+            'tahun_perolehan'    => 2026,
+            'jumlah_volume'      => 1,
+            'satuan'             => 'Gedung',
+            'total_realisasi'    => 550000000,
+            'triwulan'           => 'TW I',
+            'hibah_pemberi'      => 'Yayasan Kesehatan Mandiri',
+            'hibah_nomor_bast'   => 'BAST-GDG-8877-REV',
+            'hibah_tanggal_bast' => '2026-03-05',
+            'spesifikasi_json'   => json_encode([
+                'gedung_items' => [
+                    [
+                        'gedung_nama_barang' => 'Gedung Paviliun Rawat Inap Hibah (Revisi)',
+                        'gedung_luas_m2'     => 500,
+                        'gedung_kondisi'     => 'Baik',
+                        'gedung_bertingkat'  => 'Bertingkat',
+                        'gedung_beton'       => 'Beton',
+                        'gedung_is_baru'     => 'Baru',
+                    ]
+                ]
+            ])
+        ];
+
+        $updateResp = $this->postJson(route('astap.update_hibah', $astapC->id), $updateGedungPayload);
+        $updateResp->assertStatus(200);
+
+        $astapC->refresh();
+        $this->assertEquals('Baru', $astapC->spesifikasi_json['gedung_is_baru']);
+        $this->assertEquals(500, $astapC->spesifikasi_json['gedung_luas_m2']);
+    }
 }

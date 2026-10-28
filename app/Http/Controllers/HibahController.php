@@ -213,7 +213,7 @@ class HibahController extends Controller
         $totalVolume    = max(1, (int) $data['jumlah_volume']);
         $hargaSatuan    = $totalRealisasi / $totalVolume;
         $tahun          = (int) $data['tahun_perolehan'];
-        $kondisiItem    = $data['kondisi'] ?: 'Baik';
+        $kondisiItem    = $data['kondisi'] ?? 'Baik';
 
         // Upload file dokumen BAST jika ada
         $dokumenBastPath = null;
@@ -255,7 +255,7 @@ class HibahController extends Controller
             'keterangan_tambahan'       => $data['hibah_keterangan'] ?? null,
             'unit_id'                   => $data['unit_id'] ?? null,
             'rekening_belanja_id'       => $request->input('rekening_belanja_id') ?: null,
-            'alamat_barang'             => $data['alamat_barang'] ?: 'RSUD Dr. H. Koesnandi',
+            'alamat_barang'             => $data['alamat_barang'] ?? 'RSUD Dr. H. Koesnandi',
             'user_id'                   => auth()->id(),
             'is_extracomtable'          => filter_var($request->input('is_extracomtable', false), FILTER_VALIDATE_BOOLEAN),
             'is_reklas'                 => false,
@@ -302,6 +302,33 @@ class HibahController extends Controller
             $astapPayload['spesifikasi_json']['tanah_jumlah_bidang'] = count($tItems);
         }
 
+        // Sinkronisasi spesifikasi spesifik Mesin jika KIB B
+        $mItems = $astapPayload['spesifikasi_json']['mesin_items'] ?? ($request->input('mesin_items') ?? null);
+        if (is_array($mItems) && count($mItems) > 0) {
+            $firstM = $mItems[0];
+            $astapPayload['spesifikasi_json']['merk'] = $firstM['mesin_merk'] ?? ($astapPayload['spesifikasi_json']['merk'] ?? null);
+            $astapPayload['spesifikasi_json']['type'] = $firstM['mesin_type'] ?? ($astapPayload['spesifikasi_json']['type'] ?? null);
+            $astapPayload['spesifikasi_json']['ukuran'] = $firstM['mesin_ukuran'] ?? ($astapPayload['spesifikasi_json']['ukuran'] ?? null);
+            $astapPayload['spesifikasi_json']['bahan'] = $firstM['mesin_bahan'] ?? ($astapPayload['spesifikasi_json']['bahan'] ?? null);
+            $astapPayload['spesifikasi_json']['no_pabrik'] = $firstM['mesin_no_pabrik'] ?? ($astapPayload['spesifikasi_json']['no_pabrik'] ?? null);
+            $astapPayload['spesifikasi_json']['no_rangka'] = $firstM['mesin_no_rangka'] ?? ($astapPayload['spesifikasi_json']['no_rangka'] ?? null);
+            $astapPayload['spesifikasi_json']['no_mesin'] = $firstM['mesin_no_mesin'] ?? ($astapPayload['spesifikasi_json']['no_mesin'] ?? null);
+            $astapPayload['spesifikasi_json']['no_polisi'] = $firstM['mesin_no_polisi'] ?? ($astapPayload['spesifikasi_json']['no_polisi'] ?? null);
+            $astapPayload['spesifikasi_json']['no_bpkb'] = $firstM['mesin_no_bpkb'] ?? ($astapPayload['spesifikasi_json']['no_bpkb'] ?? null);
+            $astapPayload['spesifikasi_json']['kondisi'] = $firstM['mesin_kondisi'] ?? ($astapPayload['spesifikasi_json']['kondisi'] ?? 'Baik');
+        }
+
+        // Sinkronisasi spesifikasi spesifik Gedung jika KIB C
+        $gItems = $astapPayload['spesifikasi_json']['gedung_items'] ?? ($request->input('gedung_items') ?? null);
+        if (is_array($gItems) && count($gItems) > 0) {
+            $firstG = $gItems[0];
+            $astapPayload['spesifikasi_json']['gedung_luas_m2'] = $firstG['gedung_luas_m2'] ?? ($firstG['gedung_luas_lantai'] ?? null);
+            $astapPayload['spesifikasi_json']['gedung_bertingkat'] = $firstG['gedung_bertingkat'] ?? 'Tidak';
+            $astapPayload['spesifikasi_json']['gedung_beton'] = $firstG['gedung_beton'] ?? 'Beton';
+            $astapPayload['spesifikasi_json']['gedung_is_baru'] = $firstG['gedung_is_baru'] ?? 'Lama';
+            $astapPayload['spesifikasi_json']['kondisi'] = $firstG['gedung_kondisi'] ?? ($astapPayload['spesifikasi_json']['kondisi'] ?? 'Baik');
+        }
+
         if ($request->filled('ppk_nama')) {
             $astapPayload['ppk_nama'] = $request->input('ppk_nama');
             $astapPayload['spesifikasi_json']['ppk_nama'] = $request->input('ppk_nama');
@@ -342,7 +369,7 @@ class HibahController extends Controller
 
             $runningRegNum = (int) $maxRegInt;
             $unitModel = !empty($data['unit_id']) ? Unit::find($data['unit_id']) : null;
-            $ruangPemegang = $unitModel ? $unitModel->nama : ($data['alamat_barang'] ?: 'RSUD Dr. H. Koesnandi');
+            $ruangPemegang = $unitModel ? $unitModel->nama : (!empty($data['alamat_barang']) ? $data['alamat_barang'] : 'RSUD Dr. H. Koesnandi');
 
             for ($i = 0; $i < $totalVolume; $i++) {
                 $runningRegNum++;
@@ -496,6 +523,33 @@ class HibahController extends Controller
             if ($request->has($rk) && !is_null($request->input($rk))) {
                 $specJson[$rk] = $request->input($rk);
             }
+        }
+
+        // Sinkronisasi spesifikasi spesifik Mesin jika KIB B
+        $mItems = $specJson['mesin_items'] ?? ($request->input('mesin_items') ?? null);
+        if (is_array($mItems) && count($mItems) > 0) {
+            $firstM = $mItems[0];
+            $specJson['merk'] = $firstM['mesin_merk'] ?? ($specJson['merk'] ?? null);
+            $specJson['type'] = $firstM['mesin_type'] ?? ($specJson['type'] ?? null);
+            $specJson['ukuran'] = $firstM['mesin_ukuran'] ?? ($specJson['ukuran'] ?? null);
+            $specJson['bahan'] = $firstM['mesin_bahan'] ?? ($specJson['bahan'] ?? null);
+            $specJson['no_pabrik'] = $firstM['mesin_no_pabrik'] ?? ($specJson['no_pabrik'] ?? null);
+            $specJson['no_rangka'] = $firstM['mesin_no_rangka'] ?? ($specJson['no_rangka'] ?? null);
+            $specJson['no_mesin'] = $firstM['mesin_no_mesin'] ?? ($specJson['no_mesin'] ?? null);
+            $specJson['no_polisi'] = $firstM['mesin_no_polisi'] ?? ($specJson['no_polisi'] ?? null);
+            $specJson['no_bpkb'] = $firstM['mesin_no_bpkb'] ?? ($specJson['no_bpkb'] ?? null);
+            $specJson['kondisi'] = $firstM['mesin_kondisi'] ?? ($specJson['kondisi'] ?? 'Baik');
+        }
+
+        // Sinkronisasi spesifikasi spesifik Gedung jika KIB C
+        $gItems = $specJson['gedung_items'] ?? ($request->input('gedung_items') ?? null);
+        if (is_array($gItems) && count($gItems) > 0) {
+            $firstG = $gItems[0];
+            $specJson['gedung_luas_m2'] = $firstG['gedung_luas_m2'] ?? ($firstG['gedung_luas_lantai'] ?? null);
+            $specJson['gedung_bertingkat'] = $firstG['gedung_bertingkat'] ?? 'Tidak';
+            $specJson['gedung_beton'] = $firstG['gedung_beton'] ?? 'Beton';
+            $specJson['gedung_is_baru'] = $firstG['gedung_is_baru'] ?? 'Lama';
+            $specJson['kondisi'] = $firstG['gedung_kondisi'] ?? ($specJson['kondisi'] ?? 'Baik');
         }
 
         $vol = max(1, (int) $validated['jumlah_volume']);

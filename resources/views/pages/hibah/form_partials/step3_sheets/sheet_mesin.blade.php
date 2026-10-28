@@ -135,36 +135,84 @@
                     <!-- Spesifikasi Fisik & Identitas Mesin (Single Cohesive Card) -->
                     <div class="p-4 sm:p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4 shadow-md">
                         <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                            <span class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center space-x-1.5">
-                                <span>🏷️ Spesifikasi Fisik &amp; Identitas Mesin / Alkes</span>
+                            <span class="text-xs font-bold text-amber-400 block uppercase tracking-wider flex items-center space-x-1.5">
+                                <span x-text="(item.is_extracom || formData.is_extracomtable) ? '📦 SPESIFIKASI & IDENTITAS FISIK (EKSTRAKOMTABEL):' : '🏷️ SPESIFIKASI FISIK & IDENTITAS MESIN / ALKES'"></span>
                             </span>
-                            <span class="text-[10px] text-slate-400 font-mono font-bold">Teknis Fisik</span>
+                            <span class="text-[9px] px-2 py-0.5 rounded-md font-bold border transition-all"
+                                  :class="(item.is_extracom || formData.is_extracomtable) ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-amber-500/10 text-amber-300 border-amber-500/20'"
+                                  x-text="(item.is_extracom || formData.is_extracomtable) ? 'Ekstrakomtabel (≤ 300rb)' : 'Teknis Fisik'">
+                            </span>
                         </div>
+
+                        <!-- Nama Barang (PMDN 108) Khusus Mode Extracom -->
+                        <div x-show="item.is_extracom || formData.is_extracomtable">
+                            <label class="block text-slate-400 text-[10px] mb-1 font-semibold flex items-center justify-between">
+                                <span>Nama Barang (PMDN 108)</span>
+                                <span class="text-[9px] text-amber-400 font-bold flex items-center space-x-1">
+                                    <span>🔒</span>
+                                    <span>Otomatis dari Langkah 2</span>
+                                </span>
+                            </label>
+                            <input type="text" 
+                                   :value="item.mesin_nama_barang || formData.nama_barang || (selectedSubSub?.nama || 'Barang Ekstrakomtabel')"
+                                   readonly
+                                   class="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 font-bold cursor-not-allowed select-none focus:outline-none">
+                        </div>
+
+                        <!-- Baris 1: Merk, Type & Ukuran (3 Kolom Seimbang) -->
                         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                             <div>
-                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Merk / Brand</label>
-                                <input type="text" x-model="item.mesin_merk" placeholder="Contoh: GE / Philips / Honda"
-                                    class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-400 focus:outline-none">
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
+                                    <span x-text="(item.is_extracom || formData.is_extracomtable) ? 'Merk Barang' : 'Merk / Brand'"></span> <span class="text-rose-400">*</span>
+                                </label>
+                                <input type="text" x-model="item.mesin_merk" @input="syncActiveKibTotals()"
+                                       :placeholder="(item.is_extracom || formData.is_extracomtable) ? 'Contoh: Olympic / Lion / Krisbow / Kenko' : 'Contoh: GE / Philips / Honda'"
+                                       class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-400 focus:outline-none transition-all">
                             </div>
+
                             <div>
-                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Tipe / Model</label>
-                                <input type="text" x-model="item.mesin_type" placeholder="Contoh: V-800 / CX-50 / 150cc"
-                                    class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-400 focus:outline-none">
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Tipe / Model <span class="text-rose-400">*</span></label>
+                                <input type="text" x-model="item.mesin_type" @input="syncActiveKibTotals()"
+                                       :placeholder="(item.is_extracom || formData.is_extracomtable) ? 'Contoh: Standard / Meja / Rak' : 'Contoh: V-800 / CX-50 / 150cc'"
+                                       class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-400 focus:outline-none transition-all">
                             </div>
+
                             <div>
                                 <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Ukuran / Kapasitas</label>
-                                <input type="text" x-model="item.mesin_ukuran" placeholder="Contoh: 120x80 cm / 500 KVA"
-                                    class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-400 focus:outline-none">
+                                <input type="text" x-model="item.mesin_ukuran"
+                                       :placeholder="(item.is_extracom || formData.is_extracomtable) ? 'Contoh: 120x60 cm / Sedang' : 'Contoh: 120x80 cm / 500 KVA'"
+                                       class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-400 focus:outline-none transition-all">
                             </div>
+                        </div>
+
+                        <!-- Baris 2: No Pabrik/SN, Bahan, Kondisi (3 Kolom Seimbang) -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
+                                    <span x-text="(item.is_extracom || formData.is_extracomtable) ? 'No Pabrik / SN' : 'Nomor Pabrik / Serial Number (SN)'"></span>
+                                </label>
+                                <input type="text" x-model="item.mesin_no_pabrik"
+                                       :placeholder="(item.is_extracom || formData.is_extracomtable) ? 'SN-EXT-2026-001' : 'SN-89472894172 / Serial Unit'"
+                                       class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white font-mono focus:border-amber-400 focus:outline-none transition-all">
+                            </div>
+
                             <div>
                                 <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Bahan Material</label>
-                                <input type="text" x-model="item.mesin_bahan" placeholder="Contoh: Stainless Steel / Besi"
-                                    class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-400 focus:outline-none">
+                                <input type="text" x-model="item.mesin_bahan"
+                                       :placeholder="(item.is_extracom || formData.is_extracomtable) ? 'Kayu / Besi / Plastik' : 'Contoh: Stainless Steel / Besi'"
+                                       class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-400 focus:outline-none transition-all">
                             </div>
-                            <div class="sm:col-span-2">
-                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Nomor Pabrik / Serial Number (SN)</label>
-                                <input type="text" x-model="item.mesin_no_pabrik" placeholder="SN-89472894172 / Serial Unit"
-                                    class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-white font-mono focus:border-amber-400 focus:outline-none">
+
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
+                                    <span x-text="(item.is_extracom || formData.is_extracomtable) ? 'Kondisi Barang' : 'Kondisi Fisik Barang'"></span> <span class="text-rose-400">*</span>
+                                </label>
+                                <select x-model="item.mesin_kondisi" @change="syncActiveKibTotals()"
+                                        class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold focus:border-amber-400 focus:outline-none transition-all">
+                                    <option value="Baik" x-text="(item.is_extracom || formData.is_extracomtable) ? 'Baik (B)' : '🟢 Baik (B) — Siap Digunakan'"></option>
+                                    <option value="Kurang Baik" x-text="(item.is_extracom || formData.is_extracomtable) ? 'Kurang Baik (KB)' : '🟡 Kurang Baik (KB) — Perlu Servis'"></option>
+                                    <option value="Rusak Berat" x-text="(item.is_extracom || formData.is_extracomtable) ? 'Rusak Berat (RB)' : '🔴 Rusak Berat (RB)'"></option>
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -211,15 +259,7 @@
                             <span class="text-xs font-mono font-black text-amber-300"
                                   x-text="'Subtotal: Rp ' + formatRupiah(getMesinSubtotal(item))"></span>
                         </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-                            <div>
-                                <label class="block text-slate-300 text-[10.5px] mb-1 font-semibold">Kondisi Fisik <span class="text-rose-400">*</span></label>
-                                <select x-model="item.mesin_kondisi" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:border-amber-400 focus:outline-none">
-                                    <option value="Baik">🟢 Baik (Siap Pakai)</option>
-                                    <option value="Kurang Baik">🟡 Kurang Baik (Perlu Servis)</option>
-                                    <option value="Rusak Berat">🔴 Rusak Berat</option>
-                                </select>
-                            </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <div>
                                 <label class="block text-slate-300 text-[10.5px] mb-1 font-semibold">Jumlah Kuantitas <span class="text-rose-400">*</span></label>
                                 <input type="number" min="1" x-model.number="item.mesin_jumlah_barang" @input="syncActiveKibTotals()"

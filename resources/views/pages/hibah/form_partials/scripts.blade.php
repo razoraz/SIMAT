@@ -192,8 +192,11 @@
                 // KIB B (Peralatan & Mesin) Multi-Item Repeater
                 mesin_items: [
                     {
+                        is_extracom: false,
                         mesin_nama_barang: '',
                         mesin_kode_barang: '',
+                        isFilterOpen: false,
+                        searchFilter: '',
                         mesin_merk: '',
                         mesin_type: '',
                         mesin_ukuran: '',
@@ -219,13 +222,15 @@
                     {
                         gedung_nama_barang: '',
                         gedung_kode_barang: '',
+                        isFilterOpen: false,
+                        searchFilter: '',
                         gedung_luas_m2: 0,
-                        gedung_kondisi: 'B',
-                        gedung_bertingkat: 'Bertingkat',
+                        gedung_kondisi: 'Baik',
+                        gedung_bertingkat: 'Tidak',
                         gedung_beton: 'Beton',
                         gedung_status_tanah: 'Tanah Hak Pakai RSUD',
                         gedung_kode_aset_tanah: '1.3.1.01.01.02.013',
-                        gedung_is_baru: 'Baru',
+                        gedung_is_baru: 'Lama',
                         gedung_kapitalisasi_tahun_induk: '',
                         gedung_kapitalisasi_nilai_induk: 0,
                         gedung_jumlah_bangunan: 1,
@@ -457,39 +462,46 @@
                     }];
                 }
 
+                const isAsetExtracom = Boolean(d.is_extracomtable || spec.is_extracomtable || (d.category === 'EXTRACOM'));
                 if (Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0) {
-                    this.formData.mesin_items = spec.mesin_items;
+                    this.formData.mesin_items = spec.mesin_items.map(m => ({
+                        ...m,
+                        is_extracom: (m.is_extracom !== undefined && m.is_extracom !== null) ? Boolean(m.is_extracom) : isAsetExtracom,
+                        isFilterOpen: false,
+                        searchFilter: ''
+                    }));
                 } else if (Array.isArray(d.registers) && d.registers.length > 0) {
                     this.formData.mesin_items = d.registers.map(r => ({
                         mesin_nama_barang: d.nama_barang || '',
                         mesin_kode_barang: this.selectedSubSub ? this.selectedSubSub.kode : '',
-                        mesin_merk: r.merk || spec.merk || '',
-                        mesin_type: r.type || spec.type || '',
-                        mesin_ukuran: r.ukuran || spec.ukuran || '',
-                        mesin_no_pabrik: r.no_pabrik || spec.no_pabrik || '',
-                        mesin_bahan: r.bahan || spec.bahan || '',
+                        mesin_merk: r.merk || spec.merk || spec.mesin_merk || '',
+                        mesin_type: r.type || spec.type || spec.mesin_type || '',
+                        mesin_ukuran: r.ukuran || spec.ukuran || spec.mesin_ukuran || '',
+                        mesin_no_pabrik: r.no_pabrik || spec.no_pabrik || spec.mesin_no_pabrik || '',
+                        mesin_bahan: r.bahan || spec.bahan || spec.mesin_bahan || '',
                         mesin_no_rangka: r.no_rangka || spec.no_rangka || '',
                         mesin_no_mesin: r.no_mesin || spec.no_mesin || '',
                         mesin_no_bpkb: r.no_bpkb || spec.no_bpkb || '',
                         mesin_no_polisi: r.no_polisi || spec.no_polisi || '',
-                        mesin_kondisi: r.kondisi || 'Baik',
+                        mesin_kondisi: r.kondisi || spec.kondisi || 'Baik',
                         mesin_jumlah_barang: 1,
                         mesin_satuan: d.satuan || 'Unit',
                         mesin_nilai_satuan: Number(r.harga_satuan || r.nilai_satuan || d.harga_satuan || 0),
                         mesin_administrasi_proyek: 0,
                         ruang_pemegang: r.ruang_pemegang || '',
-                        isRuangOpen: false,
-                        searchRuang: ''
+                        is_extracom: isAsetExtracom,
+                        isFilterOpen: false,
+                        searchFilter: ''
                     }));
                 } else if (spec.merk || spec.type || spec.no_pabrik) {
                     this.formData.mesin_items = [{
                         mesin_nama_barang: d.nama_barang || '',
                         mesin_kode_barang: this.selectedSubSub ? this.selectedSubSub.kode : '',
-                        mesin_merk: spec.merk || '',
-                        mesin_type: spec.type || '',
-                        mesin_ukuran: spec.ukuran || '',
-                        mesin_no_pabrik: spec.no_pabrik || '',
-                        mesin_bahan: spec.bahan || '',
+                        mesin_merk: spec.merk || spec.mesin_merk || '',
+                        mesin_type: spec.type || spec.mesin_type || '',
+                        mesin_ukuran: spec.ukuran || spec.mesin_ukuran || '',
+                        mesin_no_pabrik: spec.no_pabrik || spec.mesin_no_pabrik || '',
+                        mesin_bahan: spec.bahan || spec.mesin_bahan || '',
                         mesin_no_rangka: spec.no_rangka || '',
                         mesin_no_mesin: spec.no_mesin || '',
                         mesin_no_bpkb: spec.no_bpkb || '',
@@ -500,12 +512,39 @@
                         mesin_nilai_satuan: Number(d.harga_satuan || 0),
                         mesin_administrasi_proyek: 0,
                         ruang_pemegang: '',
-                        isRuangOpen: false,
-                        searchRuang: ''
+                        is_extracom: isAsetExtracom,
+                        isFilterOpen: false,
+                        searchFilter: ''
                     }];
                 }
 
-                if (Array.isArray(spec.gedung_items) && spec.gedung_items.length > 0) this.formData.gedung_items = spec.gedung_items;
+                if (Array.isArray(spec.gedung_items) && spec.gedung_items.length > 0) {
+                    this.formData.gedung_items = spec.gedung_items.map(g => ({
+                        ...g,
+                        gedung_is_baru: g.gedung_is_baru || spec.gedung_is_baru || 'Lama',
+                        isFilterOpen: false,
+                        searchFilter: ''
+                    }));
+                } else if (spec.gedung_luas_m2 || spec.gedung_bertingkat || spec.gedung_beton || spec.gedung_is_baru) {
+                    this.formData.gedung_items = [{
+                        gedung_nama_barang: d.nama_barang || '',
+                        gedung_kode_barang: this.selectedSubSub ? this.selectedSubSub.kode : '',
+                        isFilterOpen: false,
+                        searchFilter: '',
+                        gedung_is_baru: spec.gedung_is_baru || 'Lama',
+                        gedung_luas_m2: spec.gedung_luas_m2 || spec.luas_lantai_m2 || 0,
+                        gedung_kondisi: spec.kondisi || 'Baik',
+                        gedung_bertingkat: spec.gedung_bertingkat || 'Tidak',
+                        gedung_beton: spec.gedung_beton || 'Beton',
+                        gedung_status_tanah: spec.status_tanah || 'Tanah Hak Pakai RSUD',
+                        gedung_kode_aset_tanah: spec.kode_aset_tanah || '1.3.1.01.01.02.013',
+                        gedung_jumlah_bangunan: d.jumlah_volume || 1,
+                        gedung_satuan: d.satuan || 'Gedung',
+                        gedung_nilai_fisik: Number(d.total_realisasi || 0),
+                        gedung_alamat: d.alamat_barang || ''
+                    }];
+                }
+
                 if (Array.isArray(spec.jaringan_items) && spec.jaringan_items.length > 0) this.formData.jaringan_items = spec.jaringan_items;
                 if (Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0) this.formData.lainnya_items = spec.lainnya_items;
                 if (Array.isArray(spec.atb_items) && spec.atb_items.length > 0) this.formData.atb_items = spec.atb_items;

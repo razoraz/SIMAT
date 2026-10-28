@@ -317,6 +317,18 @@
                                     <span class="text-slate-200" x-text="getSpecDetail(selectedDetail).gedung_bertingkat + ' • ' + (getSpecDetail(selectedDetail).gedung_beton || 'Beton')"></span>
                                 </div>
                             </template>
+                            <template x-if="getSpecDetail(selectedDetail).gedung_is_baru">
+                                <div>
+                                    <span class="text-slate-400 text-[10px] block">Status Fisik Bangunan:</span>
+                                    <span class="font-bold text-amber-300" x-text="getSpecDetail(selectedDetail).gedung_is_baru === 'Lama' ? '🏛️ Bangunan Lama (Eksisting)' : '✨ Bangunan Baru'"></span>
+                                </div>
+                            </template>
+                            <template x-if="selectedDetail.astap?.is_extracomtable || getSpecDetail(selectedDetail).is_extracom">
+                                <div>
+                                    <span class="text-slate-400 text-[10px] block">Status Akuntansi:</span>
+                                    <span class="font-bold text-amber-400">📦 Ekstrakomtabel (≤ 300rb)</span>
+                                </div>
+                            </template>
                         </div>
                     </div>
                 </div>
