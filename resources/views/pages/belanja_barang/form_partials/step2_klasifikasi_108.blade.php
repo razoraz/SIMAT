@@ -1,7 +1,7 @@
 <!-- ========================================================================= -->
-<!-- LANGKAH 2: KERANJANG RINCIAN BARANG MULTI-ITEM (PERMENDAGRI 108)           -->
+<!-- LANGKAH 2: KERANJANG BARANG MULTI-ITEM, KLASIFIKASI 108 & PENEMPATAN       -->
 <!-- ========================================================================= -->
-<div x-show="step === 2" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-6">
+<div x-show="step === 2 || currentStep === 2" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-6">
     
     <div class="border-b border-slate-800 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
@@ -9,10 +9,10 @@
                 <span>Langkah 2 dari 3</span>
             </div>
             <h2 class="text-lg font-bold text-white flex items-center space-x-2">
-                <span>📦 Keranjang Rincian Barang Pembelian (Multi-Item)</span>
+                <span>📦 Rincian Barang Pembelian (Multi-Item) &amp; Klasifikasi 108</span>
             </h2>
             <p class="text-xs text-slate-400 mt-0.5">
-                Tambahkan satu atau lebih macam barang yang tercantum dalam faktur toko ini dan tentukan klasifikasi Kode 108 masing-masing.
+                Tambahkan barang perbekalan yang tercantum dalam faktur, tentukan klasifikasi Kode 108, spesifikasi fisik, dan jalur penempatan ruangan (KIR).
             </p>
         </div>
 
@@ -23,6 +23,151 @@
             </svg>
             <span>+ Tambah Barang ke Faktur</span>
         </button>
+    </div>
+
+    <!-- Quick Shortcuts Kategori KIB yang Relevan untuk Belanja Perbekalan -->
+    <div class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-2.5">
+        <div class="flex items-center justify-between">
+            <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5">
+                <span>⚡ KATEGORI ASET UMUM PERBEKALAN RSUD</span>
+            </span>
+            <span class="text-[10px] text-slate-500">Klik untuk filter cepat pencarian</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button type="button" @click="filterByCategory('1.3.2')"
+                class="p-3 rounded-xl border text-left transition-all flex items-center justify-between bg-slate-900/80 border-slate-800 hover:border-cyan-500/50 hover:bg-slate-850 cursor-pointer group">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <span class="text-xl">🩺</span>
+                    <div class="min-w-0">
+                        <span class="text-xs font-bold text-white block group-hover:text-cyan-300 truncate">KIB B: Peralatan, Mesin &amp; Alkes</span>
+                        <span class="text-[10px] text-slate-400 block truncate">Tensimeter, timbangan pasien, kursi roda, nebulizer, dll.</span>
+                    </div>
+                </div>
+                <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">1.3.2</span>
+            </button>
+
+            <button type="button" @click="filterByCategory('1.3.5')"
+                class="p-3 rounded-xl border text-left transition-all flex items-center justify-between bg-slate-900/80 border-slate-800 hover:border-purple-500/50 hover:bg-slate-850 cursor-pointer group">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <span class="text-xl">📦</span>
+                    <div class="min-w-0">
+                        <span class="text-xs font-bold text-white block group-hover:text-purple-300 truncate">KIB E: Aset Tetap Lainnya &amp; Perabot</span>
+                        <span class="text-[10px] text-slate-400 block truncate">Perabot ruangan, lemari arsip, buku medis perbekalan, dll.</span>
+                    </div>
+                </div>
+                <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20">1.3.5</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- ALUR PENEMPATAN FLEKSIBEL (OPSI A: GUDANG VS RUANGAN KIR)            -->
+    <!-- ===================================================================== -->
+    <div class="p-5 rounded-2xl bg-slate-950/80 border border-indigo-500/30 space-y-4 shadow-xl">
+        <div class="flex items-center justify-between">
+            <span class="text-xs font-extrabold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                <span>📍 ALUR PENEMPATAN BARANG BELANJA (OPSI A)</span>
+            </span>
+            <span class="text-[10px] font-bold text-slate-400 bg-slate-900 px-2.5 py-0.5 rounded-full border border-slate-800">
+                Pilih Jalur Distribusi Fisik
+            </span>
+        </div>
+
+        <!-- Pilihan Mode Alokasi (Radio Cards) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            
+            <!-- Card 1: Simpan di Gudang Perbekalan (Transit Stok) -->
+            <div @click="setGlobalAlokasiMode('gudang')"
+                class="p-4 rounded-2xl border cursor-pointer transition-all relative flex flex-col justify-between"
+                :class="globalAlokasiMode === 'gudang' ? 'bg-indigo-600/15 border-indigo-500 shadow-lg shadow-indigo-500/10 ring-1 ring-indigo-500' : 'bg-slate-900/80 border-slate-800 hover:border-slate-700'">
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-2xl">📦</span>
+                        <div class="w-4 h-4 rounded-full border flex items-center justify-center"
+                            :class="globalAlokasiMode === 'gudang' ? 'border-indigo-400 bg-indigo-500' : 'border-slate-700'">
+                            <div x-show="globalAlokasiMode === 'gudang'" class="w-1.5 h-1.5 rounded-full bg-white"></div>
+                        </div>
+                    </div>
+                    <span class="text-xs font-extrabold text-white block">Simpan di Gudang Perbekalan (Transit Stok)</span>
+                    <p class="text-[11px] text-slate-400 leading-relaxed">
+                        Barang dicatat sebagai buffer stok di <strong class="text-indigo-300">Gudang Perbekalan</strong>. Register NIBAR berstatus <strong class="text-emerald-400">Tersedia</strong> dan siap didistribusikan bertahap ke ruangan menggunakan dokumen BAST Distribusi.
+                    </p>
+                </div>
+                <div class="mt-3 pt-2.5 border-t border-slate-800/80 flex items-center justify-between text-[10px]">
+                    <span class="text-slate-400">Status Register:</span>
+                    <span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">Tersedia di Gudang</span>
+                </div>
+            </div>
+
+            <!-- Card 2: Langsung Ditempatkan ke Ruangan Perawatan / Poli (KIR Langsung Aktif) -->
+            <div @click="setGlobalAlokasiMode('ruangan')"
+                class="p-4 rounded-2xl border cursor-pointer transition-all relative flex flex-col justify-between"
+                :class="globalAlokasiMode === 'ruangan' ? 'bg-indigo-600/15 border-indigo-500 shadow-lg shadow-indigo-500/10 ring-1 ring-indigo-500' : 'bg-slate-900/80 border-slate-800 hover:border-slate-700'">
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-2xl">🏢</span>
+                        <div class="w-4 h-4 rounded-full border flex items-center justify-center"
+                            :class="globalAlokasiMode === 'ruangan' ? 'border-indigo-400 bg-indigo-500' : 'border-slate-700'">
+                            <div x-show="globalAlokasiMode === 'ruangan'" class="w-1.5 h-1.5 rounded-full bg-white"></div>
+                        </div>
+                    </div>
+                    <span class="text-xs font-extrabold text-white block">Langsung ke Ruangan Perawatan / Poli (KIR)</span>
+                    <p class="text-[11px] text-slate-400 leading-relaxed">
+                        Untuk barang yang dibeli khusus unit tertentu (contoh: ICU, IGD, Poli Gigi). Register langsung berstatus <strong class="text-indigo-300">Tidak Tersedia</strong> dan <strong class="text-indigo-300">langsung aktif muncul di Kartu Inventaris Ruangan (KIR)</strong>.
+                    </p>
+                </div>
+                <div class="mt-3 pt-2.5 border-t border-slate-800/80 flex items-center justify-between text-[10px]">
+                    <span class="text-slate-400">Integrasi KIR:</span>
+                    <span class="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-bold">Langsung Masuk KIR</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Form Alokasi jika Mode = Ruangan (Global) -->
+        <template x-if="globalAlokasiMode === 'ruangan'">
+            <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
+                <span class="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
+                    <span>🏢 Tentukan Unit / Ruangan Tujuan Seluruh Item</span>
+                </span>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-300 mb-1">
+                            Pilih Unit / Ruangan / Poli
+                        </label>
+                        <select x-model.number="globalUnitId" @change="applyGlobalUnit()"
+                            class="w-full bg-slate-950 border border-slate-700 focus:border-indigo-400 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none">
+                            <option value="">-- Pilih Unit / Ruangan Pemegang Aset --</option>
+                            @foreach($dbUnits ?? [] as $unit)
+                                <option value="{{ $unit->id }}">{{ $unit->nama }} ({{ $unit->kode ?? '-' }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-300 mb-1">
+                            Kondisi Fisik Barang
+                        </label>
+                        <select x-model="globalKondisi" @change="applyGlobalKondisi()"
+                            class="w-full bg-slate-950 border border-slate-700 focus:border-indigo-400 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none">
+                            <option value="Baik">Baik (Bagus / Baru)</option>
+                            <option value="Kurang Baik">Kurang Baik (Dapat Berfungsi)</option>
+                            <option value="Rusak Berat">Rusak Berat (Tidak Berfungsi)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-300 mb-1">
+                        Detail Lokasi Fisik Spesifik
+                    </label>
+                    <input type="text" x-model="globalAlamatBarang" @input="applyGlobalAlamat()"
+                        placeholder="Contoh: Gedung Rawat Inap Melati Lt. 2, Ruang Isolasi 204..."
+                        class="w-full bg-slate-950 border border-slate-700 focus:border-indigo-400 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none">
+                </div>
+            </div>
+        </template>
     </div>
 
     <!-- DAFTAR ITEM BARANG DINAMIS (REPEATER CARDS) -->
@@ -58,7 +203,7 @@
                 <!-- Bagian Pemilihan Kode 108 Barang Ini -->
                 <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div class="min-w-0">
-                        <span class="text-[10px] text-slate-400 uppercase font-bold block mb-0.5">Klasifikasi Kode Barang (Permendagri 108) <span class="text-rose-400">*</span></span>
+                        <span class="text-[10px] text-slate-400 uppercase font-bold block mb-0.5">Klasifikasi Kode Barang (Permendagri 108)</span>
                         <template x-if="item.jenis_astap_id && item.kode_108">
                             <div class="flex items-center gap-2">
                                 <span class="font-mono text-xs font-extrabold text-emerald-400" x-text="item.kode_108"></span>
@@ -84,9 +229,9 @@
                     <!-- Nama Barang Spesifik -->
                     <div class="sm:col-span-5">
                         <label class="block text-[11px] font-bold text-slate-300 mb-1">
-                            Nama Barang Spesifik <span class="text-rose-400">*</span>
+                            Nama Barang Spesifik
                         </label>
-                        <input type="text" x-model="item.nama_barang" required
+                        <input type="text" x-model="item.nama_barang"
                             placeholder="Contoh: Tensimeter Digital Omron, Kursi Roda Standar..."
                             class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none font-bold">
                     </div>
@@ -94,18 +239,18 @@
                     <!-- Volume -->
                     <div class="sm:col-span-2">
                         <label class="block text-[11px] font-bold text-slate-300 mb-1">
-                            Volume <span class="text-rose-400">*</span>
+                            Volume
                         </label>
-                        <input type="number" x-model.number="item.jumlah_volume" min="1" required
+                        <input type="number" x-model.number="item.jumlah_volume" min="1"
                             class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none text-center">
                     </div>
 
                     <!-- Satuan -->
                     <div class="sm:col-span-2">
                         <label class="block text-[11px] font-bold text-slate-300 mb-1">
-                            Satuan <span class="text-rose-400">*</span>
+                            Satuan
                         </label>
-                        <select x-model="item.satuan" required
+                        <select x-model="item.satuan"
                             class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none">
                             <option value="Unit">Unit</option>
                             <option value="Buah">Buah</option>
@@ -121,17 +266,39 @@
                     <!-- Harga Satuan -->
                     <div class="sm:col-span-3">
                         <label class="block text-[11px] font-bold text-slate-300 mb-1 flex items-center justify-between">
-                            <span>Harga Satuan (Rp) <span class="text-rose-400">*</span></span>
+                            <span>Harga Satuan (Rp)</span>
                         </label>
-                        <input type="number" x-model.number="item.harga_satuan" min="0" step="any" required
+                        <input type="number" x-model.number="item.harga_satuan" min="0" step="any"
                             placeholder="0"
                             class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-cyan-300 font-mono focus:outline-none font-bold text-right">
                     </div>
                 </div>
 
+                <!-- Spesifikasi Teknis KIB Per Item (Merk, Tipe, Bahan, SN) -->
+                <div class="pt-2 border-t border-slate-900/90">
+                    <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-2">Spesifikasi Teknis KIB (Opsional):</span>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                        <div>
+                            <input type="text" x-model="item.spesifikasi_json.merk" placeholder="Merk / Brand"
+                                class="w-full bg-slate-900/90 border border-slate-800 focus:border-indigo-400 rounded-xl px-3 py-1.5 text-xs text-white">
+                        </div>
+                        <div>
+                            <input type="text" x-model="item.spesifikasi_json.type" placeholder="Tipe / Model"
+                                class="w-full bg-slate-900/90 border border-slate-800 focus:border-indigo-400 rounded-xl px-3 py-1.5 text-xs text-white">
+                        </div>
+                        <div>
+                            <input type="text" x-model="item.spesifikasi_json.bahan" placeholder="Bahan / Material"
+                                class="w-full bg-slate-900/90 border border-slate-800 focus:border-indigo-400 rounded-xl px-3 py-1.5 text-xs text-white">
+                        </div>
+                        <div>
+                            <input type="text" x-model="item.spesifikasi_json.no_pabrik" placeholder="Nomor Seri (SN)"
+                                class="w-full bg-slate-900/90 border border-slate-800 focus:border-indigo-400 rounded-xl px-3 py-1.5 text-xs text-white font-mono">
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Subtotal Row & Capitalization Guard Alert -->
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 border-t border-slate-900">
-                    <!-- Capitalization Guard Alert -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-slate-900">
                     <div>
                         <template x-if="item.harga_satuan >= 1000000">
                             <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/25 text-amber-300 text-[10px] font-bold">
@@ -141,7 +308,6 @@
                         </template>
                     </div>
 
-                    <!-- Subtotal Item -->
                     <div class="text-right">
                         <span class="text-[10px] text-slate-400 uppercase font-semibold mr-1">Subtotal Item:</span>
                         <span class="text-xs font-mono font-black text-cyan-400" x-text="formatRupiah((item.jumlah_volume || 0) * (item.harga_satuan || 0))"></span>
@@ -284,7 +450,7 @@
                 <!-- Level 5: Sub-Sub Rincian Objek -->
                 <div>
                     <label class="block text-xs font-bold text-emerald-400 mb-1">
-                        5. Sub-Sub Rincian Objek (Level Akhir) <span class="text-rose-400">*</span>
+                        5. Sub-Sub Rincian Objek (Level Akhir)
                     </label>
                     <select x-model="selectedSubSubId" @change="onSubSubChange()" :disabled="!subSubList.length"
                         class="w-full bg-slate-950 border border-emerald-500/40 focus:border-emerald-400 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none disabled:opacity-50 font-bold">

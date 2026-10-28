@@ -11,24 +11,38 @@
             <span>🧾 Dokumen Pembelian Faktur &amp; Toko Rekanan Perbekalan</span>
         </h2>
         <p class="text-xs text-slate-400 mt-0.5">
-            Masukkan data faktur/nota pembelian toko rekanan dan lampirkan berkas dokumen digital yang diwajibkan untuk keperluan audit BPK &amp; penatausahaan BMD.
+            Masukkan data faktur/nota pembelian toko rekanan dan lampirkan berkas dokumen digital pendukung belanja barang.
         </p>
+    </div>
+
+    <!-- Alert Mode Testing Aktif -->
+    <div class="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-3 text-xs">
+        <div class="flex items-center gap-2.5">
+            <span class="text-base">🧪</span>
+            <div>
+                <span class="font-bold text-amber-300 block">Mode Testing Aktif: Isian Form Tidak Diwajibkan</span>
+                <span class="text-[11px] text-slate-400 block mt-0.5">Seluruh input dan upload berkas dapat dilewati atau dikosongkan. Nilai default akan terisi otomatis saat disimpan.</span>
+            </div>
+        </div>
+        <span class="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold text-[10px] uppercase shrink-0">
+            Testing Mode
+        </span>
     </div>
 
     <!-- Periode Anggaran & Triwulan -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-950/70 border border-slate-800">
         <div>
             <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                Tahun Anggaran Pembukuan <span class="text-rose-400">*</span>
+                Tahun Anggaran Pembukuan
             </label>
-            <input type="number" x-model.number="formData.tahun_perolehan" min="1990" max="2100" required
+            <input type="number" x-model.number="formData.tahun_perolehan" min="1990" max="2100"
                 class="w-full bg-slate-900 border border-slate-700 focus:border-indigo-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none font-mono">
         </div>
         <div>
             <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                Triwulan Pembukuan <span class="text-rose-400">*</span>
+                Triwulan Pembukuan
             </label>
-            <select x-model="formData.triwulan" required
+            <select x-model="formData.triwulan"
                 class="w-full bg-slate-900 border border-slate-700 focus:border-indigo-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none">
                 <option value="TW I">Triwulan I (Januari - Maret)</option>
                 <option value="TW II">Triwulan II (April - Juni)</option>
@@ -43,7 +57,6 @@
         <div class="flex items-center justify-between">
             <span class="text-xs font-extrabold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
                 <span>🏷️ Informasi Toko / Rekanan &amp; Faktur Pembelian</span>
-                <span class="text-rose-400">*</span>
             </span>
             <span class="text-[10px] font-bold text-indigo-300 bg-indigo-500/10 px-2.5 py-0.5 rounded-full border border-indigo-500/20">
                 📦 Belanja Barang (Akun 5.1.02)
@@ -54,7 +67,7 @@
         <div class="relative space-y-1.5" @click.away="isTokoDropdownOpen = false">
             <div class="flex items-center justify-between">
                 <label class="block text-xs font-bold text-slate-200">
-                    Nama Toko / Supplier / Rekanan <span class="text-rose-400">*</span>
+                    Nama Toko / Supplier / Rekanan
                 </label>
                 <template x-if="masterTokoList && masterTokoList.length > 0">
                     <span class="text-[10px] text-indigo-400 font-mono font-normal flex items-center gap-1 bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20">
@@ -71,7 +84,6 @@
                     @focus="isTokoDropdownOpen = true"
                     @input="isTokoDropdownOpen = true"
                     @keydown.escape="isTokoDropdownOpen = false"
-                    required
                     autocomplete="off"
                     placeholder="Ketik atau pilih nama toko rekanan (contoh: CV. Sahabat Medika, Toko ATK Berkah...)"
                     class="w-full bg-slate-900 border border-slate-700 focus:border-indigo-400 rounded-xl px-4 py-3 pl-10 pr-10 text-xs text-white placeholder-slate-500 focus:outline-none font-bold transition-all shadow-inner">
@@ -150,17 +162,17 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
                 <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                    Nomor Faktur / Nota Toko <span class="text-rose-400">*</span>
+                    Nomor Faktur / Nota Toko
                 </label>
-                <input type="text" x-model="formData.rekening_nomor_faktur" required
+                <input type="text" x-model="formData.rekening_nomor_faktur"
                     placeholder="Contoh: INV/2026/04/0012 atau NOTA-582"
                     class="w-full bg-slate-900 border border-slate-700 focus:border-indigo-400 rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none">
             </div>
             <div>
                 <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                    Tanggal Faktur / Pembelian <span class="text-rose-400">*</span>
+                    Tanggal Faktur / Pembelian
                 </label>
-                <input type="text" x-datepicker x-model="formData.rekening_tanggal_faktur" required
+                <input type="text" x-datepicker x-model="formData.rekening_tanggal_faktur"
                     placeholder="dd/mm/yyyy"
                     class="w-full bg-slate-900 border border-slate-700 focus:border-indigo-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none">
             </div>
@@ -171,20 +183,19 @@
         <!-- ================================================================= -->
         <div class="pt-2 border-t border-slate-800/80">
             <span class="text-xs font-extrabold text-cyan-400 uppercase tracking-wider block mb-3 flex items-center gap-1.5">
-                <span>📎 Berkas Dokumen Pendukung Wajib (PDF / Gambar)</span>
+                <span>📎 Berkas Dokumen Pendukung (PDF / Gambar)</span>
             </span>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 
-                <!-- 1. Dropzone Nota / Faktur Toko Rekanan (WAJIB) -->
+                <!-- 1. Dropzone Nota / Faktur Toko Rekanan -->
                 <div class="p-4 rounded-2xl bg-slate-900/90 border border-indigo-500/30 space-y-2.5 relative">
                     <div class="flex items-center justify-between">
                         <label class="text-xs font-bold text-white flex items-center gap-1.5">
                             <span>📄 Nota / Faktur Toko</span>
-                            <span class="text-rose-400">*</span>
                         </label>
-                        <span class="text-[9px] px-2 py-0.5 rounded bg-rose-500/10 text-rose-300 border border-rose-500/20 font-bold">
-                            Wajib Diunggah
+                        <span class="text-[9px] px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-bold">
+                            Opsional (Mode Testing)
                         </span>
                     </div>
 
@@ -226,7 +237,7 @@
                     </template>
                 </div>
 
-                <!-- 2. Dropzone Bukti Penerimaan / Kuitansi Gudang (PENDUKUNG) -->
+                <!-- 2. Dropzone Bukti Penerimaan / Kuitansi Gudang -->
                 <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2.5 relative">
                     <div class="flex items-center justify-between">
                         <label class="text-xs font-bold text-white flex items-center gap-1.5">

@@ -91,9 +91,9 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-[11px] font-bold text-slate-300 mb-1">
-                            Pilih Unit / Ruangan / Poli <span class="text-rose-400">*</span>
+                            Pilih Unit / Ruangan / Poli
                         </label>
-                        <select x-model.number="globalUnitId" @change="applyGlobalUnit()" required
+                        <select x-model.number="globalUnitId" @change="applyGlobalUnit()"
                             class="w-full bg-slate-950 border border-slate-700 focus:border-indigo-400 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none">
                             <option value="">-- Pilih Unit / Ruangan Pemegang Aset --</option>
                             @foreach($dbUnits ?? [] as $unit)
@@ -104,9 +104,9 @@
 
                     <div>
                         <label class="block text-[11px] font-bold text-slate-300 mb-1">
-                            Kondisi Fisik Barang <span class="text-rose-400">*</span>
+                            Kondisi Fisik Barang
                         </label>
-                        <select x-model="globalKondisi" @change="applyGlobalKondisi()" required
+                        <select x-model="globalKondisi" @change="applyGlobalKondisi()"
                             class="w-full bg-slate-950 border border-slate-700 focus:border-indigo-400 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none">
                             <option value="Baik">Baik (Bagus / Baru)</option>
                             <option value="Kurang Baik">Kurang Baik (Dapat Berfungsi)</option>
