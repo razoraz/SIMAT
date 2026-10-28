@@ -1,0 +1,495 @@
+<!-- ========================================================================= -->
+<!-- SHEET SPESIFIKASI: ASET TETAP LAINNYA (KIB E / AKUN 1.3.5)                 -->
+<!-- MULTI-ITEM REPEATER (MODEL PERSIS KIB B PERALATAN & MESIN)                 -->
+<!-- ========================================================================= -->
+<div x-show="isLainnya" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-5">
+    
+    <!-- Wrapper Card Utama KIB E -->
+    <div class="p-6 rounded-3xl bg-slate-950/80 border border-amber-500/40 space-y-5 shadow-2xl relative overflow-hidden">
+        <!-- Glow Ambient -->
+        <div class="absolute -right-8 -bottom-8 w-44 h-44 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <!-- Header Card: Spesifikasi KIB E -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+            <div class="flex items-center space-x-2.5">
+                <span class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-lg border border-amber-500/30 shadow-inner">📦</span>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h3 class="text-xs sm:text-sm font-extrabold text-white uppercase tracking-wide">
+                            Spesifikasi Aset Tetap Lainnya Hibah
+                        </h3>
+                        <span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono font-bold text-[10px] border border-amber-500/40">
+                            KIB E
+                        </span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-0.5">Buku Pustaka Medis, Kesenian &amp; Ornamen Kebudayaan, atau Hewan &amp; Tanaman Hibah RSUD.</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="text-[10px] font-mono font-bold text-amber-400 bg-amber-950/60 px-3 py-1.5 rounded-xl border border-amber-500/30 shadow-sm">
+                    Total: <span x-text="formData.lainnya_items ? formData.lainnya_items.length : 1"></span> Item
+                </span>
+            </div>
+        </div>
+
+        <!-- REPEATER DAFTAR ASET TETAP LAINNYA -->
+        <div class="space-y-5">
+            <template x-for="(item, idx) in formData.lainnya_items" :key="idx">
+                <div class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800/90 hover:border-amber-500/50 transition-all space-y-4 shadow-lg relative">
+                    
+                    <!-- Header Kartu Aset Lainnya -->
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="px-3 py-1 rounded-xl bg-amber-500/20 text-amber-300 font-mono font-extrabold text-xs border border-amber-500/40 flex items-center space-x-1.5 shadow-sm">
+                                <span>📦 Item Hibah #<span x-text="idx + 1"></span></span>
+                            </span>
+                            <span class="px-2 py-0.5 rounded-md text-[10px] font-bold border transition-all"
+                                  :class="(item.is_extracom || formData.is_extracomtable) ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-slate-800 text-slate-300 border-slate-700'"
+                                  x-text="(item.is_extracom || formData.is_extracomtable) ? '📦 Extracom (≤ 300rb)' : '⚙️ Reguler'">
+                            </span>
+                            <span class="px-2 py-0.5 rounded-md text-[10px] font-bold border"
+                                :class="{
+                                    'bg-amber-500/20 text-amber-300 border-amber-500/40': (item.kib_e_type || 'buku') === 'buku',
+                                    'bg-purple-500/20 text-purple-300 border-purple-500/40': item.kib_e_type === 'kesenian',
+                                    'bg-emerald-500/20 text-emerald-300 border-emerald-500/40': item.kib_e_type === 'hewan_tumbuhan'
+                                }"
+                                x-text="item.kib_e_type === 'kesenian' ? '🎨 Kesenian' : (item.kib_e_type === 'hewan_tumbuhan' ? '🌿 Hewan/Tanaman' : '📚 Buku Pustaka')">
+                            </span>
+                            <span class="text-xs text-white font-bold" x-show="item.lainnya_nama_barang || item.lainnya_judul" x-text="item.lainnya_nama_barang || item.lainnya_judul"></span>
+                            <span class="text-[10.5px] text-slate-400 font-mono">
+                                • Subtotal: <strong class="text-emerald-400" x-text="'Rp ' + formatRupiah(getLainnyaSubtotal(item))"></strong>
+                            </span>
+                        </div>
+
+                        <!-- Tombol Hapus Item -->
+                        <button type="button"
+                            x-show="formData.lainnya_items.length > 1"
+                            @click="removeLainnyaItem(idx)"
+                            class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white border border-rose-500/30 text-[11px] font-bold transition-all flex items-center space-x-1 cursor-pointer self-end sm:self-auto">
+                            <span>🗑️ Hapus Item</span>
+                        </button>
+                    </div>
+
+                    <!-- Pilihan Kategori KIB E untuk Item Ini -->
+                    <div class="space-y-1.5">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-1.5">
+                                <span>📑 Kategori Asal PMDN 108:</span>
+                            </span>
+                            <span class="text-[9.5px] text-amber-400 font-medium" x-show="item.is_extracom || formData.is_extracomtable">
+                                ✨ Tab menentukan kode 108 asal &bull; Area isian bawah otomatis form Extracom baku
+                            </span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                            <div @click="item.kib_e_type = 'buku'"
+                                :class="(item.kib_e_type || 'buku') === 'buku' ? 'border-amber-500 bg-amber-950/40 ring-1 ring-amber-500 text-white font-extrabold shadow-sm' : 'border-slate-800 bg-slate-950/60 opacity-60 hover:opacity-100 text-amber-300/80'"
+                                class="p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between text-xs font-bold">
+                                <div class="flex items-center space-x-2">
+                                    <span>📚</span>
+                                    <div class="text-left">
+                                        <div class="text-xs">Buku Perpustakaan</div>
+                                        <div class="text-[9px] text-slate-400 font-mono font-normal">Kode 108: 1.3.5.01</div>
+                                    </div>
+                                </div>
+                                <span x-show="(item.kib_e_type || 'buku') === 'buku'" class="text-amber-400 font-bold">✓</span>
+                            </div>
+                            <div @click="item.kib_e_type = 'kesenian'"
+                                :class="item.kib_e_type === 'kesenian' ? 'border-amber-500 bg-amber-950/40 ring-1 ring-amber-500 text-white font-extrabold shadow-sm' : 'border-slate-800 bg-slate-950/60 opacity-60 hover:opacity-100 text-purple-300/80'"
+                                class="p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between text-xs font-bold">
+                                <div class="flex items-center space-x-2">
+                                    <span>🎨</span>
+                                    <div class="text-left">
+                                        <div class="text-xs">Kesenian &amp; Budaya</div>
+                                        <div class="text-[9px] text-slate-400 font-mono font-normal">Kode 108: 1.3.5.02</div>
+                                    </div>
+                                </div>
+                                <span x-show="item.kib_e_type === 'kesenian'" class="text-amber-400 font-bold">✓</span>
+                            </div>
+                            <div @click="item.kib_e_type = 'hewan_tumbuhan'"
+                                :class="item.kib_e_type === 'hewan_tumbuhan' ? 'border-amber-500 bg-amber-950/40 ring-1 ring-amber-500 text-white font-extrabold shadow-sm' : 'border-slate-800 bg-slate-950/60 opacity-60 hover:opacity-100 text-emerald-300/80'"
+                                class="p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between text-xs font-bold">
+                                <div class="flex items-center space-x-2">
+                                    <span>🌿</span>
+                                    <div class="text-left">
+                                        <div class="text-xs">Hewan &amp; Tumbuhan</div>
+                                        <div class="text-[9px] text-slate-400 font-mono font-normal">Kode 108: 1.3.5.03</div>
+                                    </div>
+                                </div>
+                                <span x-show="item.kib_e_type === 'hewan_tumbuhan'" class="text-amber-400 font-bold">✓</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pilihan Jenis & Nama Barang PMDN 108 Belanja Modal 1.3.5 -->
+                    <div class="p-4 rounded-2xl bg-slate-900/90 border border-amber-500/40 space-y-2 shadow-inner">
+                        <div class="relative" @click.outside="item.isFilterOpen = false">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label class="text-amber-300 text-[10.5px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+                                    <span>🏷️ Pilih / Ketik Jenis Barang PMDN 108 (Aset Tetap Lainnya)</span>
+                                    <span class="text-rose-400">*</span>
+                                </label>
+                                <span class="text-[9.5px] px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold font-mono"
+                                      x-show="item.lainnya_kode_barang"
+                                      x-text="'Kode 108: ' + item.lainnya_kode_barang">
+                                </span>
+                            </div>
+                            
+                            <div class="relative">
+                                <input type="text"
+                                       x-model="item.lainnya_nama_barang"
+                                       @focus="item.isFilterOpen = true"
+                                       @click="item.isFilterOpen = true"
+                                       @input="item.isFilterOpen = true; syncTotalsFromItems();"
+                                       placeholder="Ketik untuk memfilter jenis barang PMDN 108 atau tulis rincian aset lainnya..."
+                                       class="w-full bg-slate-950 border border-slate-700 hover:border-amber-500 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-xs text-white font-bold focus:outline-none transition-all pl-9 pr-11">
+                                <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                    </svg>
+                                </div>
+                                <button type="button" 
+                                        x-show="Boolean(item.lainnya_nama_barang)" 
+                                        @click.stop.prevent="clearItem108(item, 'lainnya'); item.lainnya_kode_barang = ''; item.lainnya_nama_barang = ''; item.lainnya_judul = ''; item.searchFilter = ''; formData.nama_barang = ''; item.isFilterOpen = true;" 
+                                        @mousedown.stop.prevent="clearItem108(item, 'lainnya'); item.lainnya_kode_barang = ''; item.lainnya_nama_barang = ''; item.lainnya_judul = ''; item.searchFilter = ''; formData.nama_barang = ''; item.isFilterOpen = true;" 
+                                        class="absolute inset-y-0 right-0 w-11 flex items-center justify-center text-slate-400 hover:text-white transition-colors cursor-pointer z-30"
+                                        title="Hapus / Kosongkan Pilihan">
+                                    <span class="w-6 h-6 rounded-full bg-slate-800/90 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 flex items-center justify-center transition-all border border-slate-700 hover:border-rose-500/50 shadow-sm">
+                                        <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </span>
+                                </button>
+                            </div>
+
+                            <!-- Dropdown Hasil Filter (Strict Max 5 Baris - Zero Lag) -->
+                            <div x-show="item.isFilterOpen" 
+                                 x-transition:enter="transition ease-out duration-100"
+                                 x-transition:enter-start="opacity-0 translate-y-1"
+                                 x-transition:enter-end="opacity-100 translate-y-0"
+                                 class="absolute z-50 left-0 right-0 mt-1 bg-slate-900 border border-amber-500/40 rounded-xl shadow-2xl overflow-hidden divide-y divide-slate-800">
+                                <div class="px-3 py-1.5 bg-slate-950/80 text-[10px] text-slate-400 font-semibold flex items-center justify-between">
+                                    <span>Pilihan Rekomendasi PMDN 108 (Maks. 5):</span>
+                                    <span class="text-amber-400 font-mono text-[9px]" x-text="'Prefix: ' + getKibEPrefix(item)"></span>
+                                </div>
+                                <template x-for="opt in filterJenisAstap108(getKibEPrefix(item), item.lainnya_nama_barang, item.isFilterOpen)" :key="opt.id">
+                                    <div @click="select108ForItem(item, opt, 'lainnya')"
+                                         class="px-3.5 py-2 hover:bg-amber-500/20 cursor-pointer transition-colors flex items-center justify-between group">
+                                        <div class="flex-1 pr-2">
+                                            <div class="text-xs font-bold text-white group-hover:text-amber-300" x-text="opt.nama"></div>
+                                        </div>
+                                        <span class="font-mono text-[10px] text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-500/30 shrink-0" x-text="opt.kode"></span>
+                                    </div>
+                                </template>
+                                <div x-show="filterJenisAstap108(getKibEPrefix(item), item.lainnya_nama_barang, item.isFilterOpen).length === 0" 
+                                     class="px-3.5 py-2.5 text-center text-xs text-slate-400 italic">
+                                    <span>Gunakan nama yang Anda ketik jika tidak ada dalam daftar PMDN 108 di atas.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ========================================================================= -->
+                    <!-- AREA FORM ISIAN SPESIFIKASI                                               -->
+                    <!-- ========================================================================= -->
+
+                    <!-- 1. Form Spesifik: Buku Perpustakaan (Hanya Tampil Saat Non-Extracom) -->
+                    <div x-show="!(item.is_extracom || formData.is_extracomtable) && (item.kib_e_type || 'buku') === 'buku'" class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3 shadow-inner">
+                        <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
+                            <span class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center space-x-1.5">
+                                <span>📚 Atribut Buku Perpustakaan &amp; Pustaka Medis:</span>
+                            </span>
+                            <span class="text-[9px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 font-bold">KIB E Reguler</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="sm:col-span-2">
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
+                                    Judul Buku / Pustaka Medis <span class="text-rose-400">*</span>
+                                </label>
+                                <input type="text" x-model="item.lainnya_judul"
+                                    placeholder="Contoh: Atlas Anatomi Manusia Sobotta Edisi 24"
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:border-amber-500 focus:outline-none transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Pengarang / Penerbit, Pencipta</label>
+                                <input type="text" x-model="item.lainnya_pencipta"
+                                    placeholder="Contoh: Prof. Dr. Friedrich Paulsen / EGC Penerbit Buku Kedokteran"
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-500 focus:outline-none transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Spesifikasi Buku / Literatur</label>
+                                <input type="text" x-model="item.lainnya_spesifikasi"
+                                    placeholder="Contoh: Edisi Revisi 2026 / Hardcover Lux / Cetakan Khusus"
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-500 focus:outline-none transition-all">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Form Spesifik: Kesenian & Budaya (Hanya Tampil Saat Non-Extracom) -->
+                    <div x-show="!(item.is_extracom || formData.is_extracomtable) && item.kib_e_type === 'kesenian'" class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3 shadow-inner">
+                        <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
+                            <span class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center space-x-1.5">
+                                <span>🎨 Atribut Fisik Benda Seni / Budaya:</span>
+                            </span>
+                            <span class="text-[9px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 font-bold">KIB E Reguler</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Asal Daerah / Wilayah</label>
+                                <input type="text" x-model="item.lainnya_asal_daerah"
+                                    placeholder="Bondowoso, Jawa Timur"
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-500 focus:outline-none transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Pencipta / Seniman</label>
+                                <input type="text" x-model="item.lainnya_pencipta"
+                                    placeholder="Sanggar Seni Rupa Bondowoso"
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-500 focus:outline-none transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Bahan Pembuatan</label>
+                                <input type="text" x-model="item.lainnya_bahan"
+                                    placeholder="Kanvas Cat Minyak / Perunggu / Kayu Jati"
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-500 focus:outline-none transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Ukuran / Dimensi</label>
+                                <input type="text" x-model="item.lainnya_ukuran"
+                                    placeholder="150 x 200 cm"
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-500 focus:outline-none transition-all">
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Spesifikasi Karya Seni / Ornamen</label>
+                                <input type="text" x-model="item.lainnya_spesifikasi"
+                                    placeholder="Lukisan dinding sejarah pelayanan RSUD Bondowoso"
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-300 focus:border-amber-500 focus:outline-none transition-all">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Form Spesifik: Hewan & Tumbuhan (Hanya Tampil Saat Non-Extracom) -->
+                    <div x-show="!(item.is_extracom || formData.is_extracomtable) && item.kib_e_type === 'hewan_tumbuhan'" class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3 shadow-inner">
+                        <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
+                            <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center space-x-1.5">
+                                <span>🌿 Atribut Fisik Hewan &amp; Tumbuhan:</span>
+                            </span>
+                            <span class="text-[9px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-bold">KIB E Reguler</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
+                                    Jenis Hewan / Tanaman <span class="text-rose-400">*</span>
+                                </label>
+                                <input type="text" x-model="item.lainnya_judul"
+                                    placeholder="Contoh: Pohon Ketapang Kencana / Palem Raja"
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:border-emerald-500 focus:outline-none transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Ukuran / Tinggi</label>
+                                <input type="text" x-model="item.lainnya_ukuran"
+                                    placeholder="Tinggi 3.5 Meter"
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none transition-all">
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Keterangan / Spesifikasi Khusus</label>
+                                <input type="text" x-model="item.lainnya_spesifikasi"
+                                    placeholder="Penghijauan Area Taman Rawat Inap Barat"
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none transition-all">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Form Spesifikasi Ekstrakomtabel Baku (Universal untuk Semua Kategori KIB E saat Extracom) -->
+                    <div x-show="item.is_extracom || formData.is_extracomtable" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                            <!-- 1. Spesifikasi Fisik (Merk, Type, Ukuran & Nama) -->
+                            <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3 shadow-md">
+                                <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                                    <span class="text-xs font-bold text-amber-400 block uppercase tracking-wider flex items-center space-x-1.5">
+                                        <span>⚙️ MERK, TYPE &amp; UKURAN:</span>
+                                    </span>
+                                </div>
+                                <div>
+                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold flex items-center justify-between">
+                                        <span>Nama Barang (PMDN 108)</span>
+                                        <span class="text-[9px] text-amber-400 font-bold flex items-center space-x-1">
+                                            <span>🔒</span>
+                                            <span>Otomatis dari Langkah 2</span>
+                                        </span>
+                                    </label>
+                                    <div class="relative">
+                                        <input type="text" 
+                                               :value="item.lainnya_nama_barang || formData.nama_barang || (selectedSubSub?.nama || 'Aset Tetap Lainnya')"
+                                               readonly
+                                               class="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 font-bold cursor-not-allowed select-none focus:outline-none">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Merk Barang</label>
+                                    <input type="text" x-model="item.lainnya_pencipta" placeholder="Contoh: Olympic / Lion / Krisbow / Kenko"
+                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:border-amber-500">
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block text-slate-400 text-[10px] mb-1">Type / Model</label>
+                                        <input type="text" x-model="item.lainnya_spesifikasi" placeholder="Contoh: Standard / Meja / Rak"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-mono focus:border-amber-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[10px] mb-1">Ukuran / Kapasitas</label>
+                                        <input type="text" x-model="item.lainnya_ukuran" placeholder="Contoh: 120x60 cm / Sedang"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:border-amber-500">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 2. Spesifikasi No Pabrik, Bahan & Kondisi -->
+                            <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3 shadow-md">
+                                <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                                    <span class="text-xs font-bold text-amber-400 block uppercase tracking-wider flex items-center space-x-1.5">
+                                        <span>🏷️ NO PABRIK, BAHAN &amp; KONDISI:</span>
+                                    </span>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-2.5">
+                                    <div>
+                                        <label class="block text-slate-400 text-[10px] mb-1 font-medium">No Pabrik / SN</label>
+                                        <input type="text" x-model="item.lainnya_no_pabrik" placeholder="SN-EXT-2026-001"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono focus:border-amber-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[10px] mb-1 font-medium">Bahan Pembuatan</label>
+                                        <input type="text" x-model="item.lainnya_bahan" placeholder="Kayu / Besi / Plastik"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-500">
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Kondisi Barang</label>
+                                    <select x-model="item.lainnya_kondisi" @change="syncTotalsFromItems()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold focus:border-amber-500">
+                                        <option value="Baik">Baik (B)</option>
+                                        <option value="Kurang Baik">Kurang Baik (KB)</option>
+                                        <option value="Rusak Berat">Rusak Berat (RB)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Keterangan / Catatan Khusus -->
+                    <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-slate-700 space-y-1.5 shadow-md transition-all">
+                        <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
+                            <label class="block text-slate-300 font-bold text-[11px] uppercase tracking-wider flex items-center space-x-1.5">
+                                <span>📝 KETERANGAN / CATATAN KHUSUS:</span>
+                            </label>
+                            <span class="text-[9px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-bold">Catatan Tambahan</span>
+                        </div>
+                        <input type="text" x-model="item.lainnya_keterangan"
+                            placeholder="Contoh: Koleksi literatur medis hibah / Aset tetap lainnya / Spesifikasi khusus"
+                            class="w-full bg-slate-950 border border-slate-700 hover:border-slate-600 focus:border-amber-500 rounded-xl px-3.5 py-2 text-xs text-white font-medium focus:outline-none transition-all">
+                    </div>
+
+                    <!-- Kondisi, Volume, Satuan & Taksiran Nilai -->
+                    <div class="p-4 rounded-2xl bg-slate-900/80 border border-amber-500/30 space-y-2.5 shadow-md">
+                        <div class="flex items-center justify-between border-b border-amber-500/20 pb-1.5">
+                            <span class="text-xs font-bold text-amber-400 block uppercase tracking-wider flex items-center space-x-1.5">
+                                <span>💰 Kondisi, Volume &amp; Taksiran Nilai Wajar Aset Lainnya (Rp):</span>
+                            </span>
+                            <div class="flex items-center space-x-1.5 bg-amber-950/60 border border-amber-500/30 px-2.5 py-0.5 rounded-lg">
+                                <span class="text-[10px] text-slate-300 font-semibold">Sub Total Item #<span x-text="idx + 1"></span>:</span>
+                                <span class="text-xs font-black text-emerald-400 font-mono" x-text="'Rp ' + Number(getLainnyaSubtotal(item)).toLocaleString('id-ID')"></span>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-start">
+                            <!-- Kolom 1: Kondisi (2 cols) -->
+                            <div class="lg:col-span-2">
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold min-h-[18px] flex items-center">
+                                    <span>Kondisi</span>
+                                    <span class="text-rose-400 ml-0.5">*</span>
+                                </label>
+                                <select x-model="item.lainnya_kondisi" @change="syncTotalsFromItems()"
+                                    class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-bold focus:border-amber-500 focus:outline-none">
+                                    <option value="Baik">🟢 Baik (B)</option>
+                                    <option value="Kurang Baik">🟡 Kurang Baik (KB)</option>
+                                    <option value="Rusak Berat">🔴 Rusak Berat (RB)</option>
+                                </select>
+                            </div>
+
+                            <!-- Kolom 2: Jumlah Volume (2 cols) -->
+                            <div class="lg:col-span-2">
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold min-h-[18px] flex items-center">
+                                    <span>Jumlah Volume</span>
+                                    <span class="text-rose-400 ml-0.5">*</span>
+                                </label>
+                                <input type="number" min="1" x-model.number="item.lainnya_jumlah" @input="syncTotalsFromItems()" placeholder="1"
+                                    class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono font-bold focus:border-amber-500 focus:outline-none">
+                            </div>
+
+                            <!-- Kolom 3: Satuan (2 cols) -->
+                            <div class="lg:col-span-2">
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold min-h-[18px] flex items-center">
+                                    <span>Satuan</span>
+                                    <span class="text-rose-400 ml-0.5">*</span>
+                                </label>
+                                <input type="text" x-model="item.lainnya_satuan" @input="syncTotalsFromItems()" placeholder="Eks / Buah / Unit / Pohon"
+                                    class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:border-amber-500 focus:outline-none">
+                            </div>
+
+                            <!-- Kolom 4: Taksiran Nilai Wajar (6 cols) -->
+                            <div class="lg:col-span-6">
+                                <label class="block text-[10px] mb-1 font-semibold min-h-[18px] flex items-center justify-between gap-1.5">
+                                    <span class="text-slate-400 whitespace-nowrap flex items-center">
+                                        <span x-text="(item.is_extracom || formData.is_extracomtable) ? 'Nilai Satuan (Rp)' : 'Taksiran Nilai (Rp)'"></span>
+                                        <span class="text-rose-400 ml-0.5">*</span>
+                                    </span>
+                                    <!-- Badge Status Kompak & Anti-Wrap -->
+                                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap shrink-0 transition-colors"
+                                          :class="(item.is_extracom || formData.is_extracomtable) 
+                                              ? (Number(item.lainnya_nilai_satuan || 0) > 300000 ? 'text-rose-400 bg-rose-950/60 border border-rose-500/40 animate-pulse' : 'text-amber-400 bg-amber-950/40 border border-amber-500/30') 
+                                              : (Number(item.lainnya_nilai_satuan || 0) > 0 && Number(item.lainnya_nilai_satuan || 0) <= 300000 ? 'text-rose-400 bg-rose-950/60 border border-rose-500/40 animate-pulse' : (Number(item.lainnya_nilai_satuan || 0) > 300000 ? 'text-emerald-400 bg-emerald-950/40 border border-emerald-500/30' : 'text-slate-400 bg-slate-900 border border-slate-700/60'))"
+                                          x-text="(item.is_extracom || formData.is_extracomtable) 
+                                              ? (Number(item.lainnya_nilai_satuan || 0) > 300000 ? 'Lewat Maksimal!' : 'Maks. Rp 300rb') 
+                                              : (Number(item.lainnya_nilai_satuan || 0) > 0 && Number(item.lainnya_nilai_satuan || 0) <= 300000 ? 'Wajib > Rp 300rb' : (Number(item.lainnya_nilai_satuan || 0) > 300000 ? '✓ Harga Wajar' : '> Rp 300rb'))">
+                                    </span>
+                                </label>
+                                <input type="text"
+                                    :value="item.lainnya_nilai_satuan ? Number(item.lainnya_nilai_satuan).toLocaleString('id-ID') : ''"
+                                    @input="
+                                        let raw = $event.target.value.replace(/\D/g, '');
+                                        item.lainnya_nilai_satuan = raw ? parseInt(raw, 10) : 0;
+                                        $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                                        syncTotalsFromItems();
+                                    "
+                                    :placeholder="(item.is_extracom || formData.is_extracomtable) ? 'Maks. 300.000' : 'Contoh: 1.500.000'"
+                                    :class="((item.is_extracom || formData.is_extracomtable) && Number(item.lainnya_nilai_satuan || 0) > 300000) || (!(item.is_extracom || formData.is_extracomtable) && Number(item.lainnya_nilai_satuan || 0) > 0 && Number(item.lainnya_nilai_satuan || 0) <= 300000) ? 'border-rose-500 ring-1 ring-rose-500 text-rose-300' : 'border-slate-700 text-emerald-400 focus:border-amber-500'"
+                                    class="w-full bg-slate-950 border rounded-xl px-3 py-2 text-xs font-mono font-bold focus:outline-none transition-colors">
+                                <span x-show="(item.is_extracom || formData.is_extracomtable) && Number(item.lainnya_nilai_satuan || 0) > 300000" class="text-[9.5px] font-bold text-rose-400 block mt-1">
+                                    ⚠️ Nilai satuan Extracom tidak boleh > Rp 300.000!
+                                </span>
+                                <span x-show="!(item.is_extracom || formData.is_extracomtable) && Number(item.lainnya_nilai_satuan || 0) > 0 && Number(item.lainnya_nilai_satuan || 0) <= 300000" class="text-[9.5px] font-bold text-rose-400 block mt-1">
+                                    ⚠️ Aset Reguler: Nilai satuan wajib > Rp 300.000 (Jika ≤ Rp 300.000, silakan centang Ekstrakomptabel).
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </template>
+        </div>
+
+        <!-- Tombol Tambah Item Aset Lainnya Baru -->
+        <div class="flex items-center justify-between pt-2 border-t border-slate-800">
+            <button type="button" @click="addLainnyaItem()"
+                class="px-5 py-2.5 rounded-full bg-slate-950/90 hover:bg-slate-900 text-white font-bold text-xs border border-white/80 hover:border-white shadow-lg flex items-center space-x-2 transition-all cursor-pointer">
+                <span class="text-base font-light leading-none">+</span>
+                <span>Tambah Item Aset Lainnya Baru</span>
+            </button>
+            <div class="text-right text-xs">
+                <span class="text-slate-400 block text-[10.5px]">Total Taksiran Aset Lainnya Hibah:</span>
+                <span class="font-mono font-extrabold text-emerald-400 text-sm" x-text="'Rp ' + formatRupiah(totalNilaiLainnya)"></span>
+            </div>
+        </div>
+
+    </div>
+
+</div>
