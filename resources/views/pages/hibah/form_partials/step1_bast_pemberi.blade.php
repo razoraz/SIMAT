@@ -23,81 +23,18 @@
     </div>
 
 
-    {{-- ─── CARD 1: Jenis / Sumber Hibah ─────────────────────────────────── --}}
+    {{-- ─── CARD 1: Identitas Instansi & Pihak Pemberi Hibah ──────────────── --}}
     <div class="p-6 rounded-3xl bg-slate-950/80 border border-amber-500/30 space-y-5 shadow-xl relative overflow-hidden">
         <div class="absolute -right-8 -bottom-8 w-40 h-40 bg-amber-400/5 rounded-full blur-3xl pointer-events-none"></div>
 
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
             <span class="text-xs font-extrabold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                <span>🎁 Jenis / Sumber Hibah</span>
+                <span>🎁 Identitas Instansi & Pihak Pemberi Hibah</span>
                 <span class="text-rose-400">*</span>
             </span>
             <span class="text-[10px] font-bold text-amber-300 bg-amber-400/10 px-2 py-0.5 rounded-lg border border-amber-400/20">
                 Non-Belanja Modal APBD
             </span>
-        </div>
-
-        {{-- Pilihan Tipe Hibah --}}
-        <div>
-            <label class="block text-xs font-bold text-slate-200 mb-2.5">
-                Kategori Sumber Hibah <span class="text-rose-400">*</span>
-            </label>
-            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
-                {{-- 1. Pemerintah Pusat --}}
-                <button type="button" @click="formData.tipe_hibah = 'pemerintah_pusat'"
-                    class="p-2.5 rounded-xl border text-center transition-all cursor-pointer"
-                    :class="formData.tipe_hibah === 'pemerintah_pusat'
-                        ? 'bg-amber-500/20 border-amber-400 text-amber-300 font-black shadow-lg shadow-amber-500/20 ring-1 ring-amber-400'
-                        : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'">
-                    <span class="block text-base mb-0.5">🏛️</span>
-                    <span class="block text-[10px] font-bold">Pem. Pusat</span>
-                    <span class="block text-[9px] text-slate-400 mt-0.5">Kemenkes, APBN</span>
-                </button>
-
-                {{-- 2. Pemerintah Provinsi --}}
-                <button type="button" @click="formData.tipe_hibah = 'pemerintah_provinsi'"
-                    class="p-2.5 rounded-xl border text-center transition-all cursor-pointer"
-                    :class="formData.tipe_hibah === 'pemerintah_provinsi'
-                        ? 'bg-amber-500/20 border-amber-400 text-amber-300 font-black shadow-lg shadow-amber-500/20 ring-1 ring-amber-400'
-                        : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'">
-                    <span class="block text-base mb-0.5">🏢</span>
-                    <span class="block text-[10px] font-bold">Pem. Provinsi</span>
-                    <span class="block text-[9px] text-slate-400 mt-0.5">Dinkes Prov. Jatim</span>
-                </button>
-
-                {{-- 3. Pemerintah Kabupaten / OPD --}}
-                <button type="button" @click="formData.tipe_hibah = 'pemerintah_daerah'"
-                    class="p-2.5 rounded-xl border text-center transition-all cursor-pointer"
-                    :class="formData.tipe_hibah === 'pemerintah_daerah'
-                        ? 'bg-amber-500/20 border-amber-400 text-amber-300 font-black shadow-lg shadow-amber-500/20 ring-1 ring-amber-400'
-                        : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'">
-                    <span class="block text-base mb-0.5">🏠</span>
-                    <span class="block text-[10px] font-bold">Pem. Daerah</span>
-                    <span class="block text-[9px] text-slate-400 mt-0.5">Pemkab Bondowoso</span>
-                </button>
-
-                {{-- 4. Swasta / BUMN / CSR --}}
-                <button type="button" @click="formData.tipe_hibah = 'swasta_csr'"
-                    class="p-2.5 rounded-xl border text-center transition-all cursor-pointer"
-                    :class="formData.tipe_hibah === 'swasta_csr'
-                        ? 'bg-amber-500/20 border-amber-400 text-amber-300 font-black shadow-lg shadow-amber-500/20 ring-1 ring-amber-400'
-                        : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'">
-                    <span class="block text-base mb-0.5">🏭</span>
-                    <span class="block text-[10px] font-bold">Swasta / CSR</span>
-                    <span class="block text-[9px] text-slate-400 mt-0.5">BUMN, Yayasan</span>
-                </button>
-
-                {{-- 5. Perorangan / Komunitas --}}
-                <button type="button" @click="formData.tipe_hibah = 'perorangan'"
-                    class="p-2.5 rounded-xl border text-center transition-all cursor-pointer"
-                    :class="formData.tipe_hibah === 'perorangan'
-                        ? 'bg-amber-500/20 border-amber-400 text-amber-300 font-black shadow-lg shadow-amber-500/20 ring-1 ring-amber-400'
-                        : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'">
-                    <span class="block text-base mb-0.5">👤</span>
-                    <span class="block text-[10px] font-bold">Perorangan</span>
-                    <span class="block text-[9px] text-slate-400 mt-0.5">Donatur / Tokoh</span>
-                </button>
-            </div>
         </div>
 
         {{-- ─── Instansi / Lembaga Pemberi Hibah (Combobox) ──────────────── --}}
@@ -139,8 +76,8 @@
                 </template>
             </div>
 
-            {{-- Dropdown Saran Instansi --}}
-            <div x-show="isInstansiDropdownOpen"
+            {{-- Dropdown Saran Instansi (Hanya Tampil Jika Ada Saran yang Sesuai) --}}
+            <div x-show="isInstansiDropdownOpen && filteredInstansiList.length > 0"
                 x-cloak
                 x-transition:enter="transition ease-out duration-100"
                 x-transition:enter-start="opacity-0 translate-y-1"
@@ -152,7 +89,7 @@
                 class="absolute z-50 mt-1.5 w-full bg-slate-900 border border-amber-500/40 rounded-2xl shadow-2xl overflow-hidden divide-y divide-slate-800 custom-scrollbar backdrop-blur-xl">
 
                 <div class="px-3.5 py-1.5 bg-slate-950/90 text-[10px] font-bold text-amber-400 uppercase tracking-wider flex items-center justify-between border-b border-slate-800">
-                    <span>Pilih Riwayat / Ketik Instansi Baru</span>
+                    <span>Pilih Riwayat Instansi</span>
                     <span class="font-mono text-slate-400" x-text="filteredInstansiList.length + ' saran'"></span>
                 </div>
 
@@ -169,31 +106,24 @@
                         </span>
                     </div>
                 </template>
-
-                <template x-if="formData.hibah_pemberi && filteredInstansiList.length === 0">
-                    <div class="p-3 text-center text-xs text-slate-400 bg-slate-950/50">
-                        <span class="text-amber-300 font-semibold" x-text="'➕ Gunakan Instansi Baru: &quot;' + formData.hibah_pemberi + '&quot;'"></span>
-                        <p class="text-[10px] text-slate-500 mt-0.5">Instansi ini akan otomatis tersimpan ke riwayat database setelah formulir disimpan.</p>
-                    </div>
-                </template>
             </div>
 
             {{-- Shortcut Instansi Populer --}}
             <div class="pt-1 flex flex-wrap items-center gap-1.5">
                 <span class="text-[10px] text-slate-500 font-semibold mr-1">Pilih Cepat:</span>
-                <button type="button" @click="selectInstansi('Kementerian Kesehatan Republik Indonesia'); formData.tipe_hibah = 'pemerintah_pusat';"
+                <button type="button" @click="selectInstansi('Kementerian Kesehatan Republik Indonesia')"
                     class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-amber-500/15 text-slate-300 hover:text-amber-300 text-[10px] border border-slate-700 hover:border-amber-500/30 cursor-pointer transition-colors">
                     Kemenkes RI
                 </button>
-                <button type="button" @click="selectInstansi('Dinas Kesehatan Provinsi Jawa Timur'); formData.tipe_hibah = 'pemerintah_provinsi';"
+                <button type="button" @click="selectInstansi('Dinas Kesehatan Provinsi Jawa Timur')"
                     class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-amber-500/15 text-slate-300 hover:text-amber-300 text-[10px] border border-slate-700 hover:border-amber-500/30 cursor-pointer transition-colors">
                     Dinkes Prov. Jatim
                 </button>
-                <button type="button" @click="selectInstansi('Pemerintah Kabupaten Bondowoso'); formData.tipe_hibah = 'pemerintah_daerah';"
+                <button type="button" @click="selectInstansi('Pemerintah Kabupaten Bondowoso')"
                     class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-amber-500/15 text-slate-300 hover:text-amber-300 text-[10px] border border-slate-700 hover:border-amber-500/30 cursor-pointer transition-colors">
                     Pemkab Bondowoso
                 </button>
-                <button type="button" @click="selectInstansi('Donatur Swasta / Yayasan CSR'); formData.tipe_hibah = 'swasta_csr';"
+                <button type="button" @click="selectInstansi('Donatur Swasta / Yayasan CSR')"
                     class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-amber-500/15 text-slate-300 hover:text-amber-300 text-[10px] border border-slate-700 hover:border-amber-500/30 cursor-pointer transition-colors">
                     Donatur / CSR
                 </button>
@@ -252,7 +182,10 @@
                 <label class="block text-xs font-bold text-slate-200 mb-1.5">
                     Tanggal BAST / NPHD Hibah <span class="text-rose-400">*</span>
                 </label>
-                <input type="text" x-datepicker="{ maxDate: 'today' }" x-model="formData.hibah_tanggal_bast" required
+                <input type="text" x-datepicker="{ maxDate: 'today' }" x-model="formData.hibah_tanggal_bast"
+                    @input="onTanggalBastChange($event.target.value)"
+                    @change="onTanggalBastChange($event.target.value)"
+                    required
                     placeholder="dd/mm/yyyy"
                     class="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none transition-all">
             </div>
@@ -263,7 +196,7 @@
             <div>
                 <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
                     <span>Tahun Pembukuan <span class="text-rose-400">*</span></span>
-                    <span class="inline-flex items-center gap-1 text-[10px] text-amber-400/90 font-medium bg-amber-950/40 px-2 py-0.5 rounded-md border border-amber-800/40">
+                    <span class="inline-flex items-center gap-1 text-[10px] text-amber-400/90 font-medium bg-amber-950/40 px-2 py-0.5 rounded-md border border-amber-800/40" title="Tahun otomatis tersinkron dari Tanggal BAST">
                         <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                         </svg>
@@ -278,7 +211,12 @@
             <div>
                 <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
                     <span>Triwulan Pembukuan <span class="text-rose-400">*</span></span>
-                    <span class="text-[10px] text-amber-400/80 font-mono">Periode Pencatatan</span>
+                    <span class="inline-flex items-center gap-1 text-[10px] text-amber-400/90 font-medium bg-amber-950/40 px-2 py-0.5 rounded-md border border-amber-800/40" title="Triwulan otomatis tersinkron dari bulan Tanggal BAST">
+                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                        Auto Sinkron
+                    </span>
                 </label>
                 <select x-model="formData.triwulan" required
                     class="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none font-bold">

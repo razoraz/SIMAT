@@ -147,8 +147,14 @@
             formData: {
                 // Langkah 1: BAST & Pemberi
                 tahun_perolehan: new Date().getFullYear(),
-                triwulan: 'TW I',
-                tipe_hibah: 'pemerintah_pusat',
+                triwulan: (function() {
+                    const m = new Date().getMonth() + 1;
+                    if (m >= 4 && m <= 6) return 'TW II';
+                    if (m >= 7 && m <= 9) return 'TW III';
+                    if (m >= 10 && m <= 12) return 'TW IV';
+                    return 'TW I';
+                })(),
+                tipe_hibah: 'masuk',
                 hibah_pemberi: '',
                 hibah_pimpinan: '',
                 hibah_alamat_pemberi: '',
@@ -362,6 +368,56 @@
 
             isEditMode: false,
             editId: null,
+            isHydrating: false,
+
+            // Hitung otomatis Triwulan dan Tahun dari tanggal dokumen BAST
+            calcTriwulanFromDate(dateStr) {
+                if (!dateStr) return { year: new Date().getFullYear(), tw: 'TW I' };
+                let month = 1;
+                let year = null;
+                const str = String(dateStr).trim();
+
+                if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+                    const parts = str.split('-');
+                    year = parseInt(parts[0], 10);
+                    month = parseInt(parts[1], 10);
+                } else if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}/.test(str)) {
+                    const parts = str.split(/[\/\-]/);
+                    const d = parseInt(parts[0], 10);
+                    const m = parseInt(parts[1], 10);
+                    const y = parseInt(parts[2], 10);
+                    if (!isNaN(y) && !isNaN(m)) {
+                        year = y;
+                        month = m;
+                    }
+                } else {
+                    const d = new Date(str);
+                    if (!isNaN(d.getTime())) {
+                        year = d.getFullYear();
+                        month = d.getMonth() + 1;
+                    }
+                }
+
+                let tw = 'TW I';
+                if (month >= 1 && month <= 3) tw = 'TW I';
+                else if (month >= 4 && month <= 6) tw = 'TW II';
+                else if (month >= 7 && month <= 9) tw = 'TW III';
+                else if (month >= 10 && month <= 12) tw = 'TW IV';
+
+                return { year, tw };
+            },
+
+            onTanggalBastChange(val) {
+                if (this.isHydrating) return;
+                if (!val) return;
+                const res = this.calcTriwulanFromDate(val);
+                if (res.year && res.year >= 1990 && res.year <= 2100) {
+                    this.formData.tahun_perolehan = res.year;
+                }
+                if (res.tw) {
+                    this.formData.triwulan = res.tw;
+                }
+            },
 
             init() {
                 this.buildFlat108();
@@ -375,7 +431,15 @@
                     this.isEditMode = true;
                     this.editId = window.editAstapData.id;
                     this.hydrateFromEditData(window.editAstapData);
+                } else {
+                    if (this.formData.hibah_tanggal_bast) {
+                        this.onTanggalBastChange(this.formData.hibah_tanggal_bast);
+                    }
                 }
+
+                this.$watch('formData.hibah_tanggal_bast', (val) => {
+                    this.onTanggalBastChange(val);
+                });
 
                 this.$watch('formData.mesin_items', () => { this.syncTotalsFromItems(); }, { deep: true });
                 this.$watch('formData.tanah_items', () => { this.syncTotalsFromItems(); }, { deep: true });
@@ -386,6 +450,7 @@
 
             hydrateFromEditData(d) {
                 if (!d) return;
+                this.isHydrating = true;
                 const spec = (typeof d.spesifikasi_json === 'object' && d.spesifikasi_json !== null)
                     ? d.spesifikasi_json
                     : (typeof d.spesifikasi_json === 'string' ? (JSON.parse(d.spesifikasi_json) || {}) : {});
@@ -395,7 +460,7 @@
                 // Langkah 1: BAST & Pemberi
                 this.formData.tahun_perolehan = d.tahun_perolehan || hibah.tahun || new Date().getFullYear();
                 this.formData.triwulan = d.triwulan || hibah.triwulan || 'TW I';
-                this.formData.tipe_hibah = spec.tipe_hibah || hibah.tipe_hibah || 'pemerintah_pusat';
+                this.formData.tipe_hibah = spec.tipe_hibah || hibah.tipe_hibah || 'masuk';
                 this.formData.hibah_pemberi = d.hibah_pemberi || hibah.pihak_hibah || spec.pemberi_hibah || spec.hibah_pemberi || '';
                 this.formData.hibah_pimpinan = spec.hibah_pimpinan || spec.pimpinan_pemberi || '';
                 this.formData.hibah_alamat_pemberi = spec.hibah_alamat_pemberi || spec.alamat_pemberi || '';
@@ -551,6 +616,7 @@
                 if (Array.isArray(spec.kdp_items) && spec.kdp_items.length > 0) this.formData.kdp_items = spec.kdp_items;
 
                 this.syncActiveKibTotals();
+                this.$nextTick(() => { this.isHydrating = false; });
             },
 
             // ─── Filtered Getters PMDN 108 ─────────────────────────────────────
@@ -1157,6 +1223,9 @@
                 item.ruang_pemegang = unit.nama;
                 item.isRuangOpen = false;
                 item.searchRuang = '';
+                if (unit && unit.id) {
+                    this.formData.unit_id = unit.id;
+                }
                 this.syncActiveKibTotals();
             },
 
@@ -1694,12 +1763,6 @@
 
                 if (s === 3) {
                     this.syncActiveKibTotals();
-                    if (!this.formData.unit_id) {
-                        missing.push({
-                            label: 'Ruangan / Unit Penempatan Aset (KIR)',
-                            detail: 'Pilih ruangan atau instalasi rumah sakit tempat aset hibah ini ditempatkan.'
-                        });
-                    }
                     if (!this.formData.ppk_nama || !this.formData.ppk_nama.trim()) {
                         missing.push({
                             label: 'Nama PPK / Pejabat Penandatangan',
