@@ -18,6 +18,50 @@
             // ─── Per-Step Error Banners ──────────────────────────────────────
             stepErrors: { 1: null, 2: null, 3: null },
 
+            // ─── Validation Modal Dialog State ───────────────────────────────
+            showValidationModal: false,
+            validationModal: {
+                badge: '',
+                title: '',
+                message: '',
+                missingFields: []
+            },
+            openValidationModal(title, message, missingFields = [], badge = 'Pemeriksaan Formulir') {
+                this.validationModal.title = title;
+                this.validationModal.message = message;
+                this.validationModal.missingFields = missingFields;
+                this.validationModal.badge = badge;
+                this.showValidationModal = true;
+            },
+            closeValidationModal() {
+                this.showValidationModal = false;
+            },
+
+            // ─── Verification Checklist & PPK State (Langkah 3) ──────────────
+            isDataVerified: false,
+            isPpkDropdownOpen: false,
+
+            get filteredPpkList() {
+                const q = (this.formData.ppk_nama || '').toLowerCase().trim();
+                if (!q) return this.pejabatsList.slice(0, 10);
+                return this.pejabatsList.filter(p => (p.nama || '').toLowerCase().includes(q) || (p.nip || '').includes(q));
+            },
+
+            selectPpk(p) {
+                this.formData.ppk_nama = p.nama || '';
+                this.formData.ppk_nip = p.nip || '';
+                this.isPpkDropdownOpen = false;
+            },
+
+            onPpkInput(val) {
+                this.formData.ppk_nama = val;
+                this.isPpkDropdownOpen = true;
+                const found = this.pejabatsList.find(p => (p.nama || '').toLowerCase() === (val || '').toLowerCase());
+                if (found) {
+                    this.formData.ppk_nip = found.nip || '';
+                }
+            },
+
             // Master Data
             master108: window.dbMasterJenisAstap108 || [],
             masterRekeningBelanja: window.dbRekeningBelanjas || [],
@@ -724,6 +768,60 @@
                 }
             },
 
+            // ─── Global Extracom Switcher ───────────────────────────────────────
+            setGlobalExtracom(val) {
+                const isExtra = Boolean(val);
+                this.formData.is_extracomtable = isExtra;
+                if (this.formData.mesin_items && Array.isArray(this.formData.mesin_items)) {
+                    this.formData.mesin_items.forEach(m => {
+                        m.is_extracom = isExtra;
+                    });
+                }
+                if (this.formData.lainnya_items && Array.isArray(this.formData.lainnya_items)) {
+                    this.formData.lainnya_items.forEach(l => {
+                        l.is_extracom = isExtra;
+                    });
+                }
+                this.syncActiveKibTotals();
+            },
+
+            // ─── Subtotal Calculation Helpers untuk Langkah 3 Preview ───────────
+            getTanahSubtotal(item) {
+                return parseFloat(item.tanah_nilai_fisik) || 0;
+            },
+
+            getMesinSubtotal(item) {
+                const vol = parseFloat(item.mesin_jumlah_barang) || 0;
+                const sat = parseFloat(item.mesin_nilai_satuan) || 0;
+                const adm = parseFloat(item.mesin_administrasi_proyek) || 0;
+                return (vol * sat) + adm;
+            },
+
+            getGedungSubtotal(item) {
+                const p = parseFloat(item.gedung_nilai_perencanaan) || 0;
+                const f = parseFloat(item.gedung_nilai_fisik) || 0;
+                const w = parseFloat(item.gedung_nilai_pengawasan) || 0;
+                const ap = parseFloat(item.gedung_nilai_ap) || 0;
+                const pip = parseFloat(item.gedung_nilai_pip) || 0;
+                return p + f + w + ap + pip;
+            },
+
+            getJaringanSubtotal(item) {
+                const p = parseFloat(item.jaringan_nilai_perencanaan) || 0;
+                const f = parseFloat(item.jaringan_nilai_fisik) || 0;
+                const w = parseFloat(item.jaringan_nilai_pengawasan) || 0;
+                const ap = parseFloat(item.jaringan_nilai_ap) || 0;
+                const pip = parseFloat(item.jaringan_nilai_pip) || 0;
+                return p + f + w + ap + pip;
+            },
+
+            getLainnyaSubtotal(item) {
+                const vol = parseFloat(item.lainnya_jumlah_barang) || 0;
+                const sat = parseFloat(item.lainnya_nilai_satuan) || 0;
+                const adm = parseFloat(item.lainnya_administrasi_proyek) || 0;
+                return (vol * sat) + adm;
+            },
+
             // ─── 1. KIB A (Tanah) Handlers ──────────────────────────────────────
             get totalLuasTanah() {
                 if (!this.formData.tanah_items) return 0;
@@ -1308,26 +1406,48 @@
 
             validateStep(s) {
                 this.stepErrors[s] = null;
+                const missing = [];
 
                 if (s === 1) {
                     if (!this.formData.hibah_pemberi || !this.formData.hibah_pemberi.trim()) {
-                        this.stepErrors[1] = 'Nama Instansi / Pemberi Hibah wajib diisi.';
-                        return false;
+                        missing.push({
+                            label: 'Nama Instansi / Pemberi Hibah',
+                            detail: 'Nama instansi, kementerian, dinas, atau pihak ketiga yang menyerahkan hibah wajib diisi.'
+                        });
                     }
                     if (!this.formData.hibah_nomor_bast || !this.formData.hibah_nomor_bast.trim()) {
-                        this.stepErrors[1] = 'Nomor BAST / NPHD wajib diisi.';
-                        return false;
+                        missing.push({
+                            label: 'Nomor BAST / NPHD',
+                            detail: 'Nomor naskah Berita Acara Serah Terima atau NPHD wajib diisi sebagai rujukan legalitas.'
+                        });
                     }
                     if (!this.formData.hibah_tanggal_bast) {
-                        this.stepErrors[1] = 'Tanggal BAST / NPHD wajib diisi.';
-                        return false;
+                        missing.push({
+                            label: 'Tanggal BAST / NPHD',
+                            detail: 'Tanggal naskah BAST / serah terima hibah wajib ditentukan.'
+                        });
                     }
                     if (!this.formData.tahun_perolehan) {
-                        this.stepErrors[1] = 'Tahun Pembukuan wajib diisi.';
-                        return false;
+                        missing.push({
+                            label: 'Tahun Pembukuan Perolehan',
+                            detail: 'Tahun anggaran pembukuan aset hibah wajib ditentukan.'
+                        });
                     }
                     if (!this.formData.triwulan) {
-                        this.stepErrors[1] = 'Triwulan Pembukuan wajib dipilih.';
+                        missing.push({
+                            label: 'Triwulan Pembukuan',
+                            detail: 'Triwulan periode pembukuan (TW I - TW IV) wajib dipilih.'
+                        });
+                    }
+
+                    if (missing.length > 0) {
+                        this.stepErrors[1] = missing.map(m => m.label).join(', ') + ' wajib diisi.';
+                        this.openValidationModal(
+                            'Data Dokumen BAST & Pemberi Belum Lengkap',
+                            'Beberapa kolom informasi legalitas hibah di Langkah 1 wajib dilengkapi sebelum melanjutkan:',
+                            missing,
+                            'LANGKAH 1 — BAST & PEMBERI HIBAH'
+                        );
                         return false;
                     }
                     return true;
@@ -1335,15 +1455,38 @@
 
                 if (s === 2) {
                     if (!this.formData.jenis_astap_id && !this.formData.jenis_aset_kode) {
-                        this.stepErrors[2] = 'Mohon pilih Klasifikasi Jenis Aset / Kode Barang 108 terlebih dahulu.';
-                        return false;
+                        missing.push({
+                            label: 'Klasifikasi Kode Barang 108 / Kelompok KIB',
+                            detail: 'Pilih salah satu shortcut kategori KIB (Tanah, Mesin, Gedung, Jaringan, Lainnya) atau filter kode 108.'
+                        });
                     }
                     if (!this.formData.nama_barang || !this.formData.nama_barang.trim()) {
-                        this.stepErrors[2] = 'Nama Lengkap Barang Hibah wajib diisi.';
-                        return false;
+                        missing.push({
+                            label: 'Nama Lengkap Barang Hibah',
+                            detail: 'Tuliskan nama barang atau peralatan hibah secara jelas dan lengkap.'
+                        });
                     }
                     if (!this.formData.jumlah_volume || this.formData.jumlah_volume < 1) {
-                        this.stepErrors[2] = 'Volume / Kuantitas Barang minimal 1 unit.';
+                        missing.push({
+                            label: 'Volume / Kuantitas Barang',
+                            detail: 'Kuantitas fisik barang hibah yang diterima minimal harus 1 unit.'
+                        });
+                    }
+                    if (!this.formData.total_realisasi || this.formData.total_realisasi <= 0) {
+                        missing.push({
+                            label: 'Taksiran Nilai Wajar Perolehan Hibah',
+                            detail: 'Taksiran nilai aset hibah harus lebih besar dari Rp 0 (sesuai naskah BAST / appraisal).'
+                        });
+                    }
+
+                    if (missing.length > 0) {
+                        this.stepErrors[2] = missing.map(m => m.label).join(', ') + ' wajib diisi.';
+                        this.openValidationModal(
+                            'Data Klasifikasi 108 & Spesifikasi Belum Lengkap',
+                            'Lengkapi rincian klasifikasi aset dan spesifikasi fisik barang di bawah ini sebelum beralih ke verifikasi:',
+                            missing,
+                            'LANGKAH 2 — KLASIFIKASI 108 & FISIK'
+                        );
                         return false;
                     }
                     return true;
@@ -1352,11 +1495,38 @@
                 if (s === 3) {
                     this.syncActiveKibTotals();
                     if (!this.formData.unit_id) {
-                        this.stepErrors[3] = 'Unit / Ruangan Penempatan Aset (KIR) wajib dipilih.';
-                        return false;
+                        missing.push({
+                            label: 'Ruangan / Unit Penempatan Aset (KIR)',
+                            detail: 'Pilih ruangan atau instalasi rumah sakit tempat aset hibah ini ditempatkan.'
+                        });
+                    }
+                    if (!this.formData.ppk_nama || !this.formData.ppk_nama.trim()) {
+                        missing.push({
+                            label: 'Nama PPK / Pejabat Penandatangan',
+                            detail: 'Pilih atau ketik nama Pejabat Pembuat Komitmen (PPK) yang berwenang.'
+                        });
                     }
                     if (!this.formData.total_realisasi || this.formData.total_realisasi <= 0) {
-                        this.stepErrors[3] = 'Taksiran Nilai Aset harus lebih dari Rp 0. Isi di Langkah 2.';
+                        missing.push({
+                            label: 'Taksiran Nilai Perolehan Aset',
+                            detail: 'Taksiran nilai aset hibah tidak boleh Rp 0. Periksa kembali di Langkah 2.'
+                        });
+                    }
+                    if (!this.isDataVerified) {
+                        missing.push({
+                            label: 'Pernyataan Keabsahan Data Belum Dicentang',
+                            detail: 'Centang kotak konfirmasi legalitas & keabsahan data di bagian bawah Langkah 3 sebelum menyimpan.'
+                        });
+                    }
+
+                    if (missing.length > 0) {
+                        this.stepErrors[3] = missing.map(m => m.label).join(', ') + ' wajib diisi.';
+                        this.openValidationModal(
+                            'Verifikasi Data Hibah Belum Lengkap',
+                            'Periksa dan lengkapi data penempatan ruangan serta konfirmasi keabsahan sebelum menyimpan data:',
+                            missing,
+                            'LANGKAH 3 — VERIFIKASI & LEGALITAS'
+                        );
                         return false;
                     }
                     return true;
