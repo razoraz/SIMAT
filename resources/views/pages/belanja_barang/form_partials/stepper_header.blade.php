@@ -52,7 +52,7 @@
                     </div>
                     <div class="min-w-0">
                         <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate" :class="step === 1 ? 'text-indigo-400' : 'text-slate-500'">Langkah 1</span>
-                        <span class="text-[11px] sm:text-xs font-bold text-white block truncate">Dokumen Faktur &amp; Toko</span>
+                        <span class="text-[11px] sm:text-xs font-bold text-white block truncate">Faktur &amp; Berkas Nota</span>
                     </div>
                 </div>
                 <div class="h-1 sm:h-1.5 rounded-full w-full transition-all" :class="step >= 1 ? 'bg-indigo-500' : 'bg-slate-950'"></div>
@@ -68,7 +68,7 @@
                     </div>
                     <div class="min-w-0">
                         <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate" :class="step === 2 ? 'text-indigo-400' : 'text-slate-500'">Langkah 2</span>
-                        <span class="text-[11px] sm:text-xs font-bold text-white block truncate">Klasifikasi 108</span>
+                        <span class="text-[11px] sm:text-xs font-bold text-white block truncate">Keranjang Multi-Item</span>
                     </div>
                 </div>
                 <div class="h-1 sm:h-1.5 rounded-full w-full transition-all" :class="step >= 2 ? 'bg-indigo-500' : 'bg-slate-950'"></div>
@@ -83,7 +83,7 @@
                     </div>
                     <div class="min-w-0">
                         <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate" :class="step === 3 ? 'text-indigo-400' : 'text-slate-500'">Langkah 3</span>
-                        <span class="text-[11px] sm:text-xs font-bold text-white block truncate" x-text="(hasSelectedKib ? kibLabel : 'Spesifikasi') + ' & Penempatan'"></span>
+                        <span class="text-[11px] sm:text-xs font-bold text-white block truncate">Alokasi KIR &amp; Spesifikasi</span>
                     </div>
                 </div>
                 <div class="h-1 sm:h-1.5 rounded-full w-full transition-all" :class="step >= 3 ? 'bg-indigo-500' : 'bg-slate-950'"></div>

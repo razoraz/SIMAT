@@ -1,5 +1,5 @@
 <!-- ========================================================================= -->
-<!-- LANGKAH 1: DOKUMEN FAKTUR/NOTA & TOKO SUPPLIER                            -->
+<!-- LANGKAH 1: DOKUMEN FAKTUR/NOTA & TOKO SUPPLIER & UPLOAD BERKAS             -->
 <!-- ========================================================================= -->
 <div x-show="step === 1" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-6">
     
@@ -8,10 +8,10 @@
             <span>Langkah 1 dari 3</span>
         </div>
         <h2 class="text-lg font-bold text-white flex items-center space-x-2">
-            <span>🧾 Dokumen Pembelian Toko &amp; Rekanan Perbekalan</span>
+            <span>🧾 Dokumen Pembelian Faktur &amp; Toko Rekanan Perbekalan</span>
         </h2>
         <p class="text-xs text-slate-400 mt-0.5">
-            Masukkan data faktur, nota pembelian toko, atau kuitansi pembayaran operasional perbekalan ruangan.
+            Masukkan data faktur/nota pembelian toko rekanan dan lampirkan berkas dokumen digital yang diwajibkan untuk keperluan audit BPK &amp; penatausahaan BMD.
         </p>
     </div>
 
@@ -39,14 +39,14 @@
     </div>
 
     <!-- Bagian Faktur & Toko Penyedia -->
-    <div class="p-5 rounded-2xl bg-slate-950/70 border border-indigo-500/30 space-y-4 shadow-xl">
+    <div class="p-5 rounded-2xl bg-slate-950/70 border border-indigo-500/30 space-y-5 shadow-xl">
         <div class="flex items-center justify-between">
             <span class="text-xs font-extrabold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
                 <span>🏷️ Informasi Toko / Rekanan &amp; Faktur Pembelian</span>
                 <span class="text-rose-400">*</span>
             </span>
-            <span class="text-[10px] font-bold text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
-                Tanpa Pagu Belanja Modal APBD
+            <span class="text-[10px] font-bold text-indigo-300 bg-indigo-500/10 px-2.5 py-0.5 rounded-full border border-indigo-500/20">
+                📦 Belanja Barang (Akun 5.1.02)
             </span>
         </div>
 
@@ -150,7 +150,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
                 <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                    Nomor Faktur / Nota / Kuitansi <span class="text-rose-400">*</span>
+                    Nomor Faktur / Nota Toko <span class="text-rose-400">*</span>
                 </label>
                 <input type="text" x-model="formData.rekening_nomor_faktur" required
                     placeholder="Contoh: INV/2026/04/0012 atau NOTA-582"
@@ -166,21 +166,122 @@
             </div>
         </div>
 
-        <!-- Total Nilai Pembelian (Rp) -->
-        <div>
-            <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
-                <span>Total Nilai Pembelian (Rp) <span class="text-rose-400">*</span></span>
-                <span class="text-[11px] font-mono text-indigo-400" x-text="formatRupiah(formData.total_realisasi)"></span>
-            </label>
-            <input type="number" x-model.number="formData.total_realisasi" min="0" step="any" required
-                placeholder="0"
-                class="w-full bg-slate-900 border border-slate-700 focus:border-indigo-400 rounded-xl px-4 py-2.5 text-xs text-indigo-300 font-bold font-mono focus:outline-none">
+        <!-- ================================================================= -->
+        <!-- UNGGAH BERKAS DOKUMEN DIGITAL (AUDIT-READY)                       -->
+        <!-- ================================================================= -->
+        <div class="pt-2 border-t border-slate-800/80">
+            <span class="text-xs font-extrabold text-cyan-400 uppercase tracking-wider block mb-3 flex items-center gap-1.5">
+                <span>📎 Berkas Dokumen Pendukung Wajib (PDF / Gambar)</span>
+            </span>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                
+                <!-- 1. Dropzone Nota / Faktur Toko Rekanan (WAJIB) -->
+                <div class="p-4 rounded-2xl bg-slate-900/90 border border-indigo-500/30 space-y-2.5 relative">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-bold text-white flex items-center gap-1.5">
+                            <span>📄 Nota / Faktur Toko</span>
+                            <span class="text-rose-400">*</span>
+                        </label>
+                        <span class="text-[9px] px-2 py-0.5 rounded bg-rose-500/10 text-rose-300 border border-rose-500/20 font-bold">
+                            Wajib Diunggah
+                        </span>
+                    </div>
+
+                    <!-- Hidden File Input -->
+                    <input type="file" id="dokumen_faktur_input" accept=".pdf,.jpg,.jpeg,.png"
+                        @change="handleFileChange($event, 'faktur')" class="hidden">
+
+                    <!-- Dropzone Box saat Kosong -->
+                    <template x-if="!fileFaktur">
+                        <div @click="document.getElementById('dokumen_faktur_input').click()"
+                            class="border-2 border-dashed border-slate-700 hover:border-indigo-400 rounded-xl p-4 text-center cursor-pointer hover:bg-indigo-500/5 transition-all group">
+                            <svg class="w-8 h-8 text-indigo-400/70 group-hover:text-indigo-400 mx-auto mb-1.5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                            </svg>
+                            <span class="text-xs font-bold text-slate-300 block group-hover:text-white">Klik untuk Unggah Nota / Faktur</span>
+                            <span class="text-[10px] text-slate-500 mt-0.5 block">Format PDF, JPG, PNG (Maksimal 5MB)</span>
+                        </div>
+                    </template>
+
+                    <!-- Preview saat File Terpilih -->
+                    <template x-if="fileFaktur">
+                        <div class="p-3 rounded-xl bg-slate-950 border border-indigo-500/40 flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0"
+                                    :class="fileFaktur.name.endsWith('.pdf') ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'">
+                                    <span x-text="fileFaktur.name.endsWith('.pdf') ? 'PDF' : 'IMG'"></span>
+                                </div>
+                                <div class="min-w-0">
+                                    <span class="text-xs font-bold text-white block truncate" x-text="fileFaktur.name"></span>
+                                    <span class="text-[10px] text-slate-400 font-mono block" x-text="formatFileSize(fileFaktur.size)"></span>
+                                </div>
+                            </div>
+                            <button type="button" @click="removeFile('faktur')"
+                                title="Hapus file ini"
+                                class="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 transition-colors text-xs font-bold shrink-0">
+                                ✕ Ganti
+                            </button>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- 2. Dropzone Bukti Penerimaan / Kuitansi Gudang (PENDUKUNG) -->
+                <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2.5 relative">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-bold text-white flex items-center gap-1.5">
+                            <span>📦 Bukti Terima / Kuitansi Gudang</span>
+                        </label>
+                        <span class="text-[9px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 font-medium">
+                            Dokumen Pendukung
+                        </span>
+                    </div>
+
+                    <!-- Hidden File Input -->
+                    <input type="file" id="dokumen_kuitansi_input" accept=".pdf,.jpg,.jpeg,.png"
+                        @change="handleFileChange($event, 'kuitansi')" class="hidden">
+
+                    <!-- Dropzone Box saat Kosong -->
+                    <template x-if="!fileKuitansi">
+                        <div @click="document.getElementById('dokumen_kuitansi_input').click()"
+                            class="border-2 border-dashed border-slate-700 hover:border-slate-500 rounded-xl p-4 text-center cursor-pointer hover:bg-slate-800/40 transition-all group">
+                            <svg class="w-8 h-8 text-slate-500 group-hover:text-slate-300 mx-auto mb-1.5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                            </svg>
+                            <span class="text-xs font-bold text-slate-300 block group-hover:text-white">Klik untuk Unggah Kuitansi / Bukti Terima</span>
+                            <span class="text-[10px] text-slate-500 mt-0.5 block">Format PDF, JPG, PNG (Opsional / Max 5MB)</span>
+                        </div>
+                    </template>
+
+                    <!-- Preview saat File Terpilih -->
+                    <template x-if="fileKuitansi">
+                        <div class="p-3 rounded-xl bg-slate-950 border border-slate-700 flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0"
+                                    :class="fileKuitansi.name.endsWith('.pdf') ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'">
+                                    <span x-text="fileKuitansi.name.endsWith('.pdf') ? 'PDF' : 'IMG'"></span>
+                                </div>
+                                <div class="min-w-0">
+                                    <span class="text-xs font-bold text-white block truncate" x-text="fileKuitansi.name"></span>
+                                    <span class="text-[10px] text-slate-400 font-mono block" x-text="formatFileSize(fileKuitansi.size)"></span>
+                                </div>
+                            </div>
+                            <button type="button" @click="removeFile('kuitansi')"
+                                title="Hapus file ini"
+                                class="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 transition-colors text-xs font-bold shrink-0">
+                                ✕ Ganti
+                            </button>
+                        </div>
+                    </template>
+                </div>
+
+            </div>
         </div>
 
         <!-- Catatan / Keterangan Pembelian -->
         <div>
             <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                Catatan / Keterangan Pembelian Perbekalan
+                Catatan / Keterangan Pembelian Faktur
             </label>
             <textarea x-model="formData.rekening_keterangan" rows="2"
                 placeholder="Contoh: Pengadaan alat medis operasional ruangan melalui rekening operasional BLUD/Barang & Jasa..."

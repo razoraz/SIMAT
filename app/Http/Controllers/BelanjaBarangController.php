@@ -8,9 +8,12 @@ use App\Models\AstapBelanjaBarang;
 use App\Models\AstapBelanjaModal;
 use App\Models\JenisAstap;
 use App\Models\Unit;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 
 class BelanjaBarangController extends Controller
@@ -22,45 +25,50 @@ class BelanjaBarangController extends Controller
     {
         Carbon::setLocale('id');
 
-        // Sinkronisasi otomatis: Jika ada Astap belanja_barang yang belum tercatat di astap_belanja_barangs
+        // Sinkronisasi otomatis: Jika ada Astap belanja_barang yang belum terhubung ke faktur belanja_barangs
         $unlinkedBelanja = Astap::whereIn('sumber_dana', ['belanja_barang', 'belanja_rekening'])
             ->where('is_deleted', 0)
-            ->whereDoesntHave('belanjaBarang')
+            ->whereNull('belanja_barang_id')
             ->get();
 
         foreach ($unlinkedBelanja as $astap) {
             $spec = $astap->spesifikasi_json ?? [];
-            AstapBelanjaBarang::create([
+            $header = AstapBelanjaBarang::create([
                 'astap_id'        => $astap->id,
                 'toko_penyedia'   => $spec['toko_penyedia'] ?? ($spec['rekening_penyedia'] ?? 'Pusat Perbekalan RSUD'),
                 'nomor_faktur'    => $spec['nomor_faktur'] ?? ($spec['rekening_nomor_faktur'] ?? '-'),
                 'tanggal_faktur'  => $spec['tanggal_faktur'] ?? ($spec['rekening_tanggal_faktur'] ?? now()),
                 'total_pembelian' => (float) $astap->total_realisasi,
+                'status_alokasi'  => !empty($astap->unit_id) ? 'ruangan' : 'gudang',
                 'keterangan'      => $astap->keterangan_tambahan ?? ($spec['keterangan'] ?? null),
             ]);
+            $astap->update(['belanja_barang_id' => $header->id]);
         }
 
         $filterTahun = $request->query('tahun', 'all');
         $filterTw    = $request->query('triwulan', 'all');
         $search      = trim($request->query('search', ''));
 
-        // Query utama data Belanja Barang (hanya yang aktif)
-        $query = AstapBelanjaBarang::with(['astap.jenisAstap', 'astap.registers.unit', 'astap.unit'])
+        // Query utama data Faktur Belanja Barang (hanya yang aktif)
+        $query = AstapBelanjaBarang::with([
+                'astaps.jenisAstap',
+                'astaps.registers.unit',
+                'astaps.unit',
+                'user'
+            ])
             ->where('is_deleted', 0)
-            ->whereHas('astap', function ($q) {
-                $q->where('is_deleted', 0);
-            })
             ->orderBy('tanggal_faktur', 'desc')
             ->orderBy('id', 'desc');
 
         if ($filterTahun !== 'all') {
-            $query->whereHas('astap', function ($q) use ($filterTahun) {
-                $q->where('tahun_perolehan', $filterTahun);
+            $query->where(function ($q) use ($filterTahun) {
+                $q->whereYear('tanggal_faktur', $filterTahun)
+                  ->orWhereHas('astaps', fn($sq) => $sq->where('tahun_perolehan', $filterTahun));
             });
         }
 
         if ($filterTw !== 'all') {
-            $query->whereHas('astap', function ($q) use ($filterTw) {
+            $query->whereHas('astaps', function ($q) use ($filterTw) {
                 $q->where('triwulan', $filterTw);
             });
         }
@@ -70,7 +78,7 @@ class BelanjaBarangController extends Controller
                 $q->where('toko_penyedia', 'like', "%{$search}%")
                   ->orWhere('nomor_faktur', 'like', "%{$search}%")
                   ->orWhere('keterangan', 'like', "%{$search}%")
-                  ->orWhereHas('astap', function ($sq) use ($search) {
+                  ->orWhereHas('astaps', function ($sq) use ($search) {
                       $sq->where('nama_barang', 'like', "%{$search}%")
                         ->orWhereHas('unit', function ($uq) use ($search) {
                             $uq->where('nama', 'like', "%{$search}%");
@@ -87,12 +95,11 @@ class BelanjaBarangController extends Controller
 
         // Hitung Statistik KPI (hanya yang aktif)
         $allBelanja = AstapBelanjaBarang::where('is_deleted', 0)
-            ->whereHas('astap', fn($q) => $q->where('is_deleted', 0))
-            ->with('astap')
+            ->with('astaps')
             ->get();
 
-        $totalNilaiBelanja = $allBelanja->sum('total_pembelian');
-        $totalVolumeUnit   = $allBelanja->sum(fn($b) => max(1, (int) ($b->astap?->jumlah_volume ?? 1)));
+        $totalNilaiBelanja = (float) $allBelanja->sum('total_pembelian');
+        $totalVolumeUnit   = (int) $allBelanja->sum(fn($b) => $b->astaps->sum('jumlah_volume'));
         $totalFaktur       = $allBelanja->pluck('nomor_faktur')->filter()->unique()->count();
         $totalTokoUnik     = $allBelanja->pluck('toko_penyedia')->filter()->unique()->count();
 
@@ -175,145 +182,281 @@ class BelanjaBarangController extends Controller
     }
 
     /**
-     * Simpan Data Belanja Barang ke SIMAT-RK
+     * Simpan Data Belanja Barang Multi-Item ke SIMAT-RK
      */
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'nama_barang'             => 'required|string|max:500',
-            'jenis_astap_id'          => 'required|integer|exists:jenis_astaps,id',
+        // 1. Ekstrak data item (dukungan array langsung maupun JSON-string dari FormData)
+        $rawItems = $request->input('items');
+        if (empty($rawItems) && $request->filled('items_json')) {
+            $rawItems = json_decode($request->input('items_json'), true);
+        }
+        if (!is_array($rawItems)) {
+            $rawItems = [];
+        }
+
+        // Backward compatibility jika masih input single-item format lama
+        if (empty($rawItems) && $request->filled('nama_barang') && $request->filled('jenis_astap_id')) {
+            $rawItems = [[
+                'nama_barang'      => $request->input('nama_barang'),
+                'jenis_astap_id'   => $request->input('jenis_astap_id'),
+                'jumlah_volume'    => $request->input('jumlah_volume', 1),
+                'satuan'           => $request->input('satuan', 'Unit'),
+                'harga_satuan'     => $request->input('harga_satuan', 0) ?: ($request->input('total_realisasi', 0) / max(1, (int)$request->input('jumlah_volume', 1))),
+                'mode_penempatan'  => $request->input('unit_id') ? 'ruangan' : 'gudang',
+                'unit_id'          => $request->input('unit_id'),
+                'kondisi'          => $request->input('kondisi', 'Baik'),
+                'alamat_barang'    => $request->input('alamat_barang', 'RSUD Dr. H. Koesnandi'),
+                'spesifikasi_json' => $request->input('spesifikasi_json', []),
+            ]];
+        }
+
+        $request->merge(['items' => $rawItems]);
+
+        // 2. Validasi Dokumen Faktur Header & Items
+        $rules = [
             'tahun_perolehan'         => 'required|integer|min:1990|max:2100',
-            'jumlah_volume'           => 'required|integer|min:1',
-            'satuan'                  => 'required|string|max:100',
-            'total_realisasi'         => 'required|numeric|min:0',
             'triwulan'                => 'required|string|in:TW I,TW II,TW III,TW IV',
             'rekening_penyedia'       => 'required|string|max:500',
             'rekening_nomor_faktur'   => 'required|string|max:255',
             'rekening_tanggal_faktur' => 'required',
             'rekening_keterangan'     => 'nullable|string|max:2000',
-            'unit_id'                 => 'nullable|integer|exists:units,id',
-            'alamat_barang'           => 'nullable|string|max:1000',
-            'kondisi'                 => 'nullable|string|max:50',
-        ]);
-
-        $totalRealisasi = (float) $data['total_realisasi'];
-        $totalVolume    = max(1, (int) $data['jumlah_volume']);
-        $hargaSatuan    = $totalRealisasi / $totalVolume;
-        $tahun          = (int) $data['tahun_perolehan'];
-        $kondisiItem    = $data['kondisi'] ?: 'Baik';
-
-        $astapPayload = [
-            'nama_barang'               => $data['nama_barang'],
-            'jenis_astap_id'            => $data['jenis_astap_id'],
-            'tahun_perolehan'           => $tahun,
-            'jumlah_volume'             => $totalVolume,
-            'satuan'                    => $data['satuan'],
-            'harga_satuan'              => $hargaSatuan,
-            'jumlah_anggaran'           => $totalRealisasi,
-            'total_realisasi'           => $totalRealisasi,
-            'biaya_administrasi_proyek' => 0,
-            'triwulan'                  => $data['triwulan'],
-            'sumber_dana'               => 'belanja_barang',
-            'keterangan_tambahan'       => $data['rekening_keterangan'] ?? null,
-            'alamat_barang'             => $data['alamat_barang'] ?: 'RSUD Dr. H. Koesnandi',
-            'user_id'                   => Auth::id(),
-            'is_extracomtable'          => true,
-            'is_reklas'                 => false,
-            'is_deleted'                => 0,
-            'spesifikasi_json'          => [
-                'sumber_dana'     => 'belanja_barang',
-                'toko_penyedia'   => $data['rekening_penyedia'],
-                'nomor_faktur'    => $data['rekening_nomor_faktur'],
-                'tanggal_faktur'  => $data['rekening_tanggal_faktur'],
-                'kondisi'         => $kondisiItem,
-                'keterangan'      => $data['rekening_keterangan'] ?? null,
-            ],
+            'status_alokasi_global'   => 'nullable|string|in:gudang,ruangan,custom',
+            'dokumen_faktur'          => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'dokumen_kuitansi'        => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'items'                   => 'required|array|min:1',
+            'items.*.nama_barang'     => 'required|string|max:500',
+            'items.*.jenis_astap_id'  => 'required|integer|exists:jenis_astaps,id',
+            'items.*.jumlah_volume'   => 'required|integer|min:1',
+            'items.*.satuan'          => 'required|string|max:100',
+            'items.*.harga_satuan'    => 'required|numeric|min:0',
         ];
 
-        if ($request->has('spesifikasi_json') && is_array($request->input('spesifikasi_json'))) {
-            $astapPayload['spesifikasi_json'] = array_merge($astapPayload['spesifikasi_json'], $request->input('spesifikasi_json'));
+        $validated = $request->validate($rules, [
+            'dokumen_faktur.required' => 'Wajib mengunggah Nota / Faktur Pembelian Asli Toko Rekanan (PDF/Gambar max 5MB).',
+            'dokumen_faktur.mimes'    => 'Format Nota / Faktur harus berupa PDF, JPG, JPEG, atau PNG.',
+            'dokumen_faktur.max'      => 'Ukuran file Nota / Faktur maksimal 5 Megabytes (MB).',
+            'items.required'          => 'Minimal harus ada 1 item barang yang dibeli dalam faktur.',
+            'items.min'               => 'Minimal harus ada 1 item barang yang dibeli dalam faktur.',
+            'items.*.nama_barang.required' => 'Nama barang pada rincian item wajib diisi.',
+            'items.*.jenis_astap_id.required' => 'Kode Klasifikasi 108 pada rincian item wajib dipilih.',
+        ]);
+
+        $tahun = (int) $validated['tahun_perolehan'];
+        $triwulan = $validated['triwulan'];
+        $tokoPenyedia = trim($validated['rekening_penyedia']);
+        $nomorFaktur = trim($validated['rekening_nomor_faktur']);
+        $tanggalFaktur = $validated['rekening_tanggal_faktur'];
+        $keteranganFaktur = $validated['rekening_keterangan'] ?? null;
+
+        // 3. Upload File Dokumen (Disimpan di storage/app/public/belanja_barang/{tahun}/)
+        $dokumenFakturPath = null;
+        if ($request->hasFile('dokumen_faktur') && $request->file('dokumen_faktur')->isValid()) {
+            $dokumenFakturPath = $request->file('dokumen_faktur')->store(
+                'belanja_barang/' . $tahun . '/faktur',
+                'public'
+            );
         }
 
-        $repeaterKeys = ['tanah_items', 'mesin_items', 'gedung_items', 'jaringan_items', 'lainnya_items', 'atb_items', 'kdp_items', 'merk', 'type', 'ukuran', 'bahan', 'no_pabrik', 'no_rangka', 'no_mesin', 'no_polisi', 'sertifikat_nomor'];
-        foreach ($repeaterKeys as $rk) {
-            if ($request->has($rk) && !is_null($request->input($rk))) {
-                $astapPayload['spesifikasi_json'][$rk] = $request->input($rk);
+        $dokumenKuitansiPath = null;
+        if ($request->hasFile('dokumen_kuitansi') && $request->file('dokumen_kuitansi')->isValid()) {
+            $dokumenKuitansiPath = $request->file('dokumen_kuitansi')->store(
+                'belanja_barang/' . $tahun . '/kuitansi',
+                'public'
+            );
+        }
+
+        // 4. Hitung Total Pembelian Seluruh Item
+        $itemsList = $validated['items'];
+        $totalPembelian = 0;
+        foreach ($itemsList as $it) {
+            $vol = max(1, (int) ($it['jumlah_volume'] ?? 1));
+            $hrg = (float) ($it['harga_satuan'] ?? 0);
+            $totalPembelian += ($vol * $hrg);
+        }
+
+        // Tentukan status alokasi faktur
+        $hasGudang = false;
+        $hasRuangan = false;
+        foreach ($itemsList as $it) {
+            $mode = $it['mode_penempatan'] ?? 'gudang';
+            if ($mode === 'ruangan' && !empty($it['unit_id'])) {
+                $hasRuangan = true;
+            } else {
+                $hasGudang = true;
             }
         }
+        $statusAlokasiFaktur = ($hasGudang && $hasRuangan) ? 'sebagian' : ($hasRuangan ? 'ruangan' : 'gudang');
 
-        if ($request->filled('ppk_nama')) {
-            $astapPayload['ppk_nama'] = $request->input('ppk_nama');
-        }
-        if ($request->filled('ppk_nip')) {
-            $astapPayload['ppk_nip'] = $request->input('ppk_nip');
-        }
-
-        $item = DB::transaction(function () use ($astapPayload, $data, $totalVolume, $totalRealisasi, $tahun, $kondisiItem) {
-            $item = Astap::create($astapPayload);
-
-            // Catat ke extension table astap_belanja_barangs
-            AstapBelanjaBarang::create([
-                'astap_id'        => $item->id,
-                'toko_penyedia'   => $data['rekening_penyedia'],
-                'nomor_faktur'    => $data['rekening_nomor_faktur'],
-                'tanggal_faktur'  => $data['rekening_tanggal_faktur'],
-                'total_pembelian' => $totalRealisasi,
-                'keterangan'      => $data['rekening_keterangan'] ?? null,
+        // 5. Eksekusi Atomic Database Transaction
+        $fakturHeader = DB::transaction(function () use (
+            $itemsList,
+            $tokoPenyedia,
+            $nomorFaktur,
+            $tanggalFaktur,
+            $totalPembelian,
+            $keteranganFaktur,
+            $dokumenFakturPath,
+            $dokumenKuitansiPath,
+            $statusAlokasiFaktur,
+            $tahun,
+            $triwulan,
+            $request
+        ) {
+            // A. Simpan Dokumen Faktur Header
+            $faktur = AstapBelanjaBarang::create([
+                'toko_penyedia'    => $tokoPenyedia,
+                'nomor_faktur'     => $nomorFaktur,
+                'tanggal_faktur'   => $tanggalFaktur,
+                'total_pembelian'  => $totalPembelian,
+                'dokumen_faktur'   => $dokumenFakturPath,
+                'dokumen_kuitansi' => $dokumenKuitansiPath,
+                'status_alokasi'   => $statusAlokasiFaktur,
+                'keterangan'       => $keteranganFaktur,
+                'user_id'          => Auth::id(),
+                'is_deleted'       => 0,
             ]);
 
-            // Buat AstapRegister untuk setiap unit barang (Ekstrakomptabel)
-            $ja = JenisAstap::find($data['jenis_astap_id']);
-            $kode108Raw = $ja ? ($ja->sub_sub_rincian_objek ?: $ja->jenis) : '1.3.2.00.00.00';
-            $kode108Clean = str_replace('.', '', $kode108Raw);
+            $firstAstapId = null;
 
-            $maxRegInt = AstapRegister::where('tahun_perolehan', $tahun)
-                ->whereHas('astap', fn($sq) => $sq->where('jenis_astap_id', $data['jenis_astap_id']))
-                ->max('no_register_int') ?? 0;
+            // B. Simpan Setiap Item Barang sebagai entitas Astap & Register NIBAR
+            foreach ($itemsList as $idx => $it) {
+                $namaBarang   = trim($it['nama_barang']);
+                $jenisAstapId = (int) $it['jenis_astap_id'];
+                $vol          = max(1, (int) $it['jumlah_volume']);
+                $satuan       = trim($it['satuan'] ?? 'Unit');
+                $hargaSatuan  = (float) $it['harga_satuan'];
+                $subtotal     = $vol * $hargaSatuan;
 
-            $runningRegNum = (int) $maxRegInt;
-            $unitModel = !empty($data['unit_id']) ? Unit::find($data['unit_id']) : null;
-            $ruangPemegang = $unitModel ? $unitModel->nama : ($data['alamat_barang'] ?: 'RSUD Dr. H. Koesnandi');
+                $modePenempatan = $it['mode_penempatan'] ?? 'gudang';
+                $unitId = ($modePenempatan === 'ruangan' && !empty($it['unit_id'])) ? (int) $it['unit_id'] : null;
+                $unitModel = $unitId ? Unit::find($unitId) : null;
 
-            for ($i = 0; $i < $totalVolume; $i++) {
-                $runningRegNum++;
-                $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
-                $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+                $kondisi = !empty($it['kondisi']) ? $it['kondisi'] : 'Baik';
+                $alamatBarang = !empty($it['alamat_barang']) ? $it['alamat_barang'] : ($unitModel ? $unitModel->nama : 'RSUD Dr. H. Koesnandi');
 
-                while (AstapRegister::where('nibar', $nibar)->exists()) {
+                // Siapkan JSON spesifikasi teknis
+                $spesifikasi = [
+                    'sumber_dana'        => 'belanja_barang',
+                    'toko_penyedia'      => $tokoPenyedia,
+                    'nomor_faktur'       => $nomorFaktur,
+                    'tanggal_faktur'     => $tanggalFaktur,
+                    'mode_penempatan'    => $modePenempatan,
+                    'kondisi'            => $kondisi,
+                    'dokumen_faktur'     => $dokumenFakturPath,
+                    'dokumen_kuitansi'   => $dokumenKuitansiPath,
+                ];
+
+                if (!empty($it['spesifikasi_json']) && is_array($it['spesifikasi_json'])) {
+                    $spesifikasi = array_merge($spesifikasi, $it['spesifikasi_json']);
+                }
+
+                // Buat record Astap
+                $astap = Astap::create([
+                    'belanja_barang_id'         => $faktur->id,
+                    'nama_barang'               => $namaBarang,
+                    'jenis_astap_id'            => $jenisAstapId,
+                    'tahun_perolehan'           => $tahun,
+                    'jumlah_volume'             => $vol,
+                    'satuan'                    => $satuan,
+                    'harga_satuan'              => $hargaSatuan,
+                    'jumlah_anggaran'           => $subtotal,
+                    'total_realisasi'           => $subtotal,
+                    'biaya_administrasi_proyek' => 0,
+                    'triwulan'                  => $triwulan,
+                    'sumber_dana'               => 'belanja_barang',
+                    'keterangan_tambahan'       => $keteranganFaktur,
+                    'unit_id'                   => $unitId,
+                    'alamat_barang'             => $alamatBarang,
+                    'user_id'                   => Auth::id(),
+                    'is_extracomtable'          => true,
+                    'is_reklas'                 => false,
+                    'is_deleted'                => 0,
+                    'spesifikasi_json'          => $spesifikasi,
+                ]);
+
+                if (!$firstAstapId) {
+                    $firstAstapId = $astap->id;
+                }
+
+                // C. Buat Register NIBAR untuk setiap unit fisik barang
+                $ja = JenisAstap::find($jenisAstapId);
+                $kode108Raw = $ja ? ($ja->sub_sub_rincian_objek ?: $ja->jenis) : '1.3.2.00.00.00';
+                $kode108Clean = str_replace('.', '', $kode108Raw);
+
+                $maxRegInt = AstapRegister::where('tahun_perolehan', $tahun)
+                    ->whereHas('astap', fn($sq) => $sq->where('jenis_astap_id', $jenisAstapId))
+                    ->max('no_register_int') ?? 0;
+
+                $runningRegNum = (int) $maxRegInt;
+
+                // Tentukan lokasi & status register sesuai Opsi A:
+                // - Jika di Gudang: unit_id = null, ruang_pemegang = 'Gudang Perbekalan', status = 'Tersedia' (siap didistribusikan via BAST Distribusi)
+                // - Jika di Ruangan: unit_id = $unitId, ruang_pemegang = $unitModel->nama, status = 'Tidak Tersedia' (muncul di KIR Ruangan)
+                $isDirectToRoom = ($modePenempatan === 'ruangan' && $unitId && $unitModel);
+                $ruangPemegang = $isDirectToRoom ? $unitModel->nama : 'Gudang Perbekalan';
+                $registerStatus = $isDirectToRoom ? 'Tidak Tersedia' : 'Tersedia';
+
+                for ($i = 0; $i < $vol; $i++) {
                     $runningRegNum++;
                     $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
                     $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
-                }
 
-                $qrPath = "/scan/{$nibar}";
-                AstapRegister::create([
-                    'astap_id'        => $item->id,
-                    'unit_id'         => $data['unit_id'] ?? null,
-                    'tahun_perolehan' => $tahun,
-                    'no_register_int' => $runningRegNum,
-                    'no_register'     => $nibar,
-                    'nibar'           => $nibar,
-                    'qr_code_path'    => $qrPath,
-                    'ruang_pemegang'  => $ruangPemegang,
-                    'kondisi'         => $kondisiItem,
-                    'status'          => 'Aktif',
-                    'is_deleted'      => 0,
-                ]);
+                    while (AstapRegister::where('nibar', $nibar)->exists()) {
+                        $runningRegNum++;
+                        $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                        $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+                    }
+
+                    $qrPath = "/scan/{$nibar}";
+                    AstapRegister::create([
+                        'astap_id'        => $astap->id,
+                        'unit_id'         => $isDirectToRoom ? $unitId : null,
+                        'tahun_perolehan' => $tahun,
+                        'no_register_int' => $runningRegNum,
+                        'no_register'     => $nibar,
+                        'nibar'           => $nibar,
+                        'nama_barang'     => $namaBarang,
+                        'qr_code_path'    => $qrPath,
+                        'ruang_pemegang'  => $ruangPemegang,
+                        'kondisi'         => $kondisi,
+                        'status'          => $registerStatus,
+                        'is_deleted'      => 0,
+                    ]);
+                }
             }
 
-            return $item;
+            // Tautkan astap_id pada faktur ke item pertama untuk backward-compatibility query lama
+            if ($firstAstapId) {
+                $faktur->update(['astap_id' => $firstAstapId]);
+            }
+
+            return $faktur;
         });
+
+        // 6. Kirim Notifikasi Sistem ke Admin & Super Admin
+        try {
+            $totalItemsCount = count($itemsList);
+            NotificationService::sendToAdminAndMaster(
+                "Faktur Belanja Barang: {$nomorFaktur}",
+                "{$totalItemsCount} Macam Barang dari {$tokoPenyedia} • Total " . 'Rp ' . number_format($totalPembelian, 0, ',', '.'),
+                'belanja_barang',
+                route('master.belanja_barang')
+            );
+        } catch (\Throwable $e) {
+            Log::warning("Gagal kirim notif belanja barang: " . $e->getMessage());
+        }
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
                 'success'  => true,
-                'message'  => 'Data Belanja Barang "' . $item->nama_barang . '" berhasil disimpan ke database SIMAT-RK!',
+                'message'  => 'Faktur Belanja Barang "' . $nomorFaktur . '" (' . count($itemsList) . ' macam barang) berhasil disimpan ke database SIMAT-RK!',
                 'redirect' => route('master.belanja_barang')
             ]);
         }
 
         return redirect()->route('master.belanja_barang')
-            ->with('success', 'Data Belanja Barang "' . $item->nama_barang . '" berhasil ditambahkan.');
+            ->with('success', 'Faktur Belanja Barang "' . $nomorFaktur . '" (' . count($itemsList) . ' macam barang) berhasil ditambahkan.');
     }
 
     /**
@@ -321,7 +464,7 @@ class BelanjaBarangController extends Controller
      */
     public function destroy(Request $request, $id)
     {
-        $belanja = AstapBelanjaBarang::findOrFail($id);
+        $belanja = AstapBelanjaBarang::with('astaps.registers')->findOrFail($id);
 
         DB::transaction(function () use ($belanja) {
             $user = Auth::user();
@@ -329,12 +472,16 @@ class BelanjaBarangController extends Controller
             $deleterId = $user?->id;
             $now = now();
 
-            // 1. Soft delete catatan belanja barang
+            // 1. Soft delete faktur header
             $belanja->softDelete();
 
-            // 2. Soft delete paket aset induk dan register unitnya
-            $astap = $belanja->astap;
-            if ($astap) {
+            // 2. Soft delete seluruh item Astap dan register NIBAR terkait
+            $astaps = $belanja->astaps;
+            if ($astaps->isEmpty() && $belanja->astap) {
+                $astaps = collect([$belanja->astap]);
+            }
+
+            foreach ($astaps as $astap) {
                 AstapRegister::where('astap_id', $astap->id)->update([
                     'is_deleted'    => 1,
                     'deleted_by'    => $deleterName,
@@ -354,11 +501,11 @@ class BelanjaBarangController extends Controller
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => 'Data Belanja Barang berhasil dipindahkan ke Pusat Pemulihan Data (Recycle Bin).'
+                'message' => 'Faktur Belanja Barang beserta seluruh item aset terkait berhasil dipindahkan ke Pusat Pemulihan Data (Recycle Bin).'
             ]);
         }
 
         return redirect()->route('master.belanja_barang')
-            ->with('success', 'Data Belanja Barang berhasil dipindahkan ke Pusat Pemulihan Data (Recycle Bin).');
+            ->with('success', 'Faktur Belanja Barang beserta seluruh item aset terkait berhasil dipindahkan ke Pusat Pemulihan Data (Recycle Bin).');
     }
 }

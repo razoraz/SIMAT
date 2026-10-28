@@ -282,7 +282,7 @@ class Astap extends Model
 
     public function belanjaBarang()
     {
-        return $this->hasOne(AstapBelanjaBarang::class, 'astap_id');
+        return $this->belongsTo(AstapBelanjaBarang::class, 'belanja_barang_id');
     }
 
     public function mutasiEksternalMasuk()
