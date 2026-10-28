@@ -18,7 +18,9 @@
             // Modal States
             showModalDetail: false,
             selectedDetail: null,
-            detailActiveTab: 'bast',
+            detailSearchQuery: '',
+            detailKondisiFilter: 'all',
+            detailPenempatanFilter: 'all',
 
             // Global Toast Notification State
             toast: {
@@ -316,6 +318,9 @@
                 if (item.register && item.register.ruang_pemegang && item.register.ruang_pemegang !== '-' && !item.register.ruang_pemegang.includes('Belum Ditempatkan')) {
                     return item.register.ruang_pemegang;
                 }
+                if (item.astap && item.astap.alamat_barang && item.astap.alamat_barang !== 'RSUD Dr. H. Koesnandi' && item.astap.alamat_barang !== 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1') {
+                    return item.astap.alamat_barang;
+                }
                 return 'Gudang Aset RSUD';
             },
 
@@ -329,6 +334,8 @@
                 const firstMesin = (Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0) ? spec.mesin_items[0] : {};
                 const firstGedung = (Array.isArray(spec.gedung_items) && spec.gedung_items.length > 0) ? spec.gedung_items[0] : {};
                 const firstTanah = (Array.isArray(spec.tanah_items) && spec.tanah_items.length > 0) ? spec.tanah_items[0] : {};
+                const firstJaringan = (Array.isArray(spec.jaringan_items) && spec.jaringan_items.length > 0) ? spec.jaringan_items[0] : {};
+                const firstLainnya = (Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0) ? spec.lainnya_items[0] : {};
 
                 return {
                     merk: firstMesin.mesin_merk || spec.merk || spec.mesin_merk || item.astap?.merk_type || '',
@@ -346,8 +353,48 @@
                     gedung_luas_m2: firstGedung.gedung_luas_m2 || firstGedung.gedung_luas_lantai || spec.gedung_luas_m2 || spec.luas_lantai_m2 || '',
                     gedung_bertingkat: firstGedung.gedung_bertingkat || spec.gedung_bertingkat || spec.konstruksi_bertingkat || '',
                     gedung_beton: firstGedung.gedung_beton || spec.gedung_beton || spec.konstruksi_beton || '',
-                    gedung_is_baru: firstGedung.gedung_is_baru || spec.gedung_is_baru || ''
+                    gedung_is_baru: firstGedung.gedung_is_baru || spec.gedung_is_baru || '',
+                    jaringan_konstruksi: firstJaringan.jaringan_konstruksi || spec.jaringan_konstruksi || '',
+                    jaringan_panjang_m: firstJaringan.jaringan_panjang_m || spec.jaringan_panjang_m || '',
+                    jaringan_lebar_m: firstJaringan.jaringan_lebar_m || spec.jaringan_lebar_m || '',
+                    jaringan_luas_m2: firstJaringan.jaringan_luas_m2 || spec.jaringan_luas_m2 || '',
+                    lainnya_judul: firstLainnya.lainnya_judul_pencipta || spec.lainnya_judul_pencipta || '',
+                    lainnya_bahan: firstLainnya.lainnya_bahan || spec.lainnya_bahan || '',
+                    lainnya_ukuran: firstLainnya.lainnya_ukuran || spec.lainnya_ukuran || '',
+                    hibah_pimpinan: spec.hibah_pimpinan || spec.pimpinan_pemberi || item.astap?.hibah_pimpinan || '',
+                    hibah_alamat_pemberi: spec.hibah_alamat_pemberi || spec.alamat_pemberi || item.astap?.hibah_alamat_pemberi || '',
+                    dokumen_path: item.dokumen_path || spec.dokumen_bast_path || spec.dokumen_path || item.astap?.dokumen_bast_path || '',
+                    mesin_items: Array.isArray(spec.mesin_items) ? spec.mesin_items : []
                 };
+            },
+
+            isDokumenImage(path) {
+                if (!path) return false;
+                const ext = String(path).split('.').pop().toLowerCase();
+                return ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext);
+            },
+
+            // Filter Daftar Unit Register NIBAR
+            get filteredDetailRegisters() {
+                if (!this.selectedDetail) return [];
+                let regs = this.getRegistersList(this.selectedDetail);
+                if (this.detailKondisiFilter && this.detailKondisiFilter !== 'all') {
+                    regs = regs.filter(r => (r.kondisi || 'Baik') === this.detailKondisiFilter || r.kondisi === this.detailKondisiFilter);
+                }
+                if (this.detailPenempatanFilter === 'sudah') {
+                    regs = regs.filter(r => r.ruang_pemegang && r.ruang_pemegang !== '-' && !r.ruang_pemegang.includes('Belum Ditempatkan'));
+                } else if (this.detailPenempatanFilter === 'belum') {
+                    regs = regs.filter(r => !r.ruang_pemegang || r.ruang_pemegang === '-' || r.ruang_pemegang.includes('Belum Ditempatkan'));
+                }
+                if (this.detailSearchQuery && this.detailSearchQuery.trim() !== '') {
+                    const q = this.detailSearchQuery.toLowerCase().trim();
+                    regs = regs.filter(r => 
+                        (r.nibar && String(r.nibar).toLowerCase().includes(q)) || 
+                        (r.no_register && String(r.no_register).toLowerCase().includes(q)) ||
+                        (r.ruang_pemegang && String(r.ruang_pemegang).toLowerCase().includes(q))
+                    );
+                }
+                return regs;
             },
 
             // Daftar Register NIBAR
@@ -572,7 +619,9 @@
             // =========================================================================
             openDetail(item) {
                 this.selectedDetail = item;
-                this.detailActiveTab = 'bast';
+                this.detailSearchQuery = '';
+                this.detailKondisiFilter = 'all';
+                this.detailPenempatanFilter = 'all';
                 this.showModalDetail = true;
             },
 

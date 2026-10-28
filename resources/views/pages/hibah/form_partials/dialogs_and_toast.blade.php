@@ -38,13 +38,21 @@
 
             <!-- Missing Fields Checklist -->
             <template x-if="validationModal.missingFields && validationModal.missingFields.length > 0">
-                <div class="p-3.5 bg-slate-950/80 rounded-2xl border border-slate-800 space-y-2">
-                    <span class="text-[10px] uppercase font-bold text-amber-400 block tracking-wider">Field yang Perlu Dilengkapi:</span>
-                    <ul class="space-y-1.5 text-xs text-slate-300">
+                <div class="p-3.5 bg-slate-950/80 rounded-2xl border border-rose-500/20 space-y-2.5 max-h-60 overflow-y-auto custom-scrollbar">
+                    <span class="text-[10px] uppercase font-bold text-amber-400 block tracking-wider flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping"></span>
+                        Field yang Perlu Dilengkapi:
+                    </span>
+                    <ul class="space-y-2 text-xs">
                         <template x-for="(f, idx) in validationModal.missingFields" :key="idx">
-                            <li class="flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-rose-400 shrink-0"></span>
-                                <span class="font-medium text-slate-200" x-text="f"></span>
+                            <li class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-start gap-2.5">
+                                <span class="w-2 h-2 rounded-full bg-rose-400 shrink-0 mt-1 shadow-sm shadow-rose-500/50"></span>
+                                <div class="min-w-0 flex-1">
+                                    <div class="font-bold text-slate-100" x-text="typeof f === 'object' ? (f.label || f.name || JSON.stringify(f)) : f"></div>
+                                    <template x-if="typeof f === 'object' && f.detail">
+                                        <div class="text-[11px] text-slate-400 mt-0.5 leading-snug" x-text="f.detail"></div>
+                                    </template>
+                                </div>
                             </li>
                         </template>
                     </ul>

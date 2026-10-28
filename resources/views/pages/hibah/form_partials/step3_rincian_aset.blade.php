@@ -37,8 +37,8 @@
         <div class="p-4 rounded-2xl bg-slate-950/80 border border-amber-500/30 shadow-lg space-y-1 relative overflow-hidden group transition-all">
             <div class="flex items-center justify-between">
                 <span class="text-[10px] font-bold uppercase tracking-wider text-amber-400">1. BAST &amp; PEMBERI HIBAH</span>
-                <span class="text-[9px] font-extrabold px-2.5 py-0.5 rounded-full border bg-amber-500/10 text-amber-300 border-amber-500/20"
-                      x-text="(formData.tipe_hibah || 'pemerintah_pusat').replace('_', ' ').toUpperCase()">
+                <span class="text-[9px] font-extrabold px-2.5 py-0.5 rounded-full border bg-amber-500/10 text-amber-300 border-amber-500/20">
+                    HIBAH MASUK
                 </span>
             </div>
             <div class="text-xs font-black font-mono truncate text-amber-300" x-text="formData.hibah_nomor_bast || '-'"></div>
@@ -418,56 +418,20 @@
         <!-- ===================================================================== -->
         <!-- KARTU 4: PENEMPATAN RUANGAN (KIR), KONDISI & PEJABAT PPK RSUD         -->
         <!-- ===================================================================== -->
+        <!-- 4. Pejabat Pembuat Komitmen (PPK) & Pengesah Penerimaan RSUD          -->
+        <!-- ===================================================================== -->
         <div class="lg:col-span-2 p-5 sm:p-6 rounded-3xl bg-slate-950/90 border border-amber-500/30 shadow-xl space-y-5 relative">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
                 <div class="flex items-center space-x-2">
                     <span class="w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold border bg-amber-500/20 text-amber-400 border-amber-500/30">4</span>
                     <h3 class="text-xs sm:text-sm font-extrabold text-white uppercase tracking-wider">
-                        Penempatan Ruangan (KIR), Kondisi Fisik &amp; Pejabat Penanggung Jawab RSUD
+                        Pejabat Pembuat Komitmen (PPK) &amp; Pengesah Penerimaan RSUD
                     </h3>
                 </div>
-                <span class="text-[10px] font-mono text-slate-400">Pencatatan Kartu Inventaris Ruangan (KIR)</span>
+                <span class="text-[10px] font-mono text-slate-400">Pengesahan Naskah BAST</span>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <!-- Unit / Ruangan Penempatan -->
-                <div>
-                    <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                        Unit / Ruangan Penempatan Aset (KIR) <span class="text-rose-400">*</span>
-                    </label>
-                    <select x-model="formData.unit_id" required
-                        class="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none font-semibold">
-                        <option value="">-- Pilih Unit / Ruangan Penempatan --</option>
-                        @foreach($dbUnits ?? [] as $u)
-                            <option value="{{ $u->id }}">{{ $u->nama }} ({{ $u->kode_unit ?? 'Unit' }})</option>
-                        @endforeach
-                    </select>
-                    <p class="text-[10px] text-slate-500 mt-1">Ruangan fisik tempat aset hibah ini ditempatkan dan digunakan di RSUD.</p>
-                </div>
-
-                <!-- Kondisi Fisik Saat Diterima -->
-                <div>
-                    <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                        Kondisi Fisik Saat Diterima <span class="text-rose-400">*</span>
-                    </label>
-                    <select x-model="formData.kondisi" required
-                        class="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none font-semibold">
-                        <option value="Baik">🟢 Baik (Operasional Normal / Siap Digunakan)</option>
-                        <option value="Kurang Baik">🟡 Kurang Baik (Perlu Kalibrasi / Perawatan)</option>
-                        <option value="Rusak Berat">🔴 Rusak Berat</option>
-                    </select>
-                </div>
-
-                <!-- Alamat / Gedung Penempatan Fisik Barang -->
-                <div class="sm:col-span-2">
-                    <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                        Alamat / Gedung Penempatan Fisik Barang
-                    </label>
-                    <input type="text" x-model="formData.alamat_barang"
-                        placeholder="RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1"
-                        class="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none">
-                </div>
-
                 <!-- Nama PPK dengan Filter Autocomplete & Auto-Fill NIP -->
                 <div class="relative space-y-1.5" @click.away="isPpkDropdownOpen = false">
                     <label class="block text-xs font-bold text-slate-200 flex items-center justify-between">
