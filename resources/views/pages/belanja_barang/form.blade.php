@@ -13,19 +13,22 @@
         <!-- 3. Main Form Container -->
         <form @submit.prevent="submitForm" class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
 
-            <!-- LANGKAH 1: Dokumen Pembelian Faktur/Nota & Toko Rekanan (Smart Combobox) -->
+            <!-- LANGKAH 1: Dokumen Pembelian Faktur/Nota & Toko Rekanan & Berkas Upload -->
             @include('pages.belanja_barang.form_partials.step1_faktur_toko')
 
-            <!-- LANGKAH 2: Klasifikasi Kode Barang 108 Permendagri & Volume -->
+            <!-- LANGKAH 2: Keranjang Barang Multi-Item, Klasifikasi 108 & Alokasi Penempatan -->
             @include('pages.belanja_barang.form_partials.step2_klasifikasi_108')
 
-            <!-- LANGKAH 3: Spesifikasi Teknis KIB & Ruangan Penempatan KIR -->
-            @include('pages.belanja_barang.form_partials.step3_spesifikasi_ruangan')
+            <!-- LANGKAH 3: Lembar Verifikasi Data & Konfirmasi Resmi -->
+            @include('pages.belanja_barang.form_partials.step3_verifikasi_data')
 
             <!-- Stepper Bottom Navigation (Sebelumnya / Lanjutkan / Simpan) -->
             @include('pages.belanja_barang.form_partials.stepper_navigation')
 
         </form>
+
+        <!-- 4. Global Floating Toast Notification -->
+        @include('pages.belanja_barang.form_partials.dialogs_and_toast')
 
     </div>
 </x-layout>

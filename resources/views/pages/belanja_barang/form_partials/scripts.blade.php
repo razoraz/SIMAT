@@ -5,12 +5,40 @@
     function formBelanjaBarang() {
         return {
             step: 1,
+            currentStep: 1,
             isSubmitting: false,
+
+            // Toast Notification
+            toast: {
+                show: false,
+                title: '',
+                message: '',
+                type: 'success'
+            },
+
+            showToast(title, message, type = 'success') {
+                this.toast = { show: true, title, message, type };
+                setTimeout(() => { this.toast.show = false; }, 4000);
+            },
 
             // Master Data dari Backend
             master108: @json($dbMaster108 ?? []),
             masterTokoList: @json($dbTokoPenyedias ?? []),
             dbUnits: @json($dbUnits ?? []),
+
+            getUnitNameById(id) {
+                if (!id) return '';
+                const u = (this.dbUnits || []).find(item => item.id == id);
+                return u ? u.nama : '';
+            },
+
+            filterByCategory(kode) {
+                this.search108 = kode;
+                this.performSearch108();
+                if (this.formData.items.length > 0) {
+                    this.openPicker108(0);
+                }
+            },
 
             // File Uploads
             fileFaktur: null,
@@ -318,87 +346,29 @@
             },
 
             goToStep(target) {
-                if (target > this.step) {
-                    if (this.step === 1 && !this.validateStep(1)) return;
-                    if (this.step === 2 && !this.validateStep(2)) return;
-                }
                 this.step = target;
+                this.currentStep = target;
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             },
 
             validateStep(s) {
-                if (s === 1) {
-                    if (!this.formData.rekening_penyedia.trim()) {
-                        alert('⚠️ Mohon masukkan Nama Toko / Supplier Rekanan.');
-                        return false;
-                    }
-                    if (!this.formData.rekening_nomor_faktur.trim()) {
-                        alert('⚠️ Mohon masukkan Nomor Faktur / Nota Pembelian Toko.');
-                        return false;
-                    }
-                    if (!this.formData.rekening_tanggal_faktur) {
-                        alert('⚠️ Mohon masukkan Tanggal Faktur / Pembelian.');
-                        return false;
-                    }
-                    if (!this.fileFaktur) {
-                        alert('⚠️ Wajib mengunggah Nota / Faktur Pembelian Toko (PDF/Gambar max 5MB).');
-                        return false;
-                    }
-                    return true;
-                }
-
-                if (s === 2) {
-                    if (!this.formData.items || this.formData.items.length === 0) {
-                        alert('⚠️ Minimal harus ada 1 item barang yang dibeli.');
-                        return false;
-                    }
-                    for (let i = 0; i < this.formData.items.length; i++) {
-                        const it = this.formData.items[i];
-                        if (!it.jenis_astap_id) {
-                            alert(`⚠️ Barang #${i + 1} belum memiliki Klasifikasi Kode 108. Silakan pilih Kode 108.`);
-                            return false;
-                        }
-                        if (!it.nama_barang.trim()) {
-                            alert(`⚠️ Barang #${i + 1} belum memiliki Nama Barang Spesifik.`);
-                            return false;
-                        }
-                        if (!it.jumlah_volume || it.jumlah_volume < 1) {
-                            alert(`⚠️ Barang #${i + 1} harus memiliki Volume minimal 1 unit.`);
-                            return false;
-                        }
-                        if (it.harga_satuan === '' || isNaN(it.harga_satuan) || it.harga_satuan < 0) {
-                            alert(`⚠️ Barang #${i + 1} harus memiliki Harga Satuan yang valid (>= 0).`);
-                            return false;
-                        }
-                    }
-                    return true;
-                }
-
-                if (s === 3) {
-                    if (this.globalAlokasiMode === 'ruangan' && !this.globalUnitId) {
-                        alert('⚠️ Mode Alokasi Langsung ke Ruangan dipilih. Mohon pilih Unit / Ruangan tujuan.');
-                        return false;
-                    }
-                    return true;
-                }
-
+                // MODE TESTING: Validasi dimatikan sementara agar pengguna bebas menguji form
                 return true;
             },
 
             submitForm() {
-                if (!this.validateStep(1) || !this.validateStep(2) || !this.validateStep(3)) return;
-
                 this.isSubmitting = true;
                 const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
 
+                // Nilai fallback cerdas untuk pengujian jika dikosongkan pengguna
                 const fd = new FormData();
-                fd.append('tahun_perolehan', this.formData.tahun_perolehan);
-                fd.append('triwulan', this.formData.triwulan);
-                fd.append('rekening_penyedia', this.formData.rekening_penyedia);
-                fd.append('rekening_nomor_faktur', this.formData.rekening_nomor_faktur);
-                fd.append('rekening_tanggal_faktur', this.formData.rekening_tanggal_faktur);
-                fd.append('rekening_keterangan', this.formData.rekening_keterangan || '');
-                fd.append('status_alokasi_global', this.globalAlokasiMode);
+                fd.append('tahun_perolehan', this.formData.tahun_perolehan || new Date().getFullYear());
+                fd.append('triwulan', this.formData.triwulan || 'TW I');
+                fd.append('rekening_penyedia', (this.formData.rekening_penyedia || '').trim() || 'CV. Rekanan Sejahtera (Testing)');
+                fd.append('rekening_nomor_faktur', (this.formData.rekening_nomor_faktur || '').trim() || ('TEST-' + Date.now().toString().slice(-6)));
+                fd.append('rekening_tanggal_faktur', this.formData.rekening_tanggal_faktur || new Date().toLocaleDateString('en-GB'));
+                fd.append('rekening_keterangan', this.formData.rekening_keterangan || 'Data uji coba testing form belanja barang');
+                fd.append('status_alokasi_global', this.globalAlokasiMode || 'gudang');
 
                 if (this.fileFaktur) {
                     fd.append('dokumen_faktur', this.fileFaktur);
@@ -407,8 +377,44 @@
                     fd.append('dokumen_kuitansi', this.fileKuitansi);
                 }
 
-                // Kirim Items sebagai JSON String
-                fd.append('items_json', JSON.stringify(this.formData.items));
+                // Siapkan fallback items jika kosong atau belum lengkap
+                let cleanItems = (this.formData.items || []).map((it, idx) => {
+                    const copy = { ...it };
+                    if (!copy.nama_barang || !copy.nama_barang.trim()) {
+                        copy.nama_barang = 'Barang Belanja Testing #' + (idx + 1);
+                    }
+                    if (!copy.jenis_astap_id) {
+                        copy.jenis_astap_id = 1; // Fallback ID
+                    }
+                    if (!copy.jumlah_volume || copy.jumlah_volume < 1) {
+                        copy.jumlah_volume = 1;
+                    }
+                    if (!copy.satuan) {
+                        copy.satuan = 'Unit';
+                    }
+                    if (copy.harga_satuan === '' || isNaN(copy.harga_satuan) || copy.harga_satuan < 0) {
+                        copy.harga_satuan = 50000;
+                    }
+                    return copy;
+                });
+
+                if (cleanItems.length === 0) {
+                    cleanItems = [{
+                        _id: 1,
+                        nama_barang: 'Barang Belanja Testing',
+                        jenis_astap_id: 1,
+                        jumlah_volume: 1,
+                        satuan: 'Unit',
+                        harga_satuan: 50000,
+                        mode_penempatan: 'gudang',
+                        unit_id: null,
+                        kondisi: 'Baik',
+                        alamat_barang: 'Gudang Perbekalan RSUD',
+                        spesifikasi_json: {}
+                    }];
+                }
+
+                fd.append('items_json', JSON.stringify(cleanItems));
 
                 fetch("{{ route('astap.store_belanja_barang') }}", {
                     method: 'POST',

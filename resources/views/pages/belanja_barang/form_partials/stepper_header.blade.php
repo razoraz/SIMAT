@@ -83,7 +83,7 @@
                     </div>
                     <div class="min-w-0">
                         <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate" :class="step === 3 ? 'text-indigo-400' : 'text-slate-500'">Langkah 3</span>
-                        <span class="text-[11px] sm:text-xs font-bold text-white block truncate">Alokasi KIR &amp; Spesifikasi</span>
+                        <span class="text-[11px] sm:text-xs font-bold text-white block truncate">Lembar Verifikasi Data</span>
                     </div>
                 </div>
                 <div class="h-1 sm:h-1.5 rounded-full w-full transition-all" :class="step >= 3 ? 'bg-indigo-500' : 'bg-slate-950'"></div>
