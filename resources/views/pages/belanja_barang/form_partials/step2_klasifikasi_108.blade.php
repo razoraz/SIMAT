@@ -1,476 +1,325 @@
+﻿<!-- ========================================================================= -->
+<!-- LANGKAH 2: KLASIFIKASI KODE 108 & SPESIFIKASI FISIK ASET (PELIMPAHAN BMD) -->
 <!-- ========================================================================= -->
-<!-- LANGKAH 2: KERANJANG BARANG MULTI-ITEM, KLASIFIKASI 108 & PENEMPATAN       -->
-<!-- ========================================================================= -->
-<div x-show="step === 2 || currentStep === 2" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-6">
+<div x-show="currentStep === 2" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-6">
     
-    <div class="border-b border-slate-800 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-            <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 text-xs font-bold mb-2">
-                <span>Langkah 2 dari 3</span>
+    <div>
+        <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-indigo-400/10 text-indigo-300 border border-indigo-400/20 text-xs font-bold mb-2">
+            <span>ðŸ” LANGKAH 2 DARI 3: KLASIFIKASI 108 &amp; SPESIFIKASI FISIK ASET</span>
+        </div>
+        <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+            <span class="p-2 rounded-xl bg-indigo-400/10 text-indigo-400 text-sm">ðŸ“Š</span>
+            <span>Langkah 2: Klasifikasi 108 &amp; Spesifikasi Fisik Aset</span>
+        </h2>
+        <p class="text-xs text-slate-400 mt-1">
+            Pilih klasifikasi kode barang Permendagri No. 108/2016 (Akun 1.3 Aset Tetap Milik Daerah), formulir spesifikasi teknis barang sesuai KIB, penempatan ruangan di RSUD, serta rincian nilai perolehan BMD dari SKPD asal.
+        </p>
+    </div>
+
+    <!-- ===== BANNER ERROR INLINE LANGKAH 2 ===== -->
+    <template x-if="stepErrors[2]">
+        <div class="flex items-start gap-3 p-4 rounded-2xl bg-rose-950/60 border border-rose-500/50 shadow-lg shadow-rose-500/10 animate-[fadeInDown_0.25s_ease-out]">
+            <span class="text-rose-400 text-lg mt-0.5 shrink-0">âš ï¸</span>
+            <div class="min-w-0">
+                <p class="text-xs font-bold text-rose-300 mb-0.5">Perhatian â€” Data Langkah 2 Belum Lengkap</p>
+                <p class="text-xs text-rose-200/90 leading-relaxed" x-text="stepErrors[2]"></p>
             </div>
-            <h2 class="text-lg font-bold text-white flex items-center space-x-2">
-                <span>📦 Rincian Barang Pembelian (Multi-Item) &amp; Klasifikasi 108</span>
-            </h2>
-            <p class="text-xs text-slate-400 mt-0.5">
-                Tambahkan barang perbekalan yang tercantum dalam faktur, tentukan klasifikasi Kode 108, spesifikasi fisik, dan jalur penempatan ruangan (KIR).
-            </p>
+            <button type="button" @click="clearStepError(2)" class="ml-auto shrink-0 text-rose-400 hover:text-rose-200 transition-colors text-sm leading-none">âœ•</button>
+        </div>
+    </template>
+
+    <!-- Quick Action / Shortcut 5 Kategori Objek KIB Permendagri 108 -->
+    <div class="p-5 rounded-3xl bg-slate-900/80 border border-indigo-500/30 backdrop-blur-md shadow-xl space-y-4 relative overflow-hidden">
+        <div class="absolute -right-10 -bottom-10 w-44 h-44 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none"></div>
+
+        <!-- Header Card: Info Objek KIB Aktif -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800/80">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-400/20 to-indigo-600/10 text-indigo-400 flex items-center justify-center text-lg font-bold shrink-0 border border-indigo-500/30 shadow-inner">
+                    âš¡
+                </div>
+                <div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <h3 class="text-xs font-extrabold text-white tracking-wide">Pilih Kategori Objek KIB (Akun 1.3 Aset Tetap)</h3>
+                        <span class="px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-300 text-[10px] font-bold border border-indigo-500/20">Permendagri 108</span>
+                        <span class="px-2 py-0.5 rounded-full bg-slate-800 text-indigo-300 text-[10px] font-bold border border-slate-700 font-mono" x-text="activeKibCode"></span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-0.5">
+                        Kategori Aktif: <span class="font-bold text-indigo-300" x-text="kibLabel"></span> &mdash; Klik salah satu kartu objek KIB di bawah:
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 self-start sm:self-center shrink-0">
+                <span x-show="hasSelectedKib" class="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/30 inline-flex items-center gap-1.5 shadow-sm">
+                    âœ“ Kategori: <span class="font-mono" x-text="kibLabel"></span>
+                </span>
+            </div>
         </div>
 
-        <button type="button" @click="addItem()"
-            class="px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-extrabold shadow-lg shadow-cyan-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0 self-start sm:self-auto active:scale-95">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
-            </svg>
-            <span>+ Tambah Barang ke Faktur</span>
-        </button>
-    </div>
-
-    <!-- Quick Shortcuts Kategori KIB yang Relevan untuk Belanja Perbekalan -->
-    <div class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-2.5">
-        <div class="flex items-center justify-between">
-            <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5">
-                <span>⚡ KATEGORI ASET UMUM PERBEKALAN RSUD</span>
-            </span>
-            <span class="text-[10px] text-slate-500">Klik untuk filter cepat pencarian</span>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <button type="button" @click="filterByCategory('1.3.2')"
-                class="p-3 rounded-xl border text-left transition-all flex items-center justify-between bg-slate-900/80 border-slate-800 hover:border-cyan-500/50 hover:bg-slate-850 cursor-pointer group">
-                <div class="flex items-center gap-2.5 min-w-0">
-                    <span class="text-xl">🩺</span>
-                    <div class="min-w-0">
-                        <span class="text-xs font-bold text-white block group-hover:text-cyan-300 truncate">KIB B: Peralatan, Mesin &amp; Alkes</span>
-                        <span class="text-[10px] text-slate-400 block truncate">Tensimeter, timbangan pasien, kursi roda, nebulizer, dll.</span>
+        <!-- Buttons Grid: 5 Objek KIB Aset Tetap Permendagri 108 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            
+            <!-- KIB A: Tanah -->
+            <button type="button" @click="selectKibCategory('tanah')"
+                class="group p-3.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 relative"
+                :class="isTanah 
+                    ? 'bg-emerald-500/20 border-emerald-400 text-white shadow-xl shadow-emerald-500/20 ring-1 ring-emerald-400' 
+                    : 'bg-slate-950/70 border-slate-800 text-slate-300 hover:border-emerald-500/50 hover:bg-slate-850 hover:-translate-y-0.5'">
+                <div class="flex items-center justify-between gap-2 shrink-0">
+                    <span class="text-xl">ðŸŒ¾</span>
+                    <span class="font-mono text-[10px] font-black text-emerald-400 group-hover:text-emerald-300">1.3.1</span>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <span class="block text-xs font-bold text-slate-200 group-hover:text-white truncate">KIB A (Tanah)</span>
+                    <span class="block text-[10px] text-slate-400 line-clamp-2 mt-0.5 leading-snug">Tanah perkantoran, pelayanan medis, sarana kesehatan</span>
+                </div>
+                <div class="kib-footer pt-2 border-t border-slate-800/80 flex items-center justify-between shrink-0">
+                    <span class="text-[9px] font-mono text-slate-500">KIB A</span>
+                    <div class="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold"
+                        :class="isTanah ? 'bg-emerald-400 text-slate-950 shadow-md' : 'bg-slate-800 text-slate-400 group-hover:bg-emerald-400 group-hover:text-slate-950'">
+                        <span x-show="isTanah">âœ“</span>
+                        <span x-show="!isTanah">&rarr;</span>
                     </div>
                 </div>
-                <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">1.3.2</span>
             </button>
 
-            <button type="button" @click="filterByCategory('1.3.5')"
-                class="p-3 rounded-xl border text-left transition-all flex items-center justify-between bg-slate-900/80 border-slate-800 hover:border-purple-500/50 hover:bg-slate-850 cursor-pointer group">
-                <div class="flex items-center gap-2.5 min-w-0">
-                    <span class="text-xl">📦</span>
-                    <div class="min-w-0">
-                        <span class="text-xs font-bold text-white block group-hover:text-purple-300 truncate">KIB E: Aset Tetap Lainnya &amp; Perabot</span>
-                        <span class="text-[10px] text-slate-400 block truncate">Perabot ruangan, lemari arsip, buku medis perbekalan, dll.</span>
+            <!-- KIB B: Peralatan & Mesin -->
+            <button type="button" @click="selectKibCategory('mesin')"
+                class="group p-3.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 relative"
+                :class="isMesin 
+                    ? 'bg-indigo-500/20 border-indigo-400 text-white shadow-xl shadow-indigo-500/20 ring-1 ring-indigo-400' 
+                    : 'bg-slate-950/70 border-slate-800 text-slate-300 hover:border-indigo-500/50 hover:bg-slate-850 hover:-translate-y-0.5'">
+                <div class="flex items-center justify-between gap-2 shrink-0">
+                    <span class="text-xl">âš™ï¸</span>
+                    <span class="font-mono text-[10px] font-black text-indigo-400 group-hover:text-indigo-300">1.3.2</span>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <span class="block text-xs font-bold text-slate-200 group-hover:text-white truncate">KIB B (Peralatan/Mesin)</span>
+                    <span class="block text-[10px] text-slate-400 line-clamp-2 mt-0.5 leading-snug">Alat kesehatan, kendaraan, mesin, komputer, mebeler</span>
+                </div>
+                <div class="kib-footer pt-2 border-t border-slate-800/80 flex items-center justify-between shrink-0">
+                    <span class="text-[9px] font-mono text-slate-500">KIB B</span>
+                    <div class="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold"
+                        :class="isMesin ? 'bg-indigo-400 text-slate-950 shadow-md' : 'bg-slate-800 text-slate-400 group-hover:bg-indigo-400 group-hover:text-slate-950'">
+                        <span x-show="isMesin">âœ“</span>
+                        <span x-show="!isMesin">&rarr;</span>
                     </div>
                 </div>
-                <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20">1.3.5</span>
             </button>
+
+            <!-- KIB C: Gedung & Bangunan -->
+            <button type="button" @click="selectKibCategory('gedung')"
+                class="group p-3.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 relative"
+                :class="isGedung 
+                    ? 'bg-blue-500/20 border-blue-400 text-white shadow-xl shadow-blue-500/20 ring-1 ring-blue-400' 
+                    : 'bg-slate-950/70 border-slate-800 text-slate-300 hover:border-blue-500/50 hover:bg-slate-850 hover:-translate-y-0.5'">
+                <div class="flex items-center justify-between gap-2 shrink-0">
+                    <span class="text-xl">ðŸ¢</span>
+                    <span class="font-mono text-[10px] font-black text-blue-400 group-hover:text-blue-300">1.3.3</span>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <span class="block text-xs font-bold text-slate-200 group-hover:text-white truncate">KIB C (Gedung/Bangunan)</span>
+                    <span class="block text-[10px] text-slate-400 line-clamp-2 mt-0.5 leading-snug">Gedung rawat inap, paviliun, gudang, laboratorium</span>
+                </div>
+                <div class="kib-footer pt-2 border-t border-slate-800/80 flex items-center justify-between shrink-0">
+                    <span class="text-[9px] font-mono text-slate-500">KIB C</span>
+                    <div class="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold"
+                        :class="isGedung ? 'bg-blue-400 text-slate-950 shadow-md' : 'bg-slate-800 text-slate-400 group-hover:bg-blue-400 group-hover:text-slate-950'">
+                        <span x-show="isGedung">âœ“</span>
+                        <span x-show="!isGedung">&rarr;</span>
+                    </div>
+                </div>
+            </button>
+
+            <!-- KIB D: Jalan, Irigasi & Jaringan -->
+            <button type="button" @click="selectKibCategory('jaringan')"
+                class="group p-3.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 relative"
+                :class="isJaringan 
+                    ? 'bg-teal-500/20 border-teal-400 text-white shadow-xl shadow-teal-500/20 ring-1 ring-teal-400' 
+                    : 'bg-slate-950/70 border-slate-800 text-slate-300 hover:border-teal-500/50 hover:bg-slate-850 hover:-translate-y-0.5'">
+                <div class="flex items-center justify-between gap-2 shrink-0">
+                    <span class="text-xl">ðŸ›£ï¸</span>
+                    <span class="font-mono text-[10px] font-black text-teal-400 group-hover:text-teal-300">1.3.4</span>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <span class="block text-xs font-bold text-slate-200 group-hover:text-white truncate">KIB D (Jalan/Jaringan)</span>
+                    <span class="block text-[10px] text-slate-400 line-clamp-2 mt-0.5 leading-snug">Jalan lingkungan, instalasi pemipaan, kabel listrik, IT</span>
+                </div>
+                <div class="kib-footer pt-2 border-t border-slate-800/80 flex items-center justify-between shrink-0">
+                    <span class="text-[9px] font-mono text-slate-500">KIB D</span>
+                    <div class="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold"
+                        :class="isJaringan ? 'bg-teal-400 text-slate-950 shadow-md' : 'bg-slate-800 text-slate-400 group-hover:bg-teal-400 group-hover:text-slate-950'">
+                        <span x-show="isJaringan">âœ“</span>
+                        <span x-show="!isJaringan">&rarr;</span>
+                    </div>
+                </div>
+            </button>
+
+            <!-- KIB E: Aset Tetap Lainnya -->
+            <button type="button" @click="selectKibCategory('lainnya')"
+                class="group p-3.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 relative kib-card-last-span"
+                :class="isLainnya 
+                    ? 'bg-fuchsia-500/20 border-fuchsia-400 text-white shadow-xl shadow-fuchsia-500/20 ring-1 ring-fuchsia-400' 
+                    : 'bg-slate-950/70 border-slate-800 text-slate-300 hover:border-fuchsia-500/50 hover:bg-slate-850 hover:-translate-y-0.5'">
+                <div class="flex items-center justify-between gap-2 shrink-0">
+                    <span class="text-xl">ðŸ“¦</span>
+                    <span class="font-mono text-[10px] font-black text-fuchsia-400 group-hover:text-fuchsia-300">1.3.5</span>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <span class="block text-xs font-bold text-slate-200 group-hover:text-white truncate">KIB E (Aset Lainnya)</span>
+                    <span class="block text-[10px] text-slate-400 line-clamp-2 mt-0.5 leading-snug">Buku medis perpustakaan, seni, hewan/tanaman, software</span>
+                </div>
+                <div class="kib-footer pt-2 border-t border-slate-800/80 flex items-center justify-between shrink-0">
+                    <span class="text-[9px] font-mono text-slate-500">KIB E</span>
+                    <div class="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold"
+                        :class="isLainnya ? 'bg-fuchsia-400 text-slate-950 shadow-md' : 'bg-slate-800 text-slate-400 group-hover:bg-fuchsia-400 group-hover:text-slate-950'">
+                        <span x-show="isLainnya">âœ“</span>
+                        <span x-show="!isLainnya">&rarr;</span>
+                    </div>
+                </div>
+            </button>
+
         </div>
     </div>
 
-    <!-- ===================================================================== -->
-    <!-- ALUR PENEMPATAN FLEKSIBEL (OPSI A: GUDANG VS RUANGAN KIR)            -->
-    <!-- ===================================================================== -->
-    <div class="p-5 rounded-2xl bg-slate-950/80 border border-indigo-500/30 space-y-4 shadow-xl">
-        <div class="flex items-center justify-between">
-            <span class="text-xs font-extrabold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
-                <span>📍 ALUR PENEMPATAN BARANG BELANJA (OPSI A)</span>
-            </span>
-            <span class="text-[10px] font-bold text-slate-400 bg-slate-900 px-2.5 py-0.5 rounded-full border border-slate-800">
-                Pilih Jalur Distribusi Fisik
-            </span>
+
+    <!-- ========================================================================= -->
+    <!-- LEMBAR SPESIFIKASI FISIK DINAMIS (KIB A / B / C / D / E)                   -->
+    <!-- ========================================================================= -->
+    <!-- Sheet KIB A: Tanah -->
+    @include('pages.belanja_barang.form_partials.step2_sheets.sheet_tanah')
+
+    <!-- Sheet KIB B: Peralatan & Mesin / Alkes Medis -->
+    @include('pages.belanja_barang.form_partials.step2_sheets.sheet_mesin')
+
+    <!-- Sheet KIB C: Gedung & Bangunan -->
+    @include('pages.belanja_barang.form_partials.step2_sheets.sheet_gedung')
+
+    <!-- Sheet KIB D: Jalan, Irigasi & Jaringan -->
+    @include('pages.belanja_barang.form_partials.step2_sheets.sheet_jaringan')
+
+    <!-- Sheet KIB E: Aset Tetap Lainnya -->
+    @include('pages.belanja_barang.form_partials.step2_sheets.sheet_lainnya')
+
+    <!-- ========================================================================= -->
+    <!-- ========================================================================= -->
+    <!-- AKUMULASI TOTAL VOLUME & NILAI PEROLEHAN BMD                              -->
+    <!-- ========================================================================= -->
+    <div class="p-6 rounded-3xl bg-slate-950/80 border border-indigo-500/30 space-y-5 shadow-2xl relative overflow-hidden">
+        <div class="absolute -right-10 -bottom-10 w-44 h-44 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none"></div>
+
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div class="flex items-center space-x-2.5">
+                <span class="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm border border-indigo-500/30">ðŸ”’</span>
+                <div>
+                    <h3 class="text-xs sm:text-sm font-extrabold text-white uppercase tracking-wider">
+                        Akumulasi Total Volume &amp; Nilai Perolehan BMD
+                    </h3>
+                    <p class="text-[11px] text-slate-400 mt-0.5">Terkunci otomatis dari hasil perhitungan seluruh rincian unit barang pada lembar KIB di atas.</p>
+                </div>
+            </div>
+            <template x-if="selected108Item">
+                <span class="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/30 font-mono hidden sm:inline-block"
+                    x-text="selected108Item.kode + ' â€¢ ' + selected108Item.nama"></span>
+            </template>
         </div>
 
-        <!-- Pilihan Mode Alokasi (Radio Cards) -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             
-            <!-- Card 1: Simpan di Gudang Perbekalan (Transit Stok) -->
-            <div @click="setGlobalAlokasiMode('gudang')"
-                class="p-4 rounded-2xl border cursor-pointer transition-all relative flex flex-col justify-between"
-                :class="globalAlokasiMode === 'gudang' ? 'bg-indigo-600/15 border-indigo-500 shadow-lg shadow-indigo-500/10 ring-1 ring-indigo-500' : 'bg-slate-900/80 border-slate-800 hover:border-slate-700'">
-                <div class="space-y-2">
-                    <div class="flex items-center justify-between">
-                        <span class="text-2xl">📦</span>
-                        <div class="w-4 h-4 rounded-full border flex items-center justify-center"
-                            :class="globalAlokasiMode === 'gudang' ? 'border-indigo-400 bg-indigo-500' : 'border-slate-700'">
-                            <div x-show="globalAlokasiMode === 'gudang'" class="w-1.5 h-1.5 rounded-full bg-white"></div>
-                        </div>
-                    </div>
-                    <span class="text-xs font-extrabold text-white block">Simpan di Gudang Perbekalan (Transit Stok)</span>
-                    <p class="text-[11px] text-slate-400 leading-relaxed">
-                        Barang dicatat sebagai buffer stok di <strong class="text-indigo-300">Gudang Perbekalan</strong>. Register NIBAR berstatus <strong class="text-emerald-400">Tersedia</strong> dan siap didistribusikan bertahap ke ruangan menggunakan dokumen BAST Distribusi.
-                    </p>
-                </div>
-                <div class="mt-3 pt-2.5 border-t border-slate-800/80 flex items-center justify-between text-[10px]">
-                    <span class="text-slate-400">Status Register:</span>
-                    <span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">Tersedia di Gudang</span>
-                </div>
-            </div>
-
-            <!-- Card 2: Langsung Ditempatkan ke Ruangan Perawatan / Poli (KIR Langsung Aktif) -->
-            <div @click="setGlobalAlokasiMode('ruangan')"
-                class="p-4 rounded-2xl border cursor-pointer transition-all relative flex flex-col justify-between"
-                :class="globalAlokasiMode === 'ruangan' ? 'bg-indigo-600/15 border-indigo-500 shadow-lg shadow-indigo-500/10 ring-1 ring-indigo-500' : 'bg-slate-900/80 border-slate-800 hover:border-slate-700'">
-                <div class="space-y-2">
-                    <div class="flex items-center justify-between">
-                        <span class="text-2xl">🏢</span>
-                        <div class="w-4 h-4 rounded-full border flex items-center justify-center"
-                            :class="globalAlokasiMode === 'ruangan' ? 'border-indigo-400 bg-indigo-500' : 'border-slate-700'">
-                            <div x-show="globalAlokasiMode === 'ruangan'" class="w-1.5 h-1.5 rounded-full bg-white"></div>
-                        </div>
-                    </div>
-                    <span class="text-xs font-extrabold text-white block">Langsung ke Ruangan Perawatan / Poli (KIR)</span>
-                    <p class="text-[11px] text-slate-400 leading-relaxed">
-                        Untuk barang yang dibeli khusus unit tertentu (contoh: ICU, IGD, Poli Gigi). Register langsung berstatus <strong class="text-indigo-300">Tidak Tersedia</strong> dan <strong class="text-indigo-300">langsung aktif muncul di Kartu Inventaris Ruangan (KIR)</strong>.
-                    </p>
-                </div>
-                <div class="mt-3 pt-2.5 border-t border-slate-800/80 flex items-center justify-between text-[10px]">
-                    <span class="text-slate-400">Integrasi KIR:</span>
-                    <span class="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-bold">Langsung Masuk KIR</span>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- Form Alokasi jika Mode = Ruangan (Global) -->
-        <template x-if="globalAlokasiMode === 'ruangan'">
-            <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
-                <span class="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
-                    <span>🏢 Tentukan Unit / Ruangan Tujuan Seluruh Item</span>
-                </span>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-[11px] font-bold text-slate-300 mb-1">
-                            Pilih Unit / Ruangan / Poli
-                        </label>
-                        <select x-model.number="globalUnitId" @change="applyGlobalUnit()"
-                            class="w-full bg-slate-950 border border-slate-700 focus:border-indigo-400 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none">
-                            <option value="">-- Pilih Unit / Ruangan Pemegang Aset --</option>
-                            @foreach($dbUnits ?? [] as $unit)
-                                <option value="{{ $unit->id }}">{{ $unit->nama }} ({{ $unit->kode ?? '-' }})</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-[11px] font-bold text-slate-300 mb-1">
-                            Kondisi Fisik Barang
-                        </label>
-                        <select x-model="globalKondisi" @change="applyGlobalKondisi()"
-                            class="w-full bg-slate-950 border border-slate-700 focus:border-indigo-400 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none">
-                            <option value="Baik">Baik (Bagus / Baru)</option>
-                            <option value="Kurang Baik">Kurang Baik (Dapat Berfungsi)</option>
-                            <option value="Rusak Berat">Rusak Berat (Tidak Berfungsi)</option>
-                        </select>
-                    </div>
-                </div>
-
+            <!-- 1. Total Volume / Kuantitas Aset -->
+            <div class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2.5 shadow-md flex flex-col justify-between">
                 <div>
-                    <label class="block text-[11px] font-bold text-slate-300 mb-1">
-                        Detail Lokasi Fisik Spesifik
-                    </label>
-                    <input type="text" x-model="globalAlamatBarang" @input="applyGlobalAlamat()"
-                        placeholder="Contoh: Gedung Rawat Inap Melati Lt. 2, Ruang Isolasi 204..."
-                        class="w-full bg-slate-950 border border-slate-700 focus:border-indigo-400 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none">
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                            <span>Total Volume / Kuantitas <span class="text-rose-400">*</span></span>
+                            <span class="text-[9px] font-bold text-indigo-400 bg-indigo-500/15 px-2 py-0.5 rounded border border-indigo-500/30">
+                                ðŸ”’ Terkunci
+                            </span>
+                        </label>
+                        <span class="text-xs font-mono text-indigo-300 font-extrabold" x-text="(formData.jumlah_volume || 0) + ' ' + (formData.satuan || 'Unit')"></span>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="col-span-2 relative">
+                            <input type="number" x-model.number="formData.jumlah_volume" readonly required min="1"
+                                class="w-full bg-slate-950/80 border border-slate-800 text-indigo-300 rounded-xl px-4 py-2.5 text-xs font-bold font-mono cursor-not-allowed select-none focus:outline-none shadow-inner">
+                        </div>
+                        <div>
+                            <input type="text" x-model="formData.satuan" readonly required placeholder="Unit"
+                                class="w-full bg-slate-950/80 border border-slate-800 text-slate-300 rounded-xl px-3 py-2.5 text-xs text-center font-bold cursor-not-allowed select-none focus:outline-none shadow-inner">
+                        </div>
+                    </div>
                 </div>
+
+                <p class="text-[10.5px] text-slate-400 pt-1 leading-relaxed">
+                    ðŸ’¡ Total volume dihitung otomatis dari akumulasi kuantitas rincian barang pada lembar KIB di atas.
+                </p>
             </div>
-        </template>
-    </div>
 
-    <!-- DAFTAR ITEM BARANG DINAMIS (REPEATER CARDS) -->
-    <div class="space-y-4">
-        <template x-for="(item, index) in formData.items" :key="item._id || index">
-            <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-slate-700/80 transition-all space-y-4 relative shadow-lg">
-                
-                <!-- Item Header Bar -->
-                <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
-                    <div class="flex items-center gap-2.5">
-                        <span class="w-6 h-6 rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-xs font-bold font-mono" x-text="index + 1"></span>
-                        <span class="text-xs font-extrabold text-white" x-text="item.nama_barang ? item.nama_barang : 'Barang #' + (index + 1)"></span>
-                        <template x-if="item.kode_108">
-                            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20" x-text="item.kode_108"></span>
-                        </template>
-                    </div>
-
-                    <!-- Tombol Aksi Item -->
-                    <div class="flex items-center gap-1.5">
-                        <button type="button" @click="duplicateItem(index)" title="Duplikat baris barang ini"
-                            class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-cyan-300 border border-slate-800 text-[11px] font-semibold transition-all">
-                            📋 Salin
-                        </button>
-                        <template x-if="formData.items.length > 1">
-                            <button type="button" @click="removeItem(index)" title="Hapus baris barang ini"
-                                class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border border-rose-500/20 text-[11px] font-bold transition-all">
-                                🗑️ Hapus
-                            </button>
-                        </template>
-                    </div>
-                </div>
-
-                <!-- Bagian Pemilihan Kode 108 Barang Ini -->
-                <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div class="min-w-0">
-                        <span class="text-[10px] text-slate-400 uppercase font-bold block mb-0.5">Klasifikasi Kode Barang (Permendagri 108)</span>
-                        <template x-if="item.jenis_astap_id && item.kode_108">
-                            <div class="flex items-center gap-2">
-                                <span class="font-mono text-xs font-extrabold text-emerald-400" x-text="item.kode_108"></span>
-                                <span class="text-xs text-slate-200 truncate" x-text="item.nama_108"></span>
-                            </div>
-                        </template>
-                        <template x-if="!item.jenis_astap_id">
-                            <span class="text-xs text-amber-400 font-medium">⚠️ Kode 108 belum dipilih. Klik tombol untuk mencari kode klasifikasi.</span>
-                        </template>
-                    </div>
-
-                    <button type="button" @click="openPicker108(index)"
-                        class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 hover:border-indigo-500 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer">
-                        <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                        <span x-text="item.jenis_astap_id ? 'Ganti Kode 108' : 'Pilih Kode 108'"></span>
-                    </button>
-                </div>
-
-                <!-- Input Nama, Volume, Satuan & Harga -->
-                <div class="grid grid-cols-1 sm:grid-cols-12 gap-3.5">
-                    <!-- Nama Barang Spesifik -->
-                    <div class="sm:col-span-5">
-                        <label class="block text-[11px] font-bold text-slate-300 mb-1">
-                            Nama Barang Spesifik
+            <!-- 2. Total Nilai Perolehan BMD dari SKPD Pengirim (Rp) -->
+            <div class="p-5 rounded-2xl bg-slate-900/90 border border-indigo-500/30 space-y-2.5 shadow-md flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                            <span>Total Nilai Perolehan (Rp) <span class="text-rose-400">*</span></span>
+                            <span class="text-[9px] font-bold text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded border border-emerald-500/30">
+                                ðŸ”’ Terkunci
+                            </span>
                         </label>
-                        <input type="text" x-model="item.nama_barang"
-                            placeholder="Contoh: Tensimeter Digital Omron, Kursi Roda Standar..."
-                            class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none font-bold">
+                        <span class="text-xs font-mono text-emerald-400 font-extrabold" x-text="'Rp ' + formatRupiah(formData.total_realisasi)"></span>
                     </div>
 
-                    <!-- Volume -->
-                    <div class="sm:col-span-2">
-                        <label class="block text-[11px] font-bold text-slate-300 mb-1">
-                            Volume
-                        </label>
-                        <input type="number" x-model.number="item.jumlah_volume" min="1"
-                            class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none text-center">
-                    </div>
-
-                    <!-- Satuan -->
-                    <div class="sm:col-span-2">
-                        <label class="block text-[11px] font-bold text-slate-300 mb-1">
-                            Satuan
-                        </label>
-                        <select x-model="item.satuan"
-                            class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none">
-                            <option value="Unit">Unit</option>
-                            <option value="Buah">Buah</option>
-                            <option value="Set">Set</option>
-                            <option value="Box">Box</option>
-                            <option value="Pak">Pak</option>
-                            <option value="Roll">Roll</option>
-                            <option value="Botol">Botol</option>
-                            <option value="Lembar">Lembar</option>
-                        </select>
-                    </div>
-
-                    <!-- Harga Satuan -->
-                    <div class="sm:col-span-3">
-                        <label class="block text-[11px] font-bold text-slate-300 mb-1 flex items-center justify-between">
-                            <span>Harga Satuan (Rp)</span>
-                        </label>
-                        <input type="number" x-model.number="item.harga_satuan" min="0" step="any"
+                    <div class="flex items-center rounded-xl border border-slate-800 bg-slate-950/80 overflow-hidden cursor-not-allowed shadow-inner">
+                        <span class="px-3.5 py-2.5 bg-slate-900 border-r border-slate-800 text-slate-400 text-xs font-bold font-mono select-none flex items-center justify-center">
+                            Rp
+                        </span>
+                        <input type="text"
+                            :value="formData.total_realisasi ? Number(formData.total_realisasi).toLocaleString('id-ID') : '0'"
+                            readonly
                             placeholder="0"
-                            class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-cyan-300 font-mono focus:outline-none font-bold text-right">
+                            class="w-full bg-transparent px-3.5 py-2.5 text-xs font-bold font-mono text-emerald-400 cursor-not-allowed select-none focus:outline-none">
                     </div>
                 </div>
 
-                <!-- Spesifikasi Teknis KIB Per Item (Merk, Tipe, Bahan, SN) -->
-                <div class="pt-2 border-t border-slate-900/90">
-                    <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-2">Spesifikasi Teknis KIB (Opsional):</span>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                        <div>
-                            <input type="text" x-model="item.spesifikasi_json.merk" placeholder="Merk / Brand"
-                                class="w-full bg-slate-900/90 border border-slate-800 focus:border-indigo-400 rounded-xl px-3 py-1.5 text-xs text-white">
-                        </div>
-                        <div>
-                            <input type="text" x-model="item.spesifikasi_json.type" placeholder="Tipe / Model"
-                                class="w-full bg-slate-900/90 border border-slate-800 focus:border-indigo-400 rounded-xl px-3 py-1.5 text-xs text-white">
-                        </div>
-                        <div>
-                            <input type="text" x-model="item.spesifikasi_json.bahan" placeholder="Bahan / Material"
-                                class="w-full bg-slate-900/90 border border-slate-800 focus:border-indigo-400 rounded-xl px-3 py-1.5 text-xs text-white">
-                        </div>
-                        <div>
-                            <input type="text" x-model="item.spesifikasi_json.no_pabrik" placeholder="Nomor Seri (SN)"
-                                class="w-full bg-slate-900/90 border border-slate-800 focus:border-indigo-400 rounded-xl px-3 py-1.5 text-xs text-white font-mono">
-                        </div>
-                    </div>
+                <div class="text-[10.5px] text-slate-400 pt-1 leading-relaxed">
+                    ðŸ’¡ Akumulasi otomatis dari nilai total seluruh rincian barang pada lembar KIB di atas.
                 </div>
-
-                <!-- Subtotal Row & Capitalization Guard Alert -->
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-slate-900">
-                    <div>
-                        <template x-if="item.harga_satuan >= 1000000">
-                            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/25 text-amber-300 text-[10px] font-bold">
-                                <span>⚠️</span>
-                                <span>Harga Satuan &ge; Rp 1.000.000 (Ekstrakomptabel - Dipantau di KIR tanpa kapitalisasi Belanja Modal APBD).</span>
-                            </div>
-                        </template>
-                    </div>
-
-                    <div class="text-right">
-                        <span class="text-[10px] text-slate-400 uppercase font-semibold mr-1">Subtotal Item:</span>
-                        <span class="text-xs font-mono font-black text-cyan-400" x-text="formatRupiah((item.jumlah_volume || 0) * (item.harga_satuan || 0))"></span>
-                    </div>
-                </div>
-
             </div>
-        </template>
-    </div>
 
-    <!-- Tombol Tambah Item Bawah -->
-    <div class="pt-2 flex justify-center">
-        <button type="button" @click="addItem()"
-            class="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-cyan-400 hover:text-cyan-300 border border-cyan-500/30 text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-sm active:scale-95">
-            <span>➕ Tambah Item Barang Lagi</span>
-        </button>
-    </div>
-
-    <!-- REKAPITULASI TOTAL FAKTUR STICKY BAR -->
-    <div class="p-5 rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border border-indigo-500/40 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-            <span class="text-[10px] text-indigo-400 uppercase font-black tracking-wider block">Ringkasan Faktur Pembelian</span>
-            <div class="flex items-center gap-3 mt-1">
-                <span class="text-xs text-slate-300">
-                    Total Macam Barang: <strong class="text-white font-mono" x-text="formData.items.length + ' Item'"></strong>
-                </span>
-                <span class="text-slate-600">•</span>
-                <span class="text-xs text-slate-300">
-                    Total Volume Fisik: <strong class="text-white font-mono" x-text="totalVolumeFaktur + ' Unit'"></strong>
-                </span>
-            </div>
-        </div>
-
-        <div class="text-right border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-800">
-            <span class="text-[10px] text-slate-400 uppercase font-bold block">Total Nilai Faktur (Rp)</span>
-            <span class="text-xl sm:text-2xl font-black font-mono text-emerald-400" x-text="formatRupiah(totalNilaiFaktur)"></span>
         </div>
     </div>
 
-    <!-- ========================================================================= -->
-    <!-- MODAL / DRAWER PICKER KODE 108 PERMENDAGRI                                -->
-    <!-- ========================================================================= -->
-    <div x-show="isPicker108Open" x-cloak
-        class="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-        
-        <div @click.away="closePicker108()" 
-            class="w-full max-w-3xl bg-slate-900 border border-cyan-500/40 rounded-3xl p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
-            
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                <div>
-                    <h3 class="text-base font-extrabold text-white flex items-center gap-2">
-                        <span>🔍 Pilih Klasifikasi Kode Barang 108</span>
-                    </h3>
-                    <p class="text-xs text-slate-400 mt-0.5">
-                        Item: <strong class="text-cyan-300" x-text="activeItemIndex !== null ? (formData.items[activeItemIndex]?.nama_barang || 'Barang #' + (activeItemIndex + 1)) : ''"></strong>
-                    </p>
+    <!-- BANNER PERINGATAN EXTRACOM (> RP 300.000) -->
+    <div x-show="hasExtracomViolation" x-cloak
+         class="mt-4 p-4 sm:p-5 rounded-3xl bg-rose-950/40 border border-rose-500/50 text-rose-300 shadow-xl shadow-rose-950/40 flex items-start space-x-3.5 transition-all">
+        <div class="w-10 h-10 rounded-2xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-xl shrink-0 text-rose-400 shadow-lg shadow-rose-500/20">
+            âš ï¸
+        </div>
+        <div class="space-y-2 flex-1 min-w-0">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+                <h4 class="font-extrabold text-rose-100 text-xs sm:text-sm tracking-wide">
+                    Peringatan: Nilai Satuan Ekstrakomtabel (Extracom) Melebihi Rp 300.000!
+                </h4>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/40">
+                    Tidak Dapat Lanjut ke Tahap 3
+                </span>
+            </div>
+            <p class="text-xs text-rose-200/90 leading-relaxed">
+                Terdapat rincian barang yang Anda beri status <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">Ekstrakomtabel (â‰¤ 300rb)</span> namun diisi dengan nilai satuan per unit lebih dari <strong>Rp 300.000</strong>. Anda harus menyesuaikannya sebelum dapat melanjutkan ke Tahap 3:
+            </p>
+            <div class="p-3 rounded-2xl bg-slate-950/80 border border-rose-500/20 text-[11.5px] text-slate-300 space-y-1.5 shadow-inner">
+                <div class="flex items-start gap-2">
+                    <span class="text-emerald-400 font-bold">1.</span>
+                    <span>Jika nilai perolehan memang <strong>&gt; Rp 300.000</strong>: Klik tombol status akuntansi <strong>âš™ï¸ Aset Tetap Reguler (Intrakomptabel)</strong> pada kartu rincian barang di atas.</span>
                 </div>
-                <button type="button" @click="closePicker108()"
-                    class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center font-bold text-sm transition-colors">
-                    ✕
-                </button>
-            </div>
-
-            <!-- Search Filter Cepat -->
-            <div class="relative">
-                <input type="text"
-                    x-model="search108"
-                    @input="performSearch108()"
-                    placeholder="Ketik kata kunci atau kode barang (contoh: Tensimeter, Kursi Roda, USG, Bed Pasien, Timbangan, AC, Lemari)..."
-                    class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-2.5 pl-10 text-xs text-white placeholder-slate-500 focus:outline-none transition-all">
-                <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <button type="button" x-show="search108" @click="search108 = ''; searchResults108 = []"
-                    class="absolute right-3 top-2.5 text-xs text-slate-400 hover:text-white">✕</button>
-            </div>
-
-            <!-- Hasil Pencarian Langsung -->
-            <div x-show="searchResults108.length > 0" class="max-h-56 overflow-y-auto rounded-xl border border-cyan-500/30 bg-slate-950 divide-y divide-slate-800 custom-scrollbar">
-                <template x-for="item in searchResults108" :key="item.id">
-                    <div @click="selectSearchResult108(item)"
-                        class="p-3 hover:bg-cyan-500/10 cursor-pointer transition-colors flex items-center justify-between text-xs">
-                        <div>
-                            <span class="font-bold text-white block" x-text="item.nama"></span>
-                            <span class="text-cyan-400 font-mono text-[11px] block mt-0.5" x-text="item.kode"></span>
-                        </div>
-                        <span class="text-[10px] px-2.5 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 font-bold shrink-0">Pilih ↵</span>
-                    </div>
-                </template>
-            </div>
-
-            <!-- Dropdown Cascading 5-Level (Akun -> Jenis -> Objek -> Rincian -> Sub-Sub) -->
-            <div class="overflow-y-auto flex-1 space-y-3 custom-scrollbar pr-1">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-[11px] font-bold text-slate-400 mb-1">1. Kelompok Aset (Akun)</label>
-                        <select x-model="selectedAkunKode" @change="onAkunChange()"
-                            class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                            <option value="">-- Pilih Kelompok --</option>
-                            <template x-for="item in master108" :key="item.kode">
-                                <option :value="item.kode" x-text="item.kode + ' - ' + item.nama"></option>
-                            </template>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-[11px] font-bold text-slate-400 mb-1">2. Jenis Aset</label>
-                        <select x-model="selectedJenisKode" @change="onJenisChange()" :disabled="!jenisList.length"
-                            class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none disabled:opacity-50">
-                            <option value="">-- Pilih Jenis --</option>
-                            <template x-for="item in jenisList" :key="item.kode">
-                                <option :value="item.kode" x-text="item.kode + ' - ' + item.nama"></option>
-                            </template>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-[11px] font-bold text-slate-400 mb-1">3. Objek Aset</label>
-                        <select x-model="selectedObjekKode" @change="onObjekChange()" :disabled="!objekList.length"
-                            class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none disabled:opacity-50">
-                            <option value="">-- Pilih Objek --</option>
-                            <template x-for="item in objekList" :key="item.kode">
-                                <option :value="item.kode" x-text="item.kode + ' - ' + item.nama"></option>
-                            </template>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-[11px] font-bold text-slate-400 mb-1">4. Rincian Objek</label>
-                        <select x-model="selectedRincianKode" @change="onRincianChange()" :disabled="!rincianList.length"
-                            class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none disabled:opacity-50">
-                            <option value="">-- Pilih Rincian --</option>
-                            <template x-for="item in rincianList" :key="item.kode">
-                                <option :value="item.kode" x-text="item.kode + ' - ' + item.nama"></option>
-                            </template>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Level 5: Sub-Sub Rincian Objek -->
-                <div>
-                    <label class="block text-xs font-bold text-emerald-400 mb-1">
-                        5. Sub-Sub Rincian Objek (Level Akhir)
-                    </label>
-                    <select x-model="selectedSubSubId" @change="onSubSubChange()" :disabled="!subSubList.length"
-                        class="w-full bg-slate-950 border border-emerald-500/40 focus:border-emerald-400 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none disabled:opacity-50 font-bold">
-                        <option value="">-- Pilih Sub-Sub Rincian Akhir --</option>
-                        <template x-for="item in subSubList" :key="item.id">
-                            <option :value="item.id" x-text="item.kode + ' - ' + item.nama"></option>
-                        </template>
-                    </select>
+                <div class="flex items-start gap-2">
+                    <span class="text-amber-400 font-bold">2.</span>
+                    <span>Jika barang benar-benar <strong>Ekstrakomtabel</strong>: Perbaiki nilai satuan agar <strong>maksimal Rp 300.000</strong>.</span>
                 </div>
             </div>
-
-            <!-- Footer Modal -->
-            <div class="border-t border-slate-800 pt-3 flex items-center justify-end gap-2">
-                <button type="button" @click="closePicker108()"
-                    class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-colors">
-                    Tutup
-                </button>
-            </div>
-
         </div>
     </div>
 
 </div>
+
