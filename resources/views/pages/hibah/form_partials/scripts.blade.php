@@ -64,6 +64,7 @@
 
             // Master Data
             master108: window.dbMasterJenisAstap108 || [],
+            flat108: [],
             masterRekeningBelanja: window.dbRekeningBelanjas || [],
             pejabatsList: window.dbPejabats || [],
             unitsList: window.dbUnits || [],
@@ -358,6 +359,8 @@
             editId: null,
 
             init() {
+                this.buildFlat108();
+
                 if (this.pejabatsList.length > 0) {
                     this.formData.ppk_nama = this.pejabatsList[0].nama || '';
                     this.formData.ppk_nip = this.pejabatsList[0].nip || '';
@@ -368,6 +371,12 @@
                     this.editId = window.editAstapData.id;
                     this.hydrateFromEditData(window.editAstapData);
                 }
+
+                this.$watch('formData.mesin_items', () => { this.syncTotalsFromItems(); }, { deep: true });
+                this.$watch('formData.tanah_items', () => { this.syncTotalsFromItems(); }, { deep: true });
+                this.$watch('formData.gedung_items', () => { this.syncTotalsFromItems(); }, { deep: true });
+                this.$watch('formData.jaringan_items', () => { this.syncTotalsFromItems(); }, { deep: true });
+                this.$watch('formData.lainnya_items', () => { this.syncTotalsFromItems(); }, { deep: true });
             },
 
             hydrateFromEditData(d) {
@@ -735,8 +744,12 @@
                 if (found) {
                     this.formData.jenis_aset_kode = found.kode;
                     this.formData.jenis_aset_nama = found.nama;
+                } else {
+                    this.formData.jenis_aset_kode = kodePrefix;
+                    this.formData.jenis_aset_nama = namaKib;
                 }
                 this.adjustSatuanForKib();
+                this.syncTotalsFromItems();
             },
 
             get kibLabel() {
@@ -744,7 +757,7 @@
                 if (this.isMesin) return 'KIB B (Peralatan & Mesin)';
                 if (this.isGedung) return 'KIB C (Gedung & Bangunan)';
                 if (this.isJaringan) return 'KIB D (Jalan, Irigasi & Jaringan)';
-                if (this.isAsetLainnya) return 'KIB E (Aset Tetap Lainnya)';
+                if (this.isAsetLainnya || this.isLainnya) return 'KIB E (Aset Tetap Lainnya)';
                 if (this.isAtb) return 'ATB (Aset Tidak Berwujud)';
                 if (this.isKdp) return 'KIB F (Konstruksi Dalam Pengerjaan)';
                 return 'Aset Tetap Hibah';
@@ -757,7 +770,7 @@
                     this.formData.satuan = 'Gedung';
                 } else if (this.isJaringan) {
                     this.formData.satuan = 'Paket';
-                } else if (this.isAsetLainnya) {
+                } else if (this.isAsetLainnya || this.isLainnya) {
                     this.formData.satuan = (this.formData.kib_e_default_type === 'buku') ? 'Eksemplar' : 'Buah';
                 } else if (this.isAtb) {
                     this.formData.satuan = 'Lisensi';
@@ -782,15 +795,16 @@
                         l.is_extracom = isExtra;
                     });
                 }
-                this.syncActiveKibTotals();
+                this.syncTotalsFromItems();
             },
 
             // ─── Subtotal Calculation Helpers untuk Langkah 3 Preview ───────────
             getTanahSubtotal(item) {
-                return parseFloat(item.tanah_nilai_fisik) || 0;
+                return parseFloat(item?.tanah_nilai_fisik) || 0;
             },
 
             getMesinSubtotal(item) {
+                if (!item) return 0;
                 const vol = parseFloat(item.mesin_jumlah_barang) || 0;
                 const sat = parseFloat(item.mesin_nilai_satuan) || 0;
                 const adm = parseFloat(item.mesin_administrasi_proyek) || 0;
@@ -798,28 +812,182 @@
             },
 
             getGedungSubtotal(item) {
+                if (!item) return 0;
+                const direct = Number(item.gedung_nilai_satuan || item.gedung_nilai_fisik || 0);
+                if (direct > 0) return direct;
                 const p = parseFloat(item.gedung_nilai_perencanaan) || 0;
                 const f = parseFloat(item.gedung_nilai_fisik) || 0;
                 const w = parseFloat(item.gedung_nilai_pengawasan) || 0;
-                const ap = parseFloat(item.gedung_nilai_ap) || 0;
-                const pip = parseFloat(item.gedung_nilai_pip) || 0;
-                return p + f + w + ap + pip;
+                const ap = parseFloat(item.gedung_nilai_ap || item.gedung_nilai_pip) || 0;
+                return p + f + w + ap;
             },
 
             getJaringanSubtotal(item) {
+                if (!item) return 0;
+                const direct = Number(item.jaringan_nilai_satuan || item.jaringan_nilai_fisik || 0);
+                if (direct > 0) return direct;
                 const p = parseFloat(item.jaringan_nilai_perencanaan) || 0;
                 const f = parseFloat(item.jaringan_nilai_fisik) || 0;
                 const w = parseFloat(item.jaringan_nilai_pengawasan) || 0;
-                const ap = parseFloat(item.jaringan_nilai_ap) || 0;
-                const pip = parseFloat(item.jaringan_nilai_pip) || 0;
-                return p + f + w + ap + pip;
+                const ap = parseFloat(item.jaringan_nilai_ap || item.jaringan_nilai_pip) || 0;
+                return p + f + w + ap;
             },
 
             getLainnyaSubtotal(item) {
-                const vol = parseFloat(item.lainnya_jumlah_barang) || 0;
+                if (!item) return 0;
+                const vol = parseFloat(item.lainnya_jumlah || item.lainnya_jumlah_barang) || 1;
                 const sat = parseFloat(item.lainnya_nilai_satuan) || 0;
                 const adm = parseFloat(item.lainnya_administrasi_proyek) || 0;
                 return (vol * sat) + adm;
+            },
+
+            get isLainnya() {
+                return this.isAsetLainnya;
+            },
+
+            get totalNilaiTanah() {
+                if (this.formData.tanah_items && this.formData.tanah_items.length > 0) {
+                    return this.formData.tanah_items.reduce((s, it) => s + (parseFloat(it.tanah_nilai_fisik) || 0), 0);
+                }
+                return Number(this.formData.total_realisasi || 0);
+            },
+
+            get totalVolumeTanah() {
+                if (this.formData.tanah_items && this.formData.tanah_items.length > 0) {
+                    return this.formData.tanah_items.reduce((s, it) => s + (parseInt(it.tanah_jumlah_bidang) || 1), 0);
+                }
+                return parseInt(this.formData.jumlah_volume) || 1;
+            },
+
+            get totalNilaiLainnya() {
+                return this.totalNilaiAsetLainnya;
+            },
+
+            get totalVolumeLainnya() {
+                return this.totalVolumeAsetLainnya;
+            },
+
+            getKibEPrefix(item) {
+                if (!item) return '1.3.5';
+                if (item.kib_e_type === 'kesenian') return '1.3.5.02';
+                if (item.kib_e_type === 'hewan_tumbuhan') return '1.3.5.03';
+                return '1.3.5.01';
+            },
+
+            buildFlat108() {
+                const flat = [];
+                const raw = this.master108 || [];
+                if (Array.isArray(raw)) {
+                    raw.forEach(j => {
+                        if (!j) return;
+                        const subs = j.subRincian || j.subs || [];
+                        subs.forEach(s => {
+                            if (!s) return;
+                            const subSubs = s.subSubRincian || s.subSubs || [];
+                            subSubs.forEach(ss => {
+                                if (!ss) return;
+                                flat.push({
+                                    id: ss.id,
+                                    kode: ss.kode,
+                                    nama: ss.nama,
+                                    jenisKode: j.kode,
+                                    subKode: s.kode
+                                });
+                            });
+                        });
+                    });
+                }
+                this.flat108 = flat;
+            },
+
+            filterJenisAstap108(prefix, query, isOpen) {
+                if (!isOpen) return [];
+                const q = (query || '').toLowerCase().trim();
+                const results = [];
+                const list = this.flat108 || [];
+                const pfx = prefix || '';
+
+                for (let i = 0; i < list.length; i++) {
+                    const it = list[i];
+                    if (!it || !it.kode || !it.kode.startsWith(pfx)) continue;
+                    if (!q || (it.nama && it.nama.toLowerCase().includes(q)) || (it.kode && it.kode.includes(q))) {
+                        results.push(it);
+                        if (results.length >= 5) break;
+                    }
+                }
+
+                if (results.length === 0 && pfx.length > 5) {
+                    const parentPrefix = pfx.substring(0, 5);
+                    for (let i = 0; i < list.length; i++) {
+                        const it = list[i];
+                        if (!it || !it.kode || !it.kode.startsWith(parentPrefix)) continue;
+                        if (!q || (it.nama && it.nama.toLowerCase().includes(q)) || (it.kode && it.kode.includes(q))) {
+                            results.push(it);
+                            if (results.length >= 5) break;
+                        }
+                    }
+                }
+                return results;
+            },
+
+            select108ForItem(item, opt, type) {
+                if (type === 'tanah') {
+                    item.tanah_kode_barang = opt.kode;
+                    item.tanah_nama_barang = opt.nama;
+                    item.searchFilter = opt.nama;
+                } else if (type === 'mesin') {
+                    item.mesin_kode_barang = opt.kode;
+                    item.mesin_nama_barang = opt.nama;
+                    item.searchFilter = opt.nama;
+                } else if (type === 'gedung') {
+                    item.gedung_kode_barang = opt.kode;
+                    item.gedung_nama_barang = opt.nama;
+                    item.gedung_nama_bangunan = opt.nama;
+                    item.searchFilter = opt.nama;
+                } else if (type === 'jaringan') {
+                    item.jaringan_kode_barang = opt.kode;
+                    item.jaringan_nama_barang = opt.nama;
+                    item.searchFilter = opt.nama;
+                } else if (type === 'lainnya') {
+                    item.lainnya_kode_barang = opt.kode;
+                    item.lainnya_nama_barang = opt.nama;
+                    item.searchFilter = opt.nama;
+                }
+                item.isFilterOpen = false;
+                this.syncTotalsFromItems();
+            },
+
+            clearItem108(item, type) {
+                if (!item) return;
+                if (type === 'tanah') {
+                    item.tanah_kode_barang = '';
+                    item.tanah_nama_barang = '';
+                    item.searchFilter = '';
+                } else if (type === 'mesin') {
+                    item.mesin_kode_barang = '';
+                    item.mesin_nama_barang = '';
+                    item.searchFilter = '';
+                } else if (type === 'gedung') {
+                    item.gedung_kode_barang = '';
+                    item.gedung_nama_barang = '';
+                    item.gedung_nama_bangunan = '';
+                    item.searchFilter = '';
+                } else if (type === 'jaringan') {
+                    item.jaringan_kode_barang = '';
+                    item.jaringan_nama_barang = '';
+                    item.searchFilter = '';
+                } else if (type === 'lainnya') {
+                    item.lainnya_kode_barang = '';
+                    item.lainnya_nama_barang = '';
+                    item.lainnya_judul = '';
+                    item.searchFilter = '';
+                }
+                item.isFilterOpen = true;
+                this.syncTotalsFromItems();
+            },
+
+            syncTotalsFromItems() {
+                this.syncActiveKibTotals();
             },
 
             // ─── 1. KIB A (Tanah) Handlers ──────────────────────────────────────
@@ -856,6 +1024,7 @@
             syncTanahFieldsToMain() {
                 if (this.formData.tanah_items && this.formData.tanah_items.length > 0) {
                     const first = this.formData.tanah_items[0];
+                    if (first.tanah_nama_barang) this.formData.nama_barang = first.tanah_nama_barang;
                     this.formData.kondisi = first.tanah_kondisi;
                     const totalBidang = this.formData.tanah_items.reduce((s, it) => s + (parseInt(it.tanah_jumlah_bidang) || 1), 0);
                     this.formData.jumlah_volume = totalBidang;
@@ -921,6 +1090,7 @@
             syncMesinFieldsToMain() {
                 if (this.formData.mesin_items && this.formData.mesin_items.length > 0) {
                     const first = this.formData.mesin_items[0];
+                    if (first.mesin_nama_barang) this.formData.nama_barang = first.mesin_nama_barang;
                     this.formData.merk = first.mesin_merk;
                     this.formData.type = first.mesin_type;
                     this.formData.ukuran = first.mesin_ukuran;
@@ -1009,6 +1179,7 @@
             syncGedungFieldsToMain() {
                 if (this.formData.gedung_items && this.formData.gedung_items.length > 0) {
                     const first = this.formData.gedung_items[0];
+                    if (first.gedung_nama_barang) this.formData.nama_barang = first.gedung_nama_barang;
                     this.formData.kondisi = first.gedung_kondisi;
                     this.formData.satuan = first.gedung_satuan || 'Gedung';
                     if (first.gedung_alamat) {
@@ -1078,6 +1249,7 @@
             syncJaringanFieldsToMain() {
                 if (this.formData.jaringan_items && this.formData.jaringan_items.length > 0) {
                     const first = this.formData.jaringan_items[0];
+                    if (first.jaringan_nama_barang) this.formData.nama_barang = first.jaringan_nama_barang;
                     this.formData.kondisi = first.jaringan_kondisi;
                     this.formData.satuan = first.jaringan_satuan || 'Paket';
                     if (first.jaringan_alamat) {
@@ -1096,13 +1268,13 @@
 
             get totalVolumeAsetLainnya() {
                 if (this.formData.lainnya_items && this.formData.lainnya_items.length > 0) {
-                    return this.formData.lainnya_items.reduce((sum, item) => sum + (parseInt(item.lainnya_jumlah_barang) || 1), 0);
+                    return this.formData.lainnya_items.reduce((sum, item) => sum + (parseInt(item.lainnya_jumlah_barang || item.lainnya_jumlah) || 1), 0);
                 }
                 return 1;
             },
 
             getLainnyaSubtotal(item) {
-                return (Number(item.lainnya_jumlah_barang || 1) * Number(item.lainnya_nilai_satuan || 0)) + Number(item.lainnya_administrasi_proyek || 0);
+                return (Number(item.lainnya_jumlah_barang || item.lainnya_jumlah || 1) * Number(item.lainnya_nilai_satuan || 0)) + Number(item.lainnya_administrasi_proyek || 0);
             },
 
             addLainnyaItem() {
@@ -1145,6 +1317,8 @@
             syncLainnyaFieldsToMain() {
                 if (this.formData.lainnya_items && this.formData.lainnya_items.length > 0) {
                     const first = this.formData.lainnya_items[0];
+                    const nLain = first.lainnya_nama_barang || first.lainnya_judul;
+                    if (nLain) this.formData.nama_barang = nLain;
                     this.formData.kondisi = first.lainnya_kondisi;
                     this.formData.satuan = first.lainnya_satuan || 'Eksemplar';
                     if (first.ruang_pemegang) {
@@ -1296,58 +1470,45 @@
             syncActiveKibTotals() {
                 if (this.isTanah) {
                     this.syncTanahFieldsToMain();
-                    const totalNilai = (this.formData.tanah_items || []).reduce((s, it) => s + (parseFloat(it.tanah_nilai_fisik) || 0), 0);
-                    if (totalNilai > 0) {
-                        this.formData.total_realisasi = totalNilai;
-                        this.formData.jumlah_realisasi = totalNilai;
-                    }
+                    const totalNilai = this.totalNilaiTanah;
+                    this.formData.total_realisasi = totalNilai;
+                    this.formData.jumlah_realisasi = totalNilai;
+                    this.formData.jumlah_volume = this.totalVolumeTanah;
                 } else if (this.isMesin) {
                     this.syncMesinFieldsToMain();
                     const totalNilai = this.totalNilaiMesin;
-                    if (totalNilai > 0) {
-                        this.formData.total_realisasi = totalNilai;
-                        this.formData.jumlah_realisasi = totalNilai;
-                    }
+                    this.formData.total_realisasi = totalNilai;
+                    this.formData.jumlah_realisasi = totalNilai;
                     this.formData.jumlah_volume = this.totalVolumeMesin;
                 } else if (this.isGedung) {
                     this.syncGedungFieldsToMain();
                     const totalNilai = this.totalNilaiGedung;
-                    if (totalNilai > 0) {
-                        this.formData.total_realisasi = totalNilai;
-                        this.formData.jumlah_realisasi = totalNilai;
-                    }
+                    this.formData.total_realisasi = totalNilai;
+                    this.formData.jumlah_realisasi = totalNilai;
                     this.formData.jumlah_volume = this.totalVolumeGedung;
                 } else if (this.isJaringan) {
                     this.syncJaringanFieldsToMain();
                     const totalNilai = this.totalNilaiJaringan;
-                    if (totalNilai > 0) {
-                        this.formData.total_realisasi = totalNilai;
-                        this.formData.jumlah_realisasi = totalNilai;
-                    }
+                    this.formData.total_realisasi = totalNilai;
+                    this.formData.jumlah_realisasi = totalNilai;
                     this.formData.jumlah_volume = this.totalVolumeJaringan;
-                } else if (this.isAsetLainnya) {
+                } else if (this.isAsetLainnya || this.isLainnya) {
                     this.syncLainnyaFieldsToMain();
-                    const totalNilai = this.totalNilaiAsetLainnya;
-                    if (totalNilai > 0) {
-                        this.formData.total_realisasi = totalNilai;
-                        this.formData.jumlah_realisasi = totalNilai;
-                    }
-                    this.formData.jumlah_volume = this.totalVolumeAsetLainnya;
+                    const totalNilai = this.totalNilaiLainnya;
+                    this.formData.total_realisasi = totalNilai;
+                    this.formData.jumlah_realisasi = totalNilai;
+                    this.formData.jumlah_volume = this.totalVolumeLainnya;
                 } else if (this.isAtb) {
                     this.syncAtbFieldsToMain();
                     const totalNilai = this.totalNilaiAtb;
-                    if (totalNilai > 0) {
-                        this.formData.total_realisasi = totalNilai;
-                        this.formData.jumlah_realisasi = totalNilai;
-                    }
+                    this.formData.total_realisasi = totalNilai;
+                    this.formData.jumlah_realisasi = totalNilai;
                     this.formData.jumlah_volume = this.totalVolumeAtb;
                 } else if (this.isKdp) {
                     this.syncKdpFieldsToMain();
                     const totalNilai = this.totalNilaiKdp;
-                    if (totalNilai > 0) {
-                        this.formData.total_realisasi = totalNilai;
-                        this.formData.jumlah_realisasi = totalNilai;
-                    }
+                    this.formData.total_realisasi = totalNilai;
+                    this.formData.jumlah_realisasi = totalNilai;
                     this.formData.jumlah_volume = this.totalVolumeKdp;
                 }
             },
