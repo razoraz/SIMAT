@@ -1,30 +1,30 @@
-﻿<!-- ========================================================================= -->
-<!-- LANGKAH 2: KLASIFIKASI KODE 108 & SPESIFIKASI FISIK ASET (PELIMPAHAN BMD) -->
+<!-- ========================================================================= -->
+<!-- LANGKAH 2: KLASIFIKASI KODE 108 & SPESIFIKASI FISIK ASET (BELANJA BARANG) -->
 <!-- ========================================================================= -->
 <div x-show="currentStep === 2" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-6">
     
     <div>
         <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-indigo-400/10 text-indigo-300 border border-indigo-400/20 text-xs font-bold mb-2">
-            <span>ðŸ” LANGKAH 2 DARI 3: KLASIFIKASI 108 &amp; SPESIFIKASI FISIK ASET</span>
+            <span>🔍 LANGKAH 2 DARI 3: KLASIFIKASI 108 &amp; SPESIFIKASI FISIK ASET</span>
         </div>
         <h2 class="text-lg font-bold text-white flex items-center space-x-2">
-            <span class="p-2 rounded-xl bg-indigo-400/10 text-indigo-400 text-sm">ðŸ“Š</span>
+            <span class="p-2 rounded-xl bg-indigo-400/10 text-indigo-400 text-sm">📊</span>
             <span>Langkah 2: Klasifikasi 108 &amp; Spesifikasi Fisik Aset</span>
         </h2>
         <p class="text-xs text-slate-400 mt-1">
-            Pilih klasifikasi kode barang Permendagri No. 108/2016 (Akun 1.3 Aset Tetap Milik Daerah), formulir spesifikasi teknis barang sesuai KIB, penempatan ruangan di RSUD, serta rincian nilai perolehan BMD dari SKPD asal.
+            Pilih klasifikasi kode barang Permendagri No. 108/2016 (Akun 1.3 Aset Tetap Milik Daerah), formulir spesifikasi teknis barang sesuai KIB, penempatan ruangan di RSUD, serta rincian nilai belanja barang.
         </p>
     </div>
 
     <!-- ===== BANNER ERROR INLINE LANGKAH 2 ===== -->
     <template x-if="stepErrors[2]">
         <div class="flex items-start gap-3 p-4 rounded-2xl bg-rose-950/60 border border-rose-500/50 shadow-lg shadow-rose-500/10 animate-[fadeInDown_0.25s_ease-out]">
-            <span class="text-rose-400 text-lg mt-0.5 shrink-0">âš ï¸</span>
+            <span class="text-rose-400 text-lg mt-0.5 shrink-0">⚠️</span>
             <div class="min-w-0">
-                <p class="text-xs font-bold text-rose-300 mb-0.5">Perhatian â€” Data Langkah 2 Belum Lengkap</p>
+                <p class="text-xs font-bold text-rose-300 mb-0.5">Perhatian — Data Langkah 2 Belum Lengkap</p>
                 <p class="text-xs text-rose-200/90 leading-relaxed" x-text="stepErrors[2]"></p>
             </div>
-            <button type="button" @click="clearStepError(2)" class="ml-auto shrink-0 text-rose-400 hover:text-rose-200 transition-colors text-sm leading-none">âœ•</button>
+            <button type="button" @click="clearStepError(2)" class="ml-auto shrink-0 text-rose-400 hover:text-rose-200 transition-colors text-sm leading-none">✕</button>
         </div>
     </template>
 
@@ -36,7 +36,7 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800/80">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-400/20 to-indigo-600/10 text-indigo-400 flex items-center justify-center text-lg font-bold shrink-0 border border-indigo-500/30 shadow-inner">
-                    âš¡
+                    ⚡
                 </div>
                 <div>
                     <div class="flex items-center gap-2 flex-wrap">
@@ -52,7 +52,7 @@
 
             <div class="flex items-center gap-2 self-start sm:self-center shrink-0">
                 <span x-show="hasSelectedKib" class="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/30 inline-flex items-center gap-1.5 shadow-sm">
-                    âœ“ Kategori: <span class="font-mono" x-text="kibLabel"></span>
+                    ✓ Kategori: <span class="font-mono" x-text="kibLabel"></span>
                 </span>
             </div>
         </div>
@@ -67,7 +67,7 @@
                     ? 'bg-emerald-500/20 border-emerald-400 text-white shadow-xl shadow-emerald-500/20 ring-1 ring-emerald-400' 
                     : 'bg-slate-950/70 border-slate-800 text-slate-300 hover:border-emerald-500/50 hover:bg-slate-850 hover:-translate-y-0.5'">
                 <div class="flex items-center justify-between gap-2 shrink-0">
-                    <span class="text-xl">ðŸŒ¾</span>
+                    <span class="text-xl">🌾</span>
                     <span class="font-mono text-[10px] font-black text-emerald-400 group-hover:text-emerald-300">1.3.1</span>
                 </div>
                 <div class="min-w-0 flex-1">
@@ -78,7 +78,7 @@
                     <span class="text-[9px] font-mono text-slate-500">KIB A</span>
                     <div class="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold"
                         :class="isTanah ? 'bg-emerald-400 text-slate-950 shadow-md' : 'bg-slate-800 text-slate-400 group-hover:bg-emerald-400 group-hover:text-slate-950'">
-                        <span x-show="isTanah">âœ“</span>
+                        <span x-show="isTanah">✓</span>
                         <span x-show="!isTanah">&rarr;</span>
                     </div>
                 </div>
@@ -91,7 +91,7 @@
                     ? 'bg-indigo-500/20 border-indigo-400 text-white shadow-xl shadow-indigo-500/20 ring-1 ring-indigo-400' 
                     : 'bg-slate-950/70 border-slate-800 text-slate-300 hover:border-indigo-500/50 hover:bg-slate-850 hover:-translate-y-0.5'">
                 <div class="flex items-center justify-between gap-2 shrink-0">
-                    <span class="text-xl">âš™ï¸</span>
+                    <span class="text-xl">⚙️</span>
                     <span class="font-mono text-[10px] font-black text-indigo-400 group-hover:text-indigo-300">1.3.2</span>
                 </div>
                 <div class="min-w-0 flex-1">
@@ -102,7 +102,7 @@
                     <span class="text-[9px] font-mono text-slate-500">KIB B</span>
                     <div class="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold"
                         :class="isMesin ? 'bg-indigo-400 text-slate-950 shadow-md' : 'bg-slate-800 text-slate-400 group-hover:bg-indigo-400 group-hover:text-slate-950'">
-                        <span x-show="isMesin">âœ“</span>
+                        <span x-show="isMesin">✓</span>
                         <span x-show="!isMesin">&rarr;</span>
                     </div>
                 </div>
@@ -115,7 +115,7 @@
                     ? 'bg-blue-500/20 border-blue-400 text-white shadow-xl shadow-blue-500/20 ring-1 ring-blue-400' 
                     : 'bg-slate-950/70 border-slate-800 text-slate-300 hover:border-blue-500/50 hover:bg-slate-850 hover:-translate-y-0.5'">
                 <div class="flex items-center justify-between gap-2 shrink-0">
-                    <span class="text-xl">ðŸ¢</span>
+                    <span class="text-xl">🏢</span>
                     <span class="font-mono text-[10px] font-black text-blue-400 group-hover:text-blue-300">1.3.3</span>
                 </div>
                 <div class="min-w-0 flex-1">
@@ -126,7 +126,7 @@
                     <span class="text-[9px] font-mono text-slate-500">KIB C</span>
                     <div class="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold"
                         :class="isGedung ? 'bg-blue-400 text-slate-950 shadow-md' : 'bg-slate-800 text-slate-400 group-hover:bg-blue-400 group-hover:text-slate-950'">
-                        <span x-show="isGedung">âœ“</span>
+                        <span x-show="isGedung">✓</span>
                         <span x-show="!isGedung">&rarr;</span>
                     </div>
                 </div>
@@ -139,7 +139,7 @@
                     ? 'bg-teal-500/20 border-teal-400 text-white shadow-xl shadow-teal-500/20 ring-1 ring-teal-400' 
                     : 'bg-slate-950/70 border-slate-800 text-slate-300 hover:border-teal-500/50 hover:bg-slate-850 hover:-translate-y-0.5'">
                 <div class="flex items-center justify-between gap-2 shrink-0">
-                    <span class="text-xl">ðŸ›£ï¸</span>
+                    <span class="text-xl">🛣️</span>
                     <span class="font-mono text-[10px] font-black text-teal-400 group-hover:text-teal-300">1.3.4</span>
                 </div>
                 <div class="min-w-0 flex-1">
@@ -150,7 +150,7 @@
                     <span class="text-[9px] font-mono text-slate-500">KIB D</span>
                     <div class="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold"
                         :class="isJaringan ? 'bg-teal-400 text-slate-950 shadow-md' : 'bg-slate-800 text-slate-400 group-hover:bg-teal-400 group-hover:text-slate-950'">
-                        <span x-show="isJaringan">âœ“</span>
+                        <span x-show="isJaringan">✓</span>
                         <span x-show="!isJaringan">&rarr;</span>
                     </div>
                 </div>
@@ -163,7 +163,7 @@
                     ? 'bg-fuchsia-500/20 border-fuchsia-400 text-white shadow-xl shadow-fuchsia-500/20 ring-1 ring-fuchsia-400' 
                     : 'bg-slate-950/70 border-slate-800 text-slate-300 hover:border-fuchsia-500/50 hover:bg-slate-850 hover:-translate-y-0.5'">
                 <div class="flex items-center justify-between gap-2 shrink-0">
-                    <span class="text-xl">ðŸ“¦</span>
+                    <span class="text-xl">📦</span>
                     <span class="font-mono text-[10px] font-black text-fuchsia-400 group-hover:text-fuchsia-300">1.3.5</span>
                 </div>
                 <div class="min-w-0 flex-1">
@@ -174,7 +174,7 @@
                     <span class="text-[9px] font-mono text-slate-500">KIB E</span>
                     <div class="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold"
                         :class="isLainnya ? 'bg-fuchsia-400 text-slate-950 shadow-md' : 'bg-slate-800 text-slate-400 group-hover:bg-fuchsia-400 group-hover:text-slate-950'">
-                        <span x-show="isLainnya">âœ“</span>
+                        <span x-show="isLainnya">✓</span>
                         <span x-show="!isLainnya">&rarr;</span>
                     </div>
                 </div>
@@ -204,24 +204,24 @@
 
     <!-- ========================================================================= -->
     <!-- ========================================================================= -->
-    <!-- AKUMULASI TOTAL VOLUME & NILAI PEROLEHAN BMD                              -->
+    <!-- AKUMULASI TOTAL VOLUME & NILAI BELANJA BARANG                              -->
     <!-- ========================================================================= -->
     <div class="p-6 rounded-3xl bg-slate-950/80 border border-indigo-500/30 space-y-5 shadow-2xl relative overflow-hidden">
         <div class="absolute -right-10 -bottom-10 w-44 h-44 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none"></div>
 
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
             <div class="flex items-center space-x-2.5">
-                <span class="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm border border-indigo-500/30">ðŸ”’</span>
+                <span class="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm border border-indigo-500/30">🔒</span>
                 <div>
                     <h3 class="text-xs sm:text-sm font-extrabold text-white uppercase tracking-wider">
-                        Akumulasi Total Volume &amp; Nilai Perolehan BMD
+                        Akumulasi Total Volume &amp; Nilai Belanja Barang
                     </h3>
                     <p class="text-[11px] text-slate-400 mt-0.5">Terkunci otomatis dari hasil perhitungan seluruh rincian unit barang pada lembar KIB di atas.</p>
                 </div>
             </div>
             <template x-if="selected108Item">
                 <span class="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/30 font-mono hidden sm:inline-block"
-                    x-text="selected108Item.kode + ' â€¢ ' + selected108Item.nama"></span>
+                    x-text="selected108Item.kode + ' • ' + selected108Item.nama"></span>
             </template>
         </div>
 
@@ -234,7 +234,7 @@
                         <label class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
                             <span>Total Volume / Kuantitas <span class="text-rose-400">*</span></span>
                             <span class="text-[9px] font-bold text-indigo-400 bg-indigo-500/15 px-2 py-0.5 rounded border border-indigo-500/30">
-                                ðŸ”’ Terkunci
+                                🔒 Terkunci
                             </span>
                         </label>
                         <span class="text-xs font-mono text-indigo-300 font-extrabold" x-text="(formData.jumlah_volume || 0) + ' ' + (formData.satuan || 'Unit')"></span>
@@ -253,18 +253,18 @@
                 </div>
 
                 <p class="text-[10.5px] text-slate-400 pt-1 leading-relaxed">
-                    ðŸ’¡ Total volume dihitung otomatis dari akumulasi kuantitas rincian barang pada lembar KIB di atas.
+                    💡 Total volume dihitung otomatis dari akumulasi kuantitas rincian barang pada lembar KIB di atas.
                 </p>
             </div>
 
-            <!-- 2. Total Nilai Perolehan BMD dari SKPD Pengirim (Rp) -->
+            <!-- 2. Total Nilai Belanja Barang (Rp) -->
             <div class="p-5 rounded-2xl bg-slate-900/90 border border-indigo-500/30 space-y-2.5 shadow-md flex flex-col justify-between">
                 <div>
                     <div class="flex items-center justify-between mb-2">
                         <label class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                            <span>Total Nilai Perolehan (Rp) <span class="text-rose-400">*</span></span>
+                            <span>Total Nilai Belanja Barang (Rp) <span class="text-rose-400">*</span></span>
                             <span class="text-[9px] font-bold text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded border border-emerald-500/30">
-                                ðŸ”’ Terkunci
+                                🔒 Terkunci
                             </span>
                         </label>
                         <span class="text-xs font-mono text-emerald-400 font-extrabold" x-text="'Rp ' + formatRupiah(formData.total_realisasi)"></span>
@@ -283,7 +283,7 @@
                 </div>
 
                 <div class="text-[10.5px] text-slate-400 pt-1 leading-relaxed">
-                    ðŸ’¡ Akumulasi otomatis dari nilai total seluruh rincian barang pada lembar KIB di atas.
+                    💡 Akumulasi otomatis dari nilai total seluruh rincian barang pada lembar KIB di atas.
                 </div>
             </div>
 
@@ -294,7 +294,7 @@
     <div x-show="hasExtracomViolation" x-cloak
          class="mt-4 p-4 sm:p-5 rounded-3xl bg-rose-950/40 border border-rose-500/50 text-rose-300 shadow-xl shadow-rose-950/40 flex items-start space-x-3.5 transition-all">
         <div class="w-10 h-10 rounded-2xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-xl shrink-0 text-rose-400 shadow-lg shadow-rose-500/20">
-            âš ï¸
+            ⚠️
         </div>
         <div class="space-y-2 flex-1 min-w-0">
             <div class="flex items-center justify-between flex-wrap gap-2">
@@ -306,12 +306,12 @@
                 </span>
             </div>
             <p class="text-xs text-rose-200/90 leading-relaxed">
-                Terdapat rincian barang yang Anda beri status <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">Ekstrakomtabel (â‰¤ 300rb)</span> namun diisi dengan nilai satuan per unit lebih dari <strong>Rp 300.000</strong>. Anda harus menyesuaikannya sebelum dapat melanjutkan ke Tahap 3:
+                Terdapat rincian barang yang Anda beri status <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">Ekstrakomtabel (≤ 300rb)</span> namun diisi dengan nilai satuan per unit lebih dari <strong>Rp 300.000</strong>. Anda harus menyesuaikannya sebelum dapat melanjutkan ke Tahap 3:
             </p>
             <div class="p-3 rounded-2xl bg-slate-950/80 border border-rose-500/20 text-[11.5px] text-slate-300 space-y-1.5 shadow-inner">
                 <div class="flex items-start gap-2">
                     <span class="text-emerald-400 font-bold">1.</span>
-                    <span>Jika nilai perolehan memang <strong>&gt; Rp 300.000</strong>: Klik tombol status akuntansi <strong>âš™ï¸ Aset Tetap Reguler (Intrakomptabel)</strong> pada kartu rincian barang di atas.</span>
+                    <span>Jika nilai perolehan memang <strong>&gt; Rp 300.000</strong>: Klik tombol status akuntansi <strong>⚙️ Aset Tetap Reguler (Intrakomptabel)</strong> pada kartu rincian barang di atas.</span>
                 </div>
                 <div class="flex items-start gap-2">
                     <span class="text-amber-400 font-bold">2.</span>
@@ -322,4 +322,3 @@
     </div>
 
 </div>
-

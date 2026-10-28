@@ -389,7 +389,7 @@ class BelanjaBarangController extends Controller
                     'unit_id'                   => $unitId,
                     'alamat_barang'             => $alamatBarang,
                     'user_id'                   => Auth::id(),
-                    'is_extracomtable'          => true,
+                    'is_extracomtable'          => !empty($it['is_extracom']) || (!empty($spesifikasi['is_extracom'])) || $request->boolean('is_extracomtable'),
                     'is_reklas'                 => false,
                     'is_deleted'                => 0,
                     'spesifikasi_json'          => $spesifikasi,
