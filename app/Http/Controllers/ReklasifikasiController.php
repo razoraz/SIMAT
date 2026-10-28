@@ -226,9 +226,22 @@ class ReklasifikasiController extends Controller
         }
 
         // 4. Ambil Log Transaksi Reklasifikasi
-        $logReklas = AstapReklas::active()->where('tahun', $selectedTahun)
-            ->when($selectedTw !== 'all', fn($q) => $q->where('triwulan', (int) $selectedTw))
-            ->when($selectedJenis !== 'all', fn($q) => $q->where('jenis_reklas', $selectedJenis))
+        $logReklasQuery = AstapReklas::active()->where('tahun', $selectedTahun)
+            ->when($selectedTw !== 'all', fn($q) => $q->where('triwulan', (int) $selectedTw));
+
+        if ($selectedJenis !== 'all') {
+            if ($selectedJenis === 'HIBAH' || $selectedJenis === 'HIBAH_GROUP') {
+                $logReklasQuery->whereIn('jenis_reklas', ['HIBAH_KELUAR', 'HIBAH_MASUK']);
+            } elseif ($selectedJenis === 'KDP' || $selectedJenis === 'KDP_GROUP') {
+                $logReklasQuery->whereIn('jenis_reklas', ['KDP_TO_DEFINITIF', 'DEFINITIF_TO_KDP']);
+            } elseif ($selectedJenis === 'EXTRACOM_GROUP') {
+                $logReklasQuery->whereIn('jenis_reklas', ['EKSTRAKOMPTABEL', 'KAPITALISASI_INTRAKOM']);
+            } else {
+                $logReklasQuery->where('jenis_reklas', $selectedJenis);
+            }
+        }
+
+        $logReklas = $logReklasQuery
             ->with(['astap.jenisAstap', 'jenisReklasAsal', 'jenisReklasTujuan', 'user'])
             ->orderBy('tanggal_reklas', 'desc')
             ->orderBy('id', 'desc')

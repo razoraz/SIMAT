@@ -1285,6 +1285,26 @@ class RecycleBinController extends Controller
                                 $astap->update(['jumlah_volume' => $sisaAktif]);
                             }
                         }
+                    } else {
+                        // Jika hibah MASUK dipulihkan: pulihkan juga catatan induk di astaps dan unit registernya
+                        if ($hibah->astap_id) {
+                            $astap = Astap::find($hibah->astap_id);
+                            if ($astap) {
+                                $astap->update([
+                                    'is_deleted'    => 0,
+                                    'deleted_at'    => null,
+                                    'deleted_by'    => null,
+                                    'deleted_by_id' => null,
+                                ]);
+
+                                AstapRegister::where('astap_id', $astap->id)->update([
+                                    'is_deleted'    => 0,
+                                    'deleted_at'    => null,
+                                    'deleted_by'    => null,
+                                    'deleted_by_id' => null,
+                                ]);
+                            }
+                        }
                     }
                 });
                 $msg = "Catatan Transaksi Hibah {$nomorBast} berhasil dipulihkan ke daftar aktif.";
@@ -1795,6 +1815,25 @@ class RecycleBinController extends Controller
                                     $astap->update(['jumlah_volume' => $sisaAktif]);
                                 }
                             }
+                        } else {
+                            if ($hibah->astap_id) {
+                                $astap = Astap::find($hibah->astap_id);
+                                if ($astap) {
+                                    $astap->update([
+                                        'is_deleted'    => 0,
+                                        'deleted_at'    => null,
+                                        'deleted_by'    => null,
+                                        'deleted_by_id' => null,
+                                    ]);
+
+                                    AstapRegister::where('astap_id', $astap->id)->update([
+                                        'is_deleted'    => 0,
+                                        'deleted_at'    => null,
+                                        'deleted_by'    => null,
+                                        'deleted_by_id' => null,
+                                    ]);
+                                }
+                            }
                         }
                         $restoredCount++;
                     }
@@ -2213,10 +2252,23 @@ class RecycleBinController extends Controller
 
             case 'hibah':
                 $hibahs = AstapHibah::whereIn('id', $ids)->get();
-                foreach ($hibahs as $h) {
-                    $h->delete();
-                    $deletedCount++;
-                }
+                DB::transaction(function () use ($hibahs, &$deletedCount) {
+                    foreach ($hibahs as $h) {
+                        if ($h->tipe_hibah === 'masuk' && $h->astap_id) {
+                            $astap = Astap::find($h->astap_id);
+                            if ($astap) {
+                                $astap->registers()->delete();
+                                $h->delete();
+                                $astap->delete();
+                            } else {
+                                $h->delete();
+                            }
+                        } else {
+                            $h->delete();
+                        }
+                        $deletedCount++;
+                    }
+                });
                 $msg = "Sebanyak {$deletedCount} data transaksi hibah aset telah dihapus permanen dari database.";
                 break;
 
@@ -2491,7 +2543,18 @@ class RecycleBinController extends Controller
             case 'hibah':
                 $hibah = AstapHibah::findOrFail($id);
                 $bast = $hibah->nomor_bast;
-                $hibah->delete();
+                DB::transaction(function () use ($hibah) {
+                    if ($hibah->tipe_hibah === 'masuk' && $hibah->astap_id) {
+                        $astap = Astap::find($hibah->astap_id);
+                        if ($astap) {
+                            $astap->registers()->delete();
+                            $hibah->delete();
+                            $astap->delete();
+                            return;
+                        }
+                    }
+                    $hibah->delete();
+                });
                 $msg = "Data transaksi hibah BAST {$bast} telah dihapus secara permanen dari database.";
                 break;
 

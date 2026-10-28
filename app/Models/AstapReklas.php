@@ -25,6 +25,13 @@ class AstapReklas extends Model
         'deleted_at'       => 'datetime',
     ];
 
+    protected $appends = [
+        'sub_koreksi',
+        'sub_koreksi_label',
+        'tipe_koreksi',
+        'dokumen_url',
+    ];
+
 
     public function astap()
     {
@@ -173,6 +180,23 @@ class AstapReklas extends Model
         return $tipe === 'tambah'
             ? ['kolom' => 5, 'label' => 'Kolom 5 (Koreksi Rek Bertambah)', 'kolom_text' => 'Kolom 5', 'badge' => 'indigo', 'arah' => '+']
             : ['kolom' => 15, 'label' => 'Kolom 15 (Koreksi Berkurang)', 'kolom_text' => 'Kolom 15', 'badge' => 'indigo', 'arah' => '-'];
+    }
+
+    /**
+     * URL berkas lampiran pendukung (PDF / Scan BAST / LHP BPK)
+     */
+    public function getDokumenUrlAttribute(): ?string
+    {
+        $path = $this->dokumen_path
+            ?: ($this->spesifikasi_baru['koreksi_info']['dokumen_path'] ?? null)
+            ?: ($this->spesifikasi_baru['mutasi_info']['dokumen_lampiran'] ?? null)
+            ?: ($this->astap?->spesifikasi_json['koreksi_info']['dokumen_path'] ?? null);
+
+        if (!empty($path)) {
+            return asset('storage/' . $path);
+        }
+
+        return null;
     }
 
     /**

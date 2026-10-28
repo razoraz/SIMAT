@@ -11,89 +11,6 @@
             currentStep: 1,
             totalSteps: 3,
             isSubmitting: false,
-            isEditMode: !!window.editAstapData,
-            editId: window.editAstapData ? window.editAstapData.id : null,
-
-            init() {
-                if (window.editAstapData) {
-                    this.hydrateFromEditData(window.editAstapData);
-                }
-            },
-
-            hydrateFromEditData(data) {
-                if (!data) return;
-
-                this.formData.tahun_perolehan = data.tahun_perolehan || new Date().getFullYear();
-                this.formData.triwulan = data.triwulan || 'TW I';
-
-                const hibah = data.hibah_masuk || data.hibahMasuk;
-                if (hibah) {
-                    this.formData.hibah_pemberi = hibah.pihak_hibah || '';
-                    this.formData.hibah_nomor_bast = hibah.nomor_bast || '';
-                    this.formData.hibah_tanggal_bast = hibah.tanggal_bast || '';
-                    this.formData.hibah_keterangan = hibah.keterangan || '';
-                }
-
-                let spec = data.spesifikasi_json;
-                if (typeof spec === 'string') {
-                    try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
-                }
-                if (spec && typeof spec === 'object') {
-                    if (spec.hibah_pemberi && !this.formData.hibah_pemberi) this.formData.hibah_pemberi = spec.hibah_pemberi;
-                    if (spec.hibah_nomor_bast && !this.formData.hibah_nomor_bast) this.formData.hibah_nomor_bast = spec.hibah_nomor_bast;
-                    if (spec.hibah_tanggal_bast && !this.formData.hibah_tanggal_bast) this.formData.hibah_tanggal_bast = spec.hibah_tanggal_bast;
-                    if (spec.hibah_pimpinan) this.formData.hibah_pimpinan = spec.hibah_pimpinan;
-                    if (spec.hibah_alamat_pemberi) this.formData.hibah_alamat_pemberi = spec.hibah_alamat_pemberi;
-                    if (spec.hibah_keterangan && !this.formData.hibah_keterangan) this.formData.hibah_keterangan = spec.hibah_keterangan;
-                    if (spec.tipe_hibah) this.formData.tipe_hibah = spec.tipe_hibah;
-                }
-
-                this.formData.nama_barang = data.nama_barang || '';
-                this.formData.satuan = data.satuan || 'Unit';
-                this.formData.jumlah_volume = parseInt(data.jumlah_volume) || 1;
-                this.formData.total_realisasi = parseFloat(data.total_realisasi) || 0;
-                this.formData.jumlah_realisasi = this.formData.total_realisasi;
-                this.formData.is_extracomtable = !!data.is_extracomtable;
-                this.formData.jenis_astap_id = data.jenis_astap_id || null;
-                this.formData.rekening_belanja_id = data.rekening_belanja_id || null;
-
-                if (data.unit_id) {
-                    this.formData.unit_id = data.unit_id;
-                } else if (data.unit && data.unit.id) {
-                    this.formData.unit_id = data.unit.id;
-                }
-
-                this.formData.alamat_barang = data.alamat_barang || '';
-                this.formData.ppk_nama = data.ppk_nama || (spec && spec.ppk_nama) || '';
-                this.formData.ppk_nip = data.ppk_nip || (spec && spec.ppk_nip) || '';
-                if (data.keterangan_tambahan && !this.formData.hibah_keterangan) {
-                    this.formData.hibah_keterangan = data.keterangan_tambahan;
-                }
-
-                if (data.jenis_astap) {
-                    this.formData.jenis_aset_kode = data.jenis_astap.kode || '';
-                    this.formData.jenis_aset_nama = data.jenis_astap.nama || '';
-                    this.formData.sub_rincian_kode = data.jenis_astap.sub_rincian_objek || '';
-                    this.formData.sub_rincian_nama = data.jenis_astap.nama_sub_rincian_objek || '';
-                    this.selectedSubSub = {
-                        id: data.jenis_astap.id,
-                        kode: data.jenis_astap.sub_sub_rincian_objek || data.kode_108,
-                        nama: data.jenis_astap.nama_sub_sub_rincian_objek || data.nama_barang
-                    };
-                } else if (data.kode_108) {
-                    this.formData.jenis_aset_kode = data.kode_108;
-                    this.selectedSubSub = {
-                        id: data.jenis_astap_id,
-                        kode: data.kode_108,
-                        nama: data.nama_barang
-                    };
-                }
-
-                if (data.rekening_belanja) {
-                    this.formData.kode_rek = data.rekening_belanja.kode_rek || '';
-                    this.formData.nama_belanja = data.rekening_belanja.nama_belanja || '';
-                }
-            },
 
             // ─── File Upload State ───────────────────────────────────────────
             selectedFile: null,
@@ -415,22 +332,28 @@
                     ? d.spesifikasi_json
                     : (typeof d.spesifikasi_json === 'string' ? (JSON.parse(d.spesifikasi_json) || {}) : {});
                 
-                const hibah = (d.hibahs && d.hibahs.length > 0) ? d.hibahs[0] : (d.hibah || {});
+                const hibah = (d.hibahs && d.hibahs.length > 0) ? d.hibahs[0] : (d.hibah || d.hibah_masuk || d.hibahMasuk || {});
 
                 // Langkah 1: BAST & Pemberi
                 this.formData.tahun_perolehan = d.tahun_perolehan || hibah.tahun || new Date().getFullYear();
                 this.formData.triwulan = d.triwulan || hibah.triwulan || 'TW I';
                 this.formData.tipe_hibah = spec.tipe_hibah || hibah.tipe_hibah || 'pemerintah_pusat';
-                this.formData.hibah_pemberi = d.hibah_pemberi || hibah.pihak_hibah || spec.pemberi_hibah || '';
+                this.formData.hibah_pemberi = d.hibah_pemberi || hibah.pihak_hibah || spec.pemberi_hibah || spec.hibah_pemberi || '';
                 this.formData.hibah_pimpinan = spec.hibah_pimpinan || spec.pimpinan_pemberi || '';
                 this.formData.hibah_alamat_pemberi = spec.hibah_alamat_pemberi || spec.alamat_pemberi || '';
-                this.formData.hibah_nomor_bast = d.hibah_nomor_bast || hibah.nomor_bast || d.bast_dokumen_nomor || '';
-                this.formData.hibah_tanggal_bast = d.hibah_tanggal_bast || hibah.tanggal_bast || d.bast_dokumen_tanggal || '';
+                this.formData.hibah_nomor_bast = d.hibah_nomor_bast || hibah.nomor_bast || d.bast_dokumen_nomor || spec.hibah_nomor_bast || '';
+                this.formData.hibah_tanggal_bast = d.hibah_tanggal_bast || hibah.tanggal_bast || d.bast_dokumen_tanggal || spec.hibah_tanggal_bast || '';
                 this.formData.total_realisasi = Number(d.total_realisasi || hibah.nilai_aset || 0);
                 this.formData.jumlah_realisasi = this.formData.total_realisasi;
-                this.formData.hibah_keterangan = d.hibah_keterangan || d.keterangan_tambahan || hibah.keterangan || '';
+                this.formData.hibah_keterangan = d.hibah_keterangan || d.keterangan_tambahan || hibah.keterangan || spec.hibah_keterangan || '';
 
-                // Langkah 2: Klasifikasi 108 & Barang
+                // Langkah 2: Rekening Belanja & Klasifikasi 108 & Barang
+                this.formData.rekening_belanja_id = d.rekening_belanja_id || null;
+                if (d.rekening_belanja) {
+                    this.formData.kode_rek = d.rekening_belanja.kode_rek || '';
+                    this.formData.nama_belanja = d.rekening_belanja.nama_belanja || '';
+                }
+
                 this.formData.nama_barang = d.nama_barang || '';
                 this.formData.jenis_astap_id = d.jenis_astap_id || null;
                 this.formData.satuan = d.satuan || 'Unit';
@@ -438,26 +361,97 @@
                 this.formData.is_extracomtable = Boolean(d.is_extracomtable || spec.is_extracomtable);
 
                 if (d.jenis_astap) {
-                    this.formData.jenis_aset_kode = d.jenis_astap.jenis || '';
-                    this.formData.jenis_aset_nama = d.jenis_astap.nama_jenis || '';
+                    this.formData.jenis_aset_kode = d.jenis_astap.jenis || d.jenis_astap.kode || '';
+                    this.formData.jenis_aset_nama = d.jenis_astap.nama_jenis || d.jenis_astap.nama || '';
                     this.formData.sub_rincian_kode = d.jenis_astap.sub_rincian_objek || '';
                     this.formData.sub_rincian_nama = d.jenis_astap.nama_sub_rincian_objek || '';
                     this.selectedSubSub = {
                         id: d.jenis_astap.id,
-                        kode: d.jenis_astap.sub_sub_rincian_objek,
-                        nama: d.jenis_astap.nama_sub_sub_rincian_objek
+                        kode: d.jenis_astap.sub_sub_rincian_objek || d.kode_108,
+                        nama: d.jenis_astap.nama_sub_sub_rincian_objek || d.nama_barang
+                    };
+                } else if (d.kode_108) {
+                    this.formData.jenis_aset_kode = d.kode_108;
+                    this.selectedSubSub = {
+                        id: d.jenis_astap_id,
+                        kode: d.kode_108,
+                        nama: d.nama_barang
                     };
                 }
 
                 // Langkah 3: Penempatan Ruangan & PPK
-                this.formData.unit_id = d.unit_id || '';
+                this.formData.unit_id = d.unit_id || (d.unit ? d.unit.id : '');
                 this.formData.alamat_barang = d.alamat_barang || 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1';
-                if (d.ppk_nama) this.formData.ppk_nama = d.ppk_nama;
-                if (d.ppk_nip)  this.formData.ppk_nip  = d.ppk_nip;
+                if (d.ppk_nama || spec.ppk_nama) this.formData.ppk_nama = d.ppk_nama || spec.ppk_nama;
+                if (d.ppk_nip || spec.ppk_nip)   this.formData.ppk_nip  = d.ppk_nip || spec.ppk_nip;
 
-                // Rehydrate Repeater Items from spec
-                if (Array.isArray(spec.tanah_items) && spec.tanah_items.length > 0) this.formData.tanah_items = spec.tanah_items;
-                if (Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0) this.formData.mesin_items = spec.mesin_items;
+                // Rehydrate Repeater Items from spec, OR fallback from registers if available
+                if (Array.isArray(spec.tanah_items) && spec.tanah_items.length > 0) {
+                    this.formData.tanah_items = spec.tanah_items;
+                } else if (spec.hak_tanah || spec.sertifikat_no) {
+                    this.formData.tanah_items = [{
+                        tanah_nama_barang: d.nama_barang || '',
+                        tanah_kode_barang: this.selectedSubSub ? this.selectedSubSub.kode : '',
+                        tanah_hak: spec.hak_tanah || 'Hak Pakai',
+                        tanah_sertifikat_no: spec.sertifikat_no || '',
+                        tanah_sertifikat_tgl: spec.sertifikat_tgl || '',
+                        tanah_kondisi: spec.kondisi || 'Baik',
+                        tanah_penggunaan: spec.penggunaan || 'Bangunan Rumah Sakit & Fasilitas Kesehatan',
+                        tanah_jumlah_bidang: 1,
+                        tanah_luas_m2: spec.luas_m2 || '',
+                        tanah_alamat: d.alamat_barang || '',
+                        tanah_nilai_fisik: Number(d.total_realisasi || 0)
+                    }];
+                }
+
+                if (Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0) {
+                    this.formData.mesin_items = spec.mesin_items;
+                } else if (Array.isArray(d.registers) && d.registers.length > 0) {
+                    this.formData.mesin_items = d.registers.map(r => ({
+                        mesin_nama_barang: d.nama_barang || '',
+                        mesin_kode_barang: this.selectedSubSub ? this.selectedSubSub.kode : '',
+                        mesin_merk: r.merk || spec.merk || '',
+                        mesin_type: r.type || spec.type || '',
+                        mesin_ukuran: r.ukuran || spec.ukuran || '',
+                        mesin_no_pabrik: r.no_pabrik || spec.no_pabrik || '',
+                        mesin_bahan: r.bahan || spec.bahan || '',
+                        mesin_no_rangka: r.no_rangka || spec.no_rangka || '',
+                        mesin_no_mesin: r.no_mesin || spec.no_mesin || '',
+                        mesin_no_bpkb: r.no_bpkb || spec.no_bpkb || '',
+                        mesin_no_polisi: r.no_polisi || spec.no_polisi || '',
+                        mesin_kondisi: r.kondisi || 'Baik',
+                        mesin_jumlah_barang: 1,
+                        mesin_satuan: d.satuan || 'Unit',
+                        mesin_nilai_satuan: Number(r.harga_satuan || r.nilai_satuan || d.harga_satuan || 0),
+                        mesin_administrasi_proyek: 0,
+                        ruang_pemegang: r.ruang_pemegang || '',
+                        isRuangOpen: false,
+                        searchRuang: ''
+                    }));
+                } else if (spec.merk || spec.type || spec.no_pabrik) {
+                    this.formData.mesin_items = [{
+                        mesin_nama_barang: d.nama_barang || '',
+                        mesin_kode_barang: this.selectedSubSub ? this.selectedSubSub.kode : '',
+                        mesin_merk: spec.merk || '',
+                        mesin_type: spec.type || '',
+                        mesin_ukuran: spec.ukuran || '',
+                        mesin_no_pabrik: spec.no_pabrik || '',
+                        mesin_bahan: spec.bahan || '',
+                        mesin_no_rangka: spec.no_rangka || '',
+                        mesin_no_mesin: spec.no_mesin || '',
+                        mesin_no_bpkb: spec.no_bpkb || '',
+                        mesin_no_polisi: spec.no_polisi || '',
+                        mesin_kondisi: spec.kondisi || 'Baik',
+                        mesin_jumlah_barang: d.jumlah_volume || 1,
+                        mesin_satuan: d.satuan || 'Unit',
+                        mesin_nilai_satuan: Number(d.harga_satuan || 0),
+                        mesin_administrasi_proyek: 0,
+                        ruang_pemegang: '',
+                        isRuangOpen: false,
+                        searchRuang: ''
+                    }];
+                }
+
                 if (Array.isArray(spec.gedung_items) && spec.gedung_items.length > 0) this.formData.gedung_items = spec.gedung_items;
                 if (Array.isArray(spec.jaringan_items) && spec.jaringan_items.length > 0) this.formData.jaringan_items = spec.jaringan_items;
                 if (Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0) this.formData.lainnya_items = spec.lainnya_items;

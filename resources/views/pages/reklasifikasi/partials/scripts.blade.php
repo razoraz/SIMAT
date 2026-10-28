@@ -1628,6 +1628,14 @@
                     if (raw.mutasi_info.nomor_bast) out['No. BAST Mutasi'] = raw.mutasi_info.nomor_bast;
                     if (raw.mutasi_info.tanggal_bast) out['Tgl. BAST Mutasi'] = raw.mutasi_info.tanggal_bast;
                 }
+                if (raw.koreksi_info) {
+                    const k = raw.koreksi_info;
+                    out['Sub Kategori Koreksi'] = k.sub_koreksi === 'lkd' ? 'Audit BPK RI (LKD)' : (k.sub_koreksi === 'manset' ? 'SIMDA / E-Manset BPKAD' : 'Koreksi Kas / Internal');
+                    if (k.tipe_koreksi) out['Arah Koreksi'] = k.tipe_koreksi === 'tambah' ? 'Penambahan Nilai (+)' : 'Pengurangan Nilai (−)';
+                    if (k.nilai_semula !== undefined) out['Nilai Semula (Sebelum Koreksi)'] = 'Rp ' + Number(k.nilai_semula).toLocaleString('id-ID');
+                    if (k.nilai_baru !== undefined) out['Nilai Baru (Setelah Koreksi)'] = 'Rp ' + Number(k.nilai_baru).toLocaleString('id-ID');
+                    if (k.selisih !== undefined) out['Selisih Koreksi'] = 'Rp ' + Number(Math.abs(k.selisih)).toLocaleString('id-ID');
+                }
 
                 return out;
             },

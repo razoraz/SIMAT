@@ -88,16 +88,32 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                 </svg>
                 <span class="text-xs font-semibold text-slate-400">Jenis Reklas:</span>
-                <select name="jenis_reklas" onchange="this.form.submit()" class="bg-transparent text-xs font-bold text-white focus:outline-none cursor-pointer pr-1 max-w-[190px] sm:max-w-none truncate">
-                    <option value="all" {{ ($selectedJenis ?? 'all') == 'all' ? 'selected' : '' }} class="bg-slate-900 text-white">Semua Jenis</option>
-                    <option value="KOREKSI_REKENING" {{ ($selectedJenis ?? '') == 'KOREKSI_REKENING' ? 'selected' : '' }} class="bg-slate-900 text-white">Koreksi Rekening / Pindah KIB</option>
-                    <option value="KDP_TO_DEFINITIF" {{ ($selectedJenis ?? '') == 'KDP_TO_DEFINITIF' ? 'selected' : '' }} class="bg-slate-900 text-white">KDP Selesai ➔ Definitif</option>
-                    <option value="EKSTRAKOMPTABEL" {{ ($selectedJenis ?? '') == 'EKSTRAKOMPTABEL' ? 'selected' : '' }} class="bg-slate-900 text-white">Ekstrakomptabel (≤ Rp 300rb)</option>
-                    <option value="KAPITALISASI_INTRAKOM" {{ ($selectedJenis ?? '') == 'KAPITALISASI_INTRAKOM' ? 'selected' : '' }} class="bg-slate-900 text-white">Kapitalisasi Intrakomptabel</option>
-                    <option value="HIBAH_KELUAR" {{ ($selectedJenis ?? '') == 'HIBAH_KELUAR' ? 'selected' : '' }} class="bg-slate-900 text-white">Hibah Keluar (Dihibahkan)</option>
-                    <option value="HIBAH_MASUK" {{ ($selectedJenis ?? '') == 'HIBAH_MASUK' ? 'selected' : '' }} class="bg-slate-900 text-white">Hibah Masuk (Bantuan Pemerintah)</option>
-                    <option value="MUTASI_EKSTERNAL" {{ ($selectedJenis ?? '') == 'MUTASI_EKSTERNAL' ? 'selected' : '' }} class="bg-slate-900 text-white">Mutasi Eksternal (Antar-OPD)</option>
-                    <option value="KOREKSI_LAIN" {{ ($selectedJenis ?? '') == 'KOREKSI_LAIN' ? 'selected' : '' }} class="bg-slate-900 text-white">Koreksi Nilai / Audit BPK</option>
+                <select name="jenis_reklas" onchange="this.form.submit()" class="bg-transparent text-xs font-bold text-white focus:outline-none cursor-pointer pr-1 max-w-[210px] sm:max-w-none truncate">
+                    <option value="all" {{ ($selectedJenis ?? 'all') == 'all' ? 'selected' : '' }} class="bg-slate-900 text-white">Semua Jenis (6 Kategori)</option>
+                    <optgroup label="1. Koreksi Rekening & Kemitraan" class="bg-slate-950 text-indigo-400 font-bold">
+                        <option value="KOREKSI_REKENING" {{ ($selectedJenis ?? '') == 'KOREKSI_REKENING' ? 'selected' : '' }} class="bg-slate-900 text-white">Koreksi Rekening / Pindah KIB</option>
+                    </optgroup>
+                    <optgroup label="2. Batas Kapitalisasi (≤ Rp 300rb)" class="bg-slate-950 text-rose-400 font-bold">
+                        <option value="EXTRACOM_GROUP" {{ ($selectedJenis ?? '') == 'EXTRACOM_GROUP' ? 'selected' : '' }} class="bg-slate-900 text-white">Semua Ekstrakomptabel & Intrakom</option>
+                        <option value="EKSTRAKOMPTABEL" {{ ($selectedJenis ?? '') == 'EKSTRAKOMPTABEL' ? 'selected' : '' }} class="bg-slate-900 text-white">🔻 Ekstrakomptabel (≤ Rp 300rb)</option>
+                        <option value="KAPITALISASI_INTRAKOM" {{ ($selectedJenis ?? '') == 'KAPITALISASI_INTRAKOM' ? 'selected' : '' }} class="bg-slate-900 text-white">🔺 Kapitalisasi Intrakomptabel</option>
+                    </optgroup>
+                    <optgroup label="3. Konstruksi Dalam Pengerjaan (KDP)" class="bg-slate-950 text-emerald-400 font-bold">
+                        <option value="KDP_GROUP" {{ ($selectedJenis ?? '') == 'KDP_GROUP' ? 'selected' : '' }} class="bg-slate-900 text-white">Semua Transaksi KDP</option>
+                        <option value="KDP_TO_DEFINITIF" {{ ($selectedJenis ?? '') == 'KDP_TO_DEFINITIF' ? 'selected' : '' }} class="bg-slate-900 text-white">🏗️ KDP Selesai ➔ Definitif</option>
+                        <option value="DEFINITIF_TO_KDP" {{ ($selectedJenis ?? '') == 'DEFINITIF_TO_KDP' ? 'selected' : '' }} class="bg-slate-900 text-white">🔄 Definitif ➔ KDP</option>
+                    </optgroup>
+                    <optgroup label="4. Penyesuaian Nilai Realisasi" class="bg-slate-950 text-cyan-400 font-bold">
+                        <option value="KOREKSI_LAIN" {{ ($selectedJenis ?? '') == 'KOREKSI_LAIN' ? 'selected' : '' }} class="bg-slate-900 text-white">⚖️ Koreksi Nilai / Audit BPK / Manset</option>
+                    </optgroup>
+                    <optgroup label="5. Bantuan Hibah Barang" class="bg-slate-950 text-purple-400 font-bold">
+                        <option value="HIBAH_GROUP" {{ ($selectedJenis ?? '') == 'HIBAH_GROUP' ? 'selected' : '' }} class="bg-slate-900 text-white">Semua Hibah (Keluar & Masuk)</option>
+                        <option value="HIBAH_KELUAR" {{ ($selectedJenis ?? '') == 'HIBAH_KELUAR' ? 'selected' : '' }} class="bg-slate-900 text-white">📤 Hibah Keluar (Dihibahkan)</option>
+                        <option value="HIBAH_MASUK" {{ ($selectedJenis ?? '') == 'HIBAH_MASUK' ? 'selected' : '' }} class="bg-slate-900 text-white">📥 Hibah Masuk (Bantuan Pemerintah)</option>
+                    </optgroup>
+                    <optgroup label="6. Mutasi Keluar OPD" class="bg-slate-950 text-teal-400 font-bold">
+                        <option value="MUTASI_EKSTERNAL" {{ ($selectedJenis ?? '') == 'MUTASI_EKSTERNAL' ? 'selected' : '' }} class="bg-slate-900 text-white">🏛️ Mutasi Eksternal (Antar-OPD)</option>
+                    </optgroup>
                 </select>
             </div>
         </form>
@@ -112,14 +128,18 @@
             @if (($selectedJenis ?? 'all') !== 'all')
                 @php
                     $jenisLabels = [
-                        'KOREKSI_REKENING'    => 'Koreksi Rekening',
-                        'KDP_TO_DEFINITIF'    => 'KDP ➔ Definitif',
-                        'EKSTRAKOMPTABEL'     => 'Ekstrakomptabel',
+                        'KOREKSI_REKENING'     => 'Koreksi Rekening',
+                        'EXTRACOM_GROUP'       => 'Ekstrakomptabel & Intrakom',
+                        'EKSTRAKOMPTABEL'      => 'Ekstrakomptabel',
                         'KAPITALISASI_INTRAKOM'=> 'Kapitalisasi Intrakom',
-                        'HIBAH_KELUAR'        => 'Hibah Keluar',
-                        'HIBAH_MASUK'         => 'Hibah Masuk',
-                        'MUTASI_EKSTERNAL'    => 'Mutasi Antar-OPD',
-                        'KOREKSI_LAIN'        => 'Koreksi Nilai / BPK',
+                        'KDP_GROUP'            => 'KDP (Konstruksi Selesai)',
+                        'KDP_TO_DEFINITIF'     => 'KDP ➔ Definitif',
+                        'DEFINITIF_TO_KDP'     => 'Definitif ➔ KDP',
+                        'KOREKSI_LAIN'         => 'Koreksi Nilai / BPK',
+                        'HIBAH_GROUP'          => 'Semua Hibah',
+                        'HIBAH_KELUAR'         => 'Hibah Keluar',
+                        'HIBAH_MASUK'          => 'Hibah Masuk',
+                        'MUTASI_EKSTERNAL'     => 'Mutasi Antar-OPD',
                     ];
                 @endphp
                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-violet-500/15 border border-violet-500/30 text-[11px] font-semibold text-violet-300 shadow-sm">

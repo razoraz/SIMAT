@@ -71,7 +71,7 @@
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
                             <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800">
                                 <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Jenis Transaksi:</span>
-                                <span class="font-bold text-indigo-300 mt-1 inline-block" x-text="getJenisReklasLabel(detailItem.jenis_reklas)"></span>
+                                <span class="font-bold text-indigo-300 mt-1 inline-block" x-text="detailItem.sub_koreksi_label || getJenisReklasLabel(detailItem.jenis_reklas)"></span>
                             </div>
                             <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800">
                                 <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Nomor Berita Acara (BA):</span>
@@ -82,6 +82,30 @@
                                 <span class="font-bold text-white mt-1 inline-block" x-text="formatDateIndo(detailItem.tanggal_reklas)"></span>
                             </div>
                         </div>
+
+                        <!-- Bukti Fisik / Scan PDF Dokumen Reklasifikasi -->
+                        <template x-if="detailItem.dokumen_url">
+                            <div class="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-inner">
+                                <div class="flex items-center gap-2.5">
+                                    <div class="p-2 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400 block">Dokumen Berkas Fisik / BAST Sah</span>
+                                        <p class="text-xs text-slate-300">File berkas scan PDF / dokumen sah telah terlampir dan tersimpan di server.</p>
+                                    </div>
+                                </div>
+                                <a :href="detailItem.dokumen_url" target="_blank"
+                                   class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold transition-all shadow-md shadow-emerald-500/20 shrink-0 cursor-pointer">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                    </svg>
+                                    <span>Buka Dokumen PDF</span>
+                                </a>
+                            </div>
+                        </template>
                     </div>
 
                     <!-- 2. Keterangan & Narasi Berita Acara Reklasifikasi (Audit Trail & Dasar Mutasi) -->
@@ -269,16 +293,24 @@
                                         <span x-text="detailItem.sub_koreksi === 'lkd' ? 'atas rekomendasi audit BPK RI / LHP LKPD.' : (detailItem.sub_koreksi === 'manset' ? 'untuk penyelarasan dengan sistem SIMDA BMD / E-Manset BPKAD.' : 'hasil rekonsiliasi internal kas RSUD.')"></span>
                                     </div>
                                 </div>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                                     <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
                                         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Kelompok KIB &amp; Akun 108:</span>
                                         <div class="font-bold text-white mt-1" x-text="(detailItem.asal_kib === 'KOREKSI' ? detailItem.tujuan_kib : detailItem.asal_kib) || detailItem.astap?.category || 'KIB B'"></div>
                                         <div class="text-[11px] font-mono text-cyan-400 mt-0.5" x-text="detailItem.astap?.kode_108 || detailItem.tujuan_kode || detailItem.asal_kode || '-'"></div>
                                     </div>
                                     <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
-                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Nominal Penyesuaian Nilai:</span>
-                                        <div class="font-bold font-mono text-emerald-400 mt-1" x-text="'Rp ' + Number(detailItem.nilai_reklas || 0).toLocaleString('id-ID')"></div>
-                                        <div class="text-[11px] text-slate-400 mt-0.5">Penyeimbang Neraca: Baris 42 (Koreksi Lain-lain)</div>
+                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Nilai Buku Semula:</span>
+                                        <div class="font-bold font-mono text-slate-300 mt-1"
+                                             x-text="detailItem.spesifikasi_baru?.nilai_semula !== undefined ? 'Rp ' + Number(detailItem.spesifikasi_baru.nilai_semula).toLocaleString('id-ID') : 'Rp ' + Number(detailItem.astap?.harga_total || detailItem.nilai_reklas).toLocaleString('id-ID')"></div>
+                                        <div class="text-[11px] text-slate-400 mt-0.5" x-text="'Arah: ' + (detailItem.tipe_koreksi === 'tambah' || (detailItem.spesifikasi_baru?.tipe_koreksi === 'tambah') ? 'Penambahan (+)' : 'Pengurangan (−)')"></div>
+                                    </div>
+                                    <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Nominal Koreksi / Selisih:</span>
+                                        <div class="font-bold font-mono mt-1"
+                                             :class="(detailItem.tipe_koreksi === 'kurang' || detailItem.spesifikasi_baru?.tipe_koreksi === 'kurang') ? 'text-rose-400' : 'text-emerald-400'"
+                                             x-text="((detailItem.tipe_koreksi === 'kurang' || detailItem.spesifikasi_baru?.tipe_koreksi === 'kurang') ? '− Rp ' : '+ Rp ') + Number(detailItem.nilai_reklas || 0).toLocaleString('id-ID')"></div>
+                                        <div class="text-[11px] text-slate-400 mt-0.5">Penyeimbang Neraca: Baris 42</div>
                                     </div>
                                 </div>
                             </div>

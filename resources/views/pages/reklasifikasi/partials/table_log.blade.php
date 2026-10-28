@@ -65,6 +65,7 @@
                             $badge = match ($item->jenis_reklas) {
                                 'KOREKSI_REKENING'      => ['bg' => 'bg-indigo-500/15', 'text' => 'text-indigo-300', 'border' => 'border-indigo-500/40', 'icon' => '🔄', 'label' => 'Koreksi Rekening'],
                                 'KDP_TO_DEFINITIF'     => ['bg' => 'bg-emerald-500/15', 'text' => 'text-emerald-300', 'border' => 'border-emerald-500/40', 'icon' => '🏗️', 'label' => 'KDP Selesai ➔ Definitif'],
+                                'DEFINITIF_TO_KDP'     => ['bg' => 'bg-amber-500/15', 'text' => 'text-amber-300', 'border' => 'border-amber-500/40', 'icon' => '🔄', 'label' => 'Definitif ➔ KDP'],
                                 'EKSTRAKOMPTABEL'      => ['bg' => 'bg-rose-500/15', 'text' => 'text-rose-300', 'border' => 'border-rose-500/40', 'icon' => '🔻', 'label' => 'Ekstrakomptabel'],
                                 'KAPITALISASI_INTRAKOM' => ['bg' => 'bg-teal-500/15', 'text' => 'text-teal-300', 'border' => 'border-teal-500/40', 'icon' => '🔺', 'label' => 'Kapitalisasi Intrakom'],
                                 'HIBAH_KELUAR'         => ['bg' => 'bg-purple-500/15', 'text' => 'text-purple-300', 'border' => 'border-purple-500/40', 'icon' => '📤', 'label' => 'Hibah Keluar (BAST)'],
@@ -110,6 +111,15 @@
                                             <span class="text-indigo-400">📄</span>
                                             <span>{{ $item->nomor_ba_reklas }}</span>
                                         </span>
+                                    @endif
+
+                                    @if ($item->dokumen_url)
+                                        <a href="{{ $item->dokumen_url }}" target="_blank"
+                                           class="text-[9.5px] font-bold text-cyan-300 hover:text-white bg-cyan-500/15 hover:bg-cyan-500/30 px-2 py-0.5 rounded-md border border-cyan-500/30 flex items-center gap-1 shadow-sm transition-colors cursor-pointer"
+                                           title="Buka Berkas Bukti Fisik / Scan Dokumen PDF">
+                                            <span>📎</span>
+                                            <span>Berkas PDF</span>
+                                        </a>
                                     @endif
 
                                     @if (!empty($item->spesifikasi_baru))
@@ -226,6 +236,24 @@
                                     <div class="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[9.5px] font-extrabold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
                                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                                         <span>100% Fisik Rampung &amp; BAST</span>
+                                    </div>
+
+                                @elseif ($item->jenis_reklas === 'DEFINITIF_TO_KDP')
+                                    @php
+                                        $kibAsal = $item->asal_kib ?: ($item->astap->category ?? 'Definitif');
+                                    @endphp
+                                    <div class="flex items-center gap-1.5 text-xs font-bold">
+                                        <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shrink-0">
+                                            {{ $kibAsal }}
+                                        </span>
+                                        <span class="text-slate-500 font-bold">➔</span>
+                                        <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 shrink-0">
+                                            KIB F (KDP)
+                                        </span>
+                                    </div>
+                                    <div class="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[9.5px] font-extrabold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                                        <span>Penambahan KDP Konstruksi</span>
                                     </div>
 
                                 @elseif ($item->jenis_reklas === 'HIBAH_KELUAR')
@@ -349,6 +377,10 @@
                                     @elseif ($item->jenis_reklas === 'KDP_TO_DEFINITIF')
                                         <span class="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-300 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20" title="Mengisi Kolom 20 (KDP)">
                                             <span>🏛️</span> <span>Kapitalisasi Penuh</span>
+                                        </span>
+                                    @elseif ($item->jenis_reklas === 'DEFINITIF_TO_KDP')
+                                        <span class="inline-flex items-center gap-0.5 text-[10px] font-bold text-amber-300 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20" title="Mengisi Fisik KDP Konstruksi">
+                                            <span>🏗️</span> <span>Masuk Fisik KDP</span>
                                         </span>
                                     @else
                                         <span class="inline-flex items-center gap-0.5 text-[10px] font-bold text-indigo-300 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20">
