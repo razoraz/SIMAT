@@ -267,8 +267,27 @@
                             <div class="grid grid-cols-2 gap-3">
                                 <div>
                                     <label class="block text-slate-400 text-[10px] mb-1.5 font-semibold">Jumlah Volume / Bangunan <span class="text-rose-400">*</span></label>
-                                    <input type="number" min="1" x-model.number="item.gedung_jumlah_bangunan" @input="syncActiveKibTotals()" placeholder="1"
-                                           class="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-xl px-3.5 py-2 text-xs text-white font-mono font-bold focus:outline-none transition-all">
+                                    <input type="number" min="1"
+                                        x-model.number="item.gedung_jumlah_bangunan"
+                                        @keydown="if(['-', '+', 'e', 'E', '.'].includes($event.key)) $event.preventDefault();"
+                                        @input="
+                                            let raw = String($event.target.value).replace(/\D/g, '');
+                                            if (raw.startsWith('0')) raw = raw.replace(/^0+/, '');
+                                            item.gedung_jumlah_bangunan = raw ? parseInt(raw, 10) : '';
+                                            syncActiveKibTotals();
+                                        "
+                                        @blur="
+                                            if (!item.gedung_jumlah_bangunan || Number(item.gedung_jumlah_bangunan) < 1) {
+                                                item.gedung_jumlah_bangunan = 1;
+                                                syncActiveKibTotals();
+                                            }
+                                        "
+                                        :class="(!item.gedung_jumlah_bangunan || Number(item.gedung_jumlah_bangunan) < 1) ? 'border-rose-500 ring-1 ring-rose-500 text-rose-300' : 'border-slate-700 text-white focus:border-amber-500'"
+                                        placeholder="1"
+                                        class="w-full bg-slate-950 border rounded-xl px-3.5 py-2 text-xs font-mono font-bold focus:outline-none transition-colors">
+                                    <template x-if="!item.gedung_jumlah_bangunan || Number(item.gedung_jumlah_bangunan) < 1">
+                                        <span class="text-[9.5px] font-bold text-rose-400 block mt-1">⚠️ Minimal 1 bangunan.</span>
+                                    </template>
                                 </div>
                                 <div>
                                     <label class="block text-slate-400 text-[10px] mb-1.5 font-semibold">Satuan <span class="text-rose-400">*</span></label>

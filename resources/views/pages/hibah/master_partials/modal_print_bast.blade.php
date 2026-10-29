@@ -1,8 +1,20 @@
 <!-- ========================================================================= -->
 <!-- MODAL CETAK: LEMBAR DOKUMEN BAST HIBAH ASET (MASUK & KELUAR)              -->
 <!-- ========================================================================= -->
-<div x-show="showModalPrintBast" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-2 sm:p-4 overflow-y-auto" x-cloak @click.self="showModalPrintBast = false">
-    <div @click.away="showModalPrintBast = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-4xl w-full p-4 sm:p-6 shadow-2xl space-y-4 my-auto relative">
+<template x-teleport="body">
+    <div x-show="showModalPrintBast" 
+         x-cloak 
+         @click.self="showModalPrintBast = false"
+         class="fixed inset-0 flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto w-screen h-screen min-h-screen"
+         style="background-color: rgba(2, 6, 23, 0.90); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); z-index: 9000;"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
+        
+        <div @click.away="showModalPrintBast = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-4xl w-full p-4 sm:p-6 shadow-2xl space-y-4 my-auto relative max-h-[92vh] overflow-y-auto custom-scrollbar">
         
         <!-- Action Bar Modal (Hidden when Printed) -->
         <div class="no-print flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
@@ -364,5 +376,6 @@
             </div>
         </template>
 
+        </div>
     </div>
-</div>
+</template>

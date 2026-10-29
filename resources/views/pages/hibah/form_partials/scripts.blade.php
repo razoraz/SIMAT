@@ -14,6 +14,8 @@
 
             // ─── File Upload State ───────────────────────────────────────────
             selectedFile: null,
+            existingDokumenPath: null,
+            removeExistingDokumen: false,
 
             // ─── Per-Step Error Banners ──────────────────────────────────────
             stepErrors: { 1: null, 2: null, 3: null },
@@ -189,8 +191,8 @@
 
             handleFileSelect(event) {
                 const file = event.target.files[0];
-                if (!file) { this.selectedFile = null; return; }
-                const maxMb = 5;
+                if (!file) return;
+                const maxMb = 10;
                 if (file.size > maxMb * 1024 * 1024) {
                     this.showToast('❌ File Terlalu Besar', `Ukuran file maksimal ${maxMb} MB. File Anda: ${(file.size/1024/1024).toFixed(2)} MB`, 'error');
                     event.target.value = '';
@@ -198,6 +200,33 @@
                     return;
                 }
                 this.selectedFile = file;
+                this.removeExistingDokumen = false;
+            },
+
+            cancelSelectedFile() {
+                this.selectedFile = null;
+                const fi = document.getElementById('hibahDokumenInput');
+                if (fi) fi.value = '';
+            },
+
+            toggleRemoveExistingFile() {
+                this.removeExistingDokumen = !this.removeExistingDokumen;
+                if (this.removeExistingDokumen) {
+                    this.selectedFile = null;
+                    const fi = document.getElementById('hibahDokumenInput');
+                    if (fi) fi.value = '';
+                }
+            },
+
+            isExistingFileImage() {
+                if (!this.existingDokumenPath) return false;
+                const ext = String(this.existingDokumenPath).split('.').pop().toLowerCase();
+                return ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext);
+            },
+
+            getExistingFileName() {
+                if (!this.existingDokumenPath) return '';
+                return String(this.existingDokumenPath).split('/').pop();
             },
 
             // Toast State
@@ -544,6 +573,11 @@
                 this.formData.total_realisasi = Number(d.total_realisasi || hibah.nilai_aset || 0);
                 this.formData.jumlah_realisasi = this.formData.total_realisasi;
                 this.formData.hibah_keterangan = d.hibah_keterangan || d.keterangan_tambahan || hibah.keterangan || spec.hibah_keterangan || '';
+
+                // Berkas Dokumen BAST (jika sebelumnya sudah ada yang diunggah)
+                this.existingDokumenPath = spec.dokumen_bast_path || spec.dokumen_path || hibah.dokumen_path || d.dokumen_bast_path || d.dokumen_path || '';
+                this.removeExistingDokumen = false;
+                this.selectedFile = null;
 
                 // Langkah 2: Rekening Belanja & Klasifikasi 108 & Barang
                 this.formData.rekening_belanja_id = d.rekening_belanja_id || null;
@@ -985,7 +1019,7 @@
 
             getMesinSubtotal(item) {
                 if (!item) return 0;
-                const vol = parseFloat(item.mesin_jumlah_barang) || 0;
+                const vol = Math.max(1, parseInt(item.mesin_jumlah_barang, 10) || 1);
                 const sat = parseFloat(item.mesin_nilai_satuan) || 0;
                 const adm = parseFloat(item.mesin_administrasi_proyek) || 0;
                 return (vol * sat) + adm;
@@ -1015,7 +1049,7 @@
 
             getLainnyaSubtotal(item) {
                 if (!item) return 0;
-                const vol = parseFloat(item.lainnya_jumlah || item.lainnya_jumlah_barang) || 1;
+                const vol = Math.max(1, parseInt(item.lainnya_jumlah || item.lainnya_jumlah_barang, 10) || 1);
                 const sat = parseFloat(item.lainnya_nilai_satuan) || 0;
                 const adm = parseFloat(item.lainnya_administrasi_proyek) || 0;
                 return (vol * sat) + adm;
@@ -1034,9 +1068,9 @@
 
             get totalVolumeTanah() {
                 if (this.formData.tanah_items && this.formData.tanah_items.length > 0) {
-                    return this.formData.tanah_items.reduce((s, it) => s + (parseInt(it.tanah_jumlah_bidang) || 1), 0);
+                    return this.formData.tanah_items.reduce((s, it) => s + Math.max(1, parseInt(it.tanah_jumlah_bidang, 10) || 1), 0);
                 }
-                return parseInt(this.formData.jumlah_volume) || 1;
+                return Math.max(1, parseInt(this.formData.jumlah_volume, 10) || 1);
             },
 
             get totalNilaiLainnya() {
@@ -1225,13 +1259,14 @@
 
             get totalVolumeMesin() {
                 if (this.formData.mesin_items && this.formData.mesin_items.length > 0) {
-                    return this.formData.mesin_items.reduce((sum, item) => sum + (parseInt(item.mesin_jumlah_barang) || 1), 0);
+                    return this.formData.mesin_items.reduce((sum, item) => sum + Math.max(1, parseInt(item.mesin_jumlah_barang, 10) || 1), 0);
                 }
-                return 1;
+                return Math.max(1, parseInt(this.formData.jumlah_volume, 10) || 1);
             },
 
             getMesinSubtotal(item) {
-                return (Number(item.mesin_jumlah_barang || 1) * Number(item.mesin_nilai_satuan || 0)) + Number(item.mesin_administrasi_proyek || 0);
+                const vol = Math.max(1, parseInt(item.mesin_jumlah_barang, 10) || 1);
+                return (vol * Number(item.mesin_nilai_satuan || 0)) + Number(item.mesin_administrasi_proyek || 0);
             },
 
             addMesinItem() {
@@ -1314,9 +1349,9 @@
 
             get totalVolumeGedung() {
                 if (this.formData.gedung_items && this.formData.gedung_items.length > 0) {
-                    return this.formData.gedung_items.reduce((sum, item) => sum + (parseInt(item.gedung_jumlah_bangunan) || 1), 0);
+                    return this.formData.gedung_items.reduce((sum, item) => sum + Math.max(1, parseInt(item.gedung_jumlah_bangunan, 10) || 1), 0);
                 }
-                return 1;
+                return Math.max(1, parseInt(this.formData.jumlah_volume, 10) || 1);
             },
 
             getGedungSubtotal(item) {
@@ -1381,9 +1416,9 @@
 
             get totalVolumeJaringan() {
                 if (this.formData.jaringan_items && this.formData.jaringan_items.length > 0) {
-                    return this.formData.jaringan_items.reduce((sum, item) => sum + (parseInt(item.jaringan_jumlah) || 1), 0);
+                    return this.formData.jaringan_items.reduce((sum, item) => sum + Math.max(1, parseInt(item.jaringan_jumlah, 10) || 1), 0);
                 }
-                return 1;
+                return Math.max(1, parseInt(this.formData.jumlah_volume, 10) || 1);
             },
 
             getJaringanSubtotal(item) {
@@ -1451,13 +1486,14 @@
 
             get totalVolumeAsetLainnya() {
                 if (this.formData.lainnya_items && this.formData.lainnya_items.length > 0) {
-                    return this.formData.lainnya_items.reduce((sum, item) => sum + (parseInt(item.lainnya_jumlah_barang || item.lainnya_jumlah) || 1), 0);
+                    return this.formData.lainnya_items.reduce((sum, item) => sum + Math.max(1, parseInt(item.lainnya_jumlah_barang || item.lainnya_jumlah, 10) || 1), 0);
                 }
-                return 1;
+                return Math.max(1, parseInt(this.formData.jumlah_volume, 10) || 1);
             },
 
             getLainnyaSubtotal(item) {
-                return (Number(item.lainnya_jumlah_barang || item.lainnya_jumlah || 1) * Number(item.lainnya_nilai_satuan || 0)) + Number(item.lainnya_administrasi_proyek || 0);
+                const vol = Math.max(1, parseInt(item.lainnya_jumlah_barang || item.lainnya_jumlah, 10) || 1);
+                return (vol * Number(item.lainnya_nilai_satuan || 0)) + Number(item.lainnya_administrasi_proyek || 0);
             },
 
             addLainnyaItem() {
@@ -1810,10 +1846,59 @@
                             detail: 'Tuliskan nama barang atau peralatan hibah secara jelas dan lengkap.'
                         });
                     }
-                    if (!this.formData.jumlah_volume || this.formData.jumlah_volume < 1) {
+                    if (!this.formData.jumlah_volume || Number(this.formData.jumlah_volume) < 1) {
                         missing.push({
-                            label: 'Volume / Kuantitas Barang',
-                            detail: 'Kuantitas fisik barang hibah yang diterima minimal harus 1 unit.'
+                            label: 'Volume / Kuantitas Barang Tidak Valid',
+                            detail: 'Kuantitas fisik barang hibah tidak boleh 0 atau bernilai minus (minimal 1 unit).'
+                        });
+                    }
+
+                    // ── Validasi Kuantitas Tiap Rincian Fisik (Multi-Item) ──
+                    if (this.isMesin && Array.isArray(this.formData.mesin_items)) {
+                        this.formData.mesin_items.forEach((item, idx) => {
+                            if (!item.mesin_jumlah_barang || Number(item.mesin_jumlah_barang) < 1) {
+                                missing.push({
+                                    label: `Kuantitas Item Mesin #${idx + 1} (${item.mesin_merk || 'Mesin'}) Tidak Boleh 0 atau Minus`,
+                                    detail: 'Jumlah kuantitas fisik harus minimal 1 unit.'
+                                });
+                            }
+                        });
+                    } else if (this.isAsetLainnya && Array.isArray(this.formData.lainnya_items)) {
+                        this.formData.lainnya_items.forEach((item, idx) => {
+                            const q = item.lainnya_jumlah || item.lainnya_jumlah_barang;
+                            if (!q || Number(q) < 1) {
+                                missing.push({
+                                    label: `Volume Item Lainnya #${idx + 1} Tidak Boleh 0 atau Minus`,
+                                    detail: 'Jumlah volume fisik harus minimal 1 unit.'
+                                });
+                            }
+                        });
+                    } else if (this.isTanah && Array.isArray(this.formData.tanah_items)) {
+                        this.formData.tanah_items.forEach((item, idx) => {
+                            if (!item.tanah_jumlah_bidang || Number(item.tanah_jumlah_bidang) < 1) {
+                                missing.push({
+                                    label: `Bidang Tanah #${idx + 1} Tidak Boleh 0 atau Minus`,
+                                    detail: 'Jumlah bidang tanah minimal 1 bidang.'
+                                });
+                            }
+                        });
+                    } else if (this.isGedung && Array.isArray(this.formData.gedung_items)) {
+                        this.formData.gedung_items.forEach((item, idx) => {
+                            if (!item.gedung_jumlah_bangunan || Number(item.gedung_jumlah_bangunan) < 1) {
+                                missing.push({
+                                    label: `Volume Bangunan #${idx + 1} Tidak Boleh 0 atau Minus`,
+                                    detail: 'Jumlah bangunan minimal 1 unit.'
+                                });
+                            }
+                        });
+                    } else if (this.isJaringan && Array.isArray(this.formData.jaringan_items)) {
+                        this.formData.jaringan_items.forEach((item, idx) => {
+                            if (!item.jaringan_jumlah || Number(item.jaringan_jumlah) < 1) {
+                                missing.push({
+                                    label: `Volume Ruas #${idx + 1} Tidak Boleh 0 atau Minus`,
+                                    detail: 'Jumlah ruas minimal 1 ruas.'
+                                });
+                            }
                         });
                     }
                     if (!this.formData.total_realisasi || this.formData.total_realisasi <= 0) {
@@ -1823,13 +1908,65 @@
                         });
                     }
 
+                    // ─── Validasi Batas Nilai Akuntansi (Reguler > Rp 300.000 vs Ekstrakomtabel <= Rp 300.000) ───
+                    if (this.isMesin || this.isAsetLainnya) {
+                        const isExtracom = Boolean(this.formData.is_extracomtable);
+
+                        if (this.isMesin && Array.isArray(this.formData.mesin_items) && this.formData.mesin_items.length > 0) {
+                            this.formData.mesin_items.forEach((item, idx) => {
+                                const val = Number(item.mesin_nilai_satuan || 0);
+                                if (!isExtracom && val <= 300000) {
+                                    missing.push({
+                                        label: `Nilai Satuan Item #${idx + 1} (${item.mesin_merk || 'Mesin'}) Tidak Sesuai`,
+                                        detail: `Aset Tetap Reguler wajib memiliki nilai satuan > Rp 300.000 (Ditemukan: Rp ${val.toLocaleString('id-ID')}). Silakan pilih status Ekstrakomtabel jika barang bernilai ≤ Rp 300.000.`
+                                    });
+                                } else if (isExtracom && val > 300000) {
+                                    missing.push({
+                                        label: `Nilai Satuan Item #${idx + 1} (${item.mesin_merk || 'Mesin'}) Melebihi Batas`,
+                                        detail: `Barang Ekstrakomtabel maksimal bernilai Rp 300.000 (Ditemukan: Rp ${val.toLocaleString('id-ID')}). Silakan pilih status Aset Tetap Reguler jika barang bernilai > Rp 300.000.`
+                                    });
+                                }
+                            });
+                        } else if (this.isAsetLainnya && Array.isArray(this.formData.lainnya_items) && this.formData.lainnya_items.length > 0) {
+                            this.formData.lainnya_items.forEach((item, idx) => {
+                                const val = Number(item.lainnya_nilai_satuan || 0);
+                                if (!isExtracom && val <= 300000) {
+                                    missing.push({
+                                        label: `Nilai Satuan Item #${idx + 1} (${item.lainnya_nama_barang || item.lainnya_judul || 'Aset Lainnya'}) Tidak Sesuai`,
+                                        detail: `Aset Tetap Reguler wajib memiliki nilai satuan > Rp 300.000 (Ditemukan: Rp ${val.toLocaleString('id-ID')}). Silakan pilih status Ekstrakomtabel jika barang bernilai ≤ Rp 300.000.`
+                                    });
+                                } else if (isExtracom && val > 300000) {
+                                    missing.push({
+                                        label: `Nilai Satuan Item #${idx + 1} (${item.lainnya_nama_barang || item.lainnya_judul || 'Aset Lainnya'}) Melebihi Batas`,
+                                        detail: `Barang Ekstrakomtabel maksimal bernilai Rp 300.000 (Ditemukan: Rp ${val.toLocaleString('id-ID')}). Silakan pilih status Aset Tetap Reguler jika barang bernilai > Rp 300.000.`
+                                    });
+                                }
+                            });
+                        } else {
+                            // Single item fallback
+                            const vol = Number(this.formData.jumlah_volume) || 1;
+                            const unitPrice = Math.round((Number(this.formData.total_realisasi) || 0) / vol);
+                            if (!isExtracom && unitPrice <= 300000) {
+                                missing.push({
+                                    label: 'Nilai Satuan Aset Reguler Wajib > Rp 300.000',
+                                    detail: `Aset Tetap Reguler (Kapitalisasi) wajib bernilai satuan > Rp 300.000 (Saat ini: Rp ${unitPrice.toLocaleString('id-ID')}). Silakan alihkan status ke Ekstrakomtabel (Extracom).`
+                                });
+                            } else if (isExtracom && unitPrice > 300000) {
+                                missing.push({
+                                    label: 'Nilai Satuan Ekstrakomtabel Maksimal Rp 300.000',
+                                    detail: `Barang Ekstrakomtabel maksimal bernilai satuan Rp 300.000 (Saat ini: Rp ${unitPrice.toLocaleString('id-ID')}). Silakan alihkan status ke Aset Tetap Reguler.`
+                                });
+                            }
+                        }
+                    }
+
                     if (missing.length > 0) {
                         this.stepErrors[2] = missing.map(m => m.label).join(', ') + ' wajib diisi.';
                         this.openValidationModal(
-                            'Data Klasifikasi 108 & Spesifikasi Belum Lengkap',
-                            'Lengkapi rincian klasifikasi aset dan spesifikasi fisik barang di bawah ini sebelum beralih ke verifikasi:',
+                            'Data Klasifikasi 108 & Nilai Akuntansi Belum Sesuai',
+                            'Periksa dan sesuaikan klasifikasi aset serta batasan nilai kapitalisasi akuntansi berikut sebelum melanjutkan:',
                             missing,
-                            'LANGKAH 2 — KLASIFIKASI 108 & FISIK'
+                            'LANGKAH 2 — KLASIFIKASI 108 & SPESIFIKASI'
                         );
                         return false;
                     }
@@ -1898,9 +2035,11 @@
                 if (this.formData.hibah_pimpinan)      fd.append('hibah_pimpinan',   this.formData.hibah_pimpinan);
                 if (this.formData.hibah_alamat_pemberi) fd.append('hibah_alamat_pemberi', this.formData.hibah_alamat_pemberi);
 
-                // File Dokumen BAST (opsional)
+                // File Dokumen BAST (opsional / penggantian)
                 if (this.selectedFile) {
                     fd.append('dokumen_bast', this.selectedFile, this.selectedFile.name);
+                } else if (this.removeExistingDokumen) {
+                    fd.append('remove_dokumen_bast', '1');
                 }
 
                 // Langkah 2: Klasifikasi 108 & Barang

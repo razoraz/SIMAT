@@ -253,14 +253,14 @@
         </div>
 
         {{-- ─── Upload Berkas BAST / NPHD ──────────────────────────────── --}}
-        <div class="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3 shadow-lg">
+        <div class="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3.5 shadow-lg">
             <div class="flex items-center justify-between flex-wrap gap-2">
                 <div class="flex items-center gap-2">
                     <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
                         <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
                         </svg>
-                        <span>Unggah Berkas BAST / NPHD Hibah</span>
+                        <span>Berkas Dokumen BAST / NPHD Hibah</span>
                     </span>
                     <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-950/60 text-amber-300 border border-amber-800/40">
                         Opsional
@@ -269,30 +269,95 @@
                 <span class="text-[10px] text-slate-400 font-mono">Format: PDF, JPG, PNG, DOC/DOCX (Maks. 10 MB)</span>
             </div>
 
-            <div class="p-4 rounded-2xl bg-slate-950/60 border-2 border-dashed border-slate-700 hover:border-amber-400/60 transition-all text-center relative group">
-                <input type="file" @change="handleFileSelect" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+            {{-- 1. Kartu Berkas Lama yang Sudah Ada (Mode Edit) --}}
+            <template x-if="existingDokumenPath && !removeExistingDokumen">
+                <div class="p-3.5 rounded-2xl bg-slate-950/90 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-11 h-11 rounded-xl overflow-hidden flex items-center justify-center shrink-0 border border-amber-500/30 bg-slate-900">
+                            <template x-if="isExistingFileImage()">
+                                <img :src="'/storage/' + existingDokumenPath" alt="Thumbnail BAST" class="w-full h-full object-cover">
+                            </template>
+                            <template x-if="!isExistingFileImage()">
+                                <span class="text-xl">📄</span>
+                            </template>
+                        </div>
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold text-white truncate block" x-text="getExistingFileName()"></span>
+                                <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 whitespace-nowrap shrink-0">
+                                    ✓ Berkas Tersimpan
+                                </span>
+                            </div>
+                            <p class="text-[10.5px] text-slate-400 mt-0.5">Berkas BAST ini sudah tersimpan di arsip server.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                        <a :href="'/storage/' + existingDokumenPath" target="_blank"
+                            class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 text-xs font-bold flex items-center gap-1 transition-all">
+                            <span>👁️ Lihat Berkas</span>
+                        </a>
+                        <button type="button" @click="toggleRemoveExistingFile()"
+                            class="px-3 py-1.5 rounded-xl bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-500/40 text-xs font-bold flex items-center gap-1 transition-all cursor-pointer">
+                            <span>🗑️ Hapus Berkas</span>
+                        </button>
+                    </div>
+                </div>
+            </template>
+
+            {{-- 2. Peringatan jika pengguna memilih menghapus berkas lama --}}
+            <template x-if="existingDokumenPath && removeExistingDokumen">
+                <div class="p-3.5 rounded-2xl bg-rose-950/40 border border-rose-500/40 flex items-center justify-between gap-3 text-xs">
+                    <span class="text-rose-300 font-semibold flex items-center gap-1.5">
+                        <span>⚠️</span>
+                        <span>Berkas BAST lama ditandai untuk dihapus saat Anda menekan tombol simpan.</span>
+                    </span>
+                    <button type="button" @click="toggleRemoveExistingFile()"
+                        class="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 text-[11px] font-bold cursor-pointer shrink-0">
+                        ↺ Batalkan Hapus (Pertahankan Berkas)
+                    </button>
+                </div>
+            </template>
+
+            {{-- 3. Area Dropzone Unggah File / Ganti File --}}
+            <div class="p-4 rounded-2xl bg-slate-950/60 border-2 border-dashed transition-all text-center relative group"
+                :class="selectedFile ? 'border-amber-400 bg-amber-950/10' : 'border-slate-700 hover:border-amber-400/60'">
+                <input type="file" id="hibahDokumenInput" @change="handleFileSelect" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                     class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
 
                 <div class="space-y-1.5 pointer-events-none">
-                    <div class="w-10 h-10 mx-auto rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center text-lg shadow-inner">
-                        📁
+                    <div class="w-10 h-10 mx-auto rounded-xl flex items-center justify-center text-lg shadow-inner"
+                        :class="selectedFile ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/10 text-amber-400'">
+                        <span x-show="!selectedFile">📁</span>
+                        <span x-show="selectedFile">📄</span>
                     </div>
-                    <p class="text-xs font-bold text-slate-300 group-hover:text-amber-300 transition-colors">
-                        <span x-show="!selectedFile">Klik atau seret berkas BAST / NPHD ke sini</span>
-                        <span x-show="selectedFile" class="text-amber-400 font-mono" x-text="selectedFile ? ('📄 ' + selectedFile.name + ' (' + (selectedFile.size / 1024 / 1024).toFixed(2) + ' MB)') : ''"></span>
+                    <p class="text-xs font-bold transition-colors"
+                        :class="selectedFile ? 'text-emerald-300 font-mono' : 'text-slate-300 group-hover:text-amber-300'">
+                        <span x-show="!selectedFile && !existingDokumenPath">Klik atau seret berkas BAST / NPHD ke sini</span>
+                        <span x-show="!selectedFile && existingDokumenPath && !removeExistingDokumen">Klik atau seret untuk <strong>MENGGANTI</strong> dengan berkas baru</span>
+                        <span x-show="!selectedFile && existingDokumenPath && removeExistingDokumen">Klik atau seret untuk mengunggah berkas pengganti baru</span>
+                        <span x-show="selectedFile" x-text="selectedFile ? (selectedFile.name + ' (' + (selectedFile.size / 1024 / 1024).toFixed(2) + ' MB)') : ''"></span>
                     </p>
-                    <p class="text-[10.5px] text-slate-500">Maksimal 10 MB (Format: PDF, Gambar Scan, Dokumen Word)</p>
+                    <p class="text-[10.5px] text-slate-500">
+                        <span x-show="!selectedFile && existingDokumenPath && !removeExistingDokumen">💡 Biarkan kosong jika ingin tetap mempertahankan berkas yang sudah ada.</span>
+                        <span x-show="!selectedFile && (!existingDokumenPath || removeExistingDokumen)">Maksimal 10 MB (Format: PDF, Gambar Scan, Dokumen Word)</span>
+                        <span x-show="selectedFile" class="text-amber-300/80">
+                            <span x-show="existingDokumenPath">⚡ Berkas baru ini akan menggantikan berkas lama saat disimpan.</span>
+                            <span x-show="!existingDokumenPath">✓ Berkas siap disimpan bersama dokumen hibah.</span>
+                        </span>
+                    </p>
                 </div>
             </div>
 
+            {{-- 4. Indikator dan Tombol Batal saat Berkas Baru Dipilih --}}
             <template x-if="selectedFile">
                 <div class="flex items-center justify-between px-1 text-[11px]">
                     <span class="text-emerald-400 font-semibold flex items-center gap-1">
                         <span>✓</span>
-                        <span>Berkas siap disimpan bersama data aset hibah</span>
+                        <span x-show="existingDokumenPath">Berkas baru siap diunggah menggantikan berkas lama</span>
+                        <span x-show="!existingDokumenPath">Berkas siap disimpan</span>
                     </span>
-                    <button type="button" @click="selectedFile = null" class="text-rose-400 hover:underline font-medium cursor-pointer">
-                        ✕ Batal / Ganti Berkas
+                    <button type="button" @click="cancelSelectedFile()" class="text-rose-400 hover:text-rose-300 hover:underline font-bold cursor-pointer">
+                        ✕ Batal / Lepas Berkas Baru
                     </button>
                 </div>
             </template>

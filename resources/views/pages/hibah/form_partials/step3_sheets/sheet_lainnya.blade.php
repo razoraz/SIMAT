@@ -421,8 +421,27 @@
                                     <span>Jumlah Volume</span>
                                     <span class="text-rose-400 ml-0.5">*</span>
                                 </label>
-                                <input type="number" min="1" x-model.number="item.lainnya_jumlah" @input="syncTotalsFromItems()" placeholder="1"
-                                    class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono font-bold focus:border-amber-500 focus:outline-none">
+                                <input type="number" min="1"
+                                    x-model.number="item.lainnya_jumlah"
+                                    @keydown="if(['-', '+', 'e', 'E', '.'].includes($event.key)) $event.preventDefault();"
+                                    @input="
+                                        let raw = String($event.target.value).replace(/\D/g, '');
+                                        if (raw.startsWith('0')) raw = raw.replace(/^0+/, '');
+                                        item.lainnya_jumlah = raw ? parseInt(raw, 10) : '';
+                                        syncTotalsFromItems();
+                                    "
+                                    @blur="
+                                        if (!item.lainnya_jumlah || Number(item.lainnya_jumlah) < 1) {
+                                            item.lainnya_jumlah = 1;
+                                            syncTotalsFromItems();
+                                        }
+                                    "
+                                    :class="(!item.lainnya_jumlah || Number(item.lainnya_jumlah) < 1) ? 'border-rose-500 ring-1 ring-rose-500 text-rose-300' : 'border-slate-700 text-white focus:border-amber-500'"
+                                    placeholder="1"
+                                    class="w-full bg-slate-950 border rounded-xl px-3 py-2 text-xs font-mono font-bold focus:outline-none transition-colors">
+                                <template x-if="!item.lainnya_jumlah || Number(item.lainnya_jumlah) < 1">
+                                    <span class="text-[9.5px] font-bold text-rose-400 block mt-1">⚠️ Min. 1 unit.</span>
+                                </template>
                             </div>
 
                             <!-- Kolom 3: Satuan (2 cols) -->

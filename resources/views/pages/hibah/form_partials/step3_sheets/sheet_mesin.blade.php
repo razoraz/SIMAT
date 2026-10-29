@@ -262,8 +262,26 @@
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <div>
                                 <label class="block text-slate-300 text-[10.5px] mb-1 font-semibold">Jumlah Kuantitas <span class="text-rose-400">*</span></label>
-                                <input type="number" min="1" x-model.number="item.mesin_jumlah_barang" @input="syncActiveKibTotals()"
-                                    class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono font-bold focus:border-amber-400 focus:outline-none">
+                                <input type="number" min="1"
+                                    x-model.number="item.mesin_jumlah_barang"
+                                    @keydown="if(['-', '+', 'e', 'E', '.'].includes($event.key)) $event.preventDefault();"
+                                    @input="
+                                        let raw = String($event.target.value).replace(/\D/g, '');
+                                        if (raw.startsWith('0')) raw = raw.replace(/^0+/, '');
+                                        item.mesin_jumlah_barang = raw ? parseInt(raw, 10) : '';
+                                        syncActiveKibTotals();
+                                    "
+                                    @blur="
+                                        if (!item.mesin_jumlah_barang || Number(item.mesin_jumlah_barang) < 1) {
+                                            item.mesin_jumlah_barang = 1;
+                                            syncActiveKibTotals();
+                                        }
+                                    "
+                                    :class="(!item.mesin_jumlah_barang || Number(item.mesin_jumlah_barang) < 1) ? 'border-rose-500 ring-1 ring-rose-500 text-rose-300' : 'border-slate-700 text-white focus:border-amber-400'"
+                                    class="w-full bg-slate-950 border rounded-xl px-3 py-2 text-xs font-mono font-bold focus:outline-none transition-colors">
+                                <template x-if="!item.mesin_jumlah_barang || Number(item.mesin_jumlah_barang) < 1">
+                                    <span class="text-[9.5px] font-bold text-rose-400 block mt-1">⚠️ Kuantitas minimal 1 unit (tidak boleh 0 atau minus).</span>
+                                </template>
                             </div>
                             <div>
                                 <label class="block text-slate-300 text-[10.5px] mb-1 font-semibold">Satuan <span class="text-rose-400">*</span></label>
@@ -271,10 +289,20 @@
                                     class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold text-center focus:border-amber-400 focus:outline-none">
                             </div>
                             <div>
-                                <label class="block text-slate-300 text-[10.5px] mb-1 font-semibold">
-                                    <span x-show="item.is_extracom || formData.is_extracomtable">Nilai Satuan (Maks. Rp 300.000)</span>
-                                    <span x-show="!item.is_extracom && !formData.is_extracomtable">Taksiran Nilai Satuan (Rp)</span>
-                                    <span class="text-rose-400">*</span>
+                                <label class="block text-[10.5px] mb-1 font-semibold flex items-center justify-between gap-1.5">
+                                    <span class="text-slate-300 whitespace-nowrap flex items-center">
+                                        <span x-show="item.is_extracom || formData.is_extracomtable">Nilai Satuan Extracom</span>
+                                        <span x-show="!item.is_extracom && !formData.is_extracomtable">Taksiran Nilai Satuan</span>
+                                        <span class="text-rose-400 ml-0.5">*</span>
+                                    </span>
+                                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap shrink-0 transition-colors"
+                                          :class="(item.is_extracom || formData.is_extracomtable) 
+                                              ? (Number(item.mesin_nilai_satuan || 0) > 300000 ? 'text-rose-400 bg-rose-950/60 border border-rose-500/40 animate-pulse' : 'text-amber-400 bg-amber-950/40 border border-amber-500/30') 
+                                              : (Number(item.mesin_nilai_satuan || 0) > 0 && Number(item.mesin_nilai_satuan || 0) <= 300000 ? 'text-rose-400 bg-rose-950/60 border border-rose-500/40 animate-pulse' : (Number(item.mesin_nilai_satuan || 0) > 300000 ? 'text-emerald-400 bg-emerald-950/40 border border-emerald-500/30' : 'text-slate-400 bg-slate-900 border border-slate-700/60'))"
+                                          x-text="(item.is_extracom || formData.is_extracomtable) 
+                                              ? (Number(item.mesin_nilai_satuan || 0) > 300000 ? 'Lewat Maksimal!' : 'Maks. Rp 300rb') 
+                                              : (Number(item.mesin_nilai_satuan || 0) > 0 && Number(item.mesin_nilai_satuan || 0) <= 300000 ? 'Wajib > Rp 300rb' : (Number(item.mesin_nilai_satuan || 0) > 300000 ? '✓ Harga Wajar' : '> Rp 300rb'))">
+                                    </span>
                                 </label>
                                 <div class="relative">
                                     <span class="absolute left-3 top-2 text-slate-400 text-xs font-bold font-mono">Rp</span>
@@ -283,14 +311,36 @@
                                         @input="
                                             let raw = $event.target.value.replace(/\D/g, '');
                                             let val = raw ? parseInt(raw, 10) : 0;
-                                            if ((item.is_extracom || formData.is_extracomtable) && val > 300000) { val = 300000; }
                                             item.mesin_nilai_satuan = val;
                                             $event.target.value = val ? Number(val).toLocaleString('id-ID') : '';
                                             syncActiveKibTotals();
                                         "
                                         placeholder="0"
-                                        class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 pl-9 text-xs text-amber-300 font-mono font-bold focus:border-amber-400 focus:outline-none">
+                                        :class="((item.is_extracom || formData.is_extracomtable) && Number(item.mesin_nilai_satuan || 0) > 300000) || (!(item.is_extracom || formData.is_extracomtable) && Number(item.mesin_nilai_satuan || 0) > 0 && Number(item.mesin_nilai_satuan || 0) <= 300000) ? 'border-rose-500 ring-1 ring-rose-500 text-rose-300' : 'border-slate-700 text-amber-300 focus:border-amber-400'"
+                                        class="w-full bg-slate-950 border rounded-xl px-3 py-2 pl-9 text-xs font-mono font-bold focus:outline-none transition-colors">
                                 </div>
+                                
+                                <template x-if="(item.is_extracom || formData.is_extracomtable) && Number(item.mesin_nilai_satuan || 0) > 300000">
+                                    <span class="text-[9.5px] font-bold text-rose-400 block mt-1">
+                                        ⚠️ Nilai satuan Extracom tidak boleh &gt; Rp 300.000!
+                                    </span>
+                                </template>
+                                <template x-if="!(item.is_extracom || formData.is_extracomtable) && Number(item.mesin_nilai_satuan || 0) > 0 && Number(item.mesin_nilai_satuan || 0) <= 300000">
+                                    <div class="mt-1.5 p-2 rounded-lg bg-rose-950/40 border border-rose-500/30 text-[9.5px] text-rose-300 space-y-1">
+                                        <div class="font-bold flex items-center gap-1">
+                                            <span>⚠️</span>
+                                            <span>Aset Reguler wajib memiliki nilai satuan &gt; Rp 300.000!</span>
+                                        </div>
+                                        <p class="text-slate-400 leading-tight">
+                                            Barang bernilai ≤ Rp 300.000 harus dicatat sebagai <strong>Ekstrakomtabel</strong>.
+                                        </p>
+                                        <button type="button" @click="setGlobalExtracom(true)"
+                                            class="mt-1 px-2.5 py-1 rounded-md bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold transition-all flex items-center gap-1 cursor-pointer">
+                                            <span>📦</span>
+                                            <span>Beralih ke Ekstrakomtabel Sekarang</span>
+                                        </button>
+                                    </div>
+                                </template>
                             </div>
                         </div>
                     </div>

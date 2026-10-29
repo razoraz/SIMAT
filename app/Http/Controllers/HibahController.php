@@ -214,6 +214,7 @@ class HibahController extends Controller
         $hargaSatuan    = $totalRealisasi / $totalVolume;
         $tahun          = (int) $data['tahun_perolehan'];
         $kondisiItem    = $data['kondisi'] ?? 'Baik';
+        $isExtracom     = filter_var($request->input('is_extracomtable', false), FILTER_VALIDATE_BOOLEAN);
 
         // Upload file dokumen BAST jika ada
         $dokumenBastPath = null;
@@ -230,6 +231,81 @@ class HibahController extends Controller
             $decoded = json_decode($request->input('spesifikasi_json'), true);
             if (is_array($decoded)) {
                 $spesifikasiExtra = $decoded;
+            }
+        }
+
+        // Validasi Batas Kapitalisasi Akuntansi BMD (Rp 300.000)
+        $ja = JenisAstap::find($jenisAstapId);
+        $kode108 = $ja?->sub_sub_rincian_objek ?? ($data['jenis_aset_kode'] ?? '');
+        $isMesin = str_starts_with($kode108, '1.3.2');
+        $isAsetLainnya = str_starts_with($kode108, '1.3.5');
+
+        $mesinItems = $request->input('mesin_items') ?? ($spesifikasiExtra['mesin_items'] ?? []);
+        if (is_string($mesinItems)) $mesinItems = json_decode($mesinItems, true);
+        $lainnyaItems = $request->input('lainnya_items') ?? ($spesifikasiExtra['lainnya_items'] ?? []);
+        if (is_string($lainnyaItems)) $lainnyaItems = json_decode($lainnyaItems, true);
+
+        if ($isMesin) {
+            if (!empty($mesinItems) && is_array($mesinItems)) {
+                foreach ($mesinItems as $idx => $it) {
+                    $ns = (float) ($it['mesin_nilai_satuan'] ?? 0);
+                    if ($isExtracom && $ns > 300000) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Nilai satuan barang Ekstrakomtabel item #' . ($idx + 1) . ' tidak boleh lebih dari Rp 300.000! (Ditemukan: Rp ' . number_format($ns, 0, ',', '.') . ')'
+                        ], 422);
+                    }
+                    if (!$isExtracom && $ns <= 300000) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Nilai satuan Peralatan & Mesin (Reguler) item #' . ($idx + 1) . ' wajib lebih dari Rp 300.000! (Barang ≤ Rp 300.000 harus dicatat sebagai Ekstrakomtabel)'
+                        ], 422);
+                    }
+                }
+            } else {
+                if ($isExtracom && $hargaSatuan > 300000) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Nilai satuan barang Ekstrakomtabel tidak boleh lebih dari Rp 300.000! (Ditemukan: Rp ' . number_format($hargaSatuan, 0, ',', '.') . ')'
+                    ], 422);
+                }
+                if (!$isExtracom && $hargaSatuan <= 300000) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Nilai satuan Peralatan & Mesin (Reguler) wajib lebih dari Rp 300.000! (Barang ≤ Rp 300.000 harus dicatat sebagai Ekstrakomtabel)'
+                    ], 422);
+                }
+            }
+        } elseif ($isAsetLainnya) {
+            if (!empty($lainnyaItems) && is_array($lainnyaItems)) {
+                foreach ($lainnyaItems as $idx => $it) {
+                    $ns = (float) ($it['lainnya_nilai_satuan'] ?? 0);
+                    if ($isExtracom && $ns > 300000) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Nilai satuan barang Ekstrakomtabel item #' . ($idx + 1) . ' tidak boleh lebih dari Rp 300.000! (Ditemukan: Rp ' . number_format($ns, 0, ',', '.') . ')'
+                        ], 422);
+                    }
+                    if (!$isExtracom && $ns <= 300000) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Nilai satuan Aset Tetap Lainnya (Reguler) item #' . ($idx + 1) . ' wajib lebih dari Rp 300.000! (Barang ≤ Rp 300.000 harus dicatat sebagai Ekstrakomtabel)'
+                        ], 422);
+                    }
+                }
+            } else {
+                if ($isExtracom && $hargaSatuan > 300000) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Nilai satuan barang Ekstrakomtabel tidak boleh lebih dari Rp 300.000! (Ditemukan: Rp ' . number_format($hargaSatuan, 0, ',', '.') . ')'
+                    ], 422);
+                }
+                if (!$isExtracom && $hargaSatuan <= 300000) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Nilai satuan Aset Tetap Lainnya (Reguler) wajib lebih dari Rp 300.000! (Barang ≤ Rp 300.000 harus dicatat sebagai Ekstrakomtabel)'
+                    ], 422);
+                }
             }
         }
 
@@ -480,12 +556,14 @@ class HibahController extends Controller
             'dokumen_bast'       => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240',
         ]);
 
-        // Tangani file upload jika diunggah ulang
+        // Tangani file upload jika diunggah ulang atau dihapus
         $dokumenPath = $astap->spesifikasi_json['dokumen_path'] ?? ($astap->spesifikasi_json['dokumen_bast_path'] ?? null);
         if ($request->hasFile('dokumen_bast') && $request->file('dokumen_bast')->isValid()) {
             $file = $request->file('dokumen_bast');
             $filename = 'BAST_HIBAH_' . time() . '_' . \Illuminate\Support\Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $file->getClientOriginalExtension();
             $dokumenPath = $file->storeAs('dokumen_hibah', $filename, 'public');
+        } elseif ($request->boolean('remove_dokumen_bast')) {
+            $dokumenPath = null;
         }
 
         // Decode spesifikasi_json
@@ -522,6 +600,85 @@ class HibahController extends Controller
         foreach ($repeaterKeys as $rk) {
             if ($request->has($rk) && !is_null($request->input($rk))) {
                 $specJson[$rk] = $request->input($rk);
+            }
+        }
+
+        // Validasi Batas Kapitalisasi Akuntansi BMD (Rp 300.000)
+        $isExtracom = filter_var($request->input('is_extracomtable', $astap->is_extracomtable), FILTER_VALIDATE_BOOLEAN);
+        $totalRealisasi = (float) $validated['total_realisasi'];
+        $totalVolume = max(1, (int) $validated['jumlah_volume']);
+        $hargaSatuan = $totalRealisasi / $totalVolume;
+
+        $kode108 = $astap->jenisAstap?->sub_sub_rincian_objek ?? ($astap->kode_108 ?? '');
+        $isMesin = str_starts_with($kode108, '1.3.2');
+        $isAsetLainnya = str_starts_with($kode108, '1.3.5');
+
+        $mesinItems = $specJson['mesin_items'] ?? ($request->input('mesin_items') ?? []);
+        if (is_string($mesinItems)) $mesinItems = json_decode($mesinItems, true);
+        $lainnyaItems = $specJson['lainnya_items'] ?? ($request->input('lainnya_items') ?? []);
+        if (is_string($lainnyaItems)) $lainnyaItems = json_decode($lainnyaItems, true);
+
+        if ($isMesin) {
+            if (!empty($mesinItems) && is_array($mesinItems)) {
+                foreach ($mesinItems as $idx => $it) {
+                    $ns = (float) ($it['mesin_nilai_satuan'] ?? 0);
+                    if ($isExtracom && $ns > 300000) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Nilai satuan barang Ekstrakomtabel item #' . ($idx + 1) . ' tidak boleh lebih dari Rp 300.000! (Ditemukan: Rp ' . number_format($ns, 0, ',', '.') . ')'
+                        ], 422);
+                    }
+                    if (!$isExtracom && $ns <= 300000) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Nilai satuan Peralatan & Mesin (Reguler) item #' . ($idx + 1) . ' wajib lebih dari Rp 300.000! (Barang ≤ Rp 300.000 harus dicatat sebagai Ekstrakomtabel)'
+                        ], 422);
+                    }
+                }
+            } else {
+                if ($isExtracom && $hargaSatuan > 300000) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Nilai satuan barang Ekstrakomtabel tidak boleh lebih dari Rp 300.000!'
+                    ], 422);
+                }
+                if (!$isExtracom && $hargaSatuan <= 300000) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Nilai satuan Peralatan & Mesin (Reguler) wajib lebih dari Rp 300.000! (Barang ≤ Rp 300.000 harus dicatat sebagai Ekstrakomtabel)'
+                    ], 422);
+                }
+            }
+        } elseif ($isAsetLainnya) {
+            if (!empty($lainnyaItems) && is_array($lainnyaItems)) {
+                foreach ($lainnyaItems as $idx => $it) {
+                    $ns = (float) ($it['lainnya_nilai_satuan'] ?? 0);
+                    if ($isExtracom && $ns > 300000) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Nilai satuan barang Ekstrakomtabel item #' . ($idx + 1) . ' tidak boleh lebih dari Rp 300.000!'
+                        ], 422);
+                    }
+                    if (!$isExtracom && $ns <= 300000) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Nilai satuan Aset Tetap Lainnya (Reguler) item #' . ($idx + 1) . ' wajib lebih dari Rp 300.000!'
+                        ], 422);
+                    }
+                }
+            } else {
+                if ($isExtracom && $hargaSatuan > 300000) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Nilai satuan barang Ekstrakomtabel tidak boleh lebih dari Rp 300.000!'
+                    ], 422);
+                }
+                if (!$isExtracom && $hargaSatuan <= 300000) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Nilai satuan Aset Tetap Lainnya (Reguler) wajib lebih dari Rp 300.000!'
+                    ], 422);
+                }
             }
         }
 
@@ -598,6 +755,7 @@ class HibahController extends Controller
                     'tahun'         => $tahunPerolehan,
                     'triwulan'      => $validated['triwulan'],
                     'keterangan'    => $validated['hibah_keterangan'] ?? null,
+                    'dokumen_path'  => $dokumenPath,
                 ]);
             }
 

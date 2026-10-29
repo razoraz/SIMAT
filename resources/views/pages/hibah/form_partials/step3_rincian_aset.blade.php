@@ -422,22 +422,29 @@
         <!-- ===================================================================== -->
         <div class="lg:col-span-2 p-5 sm:p-6 rounded-3xl bg-slate-950/90 border border-amber-500/30 shadow-xl space-y-5 relative">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                <div class="flex items-center space-x-2">
+                <div class="flex items-center space-x-2.5">
                     <span class="w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold border bg-amber-500/20 text-amber-400 border-amber-500/30">4</span>
                     <h3 class="text-xs sm:text-sm font-extrabold text-white uppercase tracking-wider">
                         Pejabat Pembuat Komitmen (PPK) &amp; Pengesah Penerimaan RSUD
                     </h3>
                 </div>
-                <span class="text-[10px] font-mono text-slate-400">Pengesahan Naskah BAST</span>
+                <span class="text-[10px] font-mono font-bold text-amber-400/90 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-lg">
+                    Pengesahan Naskah BAST
+                </span>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 items-start">
                 <!-- Nama PPK dengan Filter Autocomplete & Auto-Fill NIP -->
-                <div class="relative space-y-1.5" @click.away="isPpkDropdownOpen = false">
-                    <label class="block text-xs font-bold text-slate-200 flex items-center justify-between">
-                        <span>Nama Lengkap Pejabat Pembuat Komitmen (PPK) / Pengesah Penerimaan</span>
-                        <span class="text-[10px] text-amber-400 font-mono">PPK RSUD</span>
-                    </label>
+                <div class="relative space-y-2" @click.away="isPpkDropdownOpen = false">
+                    <div class="h-6 flex items-center justify-between">
+                        <label class="text-xs font-bold text-slate-200 flex items-center gap-1">
+                            <span>Nama Pejabat (PPK) / Pengesah</span>
+                            <span class="text-rose-400">*</span>
+                        </label>
+                        <span class="text-[10px] text-amber-400 font-mono font-bold bg-amber-500/10 border border-amber-500/25 px-2 py-0.5 rounded-md whitespace-nowrap shrink-0">
+                            PPK RSUD
+                        </span>
+                    </div>
                     <div class="relative">
                         <input type="text" x-model="formData.ppk_nama"
                             @focus="isPpkDropdownOpen = true"
@@ -446,13 +453,13 @@
                             @keydown.escape="isPpkDropdownOpen = false"
                             autocomplete="off"
                             placeholder="Contoh: BUDI HARTONO, S.Sos"
-                            class="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl px-4 py-2.5 pr-10 text-xs text-white font-bold focus:outline-none placeholder-slate-500 shadow-inner">
+                            class="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20 rounded-xl px-4 py-2.5 pr-10 text-xs text-white font-bold focus:outline-none placeholder-slate-500 shadow-inner transition-all">
                         <button type="button" 
                             x-show="formData.ppk_nama"
                             @click="formData.ppk_nama = ''; formData.ppk_nip = ''; isPpkDropdownOpen = true" 
                             title="Kosongkan"
-                            style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10;"
-                            class="rounded-md bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 text-xs transition-colors">
+                            style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10;"
+                            class="rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 text-xs transition-colors">
                             ✕
                         </button>
                     </div>
@@ -467,7 +474,7 @@
                         x-transition:leave-start="opacity-100 translate-y-0"
                         x-transition:leave-end="opacity-0 translate-y-1"
                         style="max-height: 220px !important; overflow-y: auto !important;"
-                        class="absolute z-[9999] mt-1.5 w-full bg-slate-900 border border-amber-500/40 rounded-2xl shadow-2xl overflow-hidden divide-y divide-slate-800 custom-scrollbar backdrop-blur-xl">
+                        class="absolute z-[9999] mt-1 w-full bg-slate-900 border border-amber-500/40 rounded-2xl shadow-2xl overflow-hidden divide-y divide-slate-800 custom-scrollbar backdrop-blur-xl">
                         
                         <div class="px-3.5 py-1.5 bg-slate-950/90 text-[10px] font-bold text-amber-400 uppercase tracking-wider flex items-center justify-between border-b border-slate-800">
                             <span>Pilih Riwayat Pejabat (PPK)</span>
@@ -492,29 +499,33 @@
                         </template>
                     </div>
 
-                    <p class="text-[10px] text-slate-500 mt-1">Nama pejabat yang berwenang mengesahkan penerimaan aset hibah.</p>
+                    <p class="text-[10.5px] text-slate-400 leading-tight">Nama pejabat yang berwenang mengesahkan penerimaan aset hibah.</p>
                 </div>
 
                 <!-- NIP PPK -->
-                <div>
-                    <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
-                        <span>NIP Pejabat Pembuat Komitmen (PPK)</span>
-                        <span class="text-[10px] text-amber-400 font-mono">NIP Pegawai</span>
-                    </label>
+                <div class="space-y-2">
+                    <div class="h-6 flex items-center justify-between">
+                        <label class="text-xs font-bold text-slate-200 flex items-center gap-1">
+                            <span>NIP Pejabat (PPK) / Pengesah</span>
+                        </label>
+                        <span class="text-[10px] text-amber-400 font-mono font-bold bg-amber-500/10 border border-amber-500/25 px-2 py-0.5 rounded-md whitespace-nowrap shrink-0">
+                            NIP Pegawai
+                        </span>
+                    </div>
                     <div class="relative">
                         <input type="text" x-model="formData.ppk_nip"
                             placeholder="Contoh: 19760229 200801 1 010"
-                            class="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl px-4 py-2.5 text-xs text-amber-300 font-mono focus:outline-none placeholder-slate-500 shadow-inner">
+                            class="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20 rounded-xl px-4 py-2.5 pr-10 text-xs text-amber-300 font-mono focus:outline-none placeholder-slate-500 shadow-inner transition-all">
                         <button type="button" 
                             x-show="formData.ppk_nip"
                             @click="formData.ppk_nip = ''" 
                             title="Kosongkan"
-                            style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10;"
-                            class="rounded-md bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 text-xs transition-colors">
+                            style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10;"
+                            class="rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 text-xs transition-colors">
                             ✕
                         </button>
                     </div>
-                    <p class="text-[10px] text-slate-500 mt-1">Nomor Induk Pegawai bersangkutan (otomatis terisi bila memilih dari daftar riwayat).</p>
+                    <p class="text-[10.5px] text-slate-400 leading-tight">Nomor Induk Pegawai bersangkutan (otomatis terisi saat memilih nama pejabat).</p>
                 </div>
             </div>
         </div>

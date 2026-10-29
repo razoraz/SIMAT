@@ -350,9 +350,22 @@
                     <div class="grid grid-cols-3 gap-2">
                         <div class="col-span-2">
                             <input type="number" x-model.number="formData.jumlah_volume" :readonly="isMultiItemActive" required min="1"
-                                :class="isMultiItemActive ? 'bg-slate-950/70 border-slate-800 text-amber-300 cursor-not-allowed' : 'bg-slate-950 border-slate-700 text-white'"
+                                @keydown="if(!isMultiItemActive && ['-', '+', 'e', 'E', '.'].includes($event.key)) $event.preventDefault();"
+                                @input="
+                                    if (!isMultiItemActive) {
+                                        let raw = String($event.target.value).replace(/\D/g, '');
+                                        if (raw.startsWith('0')) raw = raw.replace(/^0+/, '');
+                                        formData.jumlah_volume = raw ? parseInt(raw, 10) : '';
+                                    }
+                                "
+                                @blur="
+                                    if (!isMultiItemActive && (!formData.jumlah_volume || Number(formData.jumlah_volume) < 1)) {
+                                        formData.jumlah_volume = 1;
+                                    }
+                                "
+                                :class="isMultiItemActive ? 'bg-slate-950/70 border-slate-800 text-amber-300 cursor-not-allowed' : ((!formData.jumlah_volume || Number(formData.jumlah_volume) < 1) ? 'bg-slate-950 border-rose-500 ring-1 ring-rose-500 text-rose-300' : 'bg-slate-950 border-slate-700 text-white focus:border-amber-400')"
                                 placeholder="1"
-                                class="w-full border focus:border-amber-400 rounded-xl px-4 py-2.5 text-xs focus:outline-none font-bold font-mono">
+                                class="w-full border rounded-xl px-4 py-2.5 text-xs focus:outline-none font-bold font-mono transition-colors">
                         </div>
                         <div>
                             <input type="text" x-model="formData.satuan" required placeholder="Unit"
@@ -402,6 +415,38 @@
                             </span>
                         </template>
                     </div>
+
+                    {{-- Warning Batas Nilai Akuntansi (Rp 300.000) --}}
+                    <template x-if="(isMesin || isAsetLainnya) && !formData.is_extracomtable && formData.total_realisasi > 0 && Math.round(formData.total_realisasi / (formData.jumlah_volume || 1)) <= 300000">
+                        <div class="p-3 rounded-xl bg-rose-950/40 border border-rose-500/30 text-[10.5px] text-rose-300 space-y-1.5 mt-2">
+                            <div class="font-bold flex items-center gap-1.5">
+                                <span>⚠️</span>
+                                <span>Nilai satuan Aset Reguler wajib &gt; Rp 300.000 (Saat ini: Rp <span x-text="formatRupiah(Math.round(formData.total_realisasi / (formData.jumlah_volume || 1)))"></span>/unit)</span>
+                            </div>
+                            <p class="text-slate-400 leading-tight">
+                                Berdasarkan aturan akuntansi pemerintah, aset bernilai ≤ Rp 300.000 harus dicatat sebagai <strong>Ekstrakomtabel (Extracom)</strong>.
+                            </p>
+                            <button type="button" @click="setGlobalExtracom(true)"
+                                class="px-3 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold transition-all flex items-center gap-1.5 cursor-pointer">
+                                <span>📦</span>
+                                <span>Beralih ke Ekstrakomtabel Sekarang</span>
+                            </button>
+                        </div>
+                    </template>
+
+                    <template x-if="(isMesin || isAsetLainnya) && formData.is_extracomtable && formData.total_realisasi > 0 && Math.round(formData.total_realisasi / (formData.jumlah_volume || 1)) > 300000">
+                        <div class="p-3 rounded-xl bg-rose-950/40 border border-rose-500/30 text-[10.5px] text-rose-300 space-y-1.5 mt-2">
+                            <div class="font-bold flex items-center gap-1.5">
+                                <span>⚠️</span>
+                                <span>Nilai satuan Ekstrakomtabel tidak boleh &gt; Rp 300.000 (Saat ini: Rp <span x-text="formatRupiah(Math.round(formData.total_realisasi / (formData.jumlah_volume || 1)))"></span>/unit)</span>
+                            </div>
+                            <button type="button" @click="setGlobalExtracom(false)"
+                                class="px-3 py-1 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 font-bold transition-all flex items-center gap-1.5 cursor-pointer">
+                                <span>⚙️</span>
+                                <span>Beralih ke Aset Tetap Reguler</span>
+                            </button>
+                        </div>
+                    </template>
                 </div>
             </div>
         </div>
