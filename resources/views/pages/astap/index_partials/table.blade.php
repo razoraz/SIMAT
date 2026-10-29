@@ -85,10 +85,10 @@
                                             </span>
                                         </template>
 
-                                        {{-- 4. Dan Lain-Lain: Belanja Barang / Perbekalan --}}
+                                        {{-- 4. Dan Lain-Lain: Belanja Barang --}}
                                         <template x-if="item.sumber_dana === 'belanja_barang' || item.sumber_dana === 'belanja_rekening'">
                                             <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[9px] font-black whitespace-nowrap leading-none shrink-0 bg-indigo-500/25 text-indigo-300 border border-indigo-500/50 shadow-sm tracking-wider">
-                                                <span>📦</span><span>PERBEKALAN</span>
+                                                <span>📦</span><span>BELANJA BARANG</span>
                                             </span>
                                         </template>
 

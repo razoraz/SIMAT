@@ -63,10 +63,10 @@
                                 </span>
                             </template>
 
-                            {{-- 4. Dan Lain-Lain: Belanja Barang (Perbekalan) --}}
+                            {{-- 4. Dan Lain-Lain: Belanja Barang --}}
                             <template x-if="selectedAstapDetail?.sumber_dana === 'belanja_barang' || selectedAstapDetail?.sumber_dana === 'belanja_rekening'">
                                 <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 bg-indigo-500/20 text-indigo-300 border-indigo-500/30">
-                                    📦 BELANJA BARANG (PERBEKALAN)
+                                    📦 BELANJA BARANG
                                 </span>
                             </template>
 

@@ -111,6 +111,28 @@
                 this.stepErrors = { 1: '', 2: '', 3: '' };
             },
 
+            parseDateToTimestamp(d) {
+                if (!d) return 0;
+                if (d.includes('/')) {
+                    const parts = d.split('/');
+                    if (parts.length === 3) {
+                        return new Date(parts[2], parts[1] - 1, parts[0]).getTime();
+                    }
+                }
+                return new Date(d).getTime();
+            },
+
+            getTodayTimestamp() {
+                const now = new Date();
+                return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).getTime();
+            },
+
+            isTanggalFakturInvalid() {
+                if (!this.formData.rekening_tanggal_faktur) return false;
+                const t = this.parseDateToTimestamp(this.formData.rekening_tanggal_faktur);
+                return t > 0 && t > this.getTodayTimestamp();
+            },
+
             // Formatters
             formatRupiah(val) {
                 if (!val) return '0';
@@ -1068,6 +1090,11 @@
 
             // Navigasi Antar Tab Stepper
             goToStep(stepNumber) {
+                if (stepNumber > 1 && this.isTanggalFakturInvalid()) {
+                    this.setStepError(1, 'Tanggal Faktur / Pembelian tidak boleh melebihi tanggal hari ini.');
+                    this.showToast('Periksa Tanggal Faktur', 'Tanggal Faktur tidak boleh tanggal masa depan.', 'error');
+                    return;
+                }
                 this.currentStep = stepNumber;
                 this.step = stepNumber;
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1075,6 +1102,11 @@
 
             nextStep() {
                 if (this.currentStep === 1) {
+                    if (this.isTanggalFakturInvalid()) {
+                        this.setStepError(1, 'Tanggal Faktur / Pembelian tidak boleh melebihi tanggal hari ini.');
+                        this.showToast('Periksa Tanggal Faktur', 'Tanggal Faktur tidak boleh tanggal masa depan.', 'error');
+                        return;
+                    }
                     this.clearStepError(1);
                     this.goToStep(2);
                 } else if (this.currentStep === 2) {
@@ -1093,6 +1125,12 @@
             // Form Submit via AJAX (Mendukung Payload Multi-Item & File Upload)
             async submitForm() {
                 this.clearAllStepErrors();
+                if (this.isTanggalFakturInvalid()) {
+                    this.setStepError(1, 'Tanggal Faktur / Pembelian tidak boleh melebihi tanggal hari ini.');
+                    this.showToast('Periksa Tanggal Faktur', 'Tanggal Faktur tidak boleh tanggal masa depan.', 'error');
+                    this.goToStep(1);
+                    return;
+                }
                 this.isSubmitting = true;
                 this.syncTotalsFromItems();
 
@@ -1242,10 +1280,10 @@
 
                     const res = await response.json();
 
-                    if (response.ok && res.status === 'success') {
+                    if (response.ok && (res.success || res.status === 'success')) {
                         this.showToast('Transaksi Berhasil Disimpan', res.message || 'Data belanja barang berhasil disimpan ke SIMAT-RK.', 'success');
                         setTimeout(() => {
-                            window.location.href = res.redirect_url || '{{ route('master.belanja_barang') }}';
+                            window.location.href = res.redirect_url || res.redirect || '{{ route('master.belanja_barang') }}';
                         }, 1200);
                     } else {
                         throw new Error(res.message || 'Terjadi kesalahan sistem saat menyimpan.');

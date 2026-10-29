@@ -469,9 +469,11 @@ class BelanjaBarangController extends Controller
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
-                'success'  => true,
-                'message'  => 'Faktur Belanja Barang "' . $nomorFaktur . '" (' . count($itemsList) . ' macam barang) berhasil disimpan ke database SIMAT-RK!',
-                'redirect' => route('master.belanja_barang')
+                'success'      => true,
+                'status'       => 'success',
+                'message'      => 'Faktur Belanja Barang "' . $nomorFaktur . '" (' . count($itemsList) . ' macam barang) berhasil disimpan ke database SIMAT-RK!',
+                'redirect'     => route('master.belanja_barang'),
+                'redirect_url' => route('master.belanja_barang')
             ]);
         }
 

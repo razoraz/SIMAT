@@ -218,10 +218,25 @@
             <!-- Tanggal Faktur -->
             <div>
                 <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                    Tanggal Faktur / Pembelian
+                    Tanggal Faktur / Pembelian <span class="text-rose-400">*</span>
                 </label>
-                <input type="date" x-model="formData.rekening_tanggal_faktur"
-                    class="w-full bg-slate-900 border border-slate-700 focus:border-indigo-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none shadow-inner font-mono">
+                <input type="text" 
+                    x-datepicker="{ maxDate: 'today' }" 
+                    x-model="formData.rekening_tanggal_faktur" 
+                    @input="onTanggalFakturChange($event.target.value)"
+                    @change="onTanggalFakturChange($event.target.value)"
+                    placeholder="dd/mm/yyyy"
+                    required
+                    :class="isTanggalFakturInvalid() ? 'border-rose-500 focus:border-rose-400 bg-rose-950/20' : 'border-slate-700 focus:border-indigo-400 bg-slate-900'"
+                    class="w-full border rounded-xl px-3.5 py-2.5 text-xs text-white font-mono focus:outline-none transition-colors shadow-inner">
+                
+                <!-- Peringatan Visual Jika Tanggal Faktur Lebih dari Hari Ini -->
+                <template x-if="isTanggalFakturInvalid()">
+                    <div class="mt-1.5 flex items-center gap-1.5 text-[10.5px] text-rose-400 font-semibold animate-pulse">
+                        <span>⚠️</span>
+                        <span>Tanggal Faktur/Pembelian tidak boleh melebihi tanggal hari ini!</span>
+                    </div>
+                </template>
             </div>
 
             <!-- Tahun Anggaran -->

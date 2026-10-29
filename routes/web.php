@@ -1221,6 +1221,7 @@ Route::middleware('auth')->group(function () {
             Route::post('/astap/store-belanja-barang', [\App\Http\Controllers\BelanjaBarangController::class, 'store'])->name('astap.store_belanja_barang');
 
             // Backward compatibility aliases
+            Route::post('/astap/store-belanja-barang-alias', [\App\Http\Controllers\BelanjaBarangController::class, 'store'])->name('belanja_barang.store');
             Route::get('/astap/create-rekening', fn() => redirect()->route('astap.create_belanja_barang'))->name('astap.create_rekening');
             Route::post('/astap/store-rekening', [\App\Http\Controllers\BelanjaBarangController::class, 'store'])->name('astap.store_rekening');
 
