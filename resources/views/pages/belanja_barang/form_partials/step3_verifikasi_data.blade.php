@@ -65,7 +65,7 @@
             <div class="flex items-center justify-between">
                 <span class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">2. KERANJANG BARANG</span>
                 <span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-mono"
-                    x-text="formData.items.length + ' Macam'">
+                    x-text="activeSheetItems.length + ' Macam'">
                 </span>
             </div>
             <div class="text-xs font-black font-mono text-indigo-300" x-text="totalVolumeFaktur + ' Total Unit Fisik'"></div>

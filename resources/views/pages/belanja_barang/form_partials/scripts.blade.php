@@ -35,7 +35,7 @@
             // Form Data State
             formData: {
                 sumber_dana: 'belanja_barang',
-                is_extracomtable: true, // Default true: Belanja Barang = Form Ekstrakomptabel
+                is_extracomtable: false, // Default false: Reguler (sama persis seperti Mutasi Eksternal & Kemitraan)
                 tahun_perolehan: new Date().getFullYear(),
                 triwulan: (function() {
                     const m = new Date().getMonth() + 1;
@@ -1106,6 +1106,7 @@
                     payload.append('rekening_tanggal_faktur', this.formData.rekening_tanggal_faktur || new Date().toISOString().split('T')[0]);
                     payload.append('rekening_keterangan', this.formData.rekening_keterangan || 'Pembelian Barang Perbekalan');
                     payload.append('status_alokasi_global', this.globalAlokasiMode);
+                    payload.append('is_extracomtable', this.formData.is_extracomtable ? 1 : 0);
 
                     // Berkas Dokumen Faktur & Kuitansi jika ada
                     if (this.fileFaktur) {

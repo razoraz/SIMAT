@@ -16,13 +16,13 @@
                 <div>
                     <div class="flex items-center gap-2">
                         <h3 class="text-xs sm:text-sm font-extrabold text-white uppercase tracking-wide">
-                            Spesifikasi Fisik Jalan, Irigasi &amp; Jaringan Mutasi Masuk
+                            Spesifikasi Fisik Jalan, Irigasi &amp; Jaringan
                         </h3>
                         <span class="px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 font-mono font-bold text-[10px] border border-teal-500/40">
                             KIB D · Akun 1.3.4
                         </span>
                     </div>
-                    <p class="text-[11px] text-slate-400 mt-0.5">Dapat mencatat jalan lingkungan, jembatan, instalasi pemipaan air, instalasi kabel listrik, atau jaringan IT mutasi masuk antar-OPD lengkap dengan nilai BMD.</p>
+                    <p class="text-[11px] text-slate-400 mt-0.5">Dapat mencatat jalan lingkungan, jembatan, instalasi pemipaan air, instalasi kabel listrik, atau jaringan IT pengadaan belanja barang perbekalan RSUD.</p>
                 </div>
             </div>
             <div class="flex items-center gap-2">
