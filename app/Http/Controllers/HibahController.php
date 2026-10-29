@@ -961,42 +961,111 @@ class HibahController extends Controller
     }
 
     /**
-     * Helper: Ambil seluruh riwayat Instansi / Pemberi Hibah unik
+     * Helper: Ambil seluruh riwayat Instansi / Pemberi Hibah unik beserta profil pimpinan & alamat
      */
     public static function getDistinctPemberiHibahs()
     {
+        $defaultProfiles = [
+            [
+                'nama'     => 'Kementerian Kesehatan Republik Indonesia',
+                'pimpinan' => 'Ir. Budi Gunadi Sadikin, CHFC, CLU — Menteri Kesehatan RI',
+                'alamat'   => 'Jl. H.R. Rasuna Said Blok X-5 Kav. 4-9, Kuningan, Jakarta Selatan 12950',
+            ],
+            [
+                'nama'     => 'Dinas Kesehatan Provinsi Jawa Timur',
+                'pimpinan' => 'Dr. dr. Erwin Astha Triyono, Sp.PD, K-PTI, FINASIM — Kepala Dinas Kesehatan Prov. Jatim',
+                'alamat'   => 'Jl. Ahmad Yani No. 118, Gayungan, Kota Surabaya, Jawa Timur 60231',
+            ],
+            [
+                'nama'     => 'Pemerintah Kabupaten Bondowoso',
+                'pimpinan' => 'Bupati Bondowoso / Sekretaris Daerah Kab. Bondowoso',
+                'alamat'   => 'Jl. Letnan Amir Kusman No. 2, Dabasah, Kabupaten Bondowoso 68211',
+            ],
+            [
+                'nama'     => 'Donatur Swasta / Yayasan CSR',
+                'pimpinan' => 'Ketua / Pimpinan Lembaga Donatur Swasta',
+                'alamat'   => 'Kabupaten Bondowoso / Jawa Timur',
+            ],
+        ];
+
         try {
-            return AstapHibah::whereNotNull('pihak_hibah')
+            $instansiMap = [];
+
+            // 1. Data profil default
+            foreach ($defaultProfiles as $p) {
+                $key = strtolower(trim($p['nama']));
+                $instansiMap[$key] = $p;
+            }
+
+            // 2. Dari Riwayat AstapHibah (terbaru)
+            $hibahs = AstapHibah::with('astap')
+                ->whereNotNull('pihak_hibah')
                 ->where('pihak_hibah', '!=', '')
-                ->distinct()
-                ->pluck('pihak_hibah')
-                ->merge(
-                    Astap::where('sumber_dana', 'hibah')
-                        ->with('hibahDetail')
-                        ->get()
-                        ->map(function ($a) {
-                            return $a->hibahDetail?->pihak_hibah
-                                ?: ($a->spesifikasi_json['pemberi'] ?? ($a->spesifikasi_json['hibah_pemberi'] ?? null));
-                        })
-                        ->filter()
-                )
-                ->merge([
-                    'Kementerian Kesehatan Republik Indonesia',
-                    'Dinas Kesehatan Provinsi Jawa Timur',
-                    'Pemerintah Kabupaten Bondowoso',
-                    'Donatur Swasta / Yayasan CSR',
-                ])
-                ->map(fn($v) => trim($v))
-                ->filter()
-                ->unique()
-                ->values();
+                ->orderBy('id', 'desc')
+                ->get();
+
+            foreach ($hibahs as $h) {
+                $nama = trim($h->pihak_hibah);
+                if (empty($nama)) continue;
+                $key = strtolower($nama);
+
+                $pimpinan = $h->astap?->spesifikasi_json['hibah_pimpinan']
+                    ?? ($h->astap?->spesifikasi_json['pimpinan_pemberi'] ?? null);
+                $alamat = $h->astap?->spesifikasi_json['hibah_alamat_pemberi']
+                    ?? ($h->astap?->spesifikasi_json['alamat_pemberi'] ?? null);
+
+                if (!isset($instansiMap[$key])) {
+                    $instansiMap[$key] = [
+                        'nama'     => $nama,
+                        'pimpinan' => $pimpinan ?: '',
+                        'alamat'   => $alamat ?: '',
+                    ];
+                } else {
+                    if (empty($instansiMap[$key]['pimpinan']) && !empty($pimpinan)) {
+                        $instansiMap[$key]['pimpinan'] = $pimpinan;
+                    }
+                    if (empty($instansiMap[$key]['alamat']) && !empty($alamat)) {
+                        $instansiMap[$key]['alamat'] = $alamat;
+                    }
+                }
+            }
+
+            // 3. Dari Riwayat Astap Sumber Dana Hibah
+            $astaps = Astap::where('sumber_dana', 'hibah')
+                ->with('hibahDetail')
+                ->orderBy('id', 'desc')
+                ->get();
+
+            foreach ($astaps as $a) {
+                $nama = trim($a->hibahDetail?->pihak_hibah
+                    ?: ($a->spesifikasi_json['pemberi'] ?? ($a->spesifikasi_json['hibah_pemberi'] ?? '')));
+                if (empty($nama)) continue;
+                $key = strtolower($nama);
+
+                $pimpinan = $a->spesifikasi_json['hibah_pimpinan']
+                    ?? ($a->spesifikasi_json['pimpinan_pemberi'] ?? null);
+                $alamat = $a->spesifikasi_json['hibah_alamat_pemberi']
+                    ?? ($a->spesifikasi_json['alamat_pemberi'] ?? null);
+
+                if (!isset($instansiMap[$key])) {
+                    $instansiMap[$key] = [
+                        'nama'     => $nama,
+                        'pimpinan' => $pimpinan ?: '',
+                        'alamat'   => $alamat ?: '',
+                    ];
+                } else {
+                    if (empty($instansiMap[$key]['pimpinan']) && !empty($pimpinan)) {
+                        $instansiMap[$key]['pimpinan'] = $pimpinan;
+                    }
+                    if (empty($instansiMap[$key]['alamat']) && !empty($alamat)) {
+                        $instansiMap[$key]['alamat'] = $alamat;
+                    }
+                }
+            }
+
+            return collect(array_values($instansiMap));
         } catch (\Throwable $e) {
-            return collect([
-                'Kementerian Kesehatan Republik Indonesia',
-                'Dinas Kesehatan Provinsi Jawa Timur',
-                'Pemerintah Kabupaten Bondowoso',
-                'Donatur Swasta / Yayasan CSR',
-            ]);
+            return collect($defaultProfiles);
         }
     }
 }

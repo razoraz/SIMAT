@@ -71,14 +71,39 @@
             masterUnits: window.dbUnits || [],
 
             // Autocomplete Riwayat Instansi Pemberi Hibah
-            masterInstansiList: (window.dbPemberiHibahs && window.dbPemberiHibahs.length > 0)
+            masterInstansiList: ((window.dbPemberiHibahs && window.dbPemberiHibahs.length > 0)
                 ? window.dbPemberiHibahs
                 : [
-                    'Kementerian Kesehatan Republik Indonesia',
-                    'Dinas Kesehatan Provinsi Jawa Timur',
-                    'Pemerintah Kabupaten Bondowoso',
-                    'Donatur Swasta / Yayasan CSR'
-                ],
+                    {
+                        nama: 'Kementerian Kesehatan Republik Indonesia',
+                        pimpinan: 'Ir. Budi Gunadi Sadikin, CHFC, CLU — Menteri Kesehatan RI',
+                        alamat: 'Jl. H.R. Rasuna Said Blok X-5 Kav. 4-9, Kuningan, Jakarta Selatan 12950'
+                    },
+                    {
+                        nama: 'Dinas Kesehatan Provinsi Jawa Timur',
+                        pimpinan: 'Dr. dr. Erwin Astha Triyono, Sp.PD, K-PTI, FINASIM — Kepala Dinas Kesehatan Prov. Jatim',
+                        alamat: 'Jl. Ahmad Yani No. 118, Gayungan, Kota Surabaya, Jawa Timur 60231'
+                    },
+                    {
+                        nama: 'Pemerintah Kabupaten Bondowoso',
+                        pimpinan: 'Bupati Bondowoso / Sekretaris Daerah Kab. Bondowoso',
+                        alamat: 'Jl. Letnan Amir Kusman No. 2, Dabasah, Kabupaten Bondowoso 68211'
+                    },
+                    {
+                        nama: 'Donatur Swasta / Yayasan CSR',
+                        pimpinan: 'Ketua / Pimpinan Lembaga Donatur Swasta',
+                        alamat: 'Kabupaten Bondowoso / Jawa Timur'
+                    }
+                ]).map(item => {
+                    if (typeof item === 'string') {
+                        return { nama: item, pimpinan: '', alamat: '' };
+                    }
+                    return {
+                        nama: item.nama || '',
+                        pimpinan: item.pimpinan || '',
+                        alamat: item.alamat || ''
+                    };
+                }),
             isInstansiDropdownOpen: false,
 
             get filteredInstansiList() {
@@ -86,12 +111,62 @@
                 if (!q) {
                     return this.masterInstansiList.slice(0, 15);
                 }
-                return this.masterInstansiList.filter(inst => inst && inst.toLowerCase().includes(q));
+                return this.masterInstansiList.filter(inst => {
+                    const n = (inst.nama || '').toLowerCase();
+                    const p = (inst.pimpinan || '').toLowerCase();
+                    const a = (inst.alamat || '').toLowerCase();
+                    return n.includes(q) || p.includes(q) || a.includes(q);
+                });
             },
 
-            selectInstansi(name) {
-                this.formData.hibah_pemberi = name;
+            selectInstansi(target) {
+                let inst = null;
+                if (typeof target === 'string') {
+                    inst = this.masterInstansiList.find(i => i.nama.toLowerCase() === target.toLowerCase())
+                        || { nama: target, pimpinan: '', alamat: '' };
+                } else if (target && typeof target === 'object') {
+                    inst = target;
+                }
+
+                if (!inst) return;
+
+                this.formData.hibah_pemberi = inst.nama || '';
+
+                let autoFilled = false;
+                if (inst.pimpinan) {
+                    this.formData.hibah_pimpinan = inst.pimpinan;
+                    autoFilled = true;
+                }
+                if (inst.alamat) {
+                    this.formData.hibah_alamat_pemberi = inst.alamat;
+                    autoFilled = true;
+                }
+
                 this.isInstansiDropdownOpen = false;
+
+                if (autoFilled && typeof this.showToast === 'function') {
+                    this.showToast('✓ Profil Instansi Terisi', 'Nama pimpinan dan alamat kantor otomatis diisi dari riwayat.', 'success');
+                }
+            },
+
+            checkAutoFillInstansi() {
+                const val = (this.formData.hibah_pemberi || '').trim().toLowerCase();
+                if (!val) return;
+                const match = this.masterInstansiList.find(i => i.nama.trim().toLowerCase() === val);
+                if (match) {
+                    let filled = false;
+                    if (!this.formData.hibah_pimpinan && match.pimpinan) {
+                        this.formData.hibah_pimpinan = match.pimpinan;
+                        filled = true;
+                    }
+                    if (!this.formData.hibah_alamat_pemberi && match.alamat) {
+                        this.formData.hibah_alamat_pemberi = match.alamat;
+                        filled = true;
+                    }
+                    if (filled && typeof this.showToast === 'function') {
+                        this.showToast('✓ Profil Instansi Terisi', 'Nama pimpinan dan alamat kantor otomatis diisi dari riwayat.', 'success');
+                    }
+                }
             },
 
             // Filter States (Sama Persis seperti Belanja Modal)

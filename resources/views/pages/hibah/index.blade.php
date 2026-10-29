@@ -2,6 +2,8 @@
     @section('page-title', 'Kelola Data Hibah Aset (Masuk & Pengurangan)')
     @section('breadcrumb', 'Master Aset / Kelola Hibah Aset')
 
+    <script src="{{ asset('js/qrcode.min.js') }}"></script>
+
     @include('pages.hibah.master_partials.scripts_export')
     @include('pages.hibah.master_partials.scripts')
 
@@ -20,6 +22,12 @@
 
         <!-- MODAL DETAIL TRANSAKSI HIBAH -->
         @include('pages.hibah.master_partials.modal_detail_hibah')
+
+        <!-- MODAL PRATINJAU QR CODE, UBAH KONDISI & RIWAYAT MUTASI -->
+        @include('pages.hibah.master_partials.modal_qr_hibah')
+
+        <!-- MODAL REKLASIFIKASI ASET TETAP (RSDK) - SAMA PERSIS SEPERTI DI DATA ASTAP & KEMITRAAN -->
+        @include('pages.astap.index_partials.modal_reklas')
 
         <!-- MODAL EKSPOR EXCEL MULTI-SHEET SIPENERBANG -->
         @include('pages.hibah.master_partials.modal_export_excel')

@@ -55,7 +55,8 @@
                 <input type="text"
                     x-model="formData.hibah_pemberi"
                     @focus="isInstansiDropdownOpen = true"
-                    @input="isInstansiDropdownOpen = true"
+                    @input="isInstansiDropdownOpen = true; checkAutoFillInstansi()"
+                    @change="checkAutoFillInstansi()"
                     @keydown.escape="isInstansiDropdownOpen = false"
                     required
                     autocomplete="off"
@@ -85,21 +86,33 @@
                 x-transition:leave="transition ease-in duration-75"
                 x-transition:leave-start="opacity-100 translate-y-0"
                 x-transition:leave-end="opacity-0 translate-y-1"
-                style="max-height: 220px !important; overflow-y: auto !important;"
+                style="max-height: 240px !important; overflow-y: auto !important;"
                 class="absolute z-50 mt-1.5 w-full bg-slate-900 border border-amber-500/40 rounded-2xl shadow-2xl overflow-hidden divide-y divide-slate-800 custom-scrollbar backdrop-blur-xl">
 
                 <div class="px-3.5 py-1.5 bg-slate-950/90 text-[10px] font-bold text-amber-400 uppercase tracking-wider flex items-center justify-between border-b border-slate-800">
-                    <span>Pilih Riwayat Instansi</span>
+                    <span>Pilih Riwayat Instansi (Auto-Fill Pimpinan &amp; Alamat)</span>
                     <span class="font-mono text-slate-400" x-text="filteredInstansiList.length + ' saran'"></span>
                 </div>
 
                 <template x-for="(inst, iIdx) in filteredInstansiList" :key="iIdx">
                     <div @click="selectInstansi(inst)"
                         class="px-4 py-2.5 hover:bg-amber-500/15 cursor-pointer transition-colors group flex items-center justify-between gap-3 text-left"
-                        :class="formData.hibah_pemberi === inst ? 'bg-amber-500/20 text-amber-200' : 'text-slate-200'">
-                        <div class="flex items-center gap-2.5 min-w-0">
-                            <span class="text-xs text-amber-400/80">🏛️</span>
-                            <span class="text-xs font-bold group-hover:text-amber-300 truncate" x-text="inst"></span>
+                        :class="formData.hibah_pemberi === inst.nama ? 'bg-amber-500/20 text-amber-200' : 'text-slate-200'">
+                        <div class="space-y-0.5 min-w-0 flex-1">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs text-amber-400/80">🏛️</span>
+                                <span class="text-xs font-bold group-hover:text-amber-300 truncate" x-text="inst.nama"></span>
+                            </div>
+                            <template x-if="inst.pimpinan || inst.alamat">
+                                <div class="text-[10px] text-slate-400 pl-5 flex flex-wrap items-center gap-x-2 gap-y-0.5 truncate">
+                                    <template x-if="inst.pimpinan">
+                                        <span class="truncate max-w-[240px]" :title="inst.pimpinan" x-text="'👤 ' + inst.pimpinan"></span>
+                                    </template>
+                                    <template x-if="inst.alamat">
+                                        <span class="text-slate-500 truncate max-w-[200px]" :title="inst.alamat" x-text="'📍 ' + inst.alamat"></span>
+                                    </template>
+                                </div>
+                            </template>
                         </div>
                         <span class="text-[9px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/25 font-bold shrink-0 group-hover:bg-amber-500/25">
                             Pilih ↵
@@ -133,11 +146,16 @@
         {{-- ─── Pimpinan / Kuasa Pemberi & Alamat (2 Kolom) ──────────────── --}}
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-                <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center gap-1.5">
-                    <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                    </svg>
-                    <span>Nama Pimpinan / Kuasa Pemberi</span>
+                <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
+                    <span class="flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                        <span>Nama Pimpinan / Kuasa Pemberi</span>
+                    </span>
+                    <template x-if="formData.hibah_pimpinan">
+                        <span class="text-[9.5px] text-emerald-400 font-mono font-semibold">✓ Terisi</span>
+                    </template>
                 </label>
                 <input type="text" x-model="formData.hibah_pimpinan"
                     placeholder="Contoh: dr. H. Ahmad Fauzi, Sp.PD — Kepala Dinas Kesehatan"
@@ -145,16 +163,22 @@
                 <p class="text-[10px] text-slate-500 mt-1">Nama direktur, kepala dinas, atau ketua yayasan penandatangan BAST/NPHD.</p>
             </div>
             <div>
-                <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center gap-1.5">
-                    <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                    </svg>
-                    <span>Alamat Kantor Pemberi Hibah</span>
+                <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
+                    <span class="flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        <span>Alamat Kantor Pemberi Hibah</span>
+                    </span>
+                    <template x-if="formData.hibah_alamat_pemberi">
+                        <span class="text-[9.5px] text-emerald-400 font-mono font-semibold">✓ Terisi</span>
+                    </template>
                 </label>
                 <input type="text" x-model="formData.hibah_alamat_pemberi"
                     placeholder="Alamat kantor / domisili instansi pemberi hibah"
                     class="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none transition-all">
+                <p class="text-[10px] text-slate-500 mt-1">Alamat domisili kantor / lembaga instansi pemberi hibah.</p>
             </div>
         </div>
     </div>
