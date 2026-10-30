@@ -3,9 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Models\Astap;
+use App\Models\AstapBelanjaBarang;
+use App\Models\AstapBelanjaModal;
+use App\Models\AstapBastTriwulan;
+use App\Models\AstapKemitraan;
+use App\Models\AstapMutasi;
+use App\Models\AstapMutasiRegister;
 use App\Models\AstapRegister;
+use App\Models\AstapReklas;
+use App\Models\Distribusi;
+use App\Models\DistribusiItemRegister;
 use App\Models\JenisAstap;
 use App\Models\JenisPengadaan;
+use App\Models\MutasiEksternal;
+use App\Models\PeriodeTutupBuku;
 use App\Models\RekeningBelanja;
 use App\Models\Unit;
 use App\Services\NotificationService;
@@ -19,44 +30,83 @@ use Illuminate\Support\Str;
 class AstapController extends Controller
 {
     /**
+     * Helper data unik Rekanan / Penyedia
+     */
+    public static function getDistinctPenyedias()
+    {
+                try {
+                    return \App\Models\AstapBelanjaModal::whereNotNull('penyedia_nama')
+                        ->where('penyedia_nama', '!=', '')
+                        ->with('astap:id,spesifikasi_json')
+                        ->orderBy('id', 'desc')
+                        ->get(['astap_id', 'penyedia_nama', 'penyedia_pemilik', 'penyedia_rekening_nama', 'penyedia_rekening_nomor', 'penyedia_alamat'])
+                        ->map(function($m) {
+                            $spec = $m->astap?->spesifikasi_json;
+                            if (is_string($spec)) {
+                                try { $spec = json_decode($spec, true); } catch (\Throwable $e) { $spec = []; }
+                            }
+                            $tel = is_array($spec) ? ($spec['penyedia_telepon'] ?? ($spec['penyedia_kontak'] ?? '')) : '';
+                            return [
+                                'nama'           => trim($m->penyedia_nama),
+                                'pemilik'        => $m->penyedia_pemilik ?? '',
+                                'telepon'        => $tel ?: '',
+                                'rekening_nama'  => $m->penyedia_rekening_nama ?? '',
+                                'rekening_nomor' => $m->penyedia_rekening_nomor ?? '',
+                                'alamat'         => $m->penyedia_alamat ?? '',
+                            ];
+                        })
+                        ->unique(fn($p) => strtolower(trim($p['nama'])))
+                        ->values();
+                } catch (\Throwable $e) {
+                    return collect();
+                }
+    }
+
+    /**
+     * Helper data unik Pejabat Pembuat Komitmen (PPK)
+     */
+    public static function getDistinctPejabats()
+    {
+                return \App\Models\Astap::whereNotNull('ppk_nama')
+                    ->where('ppk_nama', '!=', '')
+                    ->orderBy('id', 'desc')
+                    ->get(['ppk_nama', 'ppk_nip'])
+                    ->map(function($a) {
+                        return [
+                            'nama' => trim($a->ppk_nama),
+                            'nip'  => $a->ppk_nip ?? '',
+                        ];
+                    })
+                    ->unique(fn($p) => strtolower(trim($p['nama'])))
+                    ->values();
+    }
+
+    /**
      * Tampilkan data tabel ASTAP
      */
     public function index()
     {
-        // Auto-cleanup: Jika ada paket ASTAP aktif yang seluruh registernya sudah tidak ada / kosong (0 NIBAR aktif),
-        // otomatis pindahkan ke Recycle Bin agar tidak menjadi data hantu di tabel
-        $emptyAstaps = \App\Models\Astap::where('is_deleted', 0)
-            ->whereDoesntHave('registers', function ($rq) {
-                $rq->where('is_deleted', 0);
-            })
-            ->get();
-
-        if ($emptyAstaps->isNotEmpty()) {
-            DB::transaction(function () use ($emptyAstaps) {
-                foreach ($emptyAstaps as $emptyAstap) {
-                    $emptyAstap->softDelete('Semua unit register NIBAR tidak tersedia / telah dihapus — dipindahkan ke Recycle Bin.');
-                    \App\Models\AstapKemitraan::where('astap_id', $emptyAstap->id)
-                        ->orWhere('objek_astap_id', $emptyAstap->id)
-                        ->update([
-                            'is_deleted'    => 1,
-                            'deleted_by'    => 'Sistem (Auto-Sync Register Kosong)',
-                            'deleted_at'    => now(),
-                        ]);
-                    if ($emptyAstap->mutasiEksternal) {
-                        $emptyAstap->mutasiEksternal->softDelete();
-                    }
+        $fmtDate = function($val, $fallback = '-') {
+            if (empty($val)) return $fallback;
+            if ($val instanceof \DateTimeInterface) return $val->format('d/m/Y');
+            if (is_string($val)) {
+                $valTrim = trim($val);
+                if (preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $valTrim)) return $valTrim;
+                try {
+                    return \Carbon\Carbon::parse($valTrim)->format('d/m/Y');
+                } catch (\Throwable $e) {
+                    return $valTrim;
                 }
-            });
-        }
+            }
+            return $fallback;
+        };
 
         $astaps = \App\Models\Astap::where('is_deleted', 0)
-            ->whereHas('registers', function ($q) {
-                $q->where('is_deleted', 0);
-            })
             ->with([
                 'registers' => function($q) {
                     $q->where('is_deleted', 0);
                 },
+                'registers.unit',
                 'registers.mutasis' => function($q) {
                     $q->where('status', 'Disetujui Admin (Selesai)');
                 }, 
@@ -64,18 +114,22 @@ class AstapController extends Controller
                 'rekeningBelanja', 
                 'jenisPengadaan', 
                 'unit',
-                'reklas',
+                'belanjaModal',
+                'belanjaBarang',
+                'mutasiEksternal',
+                'mutasiEksternalMasuk',
+                'hibahDetail',
+                'reklas' => function($q) {
+                    $q->orderBy('id', 'desc');
+                },
                 'kemitraan',
                 'mutasiEksternals' => function($q) {
-                    $q->where('is_deleted', 0)->orderBy('id', 'desc');
-                },
-                'hibahs' => function($q) {
                     $q->where('is_deleted', 0)->orderBy('id', 'desc');
                 }
             ])
             ->orderBy('id', 'desc')
             ->get()
-            ->map(function($a) {
+            ->map(function($a) use ($fmtDate) {
                 $spec = is_array($a->spesifikasi_json) ? $a->spesifikasi_json : (json_decode($a->spesifikasi_json, true) ?? []);
 
                 // Sinkronisasi otomatis repeater items spesifikasi dengan sisa unit register
@@ -130,7 +184,7 @@ class AstapController extends Controller
                     if ($a->registers && $a->registers->count() > 0) {
                         $a->jumlah_volume = $a->registers->count();
                     }
-                    $a->save();
+                    // Read-only in-memory synchronization for response — zero write locks on GET requests
                 }
 
                 $firstReg = $a->registers ? $a->registers->first() : null;
@@ -143,7 +197,6 @@ class AstapController extends Controller
                 $hasEverReklas = $reklasCount > 0 || (bool) $a->is_reklas || !empty($a->jenis_reklas);
 
                 $latestMutasiKeluar = $a->mutasiEksternals ? $a->mutasiEksternals->where('tipe', 'keluar')->first() : null;
-                $latestHibahKeluar = $a->hibahs ? $a->hibahs->where('tipe_hibah', 'keluar')->first() : null;
                 $activeRegsCount = $a->registers ? $a->registers->where('status', '!=', 'Mutasi Keluar OPD')->count() : 0;
                 $mutatedRegsCount = $a->registers ? $a->registers->where('status', 'Mutasi Keluar OPD')->count() : 0;
                 $isFullMutasiKeluar = ($a->jenis_reklas === 'MUTASI_EKSTERNAL') || ($mutatedRegsCount > 0 && $activeRegsCount === 0);
@@ -151,9 +204,32 @@ class AstapController extends Controller
                 $isMutasiKeluar = $isFullMutasiKeluar || $isPartialMutasiKeluar;
                 $skpdTujuanNama = $latestMutasiKeluar?->opd_tujuan ?: ($spec['mutasi_info']['skpd_tujuan'] ?? ($latestReklas?->tujuan_nama ?? null));
 
-                $isHibahKeluar = !is_null($latestHibahKeluar) 
-                    || str_contains(strtolower($a->keterangan_tambahan ?? ''), 'dihibahkan')
-                    || ($a->registers && $a->registers->count() > 0 && $a->registers->every(fn($r) => $r->status === 'Dihibahkan'));
+                // Klasifikasi Pemanfaatan BMD RSUD vs Aset Baru Ditambahkan Mitra
+                $isKemitraanAset = $a->isKemitraan() || $a->sumber_dana === 'kemitraan' || !empty($a->kemitraan);
+                $isBmdDimanfaatkan = false;
+                $isKemitraanReklas = false;
+                if ($isKemitraanAset) {
+                    $statusKonsesi = $a->kemitraan?->status_konsesi;
+                    $isReklasSelesai = ($statusKonsesi === 'Selesai / Reklasifikasi' || $statusKonsesi === 'Selesai')
+                        || ($latestReklas && $latestReklas->asal_kib === 'KEMITRAAN' && $latestReklas->tujuan_kib !== 'KEMITRAAN');
+
+                    if ($isReklasSelesai) {
+                        $isKemitraanReklas = true;
+                        $isBmdDimanfaatkan = false;
+                    } else {
+                        $explicitTipe = $a->kemitraan?->tipe_kemitraan ?: ($spec['tipe_kemitraan'] ?? null);
+                        if ($explicitTipe === 'ditambahkan') {
+                            $isBmdDimanfaatkan = false;
+                        } elseif ($explicitTipe === 'dimanfaatkan') {
+                            $isBmdDimanfaatkan = true;
+                        } elseif ($a->is_reklas || $hasEverReklas || $a->jenis_reklas === 'KOREKSI_REKENING' || ($latestReklas && $latestReklas->tujuan_kib === 'KEMITRAAN') || !empty($spec['split_parent_id']) || !empty($a->kemitraan?->objek_astap_id)) {
+                            $isBmdDimanfaatkan = true;
+                        } else {
+                            $nb = strtolower($a->nama_barang ?? '');
+                            $isBmdDimanfaatkan = str_starts_with($nb, 'sewa ') || str_contains($nb, 'pemanfaatan');
+                        }
+                    }
+                }
 
                 $mutasiKeluarData = null;
                 if ($latestMutasiKeluar) {
@@ -175,12 +251,11 @@ class AstapController extends Controller
                 } elseif (!empty($spec['mutasi_info']) || $a->jenis_reklas === 'MUTASI_EKSTERNAL' || $isMutasiKeluar) {
                     $mInfo = $spec['mutasi_info'] ?? [];
                     $skpdTujuan = $mInfo['skpd_tujuan'] ?? ($latestReklas?->tujuan_nama ?? ($skpdTujuanNama ?: 'OPD Luar'));
-                    $tglBast = $mInfo['tanggal_bast'] ?? ($latestReklas?->tanggal_reklas ? $latestReklas->tanggal_reklas->format('Y-m-d') : '');
                     $mutasiKeluarData = [
                         'id' => null,
                         'nomor_bamb' => $mInfo['nomor_bast'] ?? ($latestReklas?->nomor_ba_reklas ?? '-'),
-                        'tanggal_mutasi' => $tglBast ?: '-',
-                        'tanggal_mutasi_raw' => $tglBast,
+                        'tanggal_mutasi' => !empty($mInfo['tanggal_bast']) ? $fmtDate($mInfo['tanggal_bast']) : ($latestReklas?->tanggal_reklas ? $latestReklas->tanggal_reklas->format('d M Y') : '-'),
+                        'tanggal_mutasi_raw' => $mInfo['tanggal_bast'] ?? ($latestReklas?->tanggal_reklas ? $latestReklas->tanggal_reklas->format('Y-m-d') : ''),
                         'opd_asal' => 'RSUD Dr. H. Koesnadi',
                         'opd_tujuan' => $skpdTujuan,
                         'pj_tujuan_nama' => $mInfo['pj_tujuan_nama'] ?? ($spec['pj_tujuan_nama'] ?? '-'),
@@ -197,23 +272,17 @@ class AstapController extends Controller
                     'id' => $a->id,
                     'created_at' => $a->created_at ? $a->created_at->format('Y-m-d H:i:s') : null,
                     'category' => $a->category,
-                    'is_extracomtable' => (bool) $a->is_extracomtable,
                     'is_reklas' => (bool) ($a->is_reklas || $hasEverReklas),
                     'has_reklas' => $hasEverReklas,
                     'reklas_count' => $reklasCount,
                     'jenis_reklas' => $a->jenis_reklas ?: ($latestReklas?->jenis_reklas),
+                    'is_bmd_dimanfaatkan' => $isBmdDimanfaatkan,
+                    'is_kemitraan_reklas' => $isKemitraanReklas,
                     'is_mutasi_keluar_full' => $isFullMutasiKeluar,
                     'is_mutasi_keluar_partial' => $isPartialMutasiKeluar,
                     'mutasi_keluar_count' => $mutatedRegsCount,
                     'active_regs_count' => $activeRegsCount,
                     'mutasi_keluar' => $mutasiKeluarData,
-                    'is_hibah_keluar' => (bool) $isHibahKeluar,
-                    'hibah_keluar' => $latestHibahKeluar ? [
-                        'id' => $latestHibahKeluar->id,
-                        'nomor_bast' => $latestHibahKeluar->nomor_bast,
-                        'tanggal_bast' => $latestHibahKeluar->tanggal_bast ? $latestHibahKeluar->tanggal_bast->format('d M Y') : '-',
-                        'penerima' => $latestHibahKeluar->pihak_hibah,
-                    ] : null,
                     'opd_tujuan' => $skpdTujuanNama,
                     'tujuan_kib' => $latestReklas?->tujuan_kib,
                     'tujuan_kode' => $latestReklas?->tujuan_kode,
@@ -222,15 +291,17 @@ class AstapController extends Controller
                     'asal_kib' => $latestReklas?->asal_kib,
                     'asal_kode' => $latestReklas?->asal_kode,
                     'nilai_reklas' => $latestReklas?->nilai_reklas ? (float) $latestReklas->nilai_reklas : null,
-                    'asal_usul' => $jp ? ($jp->nama_pengadaan ?: '') : ($spec['asal_usul'] ?? ($spec['cara_perolehan'] ?? '')),
                     'sumber_dana' => ($a->isKemitraan()) ? 'kemitraan' : (in_array($a->sumber_dana, ['mutasi_eksternal', 'pelimpahan_skpd', 'mutasi_masuk', 'mutasi', 'pelimpahan'], true) ? 'mutasi_eksternal' : ($a->sumber_dana === 'hibah' ? 'hibah' : ($a->sumber_dana === 'belanja_barang' ? 'belanja_barang' : ($spec['sumber_dana'] ?? 'belanja_modal')))),
                     'sumber_dana_raw' => ($a->isKemitraan()) ? 'kemitraan' : $a->sumber_dana,
+                    'sumber_dana_label' => $a->sumber_dana_label,
                     'kemitraan' => $a->kemitraan ? [
                         'id' => $a->kemitraan->id,
                         'mitra_nama' => $a->kemitraan->mitra_nama,
                         'nomor_pks' => $a->kemitraan->nomor_pks,
                         'tanggal_pks' => $a->kemitraan->tanggal_pks ? $a->kemitraan->tanggal_pks->format('Y-m-d') : ($spec['tanggal_pks'] ?? null),
                         'skema_kemitraan' => $a->kemitraan->skema_kemitraan ?: ($spec['skema_kemitraan'] ?? 'Sewa'),
+                        'tipe_kemitraan' => $a->kemitraan->tipe_kemitraan ?: ($isBmdDimanfaatkan ? 'dimanfaatkan' : ($spec['tipe_kemitraan'] ?? 'dimanfaatkan')),
+                        'objek_astap_id' => $a->kemitraan->objek_astap_id,
                         'tanggal_mulai' => $a->kemitraan->tanggal_mulai ? $a->kemitraan->tanggal_mulai->format('Y-m-d') : ($spec['tanggal_mulai'] ?? null),
                         'tanggal_selesai' => $a->kemitraan->tanggal_selesai ? $a->kemitraan->tanggal_selesai->format('Y-m-d') : ($spec['tanggal_selesai'] ?? null),
                         'status_konsesi' => $a->kemitraan->status_konsesi ?: 'Aktif',
@@ -240,12 +311,14 @@ class AstapController extends Controller
                         'sisa_hari' => $a->kemitraan->sisa_hari_konsesi,
                         'keterangan' => $a->kemitraan->keterangan ?: ($spec['keterangan'] ?? null),
                     ] : (
-                        $a->sumber_dana === 'kemitraan' ? [
+                        ($a->isKemitraan() || $a->sumber_dana === 'kemitraan') ? [
                             'id' => null,
                             'mitra_nama' => $spec['mitra_nama'] ?? 'Mitra Pihak Ketiga',
                             'nomor_pks' => $a->bast_dokumen_nomor ?? ($spec['nomor_pks'] ?? '-'),
                             'tanggal_pks' => $a->bast_dokumen_tanggal ? (is_string($a->bast_dokumen_tanggal) ? $a->bast_dokumen_tanggal : $a->bast_dokumen_tanggal->format('Y-m-d')) : ($spec['tanggal_pks'] ?? null),
                             'skema_kemitraan' => $spec['skema_kemitraan'] ?? 'Sewa',
+                            'tipe_kemitraan' => $spec['tipe_kemitraan'] ?? ($isBmdDimanfaatkan ? 'dimanfaatkan' : 'ditambahkan'),
+                            'objek_astap_id' => $spec['objek_astap_id'] ?? null,
                             'tanggal_mulai' => $spec['tanggal_mulai'] ?? null,
                             'tanggal_selesai' => $spec['tanggal_selesai'] ?? null,
                             'status_konsesi' => 'Aktif',
@@ -256,9 +329,19 @@ class AstapController extends Controller
                             'keterangan' => $a->keterangan_tambahan ?? ($spec['keterangan'] ?? null),
                         ] : null
                     ),
-                    'hibah_pemberi' => $a->hibah_pemberi ?: ($spec['pemberi'] ?? ($spec['hibah_pemberi'] ?? '')),
-                    'hibah_nomor_bast' => $a->hibah_nomor_bast ?: ($spec['nomor_bast'] ?? ($spec['hibah_nomor_bast'] ?? '')),
-                    'hibah_tanggal_bast' => $a->hibah_tanggal_bast ? (is_string($a->hibah_tanggal_bast) ? $a->hibah_tanggal_bast : $a->hibah_tanggal_bast->format('Y-m-d')) : ($spec['tanggal_bast'] ?? ''),
+                    'hibah_pemberi' => $a->hibah_pemberi ?? '',
+                    'hibah_nomor_bast' => $a->hibah_nomor_bast ?? '',
+                    'hibah_tanggal_bast' => $fmtDate($a->hibah_tanggal_bast, ''),
+                    'hibah_keterangan' => $a->hibah_keterangan ?? '',
+                    'mutasi_asal' => ($a->isMutasiMasuk() && !$a->isBelanjaModal()) ? ($a->mutasiEksternalMasuk?->opd_asal ?: ($a->mutasi_asal ?: ($spec['skpd_asal'] ?? ($spec['mutasi_asal'] ?? '')))) : '',
+                    'mutasi_nomor_bamb' => ($a->isMutasiMasuk() && !$a->isBelanjaModal()) ? ($a->mutasiEksternalMasuk?->nomor_bamb ?: ($a->mutasi_nomor_bamb ?: ($spec['nomor_bamb'] ?? ($spec['mutasi_nomor_bamb'] ?? '')))) : '',
+                    'mutasi_tanggal' => ($a->isMutasiMasuk() && !$a->isBelanjaModal()) ? $fmtDate($a->mutasiEksternalMasuk?->tanggal_mutasi ?: $a->mutasi_tanggal, $spec['tanggal_bamb'] ?? ($spec['mutasi_tanggal'] ?? '')) : '',
+                    'mutasi_keterangan' => ($a->isMutasiMasuk() && !$a->isBelanjaModal()) ? ($a->mutasiEksternalMasuk?->alasan_mutasi ?: ($a->mutasi_keterangan ?: ($spec['mutasi_keterangan'] ?? ''))) : '',
+                    'rekening_penyedia' => $a->belanjaBarang?->nama_toko ?: ($spec['rekening_penyedia'] ?? ($a->penyedia_nama ?: '')),
+                    'rekening_nomor_faktur' => $a->belanjaBarang?->nomor_faktur ?: ($spec['rekening_nomor_faktur'] ?? ($a->faktur_nomor ?: '')),
+                    'rekening_tanggal_faktur' => $fmtDate($a->belanjaBarang?->tanggal_faktur, $spec['rekening_tanggal_faktur'] ?? ''),
+                    'rekening_keterangan' => $a->belanjaBarang?->keterangan ?: ($spec['rekening_keterangan'] ?? ''),
+                    'is_extracomtable' => (bool) $a->is_extracomtable,
                     'kode_barang' => $kode108Val,
                     'nama_barang' => $a->nama_barang,
                     'tahun_perolehan' => (string) $a->tahun_perolehan,
@@ -277,7 +360,7 @@ class AstapController extends Controller
                     'rekening_kode' => $rb ? ($rb->kode_rek ?: '5.2.02.01.01.0001') : '5.2.02.01.01.0001',
                     'rekening_nama' => $rb ? ($rb->nama_belanja ?: 'Belanja Modal Pengadaan Aset Tetap') : 'Belanja Modal Pengadaan Aset Tetap',
                     'jenis_aset_kode' => $ja ? ($ja->jenis ?: (substr($kode108Val, 0, 5) ?: '1.3.1')) : (substr($kode108Val, 0, 5) ?: '1.3.1'),
-                    'jenis_aset_nama' => ($a->isKemitraan() && $ja && !empty($ja->uraian_sub_rincian)) ? $ja->uraian_sub_rincian : ($ja ? ($ja->nama_jenis ?: 'ASET TETAP') : 'ASET TETAP'),
+                    'jenis_aset_nama' => $ja ? ($ja->nama_jenis ?: 'ASET TETAP') : 'ASET TETAP',
                     'sub_rincian_kode' => $ja ? ($ja->sub_rincian_objek ?: (strlen($kode108Val) >= 14 ? substr($kode108Val, 0, 14) : '1.3.1.01.01.01')) : (strlen($kode108Val) >= 14 ? substr($kode108Val, 0, 14) : '1.3.1.01.01.01'),
                     'sub_rincian_nama' => $ja ? ($ja->uraian_sub_rincian ?: '-') : '-',
                     'jumlah_anggaran' => (float) ($a->jumlah_anggaran ?: ($spec['jumlah_anggaran'] ?? $a->total_realisasi)),
@@ -290,17 +373,19 @@ class AstapController extends Controller
 
                     // LANGKAH 3 SPESIFIKASI & DOKUMEN
                     'spk_nomor' => $a->spk_nomor ?: ($spec['spk_nomor'] ?? '-'),
-                    'spk_tanggal' => $a->spk_tanggal ? $a->spk_tanggal->format('d/m/Y') : ($spec['spk_tanggal'] ?? '-'),
+                    'spk_tanggal' => $fmtDate($a->spk_tanggal, $spec['spk_tanggal'] ?? '-'),
                     'surat_pesanan_nomor' => $a->surat_pesanan_nomor ?: ($spec['surat_pesanan_nomor'] ?? '-'),
-                    'surat_pesanan_tanggal' => $a->surat_pesanan_tanggal ? $a->surat_pesanan_tanggal->format('d/m/Y') : ($spec['surat_pesanan_tanggal'] ?? '-'),
+                    'surat_pesanan_tanggal' => $fmtDate($a->surat_pesanan_tanggal, $spec['surat_pesanan_tanggal'] ?? '-'),
                     'kwitansi_nomor' => $a->kwitansi_nomor ?: ($spec['kwitansi_nomor'] ?? '-'),
-                    'kwitansi_tanggal' => $a->kwitansi_tanggal ? $a->kwitansi_tanggal->format('d/m/Y') : ($spec['kwitansi_tanggal'] ?? '-'),
+                    'kwitansi_tanggal' => $fmtDate($a->kwitansi_tanggal, $spec['kwitansi_tanggal'] ?? '-'),
                     'faktur_nomor' => $a->faktur_nomor ?: ($spec['faktur_nomor'] ?? ($spec['invoice_nomor'] ?? '-')),
-                    'faktur_tanggal' => $a->faktur_tanggal ? $a->faktur_tanggal->format('d/m/Y') : ($spec['faktur_tanggal'] ?? ($spec['invoice_tanggal'] ?? '-')),
+                    'faktur_tanggal' => $fmtDate($a->faktur_tanggal, $spec['faktur_tanggal'] ?? ($spec['invoice_tanggal'] ?? '-')),
                     'sp2d_nomor' => $a->sp2d_nomor ?: ($spec['sp2d_nomor'] ?? '-'),
-                    'sp2d_tanggal' => $a->sp2d_tanggal ? $a->sp2d_tanggal->format('d/m/Y') : ($spec['sp2d_tanggal'] ?? '-'),
+                    'sp2d_tanggal' => $fmtDate($a->sp2d_tanggal, $spec['sp2d_tanggal'] ?? '-'),
                     'bast_dokumen_nomor' => $a->bast_dokumen_nomor ?: ($spec['bast_dokumen_nomor'] ?? '-'),
-                    'bast_dokumen_tanggal' => $a->bast_dokumen_tanggal ? $a->bast_dokumen_tanggal->format('d/m/Y') : ($spec['bast_dokumen_tanggal'] ?? '-'),
+                    'bast_nomor' => $a->bast_nomor ?: ($a->bast_dokumen_nomor ?: ($spec['bast_dokumen_nomor'] ?? '-')),
+                    'bast_dokumen_tanggal' => $fmtDate($a->bast_dokumen_tanggal, $spec['bast_dokumen_tanggal'] ?? '-'),
+                    'bast_tanggal' => $fmtDate($a->bast_tanggal ?: $a->bast_dokumen_tanggal, $spec['bast_dokumen_tanggal'] ?? '-'),
                     
                     // Rincian Tanah Khusus (KIB A)
                     'hak_tanah' => $spec['hak_tanah'] ?? ($spec['tanah_hak'] ?? 'Hak Pakai'),
@@ -324,7 +409,7 @@ class AstapController extends Controller
                     'no_polisi' => $spec['no_polisi'] ?? ($spec['polisi'] ?? ($spec['nopol'] ?? '-')),
                     'bahan' => $spec['bahan'] ?? '-',
                     'kondisi' => $firstReg ? $firstReg->kondisi : ($spec['kondisi'] ?? 'Baik'),
-                    'ruang_unit' => $firstReg ? $firstReg->ruang_pemegang : ($spec['ruang_unit'] ?? ($a->unit ? $a->unit->nama_unit : '-')),
+                    'ruang_unit' => $isMutasiKeluar ? ('Mutasi Keluar: ' . ($skpdTujuanNama ?: 'OPD Luar')) : ($firstReg ? $firstReg->ruang_pemegang : ($spec['ruang_unit'] ?? ($a->unit ? $a->unit->nama_unit : '-'))),
                     'asal_usul' => 'BLUD RSUD',
 
                     // Rincian Gedung & Bangunan (KIB C)
@@ -366,7 +451,7 @@ class AstapController extends Controller
                     'progres_fisik' => $spec['progres_fisik'] ?? ($spec['capaian_fisik'] ?? '100%'),
 
                     // LANGKAH 4 (REKANAN, PPK, KETERANGAN)
-                    'alamat_barang' => $a->alamat_barang ?: ($spec['alamat_barang'] ?? 'RSUD Dr. H. Koesnandi'),
+                    'alamat_barang' => $isMutasiKeluar ? ('Mutasi Keluar: ' . ($skpdTujuanNama ?: 'OPD Luar')) : ($a->alamat_barang ?: ($spec['alamat_barang'] ?? 'RSUD Dr. H. Koesnandi')),
                     'penyedia_nama' => $a->penyedia_nama ?: ($spec['penyedia_nama'] ?? '-'),
                     'penyedia_pemilik' => $a->penyedia_pemilik ?: ($spec['penyedia_pemilik'] ?? '-'),
                     'penyedia_telepon' => $a->penyedia_telepon ?: ($spec['penyedia_telepon'] ?? ($spec['penyedia_kontak'] ?? '-')),
@@ -421,20 +506,6 @@ class AstapController extends Controller
                             })->values() : []
                         ];
                     })->values() : [],
-                    'reklas_history' => $a->reklas ? $a->reklas->map(function($r) {
-                        return [
-                            'id' => $r->id,
-                            'jenis_reklas' => $r->jenis_reklas,
-                            'asal_kib' => $r->asal_kib,
-                            'tujuan_kib' => $r->tujuan_kib,
-                            'nilai_reklas' => (float) $r->nilai_reklas,
-                            'tanggal_reklas' => $r->tanggal_reklas ? $r->tanggal_reklas->format('Y-m-d') : null,
-                            'triwulan' => $r->triwulan,
-                            'tahun' => $r->tahun,
-                            'nomor_ba_reklas' => $r->nomor_ba_reklas,
-                            'keterangan' => $r->keterangan,
-                        ];
-                    })->values() : [],
                     'spesifikasi_json' => $spec
                 ];
             });
@@ -464,7 +535,7 @@ class AstapController extends Controller
             ->get();
 
         $deletedAstapsList = $rawDeletedAstaps->map(function ($a) {
-            $spec = is_array($a->spesifikasi_json) ? $a->spesifikasi_json : (json_decode($a->spesifikasi_json ?? '', true) ?? []);
+            $spec = is_array($a->spesifikasi_json) ? $a->spesifikasi_json : (json_decode($a->spesifikasi_json, true) ?? []);
             $firstReg = $a->registers ? $a->registers->first() : null;
             $ja = $a->jenisAstap;
             $kode108Val = $a->kode_108 ?: ($ja ? ($ja->sub_sub_rincian_objek ?: $ja->jenis) : '');
@@ -521,8 +592,8 @@ class AstapController extends Controller
                 'total_realisasi' => 'Rp ' . number_format($a->total_realisasi, 0, ',', '.'),
                 'total_realisasi_num' => (float) $a->total_realisasi,
                 'biaya_administrasi_proyek' => (float) $a->biaya_administrasi_proyek,
-                'alasan_hapus' => $a->keterangan_tambahan ?: ($spec['keterangan'] ?? 'Dipindahkan ke Tong Sampah'),
-                'keterangan' => $a->keterangan_tambahan ?: ($a->deleted_by ? 'Dihapus oleh ' . $a->deleted_by : '-'),
+                'alasan_hapus' => $a->alasan_hapus ?: ($a->keterangan_tambahan ?: ($spec['keterangan'] ?? '-')),
+                'keterangan' => $a->keterangan_tambahan ?: ($a->alasan_hapus ?: ($a->deleted_by ? 'Dihapus oleh ' . $a->deleted_by : '-')),
                 'bahan' => $spec['bahan'] ?? '-',
                 'asal_usul' => $spec['asal_usul'] ?? ($a->asal_usul ?: 'Pembelian BLUD'),
                 'kondisi' => $firstReg ? ($firstReg->kondisi ?: 'RB') : ($spec['kondisi'] ?? 'RB'),
@@ -616,11 +687,8 @@ class AstapController extends Controller
         $dbMaster108 = \App\Models\JenisAstap::getNested108();
 
         $dbMitraKemitraans = \App\Models\AstapKemitraan::getDistinctMitras();
-        $dbSkpdDirectory = \App\Http\Controllers\MutasiEksternalController::getSkpdDirectory();
-        $dbSkpdAsals = array_values(array_unique(array_keys($dbSkpdDirectory)));
-        $dbPejabats = \App\Http\Controllers\MutasiEksternalController::getDistinctPejabats();
 
-        return view('pages.astap.index', compact('astaps', 'deletedAstaps', 'dbMaster108', 'dbMitraKemitraans', 'dbSkpdDirectory', 'dbSkpdAsals', 'dbPejabats'));
+        return view('pages.astap.index', compact('astaps', 'deletedAstaps', 'dbMaster108', 'dbMitraKemitraans'));
     }
 
     /**
@@ -649,18 +717,28 @@ class AstapController extends Controller
         ]);
     }
 
+
     /**
-     * Ambil riwayat mutasi satu register NIBAR
+     * API: Ambil riwayat komprehensif satu unit register NIBAR
      */
     public function getRegisterMutasi($id)
     {
-        $reg = \App\Models\AstapRegister::with(['mutasis' => function($q) {
-            $q->where('status', 'Disetujui Admin (Selesai)')->orderBy('tanggal_mutasi', 'desc')->orderBy('id', 'desc');
-        }])->find($id);
+        $reg = \App\Models\AstapRegister::with([
+            'astap.jenisAstap',
+            'astap.mutasiEksternalMasuk',
+            'mutasis' => function($q) {
+                $q->where('status', 'Disetujui Admin (Selesai)')
+                  ->orderBy('tanggal_mutasi', 'desc')
+                  ->orderBy('id', 'desc');
+            }
+        ])->find($id);
+
         if (!$reg) {
             return response()->json(['success' => false, 'message' => 'Register tidak ditemukan.'], 404);
         }
-        $mutasis = $reg->mutasis->map(function($m) {
+
+        // 1. Mutasi Internal (Ruangan RSUD Koesnandi)
+        $mutasisInternal = $reg->mutasis->map(function($m) use ($reg) {
             return [
                 'id'                      => $m->id,
                 'nomor_bamb'              => $m->nomor_bamb,
@@ -669,20 +747,113 @@ class AstapController extends Controller
                 'ruangan_asal'            => $m->ruangan_asal,
                 'ruangan_tujuan'          => $m->ruangan_tujuan,
                 'jenis_mutasi'            => $m->jenis_mutasi ?? 'Mutasi',
-                'kondisi'                 => $m->pivot?->kondisi ?: ($m->register?->kondisi ?: ($reg->kondisi ?: 'Baik')),
+                'kondisi'                 => $m->pivot?->kondisi ?: ($reg->kondisi ?: 'Baik'),
                 'alasan_mutasi'           => $m->alasan_mutasi ?: '-',
                 'status'                  => $m->status,
                 'penanggung_jawab_asal'   => $m->penanggung_jawab_asal ?: '-',
                 'penanggung_jawab_tujuan' => $m->penanggung_jawab_tujuan ?: '-',
                 'catatan_penerima'        => $m->catatan_penerima,
+                'tipe_histori'            => 'internal',
             ];
         })->values();
+
+        // 2. Mutasi Eksternal (Antar-OPD Pemkab Bondowoso)
+        $rawEksternal = \App\Models\MutasiEksternal::where('astap_id', $reg->astap_id)
+            ->where('is_deleted', 0)
+            ->orderBy('tanggal_mutasi', 'desc')
+            ->get();
+
+        $mutasisEksternal = $rawEksternal->map(function($me) use ($reg) {
+            return [
+                'id'                 => $me->id,
+                'nomor_bast'         => $me->nomor_bast ?: 'BAST-EKSTERNAL',
+                'tanggal_mutasi'     => $me->tanggal_mutasi ? $me->tanggal_mutasi->format('d M Y') : '-',
+                'tanggal_mutasi_raw' => $me->tanggal_mutasi ? $me->tanggal_mutasi->format('Y-m-d') : '',
+                'tipe'               => $me->tipe ?: 'keluar',
+                'opd_asal'           => $me->opd_asal ?: 'RSUD Dr. H. Koesnandi',
+                'opd_tujuan'         => $me->opd_tujuan ?: 'SKPD Pemkab Bondowoso',
+                'nilai_perolehan'    => 'Rp ' . number_format((float) ($me->nilai_perolehan ?: ($reg->astap?->total_realisasi ?? 0)), 0, ',', '.'),
+                'alasan_mutasi'      => $me->alasan_mutasi ?: ($me->keterangan ?: 'Mutasi aset antar perangkat daerah (OPD)'),
+                'status'             => $me->status ?: ($me->signed ? 'Telah Ditandatangani Elektronik (BSrE)' : 'Selesai Dimutasi'),
+                'pj_asal_nama'       => $me->pj_asal_nama ?: '-',
+                'pj_tujuan_nama'     => $me->pj_tujuan_nama ?: '-',
+                'dokumen_lampiran'   => $me->dokumen_lampiran ? asset('storage/' . $me->dokumen_lampiran) : null,
+                'tipe_histori'       => 'eksternal',
+            ];
+        })->values();
+
+        // Fallback jika ada data mutasi masuk di master tapi belum tercatat di MutasiEksternal
+        if ($mutasisEksternal->isEmpty() && $reg->astap && $reg->astap->isMutasiMasuk() && $reg->astap->mutasiEksternalMasuk) {
+            $ps = $reg->astap->mutasiEksternalMasuk;
+            $mutasisEksternal->push([
+                'id'                 => 0,
+                'nomor_bast'         => $ps->nomor_bamb ?: 'BAMB-MUTASI-MASUK',
+                'tanggal_mutasi'     => $ps->tanggal_mutasi ? \Carbon\Carbon::parse($ps->tanggal_mutasi)->format('d M Y') : '-',
+                'tanggal_mutasi_raw' => $ps->tanggal_mutasi ? \Carbon\Carbon::parse($ps->tanggal_mutasi)->format('Y-m-d') : '',
+                'tipe'               => 'masuk',
+                'opd_asal'           => $ps->opd_asal ?: 'OPD Pengirim',
+                'opd_tujuan'         => 'RSUD Dr. H. Koesnadi',
+                'nilai_perolehan'    => 'Rp ' . number_format((float) ($reg->astap->total_realisasi ?? 0), 0, ',', '.'),
+                'alasan_mutasi'      => $ps->alasan_mutasi ?: 'Mutasi masuk aset dari OPD Pemkab Bondowoso',
+                'status'             => 'Tercatat di SIMAT',
+                'pj_asal_nama'       => '-',
+                'pj_tujuan_nama'     => 'Pengurus Barang RSUD',
+                'dokumen_lampiran'   => null,
+                'tipe_histori'       => 'eksternal',
+            ]);
+        }
+
+        // 3. Reklasifikasi Aset (Perubahan KIB, Akun 1.5.2 Kemitraan, Koreksi Nilai BPK/Manset)
+        $rawReklas = \App\Models\AstapReklas::with('user')
+            ->where('astap_id', $reg->astap_id)
+            ->orderBy('tanggal_reklas', 'desc')
+            ->orderBy('id', 'desc')
+            ->get();
+
+        $reklasifikasis = $rawReklas->map(function($rk) {
+            return [
+                'id'                => $rk->id,
+                'nomor_ba'          => $rk->nomor_ba_reklas ?: 'BA-REKLAS',
+                'tanggal_reklas'    => $rk->tanggal_reklas ? $rk->tanggal_reklas->format('d M Y') : '-',
+                'tanggal_reklas_raw'=> $rk->tanggal_reklas ? $rk->tanggal_reklas->format('Y-m-d') : '',
+                'jenis_reklas'      => $rk->jenis_reklas ?: 'REKLAS_KIB',
+                'sub_koreksi_label' => $rk->sub_koreksi_label ?: ($rk->jenis_reklas === 'KOREKSI_LAIN' ? 'Koreksi Nilai' : ($rk->jenis_reklas === 'KEMITRAAN' ? 'Reklas Kemitraan (1.5.2)' : 'Reklasifikasi Aset')),
+                'tipe_koreksi'      => $rk->tipe_koreksi ?: 'tambah',
+                'nilai_reklas'      => 'Rp ' . number_format((float)$rk->nilai_reklas, 0, ',', '.'),
+                'asal_kib'          => $rk->asal_kib ?: '-',
+                'tujuan_kib'        => $rk->tujuan_kib ?: '-',
+                'asal_kode'         => $rk->asal_kode ?: '-',
+                'tujuan_kode'       => $rk->tujuan_kode ?: '-',
+                'alasan_reklas'     => $rk->alasan_reklas ?: ($rk->keterangan ?: '-'),
+                'user_nama'         => $rk->user?->name ?: 'Administrator',
+                'tipe_histori'      => 'reklas',
+            ];
+        })->values();
+
+        // 4. Gabungan Timeline Terpadu (Diurutkan dari yang paling baru)
+        $timeline = collect([])
+            ->concat($mutasisInternal->map(fn($item) => array_merge($item, ['sort_date' => $item['tanggal_mutasi_raw'] ?: '1970-01-01', 'kategori' => 'Internal'])))
+            ->concat($mutasisEksternal->map(fn($item) => array_merge($item, ['sort_date' => $item['tanggal_mutasi_raw'] ?: '1970-01-01', 'kategori' => 'Eksternal'])))
+            ->concat($reklasifikasis->map(fn($item) => array_merge($item, ['sort_date' => $item['tanggal_reklas_raw'] ?: '1970-01-01', 'kategori' => 'Reklasifikasi'])))
+            ->sortByDesc('sort_date')
+            ->values();
+
         return response()->json([
-            'success' => true,
-            'nibar'   => $reg->nibar ?: $reg->no_register,
-            'kondisi' => $reg->kondisi,
-            'ruang'   => $reg->ruang_pemegang,
-            'mutasis' => $mutasis,
+            'success'            => true,
+            'nibar'              => $reg->nibar ?: $reg->no_register,
+            'kondisi'            => $reg->kondisi,
+            'ruang'              => $reg->ruang_pemegang,
+            'mutasis'            => $mutasisInternal, // backward-compatibility
+            'mutasis_internal'   => $mutasisInternal,
+            'mutasis_eksternal'  => $mutasisEksternal,
+            'reklasifikasis'     => $reklasifikasis,
+            'timeline'           => $timeline,
+            'counts'             => [
+                'internal'   => $mutasisInternal->count(),
+                'eksternal'  => $mutasisEksternal->count(),
+                'reklas'     => $reklasifikasis->count(),
+                'total'      => $timeline->count(),
+            ]
         ]);
     }
 
@@ -691,19 +862,20 @@ class AstapController extends Controller
      */
     public function create()
     {
-            $rawMaster108 = \App\Models\JenisAstap::getNested108();
-            // Belanja modal ASTAP hanya Aset Tetap (1.3) dan ATB (1.5.3), tanpa Kemitraan (1.5.2) dan Aset Lain-Lain (1.5.4)
-            $dbMaster108 = array_values(array_filter($rawMaster108, function ($j) {
-                $kode = (string) ($j['kode'] ?? '');
-                $nama = strtolower($j['nama'] ?? '');
-                if (str_starts_with($kode, '1.5.2') || str_starts_with($kode, '1.4') || str_contains($nama, 'kemitraan')) return false;
-                if (str_starts_with($kode, '1.5.4') || str_contains($nama, 'aset lain-lain')) return false;
-                return true;
-            }));
-            $dbJenisPengadaans = \App\Models\JenisPengadaan::all();
-            $dbRekeningBelanjas = \App\Models\RekeningBelanja::all();
-            $dbUnits = \App\Models\Unit::orderBy('nama')->get();
-            return view('pages.astap.form', compact('dbMaster108', 'dbJenisPengadaans', 'dbRekeningBelanjas', 'dbUnits'));
+                $rawMaster108 = \App\Models\JenisAstap::getNested108();
+                $dbMaster108 = array_values(array_filter($rawMaster108, function ($j) {
+                    $kode = (string) ($j['kode'] ?? '');
+                    $nama = strtolower($j['nama'] ?? '');
+                    if (str_starts_with($kode, '1.5.2') || str_starts_with($kode, '1.4') || str_contains($nama, 'kemitraan')) return false;
+                    if (str_starts_with($kode, '1.5.4') || str_contains($nama, 'aset lain-lain')) return false;
+                    return true;
+                }));
+                $dbJenisPengadaans = \App\Models\JenisPengadaan::all();
+                $dbRekeningBelanjas = \App\Models\RekeningBelanja::all();
+                $dbUnits = \App\Models\Unit::orderBy('nama')->get();
+                $dbPenyedias = self::getDistinctPenyedias();
+                $dbPejabats = self::getDistinctPejabats();
+                return view('pages.astap.form', compact('dbMaster108', 'dbJenisPengadaans', 'dbRekeningBelanjas', 'dbUnits', 'dbPenyedias', 'dbPejabats'));
     }
 
     /**
@@ -711,36 +883,61 @@ class AstapController extends Controller
      */
     public function edit($id)
     {
-            $rawMaster108 = \App\Models\JenisAstap::getNested108();
-            // Belanja modal ASTAP hanya Aset Tetap (1.3) dan ATB (1.5.3), tanpa Kemitraan (1.5.2) dan Aset Lain-Lain (1.5.4)
-            $dbMaster108 = array_values(array_filter($rawMaster108, function ($j) {
-                $kode = (string) ($j['kode'] ?? '');
-                $nama = strtolower($j['nama'] ?? '');
-                if (str_starts_with($kode, '1.5.2') || str_starts_with($kode, '1.4') || str_contains($nama, 'kemitraan')) return false;
-                if (str_starts_with($kode, '1.5.4') || str_contains($nama, 'aset lain-lain')) return false;
-                return true;
-            }));
-            $dbJenisPengadaans = \App\Models\JenisPengadaan::all();
-            $dbRekeningBelanjas = \App\Models\RekeningBelanja::all();
-            $astap = \App\Models\Astap::with(['registers', 'jenisAstap', 'rekeningBelanja', 'jenisPengadaan', 'belanjaModal', 'mutasiEksternals'])->findOrFail($id);
+                $astap = \App\Models\Astap::with(['registers', 'jenisAstap', 'rekeningBelanja', 'jenisPengadaan', 'belanjaModal', 'kemitraan', 'reklas', 'mutasiEksternals'])->findOrFail($id);
 
-            // Proteksi Mutasi Keluar Penuh: Dilarang mengedit aset yang telah 100% keluar dari RSUD
-            $activeRegsCount = $astap->registers ? $astap->registers->where('is_deleted', 0)->where('status', '!=', 'Mutasi Keluar OPD')->count() : 0;
-            $mutatedRegsCount = $astap->registers ? $astap->registers->where('status', 'Mutasi Keluar OPD')->count() : 0;
-            $isFullMutasiKeluar = ($astap->jenis_reklas === 'MUTASI_EKSTERNAL') || ($mutatedRegsCount > 0 && $activeRegsCount === 0);
+                // Proteksi Mutasi Keluar Penuh: Dilarang mengedit aset yang telah 100% keluar dari RSUD
+                $activeRegsCount = $astap->registers ? $astap->registers->where('is_deleted', 0)->where('status', '!=', 'Mutasi Keluar OPD')->count() : 0;
+                $mutatedRegsCount = $astap->registers ? $astap->registers->where('status', 'Mutasi Keluar OPD')->count() : 0;
+                $isFullMutasiKeluar = ($astap->jenis_reklas === 'MUTASI_EKSTERNAL') || ($mutatedRegsCount > 0 && $activeRegsCount === 0);
 
-            if ($isFullMutasiKeluar) {
-                $opdTujuan = $astap->mutasiEksternals->where('tipe', 'keluar')->first()?->opd_tujuan ?: 'SKPD / OPD Luar';
-                return redirect()->route('astap.index')->with('error', "Aset \"{$astap->nama_barang}\" telah 100% dimutasi keluar ke {$opdTujuan}. Data tidak dapat diubah langsung. Silakan batalkan mutasi di menu Mutasi Eksternal terlebih dahulu jika ingin melakukan koreksi.");
-            }
-            return view('pages.astap.form', [
-                'id' => $id, 
-                'astap' => $astap,
-                'dbMaster108' => $dbMaster108,
-                'dbJenisPengadaans' => $dbJenisPengadaans,
-                'dbRekeningBelanjas' => $dbRekeningBelanjas,
-                'dbUnits' => $dbUnits
-            ]);
+                if ($isFullMutasiKeluar) {
+                    $opdTujuan = $astap->mutasiEksternals->where('tipe', 'keluar')->first()?->opd_tujuan ?: 'SKPD / OPD Luar';
+                    return redirect()->route('astap.index')->with('error', "Aset \"{$astap->nama_barang}\" telah 100% dimutasi keluar ke {$opdTujuan}. Data tidak dapat diubah langsung. Silakan batalkan mutasi di menu Mutasi Eksternal terlebih dahulu jika ingin melakukan koreksi.");
+                }
+
+                $kemitraanCheck = $astap->kemitraan ?? \App\Models\AstapKemitraan::where(function ($q) use ($astap) {
+                    $q->where('astap_id', $astap->id)->orWhere('objek_astap_id', $astap->id);
+                })->where('is_deleted', 0)->first();
+
+                if ($kemitraanCheck && in_array($kemitraanCheck->status_konsesi, ['Dikembalikan ke Rekanan', 'Dibatalkan'])) {
+                    $targetRoute = request('from') === 'kemitraan' ? 'master.kemitraan' : 'astap.index';
+                    return redirect()->route($targetRoute)->with('error', "Aset kemitraan '{$astap->nama_barang}' berstatus {$kemitraanCheck->status_konsesi} dan terkunci dari perubahan.");
+                }
+
+                if (!$astap->isBelanjaModal() && in_array($astap->sumber_dana, ['mutasi_eksternal', 'pelimpahan_skpd', 'pelimpahan', 'mutasi_masuk'], true)) {
+                    return redirect()->route('astap.edit_mutasi_eksternal', ['id' => $id, 'from' => request('from', 'eksternal')]);
+                }
+                if ($astap->sumber_dana === 'kemitraan' 
+                    || !empty($astap->kemitraan)
+                    || \App\Models\AstapKemitraan::where('astap_id', $id)->where('is_deleted', 0)->exists()
+                    || \App\Models\AstapKemitraan::where('objek_astap_id', $id)->where('is_deleted', 0)->exists()
+                    || ($astap->is_reklas && \App\Models\AstapKemitraan::where('astap_id', $id)->exists())
+                ) {
+                    return redirect()->route('astap.edit_kemitraan', ['id' => $id, 'from' => request('from', 'astap')]);
+                }
+                $rawMaster108 = \App\Models\JenisAstap::getNested108();
+                $dbMaster108 = array_values(array_filter($rawMaster108, function ($j) {
+                    $kode = (string) ($j['kode'] ?? '');
+                    $nama = strtolower($j['nama'] ?? '');
+                    if (str_starts_with($kode, '1.5.2') || str_starts_with($kode, '1.4') || str_contains($nama, 'kemitraan')) return false;
+                    if (str_starts_with($kode, '1.5.4') || str_contains($nama, 'aset lain-lain')) return false;
+                    return true;
+                }));
+                $dbJenisPengadaans = \App\Models\JenisPengadaan::all();
+                $dbRekeningBelanjas = \App\Models\RekeningBelanja::all();
+                $dbUnits = \App\Models\Unit::orderBy('nama')->get();
+                $dbPenyedias = self::getDistinctPenyedias();
+                $dbPejabats = self::getDistinctPejabats();
+                return view('pages.astap.form', [
+                    'id' => $id, 
+                    'astap' => $astap,
+                    'dbMaster108' => $dbMaster108,
+                    'dbJenisPengadaans' => $dbJenisPengadaans,
+                    'dbRekeningBelanjas' => $dbRekeningBelanjas,
+                    'dbUnits' => $dbUnits,
+                    'dbPenyedias' => $dbPenyedias,
+                    'dbPejabats' => $dbPejabats,
+                ]);
     }
 
     /**
@@ -1126,9 +1323,185 @@ class AstapController extends Controller
             }
 
             // =========================================================================
+            // KHUSUS EXTRACOM (SEMUA KIB) / PERALATAN DAN MESIN (1.3.2) MULTI-ITEM
+            // =========================================================================
+            if (($isExtracom || $isMesin) && $hasMesinItems) {
+                $totalVolume = 0;
+                $totalRealisasi = 0;
+                $totalBiayaAdm = 0;
+                $allMerk = [];
+                $allType = [];
+                $allUkuran = [];
+                $allBahan = [];
+                $allPabrik = [];
+
+                foreach ($data['mesin_items'] as $mItem) {
+                    $qty = max(1, (int)($mItem['mesin_jumlah_barang'] ?? 1));
+                    $nilaiSatuan = (float)($mItem['mesin_nilai_satuan'] ?? 0);
+                    $biayaAdmItem = (float)($mItem['mesin_administrasi_proyek'] ?? 0);
+                    
+                    $totalVolume += $qty;
+                    $totalRealisasi += ($qty * $nilaiSatuan) + $biayaAdmItem;
+                    $totalBiayaAdm += $biayaAdmItem;
+
+                    if (!empty($mItem['mesin_merk'])) $allMerk[] = $mItem['mesin_merk'];
+                    if (!empty($mItem['mesin_type'])) $allType[] = $mItem['mesin_type'];
+                    if (!empty($mItem['mesin_ukuran'])) $allUkuran[] = $mItem['mesin_ukuran'];
+                    if (!empty($mItem['mesin_bahan'])) $allBahan[] = $mItem['mesin_bahan'];
+                    if (!empty($mItem['mesin_no_pabrik'])) $allPabrik[] = $mItem['mesin_no_pabrik'];
+                }
+
+                $firstItem = $data['mesin_items'][0] ?? [];
+                $satuan = $firstItem['mesin_satuan'] ?? 'Unit';
+                $hargaSatuanRata = $totalVolume > 0 ? ($totalRealisasi / $totalVolume) : 0;
+                $tahun = $data['tahun_perolehan'] ?? ($data['tahun_anggaran'] ?? date('Y'));
+                
+                $isExtracom = !empty($data['is_extracomtable']);
+                if (!empty($firstItem['mesin_nama_barang'])) {
+                    $namaBarang = $firstItem['mesin_nama_barang'];
+                } elseif ($isExtracom && !empty($data['sub_rincian_nama'])) {
+                    $namaBarang = $data['sub_rincian_nama'];
+                }
+
+                // Hitung running nomor register
+                $kode108Submitted = $data['mesin_kode_barang'] ?? ($firstItem['mesin_kode_barang'] ?? ($data['sub_rincian_kode'] ?? ($data['jenis_aset_kode'] ?? null)));
+                $kode108Clean = '132000000000';
+                if ($jenisAstapRecord && !empty($jenisAstapRecord->sub_sub_rincian_objek)) {
+                    $kode108Clean = str_replace('.', '', $jenisAstapRecord->sub_sub_rincian_objek);
+                } elseif (!empty($kode108Submitted)) {
+                    $kode108Clean = str_replace('.', '', $kode108Submitted);
+                }
+
+                $maxRegInt = \App\Models\AstapRegister::where('tahun_perolehan', $tahun)
+                    ->where(function($q) use ($jenisAstapId) {
+                        if ($jenisAstapId) {
+                            $q->whereHas('astap', fn($sq) => $sq->where('jenis_astap_id', $jenisAstapId));
+                        }
+                    })
+                    ->max('no_register_int') ?? 0;
+
+                $runningRegNum = (int) $maxRegInt;
+
+                $specJson = [
+                    'jumlah_anggaran' => $data['jumlah_anggaran'] ?? null,
+                    'merk' => count($allMerk) > 0 ? implode(', ', array_unique($allMerk)) : ($firstItem['mesin_merk'] ?? null),
+                    'type' => count($allType) > 0 ? implode(', ', array_unique($allType)) : ($firstItem['mesin_type'] ?? null),
+                    'ukuran' => count($allUkuran) > 0 ? implode(', ', array_unique($allUkuran)) : ($firstItem['mesin_ukuran'] ?? null),
+                    'no_pabrik' => count($allPabrik) > 0 ? implode(', ', array_unique($allPabrik)) : ($firstItem['mesin_no_pabrik'] ?? null),
+                    'no_rangka' => $firstItem['mesin_no_rangka'] ?? null,
+                    'no_mesin' => $firstItem['mesin_no_mesin'] ?? null,
+                    'no_bpkb' => $firstItem['mesin_no_bpkb'] ?? null,
+                    'no_polisi' => $firstItem['mesin_no_polisi'] ?? null,
+                    'bahan' => count($allBahan) > 0 ? implode(', ', array_unique($allBahan)) : ($firstItem['mesin_bahan'] ?? null),
+                    'ruang_pemegang' => $firstItem['ruang_pemegang_mesin'] ?? ($firstItem['ruang_pemegang'] ?? null),
+                    'penyedia_telepon' => $data['penyedia_telepon'] ?? null,
+                    'mesin_items' => $data['mesin_items']
+                ];
+                $specJson = array_filter($specJson, fn($v) => !is_null($v) && $v !== '');
+
+                $astap = \Illuminate\Support\Facades\DB::transaction(function() use (
+                    $data, $jenisPengadaanId, $rekeningBelanjaId, $jenisAstapId, $namaBarang,
+                    $tahun, $totalVolume, $satuan, $hargaSatuanRata, $totalRealisasi, $totalBiayaAdm,
+                    $isExtracom, $specJson, $kode108Clean, &$runningRegNum
+                ) {
+                    $astapItem = \App\Models\Astap::create([
+                        'jenis_pengadaan_id' => $jenisPengadaanId,
+                        'rekening_belanja_id' => $rekeningBelanjaId,
+                        'jenis_astap_id' => $jenisAstapId,
+                        'nama_barang' => $namaBarang,
+                        'tahun_perolehan' => $tahun,
+                        'triwulan' => $data['triwulan'] ?? 'TW I',
+                        'jumlah_volume' => $totalVolume,
+                        'satuan' => $satuan,
+                        'harga_satuan' => $hargaSatuanRata,
+                        'jumlah_anggaran' => !empty($data['jumlah_anggaran']) ? (float) $data['jumlah_anggaran'] : $totalRealisasi,
+                        'total_realisasi' => $totalRealisasi,
+                        'biaya_administrasi_proyek' => $totalBiayaAdm,
+                        'is_extracomtable' => $isExtracom,
+                        'spk_nomor' => $data['spk_nomor'] ?? null,
+                        'spk_tanggal' => $data['spk_tanggal'] ?? null,
+                        'surat_pesanan_nomor' => $data['surat_pesanan_nomor'] ?? null,
+                        'surat_pesanan_tanggal' => $data['surat_pesanan_tanggal'] ?? null,
+                        'kwitansi_nomor' => $data['kwitansi_nomor'] ?? null,
+                        'kwitansi_tanggal' => $data['kwitansi_tanggal'] ?? null,
+                        'faktur_nomor' => $data['faktur_nomor'] ?? null,
+                        'faktur_tanggal' => $data['faktur_tanggal'] ?? null,
+                        'sp2d_nomor' => $data['sp2d_nomor'] ?? null,
+                        'sp2d_tanggal' => $data['sp2d_tanggal'] ?? null,
+                        'bast_dokumen_nomor' => $data['bast_dokumen_nomor'] ?? null,
+                        'bast_dokumen_tanggal' => $data['bast_dokumen_tanggal'] ?? null,
+                        'alamat_barang' => $data['alamat_barang'] ?? null,
+                        'penyedia_nama' => $data['penyedia_nama'] ?? null,
+                        'penyedia_pemilik' => $data['penyedia_pemilik'] ?? null,
+                        'penyedia_rekening_nama' => $data['penyedia_rekening_nama'] ?? null,
+                        'penyedia_rekening_nomor' => $data['penyedia_rekening_nomor'] ?? null,
+                        'penyedia_alamat' => $data['penyedia_alamat'] ?? null,
+                        'ppk_nama' => $data['ppk_nama'] ?? null,
+                        'ppk_nip' => $data['ppk_nip'] ?? null,
+                        'keterangan_tambahan' => $data['keterangan_tambahan'] ?? ($data['keterangan'] ?? null),
+                        'spesifikasi_json' => $specJson,
+                        'user_id' => auth()->id()
+                    ]);
+
+                    // Buat AstapRegister untuk setiap unit dalam mesin_items
+                    foreach ($data['mesin_items'] as $itemIdx => $mItem) {
+                        $itemQty = max(1, (int)($mItem['mesin_jumlah_barang'] ?? 1));
+                        $rawKondisi = strtoupper(trim((string)($mItem['mesin_kondisi'] ?? 'Baik')));
+                        $kondisiStr = ($rawKondisi === 'KB' || $rawKondisi === 'KURANG BAIK' || $rawKondisi === 'RR' || $rawKondisi === 'RUSAK RINGAN') ? 'Kurang Baik' : (($rawKondisi === 'RB' || $rawKondisi === 'RUSAK BERAT' || $rawKondisi === 'RUSAK') ? 'Rusak Berat' : 'Baik');
+                        $ruangPemegang = $mItem['ruang_pemegang_mesin'] ?? ($mItem['ruang_pemegang'] ?? null);
+
+                        for ($q = 0; $q < $itemQty; $q++) {
+                            $runningRegNum++;
+                            $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                            $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+
+                            while (\App\Models\AstapRegister::where('nibar', $nibar)->exists()) {
+                                $runningRegNum++;
+                                $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                                $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+                            }
+
+                            $qrPath = "/scan/{$nibar}";
+                            \App\Models\AstapRegister::create([
+                                'astap_id' => $astapItem->id,
+                                'tahun_perolehan' => $tahun,
+                                'no_register_int' => $runningRegNum,
+                                'no_register' => $nibar,
+                                'nibar' => $nibar,
+                                'qr_code_path' => $qrPath,
+                                'ruang_pemegang' => $ruangPemegang,
+                                'kondisi' => $kondisiStr,
+                                'status' => 'Tersedia'
+                            ]);
+                        }
+                    }
+
+                    return $astapItem;
+                });
+
+                // Kirim Notifikasi Sistem ke Admin & Super Admin
+                $labelTipe = $isExtracom ? 'Barang Ekstrakomtabel' : 'Aset Peralatan & Mesin';
+                try {
+                    \App\Services\NotificationService::sendToAdminAndMaster(
+                        "{$labelTipe} Baru ({$totalVolume} {$satuan}): {$namaBarang}",
+                        "{$totalVolume} {$satuan} • " . $tahun,
+                        'astap',
+                        route('astap.index')
+                    );
+                } catch (\Throwable $e) {
+                    \Log::warning("Gagal kirim notif astap store mesin/extracom: " . $e->getMessage());
+                }
+
+                $labelMsg = $isExtracom ? 'Barang Ekstrakomtabel' : 'Peralatan & Mesin';
+                session()->flash('success', 'Sebanyak ' . $totalVolume . ' ' . $satuan . ' ' . $labelMsg . ' "' . $namaBarang . '" berhasil disimpan ke database SIMAT-RK.');
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Sebanyak ' . $totalVolume . ' ' . $satuan . ' ' . $labelMsg . ' berhasil didaftarkan ke database SIMAT-RK!'
+                ]);
+            // =========================================================================
             // KHUSUS TANAH (1.3.1): MULTI-ITEM REPEATER BIDANG TANAH
             // =========================================================================
-            if ($isTanah && $hasTanahItems) {
+            } elseif ($isTanah && $hasTanahItems) {
                 $totalBidang = 0;
                 $totalLuas = 0;
                 $totalPerencanaan = 0;
@@ -1281,175 +1654,6 @@ class AstapController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Sebanyak ' . $totalBidang . ' Bidang Tanah berhasil didaftarkan ke database SIMAT-RK!'
-                ]);
-            } elseif (($isMesin || $isExtracom) && $hasMesinItems) {
-                // =========================================================================
-                // KHUSUS PERALATAN DAN MESIN / EXTRACOM MULTI-ITEM REPEATER MESIN
-                // =========================================================================
-                $totalVolume = 0;
-                $totalRealisasi = 0;
-                $totalBiayaAdm = 0;
-                $allMerk = [];
-                $allType = [];
-                $allUkuran = [];
-                $allBahan = [];
-                $allPabrik = [];
-
-                foreach ($data['mesin_items'] as $mItem) {
-                    $qty = max(1, (int)($mItem['mesin_jumlah_barang'] ?? 1));
-                    $nilaiSatuan = (float)($mItem['mesin_nilai_satuan'] ?? 0);
-                    $biayaAdmItem = (float)($mItem['mesin_administrasi_proyek'] ?? 0);
-                    
-                    $totalVolume += $qty;
-                    $totalRealisasi += ($qty * $nilaiSatuan) + $biayaAdmItem;
-                    $totalBiayaAdm += $biayaAdmItem;
-
-                    if (!empty($mItem['mesin_merk'])) $allMerk[] = $mItem['mesin_merk'];
-                    if (!empty($mItem['mesin_type'])) $allType[] = $mItem['mesin_type'];
-                    if (!empty($mItem['mesin_ukuran'])) $allUkuran[] = $mItem['mesin_ukuran'];
-                    if (!empty($mItem['mesin_bahan'])) $allBahan[] = $mItem['mesin_bahan'];
-                    if (!empty($mItem['mesin_no_pabrik'])) $allPabrik[] = $mItem['mesin_no_pabrik'];
-                }
-
-                $firstItem = $data['mesin_items'][0] ?? [];
-                $satuan = $firstItem['mesin_satuan'] ?? 'Unit';
-                $hargaSatuanRata = $totalVolume > 0 ? ($totalRealisasi / $totalVolume) : 0;
-                $tahun = $data['tahun_perolehan'] ?? ($data['tahun_anggaran'] ?? date('Y'));
-                
-                $isExtracom = !empty($data['is_extracomtable']);
-
-                // Hitung running nomor register
-                $kode108Submitted = $data['mesin_kode_barang'] ?? ($data['sub_rincian_kode'] ?? ($data['jenis_aset_kode'] ?? null));
-                $kode108Clean = '132000000000';
-                if ($jenisAstapRecord && !empty($jenisAstapRecord->sub_sub_rincian_objek)) {
-                    $kode108Clean = str_replace('.', '', $jenisAstapRecord->sub_sub_rincian_objek);
-                } elseif (!empty($kode108Submitted)) {
-                    $kode108Clean = str_replace('.', '', $kode108Submitted);
-                }
-
-                $maxRegInt = \App\Models\AstapRegister::where('tahun_perolehan', $tahun)
-                    ->where(function($q) use ($jenisAstapId) {
-                        if ($jenisAstapId) {
-                            $q->whereHas('astap', fn($sq) => $sq->where('jenis_astap_id', $jenisAstapId));
-                        }
-                    })
-                    ->max('no_register_int') ?? 0;
-
-                $runningRegNum = (int) $maxRegInt;
-
-                $specJson = [
-                    'jumlah_anggaran' => $data['jumlah_anggaran'] ?? null,
-                    'merk' => count($allMerk) > 0 ? implode(', ', array_unique($allMerk)) : ($firstItem['mesin_merk'] ?? null),
-                    'type' => count($allType) > 0 ? implode(', ', array_unique($allType)) : ($firstItem['mesin_type'] ?? null),
-                    'ukuran' => count($allUkuran) > 0 ? implode(', ', array_unique($allUkuran)) : ($firstItem['mesin_ukuran'] ?? null),
-                    'no_pabrik' => count($allPabrik) > 0 ? implode(', ', array_unique($allPabrik)) : ($firstItem['mesin_no_pabrik'] ?? null),
-                    'no_rangka' => $firstItem['mesin_no_rangka'] ?? null,
-                    'no_mesin' => $firstItem['mesin_no_mesin'] ?? null,
-                    'no_bpkb' => $firstItem['mesin_no_bpkb'] ?? null,
-                    'no_polisi' => $firstItem['mesin_no_polisi'] ?? null,
-                    'bahan' => count($allBahan) > 0 ? implode(', ', array_unique($allBahan)) : ($firstItem['mesin_bahan'] ?? null),
-                    'ruang_pemegang' => $firstItem['ruang_pemegang_mesin'] ?? null,
-                    'penyedia_telepon' => $data['penyedia_telepon'] ?? null,
-                    'mesin_items' => $data['mesin_items']
-                ];
-                $specJson = array_filter($specJson, fn($v) => !is_null($v) && $v !== '');
-
-                $astap = \Illuminate\Support\Facades\DB::transaction(function() use (
-                    $data, $jenisPengadaanId, $rekeningBelanjaId, $jenisAstapId, $namaBarang,
-                    $tahun, $totalVolume, $satuan, $hargaSatuanRata, $totalRealisasi, $totalBiayaAdm,
-                    $isExtracom, $specJson, $kode108Clean, &$runningRegNum
-                ) {
-                    $astapItem = \App\Models\Astap::create([
-                        'jenis_pengadaan_id' => $jenisPengadaanId,
-                        'rekening_belanja_id' => $rekeningBelanjaId,
-                        'jenis_astap_id' => $jenisAstapId,
-                        'nama_barang' => $namaBarang,
-                        'tahun_perolehan' => $tahun,
-                        'triwulan' => $data['triwulan'] ?? 'TW I',
-                        'jumlah_volume' => $totalVolume,
-                        'satuan' => $satuan,
-                        'harga_satuan' => $hargaSatuanRata,
-                        'jumlah_anggaran' => !empty($data['jumlah_anggaran']) ? (float) $data['jumlah_anggaran'] : $totalRealisasi,
-                        'total_realisasi' => $totalRealisasi,
-                        'biaya_administrasi_proyek' => $totalBiayaAdm,
-                        'is_extracomtable' => $isExtracom,
-                        'spk_nomor' => $data['spk_nomor'] ?? null,
-                        'spk_tanggal' => $data['spk_tanggal'] ?? null,
-                        'surat_pesanan_nomor' => $data['surat_pesanan_nomor'] ?? null,
-                        'surat_pesanan_tanggal' => $data['surat_pesanan_tanggal'] ?? null,
-                        'kwitansi_nomor' => $data['kwitansi_nomor'] ?? null,
-                        'kwitansi_tanggal' => $data['kwitansi_tanggal'] ?? null,
-                        'faktur_nomor' => $data['faktur_nomor'] ?? null,
-                        'faktur_tanggal' => $data['faktur_tanggal'] ?? null,
-                        'sp2d_nomor' => $data['sp2d_nomor'] ?? null,
-                        'sp2d_tanggal' => $data['sp2d_tanggal'] ?? null,
-                        'bast_dokumen_nomor' => $data['bast_dokumen_nomor'] ?? null,
-                        'bast_dokumen_tanggal' => $data['bast_dokumen_tanggal'] ?? null,
-                        'alamat_barang' => $data['alamat_barang'] ?? null,
-                        'penyedia_nama' => $data['penyedia_nama'] ?? null,
-                        'penyedia_pemilik' => $data['penyedia_pemilik'] ?? null,
-                        'penyedia_rekening_nama' => $data['penyedia_rekening_nama'] ?? null,
-                        'penyedia_rekening_nomor' => $data['penyedia_rekening_nomor'] ?? null,
-                        'penyedia_alamat' => $data['penyedia_alamat'] ?? null,
-                        'ppk_nama' => $data['ppk_nama'] ?? null,
-                        'ppk_nip' => $data['ppk_nip'] ?? null,
-                        'keterangan_tambahan' => $data['keterangan_tambahan'] ?? ($data['keterangan'] ?? null),
-                        'spesifikasi_json' => $specJson,
-                        'user_id' => auth()->id()
-                    ]);
-
-                    // Buat AstapRegister untuk setiap unit dalam mesin_items
-                    foreach ($data['mesin_items'] as $itemIdx => $mItem) {
-                        $itemQty = max(1, (int)($mItem['mesin_jumlah_barang'] ?? 1));
-                        $rawKondisi = strtoupper(trim((string)($mItem['mesin_kondisi'] ?? 'Baik')));
-                        $kondisiStr = ($rawKondisi === 'KB' || $rawKondisi === 'KURANG BAIK' || $rawKondisi === 'RR' || $rawKondisi === 'RUSAK RINGAN') ? 'Kurang Baik' : (($rawKondisi === 'RB' || $rawKondisi === 'RUSAK BERAT' || $rawKondisi === 'RUSAK') ? 'Rusak Berat' : 'Baik');
-                        $ruangPemegang = $mItem['ruang_pemegang_mesin'] ?? ($mItem['ruang_pemegang'] ?? null);
-
-                        for ($q = 0; $q < $itemQty; $q++) {
-                            $runningRegNum++;
-                            $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
-                            $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
-
-                            while (\App\Models\AstapRegister::where('nibar', $nibar)->exists()) {
-                                $runningRegNum++;
-                                $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
-                                $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
-                            }
-
-                            $qrPath = "/scan/{$nibar}";
-                            \App\Models\AstapRegister::create([
-                                'astap_id' => $astapItem->id,
-                                'tahun_perolehan' => $tahun,
-                                'no_register_int' => $runningRegNum,
-                                'no_register' => $nibar,
-                                'nibar' => $nibar,
-                                'qr_code_path' => $qrPath,
-                                'ruang_pemegang' => $ruangPemegang,
-                                'kondisi' => $kondisiStr,
-                                'status' => 'Tersedia'
-                            ]);
-                        }
-                    }
-
-                    return $astapItem;
-                });
-
-                // Kirim Notifikasi Sistem ke Admin & Super Admin
-                try {
-                    \App\Services\NotificationService::sendToAdminAndMaster(
-                        "Aset Peralatan & Mesin Baru ({$totalVolume} {$satuan}): {$namaBarang}",
-                        "{$totalVolume} {$satuan} • " . $tahun,
-                        'astap',
-                        route('astap.index')
-                    );
-                } catch (\Throwable $e) {
-                    \Log::warning("Gagal kirim notif astap store mesin: " . $e->getMessage());
-                }
-
-                session()->flash('success', 'Sebanyak ' . $totalVolume . ' ' . $satuan . ' Peralatan & Mesin "' . $namaBarang . '" berhasil disimpan ke database SIMAT-RK.');
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Sebanyak ' . $totalVolume . ' ' . $satuan . ' Peralatan & Mesin berhasil didaftarkan ke database SIMAT-RK!'
                 ]);
             } elseif ($isGedung && $hasGedungItems) {
                 $totalBangunan = 0;
@@ -2352,6 +2556,18 @@ class AstapController extends Controller
                 return response()->json(['success' => false, 'message' => 'Data ASTAP tidak ditemukan.'], 404);
             }
 
+            // Proteksi Integritas Tutup Buku (Periode Terkunci)
+            $twInt = \App\Models\PeriodeTutupBuku::parseTriwulan($astap->triwulan);
+            $tahunAset = (int) ($astap->tahun_perolehan ?: date('Y'));
+            if (\App\Models\PeriodeTutupBuku::isLocked($tahunAset, $twInt)) {
+                $lockInfo = \App\Models\PeriodeTutupBuku::getLockInfo($tahunAset, $twInt);
+                $barNo = $lockInfo?->nomor_bar_bpkad ?: '-';
+                return response()->json([
+                    'success' => false,
+                    'message' => "Data ASTAP \"{$astap->nama_barang}\" tidak dapat diubah karena periode T.A. {$tahunAset} Triwulan {$twInt} telah resmi DITUTUP BUKU (BAR BPKAD: {$barNo}). Buka kunci periode terlebih dahulu jika terdapat revisi darurat."
+                ], 422);
+            }
+
             // Proteksi Integritas Aset Mutasi Keluar OPD
             $activeRegsCount = $astap->registers ? $astap->registers->where('is_deleted', 0)->where('status', '!=', 'Mutasi Keluar OPD')->count() : 0;
             $mutatedRegsCount = $astap->registers ? $astap->registers->where('status', 'Mutasi Keluar OPD')->count() : 0;
@@ -2374,13 +2590,36 @@ class AstapController extends Controller
                 ], 422);
             }
 
-            $data = $request->all();
+            \Illuminate\Support\Facades\DB::beginTransaction();
+            try {
+                $data = $request->all();
             $isExtracom = !empty($data['is_extracomtable']);
+            $hasMesinItems = !empty($data['mesin_items']) && is_array($data['mesin_items']) && count($data['mesin_items']) > 0;
+            if ($isExtracom && !$hasMesinItems) {
+                $data['mesin_items'] = [
+                    [
+                        'mesin_nama_barang' => $data['mesin_nama_barang'] ?? ($astap->nama_barang ?? 'Barang Ekstrakomtabel'),
+                        'mesin_kode_barang' => $data['mesin_kode_barang'] ?? ($data['sub_rincian_kode'] ?? ($data['jenis_aset_kode'] ?? '')),
+                        'mesin_merk' => $data['mesin_merk'] ?? '',
+                        'mesin_type' => $data['mesin_type'] ?? '',
+                        'mesin_ukuran' => $data['mesin_ukuran'] ?? '',
+                        'mesin_bahan' => $data['mesin_bahan'] ?? '',
+                        'mesin_kondisi' => $data['mesin_kondisi'] ?? 'Baik',
+                        'mesin_jumlah_barang' => max(1, (int)($data['mesin_jumlah_barang'] ?? ($data['jumlah_volume'] ?? 1))),
+                        'mesin_satuan' => $data['mesin_satuan'] ?? ($data['satuan'] ?? 'Unit'),
+                        'mesin_nilai_satuan' => (float)($data['mesin_nilai_satuan'] ?? ($data['harga_satuan'] ?? 0)),
+                        'mesin_administrasi_proyek' => (float)($data['mesin_administrasi_proyek'] ?? ($data['biaya_administrasi_proyek'] ?? 0)),
+                        'ruang_pemegang' => $data['ruang_pemegang'] ?? ($data['ruang_pemegang_mesin'] ?? null)
+                    ]
+                ];
+                $hasMesinItems = true;
+            }
+            $firstMesinItem = (!empty($data['mesin_items']) && is_array($data['mesin_items'])) ? ($data['mesin_items'][0] ?? []) : [];
 
             // Dapatkan Kode 108 Sub-Sub Rincian berdasarkan jenis aset yang dipilih
             $jenisPrefix = substr($data['jenis_aset_kode'] ?? ($data['sub_rincian_kode'] ?? ''), 0, 5);
             $kode108Submitted = match(true) {
-                $isExtracom => $data['mesin_kode_barang'] ?? ($data['mesin_items'][0]['mesin_kode_barang'] ?? ($data['sub_rincian_kode'] ?? ($data['jenis_aset_kode'] ?? null))),
+                $isExtracom => $data['mesin_kode_barang'] ?? ($firstMesinItem['mesin_kode_barang'] ?? ($data['sub_rincian_kode'] ?? ($data['jenis_aset_kode'] ?? null))),
                 $jenisPrefix === '1.3.1' => $data['tanah_kode_barang'] ?? ($data['tanah_items'][0]['tanah_kode_barang'] ?? null),
                 $jenisPrefix === '1.3.2' => $data['mesin_kode_barang'] ?? ($data['mesin_items'][0]['mesin_kode_barang'] ?? null),
                 $jenisPrefix === '1.3.3' => $data['gedung_kode_barang'] ?? ($data['gedung_items'][0]['gedung_kode_barang'] ?? null),
@@ -2709,55 +2948,7 @@ class AstapController extends Controller
             $hasKdpItems = !empty($data['kdp_items']) && is_array($data['kdp_items']) && count($data['kdp_items']) > 0;
             $hasAtbItems = !empty($data['atb_items']) && is_array($data['atb_items']) && count($data['atb_items']) > 0;
 
-            if ($isTanah && $hasTanahItems) {
-                $totalBidang = 0;
-                $totalLuas = 0;
-                $totalPerencanaan = 0;
-                $totalFisik = 0;
-                $totalPengawasan = 0;
-                $allSertifikat = [];
-                $allAlamat = [];
-
-                foreach ($data['tanah_items'] as $tItem) {
-                    $bidangCount = max(1, (int)($tItem['tanah_jumlah_bidang'] ?? 1));
-                    $totalBidang += $bidangCount;
-                    $totalLuas += (float)($tItem['tanah_luas_m2'] ?? 0);
-                    $totalPerencanaan += (float)($tItem['tanah_nilai_perencanaan'] ?? 0);
-                    $totalFisik += (float)($tItem['tanah_nilai_fisik'] ?? 0);
-                    $totalPengawasan += (float)($tItem['tanah_nilai_pengawasan'] ?? 0);
-                    if (!empty($tItem['tanah_sertifikat_no'])) $allSertifikat[] = $tItem['tanah_sertifikat_no'];
-                    if (!empty($tItem['tanah_alamat'])) $allAlamat[] = $tItem['tanah_alamat'];
-                }
-
-                $totalRealisasi = $totalPerencanaan + $totalFisik + $totalPengawasan;
-                $hargaSatuan = $totalBidang > 0 ? ($totalRealisasi / $totalBidang) : $totalRealisasi;
-                $firstItem = $data['tanah_items'][0] ?? [];
-
-                $spec = [
-                    'jumlah_anggaran' => $data['jumlah_anggaran'] ?? null,
-                    'luas_m2' => $totalLuas,
-                    'hak_tanah' => $firstItem['tanah_hak'] ?? 'Hak Pakai',
-                    'sertifikat_no' => count($allSertifikat) > 0 ? implode(', ', $allSertifikat) : ($firstItem['tanah_sertifikat_no'] ?? null),
-                    'sertifikat_tgl' => $firstItem['tanah_sertifikat_tgl'] ?? null,
-                    'penggunaan' => $firstItem['tanah_penggunaan'] ?? 'Bangunan Rumah Sakit & Fasilitas',
-                    'tanah_jumlah_bidang' => $totalBidang,
-                    'nilai_perencanaan' => $totalPerencanaan,
-                    'nilai_fisik' => $totalFisik,
-                    'nilai_pengawasan' => $totalPengawasan,
-                    'tanah_items' => $data['tanah_items']
-                ];
-                $spec = array_filter($spec, fn($v) => !is_null($v) && $v !== '');
-
-                $ext = [
-                    'vol' => max(1, $totalBidang),
-                    'sat' => 'Bidang',
-                    'hrgSat' => $hargaSatuan,
-                    'totReal' => $totalRealisasi,
-                    'biaya' => 0,
-                    'extracom' => false,
-                    'spec' => $spec
-                ];
-            } elseif (($isMesin || $isExtracom) && $hasMesinItems) {
+            if (($isExtracom || $isMesin) && $hasMesinItems) {
                 $totalVolume = 0;
                 $totalRealisasi = 0;
                 $totalBiayaAdm = 0;
@@ -2815,6 +3006,54 @@ class AstapController extends Controller
                     'totReal' => $totalRealisasi,
                     'biaya' => $totalBiayaAdm,
                     'extracom' => $isExtracom,
+                    'spec' => $spec
+                ];
+            } elseif ($isTanah && $hasTanahItems) {
+                $totalBidang = 0;
+                $totalLuas = 0;
+                $totalPerencanaan = 0;
+                $totalFisik = 0;
+                $totalPengawasan = 0;
+                $allSertifikat = [];
+                $allAlamat = [];
+
+                foreach ($data['tanah_items'] as $tItem) {
+                    $bidangCount = max(1, (int)($tItem['tanah_jumlah_bidang'] ?? 1));
+                    $totalBidang += $bidangCount;
+                    $totalLuas += (float)($tItem['tanah_luas_m2'] ?? 0);
+                    $totalPerencanaan += (float)($tItem['tanah_nilai_perencanaan'] ?? 0);
+                    $totalFisik += (float)($tItem['tanah_nilai_fisik'] ?? 0);
+                    $totalPengawasan += (float)($tItem['tanah_nilai_pengawasan'] ?? 0);
+                    if (!empty($tItem['tanah_sertifikat_no'])) $allSertifikat[] = $tItem['tanah_sertifikat_no'];
+                    if (!empty($tItem['tanah_alamat'])) $allAlamat[] = $tItem['tanah_alamat'];
+                }
+
+                $totalRealisasi = $totalPerencanaan + $totalFisik + $totalPengawasan;
+                $hargaSatuan = $totalBidang > 0 ? ($totalRealisasi / $totalBidang) : $totalRealisasi;
+                $firstItem = $data['tanah_items'][0] ?? [];
+
+                $spec = [
+                    'jumlah_anggaran' => $data['jumlah_anggaran'] ?? null,
+                    'luas_m2' => $totalLuas,
+                    'hak_tanah' => $firstItem['tanah_hak'] ?? 'Hak Pakai',
+                    'sertifikat_no' => count($allSertifikat) > 0 ? implode(', ', $allSertifikat) : ($firstItem['tanah_sertifikat_no'] ?? null),
+                    'sertifikat_tgl' => $firstItem['tanah_sertifikat_tgl'] ?? null,
+                    'penggunaan' => $firstItem['tanah_penggunaan'] ?? 'Bangunan Rumah Sakit & Fasilitas',
+                    'tanah_jumlah_bidang' => $totalBidang,
+                    'nilai_perencanaan' => $totalPerencanaan,
+                    'nilai_fisik' => $totalFisik,
+                    'nilai_pengawasan' => $totalPengawasan,
+                    'tanah_items' => $data['tanah_items']
+                ];
+                $spec = array_filter($spec, fn($v) => !is_null($v) && $v !== '');
+
+                $ext = [
+                    'vol' => max(1, $totalBidang),
+                    'sat' => 'Bidang',
+                    'hrgSat' => $hargaSatuan,
+                    'totReal' => $totalRealisasi,
+                    'biaya' => 0,
+                    'extracom' => false,
                     'spec' => $spec
                 ];
             } elseif ($isGedung && $hasGedungItems) {
@@ -3097,83 +3336,8 @@ class AstapController extends Controller
             $astap->spesifikasi_json = $ext['spec'];
             $astap->save();
 
-            // Sync AstapRegisters jika tanah_items atau mesin_items
-            if ($isTanah && $hasTanahItems) {
-                $targetCount = count($data['tanah_items']);
-                $existingRegs = $astap->registers()->orderBy('id')->get();
-                $existingCount = $existingRegs->count();
-
-                $kode108Clean = '131000000000';
-                if ($jenisAstapRecord && !empty($jenisAstapRecord->sub_sub_rincian_objek)) {
-                    $kode108Clean = str_replace('.', '', $jenisAstapRecord->sub_sub_rincian_objek);
-                } elseif (!empty($data['tanah_kode_barang'])) {
-                    $kode108Clean = str_replace('.', '', $data['tanah_kode_barang']);
-                }
-
-                $tahun = $astap->tahun_perolehan;
-
-                $maxRegInt = \App\Models\AstapRegister::where('tahun_perolehan', $tahun)
-                    ->where('astap_id', '!=', $astap->id)
-                    ->where(function($q) use ($astap) {
-                        if ($astap->jenis_astap_id) {
-                            $q->whereHas('astap', fn($sq) => $sq->where('jenis_astap_id', $astap->jenis_astap_id));
-                        }
-                    })
-                    ->max('no_register_int') ?? 0;
-                $runningRegNum = (int) $maxRegInt;
-
-                // 1. Update existing registers with current tanah_items
-                foreach ($data['tanah_items'] as $itemIdx => $tItem) {
-                    $rawKondisi = strtoupper(trim((string)($tItem['tanah_kondisi'] ?? 'Baik')));
-                    $kondisiStr = ($rawKondisi === 'KB' || $rawKondisi === 'KURANG BAIK' || $rawKondisi === 'RR' || $rawKondisi === 'RUSAK RINGAN') ? 'Kurang Baik' : (($rawKondisi === 'RB' || $rawKondisi === 'RUSAK BERAT' || $rawKondisi === 'RUSAK') ? 'Rusak Berat' : 'Baik');
-
-                    $runningRegNum++;
-                    $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
-                    $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
-
-                    if ($itemIdx < $existingCount) {
-                        $reg = $existingRegs[$itemIdx];
-                        while (\App\Models\AstapRegister::where('nibar', $nibar)->where('id', '!=', $reg->id)->exists()) {
-                            $runningRegNum++;
-                            $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
-                            $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
-                        }
-                        $reg->tahun_perolehan = $tahun;
-                        $reg->no_register_int = $runningRegNum;
-                        $reg->no_register = $nibar;
-                        $reg->nibar = $nibar;
-                        $reg->qr_code_path = "/scan/{$nibar}";
-                        $reg->kondisi = $kondisiStr;
-                        $reg->save();
-                    } else {
-                        while (\App\Models\AstapRegister::where('nibar', $nibar)->exists()) {
-                            $runningRegNum++;
-                            $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
-                            $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
-                        }
-
-                        $qrPath = "/scan/{$nibar}";
-                        \App\Models\AstapRegister::create([
-                            'astap_id' => $astap->id,
-                            'tahun_perolehan' => $tahun,
-                            'no_register_int' => $runningRegNum,
-                            'no_register' => $nibar,
-                            'nibar' => $nibar,
-                            'qr_code_path' => $qrPath,
-                            'ruang_pemegang' => null,
-                            'kondisi' => $kondisiStr,
-                            'status' => 'Tersedia'
-                        ]);
-                    }
-                }
-
-                // Hapus register berlebih jika tanah_items dikurangi
-                if ($existingCount > $targetCount) {
-                    for ($k = $targetCount; $k < $existingCount; $k++) {
-                        $existingRegs[$k]->delete();
-                    }
-                }
-            } elseif ($hasMesinItems) {
+            // Sync AstapRegisters jika mesin_items/extracom atau tanah_items
+            if (($isExtracom || $isMesin) && $hasMesinItems) {
                 // Flatten target units from mesin_items
                 $targetUnits = [];
                 foreach ($data['mesin_items'] as $mItem) {
@@ -3255,12 +3419,88 @@ class AstapController extends Controller
                     }
                 }
 
-                // Hapus register berlebih jika targetCount < existingCount
+                // Hapus register berlebih jika unit berkurang
                 if ($existingCount > $targetCount) {
                     for ($k = $targetCount; $k < $existingCount; $k++) {
                         $existingRegs[$k]->delete();
                     }
                 }
+            } elseif ($isTanah && $hasTanahItems) {
+                $targetCount = count($data['tanah_items']);
+                $existingRegs = $astap->registers()->orderBy('id')->get();
+                $existingCount = $existingRegs->count();
+
+                $kode108Clean = '131000000000';
+                if ($jenisAstapRecord && !empty($jenisAstapRecord->sub_sub_rincian_objek)) {
+                    $kode108Clean = str_replace('.', '', $jenisAstapRecord->sub_sub_rincian_objek);
+                } elseif (!empty($data['tanah_kode_barang'])) {
+                    $kode108Clean = str_replace('.', '', $data['tanah_kode_barang']);
+                }
+
+                $tahun = $astap->tahun_perolehan;
+
+                $maxRegInt = \App\Models\AstapRegister::where('tahun_perolehan', $tahun)
+                    ->where('astap_id', '!=', $astap->id)
+                    ->where(function($q) use ($astap) {
+                        if ($astap->jenis_astap_id) {
+                            $q->whereHas('astap', fn($sq) => $sq->where('jenis_astap_id', $astap->jenis_astap_id));
+                        }
+                    })
+                    ->max('no_register_int') ?? 0;
+                $runningRegNum = (int) $maxRegInt;
+
+                // 1. Update existing registers with current tanah_items
+                foreach ($data['tanah_items'] as $itemIdx => $tItem) {
+                    $rawKondisi = strtoupper(trim((string)($tItem['tanah_kondisi'] ?? 'Baik')));
+                    $kondisiStr = ($rawKondisi === 'KB' || $rawKondisi === 'KURANG BAIK' || $rawKondisi === 'RR' || $rawKondisi === 'RUSAK RINGAN') ? 'Kurang Baik' : (($rawKondisi === 'RB' || $rawKondisi === 'RUSAK BERAT' || $rawKondisi === 'RUSAK') ? 'Rusak Berat' : 'Baik');
+
+                    $runningRegNum++;
+                    $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                    $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+
+                    if ($itemIdx < $existingCount) {
+                        $reg = $existingRegs[$itemIdx];
+                        while (\App\Models\AstapRegister::where('nibar', $nibar)->where('id', '!=', $reg->id)->exists()) {
+                            $runningRegNum++;
+                            $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                            $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+                        }
+                        $reg->tahun_perolehan = $tahun;
+                        $reg->no_register_int = $runningRegNum;
+                        $reg->no_register = $nibar;
+                        $reg->nibar = $nibar;
+                        $reg->qr_code_path = "/scan/{$nibar}";
+                        $reg->kondisi = $kondisiStr;
+                        $reg->save();
+                    } else {
+                        while (\App\Models\AstapRegister::where('nibar', $nibar)->exists()) {
+                            $runningRegNum++;
+                            $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                            $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+                        }
+
+                        $qrPath = "/scan/{$nibar}";
+                        \App\Models\AstapRegister::create([
+                            'astap_id' => $astap->id,
+                            'tahun_perolehan' => $tahun,
+                            'no_register_int' => $runningRegNum,
+                            'no_register' => $nibar,
+                            'nibar' => $nibar,
+                            'qr_code_path' => $qrPath,
+                            'ruang_pemegang' => null,
+                            'kondisi' => $kondisiStr,
+                            'status' => 'Tersedia'
+                        ]);
+                    }
+                }
+
+                // Hapus register berlebih jika tanah_items dikurangi
+                if ($existingCount > $targetCount) {
+                    for ($k = $targetCount; $k < $existingCount; $k++) {
+                        $existingRegs[$k]->delete();
+                    }
+                }
+
             } elseif ($hasGedungItems) {
                 $targetUnits = [];
                 foreach ($data['gedung_items'] as $gItem) {
@@ -3678,30 +3918,95 @@ class AstapController extends Controller
                 }
             }
 
-            // Kirim Notifikasi Sistem ke Admin & Super Admin saat Terjadi Perubahan ASTAP
-            try {
-                \App\Services\NotificationService::sendToAdminAndMaster(
-                    "Aset Diperbarui: {$astap->nama_barang}",
-                    "{$astap->jumlah_volume} {$astap->satuan} • " . ($astap->tahun_perolehan ?: date('Y')),
-                    'astap',
-                    route('astap.index')
-                );
-            } catch (\Throwable $e) {
-                \Log::warning("Gagal kirim notif astap update: " . $e->getMessage());
-            }
+            \Illuminate\Support\Facades\DB::commit();
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            \Illuminate\Support\Facades\Log::error("Gagal update data ASTAP ID {$id}: " . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan sistem saat memperbarui data ASTAP: ' . $e->getMessage()
+            ], 500);
+        }
 
-            session()->flash('success', 'Data ASTAP "' . ($astap->nama_barang ?? 'Aset Tetap') . '" berhasil diperbarui.');
-            return response()->json(['success' => true, 'message' => 'Data ASTAP berhasil diperbarui!']);
+        // Kirim Notifikasi Sistem ke Admin & Super Admin saat Terjadi Perubahan ASTAP
+        try {
+            \App\Services\NotificationService::sendToAdminAndMaster(
+                "Aset Diperbarui: {$astap->nama_barang}",
+                "{$astap->jumlah_volume} {$astap->satuan} • " . ($astap->tahun_perolehan ?: date('Y')),
+                'astap',
+                route('astap.index')
+            );
+        } catch (\Throwable $e) {
+            \Log::warning("Gagal kirim notif astap update: " . $e->getMessage());
+        }
+
+        session()->flash('success', 'Data ASTAP "' . ($astap->nama_barang ?? 'Aset Tetap') . '" berhasil diperbarui.');
+        return response()->json(['success' => true, 'message' => 'Data ASTAP berhasil diperbarui!']);
     }
 
     /**
-     * Hapus Data ASTAP beserta registers miliknya
+     * Hapus Data ASTAP (Soft Delete)
      */
     public function destroy($id)
     {
-        $astap = \App\Models\Astap::with(['registers', 'mutasiEksternals', 'kemitraan'])->find($id);
-        if ($astap) {
-            // Proteksi Kemitraan: Cegah penghapusan aset yang sedang aktif dalam perjanjian kemitraan / objek pemanfaatan
+            if (!auth()->user()->canDo('astap', 'delete')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Akses Ditolak: Akun Anda tidak memiliki wewenang untuk menghapus Data ASTAP.'
+                ], 403);
+            }
+
+            $astap = \App\Models\Astap::with('registers.unit')->find($id);
+            if (!$astap) {
+                return response()->json(['success' => false, 'message' => 'Data ASTAP tidak ditemukan.'], 404);
+            }
+
+            // Validasi Proteksi Tutup Buku (Periode Terkunci)
+            $twInt = \App\Models\PeriodeTutupBuku::parseTriwulan($astap->triwulan);
+            $tahunAset = (int) ($astap->tahun_perolehan ?: date('Y'));
+            if (\App\Models\PeriodeTutupBuku::isLocked($tahunAset, $twInt)) {
+                $lockInfo = \App\Models\PeriodeTutupBuku::getLockInfo($tahunAset, $twInt);
+                $barNo = $lockInfo?->nomor_bar_bpkad ?: '-';
+                return response()->json([
+                    'success' => false,
+                    'is_blocked' => true,
+                    'message' => "Aset \"{$astap->nama_barang}\" tidak dapat dihapus karena berada pada periode yang telah resmi DITUTUP BUKU (T.A. {$tahunAset} Triwulan {$twInt}) berdasarkan BAR BPKAD: {$barNo}. Buka kunci periode terlebih dahulu jika terdapat koreksi darurat."
+                ], 422);
+            }
+
+            // Validasi Proteksi Penempatan Ruangan (Unit / Paviliun):
+            // Aset yang masih ditempatkan di ruangan unit/paviliun tidak boleh dihapus langsung. Harus dimutasi terlebih dahulu.
+            $unplacedNames = ['', '-', 'Belum Ditempatkan', 'Belum Ditempatkan / Di Gudang', 'Belum Ditempatkan / Di Gudang Aset', 'Gudang Aset', 'Gudang Perbekalan', 'Gudang Aset Utama / Belum Ditempatkan'];
+            $placedRegisters = $astap->registers->filter(function ($reg) use ($unplacedNames, $astap) {
+                if ($reg->is_deleted == 1) return false;
+                if ($astap->isKemitraan() || in_array($reg->status, ['Kemitraan', 'Dikembalikan ke Rekanan', 'Mutasi Keluar OPD'], true)) return false;
+                if (!empty($reg->unit_id)) return true;
+                $ruang = trim((string)($reg->ruang_pemegang ?: ($reg->unit?->nama ?? '')));
+                if (stripos($ruang, 'Dikembalikan ke Rekanan') !== false || stripos($ruang, 'Kemitraan') !== false) return false;
+                if ($ruang !== '' && !in_array($ruang, $unplacedNames, true)) {
+                    return true;
+                }
+                return false;
+            });
+
+            if ($placedRegisters->count() > 0) {
+                $uniqueRooms = $placedRegisters->map(function($r) {
+                    return trim((string)($r->ruang_pemegang ?: ($r->unit?->nama ?? '')));
+                })->filter()->unique()->values()->take(3)->implode(', ');
+                $count = $placedRegisters->count();
+                $nilaiFmt = 'Rp ' . number_format($astap->total_realisasi, 0, ',', '.');
+                return response()->json([
+                    'success' => false,
+                    'is_blocked' => true,
+                    'action_url' => '/mutasi-aset',
+                    'action_text' => 'Ajukan Mutasi Aset',
+                    'message' => "Aset \"{$astap->nama_barang}\" saat ini belum dapat dihapus karena masih menampung {$count} barang inventaris/aset ({$nilaiFmt}) di database RSUD. Seluruh aset harus dipindahkan (mutasi) ke ruangan lain terlebih dahulu sampai ruangan ini kosong."
+                ], 422);
+            }
+
+            // Validasi Proteksi Kemitraan: Cegah penghapusan aset yang sedang aktif dalam perjanjian kemitraan / objek pemanfaatan
             $activeKemitraan = \App\Models\AstapKemitraan::where('is_deleted', 0)
                 ->where(function ($q) use ($astap) {
                     $q->where('astap_id', $astap->id)
@@ -3713,70 +4018,74 @@ class AstapController extends Controller
             if ($activeKemitraan) {
                 $isObjek = ($activeKemitraan->objek_astap_id == $astap->id && $activeKemitraan->astap_id != $astap->id);
                 $peran = $isObjek ? 'objek pemanfaatan aset mitra' : 'perjanjian kerja sama kemitraan aktif';
-                $pesan = "Aset '{$astap->nama_barang}' tidak dapat dihapus karena masih terikat sebagai {$peran} (Nomor PKS: {$activeKemitraan->nomor_pks}). Silakan selesaikan atau batalkan status kemitraannya terlebih dahulu di menu Kemitraan.";
-
-                if (request()->ajax() || request()->wantsJson()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => $pesan,
-                    ], 422);
-                }
-                return redirect()->back()->with('error', $pesan);
+                return response()->json([
+                    'success' => false,
+                    'is_blocked' => true,
+                    'action_url' => '/master/kemitraan',
+                    'action_text' => 'Buka Menu Kemitraan',
+                    'message' => "Aset \"{$astap->nama_barang}\" tidak dapat dihapus karena masih terikat sebagai {$peran} (Nomor PKS: {$activeKemitraan->nomor_pks}). Silakan selesaikan atau batalkan status kemitraannya terlebih dahulu di menu Kemitraan."
+                ], 422);
             }
 
-            $user = Auth::user();
-            $deleterName = $user ? ($user->name . ' (' . ucfirst($user->role ?? 'user') . ')') : 'Administrator';
+            // Validasi Proteksi Mutasi Keluar OPD: Cegah penghapusan aset yang memiliki riwayat serah terima keluar ke OPD lain
+            $hasMutasiKeluar = $astap->mutasiEksternals()->where('tipe', 'keluar')->where('status', '!=', 'Dibatalkan')->exists()
+                || $astap->registers()->where('status', 'Mutasi Keluar OPD')->exists()
+                || $astap->jenis_reklas === 'MUTASI_EKSTERNAL';
+
+            if ($hasMutasiKeluar) {
+                $mutasiKeluar = $astap->mutasiEksternals()->where('tipe', 'keluar')->where('status', '!=', 'Dibatalkan')->first();
+                $opdTujuan = $mutasiKeluar?->opd_tujuan ?: 'SKPD / OPD Luar';
+                $noBast = $mutasiKeluar?->nomor_bamb ?: '-';
+                return response()->json([
+                    'success' => false,
+                    'is_blocked' => true,
+                    'action_url' => '/mutasi-aset/eksternal',
+                    'action_text' => 'Buka Menu Mutasi Eksternal',
+                    'message' => "Aset \"{$astap->nama_barang}\" tidak dapat dihapus karena memiliki rekam jejak resmi Berita Acara Mutasi Keluar ke {$opdTujuan} (BAST No: {$noBast}). Jika penyerahan ini keliru atau dibatalkan, silakan lakukan pembatalan mutasi terlebih dahulu di menu Mutasi Eksternal."
+                ], 422);
+            }
+
             $namaBarang = $astap->nama_barang ?? 'Aset Tetap';
             $tahun = $astap->tahun_perolehan ?: date('Y');
             $vol = $astap->jumlah_volume . ' ' . ($astap->satuan ?: 'Unit');
+            $user = auth()->user();
+            $deleterName = $user ? ($user->name . ' (' . ucfirst($user->role ?? 'user') . ')') : 'Administrator';
 
-            \Illuminate\Support\Facades\DB::transaction(function () use ($astap, $user, $deleterName) {
-                // 1. Soft delete seluruh register miliknya
+            \Illuminate\Support\Facades\DB::transaction(function () use ($astap, $deleterName, $user) {
+                $astap->softDelete();
                 $astap->registers()->update([
                     'is_deleted'    => 1,
                     'deleted_by'    => $deleterName,
                     'deleted_by_id' => $user?->id,
                     'deleted_at'    => now(),
                 ]);
-
-                // 2. Jika merupakan aset terkait mutasi eksternal (masuk/keluar), soft delete transaksinya
-                if ($astap->mutasiEksternals()->exists()) {
-                    $astap->mutasiEksternals()->update([
-                        'is_deleted'    => 1,
-                        'deleted_by'    => $deleterName,
-                        'deleted_by_id' => $user?->id,
-                        'deleted_at'    => now(),
-                    ]);
+                if ($astap->mutasiEksternal) {
+                    $astap->mutasiEksternal->softDelete();
                 }
-
-                // 2B. Jika ada data riwayat reklasifikasi terkait, soft delete transaksinya
-                \App\Models\AstapReklas::where('astap_id', $astap->id)
-                    ->where('is_deleted', 0)
-                    ->update([
-                        'is_deleted'    => 1,
-                        'deleted_by'    => $deleterName,
-                        'deleted_by_id' => $user?->id,
-                        'deleted_at'    => now(),
-                    ]);
-
-                // 3. Jika ada data kemitraan non-aktif terkait, soft delete agar tidak jadi zombie record
-                \App\Models\AstapKemitraan::where('astap_id', $astap->id)
-                    ->where('is_deleted', 0)
-                    ->update([
-                        'is_deleted'    => 1,
-                        'deleted_by'    => $deleterName,
-                        'deleted_by_id' => $user?->id,
-                        'deleted_at'    => now(),
-                    ]);
-
-                // 4. Soft delete paket induk ASTAP
-                $astap->softDelete('Dihapus dari modul Master ASTAP');
+                if ($astap->kemitraan) {
+                    $astap->kemitraan->softDelete();
+                }
+                // Soft delete Hibah jika ada
+                if ($astap->hibahs) {
+                    foreach ($astap->hibahs as $h) {
+                        $h->softDelete();
+                    }
+                }
+                if ($astap->hibah) {
+                    $astap->hibah->softDelete();
+                }
+                \App\Models\AstapReklas::where('astap_id', $astap->id)->update([
+                    'is_deleted'    => 1,
+                    'deleted_by'    => $deleterName,
+                    'deleted_by_id' => $user?->id,
+                    'deleted_at'    => now(),
+                ]);
             });
 
             // Kirim Notifikasi Sistem saat Terjadi Penghapusan ASTAP
             try {
                 \App\Services\NotificationService::sendToAdminAndMaster(
-                    "Aset Dipindahkan ke Tong Sampah: {$namaBarang}",
+                    "Aset Dihapus (Soft Delete): {$namaBarang}",
                     "{$vol} • {$tahun}",
                     'astap',
                     route('astap.index')
@@ -3784,63 +4093,314 @@ class AstapController extends Controller
             } catch (\Throwable $e) {
                 \Log::warning("Gagal kirim notif astap delete: " . $e->getMessage());
             }
-        }
-        session()->flash('success', 'Data ASTAP berhasil dipindahkan ke Recycle Bin.');
-        return response()->json(['success' => true, 'message' => 'Data ASTAP berhasil dipindahkan ke Recycle Bin.']);
+
+            session()->flash('success', 'Data ASTAP berhasil dipindahkan ke tong sampah.');
+            return response()->json(['success' => true, 'message' => 'Data ASTAP berhasil dipindahkan ke tong sampah.']);
     }
 
     /**
-     * Update data register NIBAR per-unit
+     * Pulihkan Data ASTAP dari Recycle Bin
+     */
+    public function restore($id)
+    {
+            $astap = \App\Models\Astap::findOrFail($id);
+            $namaBarang = $astap->nama_barang ?? 'Aset Tetap';
+            \Illuminate\Support\Facades\DB::transaction(function () use ($astap) {
+                $astap->restoreData();
+                $astap->registers()->update([
+                    'is_deleted'    => 0,
+                    'deleted_by'    => null,
+                    'deleted_by_id' => null,
+                    'deleted_at'    => null,
+                ]);
+                if ($astap->mutasiEksternal) {
+                    $astap->mutasiEksternal->restoreData();
+                }
+                // Pulihkan data kemitraan terkait jika ada
+                \App\Models\AstapKemitraan::where('astap_id', $astap->id)
+                    ->where('is_deleted', 1)
+                    ->update([
+                        'is_deleted'    => 0,
+                        'deleted_by'    => null,
+                        'deleted_by_id' => null,
+                        'deleted_at'    => null,
+                        'alasan_hapus'  => null,
+                    ]);
+                $astap->jumlah_volume = max(1, $astap->registers()->where('is_deleted', 0)->count());
+                $astap->save();
+            });
+            $msg = "Data ASTAP \"{$namaBarang}\" berhasil dipulihkan ke katalog aktif.";
+            session()->flash('success', $msg);
+            return response()->json(['success' => true, 'message' => $msg]);
+    }
+
+    /**
+     * Update Data Register NIBAR
      */
     public function updateRegister(Request $request, $id)
     {
-            $reg = \App\Models\AstapRegister::with('astap')->find($id);
+            if (!in_array(auth()->user()->role ?? '', ['master_admin', 'admin'])) {
+                return response()->json(['success' => false, 'message' => 'Anda tidak memiliki hak akses untuk mengubah register ASTAP.'], 403);
+            }
+            $reg = \App\Models\AstapRegister::with('astap.registers')->find($id);
             if (!$reg) {
                 return response()->json(['success' => false, 'message' => 'Register tidak ditemukan.'], 404);
             }
-            $data = $request->all();
-            if (isset($data['ruang_pemegang'])) $reg->ruang_pemegang = $data['ruang_pemegang'];
-            if (isset($data['kondisi']) && in_array($data['kondisi'], ['Baik', 'Kurang Baik', 'Rusak Berat'])) {
-                $reg->kondisi = $data['kondisi'];
-            }
-            if (isset($data['unit_id'])) $reg->unit_id = $data['unit_id'];
-            $reg->save();
+            $stats = [];
+            \Illuminate\Support\Facades\DB::transaction(function() use ($reg, $request, &$stats) {
+                $data = $request->all();
+                if (isset($data['ruang_pemegang'])) $reg->ruang_pemegang = $data['ruang_pemegang'];
+                if (isset($data['kondisi'])) {
+                    $rawK = trim((string)$data['kondisi']);
+                    $normalizedK = ($rawK === 'KB' || $rawK === 'Kurang Baik' || $rawK === 'RR' || $rawK === 'Rusak Ringan') ? 'Kurang Baik' : (($rawK === 'RB' || $rawK === 'Rusak Berat' || $rawK === 'Rusak') ? 'Rusak Berat' : 'Baik');
+                    $reg->kondisi = $normalizedK;
+                }
+                if (isset($data['unit_id'])) $reg->unit_id = $data['unit_id'];
+                $reg->save();
 
-            return response()->json(['success' => true, 'message' => 'Data register NIBAR berhasil diperbarui!']);
+                // Sinkronisasi kondisi ke parent ASTAP dan spesifikasi_json
+                $astap = $reg->astap;
+                if ($astap) {
+                    $allRegs = $astap->registers()->get();
+                    $totalRegs = $allRegs->count();
+                    $baikCount = $allRegs->where('kondisi', 'Baik')->count();
+                    $kbCount = $allRegs->whereIn('kondisi', ['Kurang Baik', 'KB', 'Rusak Ringan', 'RR'])->count();
+                    $rbCount = $allRegs->whereIn('kondisi', ['Rusak Berat', 'Rusak', 'RB'])->count();
+
+                    $dominan = ($baikCount >= $kbCount && $baikCount >= $rbCount) ? 'Baik'
+                        : (($kbCount >= $rbCount) ? 'Kurang Baik' : 'Rusak Berat');
+
+                    $stats = [
+                        'total' => $totalRegs,
+                        'baik' => $baikCount,
+                        'kurang_baik' => $kbCount,
+                        'rusak_berat' => $rbCount,
+                        'pct_baik' => $totalRegs > 0 ? round($baikCount / $totalRegs * 100) : 0,
+                        'pct_kb' => $totalRegs > 0 ? round($kbCount / $totalRegs * 100) : 0,
+                        'pct_rb' => $totalRegs > 0 ? round($rbCount / $totalRegs * 100) : 0,
+                        'kondisi_dominan' => $dominan,
+                    ];
+
+                    $spec = $astap->spesifikasi_json ?? [];
+                    if (is_array($spec)) {
+                        $spec['kondisi'] = $dominan;
+                        $spec['kondisi_stats'] = $stats;
+                        $astap->spesifikasi_json = $spec;
+                    }
+                    $astap->save();
+                }
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data register NIBAR berhasil diperbarui!',
+                'kondisi' => $reg->kondisi,
+                'stats' => $stats
+            ]);
     }
 
     /**
-     * Hapus satu unit register NIBAR
+     * Hapus Data Register NIBAR (Soft Delete)
      */
     public function destroyRegister($id)
     {
-            $reg = \App\Models\AstapRegister::with('astap')->find($id);
+            if (!in_array(auth()->user()->role ?? '', ['master_admin', 'admin'])) {
+                return response()->json(['success' => false, 'message' => 'Anda tidak memiliki hak akses untuk menghapus register ASTAP.'], 403);
+            }
+            $reg = \App\Models\AstapRegister::with(['astap.registers', 'unit'])->find($id);
             if ($reg) {
+                // 1. Validasi Proteksi Penempatan: Cek apakah masih aktif ditempatkan di Unit / Paviliun
+                $unplacedNames = ['', '-', 'Belum Ditempatkan', 'Belum Ditempatkan / Di Gudang', 'Belum Ditempatkan / Di Gudang Aset', 'Gudang Aset', 'Gudang Perbekalan', 'Gudang Aset Utama / Belum Ditempatkan'];
+                $ruang = trim((string)($reg->ruang_pemegang ?: ($reg->unit?->nama ?? '')));
+                $isPlaced = !empty($reg->unit_id) || ($ruang !== '' && !in_array($ruang, $unplacedNames, true));
+
+                if ($isPlaced) {
+                    $room = $ruang ?: 'Unit / Paviliun RSUD';
+                    $nibarStr = $reg->nibar ?: $reg->no_register;
+                    return response()->json([
+                        'success' => false,
+                        'is_blocked' => true,
+                        'action_url' => '/mutasi-aset',
+                        'action_text' => 'Ajukan Mutasi Aset',
+                        'message' => "Unit register NIBAR \"{$nibarStr}\" saat ini belum dapat dihapus karena masih aktif ditempatkan di ruangan \"{$room}\" di database RSUD. Demi akuntabilitas aset RSUD Koesnadi, seluruh aset harus dipindahkan (mutasi) ke ruangan lain terlebih dahulu sampai ruangan ini kosong.",
+                    ], 422);
+                }
+
+                // 2. Validasi Proteksi Riwayat Transaksi: Cek apakah NIBAR pernah didistribusikan atau dimutasi
                 $hasDistribusi = \App\Models\DistribusiItemRegister::where('astap_register_id', $reg->id)->exists();
                 $hasMutasi = \App\Models\AstapMutasiRegister::where('astap_register_id', $reg->id)->exists();
+
                 if ($hasDistribusi || $hasMutasi) {
                     $reason = $hasDistribusi ? 'telah resmi diserahterimakan via BAST Distribusi' : 'memiliki riwayat mutasi aset';
                     return response()->json([
                         'success' => false,
-                        'message' => "Penghapusan ditolak: Unit NIBAR \"{$reg->nibar}\" {$reason}. Demi integritas dokumen aset, NIBAR yang memiliki riwayat transaksi tidak boleh dihapus. Silakan ubah kondisinya menjadi 'Rusak Berat / Afkir'.",
+                        'is_blocked' => true,
+                        'action_url' => '/mutasi-aset',
+                        'action_text' => 'Ajukan Mutasi Aset',
+                        'message' => "Penghapusan ditolak: Unit NIBAR \"{$reg->nibar}\" {$reason}. Demi integritas dokumen pertanggungjawaban aset daerah, NIBAR yang memiliki riwayat transaksi tidak boleh dihapus. Silakan lakukan mutasi aset atau ubah kondisinya.",
                     ], 422);
                 }
 
+                $astap = $reg->astap;
                 $nibar = $reg->nibar ?: $reg->no_register;
-                $nama = $reg->astap?->nama_barang ?? 'Aset ASTAP';
-                $reg->softDelete();
+                $nama = $astap?->nama_barang ?? 'Aset ASTAP';
+                $astapAutoDeleted = false;
+                $spec = null;
 
-                // Sinkronkan jumlah_volume barang induk di database
-                if ($reg->astap) {
-                    $reg->astap->jumlah_volume = max(1, $reg->astap->registers()->where('is_deleted', 0)->count());
-                    $reg->astap->save();
-                }
+                // 2. Lakukan Soft Delete & Sinkronisasi di dalam DB Transaction
+                \Illuminate\Support\Facades\DB::transaction(function() use ($reg, $astap, &$astapAutoDeleted, &$spec) {
+                    $reg->softDelete();
 
-                // Kirim Notifikasi Sistem saat Unit NIBAR Dihapus
+                    if ($astap) {
+                        $newCount = $astap->registers()->where('is_deleted', 0)->count();
+
+                        // Jika register terakhir habis → soft delete master ASTAP sekalian beserta dokumen PKS / transaksi terkait
+                        if ($newCount === 0) {
+                            $user = auth()->user();
+                            $deleterName = $user ? ($user->name . ' (' . ucfirst($user->role ?? 'user') . ')') : 'Administrator';
+                            $deleterId = $user?->id;
+                            $now = now();
+
+                            $astap->softDelete('Semua unit register NIBAR telah dihapus — master ASTAP otomatis dipindahkan ke Recycle Bin.');
+                            if ($astap->mutasiEksternal) {
+                                $astap->mutasiEksternal->softDelete();
+                            }
+
+                            // 1. Soft delete Kemitraan PKS terkait jika ada
+                            $kemitraans = \App\Models\AstapKemitraan::where('astap_id', $astap->id)
+                                ->orWhere('objek_astap_id', $astap->id)
+                                ->get();
+                            foreach ($kemitraans as $km) {
+                                $km->softDelete();
+                            }
+
+                            // 2. Soft delete Belanja Modal jika ada
+                            if ($astap->belanjaModal) {
+                                $astap->belanjaModal->softDelete();
+                            }
+
+                            // 3. Soft delete Belanja Barang jika ada
+                            if ($astap->belanjaBarang) {
+                                $astap->belanjaBarang->softDelete();
+                            }
+
+                            // 4. Soft delete Hibah jika ada
+                            if ($astap->hibahs) {
+                                foreach ($astap->hibahs as $h) {
+                                    $h->softDelete();
+                                }
+                            }
+                            if ($astap->hibah) {
+                                $astap->hibah->softDelete();
+                            }
+
+                            // 5. Soft delete Riwayat Reklasifikasi terkait jika ada
+                            \App\Models\AstapReklas::where('astap_id', $astap->id)->update([
+                                'is_deleted'    => 1,
+                                'deleted_by'    => $deleterName,
+                                'deleted_by_id' => $deleterId,
+                                'deleted_at'    => $now,
+                            ]);
+
+                            $astapAutoDeleted = true;
+                            $spec = $astap->spesifikasi_json ?? [];
+                        } else {
+                            $astap->jumlah_volume = $newCount;
+
+                            // Sinkronkan juga volume PKS Kemitraan jika aset ini terikat kontrak
+                            \App\Models\AstapKemitraan::where('astap_id', $astap->id)
+                                ->update(['jumlah_volume' => $newCount]);
+
+                            $allRegs = $astap->registers()->where('is_deleted', 0)->get();
+                            $totalRegs = $allRegs->count();
+                            $baikCount = $allRegs->where('kondisi', 'Baik')->count();
+                            $kbCount = $allRegs->whereIn('kondisi', ['Kurang Baik', 'KB', 'Rusak Ringan', 'RR'])->count();
+                            $rbCount = $allRegs->whereIn('kondisi', ['Rusak Berat', 'Rusak', 'RB'])->count();
+                            $dominan = ($baikCount >= $kbCount && $baikCount >= $rbCount) ? 'Baik'
+                                : (($kbCount >= $rbCount) ? 'Kurang Baik' : 'Rusak Berat');
+
+                            $spec = $astap->spesifikasi_json ?? [];
+                            if (is_array($spec)) {
+                                $spec['kondisi'] = $dominan;
+                                $spec['kondisi_stats'] = [
+                                    'total' => $totalRegs,
+                                    'baik' => $baikCount,
+                                    'kurang_baik' => $kbCount,
+                                    'rusak_berat' => $rbCount,
+                                    'pct_baik' => $totalRegs > 0 ? round($baikCount / $totalRegs * 100) : 0,
+                                    'pct_kb' => $totalRegs > 0 ? round($kbCount / $totalRegs * 100) : 0,
+                                    'pct_rb' => $totalRegs > 0 ? round($rbCount / $totalRegs * 100) : 0,
+                                    'kondisi_dominan' => $dominan,
+                                ];
+
+                                // Sinkronisasi volume pada repeater items agar selalu seimbang dan akurat dengan register aktif
+                                $repeatersConfig = [
+                                    'tanah_items'    => ['name' => 'tanah_nama_barang', 'qty' => ['tanah_jumlah_barang', 'tanah_jumlah_bidang']],
+                                    'mesin_items'    => ['name' => 'mesin_nama_barang', 'qty' => ['mesin_jumlah_barang']],
+                                    'gedung_items'   => ['name' => 'gedung_nama_barang', 'qty' => ['gedung_jumlah_bangunan']],
+                                    'jaringan_items' => ['name' => 'jaringan_nama_barang', 'qty' => ['jaringan_jumlah', 'jaringan_jumlah_barang']],
+                                    'lainnya_items'  => ['name' => 'lainnya_nama_barang', 'qty' => ['lainnya_jumlah_barang']],
+                                    'atb_items'      => ['name' => 'atb_nama_barang', 'qty' => ['atb_jumlah']],
+                                    'kdp_items'      => ['name' => 'kdp_nama_barang', 'qty' => ['kdp_jumlah_bangunan']],
+                                ];
+
+                                $activeRegs = $astap->registers()->where('is_deleted', 0)->get();
+                                $activeCounts = $activeRegs->groupBy(fn($r) => trim((string)$r->nama_barang))->map->count();
+
+                                foreach ($repeatersConfig as $itemsKey => $cfg) {
+                                    if (!empty($spec[$itemsKey]) && is_array($spec[$itemsKey])) {
+                                        $nameKey = $cfg['name'];
+                                        $qtyKeys = $cfg['qty'];
+                                        $syncedItems = [];
+
+                                        foreach ($spec[$itemsKey] as $it) {
+                                            $itemName = trim((string)($it[$nameKey] ?? ''));
+                                            $activeQtyKey = $qtyKeys[0];
+                                            foreach ($qtyKeys as $qk) {
+                                                if (isset($it[$qk])) {
+                                                    $activeQtyKey = $qk;
+                                                    break;
+                                                }
+                                            }
+
+                                            if ($activeCounts->has($itemName)) {
+                                                $matchedCount = $activeCounts->get($itemName);
+                                                if ($matchedCount > 0) {
+                                                    $it[$activeQtyKey] = $matchedCount;
+                                                    $syncedItems[] = $it;
+                                                }
+                                            } else {
+                                                $syncedItems[] = $it;
+                                            }
+                                        }
+
+                                        if (!empty($syncedItems)) {
+                                            $spec[$itemsKey] = $syncedItems;
+                                        }
+                                    }
+                                }
+
+                                $astap->spesifikasi_json = $spec;
+                            }
+                            $astap->save();
+                        }
+                    }
+                });
+
+                // Kirim Notifikasi Sistem
                 try {
+                    $isKemitraan = ($astap?->sumber_dana === 'kemitraan') || !empty($astap?->kemitraan) || str_starts_with((string) $astap?->kode_108, '1.5.2');
+                    $paketLabel = $isKemitraan ? 'Dokumen PKS Kemitraan' : 'Paket ASTAP';
+
+                    $notifTitle = $astapAutoDeleted
+                        ? "{$paketLabel} Dipindahkan ke Recycle Bin: {$nama}"
+                        : "Unit Register Dihapus: {$nibar}";
+                    $notifBody = $astapAutoDeleted
+                        ? "{$nama} • Semua NIBAR habis — {$paketLabel} otomatis ke Recycle Bin"
+                        : "{$nama} • Register {$nibar} dihapus";
                     \App\Services\NotificationService::sendToAdminAndMaster(
-                        "Unit Register Dipindahkan ke Tong Sampah: {$nibar}",
-                        "{$nama} • Register dipindahkan ke Recycle Bin",
+                        $notifTitle,
+                        $notifBody,
                         'astap',
                         route('astap.index')
                     );
@@ -3848,8 +4408,22 @@ class AstapController extends Controller
                     \Log::warning("Gagal kirim notif register delete: " . $e->getMessage());
                 }
             }
-            session()->flash('success', 'Unit register NIBAR berhasil dipindahkan ke Pusat Data Terhapus (Recycle Bin).');
-            return response()->json(['success' => true, 'message' => 'Unit register berhasil dipindahkan ke Pusat Data Terhapus (Recycle Bin).']);
+            $isKemitraan = ($astap?->sumber_dana === 'kemitraan') || !empty($astap?->kemitraan) || str_starts_with((string) $astap?->kode_108, '1.5.2');
+            $namaPaket = $isKemitraan ? "Dokumen Kontrak / PKS Kemitraan \"{$nama}\"" : "Paket pengadaan ASTAP \"{$nama}\"";
+
+            $responseMessage = ($astapAutoDeleted ?? false)
+                ? "Unit NIBAR terakhir dihapus. {$namaPaket} otomatis dipindahkan ke Pusat Data Terhapus (Recycle Bin)."
+                : 'Unit register NIBAR berhasil dipindahkan ke Pusat Data Terhapus (Recycle Bin).';
+
+            session()->flash('success', $responseMessage);
+            return response()->json([
+                'success'            => true,
+                'message'            => $responseMessage,
+                'astap_auto_deleted' => $astapAutoDeleted ?? false,
+                'astap_id'           => $astap->id ?? null,
+                'stats'              => isset($spec) && isset($spec['kondisi_stats']) ? $spec['kondisi_stats'] : null,
+                'spesifikasi_json'   => $spec ?? null,
+            ]);
     }
 
     /**
@@ -4067,4 +4641,5 @@ class AstapController extends Controller
                 'count' => $totalUpdated
             ]);
     }
+
 }

@@ -1009,11 +1009,11 @@
                     if (this.formData.tahun_anggaran) {
                         const val = Number(this.formData.tahun_anggaran);
                         if (val > currentYear) {
-                            alert('Tahun anggaran tidak boleh melebihi tahun saat ini (' + currentYear + ')!');
+                            this.showToast('Tahun anggaran tidak boleh melebihi tahun saat ini (' + currentYear + ')!', 'warning', 4000);
                             this.formData.tahun_anggaran = currentYear;
                             this.formData.tahun_perolehan = currentYear;
                         } else if (val < 1900) {
-                            alert('Tahun anggaran harus berupa 4 digit tahun yang valid (minimal tahun 1900)!');
+                            this.showToast('Tahun anggaran harus berupa 4 digit tahun yang valid (minimal tahun 1900)!', 'warning', 4000);
                             this.formData.tahun_anggaran = currentYear;
                             this.formData.tahun_perolehan = currentYear;
                         }
@@ -1036,7 +1036,8 @@
                 },
 
                 get maxDateTriwulan() {
-                    const year = this.formData.tahun_anggaran || new Date().getFullYear();
+                    const now = new Date();
+                    const year = parseInt(this.formData.tahun_anggaran) || now.getFullYear();
                     const tw = String(this.formData.triwulan || '').toUpperCase();
                     let endStr = `${year}-12-31`;
                     if (tw.includes('TW I') || tw.includes('TW 1') || tw.includes('TRIWULAN I') || (tw.includes('I') && !tw.includes('II') && !tw.includes('III') && !tw.includes('IV'))) {
@@ -1048,6 +1049,17 @@
                     } else if (tw.includes('TW IV') || tw.includes('TW 4') || tw.includes('TRIWULAN IV') || tw.includes('IV')) {
                         endStr = `${year}-12-31`;
                     }
+
+                    // Batas Maksimal: Tidak boleh melebihi hari ini jika tahun anggaran >= tahun berjalan
+                    const yyyy = now.getFullYear();
+                    const mm = String(now.getMonth() + 1).padStart(2, '0');
+                    const dd = String(now.getDate()).padStart(2, '0');
+                    const todayStr = `${yyyy}-${mm}-${dd}`;
+
+                    if (year >= yyyy && endStr > todayStr) {
+                        return todayStr;
+                    }
+
                     return endStr;
                 },
 
@@ -1091,7 +1103,7 @@
                             if (dateStr < minD || dateStr > maxD) {
                                 const twName = this.formData.triwulan;
                                 const yr = this.formData.tahun_anggaran;
-                                alert(`⚠️ Tanggal dokumen (${dateStr}) harus berada dalam periode ${twName} Tahun ${yr} (${minD} s/d ${maxD})!`);
+                                this.showToast(`Tanggal dokumen (${dateStr}) harus berada dalam periode ${twName} Tahun ${yr} (Maks: ${maxD})`, 'warning', 4500);
                                 const clamped = dateStr < minD ? minD : maxD;
                                 if (fieldName && this.formData[fieldName] !== undefined) {
                                     this.formData[fieldName] = clamped;
@@ -2777,7 +2789,7 @@
                         for (let s = 1; s < step; s++) {
                             if (s === 1) {
                                 if (!this.formData.program_kode || !this.formData.kegiatan_kode || !this.formData.sub_kegiatan_kode) {
-                                    alert('⚠️ Mohon lengkapi seluruh pilihan pada Langkah 1 (Program, Kegiatan, dan Sub Kegiatan SIPD) terlebih dahulu!');
+                                    this.showToast('Mohon lengkapi seluruh pilihan pada Langkah 1 (Program, Kegiatan, dan Sub Kegiatan SIPD) terlebih dahulu!', 'warning', 4500);
                                     this.currentStep = 1;
                                     this.scrollToTop();
                                     return;
@@ -2785,13 +2797,13 @@
                             }
                             if (s === 2) {
                                 if (!this.formData.kode_rek || !this.formData.jenis_aset_kode) {
-                                    alert('⚠️ Mohon lengkapi seluruh pilihan pada Langkah 2 (Rekening Belanja & Jenis PMDN 108) terlebih dahulu!');
+                                    this.showToast('Mohon lengkapi seluruh pilihan pada Langkah 2 (Rekening Belanja & Jenis PMDN 108) terlebih dahulu!', 'warning', 4500);
                                     this.currentStep = 2;
                                     this.scrollToTop();
                                     return;
                                 }
                                 if (!this.formData.jumlah_anggaran || Number(this.formData.jumlah_anggaran) <= 0) {
-                                    alert('⚠️ Jumlah Anggaran (Rp) (Kolom 14) wajib diisi terlebih dahulu dan tidak boleh Rp 0!');
+                                    this.showToast('Jumlah Anggaran (Rp) (Kolom 14) wajib diisi terlebih dahulu dan tidak boleh Rp 0!', 'warning', 4500);
                                     this.currentStep = 2;
                                     this.scrollToTop();
                                     return;
@@ -2800,12 +2812,7 @@
                             if (s === 3) {
                                 const valResult = this.validateStep3Assets();
                                 if (!valResult.valid) {
-                                    this.toast = { 
-                                        show: true, 
-                                        message: valResult.message.split('\n')[0], 
-                                        type: 'warning' 
-                                    };
-                                    alert(valResult.message);
+                                    this.showToast(valResult.message.split('\n')[0] || valResult.message, 'warning', 4500);
                                     this.currentStep = 3;
                                     this.scrollToTop();
                                     return;
@@ -2855,6 +2862,20 @@
                 },
 
                 toast: { show: false, message: '', type: 'success' },
+                _toastTimer: null,
+                showToast(message, type = 'warning', duration = 4000) {
+                    if (this._toastTimer) {
+                        clearTimeout(this._toastTimer);
+                    }
+                    this.toast = {
+                        show: true,
+                        message: String(message || '').trim(),
+                        type: type
+                    };
+                    this._toastTimer = setTimeout(() => {
+                        this.toast.show = false;
+                    }, duration);
+                },
 
                 askConfirmation({ title, message, itemName, type = 'success', btnText, onConfirm }) {
                     this.confirmData = {
@@ -2909,12 +2930,7 @@
 
                     const valResult = this.validateStep3Assets();
                     if (!valResult.valid) {
-                        this.toast = { 
-                            show: true, 
-                            message: valResult.message.split('\n')[0], 
-                            type: 'warning' 
-                        };
-                        alert(valResult.message);
+                        this.showToast(valResult.message.split('\n')[0] || valResult.message, 'warning', 4500);
                         this.currentStep = 3;
                         this.scrollToTop();
                         return;
@@ -3019,8 +3035,7 @@
                         })
                         .catch(err => {
                             console.error('Submit error:', err);
-                            this.toast = { show: true, message: err.message || 'Gagal menyimpan data ASTAP ke database!', type: 'error' };
-                            alert('Gagal menyimpan data ASTAP ke database: ' + (err.message || 'Terjadi kesalahan sistem'));
+                            this.showToast(err.message || 'Gagal menyimpan data ASTAP ke database!', 'error', 5000);
                         });
                     };
 
