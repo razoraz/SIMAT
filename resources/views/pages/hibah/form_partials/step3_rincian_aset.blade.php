@@ -110,7 +110,7 @@
                 </div>
                 <div>
                     <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Tanggal Penandatanganan BAST:</span>
-                    <span class="font-mono text-slate-200 block text-xs" x-text="formData.hibah_tanggal_bast || '-'"></span>
+                    <span class="font-mono text-slate-200 block text-xs" x-text="formatTanggalIndo(formData.hibah_tanggal_bast)"></span>
                 </div>
                 <div>
                     <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Tahun Pembukuan &amp; Triwulan:</span>
@@ -119,14 +119,45 @@
 
                 <div class="sm:col-span-2 lg:col-span-2">
                     <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Berkas Dokumen Lampiran BAST:</span>
+
+                    {{-- 1. Berkas Baru Dipilih --}}
                     <template x-if="selectedFile">
-                        <span class="text-emerald-400 font-mono text-xs flex items-center gap-1 font-semibold">
+                        <span class="text-emerald-400 font-mono text-xs inline-flex items-center gap-1.5 font-semibold flex-wrap">
                             <span>📄</span>
                             <span x-text="selectedFile.name + ' (' + (selectedFile.size / 1024 / 1024).toFixed(2) + ' MB)'"></span>
-                            <span class="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-bold ml-1">Siap Diunggah</span>
+                            <span class="text-[9.5px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
+                                <span x-show="existingDokumenPath">⚡ Menggantikan Berkas Lama</span>
+                                <span x-show="!existingDokumenPath">✓ Siap Diunggah</span>
+                            </span>
                         </span>
                     </template>
-                    <template x-if="!selectedFile">
+
+                    {{-- 2. Berkas Lama Tersimpan (Tidak diganti & tidak dihapus) --}}
+                    <template x-if="!selectedFile && existingDokumenPath && !removeExistingDokumen">
+                        <span class="text-amber-300 font-mono text-xs inline-flex items-center gap-1.5 font-semibold flex-wrap">
+                            <span>📄</span>
+                            <span x-text="getExistingFileName()"></span>
+                            <span class="text-[9.5px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-bold">
+                                ✓ Tersimpan di Arsip
+                            </span>
+                            <a :href="'/storage/' + existingDokumenPath" target="_blank"
+                                class="text-cyan-300 hover:text-cyan-200 hover:underline text-[11px] font-sans font-bold inline-flex items-center gap-0.5 ml-1">
+                                <span>Lihat Berkas</span>
+                                <span>↗</span>
+                            </a>
+                        </span>
+                    </template>
+
+                    {{-- 3. Berkas Lama Ditandai untuk Dihapus --}}
+                    <template x-if="!selectedFile && existingDokumenPath && removeExistingDokumen">
+                        <span class="text-rose-400 text-xs inline-flex items-center gap-1 font-semibold">
+                            <span>⚠️</span>
+                            <span>Berkas lama (<span class="font-mono" x-text="getExistingFileName()"></span>) ditandai untuk dihapus saat disimpan.</span>
+                        </span>
+                    </template>
+
+                    {{-- 4. Benar-benar Tanpa Berkas --}}
+                    <template x-if="!selectedFile && !existingDokumenPath">
                         <span class="text-slate-500 text-xs italic">Tanpa berkas lampiran (opsional).</span>
                     </template>
                 </div>
@@ -425,12 +456,34 @@
                 <div class="flex items-center space-x-2.5">
                     <span class="w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold border bg-amber-500/20 text-amber-400 border-amber-500/30">4</span>
                     <h3 class="text-xs sm:text-sm font-extrabold text-white uppercase tracking-wider">
-                        Pejabat Pembuat Komitmen (PPK) &amp; Pengesah Penerimaan RSUD
+                        Penempatan Ruangan (KIR) &amp; Pejabat Pengesah RSUD
                     </h3>
                 </div>
                 <span class="text-[10px] font-mono font-bold text-amber-400/90 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-lg">
                     Pengesahan Naskah BAST
                 </span>
+            </div>
+
+            <!-- Pilihan Penempatan Ruangan (KIR) Opsional -->
+            <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2">
+                <div class="flex items-center justify-between">
+                    <label class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                        <span>🏢 Unit / Ruangan Penempatan Aset (KIR)</span>
+                    </label>
+                    <span class="text-[10px] text-amber-400 font-mono font-bold bg-amber-500/10 border border-amber-500/25 px-2 py-0.5 rounded-md whitespace-nowrap shrink-0">
+                        Opsional
+                    </span>
+                </div>
+                <select x-model="formData.unit_id"
+                    class="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none font-semibold transition-colors">
+                    <option value="">-- Belum Ditempatkan (Menunggu Distribusi Barang) --</option>
+                    @foreach($dbUnits ?? [] as $u)
+                        <option value="{{ $u->id }}">{{ $u->nama }} ({{ $u->kode_unit ?? 'Unit' }})</option>
+                    @endforeach
+                </select>
+                <p class="text-[10.5px] text-slate-400 leading-tight">
+                    Biarkan kosong jika barang hibah baru tiba di RSUD dan menunggu proses distribusi ke ruangan/paviliun. Jika sudah ada ruangan penempatan definitif, silakan pilih unit di atas.
+                </p>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 items-start">

@@ -165,6 +165,7 @@
                     || request()->routeIs('astap.create_hibah')
                     || request()->routeIs('astap.create-hibah')
                     || request()->routeIs('astap.edit_hibah')
+                    || request()->routeIs('astap.update_hibah')
                     || request()->routeIs('master.kemitraan*')
                     || request()->routeIs('astap.create_kemitraan')
                     || (request()->routeIs('astap.edit_kemitraan') && !$isFromAstap)
@@ -274,7 +275,7 @@
                     <!-- Kelola Hibah Aset -->
                     @if ($user->canDo('astap', 'hibah'))
                         <a href="{{ route('master.hibah') }}" @click="if (isMobile) sidebarOpen = false"
-                            class="flex items-center space-x-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 {{ request()->routeIs('master.hibah*') || request()->routeIs('astap.create_hibah') || request()->routeIs('astap.create-hibah') ? 'bg-gradient-to-r from-emerald-600/20 to-teal-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
+                            class="flex items-center space-x-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 {{ request()->routeIs('master.hibah*') || request()->routeIs('astap.create_hibah') || request()->routeIs('astap.create-hibah') || request()->routeIs('astap.edit_hibah') || request()->routeIs('astap.update_hibah') ? 'bg-gradient-to-r from-emerald-600/20 to-teal-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
                             <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />

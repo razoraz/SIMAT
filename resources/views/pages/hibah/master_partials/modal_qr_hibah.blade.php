@@ -59,8 +59,8 @@
                             <span class="text-amber-300 font-bold text-right max-w-[200px] truncate" x-text="selectedQrItem.pihak_hibah || '-'"></span>
                         </div>
                         <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
-                            <span class="text-slate-400 font-semibold text-[10.5px]">📍 Lokasi / Ruangan:</span>
-                            <span class="text-teal-300 font-bold text-right max-w-[190px] truncate" x-text="selectedQrItem.ruang_pemegang || 'Gudang Aset RSUD'"></span>
+                            <span class="text-slate-400 font-semibold text-[10.5px]">📍 Lokasi Penempatan:</span>
+                            <span class="text-teal-300 font-bold text-right max-w-[190px] truncate" x-text="hasRealRuang(selectedQrItem?.ruang_pemegang) ? selectedQrItem.ruang_pemegang : 'Belum Ditempatkan (Menunggu Distribusi)'"></span>
                         </div>
                         <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
                             <span class="text-slate-400 font-semibold text-[10.5px]">⚙️ Kondisi Aset:</span>
@@ -223,7 +223,7 @@
                             <div class="flex items-center space-x-2 flex-wrap gap-y-1">
                                 <span class="text-purple-300 font-mono font-bold text-xs" x-text="selectedRiwayatRegister.nibar || selectedRiwayatRegister.no_register"></span>
                                 <span class="text-slate-500 text-[11px]">•</span>
-                                <span class="text-amber-400 text-[11px] font-semibold truncate" x-text="selectedRiwayatRegister.ruang_pemegang || (selectedDetail?.astap?.unit?.nama || 'Gudang Aset RSUD')"></span>
+                                <span class="text-amber-400 text-[11px] font-semibold truncate" x-text="hasRealRuang(selectedRiwayatRegister?.ruang_pemegang) ? selectedRiwayatRegister.ruang_pemegang : 'Belum Ditempatkan (Menunggu Distribusi)'"></span>
                             </div>
                         </div>
                         <div class="shrink-0 text-right">

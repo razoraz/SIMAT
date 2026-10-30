@@ -382,9 +382,21 @@
                 };
             },
 
+            // Validasi Ruangan Riil (Bukan RSUD, Gudang, atau tanda belum ditempatkan)
+            hasRealRuang(reg) {
+                if (!reg) return false;
+                const rVal = (typeof reg === 'string') ? reg : (reg.ruang_pemegang || reg.ruang || '');
+                if (!rVal) return false;
+                const r = String(rVal).trim().toLowerCase();
+                if (r === '' || r === '-' || r.includes('belum ditempatkan') || r.includes('rsud dr. h. koesnandi') || r.includes('piere tendean') || r === 'gudang aset' || r === 'gudang aset rsud') {
+                    return false;
+                }
+                return true;
+            },
+
             // Label Ruangan / Penempatan Unit
             getRuangLabel(item) {
-                if (!item) return 'Gudang Aset';
+                if (!item) return '-';
                 if (item.tipe_hibah === 'keluar') {
                     return 'Diserahkan ke Luar RSUD';
                 }
@@ -397,17 +409,14 @@
                 if (item.astap && Array.isArray(item.astap.registers) && item.astap.registers.length > 0) {
                     const r0 = item.astap.registers[0];
                     if (r0.unit && r0.unit.nama) return r0.unit.nama;
-                    if (r0.ruang_pemegang && r0.ruang_pemegang !== '-' && !r0.ruang_pemegang.includes('Belum Ditempatkan')) {
+                    if (this.hasRealRuang(r0)) {
                         return r0.ruang_pemegang;
                     }
                 }
-                if (item.register && item.register.ruang_pemegang && item.register.ruang_pemegang !== '-' && !item.register.ruang_pemegang.includes('Belum Ditempatkan')) {
+                if (item.register && this.hasRealRuang(item.register)) {
                     return item.register.ruang_pemegang;
                 }
-                if (item.astap && item.astap.alamat_barang && item.astap.alamat_barang !== 'RSUD Dr. H. Koesnandi' && item.astap.alamat_barang !== 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1') {
-                    return item.astap.alamat_barang;
-                }
-                return 'Gudang Aset RSUD';
+                return '-';
             },
 
             // Ekstrak Spesifikasi Fisik KIB
@@ -468,9 +477,9 @@
                     regs = regs.filter(r => (r.kondisi || 'Baik') === this.detailKondisiFilter || r.kondisi === this.detailKondisiFilter);
                 }
                 if (this.detailPenempatanFilter === 'sudah') {
-                    regs = regs.filter(r => r.ruang_pemegang && r.ruang_pemegang !== '-' && !r.ruang_pemegang.includes('Belum Ditempatkan'));
+                    regs = regs.filter(r => this.hasRealRuang(r));
                 } else if (this.detailPenempatanFilter === 'belum') {
-                    regs = regs.filter(r => !r.ruang_pemegang || r.ruang_pemegang === '-' || r.ruang_pemegang.includes('Belum Ditempatkan'));
+                    regs = regs.filter(r => !this.hasRealRuang(r));
                 }
                 if (this.detailSearchQuery && this.detailSearchQuery.trim() !== '') {
                     const q = this.detailSearchQuery.toLowerCase().trim();
@@ -486,25 +495,26 @@
             // Daftar Register NIBAR
             getRegistersList(item) {
                 if (!item) return [];
+                if (item.astap && Array.isArray(item.astap.registers)) {
+                    return item.astap.registers;
+                }
+                if (Array.isArray(item.registers)) {
+                    return item.registers;
+                }
+                if (item.register) {
+                    return [item.register];
+                }
                 let regs = [];
-                if (item.astap && Array.isArray(item.astap.registers) && item.astap.registers.length > 0) {
-                    regs = item.astap.registers;
-                } else if (Array.isArray(item.registers) && item.registers.length > 0) {
-                    regs = item.registers;
-                } else if (item.register) {
-                    regs = [item.register];
-                } else {
-                    const vol = parseInt(item.jumlah_volume) || 1;
-                    for (let i = 1; i <= vol; i++) {
-                        regs.push({
-                            id: i,
-                            nibar: '-',
-                            no_register: i,
-                            ruang_pemegang: this.getRuangLabel(item),
-                            kondisi: 'Baik',
-                            status: item.tipe_hibah === 'keluar' ? 'Dihibahkan' : 'Tersedia'
-                        });
-                    }
+                const vol = parseInt(item.jumlah_volume) || 0;
+                for (let i = 1; i <= vol; i++) {
+                    regs.push({
+                        id: i,
+                        nibar: '-',
+                        no_register: i,
+                        ruang_pemegang: this.getRuangLabel(item),
+                        kondisi: 'Baik',
+                        status: item.tipe_hibah === 'keluar' ? 'Dihibahkan' : 'Tersedia'
+                    });
                 }
                 return regs;
             },
@@ -801,7 +811,6 @@
                             });
                             const data = await res.json();
                             if (data.success) {
-                                this.showToast(data.message || 'Unit register berhasil dihapus ke Recycle Bin', 'success');
                                 if (this.selectedDetail) {
                                     if (this.selectedDetail.astap && Array.isArray(this.selectedDetail.astap.registers)) {
                                         this.selectedDetail.astap.registers = this.selectedDetail.astap.registers.filter(r => r.id !== reg.id);
@@ -809,6 +818,31 @@
                                     if (Array.isArray(this.selectedDetail.registers)) {
                                         this.selectedDetail.registers = this.selectedDetail.registers.filter(r => r.id !== reg.id);
                                     }
+                                }
+
+                                if (data.astap_auto_deleted) {
+                                    if (data.astap_id) {
+                                        this.hibahList = this.hibahList.filter(h => (h.astap_id !== data.astap_id && h.astap?.id !== data.astap_id));
+                                    } else if (this.selectedDetail) {
+                                        this.hibahList = this.hibahList.filter(h => h.id !== this.selectedDetail.id);
+                                    }
+                                    this.showModalDetail = false;
+                                    this.selectedDetail = null;
+                                    this.showToast(data.message || 'Transaksi hibah otomatis dipindahkan ke Recycle Bin karena seluruh unit NIBAR telah dihapus.', 'success');
+                                } else {
+                                    if (this.selectedDetail) {
+                                        const remainingCount = (this.selectedDetail.astap?.registers || this.selectedDetail.registers || []).length;
+                                        this.selectedDetail.jumlah_volume = remainingCount;
+                                        if (this.selectedDetail.astap) {
+                                            this.selectedDetail.astap.jumlah_volume = remainingCount;
+                                        }
+                                        const itemInList = this.hibahList.find(h => h.id === this.selectedDetail.id);
+                                        if (itemInList) {
+                                            itemInList.jumlah_volume = remainingCount;
+                                            if (itemInList.astap) itemInList.astap.jumlah_volume = remainingCount;
+                                        }
+                                    }
+                                    this.showToast(data.message || 'Unit register berhasil dihapus ke Recycle Bin', 'success');
                                 }
                             } else {
                                 this.showToast(data.message || 'Gagal menghapus unit register.', 'error');
@@ -836,12 +870,54 @@
                 if (!Array.isArray(items) || items.length === 0) return [];
                 if (targetTotal <= 0) return [];
 
+                // 1. Konsolidasi item-item yang sejenis / berspesifikasi identik
+                let consolidated = [];
+                for (let it of items) {
+                    if (!it) continue;
+                    let activeQtyKey = qtyKeys[0];
+                    let curQty = 1;
+                    for (let k of qtyKeys) {
+                        if (it[k] !== undefined && it[k] !== null && it[k] !== '') {
+                            activeQtyKey = k;
+                            curQty = parseFloat(it[k]) || 1;
+                            break;
+                        }
+                    }
+
+                    // Signature spesifikasi fisik barang
+                    const sig = [
+                        it.mesin_nama_barang || it.tanah_nama_barang || it.gedung_nama_barang || it.jaringan_nama_barang || it.lainnya_nama_barang || it.nama_barang || '',
+                        it.mesin_merk || it.merk || '',
+                        it.mesin_type || it.type || '',
+                        it.mesin_ukuran || it.mesin_ukuran_cc || it.ukuran || it.tanah_luas_m2 || it.gedung_luas_m2 || '',
+                        it.mesin_bahan || it.bahan || '',
+                        it.mesin_no_pabrik || it.no_pabrik || it.tanah_sertifikat_no || '',
+                        it.mesin_no_rangka || it.no_rangka || '',
+                        it.mesin_no_mesin || it.no_mesin || '',
+                        it.mesin_nilai_satuan || it.tanah_nilai_satuan || it.gedung_nilai_satuan || it.jaringan_nilai_satuan || it.lainnya_nilai_satuan || 0
+                    ].join('||');
+
+                    const existing = consolidated.find(c => c._sig === sig);
+                    if (existing) {
+                        existing[activeQtyKey] = (parseFloat(existing[activeQtyKey]) || 0) + curQty;
+                    } else {
+                        let clone = JSON.parse(JSON.stringify(it));
+                        clone._sig = sig;
+                        if (activeQtyKey) clone[activeQtyKey] = curQty;
+                        consolidated.push(clone);
+                    }
+                }
+
+                // Hapus properti pembantu _sig
+                consolidated.forEach(c => delete c._sig);
+
+                // 2. Alokasikan kuota volume ke item-item yang telah dikonsolidasi
                 let remainingQuota = targetTotal;
                 let result = [];
 
-                for (let i = 0; i < items.length; i++) {
+                for (let i = 0; i < consolidated.length; i++) {
                     if (remainingQuota <= 0) break;
-                    let item = JSON.parse(JSON.stringify(items[i]));
+                    let item = JSON.parse(JSON.stringify(consolidated[i]));
 
                     let activeQtyKey = null;
                     let curQty = 1;
@@ -865,16 +941,21 @@
                     }
                 }
 
+                // 3. Jika masih ada sisa kuota (misal volume paket lebih besar dari rincian item):
+                // Gabungkan sisa kuota ke kartu barang sejenis terakhir, JANGAN membuat kartu duplikat terpisah!
                 if (remainingQuota > 0 && result.length > 0) {
-                    const lastTemplate = result[result.length - 1];
-                    while (remainingQuota > 0) {
-                        let newItem = JSON.parse(JSON.stringify(lastTemplate));
-                        for (let k of qtyKeys) {
-                            if (newItem[k] !== undefined) newItem[k] = 1;
+                    const lastItem = result[result.length - 1];
+                    let activeQtyKey = qtyKeys[0];
+                    for (let k of qtyKeys) {
+                        if (lastItem[k] !== undefined && lastItem[k] !== null && lastItem[k] !== '') {
+                            activeQtyKey = k;
+                            break;
                         }
-                        result.push(newItem);
-                        remainingQuota -= 1;
                     }
+                    if (activeQtyKey) {
+                        lastItem[activeQtyKey] = (parseFloat(lastItem[activeQtyKey]) || 0) + remainingQuota;
+                    }
+                    remainingQuota = 0;
                 }
 
                 return result;

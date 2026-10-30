@@ -464,7 +464,7 @@
 
                 // Penempatan Ruangan & PPK RSUD
                 unit_id: '',
-                alamat_barang: 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1',
+                alamat_barang: '',
                 ppk_nama: '',
                 ppk_nip: '',
                 hibah_keterangan: ''
@@ -569,7 +569,11 @@
                 this.formData.hibah_pimpinan = spec.hibah_pimpinan || spec.pimpinan_pemberi || '';
                 this.formData.hibah_alamat_pemberi = spec.hibah_alamat_pemberi || spec.alamat_pemberi || '';
                 this.formData.hibah_nomor_bast = d.hibah_nomor_bast || hibah.nomor_bast || d.bast_dokumen_nomor || spec.hibah_nomor_bast || '';
-                this.formData.hibah_tanggal_bast = d.hibah_tanggal_bast || hibah.tanggal_bast || d.bast_dokumen_tanggal || spec.hibah_tanggal_bast || '';
+                let rawTgl = d.hibah_tanggal_bast || hibah.tanggal_bast || d.bast_dokumen_tanggal || spec.hibah_tanggal_bast || '';
+                if (rawTgl && String(rawTgl).includes('T')) {
+                    rawTgl = String(rawTgl).split('T')[0];
+                }
+                this.formData.hibah_tanggal_bast = rawTgl;
                 this.formData.total_realisasi = Number(d.total_realisasi || hibah.nilai_aset || 0);
                 this.formData.jumlah_realisasi = this.formData.total_realisasi;
                 this.formData.hibah_keterangan = d.hibah_keterangan || d.keterangan_tambahan || hibah.keterangan || spec.hibah_keterangan || '';
@@ -613,7 +617,7 @@
 
                 // Langkah 3: Penempatan Ruangan & PPK
                 this.formData.unit_id = d.unit_id || (d.unit ? d.unit.id : '');
-                this.formData.alamat_barang = d.alamat_barang || 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1';
+                this.formData.alamat_barang = d.alamat_barang || '';
                 if (d.ppk_nama || spec.ppk_nama) this.formData.ppk_nama = d.ppk_nama || spec.ppk_nama;
                 if (d.ppk_nip || spec.ppk_nip)   this.formData.ppk_nip  = d.ppk_nip || spec.ppk_nip;
 

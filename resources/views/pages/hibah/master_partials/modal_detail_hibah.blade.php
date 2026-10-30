@@ -865,7 +865,7 @@
                             <thead class="bg-slate-950 text-slate-400 font-bold uppercase text-[9.5px] border-b border-slate-800 shadow-sm" style="position: sticky; top: 0; z-index: 10; background-color: #020617;">
                                 <tr>
                                     <th class="px-3.5 py-2.5 text-center">NIBAR RESMI</th>
-                                    <th class="px-3.5 py-2.5 text-center">LOKASI / PENGELOLAAN</th>
+                                    <th class="px-3.5 py-2.5 text-center" x-text="selectedDetail?.tipe_hibah === 'keluar' ? 'PENERIMA HIBAH' : 'LOKASI PENEMPATAN'">LOKASI PENEMPATAN</th>
                                     <th class="px-3.5 py-2.5 text-center">KONDISI</th>
                                     <th class="px-3.5 py-2.5 text-center whitespace-nowrap">QR CODE</th>
                                     <th class="px-3.5 py-2.5 text-center whitespace-nowrap">AKSI</th>
@@ -888,18 +888,30 @@
                                             </div>
                                         </td>
 
-                                        <!-- 2. Lokasi / Pengelolaan (KIR) -->
+                                        <!-- 2. Lokasi Penempatan / Penerima Hibah -->
                                         <td class="px-4 py-3 text-center align-middle">
-                                            <template x-if="reg.ruang_pemegang">
-                                                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs font-semibold shadow-sm max-w-[220px]">
-                                                    <span class="text-amber-400 text-xs shrink-0">📍</span>
-                                                    <span class="truncate" :title="reg.ruang_pemegang" x-text="reg.ruang_pemegang"></span>
+                                            <!-- Jika Hibah Keluar: Tampilkan Instansi Penerima -->
+                                            <template x-if="selectedDetail?.tipe_hibah === 'keluar'">
+                                                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-rose-950/40 border border-rose-500/30 text-rose-300 text-xs font-semibold shadow-sm max-w-[220px]">
+                                                    <span class="text-xs shrink-0">📤</span>
+                                                    <span class="truncate" :title="selectedDetail.pihak_hibah" x-text="selectedDetail.pihak_hibah || 'Penerima Hibah'"></span>
                                                 </div>
                                             </template>
-                                            <template x-if="!reg.ruang_pemegang">
-                                                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-950/40 border border-amber-500/30 text-amber-200 font-bold text-[11px] shadow-sm max-w-[220px]">
-                                                    <span class="text-xs shrink-0">🏢</span>
-                                                    <span class="truncate" x-text="selectedDetail.pemberi_hibah_nama ? ('Pemberi: ' + selectedDetail.pemberi_hibah_nama) : (selectedDetail.unit?.nama || (selectedDetail.astap?.unit?.nama || 'Gudang Aset RSUD'))"></span>
+                                            <!-- Jika Hibah Masuk: Lokasi Penempatan (Jika belum ditempatkan, tampilkan badge Belum Ditempatkan) -->
+                                            <template x-if="selectedDetail?.tipe_hibah !== 'keluar'">
+                                                <div>
+                                                    <template x-if="hasRealRuang(reg)">
+                                                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-xs font-semibold shadow-sm max-w-[220px]">
+                                                            <span class="text-teal-400 text-xs shrink-0">📍</span>
+                                                            <span class="truncate" :title="reg.ruang_pemegang" x-text="reg.ruang_pemegang"></span>
+                                                        </div>
+                                                    </template>
+                                                    <template x-if="!hasRealRuang(reg)">
+                                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 font-bold text-[10px]">
+                                                            <span>⚠️</span>
+                                                            <span>Belum Ditempatkan</span>
+                                                        </span>
+                                                    </template>
                                                 </div>
                                             </template>
                                         </td>

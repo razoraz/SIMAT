@@ -414,7 +414,7 @@ class HibahController extends Controller
             $astapPayload['spesifikasi_json']['ppk_nip'] = $request->input('ppk_nip');
         }
 
-        $item = DB::transaction(function () use ($astapPayload, $data, $totalVolume, $totalRealisasi, $tahun, $kondisiItem) {
+        $item = DB::transaction(function () use ($astapPayload, $data, $totalVolume, $totalRealisasi, $tahun, $kondisiItem, $dokumenBastPath) {
             $item = Astap::create($astapPayload);
 
             // Catat ke riwayat AstapHibah (tipe: masuk)
@@ -431,6 +431,7 @@ class HibahController extends Controller
                 'tahun'             => $tahun,
                 'triwulan'          => $data['triwulan'],
                 'keterangan'        => $data['hibah_keterangan'] ?? null,
+                'dokumen_path'      => $dokumenBastPath,
                 'user_id'           => auth()->id(),
             ]);
 
@@ -445,7 +446,7 @@ class HibahController extends Controller
 
             $runningRegNum = (int) $maxRegInt;
             $unitModel = !empty($data['unit_id']) ? Unit::find($data['unit_id']) : null;
-            $ruangPemegang = $unitModel ? $unitModel->nama : (!empty($data['alamat_barang']) ? $data['alamat_barang'] : 'RSUD Dr. H. Koesnandi');
+            $ruangPemegang = $unitModel ? $unitModel->nama : null;
 
             for ($i = 0; $i < $totalVolume; $i++) {
                 $runningRegNum++;
@@ -469,7 +470,7 @@ class HibahController extends Controller
                     'qr_code_path'    => $qrPath,
                     'ruang_pemegang'  => $ruangPemegang,
                     'kondisi'         => $kondisiItem,
-                    'status'          => 'Aktif',
+                    'status'          => $ruangPemegang ? 'Aktif' : 'Tersedia',
                     'is_deleted'      => 0,
                 ]);
             }
@@ -714,7 +715,7 @@ class HibahController extends Controller
         $hargaSatuan = $vol > 0 ? ($totalRealisasi / $vol) : $totalRealisasi;
         $tahunPerolehan = (int) $validated['tahun_perolehan'];
 
-        DB::transaction(function () use ($astap, $validated, $specJson, $hargaSatuan, $vol, $totalRealisasi, $tahunPerolehan, $request) {
+        DB::transaction(function () use ($astap, $validated, $specJson, $hargaSatuan, $vol, $totalRealisasi, $tahunPerolehan, $request, $dokumenPath) {
             // 1. Update master ASTAP
             $astap->update([
                 'jenis_astap_id'      => $request->input('jenis_astap_id') ?: $astap->jenis_astap_id,
@@ -761,15 +762,19 @@ class HibahController extends Controller
 
             // 3. Update existing registers dan sesuaikan volume jika bertambah
             $existingRegisters = $astap->registers()->where('is_deleted', 0)->orderBy('no_register_int')->get();
-            $unitNama = $astap->unit ? $astap->unit->nama : null;
+            $unitNama = $astap->unit ? $astap->unit->nama : (!empty($validated['unit_id']) ? Unit::find($validated['unit_id'])?->nama : null);
 
             foreach ($existingRegisters as $reg) {
+                $isRsudDefault = !empty($reg->ruang_pemegang) && (str_contains($reg->ruang_pemegang, 'RSUD Dr. H. Koesnandi') || str_contains($reg->ruang_pemegang, 'Piere Tendean'));
+                $ruangTarget = $unitNama ?: ($isRsudDefault ? null : $reg->ruang_pemegang);
+
                 $reg->update([
                     'nama_barang'     => $validated['nama_barang'],
                     'tahun_perolehan' => $tahunPerolehan,
                     'harga_satuan'    => $hargaSatuan,
                     'unit_id'         => $validated['unit_id'] ?? $reg->unit_id,
-                    'ruang_pemegang'  => $unitNama ?: $reg->ruang_pemegang,
+                    'ruang_pemegang'  => $ruangTarget,
+                    'status'          => $ruangTarget ? 'Aktif' : 'Tersedia',
                 ]);
             }
 
@@ -806,9 +811,9 @@ class HibahController extends Controller
                         'no_register'     => $nibar,
                         'nibar'           => $nibar,
                         'qr_code_path'    => $qrPath,
-                        'ruang_pemegang'  => $unitNama ?: ($astap->alamat_barang ?: 'Gudang Aset'),
+                        'ruang_pemegang'  => $unitNama ?: null,
                         'kondisi'         => 'Baik',
-                        'status'          => 'Tersedia',
+                        'status'          => $unitNama ? 'Aktif' : 'Tersedia',
                         'is_deleted'      => 0,
                     ]);
                 }

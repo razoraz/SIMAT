@@ -6543,6 +6543,11 @@ Route::middleware('auth')->group(function () {
                         }
 
                         // 4. Soft delete Hibah jika ada
+                        if ($astap->hibahs) {
+                            foreach ($astap->hibahs as $h) {
+                                $h->softDelete();
+                            }
+                        }
                         if ($astap->hibah) {
                             $astap->hibah->softDelete();
                         }

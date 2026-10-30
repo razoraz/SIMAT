@@ -318,6 +318,11 @@ class Astap extends Model
         return $this->hasOne(AstapHibah::class, 'astap_id')->where('tipe_hibah', 'masuk');
     }
 
+    public function hibah()
+    {
+        return $this->hasOne(AstapHibah::class, 'astap_id')->where('tipe_hibah', 'masuk');
+    }
+
     // ─── Smart Accessors for Backward Compatibility ───────────────
     public function getJenisPengadaanIdAttribute($val = null)
     {
