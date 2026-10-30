@@ -13510,6 +13510,26 @@
                     }
                 },
 
+                // Modal Delete (Sesuai Mutasi Eksternal)
+                showDeleteModal: false,
+                itemToDelete: null,
+                isDeleting: false,
+                deleteAlasan: '',
+
+                getPlacementSummary(item) {
+                    if (!item) return '-';
+                    if (item.ruangan_tujuan) return item.ruangan_tujuan;
+                    if (item.ruang_pemegang) return item.ruang_pemegang;
+                    if (Array.isArray(item.registers) && item.registers.length > 0) {
+                        const placed = item.registers.map(r => r.ruang_pemegang).filter(Boolean);
+                        if (placed.length > 0) {
+                            const unique = Array.from(new Set(placed));
+                            return unique.length === 1 ? unique[0] : (unique[0] + ' (+' + (unique.length - 1) + ' ruangan)');
+                        }
+                    }
+                    return 'Gudang Perbekalan / Aset';
+                },
+
                 // Modal Edit Kondisi State
                 showEditKondisiModal: false,
                 editingRegisterItem: null,
@@ -13668,35 +13688,7 @@
                 deleteRegister(reg) {
                     if (!reg) return;
 
-                    // 1. Validasi Penempatan: Cek apakah unit register SUDAH DITEMPATKAN di unit / paviliun
-                    if (this.isRegisterPlacedInUnit(reg)) {
-                        const roomName = String(reg.ruang_pemegang || 'Unit / Paviliun RSUD').trim();
-                        const parentName = this.selectedAstapDetail?.nama_barang || 'Aset';
-                        const nibarStr = reg.nibar || reg.no_register || 'NIBAR';
-
-                        this.askConfirmation({
-                            title: 'Unit Tidak Dapat Dihapus',
-                            message: `Unit register NIBAR "${nibarStr}" saat ini belum dapat dihapus karena masih aktif ditempatkan di ruangan "${roomName}" di database RSUD.`,
-                            itemName: `${parentName} (NIBAR: ${nibarStr})`,
-                            itemDetails: {
-                                nama: parentName,
-                                kode: nibarStr,
-                                badgeText: '1 ASET AKTIF',
-                                totalAset: 1,
-                                nilaiFmt: this.selectedAstapDetail?.total_realisasi || 'Rp 0'
-                            },
-                            type: 'danger',
-                            isBlocked: true,
-                            actionUrl: '/mutasi-aset',
-                            actionText: 'Ajukan Mutasi Aset',
-                            assetWarning: `Sistem mendeteksi bahwa ruangan "${roomName}" saat ini masih memegang aset aktif dengan NIBAR ${nibarStr}. Demi akuntabilitas dan pencegahan kehilangan aset RSUD Koesnadi, seluruh aset harus dipindahkan (mutasi) ke ruangan lain terlebih dahulu sampai ruangan ini kosong atau dikembalikan ke gudang perbekalan.`,
-                            btnText: null,
-                            onConfirm: null
-                        });
-                        return;
-                    }
-
-                    // 2. Jika belum ditempatkan (di gudang): Izinkan hapus ke Tong Sampah
+                    // Konfirmasi Pindahkan ke Tong Sampah (Recycle Bin)
                     this.askConfirmation({
                         title: 'Konfirmasi Pindahkan ke Tong Sampah',
                         message: 'Apakah Anda yakin ingin memindahkan unit register NIBAR ini ke Recycle Bin (Tong Sampah)? Data dapat dipulihkan kembali jika diperlukan.',
@@ -13799,94 +13791,66 @@
                 deleteAstap(item) {
                     if (!item) return;
 
-                    // 1. Validasi Penempatan: Cek apakah ada unit register yang SUDAH DITEMPATKAN di unit & paviliun
-                    const regs = Array.isArray(item.registers) ? item.registers : [];
-                    const placedRegs = regs.filter(r => this.isRegisterPlacedInUnit(r));
-
-                    if (placedRegs.length > 0) {
-                        const roomNames = Array.from(new Set(placedRegs.map(r => String(r.ruang_pemegang).trim()).filter(Boolean)));
-                        const roomSummary = roomNames.slice(0, 3).join(', ') + (roomNames.length > 3 ? ` dan ${roomNames.length - 3} ruangan lainnya` : '');
-                        const totalPlaced = placedRegs.length;
-                        const nilaiFmt = item.total_realisasi || this.formatRupiah(item.total_realisasi_num || 0);
-
-                        this.askConfirmation({
-                            title: 'Unit Tidak Dapat Dihapus',
-                            message: `Aset "${item.nama_barang || 'Aset'}" saat ini belum dapat dihapus karena masih menampung ${totalPlaced} barang inventaris/aset (${nilaiFmt}) di database RSUD.`,
-                            itemName: `${item.nama_barang || 'Aset'} (Kode: ${item.kode_barang || '-'})`,
-                            itemDetails: {
-                                nama: item.nama_barang,
-                                kode: item.kode_barang,
-                                badgeText: `${totalPlaced} ASET AKTIF`,
-                                totalAset: totalPlaced,
-                                nilaiFmt: nilaiFmt
-                            },
-                            type: 'danger',
-                            isBlocked: true,
-                            actionUrl: '/mutasi-aset',
-                            actionText: 'Ajukan Mutasi Aset',
-                            assetWarning: `Sistem mendeteksi bahwa ruangan "${roomSummary || 'Unit/Paviliun'}" saat ini masih memegang ${totalPlaced} aset aktif bernilai ${nilaiFmt}. Demi akuntabilitas dan pencegahan kehilangan aset RSUD Koesnadi, seluruh aset harus dipindahkan (mutasi) ke ruangan lain terlebih dahulu sampai ruangan ini kosong.`,
-                            btnText: null,
-                            onConfirm: null
-                        });
+                    // Validasi Tutup Buku jika periode terkunci
+                    if (this.isItemLocked(item)) {
+                        this.showLockedWarning(item);
                         return;
                     }
 
-                    // 2. Jika belum ditempatkan (semua di gudang): Buka konfirmasi hapus biasa ke Tong Sampah
-                    this.askConfirmation({
-                        title: 'Konfirmasi Pindahkan ke Tong Sampah',
-                        message: 'Apakah Anda yakin ingin memindahkan data aset tetap ini ke Recycle Bin (Tong Sampah)? Seluruh unit register NIBAR terkait juga akan dipindahkan ke Recycle Bin.',
-                        itemName: (item.nama_barang || 'ASTAP') + ' (' + (item.kode_barang || '-') + ')',
-                        itemDetails: {
-                            nama: item.nama_barang,
-                            kode: item.kode_barang,
-                            badgeText: `${(item.registers || []).length} Unit di Gudang`,
-                            totalAset: 0,
-                            nilaiFmt: item.total_realisasi || 'Rp 0'
-                        },
-                        type: 'danger',
-                        isBlocked: false,
-                        btnText: 'Pindahkan ke Tong Sampah',
-                        onConfirm: async () => {
-                            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-                            try {
-                                const res = await fetch('/astap/' + item.id, {
-                                    method: 'DELETE',
-                                    headers: { 'X-CSRF-TOKEN': token, 'Accept': 'application/json' }
-                                });
-                                const data = await res.json();
-                                if (data.success) {
-                                    this.astaps = this.astaps.filter(a => Number(a.id) !== Number(item.id));
-                                    if (this.selectedAstapDetail && Number(this.selectedAstapDetail.id) === Number(item.id)) {
-                                        this.showDetailModal = false;
-                                        this.selectedAstapDetail = null;
-                                    }
-                                    this.showToast(data.message || 'Data ASTAP berhasil dipindahkan ke Recycle Bin!', 'success');
-                                } else if (data.is_blocked) {
-                                    this.askConfirmation({
-                                        title: 'Unit Tidak Dapat Dihapus',
-                                        message: data.message,
-                                        itemName: (item.nama_barang || 'ASTAP') + ' (' + (item.kode_barang || '-') + ')',
-                                        itemDetails: {
-                                            nama: item.nama_barang,
-                                            kode: item.kode_barang,
-                                            badgeText: 'ASET AKTIF'
-                                        },
-                                        type: 'danger',
-                                        isBlocked: true,
-                                        actionUrl: data.action_url || '/mutasi-aset',
-                                        actionText: 'Ajukan Mutasi Aset',
-                                        assetWarning: data.message,
-                                        btnText: null
-                                    });
-                                } else {
-                                    this.showToast(data.message || 'Gagal menghapus data ASTAP.', 'error');
-                                }
-                            } catch(err) {
-                                console.error('deleteAstap error:', err);
-                                this.showToast('Terjadi kesalahan jaringan saat menghapus data ASTAP.', 'error');
+                    this.itemToDelete = item;
+                    this.deleteAlasan = '';
+                    this.showDeleteModal = true;
+                },
+
+                async executeDelete() {
+                    if (!this.itemToDelete || this.isDeleting) return;
+                    this.isDeleting = true;
+
+                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                    const id = this.itemToDelete.id;
+                    const targetUrl = "/astap/" + id;
+
+                    try {
+                        const res = await fetch(targetUrl, {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRF-TOKEN': token,
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: JSON.stringify({
+                                alasan: this.deleteAlasan || 'Dihapus dari modul Data ASTAP'
+                            })
+                        });
+
+                        const d = await res.json().catch(() => ({}));
+                        this.isDeleting = false;
+
+                        if (res.ok && d.success !== false) {
+                            const delId = Number(this.itemToDelete.id);
+                            this.astaps = this.astaps.filter(a => Number(a.id) !== delId);
+
+                            if (this.selectedAstapDetail && Number(this.selectedAstapDetail.id) === delId) {
+                                this.showDetailModal = false;
+                                this.selectedAstapDetail = null;
                             }
+
+                            this.showDeleteModal = false;
+                            this.itemToDelete = null;
+
+                            this.showToast(d.message || 'Data ASTAP berhasil dipindahkan ke Tong Sampah (Recycle Bin).', 'success');
+                        } else if (d.is_blocked) {
+                            this.showDeleteModal = false;
+                            this.showToast(d.message || 'Data ASTAP tidak dapat dihapus.', 'error');
+                        } else {
+                            this.showToast(d.message || 'Gagal memindahkan data ke Tong Sampah.', 'error');
                         }
-                    });
+                    } catch (err) {
+                        this.isDeleting = false;
+                        console.error('executeDelete error:', err);
+                        this.showToast('Terjadi kesalahan jaringan saat menghapus data ASTAP.', 'error');
+                    }
                 },
 
                 resetModal() {

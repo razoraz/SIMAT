@@ -3976,35 +3976,7 @@ class AstapController extends Controller
                 ], 422);
             }
 
-            // Validasi Proteksi Penempatan Ruangan (Unit / Paviliun):
-            // Aset yang masih ditempatkan di ruangan unit/paviliun tidak boleh dihapus langsung. Harus dimutasi terlebih dahulu.
-            $unplacedNames = ['', '-', 'Belum Ditempatkan', 'Belum Ditempatkan / Di Gudang', 'Belum Ditempatkan / Di Gudang Aset', 'Gudang Aset', 'Gudang Perbekalan', 'Gudang Aset Utama / Belum Ditempatkan'];
-            $placedRegisters = $astap->registers->filter(function ($reg) use ($unplacedNames, $astap) {
-                if ($reg->is_deleted == 1) return false;
-                if ($astap->isKemitraan() || in_array($reg->status, ['Kemitraan', 'Dikembalikan ke Rekanan', 'Mutasi Keluar OPD'], true)) return false;
-                if (!empty($reg->unit_id)) return true;
-                $ruang = trim((string)($reg->ruang_pemegang ?: ($reg->unit?->nama ?? '')));
-                if (stripos($ruang, 'Dikembalikan ke Rekanan') !== false || stripos($ruang, 'Kemitraan') !== false) return false;
-                if ($ruang !== '' && !in_array($ruang, $unplacedNames, true)) {
-                    return true;
-                }
-                return false;
-            });
 
-            if ($placedRegisters->count() > 0) {
-                $uniqueRooms = $placedRegisters->map(function($r) {
-                    return trim((string)($r->ruang_pemegang ?: ($r->unit?->nama ?? '')));
-                })->filter()->unique()->values()->take(3)->implode(', ');
-                $count = $placedRegisters->count();
-                $nilaiFmt = 'Rp ' . number_format($astap->total_realisasi, 0, ',', '.');
-                return response()->json([
-                    'success' => false,
-                    'is_blocked' => true,
-                    'action_url' => '/mutasi-aset',
-                    'action_text' => 'Ajukan Mutasi Aset',
-                    'message' => "Aset \"{$astap->nama_barang}\" saat ini belum dapat dihapus karena masih menampung {$count} barang inventaris/aset ({$nilaiFmt}) di database RSUD. Seluruh aset harus dipindahkan (mutasi) ke ruangan lain terlebih dahulu sampai ruangan ini kosong."
-                ], 422);
-            }
 
             // Validasi Proteksi Kemitraan: Cegah penghapusan aset yang sedang aktif dalam perjanjian kemitraan / objek pemanfaatan
             $activeKemitraan = \App\Models\AstapKemitraan::where('is_deleted', 0)
@@ -4209,24 +4181,7 @@ class AstapController extends Controller
             }
             $reg = \App\Models\AstapRegister::with(['astap.registers', 'unit'])->find($id);
             if ($reg) {
-                // 1. Validasi Proteksi Penempatan: Cek apakah masih aktif ditempatkan di Unit / Paviliun
-                $unplacedNames = ['', '-', 'Belum Ditempatkan', 'Belum Ditempatkan / Di Gudang', 'Belum Ditempatkan / Di Gudang Aset', 'Gudang Aset', 'Gudang Perbekalan', 'Gudang Aset Utama / Belum Ditempatkan'];
-                $ruang = trim((string)($reg->ruang_pemegang ?: ($reg->unit?->nama ?? '')));
-                $isPlaced = !empty($reg->unit_id) || ($ruang !== '' && !in_array($ruang, $unplacedNames, true));
-
-                if ($isPlaced) {
-                    $room = $ruang ?: 'Unit / Paviliun RSUD';
-                    $nibarStr = $reg->nibar ?: $reg->no_register;
-                    return response()->json([
-                        'success' => false,
-                        'is_blocked' => true,
-                        'action_url' => '/mutasi-aset',
-                        'action_text' => 'Ajukan Mutasi Aset',
-                        'message' => "Unit register NIBAR \"{$nibarStr}\" saat ini belum dapat dihapus karena masih aktif ditempatkan di ruangan \"{$room}\" di database RSUD. Demi akuntabilitas aset RSUD Koesnadi, seluruh aset harus dipindahkan (mutasi) ke ruangan lain terlebih dahulu sampai ruangan ini kosong.",
-                    ], 422);
-                }
-
-                // 2. Validasi Proteksi Riwayat Transaksi: Cek apakah NIBAR pernah didistribusikan atau dimutasi
+                // 1. Validasi Proteksi Riwayat Transaksi: Cek apakah NIBAR pernah didistribusikan atau dimutasi
                 $hasDistribusi = \App\Models\DistribusiItemRegister::where('astap_register_id', $reg->id)->exists();
                 $hasMutasi = \App\Models\AstapMutasiRegister::where('astap_register_id', $reg->id)->exists();
 

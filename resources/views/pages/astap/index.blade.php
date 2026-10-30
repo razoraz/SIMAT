@@ -32,6 +32,9 @@
         <!-- 7. Modal Konfirmasi Tindakan Global -->
         @include('pages.astap.index_partials.modal_confirm')
 
+        <!-- 7b. Modal Konfirmasi Pindahkan ke Tong Sampah (Sesuai Mutasi Eksternal) -->
+        @include('pages.astap.index_partials.modal_delete')
+
         <!-- 8. Modal Pilih Tahun & Triwulan untuk Ekspor Excel -->
         @include('pages.astap.index_partials.modal_export_excel')
 
