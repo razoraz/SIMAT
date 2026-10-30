@@ -57,10 +57,10 @@
                             <div class="min-w-0 flex-1">
                                 <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Nama Barang / Aset</span>
                                 <div class="text-sm font-extrabold text-white truncate" x-text="selectedAstapReklas?.nama_barang || '-'"></div>
-                                <div class="text-[11px] font-mono text-cyan-400 font-medium mt-0.5" x-text="'Kode: ' + (selectedAstapReklas?.kode_barang || '-')"></div>
+                                <div class="text-[11px] font-mono text-cyan-400 font-medium mt-0.5" x-text="'Kode: ' + (selectedAstapReklas?.kode_barang || selectedAstapReklas?.kode_108 || selectedAstapReklas?.jenis_astap?.sub_sub_rincian_objek || '-')"></div>
                             </div>
                             <div class="text-right shrink-0">
-                                <template x-if="isPartialReklas()">
+                                <template x-if="typeof isPartialReklas === 'function' && isPartialReklas()">
                                     <div>
                                         <span class="text-[10px] font-extrabold uppercase tracking-wider text-amber-300 block">Dialihkan (Parsial)</span>
                                         <div class="text-sm font-extrabold font-mono text-cyan-300"
@@ -71,15 +71,15 @@
                                              x-text="'Sisa di ' + (selectedAstapReklas?.category || 'KIB') + ': Rp ' + Number(getReklasRemainingNilai()).toLocaleString('id-ID')"></div>
                                     </div>
                                 </template>
-                                <template x-if="!isPartialReklas()">
+                                <template x-if="typeof isPartialReklas !== 'function' || !isPartialReklas()">
                                     <div>
                                         <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block" x-text="(reklasJenis === 'extracom' || reklasJenis === 'intracom') ? 'Nilai Realisasi (Disesuaikan)' : 'Nilai Realisasi'"></span>
                                         <div class="text-sm font-extrabold font-mono"
                                              :class="reklasJenis === 'extracom' ? 'text-amber-300' : (reklasJenis === 'intracom' ? 'text-emerald-300' : 'text-emerald-400')"
-                                             x-text="(reklasJenis === 'extracom' || reklasJenis === 'intracom') ? ('Rp ' + Number(getReklasExtracomTotal()).toLocaleString('id-ID')) : (selectedAstapReklas?.jumlah_realisasi || 'Rp 0')"></div>
+                                             x-text="(reklasJenis === 'extracom' || reklasJenis === 'intracom') ? ('Rp ' + Number(getReklasExtracomTotal()).toLocaleString('id-ID')) : (selectedAstapReklas?.jumlah_realisasi || ('Rp ' + Number(selectedAstapReklas?.total_realisasi_num || selectedAstapReklas?.total_realisasi || selectedAstapReklas?.nilai_aset || 0).toLocaleString('id-ID')))"></div>
                                         <div class="text-[10.5px] font-mono mt-0.5"
                                              :class="reklasJenis === 'extracom' ? 'text-amber-200/80' : (reklasJenis === 'intracom' ? 'text-emerald-200/80' : 'text-teal-300')"
-                                             x-text="((reklasJenis === 'extracom' || reklasJenis === 'intracom') ? getReklasExtracomTotalVolume() : (selectedAstapReklas?.jumlah_volume || 1)) + ' ' + (selectedAstapReklas?.satuan || 'Unit')"></div>
+                                             x-text="((reklasJenis === 'extracom' || reklasJenis === 'intracom') ? getReklasExtracomTotalVolume() : (selectedAstapReklas?.jumlah_volume || 1)) + ' ' + (selectedAstapReklas?.satuan || (selectedAstapReklas?.satuan_nama || 'Unit'))"></div>
                                     </div>
                                 </template>
                             </div>
@@ -89,7 +89,7 @@
                                 <span class="text-[11px] text-slate-400 shrink-0">Kategori Saat Ini:</span>
                                 <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shrink-0"
                                       x-text="selectedAstapReklas?.category || '-'"></span>
-                                <span class="text-[11px] text-slate-300 truncate" x-text="selectedAstapReklas?.jenis_aset_nama || ''"></span>
+                                <span class="text-[11px] text-slate-300 truncate" x-text="selectedAstapReklas?.jenis_aset_nama || selectedAstapReklas?.jenis_astap?.nama_jenis || selectedAstapReklas?.jenis_astap?.uraian_sub_rincian || ''"></span>
                             </div>
                             <div class="flex flex-wrap items-center gap-2 text-[11px]">
                                 <span class="text-slate-400 shrink-0">📄 No. Bukti / BAST / SPK:</span>
@@ -1038,8 +1038,8 @@
                                                 Pilih Rincian Barang (<span x-text="reklasSpekBaruItems.length"></span> Item):
                                             </span>
                                             <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold"
-                                                  :class="isPartialReklas() ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'"
-                                                  x-text="getSelectedReklasItems().length + ' dari ' + reklasSpekBaruItems.length + ' Item Dialihkan' + (isPartialReklas() ? ' (Reklas Parsial)' : ' (Penuh)')"></span>
+                                                  :class="(typeof isPartialReklas === 'function' && isPartialReklas()) ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'"
+                                                  x-text="((typeof getSelectedReklasItems === 'function' && getSelectedReklasItems()) ? getSelectedReklasItems().length : 0) + ' dari ' + reklasSpekBaruItems.length + ' Item Dialihkan' + ((typeof isPartialReklas === 'function' && isPartialReklas()) ? ' (Reklas Parsial)' : ' (Penuh)')"></span>
                                         </div>
 
                                         <!-- Tab Pills: Full-Width (2-5 Item) & Scrollable (6+ Item) -->

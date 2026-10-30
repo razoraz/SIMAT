@@ -4524,6 +4524,41 @@
                 }, 0);
             },
 
+            // --- Partial Reklas Helpers ---
+            isPartialReklas() {
+                if (!this.reklasSpekBaruItems || this.reklasSpekBaruItems.length <= 1) return false;
+                const selected = this.getSelectedReklasItems();
+                return selected.length > 0 && selected.length < this.reklasSpekBaruItems.length;
+            },
+            getSelectedReklasItems() {
+                if (!this.reklasSpekBaruItems || this.reklasSpekBaruItems.length === 0) {
+                    return this.reklasSpekBaru ? [this.reklasSpekBaru] : [];
+                }
+                return this.reklasSpekBaruItems.filter(item => item.is_selected !== false);
+            },
+            getUnselectedReklasItems() {
+                if (!this.reklasSpekBaruItems || this.reklasSpekBaruItems.length <= 1) return [];
+                return this.reklasSpekBaruItems.filter(item => item.is_selected === false);
+            },
+            getReklasSelectedNilai() {
+                const it = this.selectedAstapReklas;
+                if (!it) return 0;
+                let rawNilai = it.jumlah_realisasi_raw ?? it.total_realisasi_num ?? it.total_realisasi ?? it.harga_satuan ?? 0;
+                if (typeof rawNilai === 'string') rawNilai = parseFloat(rawNilai.replace(/[^0-9.-]/g, '')) || 0;
+                if (!this.reklasSpekBaruItems || this.reklasSpekBaruItems.length <= 1) return rawNilai;
+                const totalUnits = this.reklasSpekBaruItems.length;
+                const selectedCount = this.getSelectedReklasItems().length;
+                if (totalUnits === 0 || selectedCount === 0) return 0;
+                return Math.round((rawNilai / totalUnits) * selectedCount);
+            },
+            getReklasRemainingNilai() {
+                const it = this.selectedAstapReklas;
+                if (!it) return 0;
+                let rawNilai = it.jumlah_realisasi_raw ?? it.total_realisasi_num ?? it.total_realisasi ?? it.harga_satuan ?? 0;
+                if (typeof rawNilai === 'string') rawNilai = parseFloat(rawNilai.replace(/[^0-9.-]/g, '')) || 0;
+                return Math.max(0, rawNilai - this.getReklasSelectedNilai());
+            },
+
             addExtracomItem() {
                 this.reklasExtracomItems.push({
                     nama_barang: '',

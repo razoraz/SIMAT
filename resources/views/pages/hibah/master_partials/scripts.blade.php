@@ -1351,7 +1351,7 @@
             },
 
             getRincianKondisiStats(item, idx = 0, type = null) {
-                if (!item) return { total: 0, text: 'Baik (100%)', badge_class: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30', dot_class: 'bg-emerald-400' };
+                if (!item) return { total: 0, text: 'Baik', badge_class: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30', dot_class: 'bg-emerald-400' };
                 const astap = item.astap || item;
                 let regs = this.getActiveRegisters(astap);
                 if (regs.length === 0) regs = this.getRegistersList(item);
@@ -1389,31 +1389,62 @@
                         baik: 1,
                         kurang_baik: 0,
                         rusak_berat: 0,
+                        pct_baik: 100,
+                        pct_kb: 0,
+                        pct_rb: 0,
+                        is_multi: false,
                         text: 'Baik',
                         badge_class: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
                         dot_class: 'bg-emerald-400'
                     };
                 }
 
-                const baik = regs.filter(r => (r.kondisi || 'Baik') === 'Baik' || r.kondisi === 'B').length;
-                const kb = regs.filter(r => r.kondisi === 'Kurang Baik' || r.kondisi === 'KB' || r.kondisi === 'Rusak Ringan' || r.kondisi === 'RR').length;
-                const rb = regs.filter(r => r.kondisi === 'Rusak Berat' || r.kondisi === 'RB' || r.kondisi === 'Rusak').length;
-                const dominan = (baik >= kb && baik >= rb) ? 'Baik' : ((kb >= rb) ? 'Kurang Baik' : 'Rusak Berat');
+                let baik = regs.filter(r => (r.kondisi || 'Baik') === 'Baik' || r.kondisi === 'B').length;
+                let kb   = regs.filter(r => r.kondisi === 'Kurang Baik' || r.kondisi === 'KB' || r.kondisi === 'Rusak Ringan' || r.kondisi === 'RR').length;
+                let rb   = regs.filter(r => r.kondisi === 'Rusak Berat' || r.kondisi === 'RB' || r.kondisi === 'Rusak' || (r.kondisi && (r.kondisi.includes('Rusak') || r.kondisi.includes('Usang') || r.kondisi.includes('Hilang')))).length;
+
+                if (baik === 0 && kb === 0 && rb === 0) {
+                    baik = total;
+                }
+
+                const pct_baik = Math.round((baik / total) * 100);
+                const pct_kb   = Math.round((kb   / total) * 100);
+                const pct_rb   = Math.round((rb   / total) * 100);
+
+                const isSingle = (baik === total) || (kb === total) || (rb === total);
+
+                let parts = [];
+                if (baik > 0) parts.push(`${pct_baik}% Baik (${baik}/${total})`);
+                if (kb > 0)   parts.push(`${pct_kb}% Kurang Baik (${kb}/${total})`);
+                if (rb > 0)   parts.push(`${pct_rb}% Rusak Berat (${rb}/${total})`);
+
+                let text = parts.join(' • ');
+                if (isSingle) {
+                    if (baik === total) text = total > 1 ? `Baik (100%)` : 'Baik';
+                    else if (kb === total) text = total > 1 ? `Kurang Baik (100%)` : 'Kurang Baik';
+                    else if (rb === total) text = total > 1 ? `Rusak Berat (100%)` : 'Rusak Berat';
+                }
+                if (!text) text = 'Baik';
 
                 let badgeClass = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
-                if (rb > 0 && rb >= baik && rb >= kb) {
+                if (rb > 0) {
                     badgeClass = 'bg-rose-500/20 text-rose-300 border-rose-500/30';
-                } else if (kb > 0 && kb >= baik) {
+                } else if (kb > 0) {
                     badgeClass = 'bg-amber-500/20 text-amber-300 border-amber-500/30';
                 }
 
-                let dotClass = dominan === 'Baik' ? 'bg-emerald-400' : (dominan === 'Kurang Baik' ? 'bg-amber-400' : 'bg-rose-400');
+                let dotClass = (pct_baik === 100) ? 'bg-emerald-400' : (pct_rb > 0 ? 'bg-rose-400' : 'bg-amber-400');
+
+                const dominan = (baik >= kb && baik >= rb) ? 'Baik' : ((kb >= rb) ? 'Kurang Baik' : 'Rusak Berat');
 
                 return {
                     total,
                     baik, kurang_baik: kb, rusak_berat: rb,
+                    pct_baik, pct_kb, pct_rb,
                     kondisi_dominan: dominan,
-                    text: dominan,
+                    is_multi: !isSingle,
+                    parts,
+                    text: text,
                     badge_class: badgeClass,
                     dot_class: dotClass
                 };
@@ -1621,18 +1652,62 @@
             // =========================================================================
             openReklas(item, specificReg = null) {
                 if (!item) return;
-                this.selectedAstapReklas = item;
+                const astap = item.astap ? item.astap : item;
+                const hibah = item.astap ? item : (item.hibah_detail || item.hibah || {});
 
-                const cat = (typeof this.getEffectiveKibCategory === 'function')
-                    ? this.getEffectiveKibCategory(item)
-                    : (item.category || 'KIB B');
-                const kode = item.kode_barang || item.kode_rekening || '';
-                const isExtracomNow = Boolean(item.is_extracomtable || item.is_extracom);
+                let target = Object.assign({}, astap);
+
+                // 1. Kode Barang 108
+                target.kode_barang = target.kode_barang 
+                    || target.kode_108 
+                    || (target.jenis_astap?.sub_sub_rincian_objek || target.jenis_astap?.sub_rincian_objek || target.jenis_astap?.jenis || '-');
+                target.kode_108 = target.kode_barang;
+
+                // 2. Kategori KIB
+                target.category = (typeof this.getEffectiveKibCategory === 'function')
+                    ? this.getEffectiveKibCategory(target)
+                    : (target.category || 'KIB B');
+
+                // 3. Nama Jenis Aset (Kategori)
+                target.jenis_aset_nama = target.jenis_aset_nama 
+                    || target.jenis_astap?.nama_jenis 
+                    || target.spesifikasi_json?.jenis_aset_nama 
+                    || target.jenis_astap?.uraian_sub_rincian 
+                    || '';
+
+                // 4. Nilai Realisasi & Format Rupiah
+                let rawVal = target.total_realisasi_num ?? target.total_realisasi ?? hibah.nilai_aset ?? target.nilai_aset ?? target.harga_satuan ?? 0;
+                if (typeof rawVal === 'string') rawVal = parseFloat(rawVal.replace(/[^0-9.-]/g, '')) || 0;
+                target.total_realisasi_num = rawVal;
+                target.total_realisasi = rawVal;
+                target.jumlah_realisasi = 'Rp ' + Number(rawVal).toLocaleString('id-ID');
+
+                // 5. Volume & Satuan
+                target.jumlah_volume = parseInt(target.jumlah_volume || hibah.jumlah_volume || 1);
+                target.satuan = target.satuan || hibah.satuan || 'Unit';
+
+                // 6. Dokumen BAST / Bukti
+                const bNo = hibah.nomor_bast || target.bast_dokumen_nomor || target.bast_nomor || target.spesifikasi_json?.nomor_bast || '';
+                if (bNo) {
+                    target.bast_dokumen_nomor = bNo;
+                    target.nomor_bast = bNo;
+                }
+
+                // 7. Registers
+                if ((!target.registers || target.registers.length === 0) && hibah.registers) {
+                    target.registers = hibah.registers;
+                }
+
+                this.selectedAstapReklas = target;
+
+                const cat = target.category;
+                const kode = target.kode_barang || target.kode_rekening || '';
+                const isExtracomNow = Boolean(target.is_extracomtable || target.is_extracom);
                 const isNonExtracom = (kode.startsWith('1.3.1') || kode.startsWith('1.3.3') || kode.startsWith('1.3.4') || kode.startsWith('1.3.6') || kode.startsWith('1.5.3') || cat === 'KIB A' || cat === 'KIB C' || cat === 'KIB D' || cat === 'KIB F' || cat === 'ATB');
                 const isKdp = (cat === 'KIB F' || kode.startsWith('1.3.6'));
 
                 // Inisialisasi NIBAR yang dipilih (semua register aktif)
-                const activeRegs = (item.registers || []).filter(r => r.status !== 'Mutasi Keluar OPD');
+                const activeRegs = (target.registers || []).filter(r => r.status !== 'Mutasi Keluar OPD');
                 this.reklasSelectedNibarIds = activeRegs.map(r => r.id);
 
                 // Tentukan jenis reklas default yang paling relevan untuk aset hibah
@@ -1664,12 +1739,12 @@
                 this.reklasTipeKoreksiNilai = 'kurang';
                 this.reklasSubKoreksi = 'biasa';
                 this.reklasNominalKoreksi = 0;
-                this.reklasNilaiRealisasiBaru = parseFloat(item.total_realisasi_num || item.nilai_aset || item.harga_satuan || 0);
-                this.reklasNilaiAnggaran = 0;
+                this.reklasNilaiRealisasiBaru = target.total_realisasi_num;
+                this.reklasNilaiAnggaran = target.total_realisasi_num;
                 this.reklasNoDokumenKoreksi = '';
                 this.reklasDokumenTglKoreksi = new Date().toLocaleDateString('en-CA');
                 this.reklasTanggal = new Date().toLocaleDateString('en-CA');
-                this.reklasNomorBa = (item.nomor_bast ? ('BAR-' + item.nomor_bast) : ('028/BAR-HB/' + new Date().getFullYear()));
+                this.reklasNomorBa = (target.bast_dokumen_nomor ? ('BAR-' + target.bast_dokumen_nomor) : ('028/BAR-HB/' + new Date().getFullYear()));
                 this.reklasAlasan = 'Penyesuaian klasifikasi akun aset hibah masuk sesuai standar pembukuan RSUD.';
                 this.reklasExtracomItems = [];
                 this.reklasKdpProgresAwal = 0;
@@ -1753,13 +1828,11 @@
                 if (!this.selectedAstapReklas) return '-';
                 const it = this.selectedAstapReklas;
                 const isValidDoc = (val) => val && typeof val === 'string' && val.trim() !== '' && val.trim() !== '-';
-                const docs = [];
-                if (isValidDoc(it.bast_dokumen_nomor)) docs.push(`BAST: ${it.bast_dokumen_nomor.trim()}`);
-                if (isValidDoc(it.nomor_bast)) docs.push(`BAST: ${it.nomor_bast.trim()}`);
-                if (isValidDoc(it.spk_nomor)) docs.push(`SPK: ${it.spk_nomor.trim()}`);
-                if (docs.length === 0 && isValidDoc(this.reklasNomorBa)) return this.reklasNomorBa.trim();
-                if (docs.length === 0) return 'Bukti Transaksi Hibah';
-                return docs.join(' | ');
+                const bNo = it.bast_dokumen_nomor || it.nomor_bast || it.hibah_nomor_bast || it.spesifikasi_json?.nomor_bast || '';
+                if (isValidDoc(bNo)) return `BAST: ${bNo.trim()}`;
+                if (isValidDoc(it.spk_nomor)) return `SPK: ${it.spk_nomor.trim()}`;
+                if (isValidDoc(this.reklasNomorBa)) return this.reklasNomorBa.trim();
+                return 'Bukti Transaksi Hibah';
             },
             getReklasExtracomTotal() {
                 if (!this.reklasExtracomItems || this.reklasExtracomItems.length === 0) {
