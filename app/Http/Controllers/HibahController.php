@@ -1084,18 +1084,7 @@ class HibahController extends Controller
      */
     public static function getDistinctPejabats()
     {
-        return Astap::whereNotNull('ppk_nama')
-            ->where('ppk_nama', '!=', '')
-            ->orderBy('id', 'desc')
-            ->get(['ppk_nama', 'ppk_nip'])
-            ->map(function($a) {
-                return [
-                    'nama' => trim($a->ppk_nama),
-                    'nip'  => $a->ppk_nip ?? '',
-                ];
-            })
-            ->unique(fn($p) => strtolower(trim($p['nama'])))
-            ->values();
+        return \App\Http\Controllers\MutasiEksternalController::getDistinctPejabats();
     }
 
     /**

@@ -568,6 +568,71 @@
                 return list.filter(s => s.toLowerCase().includes(q)).slice(0, 25);
             },
 
+            rememberCustomPejabat(nama, nip, jabatan) {
+                if (!nama || !nama.trim()) return;
+                const cleanNama = nama.trim();
+                const cleanNip = (nip || '').trim();
+                const cleanJabatan = (jabatan || '').trim();
+                try {
+                    let custom = JSON.parse(localStorage.getItem('rsud_custom_pejabats') || '[]');
+                    const idx = custom.findIndex(p => p.nama && p.nama.toLowerCase() === cleanNama.toLowerCase());
+                    if (idx >= 0) {
+                        custom[idx] = { nama: cleanNama, nip: cleanNip || custom[idx].nip, jabatan: cleanJabatan || custom[idx].jabatan };
+                    } else {
+                        custom.unshift({ nama: cleanNama, nip: cleanNip, jabatan: cleanJabatan });
+                    }
+                    localStorage.setItem('rsud_custom_pejabats', JSON.stringify(custom.slice(0, 50)));
+
+                    if (!this.dbPejabats) this.dbPejabats = [];
+                    const memIdx = this.dbPejabats.findIndex(p => p.nama && p.nama.toLowerCase() === cleanNama.toLowerCase());
+                    if (memIdx >= 0) {
+                        this.dbPejabats[memIdx] = { nama: cleanNama, nip: cleanNip || this.dbPejabats[memIdx].nip, jabatan: cleanJabatan || this.dbPejabats[memIdx].jabatan };
+                    } else {
+                        this.dbPejabats.unshift({ nama: cleanNama, nip: cleanNip, jabatan: cleanJabatan });
+                    }
+                } catch (e) {}
+            },
+
+            get availablePejabatAsalList() {
+                let localSaved = [];
+                try {
+                    localSaved = JSON.parse(localStorage.getItem('rsud_custom_pejabats') || '[]');
+                } catch (e) {}
+
+                const defaults = [
+                    { nama: 'BUDI HARTONO, S.Sos', nip: '19760229 200801 1 010', jabatan: 'Pengurus Barang Pengguna' },
+                    { nama: 'dr. YUS PRIYATNA ADISIWIBOWO, Sp.P', nip: '19760814 200212 1 005', jabatan: 'Direktur RSUD dr. H. Koesnadi' }
+                ];
+
+                const combined = [...localSaved, ...(this.dbPejabats || []), ...defaults];
+                const seen = new Set();
+                const list = [];
+                for (const p of combined) {
+                    if (!p || !p.nama) continue;
+                    const key = p.nama.trim().toLowerCase();
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        list.push({
+                            nama: p.nama.trim(),
+                            nip: (p.nip || '').trim(),
+                            jabatan: (p.jabatan || '').trim() || 'Pengurus Barang / Pejabat RSUD'
+                        });
+                    }
+                }
+                return list;
+            },
+
+            get filteredPejabatAsalList() {
+                const list = this.availablePejabatAsalList;
+                const q = (this.formData.pj_asal_nama || '').toLowerCase().trim();
+                if (!q) return list;
+                return list.filter(p => 
+                    (p.nama && p.nama.toLowerCase().includes(q)) ||
+                    (p.nip && p.nip.toLowerCase().includes(q)) ||
+                    (p.jabatan && p.jabatan.toLowerCase().includes(q))
+                );
+            },
+
             get availablePejabatTujuanList() {
                 const skpd = this.formData.skpd_tujuan;
                 if (!skpd || !this.skpdDirectory || !this.skpdDirectory[skpd]) return [];
@@ -601,6 +666,7 @@
                 this.formData.nip_pejabat_opd_tujuan = p.nip || '-';
                 this.formData.jabatan_opd_tujuan = p.jabatan || 'Pengurus Barang';
                 this.isPejabatTujuanDropdownOpen = false;
+                this.rememberCustomPejabat(p.nama, p.nip, p.jabatan);
             },
 
             selectPejabatAsal(p) {
@@ -608,6 +674,7 @@
                 this.formData.pj_asal_nip = p.nip || '-';
                 this.formData.pj_asal_jabatan = p.jabatan || 'Pengurus Barang Pengguna';
                 this.isPejabatAsalDropdownOpen = false;
+                this.rememberCustomPejabat(p.nama, p.nip, p.jabatan);
             },
 
             handleDokumenFile(event) {

@@ -3017,12 +3017,38 @@
                 }
             },
 
+            rememberCustomPejabat(nama, nip, jabatan) {
+                if (!nama || !nama.trim()) return;
+                const cleanNama = nama.trim();
+                const cleanNip = (nip || '').trim();
+                const cleanJabatan = (jabatan || '').trim();
+                try {
+                    let custom = JSON.parse(localStorage.getItem('rsud_custom_pejabats') || '[]');
+                    const idx = custom.findIndex(p => p.nama && p.nama.toLowerCase() === cleanNama.toLowerCase());
+                    if (idx >= 0) {
+                        custom[idx] = { nama: cleanNama, nip: cleanNip || custom[idx].nip, jabatan: cleanJabatan || custom[idx].jabatan };
+                    } else {
+                        custom.unshift({ nama: cleanNama, nip: cleanNip, jabatan: cleanJabatan });
+                    }
+                    localStorage.setItem('rsud_custom_pejabats', JSON.stringify(custom.slice(0, 50)));
+
+                    if (!this.dbPejabats) this.dbPejabats = [];
+                    const memIdx = this.dbPejabats.findIndex(p => p.nama && p.nama.toLowerCase() === cleanNama.toLowerCase());
+                    if (memIdx >= 0) {
+                        this.dbPejabats[memIdx] = { nama: cleanNama, nip: cleanNip || this.dbPejabats[memIdx].nip, jabatan: cleanJabatan || this.dbPejabats[memIdx].jabatan };
+                    } else {
+                        this.dbPejabats.unshift({ nama: cleanNama, nip: cleanNip, jabatan: cleanJabatan });
+                    }
+                } catch (e) {}
+            },
+
             selectPejabatTujuan(p) {
                 if (!p) return;
                 this.reklasPejabatOpdTujuan = p.nama || '';
                 this.reklasNipPejabatOpdTujuan = p.nip || '';
                 if (p.jabatan) this.reklasJabatanOpdTujuan = p.jabatan;
                 this.isPejabatTujuanDropdownOpen = false;
+                this.rememberCustomPejabat(p.nama, p.nip, p.jabatan);
             },
 
             selectPejabatAsal(p) {
@@ -3031,6 +3057,7 @@
                 this.reklasPjAsalNip = p.nip || '';
                 this.reklasPjAsalJabatan = p.jabatan || '';
                 this.isPejabatAsalDropdownOpen = false;
+                this.rememberCustomPejabat(p.nama, p.nip, p.jabatan);
             },
 
             handleDokumenFile(e) {
@@ -3061,11 +3088,43 @@
                 if (!q) return list;
                 return list.filter(p => (p.nama || p).toLowerCase().includes(q));
             },
+            get availablePejabatAsalList() {
+                let localSaved = [];
+                try {
+                    localSaved = JSON.parse(localStorage.getItem('rsud_custom_pejabats') || '[]');
+                } catch (e) {}
+
+                const defaults = [
+                    { nama: 'BUDI HARTONO, S.Sos', nip: '19760229 200801 1 010', jabatan: 'Pengurus Barang Pengguna' },
+                    { nama: 'dr. YUS PRIYATNA ADISIWIBOWO, Sp.P', nip: '19760814 200212 1 005', jabatan: 'Direktur RSUD dr. H. Koesnadi' }
+                ];
+
+                const combined = [...localSaved, ...(this.dbPejabats || []), ...defaults];
+                const seen = new Set();
+                const list = [];
+                for (const p of combined) {
+                    if (!p || !p.nama) continue;
+                    const key = p.nama.trim().toLowerCase();
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        list.push({
+                            nama: p.nama.trim(),
+                            nip: (p.nip || '').trim(),
+                            jabatan: (p.jabatan || '').trim() || 'Pengurus Barang / Pejabat RSUD'
+                        });
+                    }
+                }
+                return list;
+            },
             get filteredPejabatAsalList() {
+                const list = this.availablePejabatAsalList;
                 const q = (this.reklasPjAsalNama || '').toLowerCase().trim();
-                const list = this.dbPejabats || [];
-                if (!q) return list.slice(0, 20);
-                return list.filter(p => (p.nama || '').toLowerCase().includes(q)).slice(0, 20);
+                if (!q) return list;
+                return list.filter(p => 
+                    (p.nama && p.nama.toLowerCase().includes(q)) ||
+                    (p.nip && p.nip.toLowerCase().includes(q)) ||
+                    (p.jabatan && p.jabatan.toLowerCase().includes(q))
+                );
             },
 
             // --- Label Helpers ---
@@ -3141,7 +3200,7 @@
                     else if (this.reklasJenis === 'intracom') jenisReklasDb = 'KAPITALISASI_INTRAKOM';
                     else if (this.reklasJenis === 'kdp') jenisReklasDb = 'KDP_TO_DEFINITIF';
                     else if (this.reklasJenis === 'koreksi_nilai') jenisReklasDb = 'KOREKSI_LAIN';
-                    else if (this.reklasJenis === 'hibah') jenisReklasDb = (this.reklasTipeHibah === 'masuk') ? 'HIBAH_MASUK' : 'HIBAH_KELUAR';
+                    else if (this.reklasJenis === 'hibah') jenisReklasDb = 'HIBAH_KELUAR';
                     else if (this.reklasJenis === 'mutasi_eksternal') jenisReklasDb = 'MUTASI_EKSTERNAL';
 
                     let asalKib = it.category || 'KIB B';
@@ -3149,7 +3208,7 @@
                     if (this.reklasJenis === 'intracom') { asalKib = 'EKSTRAKOMPTABEL'; targetKib = this.reklasTujuanKib || 'KIB B'; }
                     else if (this.reklasJenis === 'extracom') { targetKib = 'EKSTRAKOMPTABEL'; }
                     else if (this.reklasJenis === 'kdp') { asalKib = 'KIB F'; targetKib = this.reklasTujuanKib === 'KIB D' ? 'KIB D' : 'KIB C'; }
-                    else if (this.reklasJenis === 'hibah') { if (this.reklasTipeHibah === 'keluar') { targetKib = 'HIBAH'; } else { asalKib = 'HIBAH'; targetKib = it.category || 'KIB B'; } }
+                    else if (this.reklasJenis === 'hibah') { asalKib = it.category || 'KIB B'; targetKib = 'HIBAH'; }
                     else if (this.reklasJenis === 'mutasi_eksternal') { targetKib = 'MUTASI_OPD'; }
 
                     const isPartial = this.isPartialReklas();

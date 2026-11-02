@@ -72,9 +72,9 @@
 
         <!-- Klasifikasi 108 -->
         <div class="p-3 rounded-2xl bg-slate-950/70 border border-slate-800/80">
-            <span class="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">🏛️ Kode Klasifikasi</span>
-            <span class="text-slate-300 font-mono text-[11px] font-bold block truncate" title="{{ $astap->kode_barang ?? '-' }}">
-                {{ $astap->kode_barang ?? '-' }}
+            <span class="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">🏛️ Kode 108 (Klasifikasi)</span>
+            <span class="text-cyan-300 font-mono text-[11px] font-bold block truncate" title="{{ $kode108 ?? ($astap->kode_barang ?? '-') }}">
+                {{ $kode108 ?? ($astap->kode_barang ?? '-') }}
             </span>
         </div>
     </div>

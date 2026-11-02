@@ -12298,6 +12298,71 @@
                     return list.filter(s => s.toLowerCase().includes(q)).slice(0, 25);
                 },
 
+                rememberCustomPejabat(nama, nip, jabatan) {
+                    if (!nama || !nama.trim()) return;
+                    const cleanNama = nama.trim();
+                    const cleanNip = (nip || '').trim();
+                    const cleanJabatan = (jabatan || '').trim();
+                    try {
+                        let custom = JSON.parse(localStorage.getItem('rsud_custom_pejabats') || '[]');
+                        const idx = custom.findIndex(p => p.nama && p.nama.toLowerCase() === cleanNama.toLowerCase());
+                        if (idx >= 0) {
+                            custom[idx] = { nama: cleanNama, nip: cleanNip || custom[idx].nip, jabatan: cleanJabatan || custom[idx].jabatan };
+                        } else {
+                            custom.unshift({ nama: cleanNama, nip: cleanNip, jabatan: cleanJabatan });
+                        }
+                        localStorage.setItem('rsud_custom_pejabats', JSON.stringify(custom.slice(0, 50)));
+
+                        if (!this.dbPejabats) this.dbPejabats = [];
+                        const memIdx = this.dbPejabats.findIndex(p => p.nama && p.nama.toLowerCase() === cleanNama.toLowerCase());
+                        if (memIdx >= 0) {
+                            this.dbPejabats[memIdx] = { nama: cleanNama, nip: cleanNip || this.dbPejabats[memIdx].nip, jabatan: cleanJabatan || this.dbPejabats[memIdx].jabatan };
+                        } else {
+                            this.dbPejabats.unshift({ nama: cleanNama, nip: cleanNip, jabatan: cleanJabatan });
+                        }
+                    } catch (e) {}
+                },
+
+                get availablePejabatAsalList() {
+                    let localSaved = [];
+                    try {
+                        localSaved = JSON.parse(localStorage.getItem('rsud_custom_pejabats') || '[]');
+                    } catch (e) {}
+
+                    const defaults = [
+                        { nama: 'BUDI HARTONO, S.Sos', nip: '19760229 200801 1 010', jabatan: 'Pengurus Barang Pengguna' },
+                        { nama: 'dr. YUS PRIYATNA ADISIWIBOWO, Sp.P', nip: '19760814 200212 1 005', jabatan: 'Direktur RSUD dr. H. Koesnadi' }
+                    ];
+
+                    const combined = [...localSaved, ...(this.dbPejabats || []), ...defaults];
+                    const seen = new Set();
+                    const list = [];
+                    for (const p of combined) {
+                        if (!p || !p.nama) continue;
+                        const key = p.nama.trim().toLowerCase();
+                        if (!seen.has(key)) {
+                            seen.add(key);
+                            list.push({
+                                nama: p.nama.trim(),
+                                nip: (p.nip || '').trim(),
+                                jabatan: (p.jabatan || '').trim() || 'Pengurus Barang / Pejabat RSUD'
+                            });
+                        }
+                    }
+                    return list;
+                },
+
+                get filteredPejabatAsalList() {
+                    const list = this.availablePejabatAsalList;
+                    const q = (this.reklasPjAsalNama || '').toLowerCase().trim();
+                    if (!q) return list;
+                    return list.filter(p => 
+                        (p.nama && p.nama.toLowerCase().includes(q)) ||
+                        (p.nip && p.nip.toLowerCase().includes(q)) ||
+                        (p.jabatan && p.jabatan.toLowerCase().includes(q))
+                    );
+                },
+
                 get availablePejabatTujuanList() {
                     const skpd = this.reklasSkpdTujuan;
                     if (!skpd || !this.skpdDirectory || !this.skpdDirectory[skpd]) return [];
@@ -12331,6 +12396,7 @@
                     this.reklasNipPejabatOpdTujuan = p.nip || '';
                     if (p.jabatan) this.reklasJabatanOpdTujuan = p.jabatan;
                     this.isPejabatTujuanDropdownOpen = false;
+                    this.rememberCustomPejabat(p.nama, p.nip, p.jabatan);
                 },
 
                 selectPejabatAsal(p) {
@@ -12339,6 +12405,7 @@
                     this.reklasPjAsalNip = p.nip || '';
                     this.reklasPjAsalJabatan = p.jabatan || '';
                     this.isPejabatAsalDropdownOpen = false;
+                    this.rememberCustomPejabat(p.nama, p.nip, p.jabatan);
                 },
 
                 handleDokumenFile(e) {
@@ -12464,12 +12531,8 @@
                         const noBast = (this.reklasNomorBastHibah || '').trim();
                         const pihak = (this.reklasPihakHibah || '').trim();
                         const bastStr = noBast ? ` berdasarkan BAST No. ${noBast}` : '';
-                        const pihakStr = pihak ? (this.reklasTipeHibah === 'keluar' ? ` kepada ${pihak}` : ` dari ${pihak}`) : '';
-                        if (this.reklasTipeHibah === 'keluar') {
-                            narasi = `Reklasifikasi hibah keluar atas aset ${it.category || 'KIB B'} ${subRek} ${subNama} senilai ${val} berupa ${it.nama_barang || ''} (${vol})${pihakStr}${bastStr}${spacerTgl} pada RSUD dr.H.Koesnandi (Pengurangan Aset Tetap ke Baris 40 Hibah).`;
-                        } else {
-                            narasi = `Pencatatan reklasifikasi hibah masuk barang ${subRek} ${subNama} senilai ${val} berupa ${it.nama_barang || ''} (${vol})${pihakStr}${bastStr}${spacerTgl} pada RSUD dr.H.Koesnandi (Penambahan Aset Tetap dari Baris 40 Hibah).`;
-                        }
+                        const pihakStr = pihak ? ` kepada ${pihak}` : '';
+                        narasi = `Reklasifikasi hibah keluar atas aset ${it.category || 'KIB B'} ${subRek} ${subNama} senilai ${val} berupa ${it.nama_barang || ''} (${vol})${pihakStr}${bastStr}${spacerTgl} pada RSUD dr.H.Koesnandi (Pengurangan Aset Tetap ke Baris 40 Hibah).`;
                     } else if (this.reklasJenis === 'mutasi_eksternal') {
                         const val = it.jumlah_realisasi || ('Rp ' + Number(it.total_realisasi_num || 0).toLocaleString('id-ID'));
                         const vol = (it.jumlah_volume || 1) + ' Unit';
@@ -12697,7 +12760,7 @@
                         else if (this.reklasJenis === 'kdp') jenisReklasDb = 'KDP_TO_DEFINITIF';
                         else if (this.reklasJenis === 'pindah_kib') jenisReklasDb = 'KOREKSI_REKENING';
                         else if (this.reklasJenis === 'koreksi_nilai') jenisReklasDb = 'KOREKSI_LAIN';
-                        else if (this.reklasJenis === 'hibah') jenisReklasDb = (this.reklasTipeHibah === 'masuk') ? 'HIBAH_MASUK' : 'HIBAH_KELUAR';
+                        else if (this.reklasJenis === 'hibah') jenisReklasDb = 'HIBAH_KELUAR';
                         else if (this.reklasJenis === 'mutasi_eksternal') jenisReklasDb = 'MUTASI_EKSTERNAL';
 
                         let asalKib = (it.category || 'KIB B');
@@ -12718,13 +12781,8 @@
                             asalKib = it.category || 'KIB B';
                             targetKib = asalKib;
                         } else if (this.reklasJenis === 'hibah') {
-                            if (this.reklasTipeHibah === 'keluar') {
-                                asalKib = it.category || 'KIB B';
-                                targetKib = 'HIBAH';
-                            } else {
-                                asalKib = 'HIBAH';
-                                targetKib = it.category || 'KIB B';
-                            }
+                            asalKib = it.category || 'KIB B';
+                            targetKib = 'HIBAH';
                         } else if (this.reklasJenis === 'mutasi_eksternal') {
                             asalKib = it.category || 'KIB B';
                             targetKib = 'MUTASI_OPD';
@@ -12862,6 +12920,13 @@
 
                             // Jika mutasi eksternal: cek apakah mutasi penuh (100%) atau parsial
                             if (this.reklasJenis === 'mutasi_eksternal') {
+                                if (this.reklasPjAsalNama) {
+                                    this.rememberCustomPejabat(this.reklasPjAsalNama, this.reklasPjAsalNip, this.reklasPjAsalJabatan);
+                                }
+                                if (this.reklasPejabatOpdTujuan) {
+                                    this.rememberCustomPejabat(this.reklasPejabatOpdTujuan, this.reklasNipPejabatOpdTujuan, this.reklasJabatanOpdTujuan);
+                                }
+
                                 const isFull = (resJson.is_full_transfer !== undefined)
                                     ? resJson.is_full_transfer
                                     : (this.getReklasMutasiRemainingVolume() <= 0);

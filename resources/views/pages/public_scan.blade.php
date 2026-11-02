@@ -61,13 +61,16 @@
 
                 // Ciri Khusus / Spesifikasi Fisik
                 $merk = $spec['mesin_merk'] ?? ($spec['merk'] ?? ($astap->merk ?? ''));
-                $tipe = $spec['mesin_tipe'] ?? ($spec['tipe'] ?? ($astap->type ?? ''));
-                $ukuran = $spec['mesin_ukuran_cc'] ?? ($spec['ukuran_cc'] ?? ($spec['ukuran'] ?? ($spec['luas_m2'] ?? '')));
+                $tipe = $spec['mesin_tipe'] ?? ($spec['mesin_type'] ?? ($spec['tipe'] ?? ($spec['type'] ?? ($astap->type ?? ''))));
+                $ukuran = $spec['mesin_ukuran_cc'] ?? ($spec['mesin_ukuran'] ?? ($spec['ukuran_cc'] ?? ($spec['ukuran'] ?? ($spec['luas_m2'] ?? ''))));
                 $bahan = $spec['mesin_bahan'] ?? ($spec['bahan'] ?? ($spec['beton'] ?? ''));
                 $noPabrik = $spec['mesin_no_pabrik'] ?? ($spec['no_pabrik'] ?? ($astap->no_pabrik ?? ''));
                 $noRangka = $spec['mesin_no_rangka'] ?? ($spec['no_rangka'] ?? '');
                 $noMesin = $spec['mesin_no_mesin'] ?? ($spec['no_mesin'] ?? '');
                 $noPolisi = $spec['mesin_no_polisi'] ?? ($spec['no_polisi'] ?? '');
+
+                // Kode 108 (Klasifikasi Standar BMD)
+                $kode108 = $astap->kode_108 ?: ($astap->kode_barang ?: ($astap->jenisAstap?->sub_sub_rincian_objek ?: ($astap->jenisAstap?->kode ?: ($spec['mesin_items'][0]['mesin_kode_barang'] ?? ($spec['mesin_kode_barang'] ?? '-')))));
 
                 // Atribut Khusus ATB / Buku / Lahan
                 $judul = $spec['atb_judul'] ?? ($spec['lainnya_buku_judul'] ?? ($spec['lainnya_hewan_judul'] ?? ($spec['judul'] ?? '')));

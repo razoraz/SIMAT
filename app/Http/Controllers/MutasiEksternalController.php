@@ -18,20 +18,68 @@ use Illuminate\Support\Facades\Storage;
 class MutasiEksternalController extends Controller
 {
     /**
-     * Dapatkan daftar pejabat penanggung jawab (PPK / Pengurus Barang) yang pernah tercatat.
+     * Dapatkan daftar pejabat penanggung jawab (PPK / Pengurus Barang / Penyerah / Penerima) yang pernah tercatat.
      */
     public static function getDistinctPejabats()
     {
-        return Astap::whereNotNull('ppk_nama')
-            ->where('ppk_nama', '!=', '')
-            ->orderBy('id', 'desc')
-            ->get(['ppk_nama', 'ppk_nip'])
-            ->map(function ($a) {
-                return [
-                    'nama' => trim($a->ppk_nama),
-                    'nip'  => $a->ppk_nip ?? '',
-                ];
-            })
+        $pejabats = collect([
+            [
+                'nama'    => 'BUDI HARTONO, S.Sos',
+                'nip'     => '19760229 200801 1 010',
+                'jabatan' => 'Pengurus Barang Pengguna',
+            ],
+            [
+                'nama'    => 'dr. YUS PRIYATNA ADISIWIBOWO, Sp.P',
+                'nip'     => '19760814 200212 1 005',
+                'jabatan' => 'Direktur RSUD dr. H. Koesnadi',
+            ],
+        ]);
+
+        try {
+            // 1. Ambil dari riwayat mutasi eksternal (Pihak Penyerah Asal)
+            $fromMutasiAsal = MutasiEksternal::whereNotNull('pj_asal_nama')
+                ->where('pj_asal_nama', '!=', '')
+                ->where('pj_asal_nama', 'not like', '%Pejabat Penyerah%')
+                ->orderBy('id', 'desc')
+                ->get(['pj_asal_nama', 'pj_asal_nip', 'pj_asal_jabatan'])
+                ->map(fn($m) => [
+                    'nama'    => trim($m->pj_asal_nama),
+                    'nip'     => trim($m->pj_asal_nip ?: ''),
+                    'jabatan' => trim($m->pj_asal_jabatan ?: 'Pejabat Penyerah'),
+                ]);
+
+            // 2. Ambil dari riwayat mutasi eksternal (Pihak Penerima Tujuan)
+            $fromMutasiTujuan = MutasiEksternal::whereNotNull('pj_tujuan_nama')
+                ->where('pj_tujuan_nama', '!=', '')
+                ->where('pj_tujuan_nama', 'not like', '%Pejabat Penerima%')
+                ->orderBy('id', 'desc')
+                ->get(['pj_tujuan_nama', 'pj_tujuan_nip', 'pj_tujuan_jabatan'])
+                ->map(fn($m) => [
+                    'nama'    => trim($m->pj_tujuan_nama),
+                    'nip'     => trim($m->pj_tujuan_nip ?: ''),
+                    'jabatan' => trim($m->pj_tujuan_jabatan ?: 'Pejabat Penerima'),
+                ]);
+
+            // 3. Ambil dari master aset belanja modal (PPK)
+            $fromAstap = Astap::whereNotNull('ppk_nama')
+                ->where('ppk_nama', '!=', '')
+                ->orderBy('id', 'desc')
+                ->get(['ppk_nama', 'ppk_nip'])
+                ->map(fn($a) => [
+                    'nama'    => trim($a->ppk_nama),
+                    'nip'     => trim($a->ppk_nip ?: ''),
+                    'jabatan' => 'PPK / Pejabat Pembuat Komitmen',
+                ]);
+
+            $pejabats = $pejabats->concat($fromMutasiAsal)
+                ->concat($fromMutasiTujuan)
+                ->concat($fromAstap);
+        } catch (\Throwable $e) {
+            // Fallback graceful jika terjadi error query
+        }
+
+        return $pejabats
+            ->filter(fn($p) => !empty($p['nama']))
             ->unique(fn($p) => strtolower(trim($p['nama'])))
             ->values();
     }

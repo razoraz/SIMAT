@@ -139,15 +139,6 @@
                     </label>
 
                     <label class="flex items-center gap-3 p-3 rounded-2xl border border-slate-700/80 bg-slate-800/60 hover:bg-slate-800 cursor-pointer transition-all select-none"
-                        :class="formData.jenis_reklas === 'HIBAH_MASUK' ? 'border-amber-500 bg-amber-500/10 shadow-sm shadow-amber-500/10' : ''">
-                        <input type="radio" x-model="formData.jenis_reklas" value="HIBAH_MASUK" @change="onJenisReklasChange()" class="text-amber-600 focus:ring-0">
-                        <div>
-                            <p class="text-xs font-bold text-white">Hibah Masuk (Bantuan)</p>
-                            <p class="text-[10px] text-slate-400">Penerimaan bantuan pemerintah / pihak ketiga non-kas</p>
-                        </div>
-                    </label>
-
-                    <label class="flex items-center gap-3 p-3 rounded-2xl border border-slate-700/80 bg-slate-800/60 hover:bg-slate-800 cursor-pointer transition-all select-none"
                         :class="formData.jenis_reklas === 'MUTASI_EKSTERNAL' ? 'border-teal-500 bg-teal-500/10 shadow-sm shadow-teal-500/10' : ''">
                         <input type="radio" x-model="formData.jenis_reklas" value="MUTASI_EKSTERNAL" @change="onJenisReklasChange()" class="text-teal-600 focus:ring-0">
                         <div>
@@ -346,8 +337,8 @@
                 </div>
             </div>
 
-            <!-- 2C. Panel Khusus Hibah (Keluar / Masuk) -->
-            <div x-show="formData.jenis_reklas === 'HIBAH_KELUAR' || formData.jenis_reklas === 'HIBAH_MASUK'"
+            <!-- 2C. Panel Khusus Hibah Keluar -->
+            <div x-show="formData.jenis_reklas === 'HIBAH_KELUAR'"
                  x-transition.duration.200ms
                  class="p-4 sm:p-5 rounded-2xl bg-slate-950/80 border border-purple-500/30 space-y-4 shadow-xl">
                 
@@ -355,7 +346,7 @@
                     <div class="flex items-center gap-2">
                         <span class="w-6 h-6 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/40 text-xs font-black flex items-center justify-center">🎁</span>
                         <span class="text-xs font-bold text-white uppercase tracking-wider">
-                            Informasi Berita Acara Serah Terima (BAST) Hibah
+                            Informasi Berita Acara Serah Terima (BAST) Hibah Keluar
                         </span>
                     </div>
                     <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/40">
@@ -366,20 +357,18 @@
                 <div class="p-3 rounded-xl bg-purple-950/25 border border-purple-500/20 text-xs text-purple-200/90 leading-relaxed flex items-start gap-2.5">
                     <span class="text-base shrink-0 mt-0.5">💡</span>
                     <div>
-                        <strong class="text-white block mb-0.5" x-text="formData.jenis_reklas === 'HIBAH_KELUAR' ? 'Hibah Keluar (Menyerahkan Aset ke Pihak Lain):' : 'Hibah Masuk (Menerima Bantuan Pemerintah):'"></strong>
-                        <span x-text="formData.jenis_reklas === 'HIBAH_KELUAR' 
-                            ? 'Aset tetap RSUD berkurang (Mutasi Kurang -). Baris 40 (Koreksi Hibah) bertambah (+) pada Kolom 12 (Dihibahkan) sebagai penyeimbang seimbang (TRUE).'
-                            : 'Fisik aset bertambah di RSUD (Mutasi Tambah +). Baris 40 (Koreksi Hibah) berkurang (-) sebagai penyeimbang agar belanja modal kas daerah tidak membengkak.'"></span>
+                        <strong class="text-white block mb-0.5">Hibah Keluar (Menyerahkan Aset ke Pihak Lain):</strong>
+                        <span>Aset tetap RSUD berkurang (Mutasi Kurang -). Baris 40 (Koreksi Hibah) bertambah (+) pada Kolom 12 (Dihibahkan) sebagai penyeimbang seimbang (TRUE).</span>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                     <div>
                         <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
-                            Pihak Terkait / Lembaga / Penerima / Pemberi: <span class="text-rose-400">*</span>
+                            Instansi / Pihak Penerima Hibah: <span class="text-rose-400">*</span>
                         </label>
                         <input type="text" x-model="formData.pihak_hibah"
-                               :placeholder="formData.jenis_reklas === 'HIBAH_KELUAR' ? 'Contoh: Puskesmas Tamanan / Yayasan Sosial' : 'Contoh: Kementerian Kesehatan RI / Dinkes Prov'"
+                               placeholder="Contoh: Puskesmas Tamanan / Yayasan Sosial"
                                class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
                     </div>
 
@@ -442,18 +431,22 @@
                         </span>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5 text-xs items-start">
-                        <!-- Nama Pejabat Penyerah RSUD -->
+                    <div class="space-y-3.5 text-xs">
+                        <!-- Baris 1: Nama Pejabat Penyerah RSUD (Lebar Penuh) -->
                         <div class="relative space-y-1.5 min-w-0" @click.away="isPejabatAsalDropdownOpen = false">
-                            <label class="flex items-center gap-1.5 text-[10px] font-bold text-slate-300 uppercase tracking-wider h-5 min-w-0">
-                                <svg class="w-3.5 h-3.5 text-teal-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                                <span class="truncate" title="Nama Pejabat Penyerah RSUD">Nama Pejabat Penyerah RSUD</span>
-                                <span class="text-rose-400 font-bold shrink-0">*</span>
-                            </label>
+                            <div class="flex items-center justify-between">
+                                <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">
+                                    <svg class="w-3.5 h-3.5 text-teal-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                                    <span>Nama Pejabat Penyerah RSUD</span>
+                                    <span class="text-rose-400 font-bold">*</span>
+                                </label>
+                                <span class="text-[9.5px] font-mono text-teal-300/80" x-show="filteredPejabatAsalList.length > 0" x-text="filteredPejabatAsalList.length + ' Pilihan Pejabat'"></span>
+                            </div>
                             <div class="relative">
                                 <input type="text" x-model="formData.pj_asal_nama"
                                        @focus="isPejabatAsalDropdownOpen = true"
-                                       placeholder="Nama Pejabat RSUD (BUDI HARTONO, S.Sos / dr. Yus...)"
+                                       @input="isPejabatAsalDropdownOpen = true"
+                                       placeholder="Ketik atau pilih pejabat penyerah RSUD (BUDI HARTONO, S.Sos / dr. Yus...)"
                                        class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-teal-400 focus:ring-1 focus:ring-teal-400/30 rounded-xl px-3.5 pr-9 text-xs text-white placeholder-slate-500 focus:outline-none font-bold transition-all shadow-inner">
                                 <button type="button" @click="isPejabatAsalDropdownOpen = !isPejabatAsalDropdownOpen"
                                         class="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-teal-300 rounded-lg hover:bg-slate-800 transition-colors"
@@ -462,53 +455,51 @@
                                 </button>
                             </div>
 
-                            <!-- Dropdown Riwayat Pejabat RSUD -->
-                            <div x-show="isPejabatAsalDropdownOpen" x-cloak
+                            <!-- Dropdown Riwayat Pejabat RSUD (Otomatis menutup jika tidak ada hasil cocok) -->
+                            <div x-show="isPejabatAsalDropdownOpen && filteredPejabatAsalList.length > 0" x-cloak
                                  class="absolute z-40 mt-1 w-full bg-slate-900 border border-teal-500/40 rounded-xl shadow-2xl overflow-hidden divide-y divide-slate-800 custom-scrollbar backdrop-blur-xl max-h-48 overflow-y-auto">
-                                <div class="px-3 py-1.5 bg-slate-950 text-[10px] font-bold text-teal-400 uppercase tracking-wider">
-                                    Pilihan Pejabat Penyerah RSUD
+                                <div class="px-3 py-1.5 bg-slate-950 text-[10px] font-bold text-teal-400 uppercase tracking-wider flex items-center justify-between">
+                                    <span>Pilihan Pejabat Penyerah RSUD</span>
+                                    <span class="font-mono text-slate-400" x-text="filteredPejabatAsalList.length + ' hasil'"></span>
                                 </div>
-                                <div @click="selectPejabatAsal({ nama: 'BUDI HARTONO, S.Sos', nip: '19760229 200801 1 010', jabatan: 'Pengurus Barang Pengguna' })"
-                                     class="p-2.5 hover:bg-teal-500/15 cursor-pointer text-left transition-colors">
-                                    <div class="font-bold text-white text-xs">BUDI HARTONO, S.Sos</div>
-                                    <div class="text-[10px] text-teal-400 font-mono mt-0.5">NIP: 19760229 200801 1 010 · Pengurus Barang Pengguna</div>
-                                </div>
-                                <div @click="selectPejabatAsal({ nama: 'dr. H. Yus Priyatna, Sp.P', nip: '196904121999031004', jabatan: 'Direktur RSUD Dr. H. Koesnadi' })"
-                                     class="p-2.5 hover:bg-teal-500/15 cursor-pointer text-left transition-colors">
-                                    <div class="font-bold text-white text-xs">dr. H. Yus Priyatna, Sp.P</div>
-                                    <div class="text-[10px] text-teal-400 font-mono mt-0.5">NIP: 196904121999031004 · Direktur RSUD Dr. H. Koesnadi</div>
-                                </div>
-                                <template x-for="p in (dbPejabats || [])" :key="p.nama">
-                                    <div x-show="p.nama !== 'BUDI HARTONO, S.Sos' && p.nama !== 'dr. H. Yus Priyatna, Sp.P'"
-                                         @click="selectPejabatAsal({ nama: p.nama, nip: p.nip || '-', jabatan: 'Pengurus Barang / PPK RSUD' })"
-                                         class="p-2.5 hover:bg-teal-500/15 cursor-pointer text-left transition-colors">
-                                        <div class="font-bold text-white text-xs" x-text="p.nama"></div>
-                                        <div class="text-[10px] text-slate-400 font-mono mt-0.5" x-text="'NIP: ' + (p.nip || '-') + ' · ' + (p.jabatan || 'Pengurus Barang / PPK RSUD')"></div>
+                                <template x-for="(pj, pjIdx) in filteredPejabatAsalList" :key="pjIdx">
+                                    <div @click="selectPejabatAsal(pj)"
+                                         class="p-2.5 hover:bg-teal-500/15 cursor-pointer text-left transition-colors flex items-center justify-between gap-2">
+                                        <div class="min-w-0">
+                                            <div class="font-bold text-white text-xs" x-text="pj.nama"></div>
+                                            <div class="text-[10px] text-teal-400 font-mono mt-0.5" x-text="'NIP: ' + (pj.nip || '-') + ' · ' + (pj.jabatan || 'Pejabat RSUD')"></div>
+                                        </div>
+                                        <span class="text-[9px] px-2 py-0.5 rounded bg-teal-500/10 text-teal-300 border border-teal-500/25 font-bold shrink-0">
+                                            Pilih ↵
+                                        </span>
                                     </div>
                                 </template>
                             </div>
                         </div>
 
-                        <!-- NIP Pejabat Penyerah RSUD -->
-                        <div class="space-y-1.5 min-w-0">
-                            <label class="flex items-center gap-1.5 text-[10px] font-bold text-slate-300 uppercase tracking-wider h-5 min-w-0">
-                                <svg class="w-3.5 h-3.5 text-teal-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" /></svg>
-                                <span class="truncate" title="NIP Pejabat Penyerah RSUD">NIP Pejabat Penyerah RSUD</span>
-                            </label>
-                            <input type="text" x-model="formData.pj_asal_nip"
-                                   placeholder="19xxxxxxxxxxxxxx"
-                                   class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-teal-400 focus:ring-1 focus:ring-teal-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none font-mono tracking-wider transition-all shadow-inner">
-                        </div>
+                        <!-- Baris 2: NIP dan Jabatan Penyerah RSUD (2 Kolom Lapang) -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                            <!-- NIP Pejabat Penyerah RSUD -->
+                            <div class="space-y-1.5 min-w-0">
+                                <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">
+                                    <svg class="w-3.5 h-3.5 text-teal-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" /></svg>
+                                    <span>NIP Pejabat Penyerah RSUD</span>
+                                </label>
+                                <input type="text" x-model="formData.pj_asal_nip"
+                                       placeholder="19xxxxxxxxxxxxxx"
+                                       class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-teal-400 focus:ring-1 focus:ring-teal-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none font-mono tracking-wider transition-all shadow-inner">
+                            </div>
 
-                        <!-- Jabatan Penyerah RSUD -->
-                        <div class="space-y-1.5 min-w-0">
-                            <label class="flex items-center gap-1.5 text-[10px] font-bold text-slate-300 uppercase tracking-wider h-5 min-w-0">
-                                <svg class="w-3.5 h-3.5 text-teal-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                                <span class="truncate" title="Jabatan Penyerah RSUD">Jabatan Penyerah RSUD</span>
-                            </label>
-                            <input type="text" x-model="formData.pj_asal_jabatan"
-                                   placeholder="Pengurus Barang Pengguna"
-                                   class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-teal-400 focus:ring-1 focus:ring-teal-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none font-semibold transition-all shadow-inner">
+                            <!-- Jabatan Penyerah RSUD -->
+                            <div class="space-y-1.5 min-w-0">
+                                <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">
+                                    <svg class="w-3.5 h-3.5 text-teal-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                                    <span>Jabatan Penyerah RSUD</span>
+                                </label>
+                                <input type="text" x-model="formData.pj_asal_jabatan"
+                                       placeholder="Pengurus Barang Pengguna"
+                                       class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-teal-400 focus:ring-1 focus:ring-teal-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none font-semibold transition-all shadow-inner">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -589,17 +580,22 @@
                         </div>
                     </div>
 
-                    <!-- Pejabat Penerima OPD (Grid 3 Kolom Sama Lebar) -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5 text-xs items-start">
-                        <!-- Nama Pejabat Penerima OPD -->
+                    <!-- Pejabat Penerima OPD (Tata Letak Lapang: Baris 1 Nama Penuh, Baris 2 NIP & Jabatan) -->
+                    <div class="space-y-3.5 text-xs">
+                        <!-- Nama Pejabat Penerima OPD (Lebar Penuh) -->
                         <div class="relative space-y-1.5 min-w-0" @click.away="isPejabatTujuanDropdownOpen = false">
-                            <label class="flex items-center gap-1.5 text-[10px] font-bold text-slate-300 uppercase tracking-wider h-5 min-w-0">
-                                <svg class="w-3.5 h-3.5 text-cyan-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                                <span class="truncate" title="Nama Pejabat Penerima OPD">Nama Pejabat Penerima OPD</span>
-                            </label>
+                            <div class="flex items-center justify-between">
+                                <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">
+                                    <svg class="w-3.5 h-3.5 text-cyan-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                                    <span>Nama Pejabat Penerima OPD</span>
+                                    <span class="text-rose-400 font-bold">*</span>
+                                </label>
+                                <span class="text-[9.5px] font-mono text-cyan-300/80" x-show="filteredPejabatTujuanList.length > 0" x-text="filteredPejabatTujuanList.length + ' Riwayat'"></span>
+                            </div>
                             <div class="relative">
                                 <input type="text" x-model="formData.pejabat_opd_tujuan"
                                        @focus="isPejabatTujuanDropdownOpen = true"
+                                       @input="isPejabatTujuanDropdownOpen = true"
                                        placeholder="Nama Pejabat / Pengurus Barang"
                                        class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 rounded-xl px-3.5 pr-9 text-xs text-white placeholder-slate-500 focus:outline-none font-bold transition-all shadow-inner">
                                 <button type="button" x-show="availablePejabatTujuanList.length > 0"
@@ -613,39 +609,48 @@
                             <!-- Dropdown Riwayat Pejabat Tujuan -->
                             <div x-show="isPejabatTujuanDropdownOpen && filteredPejabatTujuanList.length > 0" x-cloak
                                  class="absolute z-40 mt-1 w-full bg-slate-900 border border-cyan-500/40 rounded-xl shadow-2xl overflow-hidden divide-y divide-slate-800 custom-scrollbar backdrop-blur-xl max-h-44 overflow-y-auto">
-                                <div class="px-3 py-1 bg-slate-950 text-[10px] font-bold text-cyan-400 uppercase tracking-wider">
-                                    Riwayat Pejabat SKPD Terpilih
+                                <div class="px-3 py-1 bg-slate-950 text-[10px] font-bold text-cyan-400 uppercase tracking-wider flex items-center justify-between">
+                                    <span>Riwayat Pejabat SKPD Terpilih</span>
+                                    <span class="font-mono text-slate-400" x-text="filteredPejabatTujuanList.length + ' hasil'"></span>
                                 </div>
                                 <template x-for="(p, pIdx) in filteredPejabatTujuanList" :key="pIdx">
                                     <div @click="selectPejabatTujuan(p)"
-                                         class="p-2.5 hover:bg-cyan-500/15 cursor-pointer text-left transition-colors">
-                                        <div class="font-bold text-white text-xs" x-text="p.nama"></div>
-                                        <div class="text-[10px] text-slate-400 font-mono mt-0.5" x-text="'NIP: ' + (p.nip || '-') + ' · ' + (p.jabatan || '')"></div>
+                                         class="p-2.5 hover:bg-cyan-500/15 cursor-pointer text-left transition-colors flex items-center justify-between gap-2">
+                                        <div class="min-w-0">
+                                            <div class="font-bold text-white text-xs" x-text="p.nama"></div>
+                                            <div class="text-[10px] text-slate-400 font-mono mt-0.5" x-text="'NIP: ' + (p.nip || '-') + ' · ' + (p.jabatan || '')"></div>
+                                        </div>
+                                        <span class="text-[9px] px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/25 font-bold shrink-0">
+                                            Pilih ↵
+                                        </span>
                                     </div>
                                 </template>
                             </div>
                         </div>
 
-                        <!-- NIP Pejabat Penerima OPD -->
-                        <div class="space-y-1.5 min-w-0">
-                            <label class="flex items-center gap-1.5 text-[10px] font-bold text-slate-300 uppercase tracking-wider h-5 min-w-0">
-                                <svg class="w-3.5 h-3.5 text-cyan-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" /></svg>
-                                <span class="truncate" title="NIP Pejabat Penerima OPD">NIP Pejabat Penerima OPD</span>
-                            </label>
-                            <input type="text" x-model="formData.nip_pejabat_opd_tujuan"
-                                   placeholder="19xxxxxxxxxxxxxx atau -"
-                                   class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none font-mono tracking-wider transition-all shadow-inner">
-                        </div>
+                        <!-- Baris 2: NIP dan Jabatan Penerima (2 Kolom Lapang) -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                            <!-- NIP Pejabat Penerima OPD -->
+                            <div class="space-y-1.5 min-w-0">
+                                <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">
+                                    <svg class="w-3.5 h-3.5 text-cyan-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" /></svg>
+                                    <span>NIP Pejabat Penerima OPD</span>
+                                </label>
+                                <input type="text" x-model="formData.nip_pejabat_opd_tujuan"
+                                       placeholder="19xxxxxxxxxxxxxx atau -"
+                                       class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none font-mono tracking-wider transition-all shadow-inner">
+                            </div>
 
-                        <!-- Jabatan Pejabat Penerima -->
-                        <div class="space-y-1.5 min-w-0">
-                            <label class="flex items-center gap-1.5 text-[10px] font-bold text-slate-300 uppercase tracking-wider h-5 min-w-0">
-                                <svg class="w-3.5 h-3.5 text-cyan-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                                <span class="truncate" title="Jabatan Pejabat Penerima">Jabatan Pejabat Penerima</span>
-                            </label>
-                            <input type="text" x-model="formData.jabatan_opd_tujuan"
-                                   placeholder="Pengurus Barang / Kepala Bidang"
-                                   class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none font-semibold transition-all shadow-inner">
+                            <!-- Jabatan Pejabat Penerima -->
+                            <div class="space-y-1.5 min-w-0">
+                                <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">
+                                    <svg class="w-3.5 h-3.5 text-cyan-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                                    <span>Jabatan Pejabat Penerima</span>
+                                </label>
+                                <input type="text" x-model="formData.jabatan_opd_tujuan"
+                                       placeholder="Pengurus Barang / Kepala Bidang"
+                                       class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none font-semibold transition-all shadow-inner">
+                            </div>
                         </div>
                     </div>
 
