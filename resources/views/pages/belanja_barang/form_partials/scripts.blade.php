@@ -57,7 +57,7 @@
                 total_realisasi: 0,
                 unit_id: '',
                 kondisi: 'Baik',
-                alamat_barang: 'Gudang Perbekalan RSUD Dr. H. Koesnandi',
+                alamat_barang: '',
 
                 // Multi-Item Repeaters per KIB (Identik dengan Mutasi Eksternal)
                 tanah_items: [],
@@ -302,15 +302,35 @@
                 return u ? u.nama : '';
             },
 
+            cleanLegacyDefaultRuang(val) {
+                if (!val) return '';
+                const trimmed = String(val).trim();
+                const lower = trimmed.toLowerCase();
+                if (
+                    lower === 'gudang perbekalan rsud dr. h. koesnandi' ||
+                    lower === 'gudang perbekalan rsud' ||
+                    lower === 'gudang perbekalan' ||
+                    lower === 'gudang aset' ||
+                    lower === 'gudang aset utama' ||
+                    lower === 'gudang aset utama / belum ditempatkan' ||
+                    lower === 'belum ditempatkan' ||
+                    lower === 'belum ditempatkan / di gudang' ||
+                    lower === 'belum ditempatkan / di gudang aset'
+                ) {
+                    return '';
+                }
+                return trimmed;
+            },
+
             // Mode Alokasi Handlers
             setGlobalAlokasiMode(mode) {
                 this.globalAlokasiMode = mode;
                 if (mode === 'gudang') {
                     this.formData.unit_id = '';
-                    this.formData.alamat_barang = 'Gudang Perbekalan RSUD Dr. H. Koesnandi';
+                    this.formData.alamat_barang = '';
                 } else if (mode === 'ruangan' && this.globalUnitId) {
                     this.formData.unit_id = this.globalUnitId;
-                    this.formData.alamat_barang = this.globalAlamatBarang || 'RSUD Dr. H. Koesnandi';
+                    this.formData.alamat_barang = this.globalAlamatBarang || '';
                 }
                 this.syncTotalsFromItems();
             },
@@ -507,7 +527,7 @@
                 if (!this.formData.mesin_items) this.formData.mesin_items = [];
                 const defaultRuang = this.globalAlokasiMode === 'ruangan' && this.globalUnitId 
                     ? this.getUnitNameById(this.globalUnitId) 
-                    : 'Gudang Perbekalan RSUD Dr. H. Koesnandi';
+                    : '';
 
                 this.formData.mesin_items.push({
                     is_extracom: Boolean(this.formData.is_extracomtable),
@@ -653,7 +673,7 @@
                 if (!this.formData.lainnya_items) this.formData.lainnya_items = [];
                 const defaultRuang = this.globalAlokasiMode === 'ruangan' && this.globalUnitId 
                     ? this.getUnitNameById(this.globalUnitId) 
-                    : 'Gudang Perbekalan RSUD Dr. H. Koesnandi';
+                    : '';
 
                 this.formData.lainnya_items.push({
                     is_extracom: Boolean(this.formData.is_extracomtable),
@@ -927,7 +947,7 @@
                 if (this.isMesin && this.formData.mesin_items) {
                     this.formData.mesin_items.forEach((it, idx) => {
                         results.push({
-                            nama_barang: it.mesin_nama_barang || (it.mesin_merk ? it.mesin_merk + ' ' + (it.mesin_type || '') : 'Barang Peralatan/Mesin #' + (idx + 1)),
+                            nama_barang: it.mesin_nama_barang || (it.mesin_merk ? it.mesin_merk + ' ' + (it.mesin_type || '') : '-'),
                             kode_108: it.mesin_kode_barang || '1.3.2',
                             jumlah_volume: parseInt(it.mesin_jumlah_barang) || 1,
                             satuan: it.mesin_satuan || 'Unit',
@@ -941,7 +961,7 @@
                 } else if (this.isLainnya && this.formData.lainnya_items) {
                     this.formData.lainnya_items.forEach((it, idx) => {
                         results.push({
-                            nama_barang: it.lainnya_nama_barang || it.lainnya_judul || 'Aset Tetap Lainnya #' + (idx + 1),
+                            nama_barang: it.lainnya_nama_barang || it.lainnya_judul || '-',
                             kode_108: it.lainnya_kode_barang || '1.3.5',
                             jumlah_volume: parseInt(it.lainnya_jumlah) || 1,
                             satuan: it.lainnya_satuan || 'Buah',
@@ -955,7 +975,7 @@
                 } else if (this.isTanah && this.formData.tanah_items) {
                     this.formData.tanah_items.forEach((it, idx) => {
                         results.push({
-                            nama_barang: it.tanah_nama_barang || 'Bidang Tanah #' + (idx + 1),
+                            nama_barang: it.tanah_nama_barang || '-',
                             kode_108: it.tanah_kode_barang || '1.3.1',
                             jumlah_volume: parseInt(it.tanah_jumlah_barang) || 1,
                             satuan: it.tanah_satuan || 'Bidang',
@@ -969,7 +989,7 @@
                 } else if (this.isGedung && this.formData.gedung_items) {
                     this.formData.gedung_items.forEach((it, idx) => {
                         results.push({
-                            nama_barang: it.gedung_nama_barang || 'Bangunan Gedung #' + (idx + 1),
+                            nama_barang: it.gedung_nama_barang || '-',
                             kode_108: it.gedung_kode_barang || '1.3.3',
                             jumlah_volume: parseInt(it.gedung_jumlah_bangunan) || 1,
                             satuan: it.gedung_satuan || 'Gedung',
@@ -983,7 +1003,7 @@
                 } else if (this.isJaringan && this.formData.jaringan_items) {
                     this.formData.jaringan_items.forEach((it, idx) => {
                         results.push({
-                            nama_barang: it.jaringan_nama_barang || 'Ruas Jaringan #' + (idx + 1),
+                            nama_barang: it.jaringan_nama_barang || '-',
                             kode_108: it.jaringan_kode_barang || '1.3.4',
                             jumlah_volume: parseInt(it.jaringan_jumlah) || 1,
                             satuan: it.jaringan_satuan || 'Ruas',
@@ -1088,12 +1108,118 @@
                 return `${opdCode}.${year}.${code108}.${regNumber}`;
             },
 
-            // Navigasi Antar Tab Stepper
-            goToStep(stepNumber) {
-                if (stepNumber > 1 && this.isTanggalFakturInvalid()) {
+            // Validasi Data Langkah 1 (Identitas Toko & Faktur)
+            validateStep1() {
+                this.clearStepError(1);
+                if (!this.formData.rekening_penyedia || !this.formData.rekening_penyedia.trim()) {
+                    this.setStepError(1, 'Nama Toko / Supplier / Rekanan Penyedia wajib diisi.');
+                    this.showToast('Data Belum Lengkap', 'Nama Toko / Supplier Rekanan wajib diisi.', 'error');
+                    return false;
+                }
+                if (!this.formData.rekening_nomor_faktur || !this.formData.rekening_nomor_faktur.trim()) {
+                    this.setStepError(1, 'Nomor Faktur / Nota Toko wajib diisi.');
+                    this.showToast('Data Belum Lengkap', 'Nomor Faktur / Nota Toko wajib diisi.', 'error');
+                    return false;
+                }
+                if (!this.formData.rekening_tanggal_faktur || !String(this.formData.rekening_tanggal_faktur).trim()) {
+                    this.setStepError(1, 'Tanggal Faktur / Pembelian wajib diisi.');
+                    this.showToast('Data Belum Lengkap', 'Tanggal Faktur / Pembelian wajib diisi.', 'error');
+                    return false;
+                }
+                if (this.isTanggalFakturInvalid()) {
                     this.setStepError(1, 'Tanggal Faktur / Pembelian tidak boleh melebihi tanggal hari ini.');
                     this.showToast('Periksa Tanggal Faktur', 'Tanggal Faktur tidak boleh tanggal masa depan.', 'error');
-                    return;
+                    return false;
+                }
+                return true;
+            },
+
+            // Validasi Data Langkah 2 (Rincian Item Barang KIB)
+            validateStep2() {
+                this.clearStepError(2);
+                let items = [];
+                let sheetName = '';
+
+                if (this.isMesin) {
+                    items = this.formData.mesin_items || [];
+                    sheetName = 'KIB B (Peralatan & Mesin)';
+                } else if (this.isLainnya) {
+                    items = this.formData.lainnya_items || [];
+                    sheetName = 'KIB E (Aset Tetap Lainnya)';
+                } else if (this.isTanah) {
+                    items = this.formData.tanah_items || [];
+                    sheetName = 'KIB A (Tanah)';
+                } else if (this.isGedung) {
+                    items = this.formData.gedung_items || [];
+                    sheetName = 'KIB C (Gedung & Bangunan)';
+                } else if (this.isJaringan) {
+                    items = this.formData.jaringan_items || [];
+                    sheetName = 'KIB D (Jalan, Irigasi & Jaringan)';
+                }
+
+                if (items.length === 0) {
+                    this.setStepError(2, `Belum ada barang yang ditambahkan pada ${sheetName}. Silakan tambahkan minimal 1 item barang.`);
+                    this.showToast('Data Belum Lengkap', 'Tambahkan minimal 1 item barang belanja.', 'error');
+                    return false;
+                }
+
+                for (let i = 0; i < items.length; i++) {
+                    const it = items[i];
+                    let nama = '';
+                    let vol = 1;
+                    let hrg = 0;
+
+                    if (this.isMesin) {
+                        nama = (it.mesin_nama_barang || '').trim();
+                        vol = parseInt(it.mesin_jumlah_barang) || 0;
+                        hrg = parseFloat(it.mesin_nilai_satuan) || 0;
+                    } else if (this.isLainnya) {
+                        nama = (it.lainnya_nama_barang || it.lainnya_judul || '').trim();
+                        vol = parseInt(it.lainnya_jumlah) || 0;
+                        hrg = parseFloat(it.lainnya_nilai_satuan) || 0;
+                    } else if (this.isTanah) {
+                        nama = (it.tanah_nama_barang || '').trim();
+                        vol = parseInt(it.tanah_jumlah_barang) || 0;
+                        hrg = parseFloat(it.tanah_nilai_satuan) || 0;
+                    } else if (this.isGedung) {
+                        nama = (it.gedung_nama_barang || '').trim();
+                        vol = parseInt(it.gedung_jumlah_bangunan) || 0;
+                        hrg = parseFloat(it.gedung_nilai_satuan) || 0;
+                    } else if (this.isJaringan) {
+                        nama = (it.jaringan_nama_barang || '').trim();
+                        vol = parseInt(it.jaringan_jumlah) || 0;
+                        hrg = parseFloat(it.jaringan_nilai_satuan) || 0;
+                    }
+
+                    if (!nama) {
+                        this.setStepError(2, `Nama barang pada baris ke-${i + 1} (${sheetName}) belum diisi.`);
+                        this.showToast('Data Belum Lengkap', `Nama barang baris ke-${i + 1} belum diisi.`, 'error');
+                        return false;
+                    }
+                    if (vol < 1) {
+                        this.setStepError(2, `Jumlah volume pada baris ke-${i + 1} (${sheetName}) minimal 1.`);
+                        this.showToast('Data Belum Lengkap', `Volume baris ke-${i + 1} minimal 1.`, 'error');
+                        return false;
+                    }
+                    if (hrg <= 0) {
+                        this.setStepError(2, `Harga satuan pada baris ke-${i + 1} (${sheetName}) wajib diisi lebih dari Rp 0.`);
+                        this.showToast('Data Belum Lengkap', `Harga satuan baris ke-${i + 1} harus lebih dari Rp 0.`, 'error');
+                        return false;
+                    }
+                }
+
+                return true;
+            },
+
+            // Navigasi Antar Tab Stepper
+            goToStep(stepNumber) {
+                if (stepNumber > this.currentStep) {
+                    if (this.currentStep === 1 || stepNumber > 1) {
+                        if (!this.validateStep1()) return;
+                    }
+                    if (this.currentStep === 2 || stepNumber > 2) {
+                        if (!this.validateStep2()) return;
+                    }
                 }
                 this.currentStep = stepNumber;
                 this.step = stepNumber;
@@ -1102,14 +1228,11 @@
 
             nextStep() {
                 if (this.currentStep === 1) {
-                    if (this.isTanggalFakturInvalid()) {
-                        this.setStepError(1, 'Tanggal Faktur / Pembelian tidak boleh melebihi tanggal hari ini.');
-                        this.showToast('Periksa Tanggal Faktur', 'Tanggal Faktur tidak boleh tanggal masa depan.', 'error');
-                        return;
-                    }
+                    if (!this.validateStep1()) return;
                     this.clearStepError(1);
                     this.goToStep(2);
                 } else if (this.currentStep === 2) {
+                    if (!this.validateStep2()) return;
                     this.clearStepError(2);
                     this.syncTotalsFromItems();
                     this.goToStep(3);
@@ -1125,10 +1248,12 @@
             // Form Submit via AJAX (Mendukung Payload Multi-Item & File Upload)
             async submitForm() {
                 this.clearAllStepErrors();
-                if (this.isTanggalFakturInvalid()) {
-                    this.setStepError(1, 'Tanggal Faktur / Pembelian tidak boleh melebihi tanggal hari ini.');
-                    this.showToast('Periksa Tanggal Faktur', 'Tanggal Faktur tidak boleh tanggal masa depan.', 'error');
+                if (!this.validateStep1()) {
                     this.goToStep(1);
+                    return;
+                }
+                if (!this.validateStep2()) {
+                    this.goToStep(2);
                     return;
                 }
                 this.isSubmitting = true;
@@ -1139,10 +1264,10 @@
                     payload.append('_token', '{{ csrf_token() }}');
                     payload.append('tahun_perolehan', this.formData.tahun_perolehan || new Date().getFullYear());
                     payload.append('triwulan', this.formData.triwulan || 'TW I');
-                    payload.append('rekening_penyedia', this.formData.rekening_penyedia || 'CV. Rekanan Sejahtera (Testing)');
-                    payload.append('rekening_nomor_faktur', this.formData.rekening_nomor_faktur || ('FAKTUR-' + Date.now()));
-                    payload.append('rekening_tanggal_faktur', this.formData.rekening_tanggal_faktur || new Date().toISOString().split('T')[0]);
-                    payload.append('rekening_keterangan', this.formData.rekening_keterangan || 'Pembelian Barang Perbekalan');
+                    payload.append('rekening_penyedia', this.formData.rekening_penyedia);
+                    payload.append('rekening_nomor_faktur', this.formData.rekening_nomor_faktur);
+                    payload.append('rekening_tanggal_faktur', this.formData.rekening_tanggal_faktur);
+                    payload.append('rekening_keterangan', this.formData.rekening_keterangan || '');
                     payload.append('status_alokasi_global', this.globalAlokasiMode);
                     payload.append('is_extracomtable', this.formData.is_extracomtable ? 1 : 0);
 
@@ -1162,7 +1287,7 @@
                         this.formData.mesin_items.forEach(m => {
                             const found108 = this.allFlat108.find(x => x.kode === m.mesin_kode_barang);
                             mappedItems.push({
-                                nama_barang: m.mesin_nama_barang || (m.mesin_merk ? m.mesin_merk + ' ' + (m.mesin_type || '') : 'Alat Medis Perbekalan'),
+                                nama_barang: (m.mesin_nama_barang || '').trim(),
                                 jenis_astap_id: found108 ? found108.id : defaultJenisId,
                                 jumlah_volume: maxVal(m.mesin_jumlah_barang, 1),
                                 satuan: m.mesin_satuan || 'Unit',
@@ -1187,7 +1312,7 @@
                         this.formData.lainnya_items.forEach(l => {
                             const found108 = this.allFlat108.find(x => x.kode === l.lainnya_kode_barang);
                             mappedItems.push({
-                                nama_barang: l.lainnya_nama_barang || l.lainnya_judul || 'Barang Aset Lainnya',
+                                nama_barang: (l.lainnya_nama_barang || l.lainnya_judul || '').trim(),
                                 jenis_astap_id: found108 ? found108.id : defaultJenisId,
                                 jumlah_volume: maxVal(l.lainnya_jumlah, 1),
                                 satuan: l.lainnya_satuan || 'Buah',
@@ -1208,7 +1333,7 @@
                     } else if (this.isTanah && this.formData.tanah_items) {
                         this.formData.tanah_items.forEach(t => {
                             mappedItems.push({
-                                nama_barang: t.tanah_nama_barang || 'Bidang Tanah',
+                                nama_barang: (t.tanah_nama_barang || '').trim(),
                                 jenis_astap_id: defaultJenisId,
                                 jumlah_volume: maxVal(t.tanah_jumlah_barang, 1),
                                 satuan: t.tanah_satuan || 'Bidang',
@@ -1223,7 +1348,7 @@
                     } else if (this.isGedung && this.formData.gedung_items) {
                         this.formData.gedung_items.forEach(g => {
                             mappedItems.push({
-                                nama_barang: g.gedung_nama_barang || 'Bangunan Gedung',
+                                nama_barang: (g.gedung_nama_barang || '').trim(),
                                 jenis_astap_id: defaultJenisId,
                                 jumlah_volume: maxVal(g.gedung_jumlah_bangunan, 1),
                                 satuan: g.gedung_satuan || 'Gedung',
@@ -1238,7 +1363,7 @@
                     } else if (this.isJaringan && this.formData.jaringan_items) {
                         this.formData.jaringan_items.forEach(j => {
                             mappedItems.push({
-                                nama_barang: j.jaringan_nama_barang || 'Ruas Jaringan',
+                                nama_barang: (j.jaringan_nama_barang || '').trim(),
                                 jenis_astap_id: defaultJenisId,
                                 jumlah_volume: maxVal(j.jaringan_jumlah, 1),
                                 satuan: j.jaringan_satuan || 'Ruas',
@@ -1252,19 +1377,12 @@
                         });
                     }
 
-                    // Fallback jika tidak ada item
                     if (mappedItems.length === 0) {
-                        mappedItems.push({
-                            nama_barang: 'Barang Belanja Testing',
-                            jenis_astap_id: defaultJenisId,
-                            jumlah_volume: 1,
-                            satuan: 'Unit',
-                            harga_satuan: 100000,
-                            mode_penempatan: 'gudang',
-                            unit_id: null,
-                            kondisi: 'Baik',
-                            alamat_barang: 'Gudang Perbekalan RSUD'
-                        });
+                        this.setStepError(2, 'Belum ada item barang yang diisi pada formulir KIB.');
+                        this.showToast('Gagal Menyimpan', 'Daftar item belanja barang kosong.', 'error');
+                        this.isSubmitting = false;
+                        this.goToStep(2);
+                        return;
                     }
 
                     payload.append('items_json', JSON.stringify(mappedItems));
@@ -1286,7 +1404,14 @@
                             window.location.href = res.redirect_url || res.redirect || '{{ route('master.belanja_barang') }}';
                         }, 1200);
                     } else {
-                        throw new Error(res.message || 'Terjadi kesalahan sistem saat menyimpan.');
+                        let errMsg = res.message || 'Terjadi kesalahan sistem saat menyimpan.';
+                        if (res.errors) {
+                            const firstErr = Object.values(res.errors)[0];
+                            if (Array.isArray(firstErr) && firstErr.length > 0) {
+                                errMsg = firstErr[0];
+                            }
+                        }
+                        throw new Error(errMsg);
                     }
                 } catch (err) {
                     console.error('Error submit form belanja barang:', err);

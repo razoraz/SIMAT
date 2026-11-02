@@ -309,11 +309,39 @@
             cleanLegacyDefaultAlamat(val) {
                 if (!val) return '';
                 const trimmed = String(val).trim();
-                if (trimmed === 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1' ||
-                    trimmed === 'Gudang Perbekalan RSUD Dr. H. Koesnandi' ||
-                    trimmed === 'Gudang Perbekalan RSUD' ||
-                    trimmed === 'RSUD Koesnandi' ||
-                    trimmed === 'RSUD Dr. H. Koesnandi') {
+                const lower = trimmed.toLowerCase();
+                if (
+                    lower === 'rsud dr. h. koesnandi bondowoso, jl. piere tendean no. 1' ||
+                    lower === 'kompleks rsud dr. h. koesnandi, jl. piere tendean no. 1, bondowoso' ||
+                    lower === 'kompleks rsud dr. h. koesnandi, jl. piere tendean no. 1' ||
+                    lower === 'gudang perbekalan rsud dr. h. koesnandi' ||
+                    lower === 'gudang perbekalan rsud' ||
+                    lower === 'rsud koesnandi' ||
+                    lower === 'rsud dr. h. koesnandi' ||
+                    lower === 'jl. piere tendean no. 1' ||
+                    lower === 'jl. kapten piere tendean no. 1' ||
+                    lower === 'jl. kapten piere tendean no. 1 bondowoso'
+                ) {
+                    return '';
+                }
+                return trimmed;
+            },
+
+            cleanLegacyDefaultRuang(val) {
+                if (!val) return '';
+                const trimmed = String(val).trim();
+                const lower = trimmed.toLowerCase();
+                if (
+                    lower === 'gudang perbekalan rsud dr. h. koesnandi' ||
+                    lower === 'gudang perbekalan rsud' ||
+                    lower === 'gudang perbekalan' ||
+                    lower === 'gudang aset' ||
+                    lower === 'gudang aset utama' ||
+                    lower === 'gudang aset utama / belum ditempatkan' ||
+                    lower === 'belum ditempatkan' ||
+                    lower === 'belum ditempatkan / di gudang' ||
+                    lower === 'belum ditempatkan / di gudang aset'
+                ) {
                     return '';
                 }
                 return trimmed;
@@ -741,7 +769,7 @@
                     lainnya_nilai_satuan: 0,
                     lainnya_no_pabrik: '',
                     lainnya_keterangan: '',
-                    ruang_pemegang: this.selectedUnitName || '',
+                    ruang_pemegang: '',
                     isRuangOpen: false,
                     searchRuang: ''
                 });
@@ -1978,6 +2006,8 @@
                             this.formData[k] = init[k];
                         }
                     });
+                    this.formData.alamat_barang = this.cleanLegacyDefaultAlamat(this.formData.alamat_barang);
+                    this.formData.ruang_pemegang = this.cleanLegacyDefaultRuang(this.formData.ruang_pemegang);
                     this.formData.hapus_dokumen = false;
 
                     this.formData.is_extracomtable = Boolean(
@@ -2091,7 +2121,7 @@
                             lainnya_nilai_satuan: init.jumlah_volume > 0 ? Math.round(init.total_realisasi / init.jumlah_volume) : init.total_realisasi,
                             lainnya_no_pabrik: init.no_pabrik || '',
                             lainnya_keterangan: init.mutasi_keterangan || (init.keterangan || ''),
-                            ruang_pemegang: init.ruang_pemegang || (this.selectedUnitName || ''),
+                            ruang_pemegang: this.cleanLegacyDefaultRuang(init.ruang_pemegang || ''),
                             isRuangOpen: false,
                             searchRuang: ''
                         }];
@@ -2117,7 +2147,7 @@
                             mesin_satuan: init.satuan || 'Unit',
                             mesin_nilai_satuan: init.jumlah_volume > 0 ? Math.round(init.total_realisasi / init.jumlah_volume) : init.total_realisasi,
                             mesin_keterangan: init.mutasi_keterangan || (init.keterangan || ''),
-                            ruang_pemegang: init.ruang_pemegang || (this.selectedUnitName || ''),
+                            ruang_pemegang: this.cleanLegacyDefaultRuang(init.ruang_pemegang || ''),
                             isRuangOpen: false,
                             searchRuang: ''
                         }];
@@ -2160,7 +2190,7 @@
                             if (it.isFilterOpen === undefined) it.isFilterOpen = false;
                             if (it.isRuangOpen === undefined) it.isRuangOpen = false;
                             if (it.searchRuang === undefined) it.searchRuang = '';
-                            if (!it.ruang_pemegang && this.selectedUnitName) it.ruang_pemegang = this.selectedUnitName;
+                            it.ruang_pemegang = this.cleanLegacyDefaultRuang(it.ruang_pemegang);
                         });
                     }
 
@@ -2172,7 +2202,7 @@
                             if (it.isFilterOpen === undefined) it.isFilterOpen = false;
                             if (it.isRuangOpen === undefined) it.isRuangOpen = false;
                             if (it.searchRuang === undefined) it.searchRuang = '';
-                            if (!it.ruang_pemegang && this.selectedUnitName) it.ruang_pemegang = this.selectedUnitName;
+                            it.ruang_pemegang = this.cleanLegacyDefaultRuang(it.ruang_pemegang);
                         });
                     }
                 } else {

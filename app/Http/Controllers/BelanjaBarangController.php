@@ -213,37 +213,60 @@ class BelanjaBarangController extends Controller
 
         $request->merge(['items' => $rawItems]);
 
-        // 2. Validasi Dokumen Faktur Header & Items (MODE TESTING: Fleksibel tanpa wajib isi)
+        // 2. Validasi Dokumen Faktur Header & Items
         $rules = [
-            'tahun_perolehan'         => 'nullable|integer|min:1990|max:2100',
-            'triwulan'                => 'nullable|string',
-            'rekening_penyedia'       => 'nullable|string|max:500',
-            'rekening_nomor_faktur'   => 'nullable|string|max:255',
-            'rekening_tanggal_faktur' => 'nullable',
+            'tahun_perolehan'         => 'required|integer|min:1990|max:2100',
+            'triwulan'                => 'required|string',
+            'rekening_penyedia'       => 'required|string|max:500',
+            'rekening_nomor_faktur'   => 'required|string|max:255',
+            'rekening_tanggal_faktur' => 'required',
             'rekening_keterangan'     => 'nullable|string|max:2000',
             'status_alokasi_global'   => 'nullable|string',
             'dokumen_faktur'          => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'dokumen_kuitansi'        => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
-            'items'                   => 'nullable|array',
-            'items.*.nama_barang'     => 'nullable|string|max:500',
+            'items'                   => 'required|array|min:1',
+            'items.*.nama_barang'     => 'required|string|max:500',
             'items.*.jenis_astap_id'  => 'nullable|integer',
-            'items.*.jumlah_volume'   => 'nullable|integer',
-            'items.*.satuan'          => 'nullable|string|max:100',
-            'items.*.harga_satuan'    => 'nullable|numeric',
+            'items.*.jumlah_volume'   => 'required|integer|min:1',
+            'items.*.satuan'          => 'required|string|max:100',
+            'items.*.harga_satuan'    => 'required|numeric|min:0',
         ];
 
-        $validated = $request->validate($rules);
+        $messages = [
+            'tahun_perolehan.required'         => 'Tahun perolehan / anggaran wajib diisi.',
+            'triwulan.required'                => 'Triwulan pembukuan wajib dipilih.',
+            'rekening_penyedia.required'       => 'Nama Toko / Supplier Rekanan wajib diisi.',
+            'rekening_nomor_faktur.required'   => 'Nomor Faktur / Nota Toko wajib diisi.',
+            'rekening_tanggal_faktur.required' => 'Tanggal Faktur / Pembelian wajib diisi.',
+            'items.required'                   => 'Daftar rincian barang belanja wajib diisi.',
+            'items.min'                        => 'Minimal harus ada 1 item barang yang diisi.',
+            'items.*.nama_barang.required'     => 'Nama barang pada setiap baris belanja wajib diisi.',
+            'items.*.jumlah_volume.required'   => 'Jumlah volume barang wajib diisi.',
+            'items.*.jumlah_volume.min'        => 'Jumlah volume barang minimal 1.',
+            'items.*.satuan.required'          => 'Satuan barang wajib diisi.',
+            'items.*.harga_satuan.required'    => 'Harga satuan barang wajib diisi.',
+            'items.*.harga_satuan.min'         => 'Harga satuan barang tidak boleh negatif.',
+        ];
 
-        // Cari default ID jenis_astap yang valid di database untuk fallback testing
+        $validated = $request->validate($rules, $messages);
+
+        // Cari default ID jenis_astap yang valid di database sebagai fallback relasi jika kosong
         $defaultJenisId = JenisAstap::whereNotNull('sub_sub_rincian_objek')->value('id') 
             ?? (JenisAstap::first()?->id ?? 1);
 
-        $tahun = (int) ($validated['tahun_perolehan'] ?? date('Y'));
-        $triwulan = !empty($validated['triwulan']) ? $validated['triwulan'] : 'TW I';
-        $tokoPenyedia = !empty($validated['rekening_penyedia']) ? trim($validated['rekening_penyedia']) : 'CV. Rekanan Sejahtera (Testing)';
-        $nomorFaktur = !empty($validated['rekening_nomor_faktur']) ? trim($validated['rekening_nomor_faktur']) : ('TEST-' . date('Ymd-His'));
-        $tanggalFaktur = !empty($validated['rekening_tanggal_faktur']) ? $validated['rekening_tanggal_faktur'] : date('Y-m-d');
-        $keteranganFaktur = $validated['rekening_keterangan'] ?? 'Uji coba testing form belanja barang';
+        $tahun = (int) $validated['tahun_perolehan'];
+        $triwulan = $validated['triwulan'];
+        $tokoPenyedia = trim($validated['rekening_penyedia']);
+        $nomorFaktur = trim($validated['rekening_nomor_faktur']);
+
+        $rawTgl = $validated['rekening_tanggal_faktur'];
+        if (is_string($rawTgl) && preg_match('/^(\d{2})\/(\d{2})\/(\d{4})$/', trim($rawTgl), $matches)) {
+            $tanggalFaktur = "{$matches[3]}-{$matches[2]}-{$matches[1]}";
+        } else {
+            $tanggalFaktur = date('Y-m-d', strtotime($rawTgl));
+        }
+
+        $keteranganFaktur = !empty($validated['rekening_keterangan']) ? trim($validated['rekening_keterangan']) : null;
 
         // 3. Upload File Dokumen (Disimpan di storage/app/public/belanja_barang/{tahun}/ jika ada)
         $dokumenFakturPath = null;
@@ -262,30 +285,17 @@ class BelanjaBarangController extends Controller
             );
         }
 
-        // 4. Pastikan minimal ada 1 item barang yang valid untuk disimpan ke DB
-        $itemsList = $validated['items'] ?? [];
-        if (empty($itemsList)) {
-            $itemsList = [[
-                'nama_barang'     => 'Barang Belanja Testing',
-                'jenis_astap_id'  => $defaultJenisId,
-                'jumlah_volume'   => 1,
-                'satuan'          => 'Unit',
-                'harga_satuan'    => 100000,
-                'mode_penempatan' => 'gudang',
-                'unit_id'         => null,
-                'kondisi'         => 'Baik',
-                'alamat_barang'   => 'Gudang Perbekalan RSUD',
-            ]];
-        } else {
-            foreach ($itemsList as &$it) {
-                if (empty($it['nama_barang'])) $it['nama_barang'] = 'Barang Belanja Testing';
-                if (empty($it['jenis_astap_id'])) $it['jenis_astap_id'] = $defaultJenisId;
-                if (empty($it['jumlah_volume'])) $it['jumlah_volume'] = 1;
-                if (empty($it['satuan'])) $it['satuan'] = 'Unit';
-                if (!isset($it['harga_satuan']) || $it['harga_satuan'] === '') $it['harga_satuan'] = 100000;
+        // 4. Siapkan item barang yang valid untuk disimpan ke DB
+        $itemsList = $validated['items'];
+        foreach ($itemsList as &$it) {
+            if (empty($it['jenis_astap_id'])) {
+                $it['jenis_astap_id'] = $defaultJenisId;
             }
-            unset($it);
+            if (empty($it['satuan'])) {
+                $it['satuan'] = 'Unit';
+            }
         }
+        unset($it);
 
         // Hitung Total Pembelian Seluruh Item
         $totalPembelian = 0;

@@ -52,8 +52,8 @@
                     Akun 5.1.02
                 </span>
             </div>
-            <div class="text-xs font-black font-mono text-indigo-300 truncate" x-text="formData.rekening_nomor_faktur || 'Nomor Faktur Otomatis'"></div>
-            <div class="text-[11px] text-white truncate font-bold" x-text="formData.rekening_penyedia || 'Toko Rekanan (Testing)'"></div>
+            <div class="text-xs font-black font-mono text-indigo-300 truncate" x-text="formData.rekening_nomor_faktur || '-'"></div>
+            <div class="text-[11px] text-white truncate font-bold" x-text="formData.rekening_penyedia || '-'"></div>
             <div class="text-[10px] text-slate-400 pt-1 border-t border-slate-900 flex items-center justify-between">
                 <span>Berkas Nota:</span>
                 <span :class="fileFaktur ? 'text-emerald-400 font-bold' : 'text-slate-500 italic'" x-text="fileFaktur ? '✓ Terlampir (' + formatFileSize(fileFaktur.size) + ')' : 'Belum Diunggah'"></span>
@@ -165,7 +165,7 @@
                     <div class="space-y-2.5 text-xs pt-2">
                         <div>
                             <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Nama Toko / Rekanan:</span>
-                            <span class="font-extrabold text-white text-sm block" x-text="formData.rekening_penyedia || 'Toko Rekanan (Testing)'"></span>
+                            <span class="font-extrabold text-white text-sm block" x-text="formData.rekening_penyedia || '-'"></span>
                         </div>
                         <div>
                             <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Perlakuan Rekening Akuntansi:</span>

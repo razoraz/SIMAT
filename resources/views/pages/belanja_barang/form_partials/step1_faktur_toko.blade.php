@@ -30,20 +30,6 @@
         </div>
     </template>
 
-    <!-- Alert Mode Testing Aktif -->
-    <div class="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-3 text-xs">
-        <div class="flex items-center gap-2.5">
-            <span class="text-base">🧪</span>
-            <div>
-                <span class="font-bold text-amber-300 block">Mode Testing Aktif: Isian Form Tidak Diwajibkan</span>
-                <span class="text-[11px] text-slate-400 block mt-0.5">Seluruh input dan upload berkas dapat dilewati atau dikosongkan. Nilai default akan terisi otomatis saat disimpan.</span>
-            </div>
-        </div>
-        <span class="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold text-[10px] uppercase shrink-0">
-            Testing Mode
-        </span>
-    </div>
-
     <!-- ========================================================================= -->
     <!-- BAGIAN 1: IDENTITAS TOKO / REKANAN PENYEDIA & PEJABAT RSUD                -->
     <!-- ========================================================================= -->
@@ -61,7 +47,7 @@
         <div class="relative space-y-1.5" @click.away="isTokoDropdownOpen = false">
             <div class="flex items-center justify-between">
                 <label class="block text-xs font-bold text-slate-200">
-                    Nama Toko / Supplier / Rekanan
+                    Nama Toko / Supplier / Rekanan <span class="text-rose-400">*</span>
                 </label>
                 <template x-if="masterTokoList && masterTokoList.length > 0">
                     <span class="text-[10px] text-indigo-400 font-mono font-normal flex items-center gap-1 bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20">
@@ -208,7 +194,7 @@
             <!-- Nomor Faktur -->
             <div>
                 <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                    Nomor Faktur / Nota Toko
+                    Nomor Faktur / Nota Toko <span class="text-rose-400">*</span>
                 </label>
                 <input type="text" x-model="formData.rekening_nomor_faktur"
                     placeholder="Contoh: INV/2026/04/0012 atau NOTA-582"

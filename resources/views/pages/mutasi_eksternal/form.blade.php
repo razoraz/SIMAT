@@ -44,6 +44,26 @@
             return $clean;
         };
 
+        $isLegacyDefaultRuang = function($val) {
+            if (!$val) return '';
+            $clean = trim($val);
+            $lower = strtolower($clean);
+            if (
+                $lower === 'gudang perbekalan rsud dr. h. koesnandi' ||
+                $lower === 'gudang perbekalan rsud' ||
+                $lower === 'gudang perbekalan' ||
+                $lower === 'gudang aset' ||
+                $lower === 'gudang aset utama' ||
+                $lower === 'gudang aset utama / belum ditempatkan' ||
+                $lower === 'belum ditempatkan' ||
+                $lower === 'belum ditempatkan / di gudang' ||
+                $lower === 'belum ditempatkan / di gudang aset'
+            ) {
+                return '';
+            }
+            return $clean;
+        };
+
         $initialAstap = [
             'id' => $astap->id,
             'from' => request('from', 'eksternal'),
@@ -74,7 +94,14 @@
 
         // Ekstrak repeater items dengan fallback cerdas dari registers bila ada banyak unit
         $mesinItems = $spec['mesin_items'] ?? [];
-        if (empty($mesinItems) && $astap->registers && $astap->registers->count() > 1 && (str_starts_with($astap->kode_108 ?? '', '1.3.2') || $astap->category === 'KIB B')) {
+        if (!empty($mesinItems)) {
+            foreach ($mesinItems as &$it) {
+                if (isset($it['ruang_pemegang'])) {
+                    $it['ruang_pemegang'] = $isLegacyDefaultRuang($it['ruang_pemegang']);
+                }
+            }
+            unset($it);
+        } elseif ($astap->registers && $astap->registers->count() > 1 && (str_starts_with($astap->kode_108 ?? '', '1.3.2') || $astap->category === 'KIB B')) {
             $mesinItems = [];
             foreach ($astap->registers as $reg) {
                 $mesinItems[] = [
@@ -92,7 +119,7 @@
                     'mesin_no_mesin'    => $spec['no_mesin'] ?? '',
                     'mesin_no_polisi'   => $spec['no_polisi'] ?? '',
                     'mesin_no_bpkb'     => $spec['no_bpkb'] ?? '',
-                    'ruang_pemegang'    => $reg->ruang_pemegang ?: ($me?->ruangan_tujuan ?: ''),
+                    'ruang_pemegang'    => $isLegacyDefaultRuang($reg->ruang_pemegang ?: ($me?->ruangan_tujuan ?: '')),
                     'is_extracom'       => !empty($spec['is_extracom']),
                 ];
             }
@@ -191,7 +218,14 @@
         }
 
         $lainnyaItems = $spec['lainnya_items'] ?? [];
-        if (empty($lainnyaItems) && $astap->registers && $astap->registers->count() > 1 && (str_starts_with($astap->kode_108 ?? '', '1.3.5') || $astap->category === 'KIB E')) {
+        if (!empty($lainnyaItems)) {
+            foreach ($lainnyaItems as &$it) {
+                if (isset($it['ruang_pemegang'])) {
+                    $it['ruang_pemegang'] = $isLegacyDefaultRuang($it['ruang_pemegang']);
+                }
+            }
+            unset($it);
+        } elseif ($astap->registers && $astap->registers->count() > 1 && (str_starts_with($astap->kode_108 ?? '', '1.3.5') || $astap->category === 'KIB E')) {
             $lainnyaItems = [];
             foreach ($astap->registers as $reg) {
                 $lainnyaItems[] = [
@@ -210,7 +244,7 @@
                     'lainnya_jenis'       => $spec['lainnya_jenis'] ?? 'Buku / Kepustakaan Medis',
                     'lainnya_no_pabrik'   => $spec['no_pabrik'] ?? '',
                     'lainnya_keterangan'  => $spec['lainnya_keterangan'] ?? '',
-                    'ruang_pemegang'      => $reg->ruang_pemegang ?: ($me?->ruangan_tujuan ?: ''),
+                    'ruang_pemegang'      => $isLegacyDefaultRuang($reg->ruang_pemegang ?: ($me?->ruangan_tujuan ?: '')),
                     'is_extracom'         => !empty($spec['is_extracom']),
                 ];
             }
@@ -240,17 +274,19 @@
             'no_mesin' => $spec['no_mesin'] ?? '',
             'no_bpkb' => $spec['no_bpkb'] ?? ($spec['mesin_no_bpkb'] ?? ''),
             'no_polisi' => $spec['no_polisi'] ?? '',
-            'ruang_pemegang' => $spec['ruang_pemegang'] ?? '',
+            'ruang_pemegang' => $isLegacyDefaultRuang($spec['ruang_pemegang'] ?? ''),
             'gedung_luas_m2' => $spec['gedung_luas_m2'] ?? ($spec['luas_m2'] ?? ''),
             'gedung_bertingkat' => $spec['gedung_bertingkat'] ?? 'Tidak',
             'gedung_beton' => $spec['gedung_beton'] ?? 'Beton',
             'gedung_status_tanah' => $spec['gedung_status_tanah'] ?? 'Tanah Pemda',
             'gedung_dokumen_no' => $spec['gedung_dokumen_no'] ?? ($spec['dokumen_gedung_nomor'] ?? ''),
+            'gedung_alamat' => $isLegacyDefaultAlamat($spec['gedung_alamat'] ?? ($astap->alamat_barang ?: '')),
             'jaringan_luas_m2' => $spec['jaringan_luas_m2'] ?? ($spec['luas_m2'] ?? ''),
             'jaringan_bertingkat' => $spec['jaringan_bertingkat'] ?? 'Tidak',
             'jaringan_beton' => $spec['jaringan_beton'] ?? 'Beton',
             'jaringan_status_tanah' => $spec['jaringan_status_tanah'] ?? 'Tanah Pemda',
             'jaringan_dokumen_no' => $spec['jaringan_dokumen_no'] ?? ($spec['dokumen_jaringan_nomor'] ?? ''),
+            'jaringan_alamat' => $isLegacyDefaultAlamat($spec['jaringan_alamat'] ?? ($astap->alamat_barang ?: '')),
         ];
     }
 @endphp
