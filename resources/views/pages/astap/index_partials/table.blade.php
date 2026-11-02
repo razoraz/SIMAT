@@ -24,67 +24,89 @@
                                 <td class="px-3 py-3 text-center font-bold text-slate-400 whitespace-nowrap" x-text="index + 1"></td>
 
                                 <!-- 2. Nama Barang / ASTAP -->
-                                <td class="px-4 py-3">
+                                <td class="px-4 py-4">
                                     <div class="font-bold text-white text-sm" x-text="item.nama_barang || item.nama"></div>
-                                    <div class="flex items-center space-x-1.5 mt-0.5 flex-wrap gap-y-0.5">
-                                        <span class="text-[11px] font-mono text-cyan-400/90 font-medium" x-text="'Kode: ' + (item.kode_barang || item.kode_108 || '-')"></span>
-                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-extrabold whitespace-nowrap leading-none shrink-0"
+                                    <div class="text-[11px] font-mono text-cyan-400/90 font-medium mt-0.5" x-text="'Kode: ' + (item.kode_barang || item.kode_108 || '-')"></div>
+                                    <div class="flex items-center space-x-1.5 mt-1 flex-wrap gap-y-1">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-extrabold whitespace-nowrap leading-none shrink-0 shadow-sm"
                                             :class="{
-                                                'bg-amber-400/20 text-amber-300 border border-amber-400/40': isItemExtracom(item),
-                                                'bg-amber-500/20 text-amber-300 border border-amber-500/40': !isItemExtracom(item) && item.category === 'KIB A',
-                                                'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40': !isItemExtracom(item) && item.category === 'KIB B',
-                                                'bg-purple-500/20 text-purple-300 border border-purple-500/40': !isItemExtracom(item) && item.category === 'KIB C',
-                                                'bg-teal-500/20 text-teal-300 border border-teal-500/40': !isItemExtracom(item) && item.category === 'KIB D',
-                                                'bg-orange-500/20 text-orange-300 border border-orange-500/40': !isItemExtracom(item) && item.category === 'KIB E',
-                                                'bg-rose-500/20 text-rose-300 border border-rose-500/40': !isItemExtracom(item) && item.category === 'KIB F',
-                                                'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40': !isItemExtracom(item) && item.category === 'ATB',
-                                                'bg-violet-500/20 text-violet-300 border border-violet-500/40': !isItemExtracom(item) && (item.category === 'ASET LAIN' || item.category === 'ASET LAINNYA')
+                                                'bg-amber-400/20 text-amber-300 border border-amber-400/40 shadow-amber-400/10': isItemExtracom(item),
+                                                'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-amber-500/10': !isItemExtracom(item) && item.category === 'KIB A',
+                                                'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-cyan-500/10': !isItemExtracom(item) && item.category === 'KIB B',
+                                                'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-purple-500/10': !isItemExtracom(item) && item.category === 'KIB C',
+                                                'bg-teal-500/20 text-teal-300 border border-teal-500/40 shadow-teal-500/10': !isItemExtracom(item) && item.category === 'KIB D',
+                                                'bg-orange-500/20 text-orange-300 border border-orange-500/40 shadow-orange-500/10': !isItemExtracom(item) && item.category === 'KIB E',
+                                                'bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-rose-500/10': !isItemExtracom(item) && item.category === 'KIB F',
+                                                'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 shadow-indigo-500/10': !isItemExtracom(item) && item.category === 'ATB',
+                                                'bg-violet-500/20 text-violet-300 border border-violet-500/40 shadow-violet-500/10': !isItemExtracom(item) && (item.category === 'ASET LAIN' || item.category === 'ASET LAINNYA')
                                             }"
                                             x-text="isItemExtracom(item) ? 'Extracom' : (item.category === 'ATB' ? 'ATB' : (item.category === 'ASET LAIN' || item.category === 'ASET LAINNYA' ? 'Aset Lain' : (item.category || 'KIB B')))"></span>
 
-                                        {{-- Badge Sumber Perolehan / Reklas --}}
+                                        {{-- 2. Reklasifikasi --}}
                                         <template x-if="item.has_reklas || item.is_reklas || (item.reklas_count && item.reklas_count > 0) || item.jenis_reklas || !!item.mutasi_keluar">
-                                            <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[9.5px] font-black whitespace-nowrap leading-none shrink-0 bg-indigo-500/25 text-indigo-300 border border-indigo-400/50 shadow-sm tracking-wider"
+                                            <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[9px] font-black whitespace-nowrap leading-none shrink-0 bg-indigo-500/25 text-indigo-300 border border-indigo-400/50 shadow-sm shadow-indigo-500/20 tracking-wider"
                                                 :title="'Aset ini memiliki riwayat Reklasifikasi' + (item.jenis_reklas ? ' (' + item.jenis_reklas.replace(/_/g, ' ') + ')' : '')">
-                                                <span>🔄</span><span>REKLAS</span>
+                                                <svg class="w-2.5 h-2.5 shrink-0 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                                                </svg>
+                                                <span>REKLASIFIKASI</span>
                                             </span>
                                         </template>
 
+                                        {{-- 3. Mutasi Masuk (dari Luar OPD) --}}
+                                        <template x-if="!item.is_mutasi_keluar_full && !item.is_mutasi_keluar_partial && !item.mutasi_keluar && item.jenis_reklas !== 'MUTASI_EKSTERNAL' && (item.sumber_dana === 'mutasi_eksternal' || item.sumber_dana === 'pelimpahan' || item.sumber_dana === 'pelimpahan_skpd' || item.sumber_dana === 'mutasi_masuk' || item.sumber_dana === 'mutasi')">
+                                            <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[9px] font-black whitespace-nowrap leading-none shrink-0 bg-purple-500/25 text-purple-300 border border-purple-500/50 shadow-sm tracking-wider">
+                                                <span>📥</span><span>MUTASI MASUK</span>
+                                            </span>
+                                        </template>
+
+                                        {{-- 4. Hibah --}}
                                         <template x-if="item.sumber_dana === 'hibah' || item.sumber_dana_raw === 'hibah' || item.jenis_reklas === 'HIBAH_MASUK'">
-                                            <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[9.5px] font-black whitespace-nowrap leading-none shrink-0 bg-amber-500/25 text-amber-300 border border-amber-400/60 shadow-sm tracking-wider">
+                                            <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[9px] font-black whitespace-nowrap leading-none shrink-0 bg-gradient-to-r from-amber-500/25 via-amber-400/20 to-orange-500/25 text-amber-300 border border-amber-400/60 shadow-sm shadow-amber-500/20 tracking-wider">
                                                 <span>🎁</span><span>HIBAH</span>
                                             </span>
                                         </template>
 
+                                        {{-- 5. Belanja Barang --}}
+                                        <template x-if="item.sumber_dana === 'belanja_barang' || item.sumber_dana === 'belanja_rekening'">
+                                            <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[9px] font-black whitespace-nowrap leading-none shrink-0 bg-indigo-500/25 text-indigo-300 border border-indigo-500/50 shadow-sm tracking-wider">
+                                                <span>📦</span><span>BELANJA BARANG</span>
+                                            </span>
+                                        </template>
+
+                                        {{-- 6. Kemitraan --}}
                                         <template x-if="item.sumber_dana === 'kemitraan' || item.sumber_dana_raw === 'kemitraan' || !!item.kemitraan">
-                                            <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[9.5px] font-black whitespace-nowrap leading-none shrink-0 bg-cyan-500/25 text-cyan-300 border border-cyan-500/50 shadow-sm tracking-wider">
-                                                <span>🤝</span><span>KEMITRAAN</span>
+                                            <span>
+                                                <template x-if="item.is_kemitraan_reklas || item.kemitraan?.status_konsesi === 'Selesai / Reklasifikasi' || item.kemitraan?.status_konsesi === 'Selesai'">
+                                                    <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[9px] font-black whitespace-nowrap leading-none shrink-0 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm shadow-emerald-500/10 tracking-wider">
+                                                        <span>🏛️</span><span>MILIK RSUD</span>
+                                                    </span>
+                                                </template>
+                                                <template x-if="isKemitraanReturned(item)">
+                                                    <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[9px] font-black whitespace-nowrap leading-none shrink-0 bg-purple-500/25 text-purple-300 border border-purple-500/50 shadow-sm shadow-purple-500/20 tracking-wider">
+                                                        <span>📦</span><span>DIKEMBALIKAN KE MITRA</span>
+                                                    </span>
+                                                </template>
+                                                <template x-if="!(item.is_kemitraan_reklas || item.kemitraan?.status_konsesi === 'Selesai / Reklasifikasi' || item.kemitraan?.status_konsesi === 'Selesai' || isKemitraanReturned(item))">
+                                                    <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[9px] font-black whitespace-nowrap leading-none shrink-0 shadow-sm tracking-wider"
+                                                          :class="(item.is_bmd_dimanfaatkan || item.kemitraan?.tipe_kemitraan === 'dimanfaatkan') 
+                                                              ? 'bg-cyan-500/25 text-cyan-300 border border-cyan-500/50 shadow-cyan-500/10' 
+                                                              : 'bg-teal-500/25 text-teal-300 border border-teal-500/50 shadow-teal-500/10'">
+                                                        <span x-text="(item.is_bmd_dimanfaatkan || item.kemitraan?.tipe_kemitraan === 'dimanfaatkan') ? '🏛️' : '🤝'"></span>
+                                                        <span x-text="(item.is_bmd_dimanfaatkan || item.kemitraan?.tipe_kemitraan === 'dimanfaatkan') ? 'BMD DIMANFAATKAN' : 'ASET MITRA'"></span>
+                                                    </span>
+                                                </template>
+                                            </span>
+                                        </template>
+
+                                        {{-- 7. Belanja Modal (APBD / BLUD RSUD) --}}
+                                        <template x-if="!item.kemitraan && item.sumber_dana !== 'kemitraan' && item.sumber_dana_raw !== 'kemitraan' && item.sumber_dana !== 'hibah' && item.sumber_dana_raw !== 'hibah' && item.jenis_reklas !== 'HIBAH_MASUK' && item.sumber_dana !== 'belanja_barang' && item.sumber_dana !== 'belanja_rekening' && item.sumber_dana !== 'mutasi_eksternal' && item.sumber_dana !== 'pelimpahan' && item.sumber_dana !== 'pelimpahan_skpd' && item.sumber_dana !== 'mutasi_masuk' && item.sumber_dana !== 'mutasi'">
+                                            <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[9px] font-black whitespace-nowrap leading-none shrink-0 bg-emerald-500/25 text-emerald-300 border border-emerald-500/50 shadow-sm tracking-wider">
+                                                <span>🏛️</span><span>BELANJA MODAL</span>
                                             </span>
                                         </template>
 
                                         <span class="text-[11px] text-slate-400 truncate font-medium" x-text="item.jenis_aset_nama"></span>
-                                    </div>
-
-                                    <!-- Alur Pengadaan & Penempatan: 1 baris ringkas, rapi, dan padat -->
-                                    <div class="mt-1 flex items-center space-x-1.5 text-[11px] text-slate-400 flex-wrap gap-y-0.5">
-                                        <template x-if="item.penyedia_nama || item.penyedia">
-                                            <span class="inline-flex items-center space-x-1 text-slate-300 truncate max-w-[200px]" :title="'Penyedia: ' + (item.penyedia_nama || item.penyedia)">
-                                                <span class="text-purple-400 text-xs">🏢</span>
-                                                <span class="font-medium text-purple-200 truncate" x-text="item.penyedia_nama || item.penyedia"></span>
-                                            </span>
-                                        </template>
-                                        <template x-if="item.penyedia_nama || item.penyedia">
-                                            <span class="text-slate-600 text-xs">&rarr;</span>
-                                        </template>
-                                        <span class="inline-flex items-center space-x-1 text-teal-300 truncate max-w-[230px]" :title="'Lokasi Penempatan: ' + (getPlacementSummary(item) || 'Gudang Perbekalan / Aset')">
-                                            <span class="text-teal-400 text-xs">📍</span>
-                                            <span class="font-medium text-slate-200 truncate" x-text="getPlacementSummary(item) || 'Gudang Perbekalan / Aset'"></span>
-                                        </span>
-                                        <template x-if="item.nomor_spk || item.nomor_faktur || item.nomor_bast || item.nomor_dokumen || item.dokumen_nomor">
-                                            <span class="text-[10px] text-slate-400 font-mono whitespace-nowrap ml-1 shrink-0" :title="'Dokumen Perolehan: ' + (item.nomor_spk || item.nomor_faktur || item.nomor_bast || item.nomor_dokumen || item.dokumen_nomor)">
-                                                <span class="text-slate-500">📄 Dok:</span> <span class="text-indigo-300 font-bold" x-text="item.nomor_spk || item.nomor_faktur || item.nomor_bast || item.nomor_dokumen || item.dokumen_nomor"></span>
-                                            </span>
-                                        </template>
                                     </div>
                                 </td>
 

@@ -38,13 +38,15 @@
             // Riwayat Mutasi States
             showRiwayatModal: false,
             selectedRiwayatRegister: null,
+            selectedRiwayatHibah: [],
             selectedRiwayatMutasis: [],
             selectedRiwayatMutasisInternal: [],
             selectedRiwayatMutasisEksternal: [],
             selectedRiwayatReklas: [],
             selectedRiwayatTimeline: [],
-            selectedRiwayatCounts: { internal: 0, eksternal: 0, reklas: 0, total: 0 },
+            selectedRiwayatCounts: { hibah: 0, internal: 0, eksternal: 0, mutasi: 0, reklas: 0, total: 0 },
             riwayatActiveTab: 'semua',
+            mutasiSubFilter: 'semua',
             isLoadingRiwayat: false,
 
             // Generic Dialog Confirmation State
@@ -681,18 +683,20 @@
             },
 
             // =========================================================================
-            // RIWAYAT MUTASI & REKLASIFIKASI UNIT
+            // RIWAYAT & REKAM JEJAK SIKLUS ASET
             // =========================================================================
             async openRiwayatModal(reg) {
                 if (!reg) return;
                 this.riwayatActiveTab = 'semua';
+                this.mutasiSubFilter = 'semua';
                 this.selectedRiwayatRegister = reg;
+                this.selectedRiwayatHibah = [];
                 this.selectedRiwayatMutasis = Array.isArray(reg.mutasis) ? reg.mutasis : [];
                 this.selectedRiwayatMutasisInternal = Array.isArray(reg.mutasis) ? reg.mutasis : [];
                 this.selectedRiwayatMutasisEksternal = [];
                 this.selectedRiwayatReklas = [];
                 this.selectedRiwayatTimeline = [];
-                this.selectedRiwayatCounts = { internal: this.selectedRiwayatMutasisInternal.length, eksternal: 0, reklas: 0, total: this.selectedRiwayatMutasisInternal.length };
+                this.selectedRiwayatCounts = { hibah: 0, internal: this.selectedRiwayatMutasisInternal.length, eksternal: 0, mutasi: this.selectedRiwayatMutasisInternal.length, reklas: 0, total: this.selectedRiwayatMutasisInternal.length };
                 this.showRiwayatModal = true;
 
                 try {
@@ -701,17 +705,27 @@
                     if (res.ok) {
                         const data = await res.json();
                         if (data.success) {
+                            this.selectedRiwayatHibah = data.hibah || [];
                             this.selectedRiwayatMutasis = data.mutasis || [];
                             this.selectedRiwayatMutasisInternal = data.mutasis_internal || data.mutasis || [];
                             this.selectedRiwayatMutasisEksternal = data.mutasis_eksternal || [];
-                            this.selectedRiwayatReklas = data.reklas || [];
+                            this.selectedRiwayatReklas = data.reklasifikasis || data.reklas || [];
                             this.selectedRiwayatTimeline = data.timeline || [];
-                            this.selectedRiwayatCounts = {
-                                internal: this.selectedRiwayatMutasisInternal.length,
-                                eksternal: this.selectedRiwayatMutasisEksternal.length,
-                                reklas: this.selectedRiwayatReklas.length,
-                                total: (data.timeline || []).length || (this.selectedRiwayatMutasisInternal.length + this.selectedRiwayatMutasisEksternal.length + this.selectedRiwayatReklas.length)
+                            const intCount = this.selectedRiwayatMutasisInternal.length;
+                            const eksCount = this.selectedRiwayatMutasisEksternal.length;
+                            const hibahCount = (data.hibah || []).length;
+                            const reklasCount = this.selectedRiwayatReklas.length;
+                            this.selectedRiwayatCounts = data.counts || {
+                                hibah: hibahCount,
+                                internal: intCount,
+                                eksternal: eksCount,
+                                mutasi: intCount + eksCount,
+                                reklas: reklasCount,
+                                total: (data.timeline || []).length || (hibahCount + intCount + eksCount + reklasCount)
                             };
+                            reg.mutasis = this.selectedRiwayatMutasisInternal;
+                            if (data.kondisi) reg.kondisi = data.kondisi;
+                            if (data.ruang) reg.ruang_pemegang = data.ruang;
                         }
                     }
                 } catch(e) {

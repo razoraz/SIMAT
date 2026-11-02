@@ -725,6 +725,7 @@ class AstapController extends Controller
     {
         $reg = \App\Models\AstapRegister::with([
             'astap.jenisAstap',
+            'astap.hibahDetail',
             'astap.mutasiEksternalMasuk',
             'mutasis' => function($q) {
                 $q->where('status', 'Disetujui Admin (Selesai)')
@@ -735,6 +736,28 @@ class AstapController extends Controller
 
         if (!$reg) {
             return response()->json(['success' => false, 'message' => 'Register tidak ditemukan.'], 404);
+        }
+
+        // 0. Penerimaan Hibah (Jika aset bersumber dari Hibah)
+        $riwayatHibah = collect([]);
+        if ($reg->astap && ($reg->astap->sumber_dana === 'hibah' || $reg->astap->hibahDetail)) {
+            $hd = $reg->astap->hibahDetail;
+            $spec = is_array($reg->astap->spesifikasi_json) ? $reg->astap->spesifikasi_json : (json_decode($reg->astap->spesifikasi_json, true) ?? []);
+            $tglHibah = $hd?->tanggal_bast ?: ($reg->astap->bast_dokumen_tanggal ?: ($spec['tanggal_bast'] ?? null));
+            $carbonTgl = $tglHibah ? \Carbon\Carbon::parse($tglHibah) : null;
+
+            $riwayatHibah->push([
+                'id'                 => $hd?->id ?: 0,
+                'nomor_bast'         => $hd?->nomor_bast ?: ($reg->astap->bast_dokumen_nomor ?: ($spec['nomor_bast'] ?? 'BAST-HIBAH')),
+                'tanggal_hibah'      => $carbonTgl ? $carbonTgl->format('d M Y') : '-',
+                'tanggal_hibah_raw'  => $carbonTgl ? $carbonTgl->format('Y-m-d') : '',
+                'pihak_hibah'        => $hd?->pihak_hibah ?: ($reg->astap->hibah_pemberi ?: ($spec['pemberi'] ?? 'Pihak Pemberi Hibah')),
+                'penerima'           => 'RSUD Dr. H. Koesnadi',
+                'nilai_aset'         => 'Rp ' . number_format((float) ($hd?->nilai_aset ?: ($reg->astap->total_realisasi ?? 0)), 0, ',', '.'),
+                'keterangan'         => $hd?->keterangan ?: ($reg->astap->keterangan_tambahan ?: 'Penerimaan hibah barang milik daerah / pemerintah / pihak ketiga'),
+                'status'             => 'Resmi Diterima BAST',
+                'tipe_histori'       => 'hibah',
+            ]);
         }
 
         // 1. Mutasi Internal (Ruangan RSUD Koesnandi)
@@ -766,7 +789,7 @@ class AstapController extends Controller
         $mutasisEksternal = $rawEksternal->map(function($me) use ($reg) {
             return [
                 'id'                 => $me->id,
-                'nomor_bast'         => $me->nomor_bast ?: 'BAST-EKSTERNAL',
+                'nomor_bast'         => $me->nomor_bamb ?: ($me->nomor_sk_dasar ?: ($me->nomor_bast ?: 'BAST-EKSTERNAL')),
                 'tanggal_mutasi'     => $me->tanggal_mutasi ? $me->tanggal_mutasi->format('d M Y') : '-',
                 'tanggal_mutasi_raw' => $me->tanggal_mutasi ? $me->tanggal_mutasi->format('Y-m-d') : '',
                 'tipe'               => $me->tipe ?: 'keluar',
@@ -781,6 +804,19 @@ class AstapController extends Controller
                 'tipe_histori'       => 'eksternal',
             ];
         })->values();
+
+        // Filter out mutasi eksternal 'masuk' jika aset adalah barang hibah murni dan nomor dokumennya sama dengan hibah
+        if ($riwayatHibah->isNotEmpty()) {
+            $nomorBastHibah = strtolower(trim($riwayatHibah->first()['nomor_bast'] ?? ''));
+            $mutasisEksternal = $mutasisEksternal->reject(function($me) use ($nomorBastHibah) {
+                $docNo = strtolower(trim($me['nomor_bast'] ?? ''));
+                return $me['tipe'] === 'masuk' && (
+                    $docNo === $nomorBastHibah ||
+                    str_contains($docNo, 'hibah') ||
+                    str_contains(strtolower($me['alasan_mutasi'] ?? ''), 'hibah')
+                );
+            })->values();
+        }
 
         // Fallback jika ada data mutasi masuk di master tapi belum tercatat di MutasiEksternal
         if ($mutasisEksternal->isEmpty() && $reg->astap && $reg->astap->isMutasiMasuk() && $reg->astap->mutasiEksternalMasuk) {
@@ -832,6 +868,7 @@ class AstapController extends Controller
 
         // 4. Gabungan Timeline Terpadu (Diurutkan dari yang paling baru)
         $timeline = collect([])
+            ->concat($riwayatHibah->map(fn($item) => array_merge($item, ['sort_date' => $item['tanggal_hibah_raw'] ?: '1970-01-01', 'kategori' => 'Hibah'])))
             ->concat($mutasisInternal->map(fn($item) => array_merge($item, ['sort_date' => $item['tanggal_mutasi_raw'] ?: '1970-01-01', 'kategori' => 'Internal'])))
             ->concat($mutasisEksternal->map(fn($item) => array_merge($item, ['sort_date' => $item['tanggal_mutasi_raw'] ?: '1970-01-01', 'kategori' => 'Eksternal'])))
             ->concat($reklasifikasis->map(fn($item) => array_merge($item, ['sort_date' => $item['tanggal_reklas_raw'] ?: '1970-01-01', 'kategori' => 'Reklasifikasi'])))
@@ -843,17 +880,20 @@ class AstapController extends Controller
             'nibar'              => $reg->nibar ?: $reg->no_register,
             'kondisi'            => $reg->kondisi,
             'ruang'              => $reg->ruang_pemegang,
+            'hibah'              => $riwayatHibah,
             'mutasis'            => $mutasisInternal, // backward-compatibility
             'mutasis_internal'   => $mutasisInternal,
             'mutasis_eksternal'  => $mutasisEksternal,
             'reklasifikasis'     => $reklasifikasis,
             'timeline'           => $timeline,
             'counts'             => [
+                'hibah'      => $riwayatHibah->count(),
                 'internal'   => $mutasisInternal->count(),
                 'eksternal'  => $mutasisEksternal->count(),
+                'mutasi'     => $mutasisInternal->count() + $mutasisEksternal->count(),
                 'reklas'     => $reklasifikasis->count(),
                 'total'      => $timeline->count(),
-            ]
+            ],
         ]);
     }
 
