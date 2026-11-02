@@ -119,6 +119,10 @@ class HibahController extends Controller
         // Daftar Unit & Jenis 108 untuk filter / modal
         $dbUnits = Unit::orderBy('nama')->get();
         $dbMaster108 = JenisAstap::getNested108();
+        $dbSkpdDirectory = \App\Http\Controllers\MutasiEksternalController::getSkpdDirectory();
+        $dbSkpdAsals = array_values(array_unique(array_keys($dbSkpdDirectory)));
+        $dbPejabats = \App\Http\Controllers\MutasiEksternalController::getDistinctPejabats();
+        $dbMitraKemitraans = \App\Models\AstapKemitraan::getDistinctMitras();
 
         // Daftar Tahun Unik untuk Filter
         $availableYears = AstapHibah::active()->select('tahun')
@@ -136,6 +140,10 @@ class HibahController extends Controller
             'hibahAstaps',
             'dbUnits',
             'dbMaster108',
+            'dbSkpdDirectory',
+            'dbSkpdAsals',
+            'dbPejabats',
+            'dbMitraKemitraans',
             'totalMasukUnit',
             'totalMasukNominal',
             'totalKeluarUnit',

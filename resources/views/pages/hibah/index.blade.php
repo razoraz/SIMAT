@@ -3,6 +3,12 @@
     @section('breadcrumb', 'Master Aset / Kelola Hibah Aset')
 
     <script src="{{ asset('js/qrcode.min.js') }}"></script>
+    <script>
+        window.dbMitraKemitraans = @json($dbMitraKemitraans ?? []);
+        window.dbSkpdDirectory = @json($dbSkpdDirectory ?? []);
+        window.dbSkpdAsals = @json($dbSkpdAsals ?? []);
+        window.dbPejabats = @json($dbPejabats ?? []);
+    </script>
 
     @include('pages.hibah.master_partials.scripts_export')
     @include('pages.hibah.master_partials.scripts')
