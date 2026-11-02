@@ -2937,25 +2937,27 @@
                             <div class="space-y-3">
                                 <!-- PANEL CHECKLIST UNIT REGISTER NIBAR -->
                                 <div class="p-3.5 sm:p-4 rounded-2xl bg-slate-900/90 border border-teal-500/30 shadow-lg shadow-teal-950/20 space-y-3">
-                                    <div class="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
-                                        <div class="flex items-center space-x-2.5">
-                                            <div class="w-7 h-7 rounded-lg bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-300 shadow-sm shadow-teal-500/10">
+                                    <div class="flex items-center justify-between gap-3 border-b border-slate-800/80 pb-2.5">
+                                        <div class="flex items-center space-x-2.5 min-w-0">
+                                            <div class="w-7 h-7 rounded-lg bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-300 shadow-sm shadow-teal-500/10 shrink-0">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                                                 </svg>
                                             </div>
-                                            <span class="text-xs font-black text-teal-300 uppercase tracking-wider flex items-center gap-1.5">
-                                                <span>Pilih Unit Register &amp; Kondisi Serah Terima Aktual:</span>
-                                                <span class="text-rose-400">*</span>
+                                            <span class="text-xs font-black text-teal-300 uppercase tracking-wider flex items-center gap-1.5 min-w-0">
+                                                <span class="truncate">Pilih Unit Register &amp; Kondisi Serah:</span>
+                                                <span class="text-rose-400 shrink-0">*</span>
                                             </span>
                                         </div>
-                                        <div class="flex items-center space-x-2">
+                                        <div class="flex items-center space-x-2 shrink-0">
+                                            <span class="text-[10px] font-mono px-2 py-1 rounded-lg bg-teal-500/10 text-teal-300 border border-teal-500/25 whitespace-nowrap"
+                                                  x-text="(reklasSelectedNibarIds ? reklasSelectedNibarIds.length : 0) + ' Terpilih'"></span>
                                             <button type="button" @click="toggleSelectAllNibars(true)"
-                                                    class="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/30 transition-all cursor-pointer">
+                                                    class="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/40 transition-all cursor-pointer whitespace-nowrap active:scale-95">
                                                 Pilih Semua
                                             </button>
                                             <button type="button" @click="toggleSelectAllNibars(false)"
-                                                    class="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border border-slate-700 transition-all cursor-pointer">
+                                                    class="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border border-slate-700 transition-all cursor-pointer whitespace-nowrap active:scale-95">
                                                 Batal Pilih
                                             </button>
                                         </div>
@@ -2964,95 +2966,89 @@
                                     <!-- Daftar Unit Register NIBAR (Scrollable) -->
                                     <div class="space-y-2 max-h-56 overflow-y-auto custom-scrollbar pr-1">
                                         <template x-for="reg in getReklasAvailableRegisters()" :key="reg.id">
-                                            <div class="p-2.5 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                                            <div class="p-3 rounded-xl border transition-all"
                                                  :class="reg.status === 'Mutasi Keluar OPD' 
                                                      ? 'bg-slate-950/40 border-slate-900 opacity-60' 
                                                      : (reklasSelectedNibarIds.includes(reg.id) 
                                                          ? 'bg-teal-500/10 border-teal-500/50 shadow-sm shadow-teal-500/10' 
                                                          : 'bg-slate-900/60 border-slate-800/90 hover:border-slate-700')">
                                                 
-                                                <div class="flex items-center space-x-3 min-w-0 flex-1">
-                                                    <template x-if="reg.status !== 'Mutasi Keluar OPD'">
-                                                        <input type="checkbox" :value="reg.id" x-model="reklasSelectedNibarIds"
-                                                               class="w-4 h-4 rounded border-slate-700 text-teal-500 focus:ring-teal-400/30 bg-slate-950 cursor-pointer">
-                                                    </template>
-                                                    <template x-if="reg.status === 'Mutasi Keluar OPD'">
-                                                        <span class="text-slate-500 cursor-not-allowed inline-flex items-center" title="Unit ini sudah dimutasikan keluar">
-                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                                                        </span>
-                                                    </template>
-                                                    
-                                                    <div class="min-w-0 flex-1">
-                                                        <div class="flex items-center space-x-2 flex-wrap">
-                                                            <span class="font-mono font-bold text-xs"
-                                                                  :class="reklasSelectedNibarIds.includes(reg.id) ? 'text-teal-300' : 'text-emerald-400'"
-                                                                  x-text="reg.nibar || reg.no_register || ('Unit #' + reg.id)"></span>
-                                                            <span class="px-1.5 py-0.2 rounded text-[9px] font-bold border font-mono"
-                                                                  :class="{
-                                                                      'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': reg.kondisi === 'Baik' || reg.kondisi === 'B',
-                                                                      'bg-amber-500/20 text-amber-300 border-amber-500/30': reg.kondisi === 'Kurang Baik' || reg.kondisi === 'KB' || reg.kondisi === 'Rusak Ringan',
-                                                                      'bg-rose-500/20 text-rose-300 border-rose-500/30': reg.kondisi === 'Rusak Berat' || reg.kondisi === 'RB'
-                                                                  }"
-                                                                  x-text="'Kondisi: ' + (reg.kondisi || 'Baik')"></span>
-                                                        </div>
-                                                        <!-- Keterangan Penempatan Ruangan RSUD vs Instansi Tujuan vs Belum Ditempatkan -->
-                                                        <div class="text-[10.5px] flex items-center space-x-1.5 mt-0.5">
-                                                            {{-- 1. Jika sudah dialihkan keluar ke instansi/OPD lain --}}
-                                                            <template x-if="reg.status === 'Mutasi Keluar OPD' || (reg.ruang_pemegang && reg.ruang_pemegang.startsWith('Mutasi Keluar'))">
-                                                                <div class="flex items-center space-x-1 text-cyan-300 font-medium">
-                                                                    <svg class="w-3 h-3 text-cyan-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" /></svg>
-                                                                    <span class="text-cyan-400 font-bold">Instansi:</span>
-                                                                    <span class="truncate" x-text="reg.ruang_pemegang ? reg.ruang_pemegang.replace(/^Mutasi Keluar:\s*/i, '') : (selectedAstapReklas?.opd_tujuan || selectedAstapReklas?.mutasi_keluar?.opd_tujuan || 'OPD Luar')"></span>
-                                                                </div>
-                                                            </template>
+                                                <!-- Baris Atas: Checkbox + NIBAR (Kiri) & Nilai Satuan (Kanan) -->
+                                                <div class="flex items-center justify-between gap-3">
+                                                    <div class="flex items-center space-x-2.5 min-w-0 flex-1">
+                                                        <template x-if="reg.status !== 'Mutasi Keluar OPD'">
+                                                            <input type="checkbox" :value="reg.id" x-model="reklasSelectedNibarIds"
+                                                                   class="w-4 h-4 rounded border-slate-700 text-teal-500 focus:ring-teal-400/30 bg-slate-950 cursor-pointer shrink-0">
+                                                        </template>
+                                                        <template x-if="reg.status === 'Mutasi Keluar OPD'">
+                                                            <span class="text-slate-500 cursor-not-allowed inline-flex items-center shrink-0" title="Unit ini sudah dimutasikan keluar">
+                                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                                                            </span>
+                                                        </template>
+                                                        <span class="font-mono font-bold text-xs tracking-tight truncate"
+                                                              :class="reklasSelectedNibarIds.includes(reg.id) ? 'text-teal-300' : 'text-emerald-400'"
+                                                              x-text="reg.nibar || reg.no_register || ('Unit #' + reg.id)"></span>
+                                                    </div>
 
-                                                            {{-- 2. Jika aktif di RSUD & sudah ada ruangan penempatan resmi --}}
-                                                            <template x-if="reg.status !== 'Mutasi Keluar OPD' && (!reg.ruang_pemegang || !reg.ruang_pemegang.startsWith('Mutasi Keluar')) && ((reg.ruang_pemegang && reg.ruang_pemegang !== 'Belum Ditempatkan') || (selectedAstapReklas?.ruang_unit && selectedAstapReklas?.ruang_unit !== 'Belum Ditempatkan'))">
-                                                                <div class="flex items-center space-x-1 text-slate-400">
-                                                                    <svg class="w-3 h-3 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                                                                    <span class="text-slate-500">Ruangan:</span>
-                                                                    <span class="text-slate-300 truncate" x-text="reg.ruang_pemegang || selectedAstapReklas?.ruang_unit"></span>
-                                                                </div>
-                                                            </template>
-
-                                                            {{-- 3. Jika aktif di RSUD tapi belum ditempatkan ke ruangan (masih di gudang aset) --}}
-                                                            <template x-if="reg.status !== 'Mutasi Keluar OPD' && (!reg.ruang_pemegang || !reg.ruang_pemegang.startsWith('Mutasi Keluar')) && (!reg.ruang_pemegang || reg.ruang_pemegang === 'Belum Ditempatkan') && (!selectedAstapReklas?.ruang_unit || selectedAstapReklas?.ruang_unit === 'Belum Ditempatkan')">
-                                                                <div class="inline-flex items-center space-x-1 text-amber-300/90 font-medium text-[10px]">
-                                                                    <svg class="w-3 h-3 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
-                                                                    <span class="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/25">Belum Ditempatkan (Gudang Aset)</span>
-                                                                </div>
-                                                            </template>
-                                                        </div>
+                                                    <div class="text-right shrink-0">
+                                                        <template x-if="reg.status === 'Mutasi Keluar OPD'">
+                                                            <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wide bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                                                                Sudah Keluar OPD
+                                                            </span>
+                                                        </template>
+                                                        <template x-if="reg.status !== 'Mutasi Keluar OPD'">
+                                                            <div class="flex items-center gap-1.5">
+                                                                <span class="text-[9.5px] uppercase font-bold tracking-wider text-slate-400">Nilai Satuan:</span>
+                                                                <span class="text-xs font-mono font-extrabold text-teal-300"
+                                                                      x-text="'Rp ' + Number(getRegisterNilaiSatuan(reg)).toLocaleString('id-ID')"></span>
+                                                            </div>
+                                                        </template>
                                                     </div>
                                                 </div>
 
-                                                <!-- Dropdown Pembaruan Kondisi Aktual Serah Terima -->
-                                                <div class="flex items-center space-x-3 shrink-0 self-end sm:self-center" x-show="reklasSelectedNibarIds.includes(reg.id)">
-                                                    <div class="flex items-center space-x-1.5">
-                                                        <span class="text-[10px] text-slate-400">Kondisi Serah:</span>
+                                                <!-- Baris Bawah: Ruangan / Gudang Aset (Kiri) & Dropdown Kondisi Serah (Kanan) -->
+                                                <div class="mt-2.5 pt-2 border-t border-slate-800/60 flex items-center justify-between gap-3 pl-6.5">
+                                                    <!-- Keterangan Penempatan Ruangan RSUD vs Instansi Tujuan vs Belum Ditempatkan -->
+                                                    <div class="text-[10.5px] flex items-center space-x-1.5 min-w-0">
+                                                        {{-- 1. Jika sudah dialihkan keluar ke instansi/OPD lain --}}
+                                                        <template x-if="reg.status === 'Mutasi Keluar OPD' || (reg.ruang_pemegang && reg.ruang_pemegang.startsWith('Mutasi Keluar'))">
+                                                            <div class="flex items-center space-x-1 text-cyan-300 font-medium">
+                                                                <svg class="w-3 h-3 text-cyan-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" /></svg>
+                                                                <span class="text-cyan-400 font-bold">Instansi:</span>
+                                                                <span class="truncate" x-text="reg.ruang_pemegang ? reg.ruang_pemegang.replace(/^Mutasi Keluar:\s*/i, '') : (selectedAstapReklas?.opd_tujuan || selectedAstapReklas?.mutasi_keluar?.opd_tujuan || 'OPD Luar')"></span>
+                                                            </div>
+                                                        </template>
+
+                                                        {{-- 2. Jika aktif di RSUD & sudah ada ruangan penempatan resmi --}}
+                                                        <template x-if="reg.status !== 'Mutasi Keluar OPD' && (!reg.ruang_pemegang || !reg.ruang_pemegang.startsWith('Mutasi Keluar')) && ((reg.ruang_pemegang && reg.ruang_pemegang !== 'Belum Ditempatkan') || (selectedAstapReklas?.ruang_unit && selectedAstapReklas?.ruang_unit !== 'Belum Ditempatkan'))">
+                                                            <div class="flex items-center space-x-1 text-slate-400">
+                                                                <svg class="w-3 h-3 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                                                <span class="text-slate-500">Ruangan:</span>
+                                                                <span class="text-slate-300 truncate" x-text="reg.ruang_pemegang || selectedAstapReklas?.ruang_unit"></span>
+                                                            </div>
+                                                        </template>
+
+                                                        {{-- 3. Jika aktif di RSUD tapi belum ditempatkan ke ruangan (masih di gudang aset) --}}
+                                                        <template x-if="reg.status !== 'Mutasi Keluar OPD' && (!reg.ruang_pemegang || !reg.ruang_pemegang.startsWith('Mutasi Keluar')) && (!reg.ruang_pemegang || reg.ruang_pemegang === 'Belum Ditempatkan') && (!selectedAstapReklas?.ruang_unit || selectedAstapReklas?.ruang_unit === 'Belum Ditempatkan')">
+                                                            <div class="inline-flex items-center space-x-1 text-amber-300/90 font-medium text-[10px]">
+                                                                <svg class="w-3 h-3 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+                                                                <span class="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/25">Belum Ditempatkan (Gudang Aset)</span>
+                                                            </div>
+                                                        </template>
+                                                    </div>
+
+                                                    <!-- Dropdown Pembaruan Kondisi Aktual Serah Terima (Kanan) -->
+                                                    <div class="flex items-center gap-1.5 bg-slate-950/80 border border-teal-500/40 rounded-xl px-2.5 py-1.5 shadow-inner shrink-0"
+                                                         x-show="reklasSelectedNibarIds.includes(reg.id)">
+                                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Kondisi Serah:</span>
                                                         <select x-model="reklasRegisterKondisiMap[reg.id]"
                                                                 @click.stop
-                                                                class="bg-slate-900 border border-teal-500/40 rounded-lg px-2 py-1 text-[11px] font-bold text-teal-200 focus:outline-none focus:border-teal-400">
+                                                                class="bg-transparent border-none text-[11px] font-extrabold text-teal-300 focus:ring-0 focus:outline-none cursor-pointer py-0 pl-1 pr-6">
                                                             <option value="Baik" class="bg-slate-900 text-white">Baik (B)</option>
                                                             <option value="Kurang Baik" class="bg-slate-900 text-white">Kurang Baik (KB)</option>
                                                             <option value="Rusak Berat" class="bg-slate-900 text-white">Rusak Berat (RB)</option>
                                                         </select>
                                                     </div>
-                                                </div>
-
-                                                <div class="text-right shrink-0">
-                                                    <template x-if="reg.status === 'Mutasi Keluar OPD'">
-                                                        <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wide bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                                                            Sudah Keluar OPD
-                                                        </span>
-                                                    </template>
-                                                    <template x-if="reg.status !== 'Mutasi Keluar OPD'">
-                                                        <div>
-                                                            <span class="text-[10px] text-slate-400 block">Nilai Satuan:</span>
-                                                            <span class="text-xs font-mono font-extrabold text-teal-300"
-                                                                  x-text="'Rp ' + Number(getRegisterNilaiSatuan(reg)).toLocaleString('id-ID')"></span>
-                                                        </div>
-                                                    </template>
                                                 </div>
                                             </div>
                                         </template>
