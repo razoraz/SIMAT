@@ -23,6 +23,27 @@
             }
         }
 
+        $isLegacyDefaultAlamat = function($val) {
+            if (!$val) return '';
+            $clean = trim($val);
+            $lower = strtolower($clean);
+            if (
+                $lower === 'rsud dr. h. koesnandi bondowoso, jl. piere tendean no. 1' ||
+                $lower === 'kompleks rsud dr. h. koesnandi, jl. piere tendean no. 1, bondowoso' ||
+                $lower === 'kompleks rsud dr. h. koesnandi, jl. piere tendean no. 1' ||
+                $lower === 'gudang perbekalan rsud dr. h. koesnandi' ||
+                $lower === 'gudang perbekalan rsud' ||
+                $lower === 'rsud koesnandi' ||
+                $lower === 'rsud dr. h. koesnandi' ||
+                $lower === 'jl. piere tendean no. 1' ||
+                $lower === 'jl. kapten piere tendean no. 1' ||
+                $lower === 'jl. kapten piere tendean no. 1 bondowoso'
+            ) {
+                return '';
+            }
+            return $clean;
+        };
+
         $initialAstap = [
             'id' => $astap->id,
             'from' => request('from', 'eksternal'),
@@ -46,7 +67,7 @@
             'satuan' => $astap->satuan ?: ($me?->satuan ?: 'Unit'),
             'kondisi' => $firstReg?->kondisi ?: ($me?->kondisi ?: ($spec['kondisi'] ?? 'Baik')),
             'unit_id' => $me?->unit_id ?: ($astap->unit_id ?: ($firstReg?->unit_id ?: '')),
-            'alamat_barang' => $astap->alamat_barang ?: 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1',
+            'alamat_barang' => $isLegacyDefaultAlamat($astap->alamat_barang),
             'ppk_nama' => ($me?->pj_tujuan_nama && !str_contains(strtolower($me->pj_tujuan_nama), 'yus')) ? $me->pj_tujuan_nama : ($astap->ppk_nama && !str_contains(strtolower($astap->ppk_nama), 'yus') ? $astap->ppk_nama : ($spec['ppk_nama'] ?? 'BUDI HARTONO, S.Sos')),
             'ppk_nip' => ($me?->pj_tujuan_nip && !str_contains($me->pj_tujuan_nip, '19771002') && !str_contains($me->pj_tujuan_nip, '19690412')) ? $me->pj_tujuan_nip : ($astap->ppk_nip && !str_contains($astap->ppk_nip, '19771002') && !str_contains($astap->ppk_nip, '19690412') ? $astap->ppk_nip : ($spec['ppk_nip'] ?? '19760229 200801 1 010')),
         ];
@@ -78,7 +99,14 @@
         }
 
         $tanahItems = $spec['tanah_items'] ?? [];
-        if (empty($tanahItems) && $astap->registers && $astap->registers->count() > 1 && (str_starts_with($astap->kode_108 ?? '', '1.3.1') || $astap->category === 'KIB A')) {
+        if (!empty($tanahItems)) {
+            foreach ($tanahItems as &$it) {
+                if (isset($it['tanah_alamat'])) {
+                    $it['tanah_alamat'] = $isLegacyDefaultAlamat($it['tanah_alamat']);
+                }
+            }
+            unset($it);
+        } elseif ($astap->registers && $astap->registers->count() > 1 && (str_starts_with($astap->kode_108 ?? '', '1.3.1') || $astap->category === 'KIB A')) {
             $tanahItems = [];
             foreach ($astap->registers as $reg) {
                 $tanahItems[] = [
@@ -93,14 +121,21 @@
                     'tanah_penggunaan'     => $spec['penggunaan'] ?? '',
                     'tanah_luas_m2'        => $spec['luas_m2'] ?? '',
                     'tanah_batas'          => $spec['batas'] ?? ($spec['tanah_batas'] ?? ''),
-                    'tanah_alamat'         => $astap->alamat_barang ?: '',
+                    'tanah_alamat'         => $isLegacyDefaultAlamat($spec['tanah_alamat'] ?? ($astap->alamat_barang ?: '')),
                     'ruang_pemegang'       => $reg->ruang_pemegang ?: ($me?->ruangan_tujuan ?: ''),
                 ];
             }
         }
 
         $gedungItems = $spec['gedung_items'] ?? [];
-        if (empty($gedungItems) && $astap->registers && $astap->registers->count() > 1 && (str_starts_with($astap->kode_108 ?? '', '1.3.3') || $astap->category === 'KIB C')) {
+        if (!empty($gedungItems)) {
+            foreach ($gedungItems as &$it) {
+                if (isset($it['gedung_alamat'])) {
+                    $it['gedung_alamat'] = $isLegacyDefaultAlamat($it['gedung_alamat']);
+                }
+            }
+            unset($it);
+        } elseif ($astap->registers && $astap->registers->count() > 1 && (str_starts_with($astap->kode_108 ?? '', '1.3.3') || $astap->category === 'KIB C')) {
             $gedungItems = [];
             foreach ($astap->registers as $reg) {
                 $gedungItems[] = [
@@ -116,14 +151,21 @@
                     'gedung_dokumen_no'      => $spec['gedung_dokumen_no'] ?? '',
                     'gedung_dokumen_tgl'     => $spec['gedung_dokumen_tgl'] ?? '',
                     'gedung_fungsi'          => $spec['gedung_fungsi'] ?? '',
-                    'gedung_alamat'          => $spec['gedung_alamat'] ?? ($astap->alamat_barang ?: ''),
+                    'gedung_alamat'          => $isLegacyDefaultAlamat($spec['gedung_alamat'] ?? ($astap->alamat_barang ?: '')),
                     'ruang_pemegang'         => $reg->ruang_pemegang ?: ($me?->ruangan_tujuan ?: ''),
                 ];
             }
         }
 
         $jaringanItems = $spec['jaringan_items'] ?? [];
-        if (empty($jaringanItems) && $astap->registers && $astap->registers->count() > 1 && (str_starts_with($astap->kode_108 ?? '', '1.3.4') || $astap->category === 'KIB D')) {
+        if (!empty($jaringanItems)) {
+            foreach ($jaringanItems as &$it) {
+                if (isset($it['jaringan_alamat'])) {
+                    $it['jaringan_alamat'] = $isLegacyDefaultAlamat($it['jaringan_alamat']);
+                }
+            }
+            unset($it);
+        } elseif ($astap->registers && $astap->registers->count() > 1 && (str_starts_with($astap->kode_108 ?? '', '1.3.4') || $astap->category === 'KIB D')) {
             $jaringanItems = [];
             foreach ($astap->registers as $reg) {
                 $jaringanItems[] = [
@@ -142,7 +184,7 @@
                     'jaringan_dokumen_no'   => $spec['jaringan_dokumen_no'] ?? '',
                     'jaringan_dokumen_tgl'  => $spec['jaringan_dokumen_tgl'] ?? '',
                     'jaringan_keterangan'   => $spec['jaringan_keterangan'] ?? '',
-                    'jaringan_alamat'       => $spec['jaringan_alamat'] ?? ($astap->alamat_barang ?: ''),
+                    'jaringan_alamat'       => $isLegacyDefaultAlamat($spec['jaringan_alamat'] ?? ($astap->alamat_barang ?: '')),
                     'ruang_pemegang'        => $reg->ruang_pemegang ?: ($me?->ruangan_tujuan ?: ''),
                 ];
             }

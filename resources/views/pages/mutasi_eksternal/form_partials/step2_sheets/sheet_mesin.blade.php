@@ -16,7 +16,7 @@
                 <div>
                     <div class="flex items-center gap-2">
                         <h3 class="text-xs sm:text-sm font-extrabold text-white uppercase tracking-wide">
-                            Rincian Peralatan &amp; Mesin / Alkes Medis Mutasi Masuk
+                            Rincian Peralatan &amp; Mesin / Alkes Medis
                         </h3>
                         <span class="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-mono font-bold text-[10px] border border-purple-500/40">
                             KIB B · Akun 1.3.2

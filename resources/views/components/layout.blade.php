@@ -922,6 +922,10 @@
                     if (fp && fp.altInput) {
                         fp.altInput.disabled = el.disabled;
                         fp.altInput.readOnly = el.readOnly;
+                        const currentCustomClass = (el.className || '') + ' flatpickr-custom-input';
+                        if (fp.altInput.className !== currentCustomClass) {
+                            fp.altInput.className = currentCustomClass;
+                        }
                     }
                     if (fp && fp.input && el.value !== fp.input.value) {
                         fp.setDate(el.value, false);

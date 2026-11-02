@@ -704,12 +704,11 @@
                                     <span class="truncate" title="Tanggal BAST Mutasi">Tanggal BAST Mutasi</span>
                                     <span class="text-rose-400 font-bold shrink-0">*</span>
                                 </label>
-                                <span class="text-[9px] text-teal-300 font-mono shrink-0 ml-1">Maks: Hari Ini</span>
                             </div>
                             <input type="date" x-model="formData.tanggal_bast"
                                    :max="new Date().toISOString().split('T')[0]"
                                    :class="isTanggalBastInvalid() ? 'border-rose-500 bg-rose-950/20 text-rose-200' : 'border-slate-700/80 bg-slate-950 text-white'"
-                                   class="w-full h-10 border focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 rounded-xl px-3.5 text-xs focus:outline-none font-mono transition-all shadow-inner">
+                                   class="w-full h-10 border border-slate-700/80 bg-slate-950 focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 rounded-xl px-3.5 text-xs focus:outline-none font-mono transition-all shadow-inner">
                             <template x-if="isTanggalBastInvalid()">
                                 <p class="text-[10px] text-rose-400 font-semibold mt-1 flex items-center gap-1">
                                     <svg class="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>

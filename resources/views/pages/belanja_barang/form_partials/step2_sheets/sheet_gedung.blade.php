@@ -240,16 +240,13 @@
 
                                     <!-- Tanggal Dokumen Izin -->
                                     <div>
-                                        <div class="flex items-center justify-between mb-1.5">
-                                            <label class="block text-slate-300 text-[11px] font-semibold truncate" title="Tanggal Dokumen Izin">
-                                                Tanggal Dokumen Izin
-                                            </label>
-                                            <span class="text-[9.5px] font-mono text-cyan-400/80 bg-cyan-950/40 px-1.5 py-0.5 rounded border border-cyan-800/40">Maks: Hari Ini</span>
-                                        </div>
+                                        <label class="block text-slate-300 text-[11px] mb-1.5 font-semibold truncate" title="Tanggal Dokumen Izin">
+                                            Tanggal Dokumen Izin
+                                        </label>
                                         <input type="text" x-datepicker="{ maxDate: 'today' }" x-model="item.gedung_dokumen_tgl"
                                             placeholder="dd/mm/yyyy"
                                             :class="isFutureDate(item.gedung_dokumen_tgl) ? 'border-rose-500 focus:border-rose-400 bg-rose-950/20 text-rose-300' : 'border-slate-700/90 focus:border-cyan-400 bg-slate-950 text-slate-100'"
-                                            class="w-full border rounded-xl px-3 py-2.5 text-xs font-mono focus:ring-2 focus:ring-cyan-400/20 focus:outline-none transition-all">
+                                            class="w-full bg-slate-950 border border-slate-700/90 rounded-xl px-3 py-2.5 text-xs text-slate-100 font-mono focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 focus:outline-none transition-all">
                                         <div x-show="isFutureDate(item.gedung_dokumen_tgl)" class="mt-1 flex items-center gap-1 text-[10px] text-rose-400 font-semibold animate-pulse">
                                             <span>⚠️ Tanggal dokumen izin tidak boleh melebihi hari ini</span>
                                         </div>
@@ -270,24 +267,24 @@
                             <div>
                                 <input type="text" x-model="item.gedung_fungsi"
                                     placeholder="Contoh: Gedung Rawat Inap Paviliun Mawar / Laboratorium Sentral &amp; Instalasi Farmasi"
-                                    class="w-full bg-slate-950 border border-slate-700/90 hover:border-blue-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 font-medium focus:outline-none transition-all shadow-inner">
+                                    class="w-full bg-slate-950 border border-slate-700/90 hover:border-blue-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 font-medium focus:outline-none transition-all shadow-inner">
                                 <span class="text-[10px] text-slate-400 mt-1 block">Rincian fungsi operasional, peruntukan ruangan, atau catatan teknis bangunan.</span>
                             </div>
                         </div>
 
                         <!-- 4. Letak / Alamat Lokasi Fisik Gedung -->
-                        <div class="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-emerald-500/40 hover:border-emerald-500/70 space-y-2 shadow-lg flex flex-col justify-between transition-all">
-                            <div class="flex items-center justify-between border-b border-emerald-500/30 pb-2">
-                                <label class="block text-emerald-400 font-bold text-[11px] uppercase tracking-wider flex items-center space-x-1.5">
+                        <div class="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-slate-700/80 space-y-2 shadow-lg flex flex-col justify-between transition-all">
+                            <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                                <label class="block text-slate-300 font-bold text-[11px] uppercase tracking-wider flex items-center space-x-1.5">
                                     <span class="text-sm">📍</span>
                                     <span>Letak / Alamat Gedung &amp; Lokasi Fisik:</span>
                                 </label>
-                                <span class="text-[9.5px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">Lokasi Fisik</span>
+                                <span class="text-[9.5px] px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-bold">Lokasi Fisik</span>
                             </div>
                             <div>
                                 <input type="text" x-model="item.gedung_alamat"
                                     placeholder="Contoh: Kompleks RSUD Dr. H. Koesnandi, Jl. Piere Tendean No. 1, Bondowoso"
-                                    class="w-full bg-slate-950 border border-slate-700/90 hover:border-emerald-500 focus:border-emerald-400 rounded-xl px-3.5 py-2.5 text-xs text-white font-semibold focus:outline-none transition-all shadow-inner">
+                                    class="w-full bg-slate-950 border border-slate-700/90 hover:border-blue-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 font-medium focus:outline-none transition-all shadow-inner">
                                 <span class="text-[10px] text-slate-400 mt-1 block">Alamat lengkap letak persil/blok gedung di lingkungan RSUD.</span>
                             </div>
                         </div>

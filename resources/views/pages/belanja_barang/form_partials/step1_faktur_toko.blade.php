@@ -228,7 +228,7 @@
                     placeholder="dd/mm/yyyy"
                     required
                     :class="isTanggalFakturInvalid() ? 'border-rose-500 focus:border-rose-400 bg-rose-950/20' : 'border-slate-700 focus:border-indigo-400 bg-slate-900'"
-                    class="w-full border rounded-xl px-3.5 py-2.5 text-xs text-white font-mono focus:outline-none transition-colors shadow-inner">
+                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono focus:border-indigo-400 focus:outline-none transition-colors shadow-inner">
                 
                 <!-- Peringatan Visual Jika Tanggal Faktur Lebih dari Hari Ini -->
                 <template x-if="isTanggalFakturInvalid()">

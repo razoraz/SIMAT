@@ -475,7 +475,7 @@
                     tanah_satuan: 'Bidang',
                     tanah_luas_m2: '',
                     tanah_batas: '',
-                    tanah_alamat: this.formData.alamat_barang || '',
+                    tanah_alamat: '',
                     tanah_nilai_satuan: 0,
                     tanah_nilai_fisik: 0
                 });
@@ -573,7 +573,7 @@
                     gedung_dokumen_no: '',
                     gedung_dokumen_tgl: '',
                     gedung_fungsi: '',
-                    gedung_alamat: this.formData.alamat_barang || 'RSUD Dr. H. Koesnandi',
+                    gedung_alamat: '',
                     gedung_jumlah_bangunan: 1,
                     gedung_satuan: 'Gedung',
                     gedung_nilai_satuan: 0
@@ -620,7 +620,7 @@
                     jaringan_dokumen_no: '',
                     jaringan_dokumen_tgl: '',
                     jaringan_keterangan: '',
-                    jaringan_alamat: this.formData.alamat_barang || 'RSUD Dr. H. Koesnandi',
+                    jaringan_alamat: '',
                     jaringan_jumlah: 1,
                     jaringan_satuan: 'Ruas',
                     jaringan_nilai_satuan: 0

@@ -16,7 +16,7 @@
                 <div>
                     <div class="flex items-center gap-2">
                         <h3 class="text-xs sm:text-sm font-extrabold text-white uppercase tracking-wide">
-                            Spesifikasi Fisik Jalan, Irigasi &amp; Jaringan Mutasi Masuk
+                            Spesifikasi Fisik Jalan, Irigasi &amp; Jaringan
                         </h3>
                         <span class="px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 font-mono font-bold text-[10px] border border-teal-500/40">
                             KIB D · Akun 1.3.4
@@ -210,14 +210,11 @@
                                         class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-mono focus:border-amber-500 focus:outline-none transition-all">
                                 </div>
                                 <div>
-                                    <div class="flex items-center justify-between mb-1">
-                                        <label class="block text-slate-400 text-[10px] font-semibold">Tanggal Dokumen Kontrak</label>
-                                        <span class="text-[9px] font-mono text-cyan-400/80 bg-cyan-950/40 px-1.5 py-0.5 rounded border border-cyan-800/40">Maks: Hari Ini</span>
-                                    </div>
+                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Tanggal Dokumen Kontrak</label>
                                     <input type="text" x-datepicker="{ maxDate: 'today' }" x-model="item.jaringan_dokumen_tgl"
                                         placeholder="dd/mm/yyyy"
                                         :class="isFutureDate(item.jaringan_dokumen_tgl) ? 'border-rose-500 focus:border-rose-400 bg-rose-950/20 text-rose-300' : 'border-slate-700 focus:border-amber-500 bg-slate-950 text-white'"
-                                        class="w-full border rounded-xl px-2 py-2 text-xs focus:outline-none transition-all">
+                                        class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-mono focus:border-amber-500 focus:outline-none transition-all">
                                     <div x-show="isFutureDate(item.jaringan_dokumen_tgl)" class="mt-1 flex items-center gap-1 text-[10px] text-rose-400 font-semibold animate-pulse">
                                         <span>⚠️ Tanggal dokumen tidak boleh melebihi hari ini</span>
                                     </div>
@@ -237,20 +234,20 @@
                         </div>
                         <input type="text" x-model="item.jaringan_keterangan"
                             placeholder="Contoh: Pipa Distribusi Air Bersih Diameter 4 Inch dari Reservoir ke Gedung Rawat Inap"
-                            class="w-full bg-slate-950 border border-slate-700 hover:border-slate-600 focus:border-teal-500 rounded-xl px-3.5 py-2 text-xs text-white font-medium focus:outline-none transition-all">
+                            class="w-full bg-slate-950 border border-slate-700 hover:border-slate-600 focus:border-teal-500 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 font-medium focus:outline-none transition-all">
                     </div>
 
                     <!-- 4. Lokasi Fisik / Alamat Letak Jaringan (Persis KIB A) -->
-                    <div class="p-4 rounded-2xl bg-slate-900/80 border border-emerald-500/40 space-y-1.5 shadow-md">
-                        <div class="flex items-center justify-between border-b border-emerald-500/30 pb-1.5">
-                            <label class="block text-emerald-400 font-bold text-[11px] uppercase tracking-wider flex items-center space-x-1.5">
+                    <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-slate-700 space-y-1.5 shadow-md">
+                        <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
+                            <label class="block text-slate-300 font-bold text-[11px] uppercase tracking-wider flex items-center space-x-1.5">
                                 <span>📍 LETAK / ALAMAT JARINGAN &amp; LOKASI FISIK:</span>
                             </label>
-                            <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">Lokasi Fisik</span>
+                            <span class="text-[9px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-bold">Lokasi Fisik</span>
                         </div>
                         <input type="text" x-model="item.jaringan_alamat"
                             placeholder="Contoh: Kompleks RSUD Dr. H. Koesnandi, Jl. Piere Tendean No. 1, Bondowoso"
-                            class="w-full bg-slate-950 border border-slate-700 hover:border-emerald-500 rounded-xl px-3.5 py-2 text-xs text-white font-semibold focus:outline-none focus:border-emerald-500 transition-all">
+                            class="w-full bg-slate-950 border border-slate-700 hover:border-slate-600 focus:border-teal-500 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 font-medium focus:outline-none transition-all">
                     </div>
 
                     <!-- 5. Kalkulator Volume & Nilai Perolehan BMD Jaringan (Format Seragam KIB B/E/A/C) -->

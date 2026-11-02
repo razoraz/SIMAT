@@ -243,12 +243,9 @@
 
             <!-- Tanggal Dokumen BAMB -->
             <div>
-                <div class="flex items-center justify-between mb-1.5">
-                    <label class="block text-xs font-bold text-slate-200">
-                        Tanggal Dokumen BAMB / BAST <span class="text-rose-400">*</span>
-                    </label>
-                    <span class="text-[10px] font-mono text-indigo-400/80 bg-indigo-950/40 px-2 py-0.5 rounded border border-indigo-800/40">Maks: Hari Ini</span>
-                </div>
+                <label class="block text-xs font-bold text-slate-200 mb-1.5">
+                    Tanggal Dokumen BAMB / BAST <span class="text-rose-400">*</span>
+                </label>
                 <input type="text" 
                     x-datepicker="{ maxDate: 'today' }" 
                     x-model="formData.mutasi_tanggal" 
@@ -257,7 +254,7 @@
                     placeholder="dd/mm/yyyy"
                     required
                     :class="isTanggalBambInvalid() ? 'border-rose-500 focus:border-rose-400 bg-rose-950/20' : 'border-slate-700 focus:border-indigo-400 bg-slate-900'"
-                    class="w-full border rounded-xl px-3.5 py-2.5 text-xs text-white font-semibold focus:outline-none transition-colors shadow-inner">
+                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white font-semibold focus:border-indigo-400 focus:outline-none transition-colors shadow-inner">
                 
                 <!-- Peringatan Visual Jika Tanggal BAMB Lebih dari Hari Ini -->
                 <template x-if="isTanggalBambInvalid()">

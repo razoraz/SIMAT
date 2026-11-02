@@ -63,7 +63,7 @@
                 total_realisasi: 0,
                 unit_id: '',
                 kondisi: 'Baik',
-                alamat_barang: 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1',
+                alamat_barang: '',
 
                 // Multi-Item Repeaters per KIB
                 tanah_items: [],
@@ -306,6 +306,19 @@
                 }
             },
 
+            cleanLegacyDefaultAlamat(val) {
+                if (!val) return '';
+                const trimmed = String(val).trim();
+                if (trimmed === 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1' ||
+                    trimmed === 'Gudang Perbekalan RSUD Dr. H. Koesnandi' ||
+                    trimmed === 'Gudang Perbekalan RSUD' ||
+                    trimmed === 'RSUD Koesnandi' ||
+                    trimmed === 'RSUD Dr. H. Koesnandi') {
+                    return '';
+                }
+                return trimmed;
+            },
+
             // KIB Category Helpers (Single Source of Truth)
             get isTanah() {
                 return this.activeKibCategory === 'tanah';
@@ -483,7 +496,7 @@
                     tanah_satuan: 'Bidang',
                     tanah_luas_m2: '',
                     tanah_batas: '',
-                    tanah_alamat: this.formData.alamat_barang || '',
+                    tanah_alamat: '',
                     tanah_nilai_satuan: 0,
                     tanah_nilai_fisik: 0
                 });
@@ -625,7 +638,7 @@
                     gedung_dokumen_no: '',
                     gedung_dokumen_tgl: '',
                     gedung_fungsi: '',
-                    gedung_alamat: this.formData.alamat_barang || 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1',
+                    gedung_alamat: '',
                     gedung_jumlah_bangunan: 1,
                     gedung_satuan: 'Gedung',
                     gedung_nilai_satuan: 0
@@ -674,7 +687,7 @@
                     jaringan_dokumen_no: '',
                     jaringan_dokumen_tgl: '',
                     jaringan_keterangan: '',
-                    jaringan_alamat: this.formData.alamat_barang || 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1',
+                    jaringan_alamat: '',
                     jaringan_jumlah: 1,
                     jaringan_satuan: 'Ruas',
                     jaringan_nilai_satuan: 0
@@ -2011,7 +2024,7 @@
                             tanah_satuan: init.satuan || 'Bidang',
                             tanah_luas_m2: init.tanah_luas_m2 || '',
                             tanah_batas: init.tanah_batas || (init.spesifikasi_json?.batas || ''),
-                            tanah_alamat: init.tanah_alamat || init.alamat_barang || 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1',
+                            tanah_alamat: this.cleanLegacyDefaultAlamat(init.tanah_alamat || (init.id ? (init.alamat_barang || '') : '')),
                             tanah_nilai_satuan: init.jumlah_volume > 0 ? Math.round(init.total_realisasi / init.jumlah_volume) : init.total_realisasi,
                             tanah_nilai_fisik: init.total_realisasi || 0
                         }];
@@ -2029,7 +2042,7 @@
                             gedung_dokumen_no: init.gedung_dokumen_no || '',
                             gedung_dokumen_tgl: init.gedung_dokumen_tgl || '',
                             gedung_fungsi: init.gedung_fungsi || init.keterangan || '',
-                            gedung_alamat: init.gedung_alamat || init.alamat_barang || 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1',
+                            gedung_alamat: this.cleanLegacyDefaultAlamat(init.gedung_alamat || (init.id ? (init.alamat_barang || '') : '')),
                             gedung_jumlah_bangunan: init.jumlah_volume || 1,
                             gedung_satuan: init.satuan || 'Gedung',
                             gedung_nilai_satuan: init.jumlah_volume > 0 ? Math.round(init.total_realisasi / init.jumlah_volume) : init.total_realisasi
@@ -2051,7 +2064,7 @@
                             jaringan_dokumen_no: init.jaringan_dokumen_no || '',
                             jaringan_dokumen_tgl: init.jaringan_dokumen_tgl || '',
                             jaringan_keterangan: init.jaringan_keterangan || init.keterangan || '',
-                            jaringan_alamat: init.jaringan_alamat || init.alamat_barang || 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1',
+                            jaringan_alamat: this.cleanLegacyDefaultAlamat(init.jaringan_alamat || (init.id ? (init.alamat_barang || '') : '')),
                             jaringan_jumlah: init.jumlah_volume || 1,
                             jaringan_satuan: init.satuan || 'Ruas',
                             jaringan_nilai_satuan: init.jumlah_volume > 0 ? Math.round(init.total_realisasi / init.jumlah_volume) : init.total_realisasi
@@ -2115,7 +2128,7 @@
                         this.formData.tanah_items.forEach(it => {
                             if (it.isFilterOpen === undefined) it.isFilterOpen = false;
                             if (it.searchFilter === undefined) it.searchFilter = '';
-                            if (!it.tanah_alamat) it.tanah_alamat = this.formData.alamat_barang || 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1';
+                            it.tanah_alamat = this.cleanLegacyDefaultAlamat(it.tanah_alamat);
                             if (!it.tanah_jumlah_barang && it.tanah_jumlah_bidang) it.tanah_jumlah_barang = it.tanah_jumlah_bidang;
                             if (!it.tanah_satuan) it.tanah_satuan = this.formData.satuan || 'Bidang';
                             if (!it.tanah_nilai_satuan && it.tanah_nilai_fisik) it.tanah_nilai_satuan = it.tanah_nilai_fisik;
@@ -2127,7 +2140,7 @@
                         this.formData.gedung_items.forEach(it => {
                             if (it.isFilterOpen === undefined) it.isFilterOpen = false;
                             if (it.searchFilter === undefined) it.searchFilter = '';
-                            if (!it.gedung_alamat) it.gedung_alamat = this.formData.alamat_barang || 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1';
+                            it.gedung_alamat = this.cleanLegacyDefaultAlamat(it.gedung_alamat);
                         });
                     }
 
@@ -2136,7 +2149,7 @@
                         this.formData.jaringan_items.forEach(it => {
                             if (it.isFilterOpen === undefined) it.isFilterOpen = false;
                             if (it.searchFilter === undefined) it.searchFilter = '';
-                            if (!it.jaringan_alamat) it.jaringan_alamat = this.formData.alamat_barang || 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1';
+                            it.jaringan_alamat = this.cleanLegacyDefaultAlamat(it.jaringan_alamat);
                         });
                     }
 
