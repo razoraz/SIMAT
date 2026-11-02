@@ -208,7 +208,7 @@
                     </div>
                     <div>
                         <h3 class="text-base font-extrabold text-white leading-tight">Riwayat &amp; Rekam Jejak Aset</h3>
-                        <p class="text-[11px] text-slate-400 mt-0.5">Histori komprehensif: Penerimaan Hibah, Mutasi Aset (Internal/Eksternal), &amp; Reklasifikasi</p>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Histori komprehensif: Mutasi Internal Ruangan, Reklasifikasi &amp; Rekam Jejak Aset</p>
                     </div>
                 </div>
                 <button type="button" @click.stop="showRiwayatModal = false" class="text-slate-500 hover:text-white text-xl font-bold p-1 cursor-pointer">&times;</button>
@@ -237,10 +237,10 @@
                         </div>
                     </div>
 
-                    <!-- Modern Pills Tab Switcher: Semua, Hibah, Mutasi (Internal/Eksternal), Reklasifikasi -->
+                    <!-- Modern Pills Tab Switcher: Semua, Mutasi Ruangan, Reklasifikasi -->
                     <div class="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-950 border border-slate-800/80 overflow-x-auto custom-scrollbar">
                         <button type="button" @click="riwayatActiveTab = 'semua'"
-                            class="flex-1 min-w-[100px] py-1.5 px-3 rounded-xl font-bold text-[11px] transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
+                            class="flex-1 min-w-[120px] py-1.5 px-3 rounded-xl font-bold text-[11px] transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
                             :class="riwayatActiveTab === 'semua'
                                 ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 font-extrabold'
                                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'">
@@ -250,30 +250,19 @@
                                   x-text="selectedRiwayatCounts.total || 0"></span>
                         </button>
 
-                        <button type="button" @click="riwayatActiveTab = 'hibah'"
-                            class="flex-1 min-w-[110px] py-1.5 px-3 rounded-xl font-bold text-[11px] transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
-                            :class="riwayatActiveTab === 'hibah'
-                                ? 'bg-amber-600 text-white shadow-md shadow-amber-600/30 font-extrabold'
-                                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'">
-                            <span>🎁 Penerimaan Hibah</span>
-                            <span class="px-1.5 py-0.2 rounded-full text-[9px] font-mono"
-                                  :class="riwayatActiveTab === 'hibah' ? 'bg-amber-900/80 text-white' : 'bg-slate-800 text-slate-400'"
-                                  x-text="selectedRiwayatCounts.hibah || 0"></span>
-                        </button>
-
                         <button type="button" @click="riwayatActiveTab = 'mutasi'"
-                            class="flex-1 min-w-[110px] py-1.5 px-3 rounded-xl font-bold text-[11px] transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
+                            class="flex-1 min-w-[130px] py-1.5 px-3 rounded-xl font-bold text-[11px] transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
                             :class="riwayatActiveTab === 'mutasi'
                                 ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-extrabold'
                                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'">
-                            <span>🏢 Mutasi Aset</span>
+                            <span>🏢 Mutasi Ruangan</span>
                             <span class="px-1.5 py-0.2 rounded-full text-[9px] font-mono"
                                   :class="riwayatActiveTab === 'mutasi' ? 'bg-indigo-900/80 text-white' : 'bg-slate-800 text-slate-400'"
-                                  x-text="selectedRiwayatCounts.mutasi || ((selectedRiwayatCounts.internal || 0) + (selectedRiwayatCounts.eksternal || 0))"></span>
+                                  x-text="selectedRiwayatCounts.internal || 0"></span>
                         </button>
 
                         <button type="button" @click="riwayatActiveTab = 'reklas'"
-                            class="flex-1 min-w-[110px] py-1.5 px-3 rounded-xl font-bold text-[11px] transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
+                            class="flex-1 min-w-[120px] py-1.5 px-3 rounded-xl font-bold text-[11px] transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
                             :class="riwayatActiveTab === 'reklas'
                                 ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 font-extrabold'
                                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'">
@@ -288,7 +277,7 @@
                     <template x-if="isLoadingRiwayat">
                         <div class="py-12 text-center space-y-3">
                             <div class="inline-block w-7 h-7 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-                            <p class="text-xs text-slate-400 font-medium">Memuat histori rekam jejak hibah, mutasi &amp; reklasifikasi...</p>
+                            <p class="text-xs text-slate-400 font-medium">Memuat histori mutasi internal &amp; rekam jejak aset...</p>
                         </div>
                     </template>
 
@@ -299,7 +288,7 @@
                                 <span class="text-3xl block">📦</span>
                                 <h4 class="text-sm font-bold text-slate-200">Belum Ada Riwayat Tercatat</h4>
                                 <p class="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
-                                    Unit register ini belum pernah dimutasi internal antar-ruangan, dilimpahkan ke SKPD luar, maupun direklasifikasi. Unit saat ini berada di lokasi: <strong class="text-slate-300" x-text="hasRealRuang(selectedRiwayatRegister?.ruang_pemegang) ? selectedRiwayatRegister.ruang_pemegang : 'Belum Ditempatkan (Menunggu Distribusi)'"></strong> dengan kondisi <strong class="text-emerald-400" x-text="selectedRiwayatRegister.kondisi"></strong>.
+                                    Unit register ini belum pernah dimutasi antar-ruangan maupun direklasifikasi. Unit saat ini berada di lokasi: <strong class="text-slate-300" x-text="hasRealRuang(selectedRiwayatRegister?.ruang_pemegang) ? selectedRiwayatRegister.ruang_pemegang : 'Belum Ditempatkan (Menunggu Distribusi)'"></strong> dengan kondisi <strong class="text-emerald-400" x-text="selectedRiwayatRegister.kondisi"></strong>.
                                 </p>
                             </div>
                         </template>
@@ -451,61 +440,69 @@
                         </template>
                     </div>
 
-                    <!-- TAB 2: PENERIMAAN HIBAH -->
-                    <div x-show="!isLoadingRiwayat && riwayatActiveTab === 'hibah'" class="space-y-3">
-                        <template x-if="!selectedRiwayatHibah || selectedRiwayatHibah.length === 0">
-                            <div class="p-8 text-center rounded-2xl border border-dashed border-amber-500/30 space-y-2" style="background-color: #020617;">
-                                <span class="text-3xl block">🎁</span>
-                                <h4 class="text-sm font-bold text-slate-200">Belum Ada Dokumen Hibah Terkait</h4>
+                    <!-- TAB 2: MUTASI RUANGAN -->
+                    <div x-show="!isLoadingRiwayat && riwayatActiveTab === 'mutasi'" class="space-y-3">
+                        <template x-if="!selectedRiwayatMutasisInternal || selectedRiwayatMutasisInternal.length === 0">
+                            <div class="p-8 text-center rounded-2xl border border-dashed border-indigo-500/30 space-y-2" style="background-color: #020617;">
+                                <span class="text-3xl block">🏢</span>
+                                <h4 class="text-sm font-bold text-slate-200">Belum Pernah Dimutasi Ruangan</h4>
                                 <p class="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
-                                    Unit register ini tidak memiliki catatan BAST hibah khusus atau diperoleh dari sumber perolehan non-hibah.
+                                    Unit register ini belum pernah dipindahkan ke ruangan atau instalasi lain di lingkungan RSUD Dr. H. Koesnadi. Posisi terkini: <strong class="text-slate-300" x-text="hasRealRuang(selectedRiwayatRegister?.ruang_pemegang) ? selectedRiwayatRegister.ruang_pemegang : 'Belum Ditempatkan (Menunggu Distribusi)'"></strong>.
                                 </p>
                             </div>
                         </template>
 
-                        <template x-if="selectedRiwayatHibah && selectedRiwayatHibah.length > 0">
-                            <div class="space-y-3 relative pl-4 border-l-2 border-amber-500/30 my-2">
-                                <template x-for="(hb, idx) in selectedRiwayatHibah" :key="'hibah-histori-' + (hb.id || idx)">
+                        <template x-if="selectedRiwayatMutasisInternal && selectedRiwayatMutasisInternal.length > 0">
+                            <div class="space-y-3 relative pl-4 border-l-2 border-indigo-500/30 my-2">
+                                <template x-for="(m, idx) in selectedRiwayatMutasisInternal" :key="'internal-hibah-' + (m.id || idx)">
                                     <div class="relative group">
-                                        <div class="absolute -left-[21px] top-2.5 w-2.5 h-2.5 rounded-full bg-amber-500 ring-4 ring-slate-900"></div>
-                                        <div class="p-4 rounded-2xl border border-slate-800 space-y-2.5 hover:border-amber-500/40 transition-colors shadow-sm" style="background-color: #020617;">
+                                        <div class="absolute -left-[21px] top-2.5 w-2.5 h-2.5 rounded-full bg-indigo-500 ring-4 ring-slate-900"></div>
+                                        <div class="p-4 rounded-2xl border border-slate-800 space-y-2.5 hover:border-indigo-500/40 transition-colors shadow-sm" style="background-color: #020617;">
                                             <div class="flex flex-wrap items-center justify-between gap-2">
                                                 <div class="flex items-center space-x-2">
                                                     <span class="text-xs font-mono font-extrabold text-white flex items-center space-x-1">
                                                         <span>📅</span>
-                                                        <span x-text="hb.tanggal_hibah"></span>
+                                                        <span x-text="m.tanggal_mutasi"></span>
                                                     </span>
-                                                    <span class="px-2 py-0.5 rounded text-[9.5px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                                                        🎁 BAST Penerimaan Hibah
+                                                    <span class="px-2 py-0.5 rounded text-[9.5px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                                                        🏢 Mutasi Internal Ruangan
                                                     </span>
-                                                    <span class="text-[10px] font-mono text-slate-400" x-text="'(' + (hb.nomor_bast || 'BAST') + ')'"></span>
+                                                    <span class="text-[10px] font-mono text-slate-400" x-text="'(' + (m.nomor_bamb || 'BAMB') + ')'"></span>
                                                 </div>
-                                                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30" x-text="hb.status || 'Resmi Diterima'"></span>
+                                                <div class="flex items-center space-x-1.5">
+                                                    <span class="text-[10px] text-slate-400 font-bold uppercase">Kondisi saat mutasi:</span>
+                                                    <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-black border"
+                                                          :class="{
+                                                              'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': m.kondisi === 'Baik',
+                                                              'bg-amber-500/20 text-amber-300 border-amber-500/30': m.kondisi === 'Kurang Baik',
+                                                              'bg-rose-500/20 text-rose-300 border-rose-500/30': m.kondisi === 'Rusak Berat'
+                                                          }" x-text="m.kondisi || 'Baik'"></span>
+                                                </div>
                                             </div>
 
                                             <div class="p-2.5 bg-slate-900/80 rounded-xl border border-slate-800 flex items-center justify-between text-xs">
                                                 <div>
-                                                    <span class="text-[9.5px] uppercase font-bold text-slate-500 block">Pihak Pemberi Hibah:</span>
-                                                    <span class="font-bold text-amber-300" x-text="hb.pihak_hibah || '-'"></span>
+                                                    <span class="text-[9.5px] uppercase font-bold text-slate-500 block">Dari Ruangan:</span>
+                                                    <span class="font-semibold text-slate-200" x-text="m.ruangan_asal || '-'"></span>
                                                 </div>
-                                                <span class="text-amber-400 font-extrabold text-sm px-1">➔</span>
+                                                <span class="text-indigo-400 font-extrabold text-sm px-1">➔</span>
                                                 <div>
-                                                    <span class="text-[9.5px] uppercase font-bold text-slate-500 block">Instansi Penerima:</span>
-                                                    <span class="font-semibold text-slate-200" x-text="hb.penerima || 'RSUD Dr. H. Koesnadi'"></span>
+                                                    <span class="text-[9.5px] uppercase font-bold text-slate-500 block">Ke Ruangan:</span>
+                                                    <span class="font-bold text-cyan-300" x-text="m.ruangan_tujuan || '-'"></span>
                                                 </div>
                                             </div>
 
-                                            <div class="p-2.5 bg-slate-900/90 rounded-xl border border-slate-800 text-xs space-y-1">
-                                                <div class="flex items-center justify-between">
-                                                    <span class="text-[10px] font-bold text-slate-400 uppercase">Nilai Aset Hibah:</span>
-                                                    <span class="font-mono font-bold text-white text-xs" x-text="hb.nilai_aset || '-'"></span>
+                                            <div class="p-2.5 bg-slate-900/95 rounded-xl border border-amber-500/20 space-y-1">
+                                                <div class="flex items-center space-x-1.5 text-amber-400">
+                                                    <span class="text-xs">📝</span>
+                                                    <span class="text-[10px] font-extrabold uppercase tracking-wider">Alasan Mutasi:</span>
                                                 </div>
-                                                <p class="text-[11px] text-slate-300 italic pt-1 border-t border-slate-800/80" x-text="'Keterangan: ' + (hb.keterangan || '-')"></p>
+                                                <p class="text-xs text-slate-200 leading-relaxed italic pl-1" x-text="m.alasan_mutasi || 'Tidak ada alasan khusus dicatat'"></p>
                                             </div>
 
-                                            <div class="flex items-center justify-between text-[10px] text-slate-400 pt-0.5 px-1 border-t border-slate-800/60">
-                                                <span>Dasar Pencatatan: <strong class="text-slate-300 font-semibold">Berita Acara Serah Terima (BAST Hibah)</strong></span>
-                                                <span class="text-emerald-400 font-semibold">✓ Resmi Dicatat di BMD</span>
+                                            <div class="flex flex-wrap items-center justify-between text-[10px] text-slate-400 pt-0.5 px-1 border-t border-slate-800/60">
+                                                <span>Pengirim: <strong class="text-slate-300 font-semibold" x-text="m.penanggung_jawab_asal || '-'"></strong></span>
+                                                <span>Penerima: <strong class="text-slate-300 font-semibold" x-text="m.penanggung_jawab_tujuan || '-'"></strong></span>
                                             </div>
                                         </div>
                                     </div>
@@ -514,180 +511,67 @@
                         </template>
                     </div>
 
-                    <!-- TAB 3: MUTASI ASET (INTERNAL & EKSTERNAL DIGABUNG DENGAN SUB-FILTER) -->
-                    <div x-show="!isLoadingRiwayat && riwayatActiveTab === 'mutasi'" class="space-y-3">
-                        <!-- Sub-filter Mutasi: Semua Mutasi, Internal, Eksternal -->
-                        <div class="flex flex-wrap items-center justify-between gap-2 p-1.5 rounded-xl bg-slate-950/70 border border-slate-800">
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 pl-1.5 flex items-center gap-1.5">
-                                <span>Filter Kategori Mutasi:</span>
-                            </span>
-                            <div class="flex items-center gap-1">
-                                <button type="button" @click="mutasiSubFilter = 'semua'"
-                                    class="py-1 px-3 rounded-lg text-[10.5px] font-bold transition-all flex items-center space-x-1.5 cursor-pointer"
-                                    :class="mutasiSubFilter === 'semua'
-                                        ? 'bg-indigo-600 text-white font-extrabold shadow-sm'
-                                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'">
-                                    <span>Semua Mutasi</span>
-                                    <span class="text-[9px] font-mono px-1.5 py-0.2 rounded-full"
-                                          :class="mutasiSubFilter === 'semua' ? 'bg-indigo-950 text-indigo-200' : 'bg-slate-800 text-slate-400'"
-                                          x-text="selectedRiwayatCounts.mutasi || 0"></span>
-                                </button>
-                                <button type="button" @click="mutasiSubFilter = 'internal'"
-                                    class="py-1 px-3 rounded-lg text-[10.5px] font-bold transition-all flex items-center space-x-1.5 cursor-pointer"
-                                    :class="mutasiSubFilter === 'internal'
-                                        ? 'bg-indigo-600 text-white font-extrabold shadow-sm'
-                                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'">
-                                    <span>🏢 Internal</span>
-                                    <span class="text-[9px] font-mono px-1.5 py-0.2 rounded-full"
-                                          :class="mutasiSubFilter === 'internal' ? 'bg-indigo-950 text-indigo-200' : 'bg-slate-800 text-slate-400'"
-                                          x-text="selectedRiwayatCounts.internal || 0"></span>
-                                </button>
-                                <button type="button" @click="mutasiSubFilter = 'eksternal'"
-                                    class="py-1 px-3 rounded-lg text-[10.5px] font-bold transition-all flex items-center space-x-1.5 cursor-pointer"
-                                    :class="mutasiSubFilter === 'eksternal'
-                                        ? 'bg-cyan-600 text-white font-extrabold shadow-sm'
-                                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'">
-                                    <span>🏛️ Eksternal</span>
-                                    <span class="text-[9px] font-mono px-1.5 py-0.2 rounded-full"
-                                          :class="mutasiSubFilter === 'eksternal' ? 'bg-cyan-950 text-cyan-200' : 'bg-slate-800 text-slate-400'"
-                                          x-text="selectedRiwayatCounts.eksternal || 0"></span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Empty State Jika Tidak Ada Record Sesuai Filter -->
-                        <template x-if="(mutasiSubFilter === 'semua' && (!selectedRiwayatMutasisInternal || selectedRiwayatMutasisInternal.length === 0) && (!selectedRiwayatMutasisEksternal || selectedRiwayatMutasisEksternal.length === 0)) ||
-                                        (mutasiSubFilter === 'internal' && (!selectedRiwayatMutasisInternal || selectedRiwayatMutasisInternal.length === 0)) ||
-                                        (mutasiSubFilter === 'eksternal' && (!selectedRiwayatMutasisEksternal || selectedRiwayatMutasisEksternal.length === 0))">
-                            <div class="p-8 text-center rounded-2xl border border-dashed border-slate-800 space-y-2" style="background-color: #020617;">
-                                <span class="text-3xl block">🏢</span>
-                                <h4 class="text-sm font-bold text-slate-200" x-text="mutasiSubFilter === 'internal' ? 'Belum Ada Mutasi Ruangan' : (mutasiSubFilter === 'eksternal' ? 'Belum Ada Mutasi Antar-OPD' : 'Belum Ada Riwayat Mutasi')"></h4>
+                    <!-- TAB 3: REKLASIFIKASI -->
+                    <div x-show="!isLoadingRiwayat && riwayatActiveTab === 'reklas'" class="space-y-3">
+                        <template x-if="!selectedRiwayatReklas || selectedRiwayatReklas.length === 0">
+                            <div class="p-8 text-center rounded-2xl border border-dashed border-emerald-500/30 space-y-2" style="background-color: #020617;">
+                                <span class="text-3xl block">🔄</span>
+                                <h4 class="text-sm font-bold text-slate-200">Belum Ada Reklasifikasi Aset</h4>
                                 <p class="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
-                                    <span x-show="mutasiSubFilter === 'internal'">Unit register ini belum pernah dimutasi ke ruangan atau instalasi lain di lingkungan RSUD Dr. H. Koesnadi.</span>
-                                    <span x-show="mutasiSubFilter === 'eksternal'">Unit register ini belum pernah dimutasi (eksternal masuk/keluar) antar-OPD di lingkungan Pemkab Bondowoso.</span>
-                                    <span x-show="mutasiSubFilter === 'semua'">Unit register ini belum pernah dimutasi internal antar-ruangan maupun eksternal antar-OPD. Posisi terkini: <strong class="text-slate-300" x-text="hasRealRuang(selectedRiwayatRegister?.ruang_pemegang) ? selectedRiwayatRegister.ruang_pemegang : 'Belum Ditempatkan (Menunggu Distribusi)'"></strong>.</span>
+                                    Aset ini belum pernah direklasifikasi kelompok KIB, kemitraan (akun 1.5.2), maupun penyesuaian nilai kapitalisasi koreksi.
                                 </p>
                             </div>
                         </template>
 
-                        <!-- LIST MUTASI INTERNAL -->
-                        <div x-show="mutasiSubFilter === 'semua' || mutasiSubFilter === 'internal'">
-                            <template x-if="selectedRiwayatMutasisInternal && selectedRiwayatMutasisInternal.length > 0">
-                                <div class="space-y-3 relative pl-4 border-l-2 border-indigo-500/30 my-2">
-                                    <template x-for="(m, idx) in selectedRiwayatMutasisInternal" :key="'internal-hibah-' + (m.id || idx)">
-                                        <div class="relative group">
-                                            <div class="absolute -left-[21px] top-2.5 w-2.5 h-2.5 rounded-full bg-indigo-500 ring-4 ring-slate-900"></div>
-                                            <div class="p-4 rounded-2xl border border-slate-800 space-y-2.5 hover:border-indigo-500/40 transition-colors shadow-sm" style="background-color: #020617;">
-                                                <div class="flex flex-wrap items-center justify-between gap-2">
-                                                    <div class="flex items-center space-x-2">
-                                                        <span class="text-xs font-mono font-extrabold text-white flex items-center space-x-1">
-                                                            <span>📅</span>
-                                                            <span x-text="m.tanggal_mutasi"></span>
-                                                        </span>
-                                                        <span class="px-2 py-0.5 rounded text-[9.5px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                                                            🏢 Mutasi Internal Ruangan
-                                                        </span>
-                                                        <span class="text-[10px] font-mono text-slate-400" x-text="'(' + (m.nomor_bamb || 'BAMB') + ')'"></span>
-                                                    </div>
-                                                    <div class="flex items-center space-x-1.5">
-                                                        <span class="text-[10px] text-slate-400 font-bold uppercase">Kondisi saat mutasi:</span>
-                                                        <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-black border"
-                                                              :class="{
-                                                                  'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': m.kondisi === 'Baik',
-                                                                  'bg-amber-500/20 text-amber-300 border-amber-500/30': m.kondisi === 'Kurang Baik',
-                                                                  'bg-rose-500/20 text-rose-300 border-rose-500/30': m.kondisi === 'Rusak Berat'
-                                                              }" x-text="m.kondisi || 'Baik'"></span>
-                                                    </div>
+                        <template x-if="selectedRiwayatReklas && selectedRiwayatReklas.length > 0">
+                            <div class="space-y-3 relative pl-4 border-l-2 border-emerald-500/30 my-2">
+                                <template x-for="(rk, idx) in selectedRiwayatReklas" :key="'reklas-hibah-' + (rk.id || idx)">
+                                    <div class="relative group">
+                                        <div class="absolute -left-[21px] top-2.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-4 ring-slate-900"></div>
+                                        <div class="p-4 rounded-2xl border border-slate-800 space-y-2.5 hover:border-emerald-500/40 transition-colors" style="background-color: #020617;">
+                                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="text-xs font-mono font-extrabold text-white flex items-center space-x-1">
+                                                        <span>📅</span>
+                                                        <span x-text="rk.tanggal_reklas"></span>
+                                                    </span>
+                                                    <span class="px-2 py-0.5 rounded text-[9.5px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" x-text="rk.sub_koreksi_label || rk.jenis_reklas"></span>
+                                                    <span class="text-[10px] font-mono text-slate-400" x-text="'(' + (rk.nomor_ba || 'BA-REKLAS') + ')'"></span>
                                                 </div>
+                                                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border"
+                                                      :class="rk.tipe_koreksi === 'tambah' ? 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30' : 'bg-rose-500/15 text-rose-300 border-rose-500/30'"
+                                                      x-text="rk.tipe_koreksi === 'tambah' ? '➕ Bertambah' : '➖ Berkurang'"></span>
+                                            </div>
 
-                                                <div class="p-2.5 bg-slate-900/80 rounded-xl border border-slate-800 flex items-center justify-between text-xs">
-                                                    <div>
-                                                        <span class="text-[9.5px] uppercase font-bold text-slate-500 block">Dari Ruangan:</span>
-                                                        <span class="font-semibold text-slate-200" x-text="m.ruangan_asal || '-'"></span>
-                                                    </div>
-                                                    <span class="text-indigo-400 font-extrabold text-sm px-1">➔</span>
-                                                    <div>
-                                                        <span class="text-[9.5px] uppercase font-bold text-slate-500 block">Ke Ruangan:</span>
-                                                        <span class="font-bold text-cyan-300" x-text="m.ruangan_tujuan || '-'"></span>
-                                                    </div>
+                                            <div class="p-2.5 bg-slate-900/80 rounded-xl border border-slate-800 flex items-center justify-between text-xs">
+                                                <div>
+                                                    <span class="text-[9.5px] uppercase font-bold text-slate-500 block">Akun / KIB Asal:</span>
+                                                    <span class="font-semibold text-slate-200" x-text="rk.asal_kib || rk.asal_kode || '-'"></span>
                                                 </div>
-
-                                                <div class="p-2.5 bg-slate-900/95 rounded-xl border border-amber-500/20 space-y-1">
-                                                    <div class="flex items-center space-x-1.5 text-amber-400">
-                                                        <span class="text-xs">📝</span>
-                                                        <span class="text-[10px] font-extrabold uppercase tracking-wider">Alasan Mutasi:</span>
-                                                    </div>
-                                                    <p class="text-xs text-slate-200 leading-relaxed italic pl-1" x-text="m.alasan_mutasi || 'Tidak ada alasan khusus dicatat'"></p>
-                                                </div>
-
-                                                <div class="flex flex-wrap items-center justify-between text-[10px] text-slate-400 pt-0.5 px-1 border-t border-slate-800/60">
-                                                    <span>Pengirim: <strong class="text-slate-300 font-semibold" x-text="m.penanggung_jawab_asal || '-'"></strong></span>
-                                                    <span>Penerima: <strong class="text-slate-300 font-semibold" x-text="m.penanggung_jawab_tujuan || '-'"></strong></span>
+                                                <span class="text-emerald-400 font-extrabold text-sm px-1">➔</span>
+                                                <div>
+                                                    <span class="text-[9.5px] uppercase font-bold text-slate-500 block">Akun / KIB Tujuan:</span>
+                                                    <span class="font-bold text-emerald-300" x-text="rk.tujuan_kib || rk.tujuan_kode || '-'"></span>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </template>
-                                </div>
-                            </template>
-                        </div>
 
-                        <!-- LIST MUTASI EKSTERNAL -->
-                        <div x-show="mutasiSubFilter === 'semua' || mutasiSubFilter === 'eksternal'">
-                            <template x-if="selectedRiwayatMutasisEksternal && selectedRiwayatMutasisEksternal.length > 0">
-                                <div class="space-y-3 relative pl-4 border-l-2 border-cyan-500/30 my-2">
-                                    <template x-for="(me, idx) in selectedRiwayatMutasisEksternal" :key="'eksternal-hibah-' + (me.id || idx)">
-                                        <div class="relative group">
-                                            <div class="absolute -left-[21px] top-2.5 w-2.5 h-2.5 rounded-full bg-cyan-500 ring-4 ring-slate-900"></div>
-                                            <div class="p-4 rounded-2xl border border-slate-800 space-y-2.5 hover:border-cyan-500/40 transition-colors shadow-sm" style="background-color: #020617;">
-                                                <div class="flex flex-wrap items-center justify-between gap-2">
-                                                    <div class="flex items-center space-x-2">
-                                                        <span class="text-xs font-mono font-extrabold text-white flex items-center space-x-1">
-                                                            <span>📅</span>
-                                                            <span x-text="me.tanggal_mutasi"></span>
-                                                        </span>
-                                                        <span class="px-2 py-0.5 rounded text-[9.5px] font-bold border"
-                                                              :class="me.tipe === 'masuk' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30'"
-                                                              x-text="me.tipe === 'masuk' ? '📥 Mutasi Masuk OPD' : '📤 Mutasi Keluar OPD'"></span>
-                                                        <span class="text-[10px] font-mono text-slate-400" x-text="'(' + (me.nomor_bast || 'BAST') + ')'"></span>
-                                                    </div>
-                                                    <span class="px-2 py-0.5 rounded-lg text-[10px] font-extrabold bg-slate-900 text-cyan-300 border border-slate-700" x-text="me.status || 'Tercatat'"></span>
+                                            <div class="p-2.5 bg-slate-900/90 rounded-xl border border-slate-800 text-xs space-y-1">
+                                                <div class="flex items-center justify-between">
+                                                    <span class="text-[10px] font-bold text-slate-400 uppercase">Nilai Reklasifikasi:</span>
+                                                    <span class="font-mono font-bold text-white text-xs" x-text="rk.nilai_reklas"></span>
                                                 </div>
+                                                <p class="text-[11px] text-slate-300 italic pt-1 border-t border-slate-800/80" x-text="'Keterangan: ' + (rk.alasan_reklas || '-')"></p>
+                                            </div>
 
-                                                <div class="p-2.5 bg-slate-900/80 rounded-xl border border-slate-800 flex items-center justify-between text-xs">
-                                                    <div>
-                                                        <span class="text-[9.5px] uppercase font-bold text-slate-500 block">Instansi / SKPD Pengirim:</span>
-                                                        <span class="font-semibold text-slate-200" x-text="me.opd_asal"></span>
-                                                    </div>
-                                                    <span class="text-cyan-400 font-extrabold text-sm px-1">➔</span>
-                                                    <div>
-                                                        <span class="text-[9.5px] uppercase font-bold text-slate-500 block">Instansi / SKPD Penerima:</span>
-                                                        <span class="font-bold text-cyan-300" x-text="me.opd_tujuan"></span>
-                                                    </div>
-                                                </div>
-
-                                                <div class="p-2.5 bg-slate-900/90 rounded-xl border border-slate-800 text-xs space-y-1">
-                                                    <div class="flex items-center justify-between">
-                                                        <span class="text-[10px] font-bold text-slate-400 uppercase">Nilai Aset Mutasi:</span>
-                                                        <span class="font-mono font-bold text-white text-xs" x-text="me.nilai_perolehan"></span>
-                                                    </div>
-                                                    <p class="text-[11px] text-slate-300 italic pt-1 border-t border-slate-800/80" x-text="'Alasan: ' + (me.alasan_mutasi || '-')"></p>
-                                                </div>
-
-                                                <div class="flex flex-wrap items-center justify-between text-[10px] text-slate-400 pt-0.5 px-1 border-t border-slate-800/60">
-                                                    <span>Pihak I (Pengirim): <strong class="text-slate-300 font-semibold" x-text="me.pj_asal_nama || '-'"></strong></span>
-                                                    <span>Pihak II (Penerima): <strong class="text-slate-300 font-semibold" x-text="me.pj_tujuan_nama || '-'"></strong></span>
-                                                </div>
+                                            <div class="text-[10px] text-slate-400 pt-0.5 px-1 border-t border-slate-800/60">
+                                                <span>Operator Pencatat: <strong class="text-slate-300 font-semibold" x-text="rk.user_nama || 'Administrator'"></strong></span>
                                             </div>
                                         </div>
-                                    </template>
-                                </div>
-                            </template>
-                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
                     </div>
-
-                    <!-- TAB 4: REKLASIFIKASI -->
-                    <div x-show="!isLoadingRiwayat && riwayatActiveTab === 'reklas'" class="space-y-3">
-                        <template x-if="!selectedRiwayatReklas || selectedRiwayatReklas.length === 0">
                             <div class="p-8 text-center rounded-2xl border border-dashed border-emerald-500/30 space-y-2" style="background-color: #020617;">
                                 <span class="text-3xl block">🔄</span>
                                 <h4 class="text-sm font-bold text-slate-200">Belum Ada Reklasifikasi Aset</h4>
