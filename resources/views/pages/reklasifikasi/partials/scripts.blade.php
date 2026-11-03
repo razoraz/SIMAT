@@ -735,6 +735,9 @@
                     tipe_koreksi: 'kurang',
                     nilai_realisasi_baru: 0,
                     pihak_hibah: '',
+                    penerima_nama: '',
+                    penerima_jabatan: '',
+                    penerima_nip: '',
                     skpd_tujuan: '',
                     tanggal_bast: new Date().toISOString().split('T')[0],
                     pejabat_opd_tujuan: '',
@@ -807,6 +810,11 @@
                 this.onSelectedNibarsChange();
             },
 
+            isNibarSelected(regId) {
+                if (!this.formData.selected_register_ids || !Array.isArray(this.formData.selected_register_ids)) return false;
+                return this.formData.selected_register_ids.some(id => String(id) === String(regId));
+            },
+
             calculateSelectedNibarsValue() {
                 if (!this.selectedAstap) return 0;
                 const regs = this.getReklasAvailableRegisters();
@@ -819,7 +827,7 @@
                 const defaultUnitVal = parseFloat(this.selectedAstap.total_realisasi || 0) / Math.max(1, regs.length);
                 let total = 0;
                 for (const reg of regs) {
-                    if (selectedIds.includes(reg.id)) {
+                    if (this.isNibarSelected(reg.id)) {
                         total += parseFloat(reg.harga_satuan || defaultUnitVal);
                     }
                 }
@@ -827,6 +835,9 @@
             },
 
             onSelectedNibarsChange() {
+                if (this.formData.selected_register_ids && Array.isArray(this.formData.selected_register_ids)) {
+                    this.formData.selected_register_ids = this.formData.selected_register_ids.map(id => Number(id));
+                }
                 if (this.formData.jenis_reklas === 'MUTASI_EKSTERNAL' || this.formData.jenis_reklas === 'HIBAH_KELUAR') {
                     this.formData.nilai_reklas = this.calculateSelectedNibarsValue();
                 }
@@ -1876,6 +1887,9 @@
                         keterangan: (this.formData.keterangan || '').trim() || this.getNarasiPreview(),
                         spesifikasi_baru: (['KOREKSI_REKENING', 'KDP_TO_DEFINITIF'].includes(this.formData.jenis_reklas) && this.formData.tujuan_kib) ? this.formData.spekBaru : null,
                         pihak_hibah: this.formData.pihak_hibah || null,
+                        penerima_nama: this.formData.penerima_nama || null,
+                        penerima_jabatan: this.formData.penerima_jabatan || null,
+                        penerima_nip: this.formData.penerima_nip || null,
                         skpd_tujuan: this.formData.skpd_tujuan || null,
                         tanggal_bast: this.formData.tanggal_bast || null,
                         pejabat_opd_tujuan: this.formData.pejabat_opd_tujuan || null,

@@ -133,6 +133,12 @@
 
         $qrHash = md5($hibah->nomor_bast ?: ('HIBAH-' . $hibah->id));
         $qrUrl = url('/validasi-tte/' . $qrHash);
+
+        $hibahInfo = is_array($astap?->spesifikasi_json) ? ($astap->spesifikasi_json['hibah_info'] ?? []) : (json_decode($astap?->spesifikasi_json ?? '[]', true)['hibah_info'] ?? []);
+        $namaPenerimaKeluar = $hibah->nama_penerima ?: ($hibahInfo['nama_penerima'] ?? null);
+        $jabatanPenerimaKeluar = $hibah->jabatan_penerima ?: ($hibahInfo['jabatan_penerima'] ?? 'Pihak Penerima Hibah');
+        $nipPenerimaKeluar = $hibah->nip_penerima ?: ($hibahInfo['nip_penerima'] ?? null);
+        $alamatPenerimaKeluar = $hibah->alamat_penerima ?: ($hibahInfo['alamat_penerima'] ?? null);
     @endphp
 
     <div class="print-container bg-white text-black max-w-4xl w-full p-8 sm:p-12 shadow-2xl rounded-sm text-[10pt] leading-relaxed"
@@ -274,21 +280,37 @@
                 <table class="w-full mt-2">
                     <tr>
                         <td class="w-6 align-top font-bold">2.</td>
-                        <td class="w-32 align-top">Nama Penerima / Pihak</td>
+                        <td class="w-32 align-top">Nama Instansi / Pihak</td>
                         <td class="w-3 align-top">:</td>
                         <td class="align-top font-bold uppercase">{{ $hibah->pihak_hibah }}</td>
                     </tr>
+                    @if($alamatPenerimaKeluar)
                     <tr>
                         <td></td>
-                        <td class="align-top">Penanggung Jawab</td>
+                        <td class="align-top">Alamat Instansi</td>
                         <td class="align-top">:</td>
-                        <td class="align-top">Pimpinan / Perwakilan Lembaga Penerima</td>
+                        <td class="align-top">{{ $alamatPenerimaKeluar }}</td>
                     </tr>
+                    @endif
+                    <tr>
+                        <td></td>
+                        <td class="align-top">Penanggung Jawab / Nama</td>
+                        <td class="align-top">:</td>
+                        <td class="align-top font-semibold">{{ $namaPenerimaKeluar ?: 'Pimpinan / Perwakilan Lembaga Penerima' }}</td>
+                    </tr>
+                    @if($nipPenerimaKeluar && $nipPenerimaKeluar !== '-')
+                    <tr>
+                        <td></td>
+                        <td class="align-top">NIP</td>
+                        <td class="align-top">:</td>
+                        <td class="align-top font-mono">{{ $nipPenerimaKeluar }}</td>
+                    </tr>
+                    @endif
                     <tr>
                         <td></td>
                         <td class="align-top">Kedudukan / Jabatan</td>
                         <td class="align-top">:</td>
-                        <td class="align-top">Pihak Penerima Hibah</td>
+                        <td class="align-top">{{ $jabatanPenerimaKeluar }}</td>
                     </tr>
                     <tr>
                         <td></td>
@@ -422,8 +444,11 @@
                     <div class="h-20 flex items-center justify-center">
                         <!-- Space for TTD / Stempel -->
                     </div>
-                    <p class="font-bold underline text-[10pt] uppercase">{{ $hibah->pihak_hibah }}</p>
-                    <p class="font-mono text-[9pt]">Penerima Hibah</p>
+                    <p class="font-bold underline text-[10pt] uppercase">{{ $namaPenerimaKeluar ?: $hibah->pihak_hibah }}</p>
+                    @if($nipPenerimaKeluar && $nipPenerimaKeluar !== '-')
+                        <p class="font-mono text-[9pt]">NIP. {{ $nipPenerimaKeluar }}</p>
+                    @endif
+                    <p class="font-mono text-[9pt]">{{ $jabatanPenerimaKeluar ?: 'Penerima Hibah' }}</p>
                 @endif
             </div>
         </div>

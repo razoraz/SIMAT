@@ -309,6 +309,9 @@ class ReklasifikasiController extends Controller
             'sub_koreksi' => 'nullable|string|in:biasa,lkd,manset',
             'tanggal_dokumen_koreksi' => 'nullable|date',
             'pihak_hibah' => 'nullable|string|max:255',
+            'penerima_nama' => 'nullable|string|max:255',
+            'penerima_jabatan' => 'nullable|string|max:255',
+            'penerima_nip' => 'nullable|string|max:50',
             'skpd_tujuan' => 'nullable|string|max:255',
             'tanggal_bast' => 'nullable|date|before_or_equal:today',
             'pejabat_opd_tujuan' => 'nullable|string|max:255',
@@ -1930,9 +1933,18 @@ class ReklasifikasiController extends Controller
                 if ($isFullTransfer) {
                     $currSpec['status_barang'] = 'Dihibahkan';
                 }
+                $penerimaNama = $validated['penerima_nama'] ?? ($request->input('penerima_nama') ?: ($request->input('pejabat_opd_tujuan') ?: null));
+                $penerimaJabatan = $validated['penerima_jabatan'] ?? ($request->input('penerima_jabatan') ?: ($request->input('jabatan_opd_tujuan') ?: null));
+                $penerimaNip = $validated['penerima_nip'] ?? ($request->input('penerima_nip') ?: ($request->input('nip_pejabat_opd_tujuan') ?: null));
+                $alamatPenerima = $validated['alamat_instansi'] ?? ($request->input('alamat_instansi') ?: ($request->input('penerima_alamat') ?: null));
+
                 $currSpec['hibah_info'] = [
                     'tipe'                  => 'keluar',
                     'pihak'                 => $validated['pihak_hibah'] ?? ($request->input('pihak_hibah') ?? null),
+                    'nama_penerima'         => $penerimaNama,
+                    'jabatan_penerima'      => $penerimaJabatan,
+                    'nip_penerima'          => $penerimaNip,
+                    'alamat_penerima'       => $alamatPenerima,
                     'nomor_bast'            => $validated['nomor_ba_reklas'] ?? null,
                     'tanggal_bast'          => $validated['tanggal_bast'] ?? ($request->input('tanggal_bast') ?? null),
                     'alasan'                => $validated['alasan_reklas'],
@@ -2826,6 +2838,30 @@ class ReklasifikasiController extends Controller
                         $astap->unit_id = null;
                     }
                     $astap->save();
+                }
+
+                if (\Illuminate\Support\Facades\Schema::hasTable('astap_hibahs')) {
+                    $firstRegId = (!empty($selectedRegisterIds) && count($selectedRegisterIds) === 1) ? $selectedRegisterIds[0] : null;
+                    $hibahKeluar = \App\Models\AstapHibah::create([
+                        'tipe_hibah'        => 'keluar',
+                        'astap_id'          => $astap->id,
+                        'astap_register_id' => $firstRegId,
+                        'pihak_hibah'       => $validated['pihak_hibah'] ?? ($request->input('pihak_hibah') ?? 'Penerima Hibah'),
+                        'nama_penerima'     => $penerimaNama,
+                        'jabatan_penerima'  => $penerimaJabatan,
+                        'nip_penerima'      => $penerimaNip,
+                        'alamat_penerima'   => $alamatPenerima,
+                        'nomor_bast'        => $validated['nomor_ba_reklas'] ?? ($request->input('nomor_ba_reklas') ?? 'BAST-HIBAH'),
+                        'tanggal_bast'      => $validated['tanggal_bast'] ?? ($request->input('tanggal_bast') ?? now()->toDateString()),
+                        'jumlah_volume'     => !empty($selectedRegisterIds) ? count($selectedRegisterIds) : max(1, (int) $astap->jumlah_volume),
+                        'satuan'            => $astap->satuan ?: 'Unit',
+                        'nilai_aset'        => (float) ($validated['nilai_reklas'] ?? 0),
+                        'tahun'             => (int) ($validated['tahun'] ?? now()->year),
+                        'triwulan'          => 'TW ' . ($validated['triwulan'] ?? 1),
+                        'keterangan'        => $validated['keterangan'] ?? null,
+                        'dokumen_path'      => $dokumenLampiranPath ?? null,
+                        'user_id'           => Auth::id(),
+                    ]);
                 }
             }
 

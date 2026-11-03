@@ -80,6 +80,10 @@
                 astap_id: '',
                 register_ids: [],
                 penerima_hibah: '',
+                nama_penerima: '',
+                jabatan_penerima: '',
+                nip_penerima: '',
+                alamat_penerima: '',
                 nomor_bast: '',
                 tanggal_bast: new Date().toISOString().split('T')[0],
                 nilai_aset: 0,
@@ -1916,7 +1920,7 @@
                 if (!regs || regs.length === 0) return this.selectedAstapReklas ? parseFloat(this.selectedAstapReklas.total_realisasi_num || 0) : 0;
                 let total = 0;
                 for (const id of this.reklasSelectedNibarIds) {
-                    const r = regs.find(x => x.id === id);
+                    const r = regs.find(x => String(x.id) === String(id));
                     if (r) total += this.getRegisterNilaiSatuan(r);
                 }
                 return total;
@@ -3414,6 +3418,18 @@
                 }
                 if (!(this.keluarData.penerima_hibah || '').trim()) {
                     alert('⚠️ Mohon isi instansi / pihak penerima hibah.');
+                    return;
+                }
+                if (!(this.keluarData.nama_penerima || '').trim()) {
+                    alert('⚠️ Mohon isi nama pejabat / perwakilan penerima hibah.');
+                    return;
+                }
+                if (!(this.keluarData.jabatan_penerima || '').trim()) {
+                    alert('⚠️ Mohon isi jabatan pejabat penerima hibah.');
+                    return;
+                }
+                if (!(this.keluarData.alamat_penerima || '').trim()) {
+                    alert('⚠️ Mohon isi alamat kantor / domisili penerima hibah.');
                     return;
                 }
                 if (!(this.keluarData.nomor_bast || '').trim()) {

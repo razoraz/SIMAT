@@ -9573,6 +9573,10 @@
                 reklasNomorBastHibah: '',
                 reklasTanggalBastHibah: new Date().toLocaleDateString('en-CA'),
                 reklasPihakHibah: '',
+                reklasPenerimaNama: '',
+                reklasPenerimaJabatan: '',
+                reklasPenerimaAlamat: '',
+                reklasPenerimaNip: '',
                 reklasNomorBastMutasi: '',
                 reklasTanggalBastMutasi: new Date().toLocaleDateString('en-CA'),
                 reklasSkpdTujuan: '',
@@ -10836,6 +10840,10 @@
                     this.reklasNomorBastHibah = '';
                     this.reklasTanggalBastHibah = new Date().toLocaleDateString('en-CA');
                     this.reklasPihakHibah = '';
+                    this.reklasPenerimaNama = '';
+                    this.reklasPenerimaJabatan = '';
+                    this.reklasPenerimaAlamat = '';
+                    this.reklasPenerimaNip = '';
                     this.reklasNomorBastMutasi = '';
                     this.reklasTanggalBastMutasi = new Date().toLocaleDateString('en-CA');
                     this.reklasSkpdTujuan = '';
@@ -12271,19 +12279,43 @@
                     return this.reklasSelectedNibarIds.length;
                 },
 
+                isNibarSelected(regId) {
+                    if (!this.reklasSelectedNibarIds || !Array.isArray(this.reklasSelectedNibarIds)) return false;
+                    return this.reklasSelectedNibarIds.some(id => String(id) === String(regId));
+                },
+
+                onNibarCheckboxChange() {
+                    if (this.reklasSelectedNibarIds && Array.isArray(this.reklasSelectedNibarIds)) {
+                        this.reklasSelectedNibarIds = this.reklasSelectedNibarIds.map(id => Number(id));
+                    }
+                },
+
                 getReklasMutasiSelectedNilai() {
                     const regs = this.getReklasAvailableRegisters();
                     if (!regs || regs.length === 0) {
-                        return this.selectedAstapReklas ? parseFloat(this.selectedAstapReklas.total_realisasi_num || this.selectedAstapReklas.total_realisasi || this.selectedAstapReklas.jumlah_realisasi || 0) : 0;
+                        if (!this.selectedAstapReklas) return 0;
+                        let val = this.selectedAstapReklas.total_realisasi_num 
+                            ?? this.selectedAstapReklas.total_realisasi 
+                            ?? this.selectedAstapReklas.jumlah_realisasi 
+                            ?? this.selectedAstapReklas.harga_satuan 
+                            ?? 0;
+                        if (typeof val === 'string') {
+                            val = parseFloat(val.replace(/[^0-9.-]/g, '')) || 0;
+                        }
+                        return isNaN(val) ? 0 : Number(val);
                     }
                     let total = 0;
-                    for (const id of this.reklasSelectedNibarIds) {
-                        const r = regs.find(x => x.id === id);
+                    for (const id of (this.reklasSelectedNibarIds || [])) {
+                        const r = regs.find(x => String(x.id) === String(id));
                         if (r) {
-                            total += this.getRegisterNilaiSatuan(r);
+                            let sat = this.getRegisterNilaiSatuan(r);
+                            if (typeof sat === 'string') {
+                                sat = parseFloat(sat.replace(/[^0-9.-]/g, '')) || 0;
+                            }
+                            total += (Number(sat) || 0);
                         }
                     }
-                    return total;
+                    return isNaN(total) ? 0 : total;
                 },
 
                 getReklasSelectedTotalNilai() {
@@ -12690,6 +12722,22 @@
                             this.showToast('Tanggal Dokumen BAST Hibah wajib dipilih!', 'warning');
                             return;
                         }
+                        if (!this.reklasPihakHibah || !this.reklasPihakHibah.trim()) {
+                            this.showToast('Instansi / Pihak Penerima Hibah wajib diisi!', 'warning');
+                            return;
+                        }
+                        if (!this.reklasPenerimaNama || !this.reklasPenerimaNama.trim()) {
+                            this.showToast('Nama Pejabat / Perwakilan Penerima Hibah wajib diisi!', 'warning');
+                            return;
+                        }
+                        if (!this.reklasPenerimaJabatan || !this.reklasPenerimaJabatan.trim()) {
+                            this.showToast('Jabatan Pejabat Penerima Hibah wajib diisi!', 'warning');
+                            return;
+                        }
+                        if (!this.reklasPenerimaAlamat || !this.reklasPenerimaAlamat.trim()) {
+                            this.showToast('Alamat Kantor / Domisili Penerima Hibah wajib diisi!', 'warning');
+                            return;
+                        }
                     } else if (this.reklasJenis === 'mutasi_eksternal') {
                         if (!this.reklasSkpdTujuan || !this.reklasSkpdTujuan.trim()) {
                             this.showToast('SKPD / Dinas Penerima Mutasi wajib diisi!', 'warning');
@@ -12860,14 +12908,17 @@
                             nomor_ba_reklas: nomorBaFinal,
                             alasan_reklas: (this.reklasAlasan || '').trim() || null,
                             pihak_hibah: (this.reklasJenis === 'hibah') ? this.reklasPihakHibah : null,
+                            penerima_nama: (this.reklasJenis === 'hibah') ? this.reklasPenerimaNama : null,
+                            penerima_jabatan: (this.reklasJenis === 'hibah') ? this.reklasPenerimaJabatan : null,
+                            penerima_nip: (this.reklasJenis === 'hibah') ? this.reklasPenerimaNip : null,
                             skpd_tujuan: (this.reklasJenis === 'mutasi_eksternal') ? this.reklasSkpdTujuan : null,
-                            pejabat_opd_tujuan: (this.reklasJenis === 'mutasi_eksternal') ? this.reklasPejabatOpdTujuan : null,
-                            nip_pejabat_opd_tujuan: (this.reklasJenis === 'mutasi_eksternal') ? this.reklasNipPejabatOpdTujuan : null,
-                            jabatan_opd_tujuan: (this.reklasJenis === 'mutasi_eksternal') ? this.reklasJabatanOpdTujuan : null,
+                            pejabat_opd_tujuan: (this.reklasJenis === 'mutasi_eksternal') ? this.reklasPejabatOpdTujuan : ((this.reklasJenis === 'hibah') ? this.reklasPenerimaNama : null),
+                            nip_pejabat_opd_tujuan: (this.reklasJenis === 'mutasi_eksternal') ? this.reklasNipPejabatOpdTujuan : ((this.reklasJenis === 'hibah') ? this.reklasPenerimaNip : null),
+                            jabatan_opd_tujuan: (this.reklasJenis === 'mutasi_eksternal') ? this.reklasJabatanOpdTujuan : ((this.reklasJenis === 'hibah') ? this.reklasPenerimaJabatan : null),
                             pj_asal_nama: (this.reklasJenis === 'mutasi_eksternal' || this.reklasJenis === 'hibah') ? (this.reklasPjAsalNama || 'BUDI HARTONO, S.Sos') : null,
                             pj_asal_nip: (this.reklasJenis === 'mutasi_eksternal' || this.reklasJenis === 'hibah') ? (this.reklasPjAsalNip || '19760229 200801 1 010') : null,
                             pj_asal_jabatan: (this.reklasJenis === 'mutasi_eksternal' || this.reklasJenis === 'hibah') ? (this.reklasPjAsalJabatan || 'Pengurus Barang Pengguna') : null,
-                            alamat_instansi: (this.reklasJenis === 'mutasi_eksternal') ? this.reklasAlamatInstansi : null,
+                            alamat_instansi: (this.reklasJenis === 'hibah') ? this.reklasPenerimaAlamat : ((this.reklasJenis === 'mutasi_eksternal') ? this.reklasAlamatInstansi : null),
                             nomor_sk_dasar: (this.reklasJenis === 'mutasi_eksternal') ? this.reklasNomorSkDasar : null,
                             tanggal_bast: (this.reklasJenis === 'hibah') ? this.reklasTanggalBastHibah : ((this.reklasJenis === 'mutasi_eksternal') ? this.reklasTanggalBastMutasi : null),
                             tanggal_dokumen_koreksi: (this.reklasJenis === 'koreksi_nilai') ? this.reklasDokumenTglKoreksi : null,
@@ -12954,7 +13005,7 @@
 
                                 if (it.registers && Array.isArray(it.registers)) {
                                     it.registers.forEach(r => {
-                                        if (isFull || this.reklasSelectedNibarIds.includes(r.id)) {
+                                        if (isFull || this.isNibarSelected(r.id)) {
                                             r.status = statusTarget;
                                             r.ruang_pemegang = ruangTarget;
                                             if (this.reklasJenis === 'mutasi_eksternal') {

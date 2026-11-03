@@ -136,6 +136,48 @@
                     class="w-full bg-slate-950 border border-slate-700 focus:border-rose-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none">
             </div>
 
+            <!-- 3b. Identitas Pejabat Penerima Hibah -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="space-y-1.5">
+                    <label class="block font-bold text-slate-200 text-xs">
+                        Nama Pejabat / Perwakilan Penerima <span class="text-rose-400">*</span>
+                    </label>
+                    <input type="text" x-model="keluarData.nama_penerima" required
+                        placeholder="Contoh: dr. H. Ahmad Fauzi / Pimpinan..."
+                        class="w-full bg-slate-950 border border-slate-700 focus:border-rose-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none font-bold">
+                </div>
+
+                <div class="space-y-1.5">
+                    <label class="block font-bold text-slate-200 text-xs">
+                        Jabatan Pejabat Penerima <span class="text-rose-400">*</span>
+                    </label>
+                    <input type="text" x-model="keluarData.jabatan_penerima" required
+                        placeholder="Contoh: Kepala Puskesmas / Ketua Yayasan..."
+                        class="w-full bg-slate-950 border border-slate-700 focus:border-rose-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none font-medium">
+                </div>
+            </div>
+
+            <!-- 3c. NIP & Alamat Kantor Penerima -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="space-y-1.5">
+                    <label class="block font-bold text-slate-200 text-xs">
+                        NIP Pejabat Penerima (Opsional)
+                    </label>
+                    <input type="text" x-model="keluarData.nip_penerima"
+                        placeholder="19xxxxxxxxxxxxxx atau -"
+                        class="w-full bg-slate-950 border border-slate-700 focus:border-rose-400 rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none">
+                </div>
+
+                <div class="space-y-1.5">
+                    <label class="block font-bold text-slate-200 text-xs">
+                        Alamat Kantor / Domisili Penerima <span class="text-rose-400">*</span>
+                    </label>
+                    <input type="text" x-model="keluarData.alamat_penerima" required
+                        placeholder="Contoh: Jl. Raya Situbondo No. 45, Bondowoso..."
+                        class="w-full bg-slate-950 border border-slate-700 focus:border-rose-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none">
+                </div>
+            </div>
+
             <!-- 4. Nomor & Tanggal BAST -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div class="space-y-1.5">
