@@ -801,7 +801,7 @@
                 } else {
                     const regs = this.getReklasAvailableRegisters();
                     this.formData.selected_register_ids = regs
-                        .filter(r => r.status !== 'Mutasi Keluar OPD')
+                        .filter(r => r.status !== 'Mutasi Keluar OPD' && r.status !== 'Dihibahkan')
                         .map(r => r.id);
                 }
                 this.onSelectedNibarsChange();
@@ -827,7 +827,7 @@
             },
 
             onSelectedNibarsChange() {
-                if (this.formData.jenis_reklas === 'MUTASI_EKSTERNAL') {
+                if (this.formData.jenis_reklas === 'MUTASI_EKSTERNAL' || this.formData.jenis_reklas === 'HIBAH_KELUAR') {
                     this.formData.nilai_reklas = this.calculateSelectedNibarsValue();
                 }
             },
@@ -847,12 +847,15 @@
 
                 if (found.registers && found.registers.length > 0) {
                     this.formData.selected_register_ids = found.registers
-                        .filter(r => r.status !== 'Mutasi Keluar OPD')
+                        .filter(r => r.status !== 'Mutasi Keluar OPD' && r.status !== 'Dihibahkan')
                         .map(r => r.id);
                     this.formData.register_kondisi_map = {};
                     found.registers.forEach(r => {
                         this.formData.register_kondisi_map[r.id] = r.kondisi || 'Baik';
                     });
+                    if (this.formData.jenis_reklas === 'MUTASI_EKSTERNAL' || this.formData.jenis_reklas === 'HIBAH_KELUAR') {
+                        this.formData.nilai_reklas = this.calculateSelectedNibarsValue();
+                    }
                 } else {
                     this.formData.selected_register_ids = [];
                     this.formData.register_kondisi_map = {};
@@ -1847,13 +1850,25 @@
                     }
                 }
 
+                // Validasi khusus Hibah Keluar jika aset memiliki register
+                if (this.formData.jenis_reklas === 'HIBAH_KELUAR') {
+                    if (this.selectedAstap && this.selectedAstap.registers && this.selectedAstap.registers.length > 0) {
+                        if (!this.formData.selected_register_ids || this.formData.selected_register_ids.length === 0) {
+                            const errMsg = '⚠️ Pilih minimal 1 unit register/NIBAR yang akan dihibahkan.';
+                            if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'error');
+                            else alert(errMsg);
+                            return;
+                        }
+                    }
+                }
+
                 this.isSubmitting = true;
 
                 try {
                     const payload = {
                         ...this.formData,
-                        selected_register_ids: (this.formData.jenis_reklas === 'MUTASI_EKSTERNAL') ? (this.formData.selected_register_ids || []) : null,
-                        register_kondisi_map: (this.formData.jenis_reklas === 'MUTASI_EKSTERNAL') ? (this.formData.register_kondisi_map || {}) : null,
+                        selected_register_ids: (this.formData.jenis_reklas === 'MUTASI_EKSTERNAL' || this.formData.jenis_reklas === 'HIBAH_KELUAR') ? (this.formData.selected_register_ids || []) : null,
+                        register_kondisi_map: (this.formData.jenis_reklas === 'MUTASI_EKSTERNAL' || this.formData.jenis_reklas === 'HIBAH_KELUAR') ? (this.formData.register_kondisi_map || {}) : null,
                         tipe_koreksi: this.formData.tipe_koreksi || 'kurang',
                         sub_koreksi: (this.formData.jenis_reklas === 'KOREKSI_LAIN') ? (this.formData.sub_koreksi || 'biasa') : null,
                         nilai_realisasi_baru: parseFloat(this.formData.nilai_realisasi_baru || 0),

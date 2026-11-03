@@ -1465,6 +1465,85 @@ class ReklasifikasiTest extends TestCase
         $this->assertEquals($korHibahRow->id, $reklas->jenis_reklasifikasi_tujuan_id);
     }
 
+    public function test_can_reklas_hibah_keluar_partial_single_register()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        $astap = Astap::create([
+            'nama_barang' => 'Kursi Roda Pasien Test Parsial',
+            'category' => 'KIB B',
+            'tahun_perolehan' => 2026,
+            'jumlah_volume' => 2,
+            'harga_satuan' => 570000,
+            'total_realisasi' => 1140000,
+            'jumlah_anggaran' => 1140000,
+            'user_id' => $admin->id,
+        ]);
+
+        $reg1 = \App\Models\AstapRegister::create([
+            'astap_id' => $astap->id,
+            'tahun_perolehan' => 2026,
+            'no_register_int' => 1,
+            'no_register' => 'REG-HIB-001',
+            'nibar' => 'NIBAR-HIB-001',
+            'kondisi' => 'Baik',
+            'status' => 'Tersedia',
+            'harga_satuan' => 570000,
+        ]);
+
+        $reg2 = \App\Models\AstapRegister::create([
+            'astap_id' => $astap->id,
+            'tahun_perolehan' => 2026,
+            'no_register_int' => 2,
+            'no_register' => 'REG-HIB-002',
+            'nibar' => 'NIBAR-HIB-002',
+            'kondisi' => 'Baik',
+            'status' => 'Tersedia',
+            'harga_satuan' => 570000,
+        ]);
+
+        // Hibah HANYA reg1 (parsial 1 dari 2 unit)
+        $payload = [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'HIBAH_KELUAR',
+            'asal_kib' => 'KIB B',
+            'tujuan_kib' => 'HIBAH',
+            'nilai_reklas' => 570000,
+            'tanggal_reklas' => '2026-03-26',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'nomor_ba_reklas' => 'BAST-HIB-PARTIAL/001',
+            'alasan_reklas' => 'Hibah 1 unit kursi roda ke Puskesmas Curahdami',
+            'pihak_hibah' => 'Puskesmas Curahdami',
+            'tanggal_bast' => '2026-03-26',
+            'pj_asal_nama' => 'BUDI HARTONO, S.Sos',
+            'pj_asal_nip' => '19760229 200801 1 010',
+            'pj_asal_jabatan' => 'Pengurus Barang Pengguna',
+            'selected_register_ids' => [$reg1->id],
+            'register_kondisi_map' => [
+                $reg1->id => 'Baik',
+            ],
+        ];
+
+        $response = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), $payload);
+        $response->assertStatus(200);
+        $response->assertJson(['success' => true]);
+
+        $reg1->refresh();
+        $reg2->refresh();
+        $astap->refresh();
+
+        // Reg 1 harus berubah status jadi 'Dihibahkan'
+        $this->assertEquals('Dihibahkan', $reg1->status);
+        $this->assertStringContainsString('Puskesmas Curahdami', $reg1->ruang_pemegang);
+
+        // Reg 2 harus tetap 'Tersedia'
+        $this->assertEquals('Tersedia', $reg2->status);
+
+        // Aset induk TIDAK ditandai full HIBAH_KELUAR karena masih ada 1 unit aktif
+        $this->assertNotEquals('HIBAH_KELUAR', $astap->jenis_reklas);
+    }
+
     public function test_can_reklas_hibah_masuk_and_balance_with_kor_hibah()
     {
         $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);

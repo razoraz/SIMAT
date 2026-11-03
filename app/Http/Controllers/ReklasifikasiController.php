@@ -466,13 +466,13 @@ class ReklasifikasiController extends Controller
             if (is_array($selectedRegIds) && count($selectedRegIds) === 0) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Pilih minimal 1 unit register NIBAR yang akan dimutasikan ke OPD luar.',
+                    'message' => 'Pilih minimal 1 unit register NIBAR yang akan dialihkan ke OPD luar.',
                 ], 422);
             }
 
             if (!empty($selectedRegIds) && is_array($selectedRegIds)) {
                 $alreadyOutRegs = \App\Models\AstapRegister::whereIn('id', $selectedRegIds)
-                    ->where('status', 'Mutasi Keluar OPD')
+                    ->whereIn('status', ['Mutasi Keluar OPD', 'Dihibahkan'])
                     ->pluck('nibar')
                     ->toArray();
 
@@ -480,7 +480,50 @@ class ReklasifikasiController extends Controller
                     $nibarList = implode(', ', $alreadyOutRegs);
                     return response()->json([
                         'success' => false,
-                        'message' => "Unit register NIBAR ({$nibarList}) sudah pernah dimutasi keluar ke OPD lain dan tidak dapat dimutasi lagi.",
+                        'message' => "Unit register NIBAR ({$nibarList}) sudah pernah dialihkan keluar dan tidak dapat dialihkan lagi.",
+                    ], 422);
+                }
+            }
+        }
+
+        // Proteksi Validasi Hibah Keluar
+        if ($validated['jenis_reklas'] === 'HIBAH_KELUAR') {
+            $isAlreadyFullHibah = ($astap->jenis_reklas === 'HIBAH_KELUAR') || ($astap->kondisi === 'Dihibahkan');
+            $activeRegistersCount = $astap->registers()
+                ->where('is_deleted', 0)
+                ->where(function($q) {
+                    $q->whereNull('status')
+                      ->orWhereNotIn('status', ['Dihibahkan', 'Mutasi Keluar OPD']);
+                })
+                ->count();
+            $totalRegistersCount = $astap->registers()->where('is_deleted', 0)->count();
+
+            if (($isAlreadyFullHibah && $totalRegistersCount === 0) || ($totalRegistersCount > 0 && $activeRegistersCount === 0)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Aset '{$astap->nama_barang}' sudah pernah dihibahkan keluar seluruhnya dan tidak dapat dihibahkan lagi.",
+                ], 422);
+            }
+
+            $selectedRegIds = $request->input('selected_register_ids');
+            if (is_array($selectedRegIds) && count($selectedRegIds) === 0 && $totalRegistersCount > 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pilih minimal 1 unit register NIBAR yang akan dihibahkan.',
+                ], 422);
+            }
+
+            if (!empty($selectedRegIds) && is_array($selectedRegIds)) {
+                $alreadyOutRegs = \App\Models\AstapRegister::whereIn('id', $selectedRegIds)
+                    ->whereIn('status', ['Mutasi Keluar OPD', 'Dihibahkan'])
+                    ->pluck('nibar')
+                    ->toArray();
+
+                if (!empty($alreadyOutRegs)) {
+                    $nibarList = implode(', ', $alreadyOutRegs);
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Unit register NIBAR ({$nibarList}) sudah pernah dialihkan keluar (Dihibahkan / Mutasi Keluar OPD) dan tidak dapat dialihkan lagi.",
                     ], 422);
                 }
             }
@@ -767,7 +810,9 @@ class ReklasifikasiController extends Controller
 
             if (!$isPartial) {
                 $astap->is_reklas = true;
-                $astap->jenis_reklas = $validated['jenis_reklas'];
+                if (!in_array($validated['jenis_reklas'], ['MUTASI_EKSTERNAL', 'HIBAH_KELUAR'], true)) {
+                    $astap->jenis_reklas = $validated['jenis_reklas'];
+                }
             }
             if ($validated['jenis_reklas'] === 'EKSTRAKOMPTABEL') {
                 $astap->is_extracomtable = true;
@@ -1845,21 +1890,58 @@ class ReklasifikasiController extends Controller
 
             // Penanganan khusus status dan spesifikasi untuk Hibah Keluar, Hibah Masuk, dan Mutasi Eksternal
             if ($validated['jenis_reklas'] === 'HIBAH_KELUAR') {
+                $selectedRegisterIds = $request->input('selected_register_ids', []);
+                if (is_string($selectedRegisterIds)) {
+                    $selectedRegisterIds = json_decode($selectedRegisterIds, true) ?: [];
+                }
+                if (!is_array($selectedRegisterIds)) {
+                    $selectedRegisterIds = [];
+                }
+
+                $activeRegsQuery = $astap->registers()->where('is_deleted', 0)->where(function($sr) {
+                    $sr->whereNull('status')->orWhereNotIn('status', ['Dihibahkan', 'Mutasi Keluar OPD']);
+                });
+                $totalActiveRegs = $activeRegsQuery->count();
+
+                $isFullTransfer = false;
+                if ($totalActiveRegs === 0) {
+                    $isFullTransfer = true;
+                } elseif (!empty($selectedRegisterIds)) {
+                    $isFullTransfer = count($selectedRegisterIds) >= $totalActiveRegs;
+                } else {
+                    $isFullTransfer = true;
+                }
+
                 $astap->is_reklas = 1;
-                $astap->jenis_reklas = 'HIBAH_KELUAR';
+                if ($isFullTransfer) {
+                    $astap->jenis_reklas = 'HIBAH_KELUAR';
+                    if (\Illuminate\Support\Facades\Schema::hasColumn('astaps', 'kondisi')) {
+                        $astap->kondisi = 'Dihibahkan';
+                    }
+                    if (\Illuminate\Support\Facades\Schema::hasColumn('astaps', 'unit_id')) {
+                        $astap->unit_id = null;
+                    }
+                }
+
                 $tujuanKodeAset = 'KOR_HIBAH';
                 $tujuanNamaAset = 'Koreksi Hibah / Bantuan Pemerintah (Dihibahkan)';
-                if (\Illuminate\Support\Facades\Schema::hasColumn('astaps', 'kondisi')) {
-                    $astap->kondisi = 'Dihibahkan';
-                }
+
                 $currSpec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?? []);
-                $currSpec['status_barang'] = 'Dihibahkan';
+                if ($isFullTransfer) {
+                    $currSpec['status_barang'] = 'Dihibahkan';
+                }
                 $currSpec['hibah_info'] = [
-                    'tipe'         => 'keluar',
-                    'pihak'        => $validated['pihak_hibah'] ?? ($request->input('pihak_hibah') ?? null),
-                    'nomor_bast'   => $validated['nomor_ba_reklas'] ?? null,
-                    'tanggal_bast' => $validated['tanggal_bast'] ?? ($request->input('tanggal_bast') ?? null),
-                    'alasan'       => $validated['alasan_reklas'],
+                    'tipe'                  => 'keluar',
+                    'pihak'                 => $validated['pihak_hibah'] ?? ($request->input('pihak_hibah') ?? null),
+                    'nomor_bast'            => $validated['nomor_ba_reklas'] ?? null,
+                    'tanggal_bast'          => $validated['tanggal_bast'] ?? ($request->input('tanggal_bast') ?? null),
+                    'alasan'                => $validated['alasan_reklas'],
+                    'pj_penyerah_nama'      => $request->input('pj_asal_nama') ?: 'BUDI HARTONO, S.Sos',
+                    'pj_penyerah_nip'       => $request->input('pj_asal_nip') ?: '19760229 200801 1 010',
+                    'pj_penyerah_jabatan'   => $request->input('pj_asal_jabatan') ?: 'Pengurus Barang Pengguna',
+                    'selected_register_ids' => $selectedRegisterIds,
+                    'is_full_transfer'      => $isFullTransfer,
+                    'transferred_count'     => count($selectedRegisterIds),
                 ];
                 $astap->spesifikasi_json = $currSpec;
                 $specBaru = $currSpec;
@@ -2685,6 +2767,63 @@ class ReklasifikasiController extends Controller
                     $astap->jenis_reklas = 'MUTASI_EKSTERNAL';
                     if (\Illuminate\Support\Facades\Schema::hasColumn('astaps', 'unit_id')) {
                         $astap->unit_id = null; // Lepaskan dari unit ruangan KIR
+                    }
+                    $astap->save();
+                }
+            }
+
+            if ($validated['jenis_reklas'] === 'HIBAH_KELUAR') {
+                $selectedRegisterIds = $request->input('selected_register_ids', []);
+                if (is_string($selectedRegisterIds)) {
+                    $selectedRegisterIds = json_decode($selectedRegisterIds, true) ?: [];
+                }
+                $targetRegisters = collect();
+                if ($astap->registers()->exists()) {
+                    if (!empty($selectedRegisterIds)) {
+                        $targetRegisters = $astap->registers()->whereIn('id', $selectedRegisterIds)->get();
+                    } else {
+                        $targetRegisters = $astap->registers()->where(function($sr) {
+                            $sr->whereNull('status')->orWhereNotIn('status', ['Dihibahkan', 'Mutasi Keluar OPD']);
+                        })->get();
+                        if ($targetRegisters->isEmpty()) {
+                            $targetRegisters = $astap->registers;
+                        }
+                    }
+                }
+
+                if ($targetRegisters->isNotEmpty()) {
+                    $regKondisiMap = $request->input('register_kondisi_map', []);
+                    if (is_string($regKondisiMap)) {
+                        $regKondisiMap = json_decode($regKondisiMap, true) ?: [];
+                    }
+                    $pihakPenerima = $validated['pihak_hibah'] ?? ($request->input('pihak_hibah') ?? 'Penerima Hibah');
+                    foreach ($targetRegisters as $reg) {
+                        $kondisiSerah = $regKondisiMap[$reg->id] ?? ($reg->kondisi ?: 'Baik');
+                        $reg->update([
+                            'status'         => 'Dihibahkan',
+                            'unit_id'        => null,
+                            'ruang_pemegang' => 'Dihibahkan: ' . $pihakPenerima,
+                            'kondisi'        => $kondisiSerah,
+                        ]);
+                    }
+                }
+
+                $remainingActiveCount = $astap->registers()
+                    ->where('is_deleted', 0)
+                    ->where(function($sr) {
+                        $sr->whereNull('status')
+                           ->orWhereNotIn('status', ['Dihibahkan', 'Mutasi Keluar OPD']);
+                    })
+                    ->count();
+
+                $isFullTransferFinal = ($remainingActiveCount === 0);
+                if ($isFullTransferFinal) {
+                    $astap->jenis_reklas = 'HIBAH_KELUAR';
+                    if (\Illuminate\Support\Facades\Schema::hasColumn('astaps', 'kondisi')) {
+                        $astap->kondisi = 'Dihibahkan';
+                    }
+                    if (\Illuminate\Support\Facades\Schema::hasColumn('astaps', 'unit_id')) {
+                        $astap->unit_id = null;
                     }
                     $astap->save();
                 }
