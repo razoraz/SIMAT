@@ -17,6 +17,9 @@
         <!-- MODAL DETAIL BELANJA BARANG & NIBAR -->
         @include('pages.belanja_barang.index_partials.modal_detail')
 
+        <!-- MODAL AKSI REGISTER NIBAR (UBAH KONDISI & RIWAYAT MUTASI) -->
+        @include('pages.belanja_barang.index_partials.modal_register_actions')
+
         <!-- MODAL KONFIRMASI HAPUS / BATALKAN -->
         @include('pages.belanja_barang.index_partials.modal_confirm')
     </div>
