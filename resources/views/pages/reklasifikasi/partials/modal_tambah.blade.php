@@ -455,60 +455,60 @@
                         </div>
                     </div>
 
-                    <!-- Baris 2: Nama & Jabatan Penerima Hibah -->
+                    <!-- Baris 2: Nama Penerima & NIP (2 Kolom Sejajar Presisi) -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                         <div class="space-y-1.5 min-w-0">
-                            <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">
+                            <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider h-5 whitespace-nowrap">
                                 <svg class="w-3.5 h-3.5 text-purple-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                 </svg>
-                                <span>Nama Pejabat / Perwakilan Penerima</span>
-                                <span class="text-rose-400 font-bold">*</span>
+                                <span class="truncate">Nama Penerima Hibah</span>
+                                <span class="text-rose-400 font-bold shrink-0">*</span>
                             </label>
                             <input type="text" x-model="formData.penerima_nama"
-                                   placeholder="Contoh: dr. H. Ahmad Fauzi / Pimpinan..."
+                                   placeholder="Contoh: dr. H. Ahmad Fauzi / Nama Pimpinan..."
                                    class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none transition-all shadow-inner font-bold">
                         </div>
 
                         <div class="space-y-1.5 min-w-0">
-                            <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">
-                                <svg class="w-3.5 h-3.5 text-purple-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                </svg>
-                                <span>Jabatan Pejabat Penerima</span>
-                                <span class="text-rose-400 font-bold">*</span>
-                            </label>
-                            <input type="text" x-model="formData.penerima_jabatan"
-                                   placeholder="Contoh: Kepala Puskesmas / Ketua Yayasan..."
-                                   class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none transition-all shadow-inner font-medium">
-                        </div>
-                    </div>
-
-                    <!-- Baris 3: NIP & Alamat Kantor Penerima -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                        <div class="space-y-1.5 min-w-0">
-                            <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">
+                            <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider h-5 whitespace-nowrap">
                                 <svg class="w-3.5 h-3.5 text-purple-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
                                 </svg>
-                                <span>NIP Pejabat Penerima (Opsional)</span>
+                                <span class="truncate">NIP Pejabat Penerima (Opsional)</span>
                             </label>
                             <input type="text" x-model="formData.penerima_nip"
                                    placeholder="19xxxxxxxxxxxxxx atau -"
                                    class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3.5 text-xs font-mono text-purple-200 placeholder-slate-500 focus:outline-none transition-all shadow-inner">
                         </div>
+                    </div>
+
+                    <!-- Baris 3: Jabatan & Alamat Kantor Penerima (2 Kolom Sejajar Presisi) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        <div class="space-y-1.5 min-w-0">
+                            <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider h-5 whitespace-nowrap">
+                                <svg class="w-3.5 h-3.5 text-purple-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                </svg>
+                                <span class="truncate">Jabatan Pejabat Penerima</span>
+                                <span class="text-rose-400 font-bold shrink-0">*</span>
+                            </label>
+                            <input type="text" x-model="formData.penerima_jabatan"
+                                   placeholder="Contoh: Kepala Puskesmas / Ketua Yayasan..."
+                                   class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none transition-all shadow-inner font-medium">
+                        </div>
 
                         <div class="space-y-1.5 min-w-0">
-                            <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">
+                            <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider h-5 whitespace-nowrap">
                                 <svg class="w-3.5 h-3.5 text-purple-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
-                                <span>Alamat Kantor / Domisili Penerima</span>
-                                <span class="text-rose-400 font-bold">*</span>
+                                <span class="truncate">Alamat Kantor / Domisili Penerima</span>
+                                <span class="text-rose-400 font-bold shrink-0">*</span>
                             </label>
                             <input type="text" x-model="formData.alamat_instansi"
-                                   placeholder="Contoh: Jl. Raya Situbondo No. 45, Bondowoso..."
+                                   placeholder="Contoh: Jl. Raya Situbondo No. 45, Kecamatan Tenggarang, Bondowoso..."
                                    class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none transition-all shadow-inner">
                         </div>
                     </div>

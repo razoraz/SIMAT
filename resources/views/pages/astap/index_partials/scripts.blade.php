@@ -9596,6 +9596,8 @@
                 isSkpdDropdownOpen: false,
                 isPejabatTujuanDropdownOpen: false,
                 isPejabatAsalDropdownOpen: false,
+                isInstansiHibahDropdownOpen: false,
+                isPejabatHibahDropdownOpen: false,
                 selectedDokumenFile: null,
                 isSubmittingReklas: false,
                 reklasKdpProgresAwal: 0,
@@ -12453,6 +12455,72 @@
                     this.reklasPjAsalNip = p.nip || '';
                     this.reklasPjAsalJabatan = p.jabatan || '';
                     this.isPejabatAsalDropdownOpen = false;
+                    this.rememberCustomPejabat(p.nama, p.nip, p.jabatan);
+                },
+
+                // ===== DIREKTORI INSTANSI & PEJABAT PENERIMA HIBAH =====
+                get filteredInstansiHibahList() {
+                    const q = (this.reklasPihakHibah || '').toLowerCase().trim();
+                    const list = this.skpdList || [];
+                    if (!q) return list.slice(0, 25);
+                    return list.filter(s => s.toLowerCase().includes(q)).slice(0, 25);
+                },
+
+                get availablePejabatPenerimaHibahList() {
+                    const instansi = this.reklasPihakHibah;
+                    if (instansi && this.skpdDirectory && this.skpdDirectory[instansi]) {
+                        const data = this.skpdDirectory[instansi];
+                        if (data.pejabats && data.pejabats.length > 0) {
+                            return data.pejabats;
+                        }
+                        if (data.pj_nama) {
+                            return [{
+                                nama: data.pj_nama,
+                                nip: data.pj_nip || '',
+                                jabatan: data.pj_jabatan || 'Pimpinan / Kepala Instansi'
+                            }];
+                        }
+                    }
+                    return [];
+                },
+
+                get filteredPejabatPenerimaHibahList() {
+                    const list = this.availablePejabatPenerimaHibahList;
+                    const q = (this.reklasPenerimaNama || '').toLowerCase().trim();
+                    if (!q) return list;
+                    return list.filter(p => 
+                        (p.nama && p.nama.toLowerCase().includes(q)) ||
+                        (p.nip && p.nip.toLowerCase().includes(q)) ||
+                        (p.jabatan && p.jabatan.toLowerCase().includes(q))
+                    );
+                },
+
+                selectInstansiHibah(instansi) {
+                    this.reklasPihakHibah = instansi;
+                    this.isInstansiHibahDropdownOpen = false;
+                    if (this.skpdDirectory && this.skpdDirectory[instansi]) {
+                        const data = this.skpdDirectory[instansi];
+                        if (data.alamat) {
+                            this.reklasPenerimaAlamat = data.alamat;
+                        }
+                        if (data.pejabats && data.pejabats.length > 0) {
+                            this.selectPejabatPenerimaHibah(data.pejabats[0]);
+                        } else if (data.pj_nama) {
+                            this.selectPejabatPenerimaHibah({
+                                nama: data.pj_nama,
+                                nip: data.pj_nip || '',
+                                jabatan: data.pj_jabatan || 'Pimpinan / Kepala Instansi'
+                            });
+                        }
+                    }
+                },
+
+                selectPejabatPenerimaHibah(p) {
+                    if (!p) return;
+                    this.reklasPenerimaNama = p.nama || '';
+                    this.reklasPenerimaNip = p.nip || '';
+                    if (p.jabatan) this.reklasPenerimaJabatan = p.jabatan;
+                    this.isPejabatHibahDropdownOpen = false;
                     this.rememberCustomPejabat(p.nama, p.nip, p.jabatan);
                 },
 

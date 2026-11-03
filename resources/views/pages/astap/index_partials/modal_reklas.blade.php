@@ -2645,23 +2645,60 @@
 
                                 <!-- Baris 2: Pihak Penerima & Nilai Buku Aset yang Dihibahkan (Presisi Sejajar h-10) -->
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                                    <div class="space-y-1.5 min-w-0">
-                                        <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">
+                                    <div class="space-y-1.5 min-w-0 relative" @click.away="isInstansiHibahDropdownOpen = false">
+                                        <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider h-5 whitespace-nowrap">
                                             <svg class="w-3.5 h-3.5 text-purple-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                                             </svg>
-                                            <span>Instansi / Pihak Penerima Hibah</span>
-                                            <span class="text-rose-400 font-bold">*</span>
+                                            <span class="truncate">Instansi / Pihak Penerima Hibah</span>
+                                            <span class="text-rose-400 font-bold shrink-0">*</span>
                                         </label>
-                                        <input type="text" x-model="reklasPihakHibah" placeholder="Contoh: Puskesmas Curahdami / Dinas Kesehatan..."
-                                               class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none transition-all shadow-inner">
+
+                                        <div class="relative">
+                                            <input type="text" x-model="reklasPihakHibah"
+                                                   @focus="isInstansiHibahDropdownOpen = true"
+                                                   @input="isInstansiHibahDropdownOpen = true"
+                                                   placeholder="Ketik atau pilih nama instansi penerima..."
+                                                   autocomplete="off"
+                                                   class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3.5 pr-9 text-xs text-white placeholder-slate-500 focus:outline-none font-bold shadow-inner transition-all">
+                                            <button type="button" x-show="reklasPihakHibah"
+                                                    @click="reklasPihakHibah = ''; isInstansiHibahDropdownOpen = true"
+                                                    class="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-rose-300 rounded-lg hover:bg-slate-800 transition-colors">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                            </button>
+                                        </div>
+
+                                        <!-- Dropdown List Direktori Instansi Hibah (Mirip Gambar 2) -->
+                                        <div x-show="isInstansiHibahDropdownOpen && filteredInstansiHibahList.length > 0" x-cloak
+                                             class="absolute z-40 mt-1 w-full bg-slate-900 border border-purple-500/40 rounded-xl shadow-2xl overflow-hidden divide-y divide-slate-800 custom-scrollbar backdrop-blur-xl max-h-56 overflow-y-auto">
+                                            <div class="px-3 py-1.5 bg-slate-950 text-[10px] font-bold text-purple-400 uppercase tracking-wider flex items-center justify-between">
+                                                <span>Pilih Direktori Instansi Pemkab</span>
+                                                <span class="font-mono text-slate-400" x-text="filteredInstansiHibahList.length + ' hasil'"></span>
+                                            </div>
+                                            <template x-for="(instansi, iIdx) in filteredInstansiHibahList" :key="iIdx">
+                                                <div @click="selectInstansiHibah(instansi)"
+                                                     class="p-2.5 hover:bg-purple-500/15 cursor-pointer transition-colors group flex items-center justify-between gap-2.5 text-left"
+                                                     :class="reklasPihakHibah === instansi ? 'bg-purple-500/20 text-purple-200' : 'text-slate-200'">
+                                                    <div class="min-w-0">
+                                                        <div class="font-bold text-xs group-hover:text-purple-300 truncate" x-text="instansi"></div>
+                                                        <div class="text-[10px] text-slate-400 truncate flex items-center gap-1 mt-0.5" x-show="skpdDirectory[instansi]?.alamat">
+                                                            <svg class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                                            <span x-text="skpdDirectory[instansi]?.alamat"></span>
+                                                        </div>
+                                                    </div>
+                                                    <span class="text-[9px] px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/25 font-bold shrink-0">
+                                                        Pilih ↵
+                                                    </span>
+                                                </div>
+                                            </template>
+                                        </div>
                                     </div>
                                     <div class="space-y-1.5 min-w-0">
-                                        <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">
+                                        <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider h-5 whitespace-nowrap">
                                             <svg class="w-3.5 h-3.5 text-purple-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                                             </svg>
-                                            <span>Nilai Buku Aset yang Dihibahkan</span>
+                                            <span class="truncate">Nilai Buku Aset yang Dihibahkan</span>
                                         </label>
                                         <div class="w-full h-10 rounded-xl bg-purple-950/40 border border-purple-500/40 px-3.5 flex items-center justify-between shadow-inner">
                                             <span class="text-[10px] uppercase font-bold text-purple-300/80 tracking-wider">Total Nilai:</span>
@@ -2671,54 +2708,87 @@
                                     </div>
                                 </div>
 
-                                <!-- Baris 3: Nama Pejabat & Jabatan Penerima Hibah -->
+                                <!-- Baris 3: Nama Penerima & NIP (2 Kolom Sejajar Presisi) -->
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                                    <div class="space-y-1.5 min-w-0">
-                                        <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">
+                                    <div class="space-y-1.5 min-w-0 relative" @click.away="isPejabatHibahDropdownOpen = false">
+                                        <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider h-5 whitespace-nowrap">
                                             <svg class="w-3.5 h-3.5 text-purple-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                             </svg>
-                                            <span>Nama Pejabat / Perwakilan Penerima</span>
-                                            <span class="text-rose-400 font-bold">*</span>
+                                            <span class="truncate">Nama Penerima Hibah</span>
+                                            <span class="text-rose-400 font-bold shrink-0">*</span>
                                         </label>
-                                        <input type="text" x-model="reklasPenerimaNama" placeholder="Contoh: dr. H. Ahmad Fauzi / Nama Pimpinan..."
-                                               class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none transition-all shadow-inner font-bold">
-                                    </div>
-                                    <div class="space-y-1.5 min-w-0">
-                                        <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">
-                                            <svg class="w-3.5 h-3.5 text-purple-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                            </svg>
-                                            <span>Jabatan Pejabat Penerima</span>
-                                            <span class="text-rose-400 font-bold">*</span>
-                                        </label>
-                                        <input type="text" x-model="reklasPenerimaJabatan" placeholder="Contoh: Kepala Puskesmas / Ketua Yayasan..."
-                                               class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none transition-all shadow-inner font-medium">
-                                    </div>
-                                </div>
+                                        <div class="relative">
+                                            <input type="text" x-model="reklasPenerimaNama"
+                                                   @focus="isPejabatHibahDropdownOpen = true"
+                                                   @input="isPejabatHibahDropdownOpen = true"
+                                                   placeholder="Ketik atau pilih nama pejabat penerima..."
+                                                   class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3.5 pr-9 text-xs text-white placeholder-slate-500 focus:outline-none transition-all shadow-inner font-bold">
+                                            <button type="button" x-show="availablePejabatPenerimaHibahList.length > 0"
+                                                    @click="isPejabatHibahDropdownOpen = !isPejabatHibahDropdownOpen"
+                                                    class="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-purple-300 rounded-lg hover:bg-slate-800 transition-colors"
+                                                    title="Buka riwayat pejabat penerima">
+                                                <svg class="w-4 h-4 transition-transform duration-200" :class="isPejabatHibahDropdownOpen ? 'rotate-180 text-purple-400' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                            </button>
+                                        </div>
 
-                                <!-- Baris 4: NIP (Opsional) & Alamat Instansi Penerima -->
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                                        <!-- Dropdown List Pejabat Penerima Hibah (Mirip Gambar 2) -->
+                                        <div x-show="isPejabatHibahDropdownOpen && filteredPejabatPenerimaHibahList.length > 0" x-cloak
+                                             class="absolute z-40 mt-1 w-full bg-slate-900 border border-purple-500/40 rounded-xl shadow-2xl overflow-hidden divide-y divide-slate-800 custom-scrollbar backdrop-blur-xl max-h-48 overflow-y-auto">
+                                            <div class="px-3 py-1.5 bg-slate-950 text-[10px] font-bold text-purple-400 uppercase tracking-wider flex items-center justify-between">
+                                                <span>Pilihan Pejabat Penerima Hibah</span>
+                                                <span class="font-mono text-slate-400" x-text="filteredPejabatPenerimaHibahList.length + ' hasil'"></span>
+                                            </div>
+                                            <template x-for="(pj, pIdx) in filteredPejabatPenerimaHibahList" :key="pIdx">
+                                                <div @click="selectPejabatPenerimaHibah(pj)"
+                                                     class="p-2.5 hover:bg-purple-500/15 cursor-pointer text-left transition-colors flex items-center justify-between gap-2">
+                                                    <div class="min-w-0">
+                                                        <div class="font-bold text-white text-xs" x-text="pj.nama"></div>
+                                                        <div class="text-[10px] text-purple-400 font-mono mt-0.5" x-text="'NIP: ' + (pj.nip || '-') + ' · ' + (pj.jabatan || 'Penerima Hibah')"></div>
+                                                    </div>
+                                                    <span class="text-[9px] px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/25 font-bold shrink-0">
+                                                        Pilih ↵
+                                                    </span>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+
                                     <div class="space-y-1.5 min-w-0">
-                                        <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">
+                                        <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider h-5 whitespace-nowrap">
                                             <svg class="w-3.5 h-3.5 text-purple-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
                                             </svg>
-                                            <span>NIP Pejabat Penerima (Opsional)</span>
+                                            <span class="truncate">NIP Pejabat Penerima (Opsional)</span>
                                         </label>
                                         <input type="text" x-model="reklasPenerimaNip" placeholder="19xxxxxxxxxxxxxx atau -"
                                                class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3.5 text-xs font-mono text-purple-200 placeholder-slate-500 focus:outline-none transition-all shadow-inner">
                                     </div>
+                                </div>
+
+                                <!-- Baris 4: Jabatan & Alamat Kantor Penerima (2 Kolom Sejajar Presisi) -->
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                                     <div class="space-y-1.5 min-w-0">
-                                        <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">
+                                        <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider h-5 whitespace-nowrap">
+                                            <svg class="w-3.5 h-3.5 text-purple-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                            </svg>
+                                            <span class="truncate">Jabatan Pejabat Penerima</span>
+                                            <span class="text-rose-400 font-bold shrink-0">*</span>
+                                        </label>
+                                        <input type="text" x-model="reklasPenerimaJabatan" placeholder="Contoh: Kepala Dinas / Kepala Puskesmas..."
+                                               class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none transition-all shadow-inner font-medium">
+                                    </div>
+                                    <div class="space-y-1.5 min-w-0">
+                                        <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider h-5 whitespace-nowrap">
                                             <svg class="w-3.5 h-3.5 text-purple-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                             </svg>
-                                            <span>Alamat Kantor / Domisili Penerima</span>
-                                            <span class="text-rose-400 font-bold">*</span>
+                                            <span class="truncate">Alamat Kantor / Domisili Penerima</span>
+                                            <span class="text-rose-400 font-bold shrink-0">*</span>
                                         </label>
-                                        <input type="text" x-model="reklasPenerimaAlamat" placeholder="Contoh: Jl. Raya Situbondo No. 45, Bondowoso..."
+                                        <input type="text" x-model="reklasPenerimaAlamat" placeholder="Contoh: Jl. Imam Bonjol No. 34, Bondowoso..."
                                                class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none transition-all shadow-inner">
                                     </div>
                                 </div>
