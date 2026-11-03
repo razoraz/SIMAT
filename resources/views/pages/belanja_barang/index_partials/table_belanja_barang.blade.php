@@ -74,6 +74,8 @@
                             'dokumen_kuitansi_url' => $row->dokumen_kuitansi_url,
                             'total_item_count'     => $totalItemCount,
                             'total_volume'         => $totalVolFaktur,
+                            'category'             => 'EXTRACOM',
+                            'first_nama'           => $firstAstap?->nama_barang,
                             'tahun'                => $firstAstap?->tahun_perolehan ?: date('Y'),
                             'triwulan'             => $firstAstap?->triwulan ?: 'TW I',
                             'items'                => $astaps->map(function ($a) {
@@ -90,10 +92,12 @@
                                     'kondisi'       => $a->registers?->first()?->kondisi ?: 'Baik',
                                     'status'        => $a->registers?->first()?->status ?: 'Tersedia',
                                     'registers'     => $a->registers->map(fn($r) => [
+                                        'id'      => $r->id,
                                         'nibar'   => $r->nibar,
                                         'kondisi' => $r->kondisi ?: 'Baik',
                                         'status'  => $r->status,
-                                        'ruang'   => $r->ruang_pemegang ?: ($r->unit?->nama ?: 'Gudang Perbekalan')
+                                        'ruang'   => $r->ruang_pemegang ?: ($r->unit?->nama ?: 'Gudang Perbekalan'),
+                                        'qr_url'  => url('/scan/' . $r->nibar),
                                     ])->values()
                                 ];
                             })->values()
