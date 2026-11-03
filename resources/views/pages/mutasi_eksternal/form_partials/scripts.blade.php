@@ -1392,62 +1392,83 @@
             },
 
             showExtracomAlert(violations) {
-                const listHtml = violations.map(v => `
-                    <li class="flex items-start gap-2.5 text-rose-300 py-1.5 border-b border-slate-800/80 last:border-0">
-                        <span class="text-rose-400 font-bold shrink-0 mt-0.5">⚠️</span> 
-                        <div class="text-left leading-snug">
-                            <span class="font-extrabold text-white block text-xs">${v.nama}</span>
-                            <span class="text-[11px] text-slate-300">
-                                Nilai Satuan Input: <strong class="font-mono text-rose-400 font-bold">${v.nilaiFormatted}</strong> 
-                                <span class="text-rose-300/80">(Batas Maksimal Ekstrakomtabel: <strong class="font-mono text-amber-300">Rp 300.000</strong>)</span>
-                            </span>
-                        </div>
-                    </li>
-                `).join('');
-
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Nilai Ekstrakomtabel Melebihi Rp 300.000!',
-                        html: `
-                            <div class="text-left text-xs space-y-3 text-slate-300">
-                                <p class="text-slate-200 leading-relaxed">
-                                    Anda <strong>tidak dapat melanjutkan ke Tahap 3</strong> karena item berikut dipilih berstatus <span class="px-2 py-0.5 rounded text-[10.5px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">Ekstrakomtabel (Extracom)</span> tetapi nilai satuannya melebihi batas regulasi <strong>Rp 300.000</strong>:
-                                </p>
-                                <ul class="p-3.5 rounded-2xl bg-slate-950/90 border border-rose-500/40 space-y-1.5 shadow-inner">
-                                    ${listHtml}
-                                </ul>
-                                <div class="p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-200 text-[11px] leading-relaxed space-y-1">
-                                    <div class="font-bold text-indigo-300 flex items-center gap-1.5">
-                                        <span>💡</span> Petunjuk Solusi:
-                                    </div>
-                                    <ul class="list-disc pl-4 space-y-1 text-slate-300 text-[10.5px]">
-                                        <li>Jika nilai perolehan per unit memang <strong>&gt; Rp 300.000</strong>: Ubah status akuntansi item menjadi <strong>⚙️ Aset Tetap Reguler (Intrakomptabel)</strong>.</li>
-                                        <li>Jika barang benar-benar <strong>Ekstrakomtabel</strong>: Perbaiki nilai satuan agar <strong>&le; Rp 300.000</strong>.</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        `,
-                        confirmButtonText: 'Perbaiki Nilai Satuan &rarr;',
-                        confirmButtonColor: '#f43f5e',
-                        background: '#0f172a',
-                        color: '#ffffff',
-                        customClass: {
-                            popup: 'rounded-3xl border border-rose-500/30 shadow-2xl'
-                        }
-                    }).then(() => {
-                        this.focusFirstExtracomViolation();
-                    });
-                } else {
-                    const msg = violations.map(v => `${v.nama}: ${v.nilaiFormatted} (Maks. Rp 300.000)`).join(', ');
-                    this.showToast('Batas Nilai Extracom Terlampaui', msg, 'error');
-                    this.focusFirstExtracomViolation();
-                }
+                const first = violations[0] || {};
+                const msg = `Nilai satuan barang "${first.nama || 'ini'}" (${first.nilaiFormatted || ''}) melebihi batas maksimal Ekstrakomtabel Rp 300.000.`;
+                this.showToast('Batas Nilai Extracom Terlampaui', msg, 'error');
+                this.focusFirstExtracomViolation();
             },
 
             focusFirstExtracomViolation() {
                 setTimeout(() => {
                     const el = document.querySelector('.border-rose-500[placeholder*="300.000"]') ||
+                               document.querySelector('input.border-rose-500') ||
+                               document.querySelector('input[placeholder*="Maks. 300.000"]');
+                    if (el) {
+                        el.focus();
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }, 200);
+            },
+
+            // Helper validasi kebalikan: Jika di mode Reguler tapi nilai satuan <= Rp 300.000 (Wajib Ekstrakomtabel)
+            getRegulerUnder300kViolations() {
+                const violations = [];
+                if (this.formData.is_extracomtable) return violations;
+
+                if (this.isMesin && Array.isArray(this.formData.mesin_items)) {
+                    this.formData.mesin_items.forEach((item, idx) => {
+                        const val = parseFloat(item.mesin_nilai_satuan) || 0;
+                        if (val > 0 && val <= 300000) {
+                            violations.push({
+                                index: idx,
+                                type: 'mesin',
+                                itemNumber: idx + 1,
+                                nama: (item.mesin_nama_barang || this.formData.nama_barang || `Barang Mesin #${idx + 1}`),
+                                nilai: val,
+                                nilaiFormatted: 'Rp ' + Number(val).toLocaleString('id-ID')
+                            });
+                        }
+                    });
+                } else if (this.isLainnya && Array.isArray(this.formData.lainnya_items)) {
+                    this.formData.lainnya_items.forEach((item, idx) => {
+                        const val = parseFloat(item.lainnya_nilai_satuan) || 0;
+                        if (val > 0 && val <= 300000) {
+                            violations.push({
+                                index: idx,
+                                type: 'lainnya',
+                                itemNumber: idx + 1,
+                                nama: (item.lainnya_nama_barang || item.lainnya_judul || this.formData.nama_barang || `Item Lainnya #${idx + 1}`),
+                                nilai: val,
+                                nilaiFormatted: 'Rp ' + Number(val).toLocaleString('id-ID')
+                            });
+                        }
+                    });
+                }
+                return violations;
+            },
+
+            get hasRegulerUnder300kViolation() {
+                return this.getRegulerUnder300kViolations().length > 0;
+            },
+
+            showRegulerUnder300kAlert(violations) {
+                const first = violations[0] || {};
+                const msg = `Nilai satuan barang "${first.nama || 'ini'}" (${first.nilaiFormatted || ''}) berada di bawah Rp 300.000. Wajib dicatat sebagai Ekstrakomtabel.`;
+                this.showToast('Kriteria Ekstrakomtabel', msg, 'warning');
+                this.focusFirstRegulerUnder300kViolation();
+            },
+
+            focusFirstRegulerUnder300kViolation() {
+                setTimeout(() => {
+                    const el = document.querySelector('.border-amber-500') ||
+                               document.querySelector('input.text-amber-300') ||
+                               document.querySelector('input[placeholder*="Contoh"]');
+                    if (el) {
+                        el.focus();
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }, 200);
+            },
                                document.querySelector('input.border-rose-500') ||
                                document.querySelector('input[placeholder*="Maks. 300.000"]');
                     if (el) {
@@ -1733,12 +1754,22 @@
                         return false;
                     }
 
-                    // VALIDASI EXTRACOM: Nilai satuan tidak boleh melebihi Rp 300.000
+                    // 1. VALIDASI EXTRACOM: Nilai satuan tidak boleh melebihi Rp 300.000
                     const extracomViolations = this.getExtracomViolations();
                     if (extracomViolations.length > 0) {
                         this.showExtracomAlert(extracomViolations);
                         const msg = 'Nilai satuan barang Extracom tidak boleh melebihi Rp 300.000.';
                         this.showToast('Validasi Extracom Gagal', msg, 'error');
+                        this.setStepError(2, msg);
+                        return false;
+                    }
+
+                    // 2. VALIDASI REGULER: Nilai satuan <= Rp 300.000 wajib masuk Ekstrakomtabel
+                    const regulerUnder300kViolations = this.getRegulerUnder300kViolations();
+                    if (regulerUnder300kViolations.length > 0) {
+                        this.showRegulerUnder300kAlert(regulerUnder300kViolations);
+                        const msg = 'Nilai satuan barang ≤ Rp 300.000 harus dicatat sebagai Ekstrakomtabel.';
+                        this.showToast('Kriteria Ekstrakomtabel', msg, 'warning');
                         this.setStepError(2, msg);
                         return false;
                     }

@@ -476,8 +476,8 @@
                                 <label class="block text-slate-400 text-[10px] mb-1 font-semibold flex items-center justify-between">
                                     <span x-text="formData.is_extracomtable ? 'Nilai Satuan (Rp) *' : 'Nilai Perolehan Satuan (Rp) *'"></span>
                                     <span class="text-[9px] font-bold"
-                                          :class="formData.is_extracomtable ? 'text-amber-400 font-mono' : 'text-emerald-400'"
-                                          x-text="formData.is_extracomtable ? 'Maks. Rp 300.000' : 'Sesuai BAMB'">
+                                          :class="formData.is_extracomtable ? 'text-amber-400 font-mono' : (!formData.is_extracomtable && item.lainnya_nilai_satuan > 0 && item.lainnya_nilai_satuan <= 300000 ? 'text-amber-400 font-mono font-bold' : 'text-emerald-400')"
+                                          x-text="formData.is_extracomtable ? 'Maks. Rp 300.000' : (!formData.is_extracomtable && item.lainnya_nilai_satuan > 0 && item.lainnya_nilai_satuan <= 300000 ? 'Wajib Extracom' : 'Sesuai BAMB')">
                                     </span>
                                 </label>
                                 <input type="text"
@@ -489,10 +489,13 @@
                                         syncTotalsFromItems();
                                     "
                                     :placeholder="formData.is_extracomtable ? 'Maks. 300.000' : 'Contoh: 1.500.000'"
-                                    :class="formData.is_extracomtable && item.lainnya_nilai_satuan > 300000 ? 'border-rose-500 ring-1 ring-rose-500 text-rose-300' : 'border-slate-700 text-emerald-400 focus:border-purple-500'"
+                                    :class="formData.is_extracomtable && item.lainnya_nilai_satuan > 300000 ? 'border-rose-500 ring-1 ring-rose-500 text-rose-300' : (!formData.is_extracomtable && item.lainnya_nilai_satuan > 0 && item.lainnya_nilai_satuan <= 300000 ? 'border-amber-500 ring-1 ring-amber-500 text-amber-300' : 'border-slate-700 text-emerald-400 focus:border-purple-500')"
                                     class="w-full bg-slate-950 border rounded-xl px-3 py-2 text-xs font-mono font-bold focus:outline-none transition-colors">
                                 <span x-show="formData.is_extracomtable && item.lainnya_nilai_satuan > 300000" class="text-[9px] font-bold text-rose-400 block mt-1">
                                     ⚠️ Nilai satuan Extracom tidak boleh > Rp 300.000!
+                                </span>
+                                <span x-show="!formData.is_extracomtable && item.lainnya_nilai_satuan > 0 && item.lainnya_nilai_satuan <= 300000" class="text-[9px] font-bold text-amber-400 block mt-1 animate-pulse">
+                                    ⚠️ Nilai satuan &le; Rp 300.000 wajib dicatat sebagai Ekstrakomtabel!
                                 </span>
                             </div>
                         </div>
