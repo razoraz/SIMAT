@@ -2509,19 +2509,19 @@
 
                             <!-- Bagian 1: Identitas Pihak Pertama (Yang Menyerahkan Hibah - RSUD Dr. H. Koesnadi) -->
                             <div class="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-purple-500/30 shadow-lg shadow-purple-950/20 space-y-4">
-                                <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-8 h-8 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-300 shadow-sm shadow-purple-500/10">
+                                <div class="flex items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
+                                    <div class="flex items-center gap-3 min-w-0">
+                                        <div class="w-8 h-8 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-300 shadow-sm shadow-purple-500/10 shrink-0">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                                             </svg>
                                         </div>
-                                        <div>
-                                            <span class="text-xs font-black text-purple-300 uppercase tracking-wider block">PIHAK PERTAMA (Yang Menyerahkan Hibah - RSUD Dr. H. Koesnadi)</span>
-                                            <span class="text-[10px] text-slate-400">Instansi Penyerah Barang Milik Daerah</span>
+                                        <div class="min-w-0">
+                                            <span class="text-xs font-black text-purple-300 uppercase tracking-wider truncate block">PIHAK PERTAMA (PENYERAH HIBAH)</span>
+                                            <span class="text-[10px] text-slate-400 truncate block">RSUD Dr. H. Koesnadi · Instansi Penyerah BMD</span>
                                         </div>
                                     </div>
-                                    <span class="inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/30 font-bold tracking-wide">
+                                    <span class="inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/30 font-bold tracking-wide whitespace-nowrap shrink-0">
                                         <span class="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse"></span>
                                         Internal RSUD
                                     </span>
@@ -2886,19 +2886,19 @@
 
                             <!-- Bagian 1: Identitas Pihak Pertama (RSUD Dr. H. Koesnadi) -->
                             <div class="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-teal-500/30 shadow-lg shadow-teal-950/20 space-y-4">
-                                <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-8 h-8 rounded-xl bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-300 shadow-sm shadow-teal-500/10">
+                                <div class="flex items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
+                                    <div class="flex items-center gap-3 min-w-0">
+                                        <div class="w-8 h-8 rounded-xl bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-300 shadow-sm shadow-teal-500/10 shrink-0">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                                             </svg>
                                         </div>
-                                        <div>
-                                            <span class="text-xs font-black text-teal-300 uppercase tracking-wider block">PIHAK PERTAMA (Yang Menyerahkan - RSUD Dr. H. Koesnadi)</span>
-                                            <span class="text-[10px] text-slate-400">Instansi Penyerah Barang Milik Daerah</span>
+                                        <div class="min-w-0">
+                                            <span class="text-xs font-black text-teal-300 uppercase tracking-wider truncate block">PIHAK PERTAMA (PENYERAH ASET)</span>
+                                            <span class="text-[10px] text-slate-400 truncate block">RSUD Dr. H. Koesnadi · Instansi Penyerah BMD</span>
                                         </div>
                                     </div>
-                                    <span class="inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/30 font-bold tracking-wide">
+                                    <span class="inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full bg-teal-500/10 text-teal-300 border border-teal-500/30 font-bold tracking-wide whitespace-nowrap shrink-0">
                                         <span class="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse"></span>
                                         Internal RSUD
                                     </span>

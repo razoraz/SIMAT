@@ -10905,7 +10905,6 @@
                                 .filter(r => r.status !== 'Mutasi Keluar OPD' && r.status !== 'Dihibahkan')
                                 .map(r => r.id);
                         }
-                    }
                     } else if (this.reklasJenis === 'koreksi_nilai') {
                         this.reklasTujuanKib = (cat && cat !== 'EXTRACOM') ? cat : 'KIB B';
                         this.onReklasItemPriceChanged();
