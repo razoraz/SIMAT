@@ -10540,7 +10540,7 @@
                         this.reklasJenis = 'mutasi_eksternal';
                         this.reklasTujuanKib = 'MUTASI_OPD';
                     } else {
-                        const activeRegs = (item.registers || []).filter(r => r.status !== 'Mutasi Keluar OPD');
+                        const activeRegs = (item.registers || []).filter(r => r.status !== 'Mutasi Keluar OPD' && r.status !== 'Dihibahkan');
                         this.reklasSelectedNibarIds = activeRegs.map(r => r.id);
                         if (this.isKemitraanAktif()) {
                             this.reklasJenis = 'pindah_kib';
@@ -10891,8 +10891,21 @@
                         this.reklasTujuanKib = 'EKSTRAKOMPTABEL';
                     } else if (this.reklasJenis === 'hibah') {
                         this.reklasTujuanKib = 'HIBAH';
+                        if (!this.reklasSelectedNibarIds || this.reklasSelectedNibarIds.length === 0) {
+                            const regs = this.getReklasAvailableRegisters();
+                            this.reklasSelectedNibarIds = regs
+                                .filter(r => r.status !== 'Mutasi Keluar OPD' && r.status !== 'Dihibahkan')
+                                .map(r => r.id);
+                        }
                     } else if (this.reklasJenis === 'mutasi_eksternal') {
                         this.reklasTujuanKib = 'MUTASI_OPD';
+                        if (!this.reklasSelectedNibarIds || this.reklasSelectedNibarIds.length === 0) {
+                            const regs = this.getReklasAvailableRegisters();
+                            this.reklasSelectedNibarIds = regs
+                                .filter(r => r.status !== 'Mutasi Keluar OPD' && r.status !== 'Dihibahkan')
+                                .map(r => r.id);
+                        }
+                    }
                     } else if (this.reklasJenis === 'koreksi_nilai') {
                         this.reklasTujuanKib = (cat && cat !== 'EXTRACOM') ? cat : 'KIB B';
                         this.onReklasItemPriceChanged();
@@ -12272,6 +12285,10 @@
                         }
                     }
                     return total;
+                },
+
+                getReklasSelectedTotalNilai() {
+                    return this.getReklasMutasiSelectedNilai();
                 },
 
                 getReklasMutasiRemainingVolume() {

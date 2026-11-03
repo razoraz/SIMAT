@@ -810,7 +810,9 @@ class ReklasifikasiController extends Controller
 
             if (!$isPartial) {
                 $astap->is_reklas = true;
-                $astap->jenis_reklas = $validated['jenis_reklas'];
+                if (!in_array($validated['jenis_reklas'], ['MUTASI_EKSTERNAL', 'HIBAH_KELUAR'], true)) {
+                    $astap->jenis_reklas = $validated['jenis_reklas'];
+                }
             }
             if ($validated['jenis_reklas'] === 'EKSTRAKOMPTABEL') {
                 $astap->is_extracomtable = true;
