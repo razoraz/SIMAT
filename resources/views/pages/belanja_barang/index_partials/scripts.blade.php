@@ -35,6 +35,31 @@
             qrDataUrl: '',
             isGeneratingQr: false,
 
+            // State Dokumen Viewer Interaktif
+            previewDocModalOpen: false,
+            previewDocUrl: '',
+            previewDocTitle: '',
+            previewDocType: '', // 'pdf' atau 'image'
+            showInlineFakturImg: false,
+            showInlineKuitansiImg: false,
+
+            openDocPreview(url, title) {
+                if (!url) return;
+                this.previewDocUrl = url;
+                this.previewDocTitle = title || 'Dokumen Belanja Barang';
+                this.previewDocType = url.toLowerCase().endsWith('.pdf') ? 'pdf' : 'image';
+                this.previewDocModalOpen = true;
+            },
+
+            closeDocPreview() {
+                this.previewDocModalOpen = false;
+                setTimeout(() => {
+                    this.previewDocUrl = '';
+                    this.previewDocTitle = '';
+                    this.previewDocType = '';
+                }, 200);
+            },
+
             openDetailModal(item) {
                 this.selectedItem = item;
                 this.detailPenempatanFilter = 'all';

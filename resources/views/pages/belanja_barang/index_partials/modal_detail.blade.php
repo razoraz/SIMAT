@@ -20,9 +20,19 @@
             <div class="flex items-start justify-between pb-4 border-b border-slate-800 gap-4">
                 <div class="space-y-1.5 min-w-0 flex-1">
                     <div class="flex flex-wrap items-center gap-2">
-                        <!-- Kategori Badge -->
-                        <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 bg-amber-400/20 text-amber-300 border-amber-400/30">
-                            📦 EXTRACOM
+                        <!-- Kategori Badge Dinamis -->
+                        <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0"
+                            :class="{
+                                'bg-cyan-500/20 text-cyan-300 border-cyan-500/40': (selectedItem?.category || '') === 'KIB B',
+                                'bg-orange-500/20 text-orange-300 border-orange-500/40': (selectedItem?.category || '') === 'KIB E',
+                                'bg-amber-400/20 text-amber-300 border-amber-400/40': (selectedItem?.category || '') === 'EXTRACOM',
+                                'bg-indigo-500/20 text-indigo-300 border-indigo-500/40': (selectedItem?.category || '') === 'ATB',
+                                'bg-amber-500/20 text-amber-300 border-amber-500/40': (selectedItem?.category || '') === 'KIB A',
+                                'bg-purple-500/20 text-purple-300 border-purple-500/40': (selectedItem?.category || '') === 'KIB C',
+                                'bg-teal-500/20 text-teal-300 border-teal-500/40': (selectedItem?.category || '') === 'KIB D',
+                                'bg-rose-500/20 text-rose-300 border-rose-500/40': (selectedItem?.category || '') === 'KIB F'
+                            }"
+                            x-text="(selectedItem?.category === 'EXTRACOM' ? '📦 EXTRACOM' : (selectedItem?.category ? ('🏷️ ' + selectedItem.category) : '🏷️ KIB B'))">
                         </span>
 
                         <!-- Sumber Dana Badge -->
@@ -41,7 +51,7 @@
                                 ? '🏢 Penempatan Ruangan'
                                 : (selectedItem?.status_alokasi === 'sebagian'
                                     ? '🔀 Sebagian Ruang & Gudang'
-                                    : '📦 Buffer Stok Gudang')">
+                                    : '📦 Gudang Perbekalan')">
                         </span>
 
                         <!-- Nomor Faktur Badge -->
@@ -98,69 +108,195 @@
                         </div>
                     </div>
 
-                    <!-- 3. DOKUMEN FAKTUR & BERKAS DIGITAL (INTERACTIVE ATTACHMENTS CARD) -->
-                    <div class="p-4 rounded-2xl bg-slate-950/60 border border-indigo-500/20 space-y-2.5 shadow-sm">
-                        <div class="flex items-center justify-between border-b border-indigo-500/20 pb-2">
-                            <span class="text-xs font-extrabold text-indigo-300 uppercase tracking-wider flex items-center space-x-1.5">
-                                <span>📜 Berkas Dokumen Digital Terlampir</span>
+                    <!-- 3. DOKUMEN FAKTUR & BERKAS DIGITAL (INTERACTIVE ATTACHMENTS CARDS) -->
+                    <div class="p-4 sm:p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3.5 shadow-lg">
+                        <div class="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
+                            <span class="text-xs font-black text-white uppercase tracking-wider flex items-center space-x-2">
+                                <span class="text-indigo-400">📜</span>
+                                <span>BERKAS LEGALITAS &amp; DOKUMEN FAKTUR DIGITAL</span>
                             </span>
-                            <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded border bg-indigo-950/80 border-indigo-500/40 text-indigo-300"
+                            <span class="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full border bg-slate-900 border-slate-800 text-slate-300"
                                 x-text="'No. Faktur: ' + (selectedItem?.nomor_faktur || '-')"></span>
                         </div>
-                        <div class="flex flex-wrap items-center gap-3 pt-1">
-                            <template x-if="selectedItem?.dokumen_faktur_url">
-                                <a :href="selectedItem.dokumen_faktur_url" target="_blank" rel="noopener noreferrer"
-                                    class="px-3.5 py-2 rounded-xl bg-indigo-500/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/40 text-xs font-bold transition-all flex items-center space-x-2 shadow-sm">
-                                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-                                    <span>Buka Berkas Nota / Faktur Asli ↗</span>
-                                </a>
-                            </template>
-                            <template x-if="!selectedItem?.dokumen_faktur_url">
-                                <span class="text-xs text-slate-500 italic flex items-center gap-1.5">
-                                    <span>📎</span> Faktur: Tidak ada berkas nota/faktur terunggah
-                                </span>
-                            </template>
 
-                            <template x-if="selectedItem?.dokumen_kuitansi_url">
-                                <a :href="selectedItem.dokumen_kuitansi_url" target="_blank" rel="noopener noreferrer"
-                                    class="px-3.5 py-2 rounded-xl bg-cyan-500/20 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/40 text-xs font-bold transition-all flex items-center space-x-2 shadow-sm">
-                                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-                                    <span>Buka Berkas Bukti Terima / Kuitansi Gudang ↗</span>
-                                </a>
-                            </template>
-                            <template x-if="!selectedItem?.dokumen_kuitansi_url">
-                                <span class="text-xs text-slate-500 italic flex items-center gap-1.5">
-                                    <span>📎</span> Kuitansi: Tidak ada berkas kuitansi terunggah
-                                </span>
-                            </template>
+                        <!-- 2 Kolom Berkas: 1. Faktur Toko & 2. Kuitansi Gudang -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                            <!-- KARTU 1: FAKTUR / NOTA TOKO -->
+                            <div class="p-3.5 rounded-2xl border transition-all duration-200"
+                                :class="selectedItem?.dokumen_faktur_url
+                                    ? 'bg-slate-900/90 border-indigo-500/40 shadow-md shadow-indigo-500/5'
+                                    : 'bg-slate-950/50 border-slate-800/80 opacity-75'">
+                                <div class="flex items-start justify-between gap-2.5">
+                                    <div class="flex items-center space-x-2.5 min-w-0">
+                                        <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border"
+                                            :class="selectedItem?.dokumen_faktur_url
+                                                ? (selectedItem.dokumen_faktur_url.toLowerCase().endsWith('.pdf') ? 'bg-rose-500/15 border-rose-500/30 text-rose-400' : 'bg-indigo-500/15 border-indigo-500/30 text-indigo-400')
+                                                : 'bg-slate-900 border-slate-800 text-slate-600'">
+                                            <template x-if="selectedItem?.dokumen_faktur_url && selectedItem.dokumen_faktur_url.toLowerCase().endsWith('.pdf')">
+                                                <span class="text-lg">📄</span>
+                                            </template>
+                                            <template x-if="selectedItem?.dokumen_faktur_url && !selectedItem.dokumen_faktur_url.toLowerCase().endsWith('.pdf')">
+                                                <span class="text-lg">🖼️</span>
+                                            </template>
+                                            <template x-if="!selectedItem?.dokumen_faktur_url">
+                                                <span class="text-lg">📑</span>
+                                            </template>
+                                        </div>
+                                        <div class="min-w-0">
+                                            <div class="flex items-center gap-1.5 flex-wrap">
+                                                <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Faktur / Nota Toko</span>
+                                                <template x-if="selectedItem?.dokumen_faktur_url">
+                                                    <span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-extrabold border"
+                                                        :class="selectedItem.dokumen_faktur_url.toLowerCase().endsWith('.pdf') ? 'bg-rose-500/20 text-rose-300 border-rose-500/30' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'"
+                                                        x-text="selectedItem.dokumen_faktur_url.toLowerCase().endsWith('.pdf') ? 'PDF' : 'GAMBAR'"></span>
+                                                </template>
+                                            </div>
+                                            <p class="text-xs font-bold text-white truncate max-w-[210px] mt-0.5"
+                                               :title="selectedItem?.dokumen_faktur_name || (selectedItem?.dokumen_faktur_url ? selectedItem.dokumen_faktur_url.split('/').pop() : 'Belum Ada Berkas')"
+                                               x-text="selectedItem?.dokumen_faktur_name || (selectedItem?.dokumen_faktur_url ? selectedItem.dokumen_faktur_url.split('/').pop() : 'Belum diunggah')"></p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Aksi Kartu Faktur -->
+                                <div class="mt-3 pt-2.5 border-t border-slate-800/80 flex items-center justify-between gap-1.5 flex-wrap">
+                                    <template x-if="selectedItem?.dokumen_faktur_url">
+                                        <div class="flex items-center gap-1.5 w-full">
+                                            <!-- 1. Tombol Pratinjau Interaktif -->
+                                            <button type="button" @click="openDocPreview(selectedItem.dokumen_faktur_url, 'Faktur Toko: ' + (selectedItem.nomor_faktur || ''))"
+                                                class="flex-1 py-1.5 px-2.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/40 text-[11px] font-bold transition-all flex items-center justify-center space-x-1.5 shadow-sm active:scale-95 cursor-pointer">
+                                                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                                <span>Lihat Berkas</span>
+                                            </button>
+
+                                            <!-- 2. Buka Tab Baru -->
+                                            <a :href="selectedItem.dokumen_faktur_url" target="_blank" rel="noopener noreferrer"
+                                                title="Buka Berkas di Tab Baru"
+                                                class="p-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition-all cursor-pointer">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                            </a>
+
+                                            <!-- 3. Unduh -->
+                                            <a :href="selectedItem.dokumen_faktur_url" :download="selectedItem.dokumen_faktur_name || 'Faktur_' + selectedItem.nomor_faktur"
+                                                title="Unduh Berkas Faktur"
+                                                class="p-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition-all cursor-pointer">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                            </a>
+                                        </div>
+                                    </template>
+                                    <template x-if="!selectedItem?.dokumen_faktur_url">
+                                        <span class="text-[10.5px] text-slate-500 italic flex items-center gap-1.5 py-1">
+                                            <span>📎</span> Belum ada berkas nota/faktur diunggah
+                                        </span>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <!-- KARTU 2: KUITANSI / BUKTI PENERIMAAN GUDANG -->
+                            <div class="p-3.5 rounded-2xl border transition-all duration-200"
+                                :class="selectedItem?.dokumen_kuitansi_url
+                                    ? 'bg-slate-900/90 border-cyan-500/40 shadow-md shadow-cyan-500/5'
+                                    : 'bg-slate-950/50 border-slate-800/80 opacity-75'">
+                                <div class="flex items-start justify-between gap-2.5">
+                                    <div class="flex items-center space-x-2.5 min-w-0">
+                                        <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border"
+                                            :class="selectedItem?.dokumen_kuitansi_url
+                                                ? (selectedItem.dokumen_kuitansi_url.toLowerCase().endsWith('.pdf') ? 'bg-rose-500/15 border-rose-500/30 text-rose-400' : 'bg-cyan-500/15 border-cyan-500/30 text-cyan-400')
+                                                : 'bg-slate-900 border-slate-800 text-slate-600'">
+                                            <template x-if="selectedItem?.dokumen_kuitansi_url && selectedItem.dokumen_kuitansi_url.toLowerCase().endsWith('.pdf')">
+                                                <span class="text-lg">📄</span>
+                                            </template>
+                                            <template x-if="selectedItem?.dokumen_kuitansi_url && !selectedItem.dokumen_kuitansi_url.toLowerCase().endsWith('.pdf')">
+                                                <span class="text-lg">🖼️</span>
+                                            </template>
+                                            <template x-if="!selectedItem?.dokumen_kuitansi_url">
+                                                <span class="text-lg">📦</span>
+                                            </template>
+                                        </div>
+                                        <div class="min-w-0">
+                                            <div class="flex items-center gap-1.5 flex-wrap">
+                                                <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Kuitansi / Bukti Gudang</span>
+                                                <template x-if="selectedItem?.dokumen_kuitansi_url">
+                                                    <span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-extrabold border"
+                                                        :class="selectedItem.dokumen_kuitansi_url.toLowerCase().endsWith('.pdf') ? 'bg-rose-500/20 text-rose-300 border-rose-500/30' : 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30'"
+                                                        x-text="selectedItem.dokumen_kuitansi_url.toLowerCase().endsWith('.pdf') ? 'PDF' : 'GAMBAR'"></span>
+                                                </template>
+                                            </div>
+                                            <p class="text-xs font-bold text-white truncate max-w-[210px] mt-0.5"
+                                               :title="selectedItem?.dokumen_kuitansi_name || (selectedItem?.dokumen_kuitansi_url ? selectedItem.dokumen_kuitansi_url.split('/').pop() : 'Belum Ada Berkas')"
+                                               x-text="selectedItem?.dokumen_kuitansi_name || (selectedItem?.dokumen_kuitansi_url ? selectedItem.dokumen_kuitansi_url.split('/').pop() : 'Belum diunggah')"></p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Aksi Kartu Kuitansi -->
+                                <div class="mt-3 pt-2.5 border-t border-slate-800/80 flex items-center justify-between gap-1.5 flex-wrap">
+                                    <template x-if="selectedItem?.dokumen_kuitansi_url">
+                                        <div class="flex items-center gap-1.5 w-full">
+                                            <!-- 1. Tombol Pratinjau Interaktif -->
+                                            <button type="button" @click="openDocPreview(selectedItem.dokumen_kuitansi_url, 'Bukti Kuitansi Gudang: ' + (selectedItem.nomor_faktur || ''))"
+                                                class="flex-1 py-1.5 px-2.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/40 text-[11px] font-bold transition-all flex items-center justify-center space-x-1.5 shadow-sm active:scale-95 cursor-pointer">
+                                                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                                <span>Lihat Berkas</span>
+                                            </button>
+
+                                            <!-- 2. Buka Tab Baru -->
+                                            <a :href="selectedItem.dokumen_kuitansi_url" target="_blank" rel="noopener noreferrer"
+                                                title="Buka Berkas di Tab Baru"
+                                                class="p-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition-all cursor-pointer">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                            </a>
+
+                                            <!-- 3. Unduh -->
+                                            <a :href="selectedItem.dokumen_kuitansi_url" :download="selectedItem.dokumen_kuitansi_name || 'Kuitansi_' + selectedItem.nomor_faktur"
+                                                title="Unduh Berkas Kuitansi"
+                                                class="p-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition-all cursor-pointer">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                            </a>
+                                        </div>
+                                    </template>
+                                    <template x-if="!selectedItem?.dokumen_kuitansi_url">
+                                        <span class="text-[10.5px] text-slate-500 italic flex items-center gap-1.5 py-1">
+                                            <span>📎</span> Belum ada bukti penerimaan/kuitansi diunggah
+                                        </span>
+                                    </template>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <!-- 4. PIHAK & ALUR PENGADAAN -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                        <div class="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-2">
-                            <div class="flex items-center space-x-1.5 border-b border-slate-800 pb-1.5 text-slate-300 font-bold uppercase tracking-wider text-[11px]">
+                        <!-- Kotak Kiri: Penyedia / Toko Rekanan -->
+                        <div class="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800/80 space-y-2.5 shadow-sm">
+                            <div class="flex items-center space-x-1.5 border-b border-slate-800 pb-2 text-slate-300 font-bold uppercase tracking-wider text-[11px]">
                                 <span>🏪</span>
                                 <span>PIHAK PENYEDIA / TOKO REKANAN</span>
                             </div>
                             <div class="space-y-1">
-                                <span class="text-slate-400 text-[10px] block">Toko / Rekanan Penjual:</span>
-                                <p class="text-emerald-400 font-bold text-xs" x-text="selectedItem?.toko_penyedia || '-'"></p>
-                                <p class="text-[10px] text-slate-400 font-mono" x-text="'No. Faktur: ' + (selectedItem?.nomor_faktur || '-')"></p>
-                                <p class="text-[10px] text-slate-400" x-text="'Tanggal Faktur: ' + (selectedItem?.tanggal_faktur || '-')"></p>
+                                <span class="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Toko / Rekanan Penjual:</span>
+                                <p class="text-white font-bold text-xs sm:text-sm leading-snug" x-text="selectedItem?.toko_penyedia || '-'"></p>
+                                <div class="flex items-center gap-2 pt-0.5 text-[10.5px] text-slate-400 font-mono">
+                                    <span x-text="'No. Faktur: ' + (selectedItem?.nomor_faktur || '-')"></span>
+                                    <span>•</span>
+                                    <span x-text="'Tgl: ' + (selectedItem?.tanggal_faktur || '-')"></span>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="p-3.5 rounded-2xl bg-indigo-950/20 border border-indigo-500/30 space-y-2">
-                            <div class="flex items-center space-x-1.5 border-b border-indigo-500/30 pb-1.5 font-bold uppercase tracking-wider text-[11px] text-indigo-300">
+                        <!-- Kotak Kanan: Penerima & Penyimpanan RSUD -->
+                        <div class="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800/80 space-y-2.5 shadow-sm">
+                            <div class="flex items-center space-x-1.5 border-b border-slate-800 pb-2 text-slate-300 font-bold uppercase tracking-wider text-[11px]">
                                 <span>🏢</span>
                                 <span>PENERIMA &amp; PENYIMPANAN RSUD</span>
                             </div>
                             <div class="space-y-1">
-                                <span class="text-slate-400 text-[10px] block">Status Penempatan Aset:</span>
-                                <p class="font-bold text-xs text-indigo-200"
-                                    x-text="selectedItem?.status_alokasi === 'ruangan' ? 'Langsung Ditempatkan di Ruangan RSUD' : (selectedItem?.status_alokasi === 'sebagian' ? 'Sebagian Gudang & Ruangan' : 'Disimpan di Gudang Buffer Stok Perbekalan')"></p>
-                                <p class="text-[10px] text-indigo-400/90 font-semibold" x-text="'Instansi: RSUD Dr. H. Koesnandi Bondowoso'"></p>
+                                <span class="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Status Penempatan Aset:</span>
+                                <p class="text-white font-bold text-xs sm:text-sm leading-snug"
+                                    x-text="selectedItem?.status_alokasi === 'ruangan' ? 'Langsung Ditempatkan di Ruangan RSUD' : (selectedItem?.status_alokasi === 'sebagian' ? 'Sebagian Gudang & Ruangan' : 'Disimpan di Gudang Perbekalan')"></p>
+                                <div class="flex items-center gap-2 pt-0.5 text-[10.5px] text-slate-400">
+                                    <span>Instansi: <strong class="text-slate-300 font-semibold">RSUD Dr. H. Koesnandi</strong></span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -194,7 +330,22 @@
                                         <tr class="hover:bg-slate-800/60 transition-colors">
                                             <td class="py-3 px-3 text-center font-mono text-slate-500" x-text="iIdx + 1"></td>
                                             <td class="py-3 px-3">
-                                                <div class="font-bold text-white" x-text="item.nama_barang"></div>
+                                                <div class="flex items-center gap-1.5 flex-wrap">
+                                                    <span class="px-1.5 py-0.5 rounded text-[9.5px] font-extrabold border uppercase tracking-wider leading-none"
+                                                        :class="{
+                                                            'bg-cyan-500/20 text-cyan-300 border-cyan-500/40': item.category === 'KIB B',
+                                                            'bg-orange-500/20 text-orange-300 border-orange-500/40': item.category === 'KIB E',
+                                                            'bg-amber-400/20 text-amber-300 border-amber-400/40': item.category === 'EXTRACOM',
+                                                            'bg-indigo-500/20 text-indigo-300 border-indigo-500/40': item.category === 'ATB',
+                                                            'bg-amber-500/20 text-amber-300 border-amber-500/40': item.category === 'KIB A',
+                                                            'bg-purple-500/20 text-purple-300 border-purple-500/40': item.category === 'KIB C',
+                                                            'bg-teal-500/20 text-teal-300 border-teal-500/40': item.category === 'KIB D',
+                                                            'bg-rose-500/20 text-rose-300 border-rose-500/40': item.category === 'KIB F',
+                                                            'bg-slate-800 text-slate-300 border-slate-700': !item.category
+                                                        }"
+                                                        x-text="item.category === 'EXTRACOM' ? 'Extracom' : (item.category || 'KIB B')"></span>
+                                                    <span class="font-bold text-white" x-text="item.nama_barang"></span>
+                                                </div>
                                                 <div class="text-[10px] font-mono text-cyan-400 mt-0.5" x-text="item.kode_108"></div>
                                             </td>
                                             <td class="py-3 px-3 text-center font-mono">
@@ -239,7 +390,7 @@
                                 <select x-model="detailPenempatanFilter" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-cyan-500">
                                     <option value="all">Semua Penempatan</option>
                                     <option value="ruangan">🏢 Sudah di Ruangan</option>
-                                    <option value="gudang">📦 Buffer Stok Gudang</option>
+                                    <option value="gudang">📦 Gudang Perbekalan</option>
                                 </select>
                             </div>
 
@@ -365,6 +516,106 @@
                 <button type="button" @click="closeDetailModal()"
                     class="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold transition-all cursor-pointer">
                     Tutup Rincian
+                </button>
+            </div>
+
+        </div>
+    </div>
+</template>
+
+<!-- ========================================================================= -->
+<!-- MODAL VIEWER PRATINJAU DOKUMEN DIGITAL (PDF & GAMBAR NOTA / KUITANSI)     -->
+<!-- ========================================================================= -->
+<template x-teleport="body">
+    <div x-show="previewDocModalOpen" x-cloak
+        class="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-5 md:p-8 overflow-y-auto"
+        style="background-color: rgba(2, 6, 23, 0.88); backdrop-filter: blur(8px);"
+        @keydown.escape.window="closeDocPreview()"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0">
+
+        <!-- Click outside backdrop to close -->
+        <div class="fixed inset-0" @click="closeDocPreview()"></div>
+
+        <!-- Modal Dialog Box -->
+        <div class="relative w-full max-w-5xl rounded-3xl border border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[92vh] z-10"
+             style="background-color: #0f172a;"
+             @click.stop>
+
+            <!-- Viewer Header -->
+            <div class="px-5 py-3.5 border-b border-slate-800 flex items-center justify-between gap-3 bg-slate-950/90">
+                <div class="flex items-center space-x-3 min-w-0">
+                    <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border"
+                        :class="previewDocType === 'pdf' ? 'bg-rose-500/20 border-rose-500/30 text-rose-400' : 'bg-cyan-500/20 border-cyan-500/30 text-cyan-400'">
+                        <span x-text="previewDocType === 'pdf' ? '📄' : '🖼️'" class="text-base"></span>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-sm font-black text-white truncate" x-text="previewDocTitle || 'Pratinjau Berkas Dokumen'"></h3>
+                            <span class="px-1.5 py-0.5 rounded text-[9px] font-mono font-extrabold border uppercase"
+                                :class="previewDocType === 'pdf' ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' : 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'"
+                                x-text="previewDocType === 'pdf' ? 'PDF DOKUMEN' : 'GAMBAR SCAN'"></span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 font-mono truncate mt-0.5" x-text="previewDocUrl"></p>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2 shrink-0">
+                    <!-- Buka Tab Baru -->
+                    <a :href="previewDocUrl" target="_blank" rel="noopener noreferrer"
+                        title="Buka Penuh di Tab Baru"
+                        class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 font-bold text-xs flex items-center space-x-1.5 transition-all">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                        <span class="hidden sm:inline">Tab Baru</span>
+                    </a>
+
+                    <!-- Unduh -->
+                    <a :href="previewDocUrl" :download="(previewDocTitle || 'dokumen').replace(/[^a-zA-Z0-9_-]/g, '_')"
+                        title="Unduh Berkas Ini"
+                        class="px-3 py-1.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/40 font-bold text-xs flex items-center space-x-1.5 transition-all shadow-sm">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                        <span class="hidden sm:inline">Unduh</span>
+                    </a>
+
+                    <!-- Tutup -->
+                    <button type="button" @click="closeDocPreview()"
+                        class="w-8 h-8 rounded-xl bg-slate-900 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-slate-800 flex items-center justify-center transition-all cursor-pointer">
+                        ✕
+                    </button>
+                </div>
+            </div>
+
+            <!-- Viewer Body Container -->
+            <div class="flex-1 overflow-auto bg-slate-950 p-2 sm:p-4 flex items-center justify-center min-h-[60vh] max-h-[78vh] custom-scrollbar">
+                <!-- Jika PDF: Tampilkan Iframe Viewer -->
+                <template x-if="previewDocType === 'pdf'">
+                    <iframe :src="previewDocUrl"
+                            class="w-full h-full min-h-[70vh] rounded-2xl border border-slate-800 shadow-inner bg-slate-900"
+                            frameborder="0"></iframe>
+                </template>
+
+                <!-- Jika Gambar: Tampilkan Image Viewer Responsif -->
+                <template x-if="previewDocType === 'image'">
+                    <div class="w-full h-full flex items-center justify-center p-2">
+                        <img :src="previewDocUrl"
+                             :alt="previewDocTitle"
+                             class="max-h-[72vh] max-w-full w-auto h-auto rounded-2xl object-contain border border-slate-800 shadow-2xl">
+                    </div>
+                </template>
+            </div>
+
+            <!-- Viewer Footer Bar -->
+            <div class="px-5 py-2.5 bg-slate-950 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                <span class="flex items-center gap-1.5">
+                    <span>💡</span> Gunakan kontrol zoom dan rotasi bawaan browser untuk memeriksa berkas lebih teliti.
+                </span>
+                <button type="button" @click="closeDocPreview()"
+                    class="px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition-all cursor-pointer">
+                    Tutup Pratinjau
                 </button>
             </div>
 

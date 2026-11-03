@@ -25,20 +25,12 @@
 
         <!-- Tombol Aksi Cepat -->
         <div class="flex flex-wrap items-center gap-2 shrink-0">
-            <a href="{{ route('astap.pilih_jenis') }}"
-                class="px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-indigo-500/40 text-xs font-bold text-slate-300 hover:text-indigo-300 transition-all flex items-center gap-1.5 shadow-sm">
-                <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                </svg>
-                <span>Pilih Sumber Lain</span>
-            </a>
-
             <a href="{{ route('astap.create_belanja_barang') }}"
                 class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white text-xs font-extrabold shadow-lg shadow-indigo-500/20 transition-all flex items-center gap-1.5 active:scale-95">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
                 </svg>
-                <span>+ Catat Belanja Barang</span>
+                <span>Catat Belanja Barang</span>
             </a>
         </div>
     </div>

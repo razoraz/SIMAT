@@ -6,6 +6,8 @@
     .sticky-aksi-belanja {
         position: sticky !important;
         right: 0 !important;
+        z-index: 10 !important;
+        background-color: #0f172a !important;
         box-shadow: -6px 0 12px rgba(0, 0, 0, 0.6) !important;
     }
     tr:hover .sticky-aksi-belanja {
@@ -32,20 +34,19 @@
         </div>
 
         <span class="text-[11px] font-mono font-bold text-indigo-400 bg-indigo-500/10 px-3 py-1 rounded-xl border border-indigo-500/30">
-            Inventaris Ekstrakomptabel
+            Perbekalan &amp; Operasional
         </span>
     </div>
 
     <div class="overflow-x-auto custom-scrollbar">
-        <table class="w-full text-left text-xs text-slate-300 relative border-collapse">
+        <table class="w-full text-left text-xs text-slate-300 relative border-collapse min-w-[880px]">
             <thead class="bg-slate-950 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800 font-extrabold select-none">
                 <tr>
-                    <th class="py-3.5 px-4 w-12 text-center">No</th>
-                    <th class="py-3.5 px-4 min-w-[210px]">Dokumen Faktur &amp; Toko</th>
-                    <th class="py-3.5 px-4 min-w-[240px]">Rincian Barang (Akun 108)</th>
-                    <th class="py-3.5 px-4 min-w-[180px]">Alokasi Penempatan</th>
-                    <th class="py-3.5 px-4 min-w-[140px] text-right">Total Pembelian (Rp)</th>
-                    <th class="py-3.5 px-4 min-w-[110px] text-center">Berkas Lampiran</th>
+                    <th class="py-3.5 px-4 w-12 text-center bg-slate-950">No</th>
+                    <th class="py-3.5 px-4 min-w-[210px] bg-slate-950">Dokumen Faktur &amp; Toko</th>
+                    <th class="py-3.5 px-4 min-w-[240px] bg-slate-950">Rincian Barang (Akun 108)</th>
+                    <th class="py-3.5 px-4 min-w-[170px] bg-slate-950">Alokasi Penempatan</th>
+                    <th class="py-3.5 px-4 min-w-[170px] text-right whitespace-nowrap bg-slate-950">Total Pembelian (Rp)</th>
                     <th class="py-3.5 px-4 w-[240px] min-w-[240px] text-center whitespace-nowrap border-l border-slate-800 shrink-0 sticky-aksi-belanja">Aksi</th>
                 </tr>
             </thead>
@@ -60,6 +61,8 @@
                         $firstReg = $firstAstap?->registers?->first();
                         $totalItemCount = $astaps->count();
                         $totalVolFaktur = (int) $astaps->sum('jumlah_volume');
+                        $categories = $astaps->map(fn($a) => $a->category)->filter()->unique()->values();
+                        $primaryCategory = $categories->count() === 1 ? $categories->first() : ($categories->isNotEmpty() ? $categories->first() : ($firstAstap?->category ?: 'KIB B'));
 
                         // Data untuk modal detail
                         $itemData = [
@@ -71,10 +74,13 @@
                             'status_alokasi'       => $row->status_alokasi ?: 'gudang',
                             'keterangan'           => $row->keterangan ?: '-',
                             'dokumen_faktur_url'   => $row->dokumen_faktur_url,
+                            'dokumen_faktur_name'  => $row->dokumen_faktur ? basename($row->dokumen_faktur) : null,
                             'dokumen_kuitansi_url' => $row->dokumen_kuitansi_url,
+                            'dokumen_kuitansi_name'=> $row->dokumen_kuitansi ? basename($row->dokumen_kuitansi) : null,
                             'total_item_count'     => $totalItemCount,
                             'total_volume'         => $totalVolFaktur,
-                            'category'             => 'EXTRACOM',
+                            'category'             => $primaryCategory,
+                            'categories'           => $categories,
                             'first_nama'           => $firstAstap?->nama_barang,
                             'tahun'                => $firstAstap?->tahun_perolehan ?: date('Y'),
                             'triwulan'             => $firstAstap?->triwulan ?: 'TW I',
@@ -83,7 +89,8 @@
                                     'id'            => $a->id,
                                     'nama_barang'   => $a->nama_barang,
                                     'kode_108'      => $a->kode_108 ?: ($a->jenisAstap?->sub_sub_rincian_objek ?: '-'),
-                                    'nama_108'      => $a->jenisAstap?->nama ?: 'Aset Ekstrakomptabel',
+                                    'nama_108'      => $a->jenisAstap?->uraian_sub_sub_rincian ?: ($a->jenisAstap?->nama_jenis ?: 'Aset Operasional'),
+                                    'category'      => $a->category ?: 'KIB B',
                                     'jumlah_volume' => (int) $a->jumlah_volume,
                                     'satuan'        => $a->satuan ?: 'Unit',
                                     'harga_satuan'  => (float) $a->harga_satuan,
@@ -122,18 +129,53 @@
                             <div class="text-[10px] text-slate-500 mt-0.5">
                                 Tgl: {{ $row->tanggal_faktur ? \Carbon\Carbon::parse($row->tanggal_faktur)->translatedFormat('d M Y') : '-' }}
                             </div>
+                            @if($row->dokumen_faktur || $row->dokumen_kuitansi)
+                                <div class="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                                    @if($row->dokumen_faktur)
+                                        <a href="{{ asset('storage/' . $row->dokumen_faktur) }}" target="_blank"
+                                            title="Buka Berkas Nota / Faktur Asli"
+                                            class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 hover:text-white border border-indigo-500/30 text-[9.5px] font-bold transition-all shadow-sm">
+                                            <span>📄</span>
+                                            <span>Nota</span>
+                                        </a>
+                                    @endif
+                                    @if($row->dokumen_kuitansi)
+                                        <a href="{{ asset('storage/' . $row->dokumen_kuitansi) }}" target="_blank"
+                                            title="Buka Berkas Kuitansi / Bukti Penerimaan"
+                                            class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-cyan-500/15 hover:bg-cyan-500/30 text-cyan-300 hover:text-white border border-cyan-500/30 text-[9.5px] font-bold transition-all shadow-sm">
+                                            <span>📦</span>
+                                            <span>Kuitansi</span>
+                                        </a>
+                                    @endif
+                                </div>
+                            @endif
                         </td>
 
                         <!-- 3. Rincian Barang (Akun 108) -->
                         <td class="py-4 px-4">
                             @if($totalItemCount > 1)
-                                <div class="flex items-center gap-1.5 mb-1">
+                                <div class="flex items-center gap-1.5 mb-1 flex-wrap">
                                     <span class="text-xs font-extrabold text-white group-hover:text-indigo-300 transition-colors">
-                                        📦 {{ $totalItemCount }} Macam Barang
+                                        📦 {{ $totalItemCount }} Macam
                                     </span>
-                                    <span class="text-[9px] px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30">
+                                    <span class="text-[9px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30">
                                         Multi-Item
                                     </span>
+                                    @foreach($categories->take(2) as $catBadge)
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-extrabold border leading-none {{ match($catBadge) {
+                                            'KIB A' => 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+                                            'KIB B' => 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40',
+                                            'KIB C' => 'bg-purple-500/20 text-purple-300 border-purple-500/40',
+                                            'KIB D' => 'bg-teal-500/20 text-teal-300 border-teal-500/40',
+                                            'KIB E' => 'bg-orange-500/20 text-orange-300 border-orange-500/40',
+                                            'KIB F' => 'bg-rose-500/20 text-rose-300 border-rose-500/40',
+                                            'ATB'   => 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40',
+                                            'EXTRACOM' => 'bg-amber-400/20 text-amber-300 border-amber-400/40',
+                                            default => 'bg-slate-800 text-slate-300 border-slate-700'
+                                        } }}">
+                                            {{ $catBadge === 'EXTRACOM' ? 'Extracom' : $catBadge }}
+                                        </span>
+                                    @endforeach
                                 </div>
                                 <div class="text-[11px] text-slate-300 truncate max-w-[240px]" title="{{ $firstAstap?->nama_barang }}">
                                     1. {{ $firstAstap?->nama_barang }} ({{ $firstAstap?->jumlah_volume }} {{ $firstAstap?->satuan }})
@@ -142,8 +184,27 @@
                                     + {{ $totalItemCount - 1 }} barang lainnya · Total <strong>{{ $totalVolFaktur }} Unit</strong>
                                 </div>
                             @elseif($firstAstap)
-                                <div class="text-xs font-bold text-white group-hover:text-indigo-300 transition-colors leading-snug">
-                                    {{ $firstAstap->nama_barang }}
+                                @php
+                                    $firstCat = $firstAstap->category ?: 'KIB B';
+                                    $firstCatClass = match($firstCat) {
+                                        'KIB A' => 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+                                        'KIB B' => 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40',
+                                        'KIB C' => 'bg-purple-500/20 text-purple-300 border-purple-500/40',
+                                        'KIB D' => 'bg-teal-500/20 text-teal-300 border-teal-500/40',
+                                        'KIB E' => 'bg-orange-500/20 text-orange-300 border-orange-500/40',
+                                        'KIB F' => 'bg-rose-500/20 text-rose-300 border-rose-500/40',
+                                        'ATB'   => 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40',
+                                        'EXTRACOM' => 'bg-amber-400/20 text-amber-300 border-amber-400/40',
+                                        default => 'bg-slate-800 text-slate-300 border-slate-700'
+                                    };
+                                @endphp
+                                <div class="flex items-center gap-1.5 mb-1 flex-wrap">
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-extrabold whitespace-nowrap leading-none shrink-0 border {{ $firstCatClass }}">
+                                        {{ $firstCat === 'EXTRACOM' ? 'Extracom' : $firstCat }}
+                                    </span>
+                                    <span class="text-xs font-bold text-white group-hover:text-indigo-300 transition-colors leading-snug truncate max-w-[180px]" title="{{ $firstAstap->nama_barang }}">
+                                        {{ $firstAstap->nama_barang }}
+                                    </span>
                                 </div>
                                 <div class="text-[11px] font-mono text-indigo-400 mt-0.5">
                                     {{ $firstAstap->kode_108 ?: ($firstAstap->jenisAstap?->sub_sub_rincian_objek ?: '-') }}
@@ -157,68 +218,34 @@
                         </td>
 
                         <!-- 4. Alokasi Penempatan -->
-                        <td class="py-4 px-4">
+                        <td class="py-4 px-4 whitespace-nowrap">
                             @if($row->status_alokasi === 'ruangan' && $firstAstap?->unit)
-                                <div class="inline-flex items-center gap-1 text-xs font-bold text-indigo-300">
-                                    <span>🏢</span>
-                                    <span class="truncate max-w-[160px]" title="{{ $firstAstap->unit->nama }}">
+                                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-bold shadow-sm select-none">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
+                                    <span class="truncate max-w-[150px]" title="{{ $firstAstap->unit->nama }}">
                                         {{ $firstAstap->unit->nama }}
                                     </span>
                                 </div>
-                                <div class="text-[10px] text-indigo-400/80 font-medium mt-0.5">
-                                    ✓ Aktif di KIR Ruangan
-                                </div>
                             @elseif($row->status_alokasi === 'sebagian')
-                                <div class="inline-flex items-center gap-1 text-xs font-bold text-amber-300">
-                                    <span>🔀</span>
+                                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold shadow-sm select-none">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
                                     <span>Sebagian Gudang / Ruang</span>
                                 </div>
-                                <div class="text-[10px] text-slate-400 mt-0.5">
-                                    Alokasi per-item spesifik
-                                </div>
                             @else
-                                <div class="inline-flex items-center gap-1 text-xs font-bold text-emerald-400">
-                                    <span>📦</span>
+                                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-bold shadow-sm select-none">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                                     <span>Gudang Perbekalan</span>
-                                </div>
-                                <div class="text-[10px] text-slate-400 mt-0.5">
-                                    Buffer Stok · Siap Distribusi
                                 </div>
                             @endif
                         </td>
 
                         <!-- 5. Total Pembelian (Rp) -->
-                        <td class="py-4 px-4 text-right">
-                            <div class="text-xs font-black text-white font-mono">
+                        <td class="py-4 px-4 text-right whitespace-nowrap">
+                            <div class="text-sm font-extrabold text-emerald-400 font-mono tracking-tight whitespace-nowrap">
                                 Rp {{ number_format($row->total_pembelian, 0, ',', '.') }}
                             </div>
-                            <div class="text-[10px] text-slate-500 font-mono mt-0.5">
-                                {{ $totalItemCount }} macam / {{ $totalVolFaktur }} unit
-                            </div>
-                        </td>
-
-                        <!-- 6. Berkas Lampiran -->
-                        <td class="py-4 px-4 text-center">
-                            <div class="flex items-center justify-center gap-1.5">
-                                @if($row->dokumen_faktur)
-                                    <a href="{{ asset('storage/' . $row->dokumen_faktur) }}" target="_blank"
-                                        title="Buka Berkas Nota / Faktur Asli"
-                                        class="p-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 hover:text-indigo-300 border border-indigo-500/30 text-[10px] font-bold transition-all flex items-center gap-1">
-                                        <span>📄</span>
-                                        <span>Nota</span>
-                                    </a>
-                                @else
-                                    <span class="text-slate-600 text-[10px]">-</span>
-                                @endif
-
-                                @if($row->dokumen_kuitansi)
-                                    <a href="{{ asset('storage/' . $row->dokumen_kuitansi) }}" target="_blank"
-                                        title="Buka Berkas Kuitansi / Bukti Penerimaan"
-                                        class="p-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 hover:text-cyan-300 border border-cyan-500/30 text-[10px] font-bold transition-all flex items-center gap-1">
-                                        <span>📦</span>
-                                        <span>Kuitansi</span>
-                                    </a>
-                                @endif
+                            <div class="text-[10px] text-slate-400 font-mono mt-0.5 whitespace-nowrap">
+                                {{ $totalItemCount }} macam · {{ $totalVolFaktur }} unit
                             </div>
                         </td>
 
@@ -284,7 +311,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="py-12 px-4 text-center">
+                        <td colspan="6" class="py-12 px-4 text-center">
                             <div class="w-16 h-16 rounded-3xl bg-slate-950 border border-slate-800 flex items-center justify-center text-3xl mx-auto mb-3 shadow-inner">
                                 📦
                             </div>
