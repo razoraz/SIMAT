@@ -12236,7 +12236,7 @@
                     }
                     const regs = this.getReklasAvailableRegisters();
                     this.reklasSelectedNibarIds = regs
-                        .filter(r => r.status !== 'Mutasi Keluar OPD')
+                        .filter(r => r.status !== 'Mutasi Keluar OPD' && r.status !== 'Dihibahkan')
                         .map(r => r.id);
                 },
 
@@ -12276,13 +12276,13 @@
 
                 getReklasMutasiRemainingVolume() {
                     const regs = this.getReklasAvailableRegisters();
-                    const activeRegs = regs.filter(r => r.status !== 'Mutasi Keluar OPD');
+                    const activeRegs = regs.filter(r => r.status !== 'Mutasi Keluar OPD' && r.status !== 'Dihibahkan');
                     return Math.max(0, activeRegs.length - this.reklasSelectedNibarIds.length);
                 },
 
                 getReklasMutasiRemainingNilai() {
                     const regs = this.getReklasAvailableRegisters();
-                    const activeRegs = regs.filter(r => r.status !== 'Mutasi Keluar OPD');
+                    const activeRegs = regs.filter(r => r.status !== 'Mutasi Keluar OPD' && r.status !== 'Dihibahkan');
                     let totalActive = 0;
                     for (const r of activeRegs) {
                         totalActive += this.getRegisterNilaiSatuan(r);
@@ -12809,7 +12809,7 @@
                             ? this.getReklasExtracomTotal()
                             : (this.reklasJenis === 'koreksi_nilai' 
                                 ? (parseFloat(this.reklasNominalKoreksi) || 0) 
-                                : (this.reklasJenis === 'mutasi_eksternal' 
+                                : ((this.reklasJenis === 'mutasi_eksternal' || this.reklasJenis === 'hibah') 
                                     ? this.getReklasMutasiSelectedNilai() 
                                     : (isPartial ? this.getReklasSelectedNilai() : rawNilai)));
 
@@ -12848,15 +12848,15 @@
                             pejabat_opd_tujuan: (this.reklasJenis === 'mutasi_eksternal') ? this.reklasPejabatOpdTujuan : null,
                             nip_pejabat_opd_tujuan: (this.reklasJenis === 'mutasi_eksternal') ? this.reklasNipPejabatOpdTujuan : null,
                             jabatan_opd_tujuan: (this.reklasJenis === 'mutasi_eksternal') ? this.reklasJabatanOpdTujuan : null,
-                            pj_asal_nama: (this.reklasJenis === 'mutasi_eksternal') ? (this.reklasPjAsalNama || 'BUDI HARTONO, S.Sos') : null,
-                            pj_asal_nip: (this.reklasJenis === 'mutasi_eksternal') ? (this.reklasPjAsalNip || '19760229 200801 1 010') : null,
-                            pj_asal_jabatan: (this.reklasJenis === 'mutasi_eksternal') ? (this.reklasPjAsalJabatan || 'Pengurus Barang Pengguna') : null,
+                            pj_asal_nama: (this.reklasJenis === 'mutasi_eksternal' || this.reklasJenis === 'hibah') ? (this.reklasPjAsalNama || 'BUDI HARTONO, S.Sos') : null,
+                            pj_asal_nip: (this.reklasJenis === 'mutasi_eksternal' || this.reklasJenis === 'hibah') ? (this.reklasPjAsalNip || '19760229 200801 1 010') : null,
+                            pj_asal_jabatan: (this.reklasJenis === 'mutasi_eksternal' || this.reklasJenis === 'hibah') ? (this.reklasPjAsalJabatan || 'Pengurus Barang Pengguna') : null,
                             alamat_instansi: (this.reklasJenis === 'mutasi_eksternal') ? this.reklasAlamatInstansi : null,
                             nomor_sk_dasar: (this.reklasJenis === 'mutasi_eksternal') ? this.reklasNomorSkDasar : null,
                             tanggal_bast: (this.reklasJenis === 'hibah') ? this.reklasTanggalBastHibah : ((this.reklasJenis === 'mutasi_eksternal') ? this.reklasTanggalBastMutasi : null),
                             tanggal_dokumen_koreksi: (this.reklasJenis === 'koreksi_nilai') ? this.reklasDokumenTglKoreksi : null,
-                            selected_register_ids: (this.reklasJenis === 'mutasi_eksternal' && (this.selectedAstapReklas?.registers && this.selectedAstapReklas.registers.length > 0)) ? this.reklasSelectedNibarIds : null,
-                            register_kondisi_map: (this.reklasJenis === 'mutasi_eksternal') ? this.reklasRegisterKondisiMap : null,
+                            selected_register_ids: ((this.reklasJenis === 'mutasi_eksternal' || this.reklasJenis === 'hibah') && (this.selectedAstapReklas?.registers && this.selectedAstapReklas.registers.length > 0)) ? this.reklasSelectedNibarIds : null,
+                            register_kondisi_map: (this.reklasJenis === 'mutasi_eksternal' || this.reklasJenis === 'hibah') ? this.reklasRegisterKondisiMap : null,
                             keterangan: this.getReklasNarasiPreview(),
                             progres_persen: (this.reklasJenis === 'kdp') ? 100 : undefined,
                             jumlah_anggaran: (this.reklasJenis === 'koreksi_nilai') ? (this.isReklasBelanjaModal() ? this.reklasNilaiAnggaran : null) : (parseFloat(it.jumlah_anggaran) || null),
@@ -12918,12 +12918,12 @@
                             it.is_reklas = true;
                             it.jenis_reklas = jenisReklasDb;
 
-                            // Jika mutasi eksternal: cek apakah mutasi penuh (100%) atau parsial
-                            if (this.reklasJenis === 'mutasi_eksternal') {
+                            // Jika mutasi eksternal atau hibah keluar: cek apakah transfer penuh (100%) atau parsial
+                            if (this.reklasJenis === 'mutasi_eksternal' || this.reklasJenis === 'hibah') {
                                 if (this.reklasPjAsalNama) {
                                     this.rememberCustomPejabat(this.reklasPjAsalNama, this.reklasPjAsalNip, this.reklasPjAsalJabatan);
                                 }
-                                if (this.reklasPejabatOpdTujuan) {
+                                if (this.reklasJenis === 'mutasi_eksternal' && this.reklasPejabatOpdTujuan) {
                                     this.rememberCustomPejabat(this.reklasPejabatOpdTujuan, this.reklasNipPejabatOpdTujuan, this.reklasJabatanOpdTujuan);
                                 }
 
@@ -12931,37 +12931,60 @@
                                     ? resJson.is_full_transfer
                                     : (this.getReklasMutasiRemainingVolume() <= 0);
 
+                                const statusTarget = (this.reklasJenis === 'hibah') ? 'Dihibahkan' : 'Mutasi Keluar OPD';
+                                const ruangTarget = (this.reklasJenis === 'hibah') 
+                                    ? ('Dihibahkan: ' + (this.reklasPihakHibah || 'Pihak Luar'))
+                                    : (this.reklasSkpdTujuan || 'OPD Luar');
+
                                 if (it.registers && Array.isArray(it.registers)) {
                                     it.registers.forEach(r => {
                                         if (isFull || this.reklasSelectedNibarIds.includes(r.id)) {
-                                            r.status = 'Mutasi Keluar OPD';
-                                            r.ruang_pemegang = this.reklasSkpdTujuan || 'OPD Luar';
-                                            r.opd_tujuan = this.reklasSkpdTujuan || 'OPD Luar';
+                                            r.status = statusTarget;
+                                            r.ruang_pemegang = ruangTarget;
+                                            if (this.reklasJenis === 'mutasi_eksternal') {
+                                                r.opd_tujuan = this.reklasSkpdTujuan || 'OPD Luar';
+                                            }
                                         }
                                     });
                                 }
 
-                                it.is_mutasi_keluar_full = isFull;
-                                it.is_mutasi_keluar_partial = !isFull;
-                                it.jenis_reklas = 'MUTASI_EKSTERNAL';
-                                it.opd_tujuan = this.reklasSkpdTujuan;
-                                it.active_regs_count = isFull ? 0 : Math.max(0, (it.active_regs_count || (it.registers ? it.registers.length : 1)) - this.reklasSelectedNibarIds.length);
-                                it.mutasi_keluar_count = isFull ? (it.jumlah_volume || 1) : ((it.mutasi_keluar_count || 0) + this.reklasSelectedNibarIds.length);
-                                if (resJson.mutasi_keluar) {
-                                    it.mutasi_keluar = resJson.mutasi_keluar;
+                                if (this.reklasJenis === 'mutasi_eksternal') {
+                                    it.is_mutasi_keluar_full = isFull;
+                                    it.is_mutasi_keluar_partial = !isFull;
+                                    it.jenis_reklas = 'MUTASI_EKSTERNAL';
+                                    it.opd_tujuan = this.reklasSkpdTujuan;
+                                    it.active_regs_count = isFull ? 0 : Math.max(0, (it.active_regs_count || (it.registers ? it.registers.length : 1)) - this.reklasSelectedNibarIds.length);
+                                    it.mutasi_keluar_count = isFull ? (it.jumlah_volume || 1) : ((it.mutasi_keluar_count || 0) + this.reklasSelectedNibarIds.length);
+                                    if (resJson.mutasi_keluar) {
+                                        it.mutasi_keluar = resJson.mutasi_keluar;
+                                    }
+                                } else {
+                                    if (isFull) {
+                                        it.jenis_reklas = 'HIBAH_KELUAR';
+                                        it.kondisi = 'Dihibahkan';
+                                    }
+                                    it.active_regs_count = isFull ? 0 : Math.max(0, (it.active_regs_count || (it.registers ? it.registers.length : 1)) - this.reklasSelectedNibarIds.length);
                                 }
 
                                 const idxInList = this.astaps.findIndex(a => a.id === it.id);
                                 if (idxInList !== -1) {
-                                    Object.assign(this.astaps[idxInList], {
-                                        is_mutasi_keluar_full: isFull,
-                                        is_mutasi_keluar_partial: !isFull,
-                                        jenis_reklas: 'MUTASI_EKSTERNAL',
-                                        opd_tujuan: it.opd_tujuan,
-                                        active_regs_count: it.active_regs_count,
-                                        mutasi_keluar_count: it.mutasi_keluar_count,
-                                        mutasi_keluar: it.mutasi_keluar
-                                    });
+                                    if (this.reklasJenis === 'mutasi_eksternal') {
+                                        Object.assign(this.astaps[idxInList], {
+                                            is_mutasi_keluar_full: isFull,
+                                            is_mutasi_keluar_partial: !isFull,
+                                            jenis_reklas: 'MUTASI_EKSTERNAL',
+                                            opd_tujuan: it.opd_tujuan,
+                                            active_regs_count: it.active_regs_count,
+                                            mutasi_keluar_count: it.mutasi_keluar_count,
+                                            mutasi_keluar: it.mutasi_keluar
+                                        });
+                                    } else {
+                                        Object.assign(this.astaps[idxInList], {
+                                            jenis_reklas: isFull ? 'HIBAH_KELUAR' : it.jenis_reklas,
+                                            kondisi: isFull ? 'Dihibahkan' : it.kondisi,
+                                            active_regs_count: it.active_regs_count
+                                        });
+                                    }
                                 }
                                 this.showReklasModal = false;
                                 this.showDetailModal = false;

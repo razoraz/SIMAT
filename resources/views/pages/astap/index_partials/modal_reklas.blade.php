@@ -2475,64 +2475,200 @@
                         <div x-show="reklasJenis === 'hibah'" class="space-y-4">
                             <!-- Header Info Panel Hibah Keluar -->
                             <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
-                                <div class="flex items-center gap-2.5">
-                                    <div class="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center justify-center text-xs">
-                                        📤
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-300 shadow-sm shadow-purple-500/10">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+                                        </svg>
                                     </div>
                                     <div>
-                                        <span class="text-xs font-bold text-white uppercase tracking-wider block">
+                                        <span class="text-xs font-black text-purple-300 uppercase tracking-wider block">
                                             Informasi Hibah Keluar (Aset Diserahkan)
                                         </span>
-                                        <span class="text-[10px] text-slate-400">Pengalihan aset RSUD kepada Puskesmas / Desa / Instansi Lain</span>
+                                        <span class="text-[10px] text-slate-400">Pengalihan aset RSUD kepada Puskesmas / Desa / Instansi Luar</span>
                                     </div>
                                 </div>
-                                <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/40 font-mono">
+                                <span class="inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/30 font-bold tracking-wide">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse"></span>
                                     Baris 40 / Kolom 12 (DIHIBAHKAN)
                                 </span>
                             </div>
 
-                            <!-- Field Informasi BAST Hibah -->
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div class="space-y-1.5">
-                                    <label class="block text-slate-300 font-bold text-[10.5px] uppercase tracking-wider">
-                                        📄 Nomor Dokumen BAST Hibah: <span class="text-rose-400">*</span>
-                                    </label>
-                                    <input type="text" x-model="reklasNomorBastHibah" placeholder="Contoh: 028/BAST-HB/430.10.7/2026..."
-                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs font-mono text-purple-200 focus:outline-none focus:border-purple-500">
+                            <!-- Box Penjelasan Dampak Neraca BMD -->
+                            <div class="p-3.5 rounded-2xl bg-purple-950/25 border border-purple-500/30 flex items-start gap-3 shadow-inner">
+                                <div class="p-1.5 rounded-lg bg-purple-500/20 text-purple-300 shrink-0 mt-0.5 border border-purple-500/30 shadow-sm shadow-purple-500/20">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
                                 </div>
-                                <div class="space-y-1.5">
-                                    <label class="block text-slate-300 font-bold text-[10.5px] uppercase tracking-wider">
-                                        📅 Tanggal BAST Hibah: <span class="text-rose-400">*</span>
-                                    </label>
-                                    <input type="date" x-model="reklasTanggalBastHibah"
-                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs font-mono text-white focus:outline-none focus:border-purple-500">
+                                <div class="text-[11px] text-purple-200/90 leading-relaxed">
+                                    <strong class="text-white block mb-0.5">Dampak Pencatatan Neraca BMD (Hibah Keluar):</strong>
+                                    <span>Transaksi ini akan mencatat <strong>Mutasi Kurang (−)</strong> di KIB dan mengisi penyeimbang <strong>Mutasi Tambah (+) di Baris 40: Hibah (KOR_HIBAH)</strong> serta mengisi <strong>Kolom 12 (DIHIBAHKAN)</strong> pada Laporan Rekonsiliasi BMD.</span>
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div class="space-y-1.5">
-                                    <label class="block text-slate-300 font-bold text-[10.5px] uppercase tracking-wider">
-                                        🏢 Instansi / Pihak Penerima Hibah: <span class="text-rose-400">*</span>
-                                    </label>
-                                    <input type="text" x-model="reklasPihakHibah" placeholder="Contoh: Puskesmas Curahdami / Dinas Kesehatan..."
-                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-purple-500">
+                            <!-- Bagian 1: Identitas Pihak Pertama (Yang Menyerahkan Hibah - RSUD Dr. H. Koesnadi) -->
+                            <div class="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-purple-500/30 shadow-lg shadow-purple-950/20 space-y-4">
+                                <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-300 shadow-sm shadow-purple-500/10">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <span class="text-xs font-black text-purple-300 uppercase tracking-wider block">PIHAK PERTAMA (Yang Menyerahkan Hibah - RSUD Dr. H. Koesnadi)</span>
+                                            <span class="text-[10px] text-slate-400">Instansi Penyerah Barang Milik Daerah</span>
+                                        </div>
+                                    </div>
+                                    <span class="inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/30 font-bold tracking-wide">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse"></span>
+                                        Internal RSUD
+                                    </span>
                                 </div>
-                                <div class="space-y-1.5">
-                                    <label class="block text-slate-300 font-bold text-[10.5px] uppercase tracking-wider">
-                                        🏷️ Nilai Buku Aset yang Dihibahkan:
-                                    </label>
-                                    <div class="p-2.5 rounded-xl bg-purple-950/30 border border-purple-500/40 flex items-center justify-between">
-                                        <span class="text-[10px] text-purple-300 font-bold">Total Nilai:</span>
-                                        <span class="text-sm font-mono font-extrabold text-purple-300" x-text="selectedAstapReklas?.jumlah_realisasi || 'Rp 0'"></span>
+
+                                <div class="space-y-3.5 text-xs">
+                                    <!-- Baris 1: Nama Pejabat Penyerah RSUD (Lebar Penuh) -->
+                                    <div class="relative space-y-1.5 min-w-0" @click.away="isPejabatAsalDropdownOpen = false">
+                                        <div class="flex items-center justify-between">
+                                            <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">
+                                                <svg class="w-3.5 h-3.5 text-purple-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                                                <span>Nama Pejabat Penyerah Hibah RSUD</span>
+                                                <span class="text-rose-400 font-bold">*</span>
+                                            </label>
+                                            <span class="text-[9.5px] font-mono text-purple-300/80" x-show="filteredPejabatAsalList.length > 0" x-text="filteredPejabatAsalList.length + ' Pilihan Pejabat'"></span>
+                                        </div>
+                                        <div class="relative">
+                                            <input type="text" x-model="reklasPjAsalNama"
+                                                   @focus="isPejabatAsalDropdownOpen = true"
+                                                   @input="isPejabatAsalDropdownOpen = true"
+                                                   placeholder="Ketik atau pilih pejabat penyerah RSUD (BUDI HARTONO, S.Sos / dr. Yus...)"
+                                                   class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3.5 pr-9 text-xs text-white placeholder-slate-500 focus:outline-none font-bold transition-all shadow-inner">
+                                            <button type="button" @click="isPejabatAsalDropdownOpen = !isPejabatAsalDropdownOpen"
+                                                    class="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-purple-300 rounded-lg hover:bg-slate-800 transition-colors"
+                                                    title="Buka pilihan pejabat">
+                                                <svg class="w-4 h-4 transition-transform duration-200" :class="isPejabatAsalDropdownOpen ? 'rotate-180 text-purple-400' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                            </button>
+                                        </div>
+
+                                        <!-- Dropdown Pejabat RSUD -->
+                                        <div x-show="isPejabatAsalDropdownOpen && filteredPejabatAsalList.length > 0" x-cloak
+                                             class="absolute z-40 mt-1 w-full bg-slate-900 border border-purple-500/40 rounded-xl shadow-2xl overflow-hidden divide-y divide-slate-800 custom-scrollbar backdrop-blur-xl max-h-48 overflow-y-auto">
+                                            <div class="px-3 py-1.5 bg-slate-950 text-[10px] font-bold text-purple-400 uppercase tracking-wider flex items-center justify-between">
+                                                <span>Pilihan Pejabat Penyerah RSUD</span>
+                                                <span class="font-mono text-slate-400" x-text="filteredPejabatAsalList.length + ' hasil'"></span>
+                                            </div>
+                                            <template x-for="(pj, pjIdx) in filteredPejabatAsalList" :key="pjIdx">
+                                                <div @click="selectPejabatAsal(pj)"
+                                                     class="p-2.5 hover:bg-purple-500/15 cursor-pointer text-left transition-colors flex items-center justify-between gap-2">
+                                                    <div class="min-w-0">
+                                                        <div class="font-bold text-white text-xs" x-text="pj.nama"></div>
+                                                        <div class="text-[10px] text-purple-400 font-mono mt-0.5" x-text="'NIP: ' + (pj.nip || '-') + ' · ' + (pj.jabatan || 'Pejabat RSUD')"></div>
+                                                    </div>
+                                                    <span class="text-[9px] px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/25 font-bold shrink-0">
+                                                        Pilih ↵
+                                                    </span>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+
+                                    <!-- Baris 2: NIP dan Jabatan (2 Kolom Lapang) -->
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                                        <div class="space-y-1.5 min-w-0">
+                                            <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">
+                                                <svg class="w-3.5 h-3.5 text-purple-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" /></svg>
+                                                <span>NIP Pejabat Penyerah RSUD</span>
+                                            </label>
+                                            <input type="text" x-model="reklasPjAsalNip"
+                                                   placeholder="19xxxxxxxxxxxxxx"
+                                                   class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none font-mono tracking-wider transition-all shadow-inner">
+                                        </div>
+
+                                        <div class="space-y-1.5 min-w-0">
+                                            <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">
+                                                <svg class="w-3.5 h-3.5 text-purple-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                                                <span>Jabatan Penyerah RSUD</span>
+                                            </label>
+                                            <input type="text" x-model="reklasPjAsalJabatan"
+                                                   placeholder="Pengurus Barang Pengguna / Direktur RSUD"
+                                                   class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none transition-all shadow-inner">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Box Penjelasan Dampak Neraca BMD -->
-                            <div class="p-3 rounded-xl bg-purple-950/30 border border-purple-500/30 flex items-start space-x-2.5">
-                                <span class="text-purple-400 text-sm shrink-0">💡</span>
-                                <div class="text-[11px] text-purple-200/90 leading-relaxed">
-                                    <span>Transaksi ini akan mencatat <strong>Mutasi Kurang (−)</strong> di KIB dan mengisi penyeimbang <strong>Mutasi Tambah (+) di Baris 40: Hibah (KOR_HIBAH)</strong> serta mengisi <strong>Kolom 12 (DIHIBAHKAN)</strong> pada Laporan Rekonsiliasi BMD.</span>
+                            <!-- Bagian 2: Field Informasi BAST Hibah & Pihak Penerima -->
+                            <div class="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-purple-500/30 shadow-lg shadow-purple-950/20 space-y-4">
+                                <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-300 shadow-sm shadow-purple-500/10">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <span class="text-xs font-black text-purple-300 uppercase tracking-wider block">DOKUMEN BAST &amp; PIHAK PENERIMA HIBAH</span>
+                                            <span class="text-[10px] text-slate-400">Identitas Berita Acara &amp; Instansi Penerima Aset</span>
+                                        </div>
+                                    </div>
+                                    <span class="inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/30 font-bold tracking-wide">
+                                        Pihak Kedua
+                                    </span>
+                                </div>
+
+                                <!-- Baris 1: Field Informasi BAST Hibah (2 Kolom Sejajar h-10) -->
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                                    <div class="space-y-1.5 min-w-0">
+                                        <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">
+                                            <svg class="w-3.5 h-3.5 text-purple-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                            <span>Nomor Dokumen BAST Hibah</span>
+                                            <span class="text-rose-400 font-bold">*</span>
+                                        </label>
+                                        <input type="text" x-model="reklasNomorBastHibah" placeholder="Contoh: 028/BAST-HB/430.10.7/2026..."
+                                               class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3.5 text-xs font-mono text-purple-200 placeholder-slate-500 focus:outline-none transition-all shadow-inner">
+                                    </div>
+                                    <div class="space-y-1.5 min-w-0">
+                                        <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">
+                                            <svg class="w-3.5 h-3.5 text-purple-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                            <span>Tanggal BAST Hibah</span>
+                                            <span class="text-rose-400 font-bold">*</span>
+                                        </label>
+                                        <input type="date" x-model="reklasTanggalBastHibah"
+                                               class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3.5 text-xs font-mono text-white focus:outline-none transition-all shadow-inner">
+                                    </div>
+                                </div>
+
+                                <!-- Baris 2: Pihak Penerima & Nilai Buku Aset yang Dihibahkan (Presisi Sejajar h-10) -->
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                                    <div class="space-y-1.5 min-w-0">
+                                        <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">
+                                            <svg class="w-3.5 h-3.5 text-purple-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                            </svg>
+                                            <span>Instansi / Pihak Penerima Hibah</span>
+                                            <span class="text-rose-400 font-bold">*</span>
+                                        </label>
+                                        <input type="text" x-model="reklasPihakHibah" placeholder="Contoh: Puskesmas Curahdami / Dinas Kesehatan..."
+                                               class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none transition-all shadow-inner">
+                                    </div>
+                                    <div class="space-y-1.5 min-w-0">
+                                        <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider">
+                                            <svg class="w-3.5 h-3.5 text-purple-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                            </svg>
+                                            <span>Nilai Buku Aset yang Dihibahkan</span>
+                                        </label>
+                                        <div class="w-full h-10 rounded-xl bg-purple-950/40 border border-purple-500/40 px-3.5 flex items-center justify-between shadow-inner">
+                                            <span class="text-[10px] uppercase font-bold text-purple-300/80 tracking-wider">Total Nilai:</span>
+                                            <span class="text-xs font-mono font-black text-purple-200"
+                                                  x-text="(reklasSelectedNibarIds && reklasSelectedNibarIds.length > 0) ? ('Rp ' + Number(getReklasSelectedTotalNilai()).toLocaleString('id-ID')) : (selectedAstapReklas?.jumlah_realisasi || 'Rp 0')"></span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -2967,7 +3103,7 @@
                                     <div class="space-y-2 max-h-56 overflow-y-auto custom-scrollbar pr-1">
                                         <template x-for="reg in getReklasAvailableRegisters()" :key="reg.id">
                                             <div class="p-3 rounded-xl border transition-all"
-                                                 :class="reg.status === 'Mutasi Keluar OPD' 
+                                                 :class="(reg.status === 'Mutasi Keluar OPD' || reg.status === 'Dihibahkan') 
                                                      ? 'bg-slate-950/40 border-slate-900 opacity-60' 
                                                      : (reklasSelectedNibarIds.includes(reg.id) 
                                                          ? 'bg-teal-500/10 border-teal-500/50 shadow-sm shadow-teal-500/10' 
@@ -2976,12 +3112,12 @@
                                                 <!-- Baris Atas: Checkbox + NIBAR (Kiri) & Nilai Satuan (Kanan) -->
                                                 <div class="flex items-center justify-between gap-3">
                                                     <div class="flex items-center space-x-2.5 min-w-0 flex-1">
-                                                        <template x-if="reg.status !== 'Mutasi Keluar OPD'">
+                                                        <template x-if="reg.status !== 'Mutasi Keluar OPD' && reg.status !== 'Dihibahkan'">
                                                             <input type="checkbox" :value="reg.id" x-model="reklasSelectedNibarIds"
                                                                    class="w-4 h-4 rounded border-slate-700 text-teal-500 focus:ring-teal-400/30 bg-slate-950 cursor-pointer shrink-0">
                                                         </template>
-                                                        <template x-if="reg.status === 'Mutasi Keluar OPD'">
-                                                            <span class="text-slate-500 cursor-not-allowed inline-flex items-center shrink-0" title="Unit ini sudah dimutasikan keluar">
+                                                        <template x-if="reg.status === 'Mutasi Keluar OPD' || reg.status === 'Dihibahkan'">
+                                                            <span class="text-slate-500 cursor-not-allowed inline-flex items-center shrink-0" :title="'Unit ini sudah dialihkan keluar (' + reg.status + ')'">
                                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
                                                             </span>
                                                         </template>
@@ -2996,7 +3132,12 @@
                                                                 Sudah Keluar OPD
                                                             </span>
                                                         </template>
-                                                        <template x-if="reg.status !== 'Mutasi Keluar OPD'">
+                                                        <template x-if="reg.status === 'Dihibahkan'">
+                                                            <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wide bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                                                                Sudah Dihibahkan
+                                                            </span>
+                                                        </template>
+                                                        <template x-if="reg.status !== 'Mutasi Keluar OPD' && reg.status !== 'Dihibahkan'">
                                                             <div class="flex items-center gap-1.5">
                                                                 <span class="text-[9.5px] uppercase font-bold tracking-wider text-slate-400">Nilai Satuan:</span>
                                                                 <span class="text-xs font-mono font-extrabold text-teal-300"
@@ -3019,8 +3160,17 @@
                                                             </div>
                                                         </template>
 
+                                                        {{-- 1b. Jika sudah dihibahkan keluar --}}
+                                                        <template x-if="reg.status === 'Dihibahkan' || (reg.ruang_pemegang && reg.ruang_pemegang.startsWith('Dihibahkan'))">
+                                                            <div class="flex items-center space-x-1 text-purple-300 font-medium">
+                                                                <svg class="w-3 h-3 text-purple-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" /></svg>
+                                                                <span class="text-purple-400 font-bold">Penerima Hibah:</span>
+                                                                <span class="truncate" x-text="reg.ruang_pemegang ? reg.ruang_pemegang.replace(/^Dihibahkan:\s*/i, '') : (selectedAstapReklas?.pihak_hibah || 'Penerima Hibah')"></span>
+                                                            </div>
+                                                        </template>
+
                                                         {{-- 2. Jika aktif di RSUD & sudah ada ruangan penempatan resmi --}}
-                                                        <template x-if="reg.status !== 'Mutasi Keluar OPD' && (!reg.ruang_pemegang || !reg.ruang_pemegang.startsWith('Mutasi Keluar')) && ((reg.ruang_pemegang && reg.ruang_pemegang !== 'Belum Ditempatkan') || (selectedAstapReklas?.ruang_unit && selectedAstapReklas?.ruang_unit !== 'Belum Ditempatkan'))">
+                                                        <template x-if="reg.status !== 'Mutasi Keluar OPD' && reg.status !== 'Dihibahkan' && (!reg.ruang_pemegang || (!reg.ruang_pemegang.startsWith('Mutasi Keluar') && !reg.ruang_pemegang.startsWith('Dihibahkan'))) && ((reg.ruang_pemegang && reg.ruang_pemegang !== 'Belum Ditempatkan') || (selectedAstapReklas?.ruang_unit && selectedAstapReklas?.ruang_unit !== 'Belum Ditempatkan'))">
                                                             <div class="flex items-center space-x-1 text-slate-400">
                                                                 <svg class="w-3 h-3 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                                                                 <span class="text-slate-500">Ruangan:</span>
@@ -3029,7 +3179,7 @@
                                                         </template>
 
                                                         {{-- 3. Jika aktif di RSUD tapi belum ditempatkan ke ruangan (masih di gudang aset) --}}
-                                                        <template x-if="reg.status !== 'Mutasi Keluar OPD' && (!reg.ruang_pemegang || !reg.ruang_pemegang.startsWith('Mutasi Keluar')) && (!reg.ruang_pemegang || reg.ruang_pemegang === 'Belum Ditempatkan') && (!selectedAstapReklas?.ruang_unit || selectedAstapReklas?.ruang_unit === 'Belum Ditempatkan')">
+                                                        <template x-if="reg.status !== 'Mutasi Keluar OPD' && reg.status !== 'Dihibahkan' && (!reg.ruang_pemegang || (!reg.ruang_pemegang.startsWith('Mutasi Keluar') && !reg.ruang_pemegang.startsWith('Dihibahkan'))) && (!reg.ruang_pemegang || reg.ruang_pemegang === 'Belum Ditempatkan') && (!selectedAstapReklas?.ruang_unit || selectedAstapReklas?.ruang_unit === 'Belum Ditempatkan')">
                                                             <div class="inline-flex items-center space-x-1 text-amber-300/90 font-medium text-[10px]">
                                                                 <svg class="w-3 h-3 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
                                                                 <span class="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/25">Belum Ditempatkan (Gudang Aset)</span>
