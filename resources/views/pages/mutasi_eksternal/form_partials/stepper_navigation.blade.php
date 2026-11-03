@@ -16,16 +16,21 @@
 
         <!-- Next Step Button -->
         <button type="button" x-show="currentStep < 3" @click="nextStep()"
-                :class="currentStep === 2 && hasExtracomViolation 
-                    ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-600/30 ring-2 ring-rose-400/40' 
+                :class="currentStep === 2 && (hasExtracomViolation || hasRegulerUnder300kViolation) 
+                    ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-600/30 ring-2 ring-amber-400/40' 
                     : 'bg-indigo-500 hover:bg-indigo-400 text-white shadow-lg shadow-indigo-500/20'"
                 class="flex-1 sm:flex-initial px-5 sm:px-6 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center space-x-2 cursor-pointer">
             <template x-if="currentStep === 2 && hasExtracomViolation">
                 <span class="flex items-center gap-1.5">
-                    <span>⚠️ Lanjut Langkah 3 (Perbaiki Extracom)</span>
+                    <span>⚠️ Lanjut Langkah 3 (Perbaiki Extracom &gt; 300rb)</span>
                 </span>
             </template>
-            <template x-if="!(currentStep === 2 && hasExtracomViolation)">
+            <template x-if="currentStep === 2 && !hasExtracomViolation && hasRegulerUnder300kViolation">
+                <span class="flex items-center gap-1.5">
+                    <span>⚠️ Lanjut Langkah 3 (Ubah ke Extracom &le; 300rb)</span>
+                </span>
+            </template>
+            <template x-if="!(currentStep === 2 && (hasExtracomViolation || hasRegulerUnder300kViolation))">
                 <span>Lanjut Langkah <span x-text="currentStep + 1"></span> &rarr;</span>
             </template>
         </button>

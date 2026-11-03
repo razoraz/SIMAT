@@ -224,6 +224,7 @@ class BelanjaBarangController extends Controller
             'status_alokasi_global'   => 'nullable|string',
             'dokumen_faktur'          => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'dokumen_kuitansi'        => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'is_data_verified'        => 'required|accepted',
             'items'                   => 'required|array|min:1',
             'items.*.nama_barang'     => 'required|string|max:500',
             'items.*.jenis_astap_id'  => 'nullable|integer',
@@ -238,6 +239,8 @@ class BelanjaBarangController extends Controller
             'rekening_penyedia.required'       => 'Nama Toko / Supplier Rekanan wajib diisi.',
             'rekening_nomor_faktur.required'   => 'Nomor Faktur / Nota Toko wajib diisi.',
             'rekening_tanggal_faktur.required' => 'Tanggal Faktur / Pembelian wajib diisi.',
+            'is_data_verified.required'        => 'Pernyataan verifikasi dan pengesahan pembukuan belanja barang wajib dicentang sebelum data dapat disimpan.',
+            'is_data_verified.accepted'        => 'Pernyataan verifikasi dan pengesahan pembukuan belanja barang wajib dicentang sebelum data dapat disimpan.',
             'items.required'                   => 'Daftar rincian barang belanja wajib diisi.',
             'items.min'                        => 'Minimal harus ada 1 item barang yang diisi.',
             'items.*.nama_barang.required'     => 'Nama barang pada setiap baris belanja wajib diisi.',
@@ -285,14 +288,46 @@ class BelanjaBarangController extends Controller
             );
         }
 
-        // 4. Siapkan item barang yang valid untuk disimpan ke DB
+        // 4. Siapkan item barang yang valid untuk disimpan ke DB & validasi aturan Extracom (<= 300.000)
+        $isExtracomGlobal = $request->boolean('is_extracomtable');
         $itemsList = $validated['items'];
-        foreach ($itemsList as &$it) {
+        foreach ($itemsList as $idx => &$it) {
             if (empty($it['jenis_astap_id'])) {
                 $it['jenis_astap_id'] = $defaultJenisId;
             }
             if (empty($it['satuan'])) {
                 $it['satuan'] = 'Unit';
+            }
+
+            // Validasi: Barang Ekstrakomtabel (Extracom) harga satuan maksimal Rp 300.000
+            $isItemExtra = !empty($it['spesifikasi_json']['is_extracom']) || $isExtracomGlobal;
+            $hrg = (float) ($it['harga_satuan'] ?? 0);
+            if ($isItemExtra && $hrg > 300000) {
+                $nama = !empty($it['nama_barang']) ? $it['nama_barang'] : ('Baris ke-' . ($idx + 1));
+                return response()->json([
+                    'success' => false,
+                    'message' => "Nilai satuan untuk barang '{$nama}' berstatus Ekstrakomtabel tidak boleh melebihi batas maksimal Rp 300.000 (Nilai saat ini: Rp " . number_format($hrg, 0, ',', '.') . "). Silakan sesuaikan nilai satuan atau ubah status ke Aset Tetap Reguler.",
+                    'errors'  => [
+                        "items.{$idx}.harga_satuan" => ["Nilai satuan barang Ekstrakomtabel maksimal Rp 300.000."]
+                    ]
+                ], 422);
+            }
+
+            // Validasi: Barang Aset Tetap Reguler bernilai <= Rp 300.000 wajib masuk Ekstrakomtabel (KIB B & KIB E)
+            if (!$isItemExtra && $hrg > 0 && $hrg <= 300000) {
+                $ja = JenisAstap::find($it['jenis_astap_id']);
+                $kd = $ja ? ($ja->sub_sub_rincian_objek ?: $ja->jenis) : '';
+                $isTanahGedungJaringan = str_starts_with($kd, '1.3.1') || str_starts_with($kd, '1.3.3') || str_starts_with($kd, '1.3.4');
+                if (!$isTanahGedungJaringan) {
+                    $nama = !empty($it['nama_barang']) ? $it['nama_barang'] : ('Baris ke-' . ($idx + 1));
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Nilai satuan untuk barang '{$nama}' sebesar Rp " . number_format($hrg, 0, ',', '.') . " berada di bawah atau sama dengan batas kapitalisasi Rp 300.000 sehingga wajib dicatat sebagai Ekstrakomtabel. Silakan pilih status Ekstrakomtabel untuk melanjutkan.",
+                        'errors'  => [
+                            "items.{$idx}.harga_satuan" => ["Nilai satuan barang ≤ Rp 300.000 wajib masuk kategori Ekstrakomtabel."]
+                        ]
+                    ], 422);
+                }
             }
         }
         unset($it);

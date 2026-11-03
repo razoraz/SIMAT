@@ -932,6 +932,14 @@ class MutasiEksternalController extends Controller
                     }
                     return back()->withInput()->withErrors(['total_realisasi' => $msg]);
                 }
+                if (empty($m['is_extracom']) && empty($specJson['is_extracom']) && (float)($m['mesin_nilai_satuan'] ?? 0) > 0 && (float)($m['mesin_nilai_satuan'] ?? 0) <= 300000) {
+                    $namaItem = $m['mesin_nama_barang'] ?? ('Item Mesin #' . ($idx + 1));
+                    $msg = "Nilai satuan untuk barang '{$namaItem}' sebesar Rp " . number_format((float)$m['mesin_nilai_satuan'], 0, ',', '.') . " berada di bawah atau sama dengan Rp 300.000 sehingga wajib dicatat sebagai Ekstrakomtabel. Silakan pilih status Ekstrakomtabel untuk melanjutkan.";
+                    if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+                        return response()->json(['success' => false, 'message' => $msg], 422);
+                    }
+                    return back()->withInput()->withErrors(['total_realisasi' => $msg]);
+                }
             }
         }
         $lainnyaItems = $specJson['lainnya_items'] ?? [];
@@ -940,6 +948,14 @@ class MutasiEksternalController extends Controller
                 if (!empty($l['is_extracom']) && (float)($l['lainnya_nilai_satuan'] ?? 0) > 300000) {
                     $namaItem = $l['lainnya_nama_barang'] ?? ($l['lainnya_judul'] ?? ('Item Lainnya #' . ($idx + 1)));
                     $msg = "Nilai satuan untuk barang Ekstrakomtabel (Extracom) '{$namaItem}' tidak boleh melebihi Rp 300.000.";
+                    if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+                        return response()->json(['success' => false, 'message' => $msg], 422);
+                    }
+                    return back()->withInput()->withErrors(['total_realisasi' => $msg]);
+                }
+                if (empty($l['is_extracom']) && empty($specJson['is_extracom']) && (float)($l['lainnya_nilai_satuan'] ?? 0) > 0 && (float)($l['lainnya_nilai_satuan'] ?? 0) <= 300000) {
+                    $namaItem = $l['lainnya_nama_barang'] ?? ($l['lainnya_judul'] ?? ('Item Lainnya #' . ($idx + 1)));
+                    $msg = "Nilai satuan untuk barang '{$namaItem}' sebesar Rp " . number_format((float)$l['lainnya_nilai_satuan'], 0, ',', '.') . " berada di bawah atau sama dengan Rp 300.000 sehingga wajib dicatat sebagai Ekstrakomtabel. Silakan pilih status Ekstrakomtabel untuk melanjutkan.";
                     if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
                         return response()->json(['success' => false, 'message' => $msg], 422);
                     }
@@ -1354,6 +1370,14 @@ class MutasiEksternalController extends Controller
                     }
                     return back()->withInput()->withErrors(['total_realisasi' => $msg]);
                 }
+                if (empty($m['is_extracom']) && empty($specJson['is_extracom']) && (float)($m['mesin_nilai_satuan'] ?? 0) > 0 && (float)($m['mesin_nilai_satuan'] ?? 0) <= 300000) {
+                    $namaItem = $m['mesin_nama_barang'] ?? ('Item Mesin #' . ($idx + 1));
+                    $msg = "Nilai satuan untuk barang '{$namaItem}' sebesar Rp " . number_format((float)$m['mesin_nilai_satuan'], 0, ',', '.') . " berada di bawah atau sama dengan Rp 300.000 sehingga wajib dicatat sebagai Ekstrakomtabel. Silakan pilih status Ekstrakomtabel untuk melanjutkan.";
+                    if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+                        return response()->json(['success' => false, 'message' => $msg], 422);
+                    }
+                    return back()->withInput()->withErrors(['total_realisasi' => $msg]);
+                }
             }
         }
         $lainnyaItems = $specJson['lainnya_items'] ?? [];
@@ -1362,6 +1386,14 @@ class MutasiEksternalController extends Controller
                 if (!empty($l['is_extracom']) && (float)($l['lainnya_nilai_satuan'] ?? 0) > 300000) {
                     $namaItem = $l['lainnya_nama_barang'] ?? ($l['lainnya_judul'] ?? ('Item Lainnya #' . ($idx + 1)));
                     $msg = "Nilai satuan untuk barang Ekstrakomtabel (Extracom) '{$namaItem}' tidak boleh melebihi Rp 300.000.";
+                    if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+                        return response()->json(['success' => false, 'message' => $msg], 422);
+                    }
+                    return back()->withInput()->withErrors(['total_realisasi' => $msg]);
+                }
+                if (empty($l['is_extracom']) && empty($specJson['is_extracom']) && (float)($l['lainnya_nilai_satuan'] ?? 0) > 0 && (float)($l['lainnya_nilai_satuan'] ?? 0) <= 300000) {
+                    $namaItem = $l['lainnya_nama_barang'] ?? ($l['lainnya_judul'] ?? ('Item Lainnya #' . ($idx + 1)));
+                    $msg = "Nilai satuan untuk barang '{$namaItem}' sebesar Rp " . number_format((float)$l['lainnya_nilai_satuan'], 0, ',', '.') . " berada di bawah atau sama dengan Rp 300.000 sehingga wajib dicatat sebagai Ekstrakomtabel. Silakan pilih status Ekstrakomtabel untuk melanjutkan.";
                     if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
                         return response()->json(['success' => false, 'message' => $msg], 422);
                     }

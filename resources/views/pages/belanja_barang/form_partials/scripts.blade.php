@@ -91,6 +91,13 @@
 
             // Inisialisasi State Saat Komponen Dimuat
             init() {
+                if ('scrollRestoration' in history) {
+                    history.scrollRestoration = 'manual';
+                }
+                window.scrollTo({ top: 0, behavior: 'instant' });
+                document.documentElement.scrollTop = 0;
+                document.body.scrollTop = 0;
+
                 this.initFlat108();
                 if (!this.formData.mesin_items || this.formData.mesin_items.length === 0) {
                     this.addMesinItem();
@@ -911,34 +918,125 @@
                 this.syncTotalsFromItems();
             },
 
-            // Extracom Violations Check
+            // Helper validasi batasan Ekstrakomtabel (Extracom <= Rp 300.000)
             getExtracomViolations() {
-                const list = [];
-                if (this.isMesin && this.formData.mesin_items) {
-                    this.formData.mesin_items.forEach((m, idx) => {
-                        if (m.is_extracom && m.mesin_nilai_satuan > 300000) {
-                            list.push({
-                                nama: m.mesin_nama_barang || ('Barang #' + (idx + 1)),
-                                nilaiFormatted: 'Rp ' + Number(m.mesin_nilai_satuan).toLocaleString('id-ID')
+                const violations = [];
+                if (!this.formData.is_extracomtable) return violations;
+
+                if (this.isMesin && Array.isArray(this.formData.mesin_items)) {
+                    this.formData.mesin_items.forEach((item, idx) => {
+                        const val = parseFloat(item.mesin_nilai_satuan) || 0;
+                        if (val > 300000) {
+                            violations.push({
+                                index: idx,
+                                type: 'mesin',
+                                itemNumber: idx + 1,
+                                nama: (item.mesin_nama_barang || `Barang Mesin #${idx + 1}`),
+                                nilai: val,
+                                nilaiFormatted: 'Rp ' + Number(val).toLocaleString('id-ID')
+                            });
+                        }
+                    });
+                } else if (this.isLainnya && Array.isArray(this.formData.lainnya_items)) {
+                    this.formData.lainnya_items.forEach((item, idx) => {
+                        const val = parseFloat(item.lainnya_nilai_satuan) || 0;
+                        if (val > 300000) {
+                            violations.push({
+                                index: idx,
+                                type: 'lainnya',
+                                itemNumber: idx + 1,
+                                nama: (item.lainnya_nama_barang || item.lainnya_judul || `Item Lainnya #${idx + 1}`),
+                                nilai: val,
+                                nilaiFormatted: 'Rp ' + Number(val).toLocaleString('id-ID')
                             });
                         }
                     });
                 }
-                if (this.isLainnya && this.formData.lainnya_items) {
-                    this.formData.lainnya_items.forEach((l, idx) => {
-                        if (l.is_extracom && l.lainnya_nilai_satuan > 300000) {
-                            list.push({
-                                nama: l.lainnya_nama_barang || l.lainnya_judul || ('Item #' + (idx + 1)),
-                                nilaiFormatted: 'Rp ' + Number(l.lainnya_nilai_satuan).toLocaleString('id-ID')
-                            });
-                        }
-                    });
-                }
-                return list;
+                return violations;
             },
 
             get hasExtracomViolation() {
                 return this.getExtracomViolations().length > 0;
+            },
+
+            showExtracomAlert(violations) {
+                const first = violations[0] || {};
+                const msg = `Nilai satuan barang "${first.nama || 'ini'}" (${first.nilaiFormatted || ''}) melebihi batas maksimal Ekstrakomtabel Rp 300.000.`;
+                this.showToast('Batas Nilai Extracom Terlampaui', msg, 'error');
+                this.focusFirstExtracomViolation();
+            },
+
+            focusFirstExtracomViolation() {
+                setTimeout(() => {
+                    const el = document.querySelector('.border-rose-500[placeholder*="300.000"]') ||
+                               document.querySelector('input.border-rose-500') ||
+                               document.querySelector('input[placeholder*="Maks. 300.000"]');
+                    if (el) {
+                        el.focus();
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }, 200);
+            },
+
+            // Helper validasi kebalikan: Jika di mode Reguler tapi nilai satuan <= Rp 300.000 (Wajib Ekstrakomtabel)
+            getRegulerUnder300kViolations() {
+                const violations = [];
+                // Hanya dicek jika status saat ini Aset Tetap Reguler (bukan extracom)
+                if (this.formData.is_extracomtable) return violations;
+
+                if (this.isMesin && Array.isArray(this.formData.mesin_items)) {
+                    this.formData.mesin_items.forEach((item, idx) => {
+                        const val = parseFloat(item.mesin_nilai_satuan) || 0;
+                        if (val > 0 && val <= 300000) {
+                            violations.push({
+                                index: idx,
+                                type: 'mesin',
+                                itemNumber: idx + 1,
+                                nama: (item.mesin_nama_barang || `Barang Mesin #${idx + 1}`),
+                                nilai: val,
+                                nilaiFormatted: 'Rp ' + Number(val).toLocaleString('id-ID')
+                            });
+                        }
+                    });
+                } else if (this.isLainnya && Array.isArray(this.formData.lainnya_items)) {
+                    this.formData.lainnya_items.forEach((item, idx) => {
+                        const val = parseFloat(item.lainnya_nilai_satuan) || 0;
+                        if (val > 0 && val <= 300000) {
+                            violations.push({
+                                index: idx,
+                                type: 'lainnya',
+                                itemNumber: idx + 1,
+                                nama: (item.lainnya_nama_barang || item.lainnya_judul || `Item Lainnya #${idx + 1}`),
+                                nilai: val,
+                                nilaiFormatted: 'Rp ' + Number(val).toLocaleString('id-ID')
+                            });
+                        }
+                    });
+                }
+                return violations;
+            },
+
+            get hasRegulerUnder300kViolation() {
+                return this.getRegulerUnder300kViolations().length > 0;
+            },
+
+            showRegulerUnder300kAlert(violations) {
+                const first = violations[0] || {};
+                const msg = `Nilai satuan barang "${first.nama || 'ini'}" (${first.nilaiFormatted || ''}) berada di bawah Rp 300.000. Wajib dicatat sebagai Ekstrakomtabel.`;
+                this.showToast('Kriteria Ekstrakomtabel', msg, 'warning');
+                this.focusFirstRegulerUnder300kViolation();
+            },
+
+            focusFirstRegulerUnder300kViolation() {
+                setTimeout(() => {
+                    const el = document.querySelector('.border-amber-500') ||
+                               document.querySelector('input.text-amber-300') ||
+                               document.querySelector('input[placeholder*="Contoh"]');
+                    if (el) {
+                        el.focus();
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }, 200);
             },
 
             // Normalized Items untuk Step 3 Table dan NIBAR Preview
@@ -1208,6 +1306,38 @@
                     }
                 }
 
+                // 1. VALIDASI EXTRACOM: Nilai satuan tidak boleh melebihi Rp 300.000 jika mode Ekstrakomtabel
+                const extracomViolations = this.getExtracomViolations();
+                if (extracomViolations.length > 0) {
+                    this.showExtracomAlert(extracomViolations);
+                    const msg = 'Nilai satuan barang Extracom tidak boleh melebihi Rp 300.000.';
+                    this.showToast('Validasi Extracom Gagal', msg, 'error');
+                    this.setStepError(2, msg);
+                    return false;
+                }
+
+                // 2. VALIDASI REGULER: Nilai satuan <= Rp 300.000 harus dicatat sebagai Ekstrakomtabel
+                const regulerUnder300kViolations = this.getRegulerUnder300kViolations();
+                if (regulerUnder300kViolations.length > 0) {
+                    this.showRegulerUnder300kAlert(regulerUnder300kViolations);
+                    const msg = 'Nilai satuan barang ≤ Rp 300.000 harus dicatat sebagai Ekstrakomtabel.';
+                    this.showToast('Kriteria Ekstrakomtabel', msg, 'warning');
+                    this.setStepError(2, msg);
+                    return false;
+                }
+
+                return true;
+            },
+
+            // Validasi Data Langkah 3 (Verifikasi & Pengesahan Pembukuan)
+            validateStep3() {
+                this.clearStepError(3);
+                if (!this.isDataVerified) {
+                    const msg = 'Mohon centang pernyataan bahwa data serah terima BMD telah diverifikasi dengan benar sebelum disimpan.';
+                    this.showToast('Verifikasi Diperlukan', msg, 'warning');
+                    this.setStepError(3, msg);
+                    return false;
+                }
                 return true;
             },
 
@@ -1256,6 +1386,10 @@
                     this.goToStep(2);
                     return;
                 }
+                if (!this.validateStep3()) {
+                    this.goToStep(3);
+                    return;
+                }
                 this.isSubmitting = true;
                 this.syncTotalsFromItems();
 
@@ -1270,6 +1404,7 @@
                     payload.append('rekening_keterangan', this.formData.rekening_keterangan || '');
                     payload.append('status_alokasi_global', this.globalAlokasiMode);
                     payload.append('is_extracomtable', this.formData.is_extracomtable ? 1 : 0);
+                    payload.append('is_data_verified', this.isDataVerified ? 1 : 0);
 
                     // Berkas Dokumen Faktur & Kuitansi jika ada
                     if (this.fileFaktur) {
