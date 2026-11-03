@@ -21,6 +21,12 @@
                 }, 200);
             },
 
+            openReklas(astapId, searchKey) {
+                if (!astapId && !searchKey) return;
+                const query = searchKey ? `search=${encodeURIComponent(searchKey)}&` : '';
+                window.location.href = `/astap?${query}open_reklas=${astapId || ''}`;
+            },
+
             openConfirmDelete(id, title) {
                 this.deleteId = id;
                 this.deleteTitle = title;

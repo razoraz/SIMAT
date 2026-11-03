@@ -1,6 +1,25 @@
 <!-- ========================================================================= -->
 <!-- TABEL DATA MASTER BELANJA BARANG MULTI-ITEM (INSTALASI PERBEKALAN)        -->
 <!-- ========================================================================= -->
+<style>
+    /* Freeze Sticky Column Aksi Belanja Barang (Opaque & Anti-Bocor saat Scroll Horizontal) */
+    .sticky-aksi-belanja {
+        position: sticky !important;
+        right: 0 !important;
+        box-shadow: -6px 0 12px rgba(0, 0, 0, 0.6) !important;
+    }
+    tr:hover .sticky-aksi-belanja {
+        background-color: #1e293b !important;
+    }
+    th.sticky-aksi-belanja {
+        position: sticky !important;
+        top: 0 !important;
+        right: 0 !important;
+        z-index: 20 !important;
+        background-color: #020617 !important;
+    }
+</style>
+
 <div class="rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl overflow-hidden">
     <div class="p-5 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
@@ -18,8 +37,8 @@
     </div>
 
     <div class="overflow-x-auto custom-scrollbar">
-        <table class="w-full text-left text-xs text-slate-300">
-            <thead class="bg-slate-950/80 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800 font-extrabold">
+        <table class="w-full text-left text-xs text-slate-300 relative border-collapse">
+            <thead class="bg-slate-950 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800 font-extrabold select-none">
                 <tr>
                     <th class="py-3.5 px-4 w-12 text-center">No</th>
                     <th class="py-3.5 px-4 min-w-[210px]">Dokumen Faktur &amp; Toko</th>
@@ -27,7 +46,7 @@
                     <th class="py-3.5 px-4 min-w-[180px]">Alokasi Penempatan</th>
                     <th class="py-3.5 px-4 min-w-[140px] text-right">Total Pembelian (Rp)</th>
                     <th class="py-3.5 px-4 min-w-[110px] text-center">Berkas Lampiran</th>
-                    <th class="py-3.5 px-4 w-28 text-center">Aksi</th>
+                    <th class="py-3.5 px-4 w-[240px] min-w-[240px] text-center whitespace-nowrap border-l border-slate-800 shrink-0 sticky-aksi-belanja">Aksi</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-800/60">
@@ -199,28 +218,62 @@
                             </div>
                         </td>
 
-                        <!-- 7. Aksi -->
-                        <td class="py-4 px-4 text-center">
+                        <!-- 7. Aksi (Detail, Reklas, Ubah, Hapus) -->
+                        <td class="px-3 py-3 text-center whitespace-nowrap border-l border-slate-800/80 w-[240px] min-w-[240px] shrink-0 sticky-aksi-belanja" style="position: sticky; right: 0; z-index: 2; background-color: #0f172a !important;">
                             <div class="flex items-center justify-center gap-1.5">
-                                <!-- Tombol Detail Modal -->
+                                <!-- 1. Tombol Detail -->
                                 <button type="button"
                                     @click="openDetailModal({{ json_encode($itemData) }})"
                                     title="Lihat Rincian Faktur Belanja Barang"
-                                    class="p-1.5 rounded-xl bg-slate-800 hover:bg-indigo-600/30 text-slate-300 hover:text-indigo-300 border border-slate-700 hover:border-indigo-500/40 transition-all text-xs font-bold cursor-pointer">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 hover:border-emerald-400 font-bold text-xs transition-all duration-200 shadow-sm active:scale-95 cursor-pointer leading-none">
+                                    <svg class="w-3.5 h-3.5 text-emerald-400 group-hover/btn:text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                     </svg>
+                                    <span>Detail</span>
                                 </button>
 
-                                <!-- Tombol Soft Delete -->
+                                <!-- 2. Tombol Reklas -->
+                                <button type="button"
+                                    @click="openReklas({{ $firstAstap?->id ?? 'null' }}, '{{ addslashes($row->nomor_faktur) }}')"
+                                    title="Reklasifikasi Aset (Pindah KIB / Ekstrakom / Koreksi)"
+                                    class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 hover:border-indigo-400 font-bold text-xs transition-all duration-200 shadow-sm active:scale-95 cursor-pointer leading-none">
+                                    <svg class="w-3.5 h-3.5 text-indigo-400 group-hover/btn:text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                                    </svg>
+                                    <span>Reklas</span>
+                                </button>
+
+                                <!-- 3. Tombol Ubah -->
+                                @if($firstAstap)
+                                    <a href="{{ url('/astap/' . $firstAstap->id . '/edit?from=belanja_barang') }}"
+                                        title="Ubah Data Aset Belanja Barang"
+                                        class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 hover:border-cyan-400 font-bold text-xs transition-all duration-200 shadow-sm active:scale-95 cursor-pointer leading-none">
+                                        <svg class="w-3.5 h-3.5 text-cyan-400 group-hover/btn:text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                        <span>Ubah</span>
+                                    </a>
+                                @else
+                                    <button type="button" disabled
+                                        title="Aset Tidak Ditemukan"
+                                        class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-800/40 text-slate-500 border border-slate-700/50 font-bold text-xs cursor-not-allowed opacity-60 leading-none">
+                                        <svg class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                        <span>Ubah</span>
+                                    </button>
+                                @endif
+
+                                <!-- 4. Tombol Hapus (Soft Delete ke Recycle Bin) -->
                                 <button type="button"
                                     @click="openConfirmDelete('{{ $row->id }}', '{{ addslashes($row->nomor_faktur) }}')"
                                     title="Pindahkan Faktur ke Recycle Bin"
-                                    class="p-1.5 rounded-xl bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-slate-700 hover:border-rose-500/40 transition-all text-xs font-bold cursor-pointer">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 hover:border-rose-400 font-bold text-xs transition-all duration-200 shadow-sm active:scale-95 cursor-pointer leading-none">
+                                    <svg class="w-3.5 h-3.5 text-rose-400 group-hover/btn:text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                     </svg>
+                                    <span>Hapus</span>
                                 </button>
                             </div>
                         </td>
