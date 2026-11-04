@@ -219,39 +219,106 @@
                 }
             },
 
-            async deleteRegister(reg) {
-                if (!reg) return;
+            deleteRegister(reg) {
+                if (!reg || !reg.id) return;
                 const nibarStr = reg.nibar || reg.no_register || 'Unit NIBAR';
-                const confirmMsg = `Apakah Anda yakin ingin memindahkan unit register NIBAR "${nibarStr}" ke Pusat Data Terhapus (Recycle Bin)?`;
-                if (!confirm(confirmMsg)) return;
+                const namaBarang = reg.nama_barang || this.selectedItem?.toko_penyedia || 'Aset Belanja Barang';
+                const hargaNominal = reg.harga_satuan ? ('Rp ' + Number(reg.harga_satuan).toLocaleString('id-ID')) : 'Rp 0';
 
-                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
-                try {
-                    const res = await fetch('/astap-register/' + reg.id, {
-                        method: 'DELETE',
-                        headers: {
-                            'X-CSRF-TOKEN': token,
-                            'Accept': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    });
-                    const data = await res.json();
-                    if (res.ok && data.success) {
-                        if (this.selectedItem && this.selectedItem.items) {
-                            this.selectedItem.items.forEach(it => {
-                                if (it.registers) {
-                                    it.registers = it.registers.filter(r => r.id !== reg.id);
-                                    it.jumlah_volume = it.registers.length;
+                const performDelete = async () => {
+                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+                    try {
+                        const res = await fetch('/astap-register/' + reg.id, {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRF-TOKEN': token,
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+                        const data = await res.json();
+
+                        if (res.ok && data.success) {
+                            if (this.selectedItem && this.selectedItem.items) {
+                                this.selectedItem.items.forEach(it => {
+                                    if (it.registers) {
+                                        it.registers = it.registers.filter(r => r.id !== reg.id);
+                                        it.jumlah_volume = it.registers.length;
+                                    }
+                                });
+                                this.selectedItem.total_volume = this.selectedItem.items.reduce((acc, it) => acc + (it.registers ? it.registers.length : 0), 0);
+
+                                // Force Reaktivitas Alpine.js agar getter filteredRegisters segera ter-render ulang
+                                this.selectedItem = JSON.parse(JSON.stringify(this.selectedItem));
+                            }
+
+                            // Jika NIBAR terakhir habis dan faktur / master ASTAP otomatis dipindahkan ke Recycle Bin
+                            if (data.astap_auto_deleted || (this.selectedItem && this.selectedItem.total_volume <= 0)) {
+                                this.closeDetailModal();
+                                if (typeof window.showSimatToast === 'function') {
+                                    window.showSimatToast(data.message || 'Semua unit NIBAR telah dihapus — faktur belanja barang otomatis dipindahkan ke Recycle Bin.', 'success');
                                 }
-                            });
-                            this.selectedItem.total_volume = this.selectedItem.items.reduce((acc, it) => acc + (it.registers ? it.registers.length : 0), 0);
+                                setTimeout(() => {
+                                    window.location.reload();
+                                }, 1000);
+                            } else {
+                                if (typeof window.showSimatToast === 'function') {
+                                    window.showSimatToast(data.message || `Unit register NIBAR "${nibarStr}" berhasil dipindahkan ke Recycle Bin.`, 'success');
+                                }
+                            }
+                        } else if (data.is_blocked) {
+                            if (typeof window.askSimatConfirm === 'function') {
+                                window.askSimatConfirm({
+                                    title: 'Unit Tidak Dapat Dihapus',
+                                    message: data.message,
+                                    itemName: 'NIBAR: ' + nibarStr,
+                                    type: 'danger',
+                                    isBlocked: true,
+                                    actionUrl: data.action_url || '/mutasi-aset',
+                                    actionText: data.action_text || 'Ajukan Mutasi Aset',
+                                    btnText: null,
+                                    onConfirm: null
+                                });
+                            } else {
+                                alert(data.message);
+                            }
+                        } else {
+                            if (typeof window.showSimatToast === 'function') {
+                                window.showSimatToast(data.message || 'Gagal menghapus unit register.', 'error');
+                            } else {
+                                alert(data.message || 'Gagal menghapus unit register.');
+                            }
                         }
-                    } else {
-                        alert(data.message || 'Gagal menghapus unit register.');
+                    } catch (err) {
+                        console.error('Delete register error:', err);
+                        if (typeof window.showSimatToast === 'function') {
+                            window.showSimatToast('Terjadi kesalahan jaringan saat menghapus unit register.', 'error');
+                        } else {
+                            alert('Terjadi kesalahan jaringan saat menghapus unit register.');
+                        }
                     }
-                } catch (err) {
-                    console.error('Delete register error:', err);
-                    alert('Terjadi kesalahan jaringan saat menghapus unit register.');
+                };
+
+                // Buka modal konfirmasi kustom SIMAT-RK Bespoke
+                if (typeof window.askSimatConfirm === 'function') {
+                    window.askSimatConfirm({
+                        title: 'Konfirmasi Pindahkan ke Tong Sampah',
+                        message: `Apakah Anda yakin ingin memindahkan unit register NIBAR "${nibarStr}" ke Pusat Data Terhapus (Recycle Bin)?`,
+                        itemName: 'NIBAR: ' + nibarStr,
+                        itemDetails: {
+                            nama: namaBarang,
+                            kode: nibarStr,
+                            badgeText: '1 UNIT REGISTER',
+                            totalAset: 1,
+                            nilaiFmt: hargaNominal
+                        },
+                        type: 'danger',
+                        isBlocked: false,
+                        btnText: 'Pindahkan ke Tong Sampah',
+                        onConfirm: performDelete
+                    });
+                } else {
+                    performDelete();
                 }
             },
 

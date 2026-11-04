@@ -762,12 +762,19 @@
                         </button>
                     </template>
 
-                    {{-- Jika Sudah Dibatalkan: Indikator Status Dibatalkan --}}
+                    {{-- Jika Sudah Dibatalkan: Indikator Status Dibatalkan + Tombol Aktifkan Kembali --}}
                     <template x-if="((selectedAstapDetail || selectedMutasi)?.status || '').toLowerCase().includes('batal')">
-                        <span class="inline-flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 font-extrabold text-xs select-none">
-                            <span class="w-2 h-2 rounded-full bg-rose-400"></span>
-                            <span>Status: Dibatalkan</span>
-                        </span>
+                        <div class="flex items-center space-x-2">
+                            <span class="inline-flex items-center space-x-1.5 px-3 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 font-extrabold text-xs select-none">
+                                <span class="w-2 h-2 rounded-full bg-rose-400"></span>
+                                <span>Status: Dibatalkan</span>
+                            </span>
+                            <button type="button" @click="reaktivasiMutasi(selectedAstapDetail || selectedMutasi)"
+                                class="px-4 py-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 hover:border-emerald-400 font-extrabold text-xs transition-all shadow-md flex items-center space-x-1.5 active:scale-95 cursor-pointer">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                <span>Aktifkan Kembali Mutasi</span>
+                            </button>
+                        </div>
                     </template>
                 @endif
 
