@@ -9891,6 +9891,27 @@
                     });
                 },
 
+                // Helper Cek Status Kemitraan: Apakah Aset merupakan Aset Kemitraan
+                isKemitraanAset(item) {
+                    if (!item) return false;
+                    return item.sumber_dana === 'kemitraan' || 
+                           item.sumber_dana_raw === 'kemitraan' || 
+                           !!item.kemitraan || 
+                           (item.kode_barang && String(item.kode_barang).startsWith('1.5.2')) || 
+                           item.category === 'KEMITRAAN';
+                },
+
+                // Helper Cek Status Kemitraan: Apakah Aset telah sah menjadi Milik RSUD (Reklasifikasi / Serah Terima Selesai)
+                isKemitraanMilikRsud(item) {
+                    if (!item) return false;
+                    const statusKonsesi = (item.kemitraan?.status_konsesi || item.status_konsesi || '').trim();
+                    return !!(
+                        item.is_kemitraan_reklas || 
+                        statusKonsesi === 'Selesai / Reklasifikasi' || 
+                        statusKonsesi === 'Selesai'
+                    );
+                },
+
                 // Helper Cek Status Kemitraan: Apakah Aset Telah Dikembalikan ke Rekanan / Dibatalkan
                 isKemitraanReturned(item) {
                     if (!item) return false;
@@ -9902,6 +9923,69 @@
                         if (hasReturned && activeCount === 0) return true;
                     }
                     return false;
+                },
+
+                // Helper Status Badge Kemitraan untuk Kolom Status Tabel ASTAP
+                getKemitraanStatusInfo(item) {
+                    if (!item || !this.isKemitraanAset(item)) return null;
+
+                    // 1. Jika sudah selesai & diserahterimakan menjadi Milik RSUD
+                    if (this.isKemitraanMilikRsud(item)) {
+                        return {
+                            type: 'milik_rsud',
+                            label: 'Aktif (Milik RSUD)',
+                            badgeClass: 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30',
+                            dotClass: 'bg-emerald-400 animate-pulse',
+                            title: 'Aset telah resmi diserahterimakan dan sah menjadi aset inventaris milik RSUD Dr. H. Koesnandi'
+                        };
+                    }
+
+                    // 2. Jika telah dikembalikan ke rekanan pihak ketiga
+                    if (this.isKemitraanReturned(item)) {
+                        return {
+                            type: 'returned',
+                            label: 'Ke Rekanan',
+                            badgeClass: 'bg-purple-500/15 text-purple-300 border border-purple-500/30',
+                            dotClass: 'bg-purple-400',
+                            title: 'Aset kemitraan telah resmi dialihkan / dikembalikan kepada pihak ketiga rekanan mitra'
+                        };
+                    }
+
+                    // 3. Evaluasi status konsesi & sisa hari
+                    const rawStatus = (item.kemitraan?.status_konsesi || item.status_konsesi || '').trim();
+                    const sisaHari = item.kemitraan?.sisa_hari ?? null;
+
+                    if (rawStatus.toLowerCase() === 'dibatalkan' || rawStatus.toLowerCase() === 'dihentikan') {
+                        return {
+                            type: 'dibatalkan',
+                            label: 'Dibatalkan',
+                            badgeClass: 'bg-rose-500/15 text-rose-300 border border-rose-500/30',
+                            dotClass: 'bg-rose-400',
+                            title: 'Perjanjian kerja sama kemitraan telah dibatalkan / dihentikan'
+                        };
+                    }
+
+                    if (rawStatus.toLowerCase() === 'konsesi berakhir' || (sisaHari !== null && sisaHari < 0)) {
+                        return {
+                            type: 'expired',
+                            label: 'Konsesi Berakhir',
+                            badgeClass: 'bg-amber-500/15 text-amber-300 border border-amber-500/30',
+                            dotClass: 'bg-amber-400 animate-pulse',
+                            title: 'Masa konsesi perjanjian kemitraan telah berakhir. Menunggu tindak lanjut Serah Terima RSUD atau Pengembalian ke Rekanan.'
+                        };
+                    }
+
+                    // 4. Default kemitraan aktif (dalam masa konsesi berjalan)
+                    const isBmd = item.is_bmd_dimanfaatkan || item.kemitraan?.tipe_kemitraan === 'dimanfaatkan';
+                    return {
+                        type: 'konsesi_aktif',
+                        label: 'Masa Konsesi',
+                        badgeClass: isBmd ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30' : 'bg-teal-500/15 text-teal-300 border border-teal-500/30',
+                        dotClass: isBmd ? 'bg-cyan-400 animate-pulse' : 'bg-teal-400 animate-pulse',
+                        title: isBmd 
+                            ? 'BMD RSUD sedang aktif dimanfaatkan oleh mitra pihak ketiga dalam masa konsesi' 
+                            : 'Aset mitra pihak ketiga sedang aktif digunakan dalam masa konsesi kerja sama'
+                    };
                 },
 
                 // Modal Peringatan Interaktif saat Tombol Aset Kemitraan Dikembalikan Diklik

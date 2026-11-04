@@ -172,14 +172,15 @@
                                             <span>Mutasi Keluar</span>
                                         </span>
                                     </template>
-                                    <template x-if="!isItemLocked(item) && !isMutasiKeluarFull(item) && isKemitraanReturned(item)">
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10.5px] font-extrabold bg-purple-500/15 text-purple-300 border border-purple-500/30 shadow-sm select-none"
-                                              title="Aset kemitraan telah dikembalikan ke rekanan mitra">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
-                                            <span>Ke Rekanan</span>
+                                    <template x-if="!isItemLocked(item) && !isMutasiKeluarFull(item) && getKemitraanStatusInfo(item)">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10.5px] font-extrabold shadow-sm select-none"
+                                              :class="getKemitraanStatusInfo(item).badgeClass"
+                                              :title="getKemitraanStatusInfo(item).title">
+                                            <span class="w-1.5 h-1.5 rounded-full" :class="getKemitraanStatusInfo(item).dotClass"></span>
+                                            <span x-text="getKemitraanStatusInfo(item).label"></span>
                                         </span>
                                     </template>
-                                    <template x-if="!isItemLocked(item) && !isMutasiKeluarFull(item) && !isKemitraanReturned(item)">
+                                    <template x-if="!isItemLocked(item) && !isMutasiKeluarFull(item) && !getKemitraanStatusInfo(item)">
                                         <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10.5px] font-extrabold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shadow-sm select-none">
                                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                                             <span>Aktif (Tersedia)</span>
