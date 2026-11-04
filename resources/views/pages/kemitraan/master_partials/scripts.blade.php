@@ -4596,6 +4596,24 @@
                 return narasi;
             },
 
+            showLockedEditWarning(statusKonsesi = 'Dikembalikan ke Rekanan') {
+                const isBatal = (statusKonsesi === 'Dibatalkan');
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: isBatal ? 'Kemitraan Dibatalkan' : 'Aset Telah Dikembalikan',
+                        text: isBatal
+                            ? 'Status kerja sama kemitraan aset ini telah dibatalkan, sehingga data aset terkunci dari pengubahan.'
+                            : 'Aset ini telah resmi dialihkan / dikembalikan ke pihak rekanan mitra, sehingga data aset terkunci dari pengubahan.',
+                        confirmButtonColor: '#06b6d4',
+                        background: '#0f172a',
+                        color: '#f8fafc',
+                    });
+                } else {
+                    alert(isBatal ? 'Status kemitraan dibatalkan dan tidak dapat diubah.' : 'Aset ini telah dikembalikan ke pihak rekanan dan tidak dapat diubah.');
+                }
+            },
+
             openReklas(astapItem, kemitraanRow) {
                 let item = Object.assign({}, astapItem || {});
                 item.kemitraan = kemitraanRow || {};

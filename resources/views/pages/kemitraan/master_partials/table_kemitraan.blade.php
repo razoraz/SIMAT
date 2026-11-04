@@ -793,8 +793,20 @@
                                     </button>
 
                                     @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
-                                    <!-- 3. Tombol Reklas -->
-                                    @if($row->status_konsesi === 'Konsesi Berakhir')
+                                    @php
+                                        $isLockedKonsesi1 = in_array($row->status_konsesi, ['Dikembalikan ke Rekanan', 'Dibatalkan']);
+                                    @endphp
+                                    <!-- 2. Tombol Reklas -->
+                                    @if($isLockedKonsesi1)
+                                    <button type="button" @click="openReklas({{ json_encode($astap) }}, {{ json_encode($row) }})"
+                                        title="Terkunci (Aset Telah {{ $row->status_konsesi }})"
+                                        class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-800/60 text-slate-500 border border-slate-700/60 hover:bg-slate-800 hover:text-slate-400 font-bold text-xs transition-all duration-200 shadow-sm active:scale-95 cursor-pointer leading-none">
+                                        <svg class="w-3.5 h-3.5 text-slate-500 group-hover/btn:text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                        </svg>
+                                        <span>Reklas</span>
+                                    </button>
+                                    @elseif($row->status_konsesi === 'Konsesi Berakhir')
                                     <button type="button" @click="openReklas({{ json_encode($astap) }}, {{ json_encode($row) }})"
                                         title="Masa konsesi berakhir! Reklasifikasi balik aset ini ke KIB Asal RSUD"
                                         class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-slate-950 border border-amber-400 font-extrabold text-xs transition-all duration-200 shadow-md shadow-amber-500/30 ring-1 ring-amber-400 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none animate-pulse">
@@ -815,6 +827,16 @@
                                     @endif
 
                                     <!-- 3. Tombol Ubah -->
+                                    @if($isLockedKonsesi1)
+                                    <button type="button" @click="showLockedEditWarning('{{ $row->status_konsesi }}')"
+                                        title="Terkunci (Aset Telah {{ $row->status_konsesi }})"
+                                        class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-800/60 text-slate-500 border border-slate-700/60 hover:bg-slate-800 hover:text-slate-400 font-bold text-xs transition-all duration-200 shadow-sm active:scale-95 cursor-pointer leading-none">
+                                        <svg class="w-3.5 h-3.5 text-slate-500 group-hover/btn:text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                        </svg>
+                                        <span>Ubah</span>
+                                    </button>
+                                    @else
                                     <a href="{{ route('astap.edit_kemitraan', ['id' => $astap?->id, 'tipe' => 'dimanfaatkan']) }}"
                                         title="Ubah Data Aset Kemitraan"
                                         class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 hover:border-cyan-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-cyan-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
@@ -823,6 +845,7 @@
                                         </svg>
                                         <span>Ubah</span>
                                     </a>
+                                    @endif
 
                                     <!-- 4. Tombol Hapus (Proteksi Ketat Opsi 1: Cek Keterkaitan Aset Mitra) -->
                                     @if($countDitambahkan > 0)
@@ -1194,9 +1217,20 @@
                                     </button>
 
                                     @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
-                                    @if($row->status_konsesi !== 'Dikembalikan ke Rekanan' && $row->status_konsesi !== 'Dibatalkan')
-                                    <!-- 3. Tombol Reklas -->
-                                    @if($row->status_konsesi === 'Konsesi Berakhir')
+                                    @php
+                                        $isLockedKonsesi2 = in_array($row->status_konsesi, ['Dikembalikan ke Rekanan', 'Dibatalkan']);
+                                    @endphp
+                                    <!-- 2. Tombol Reklas -->
+                                    @if($isLockedKonsesi2)
+                                    <button type="button" @click="openReklas({{ json_encode($astap) }}, {{ json_encode($row) }})"
+                                        title="Terkunci (Aset Telah {{ $row->status_konsesi }})"
+                                        class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-800/60 text-slate-500 border border-slate-700/60 hover:bg-slate-800 hover:text-slate-400 font-bold text-xs transition-all duration-200 shadow-sm active:scale-95 cursor-pointer leading-none">
+                                        <svg class="w-3.5 h-3.5 text-slate-500 group-hover/btn:text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                        </svg>
+                                        <span>Reklas</span>
+                                    </button>
+                                    @elseif($row->status_konsesi === 'Konsesi Berakhir')
                                     <button type="button" @click="openReklas({{ json_encode($astap) }}, {{ json_encode($row) }})"
                                         title="Masa konsesi berakhir! Reklasifikasi aset ini menjadi Aset Tetap RSUD"
                                         class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-slate-950 border border-emerald-400 font-extrabold text-xs transition-all duration-200 shadow-md shadow-emerald-500/30 ring-1 ring-emerald-400 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none animate-pulse">
@@ -1217,6 +1251,16 @@
                                     @endif
 
                                     <!-- 3. Tombol Ubah -->
+                                    @if($isLockedKonsesi2)
+                                    <button type="button" @click="showLockedEditWarning('{{ $row->status_konsesi }}')"
+                                        title="Terkunci (Aset Telah {{ $row->status_konsesi }})"
+                                        class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-800/60 text-slate-500 border border-slate-700/60 hover:bg-slate-800 hover:text-slate-400 font-bold text-xs transition-all duration-200 shadow-sm active:scale-95 cursor-pointer leading-none">
+                                        <svg class="w-3.5 h-3.5 text-slate-500 group-hover/btn:text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                        </svg>
+                                        <span>Ubah</span>
+                                    </button>
+                                    @else
                                     <a href="{{ route('astap.edit_kemitraan', ['id' => $astap?->id, 'tipe' => 'ditambahkan']) }}"
                                         title="Ubah Data ASTAP Kemitraan"
                                         class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 hover:border-cyan-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-cyan-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
