@@ -3249,7 +3249,7 @@
                 }
             },
 
-            // Cek apakah register sedang aktif ditempatkan di Unit / Ruangan
+            // Cek apakah register sedang aktif ditempatkan di Unit / Ruangan RSUD
             isRegisterPlacedInUnit(reg) {
                 if (!reg) return false;
                 if (reg.unit_id) return true;
@@ -3260,7 +3260,10 @@
                     'belum ditempatkan / di gudang aset', 'gudang aset',
                     'gudang aset utama / belum ditempatkan', 'gudang perbekalan'
                 ];
-                return !unplacedPlaceholders.includes(clean);
+                if (unplacedPlaceholders.includes(clean)) return false;
+                // Label Kemitraan adalah penanda kontrak pihak ketiga, bukan unit/paviliun ruangan fisik RSUD
+                if (clean.startsWith('kemitraan:') || clean.startsWith('kemitraan') || reg.status === 'Kemitraan') return false;
+                return true;
             },
 
             // Hapus Unit Register NIBAR (dengan proteksi ruangan aktif)

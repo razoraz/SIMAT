@@ -1590,7 +1590,6 @@
                                         <span>Ubah</span>
                                     </a>
                                     @endif
-                                    @endif
                                     @php
                                         $rowLinkedDitambahkan = $isRowDimanfaatkan ? $getAsetDitambahkanForRow($row) : collect();
                                         $rowCountDitambahkan = $rowLinkedDitambahkan->count();

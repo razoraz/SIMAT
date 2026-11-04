@@ -4310,6 +4310,12 @@ class AstapController extends Controller
                             if ($astap->hibah) {
                                 $astap->hibah->softDelete();
                             }
+                            \App\Models\AstapHibah::where('astap_id', $astap->id)->update([
+                                'is_deleted'    => 1,
+                                'deleted_by'    => $deleterName,
+                                'deleted_by_id' => $deleterId,
+                                'deleted_at'    => $now,
+                            ]);
 
                             // 5. Soft delete Riwayat Reklasifikasi terkait jika ada
                             \App\Models\AstapReklas::where('astap_id', $astap->id)->update([
@@ -4326,6 +4332,10 @@ class AstapController extends Controller
 
                             // Sinkronkan juga volume PKS Kemitraan jika aset ini terikat kontrak
                             \App\Models\AstapKemitraan::where('astap_id', $astap->id)
+                                ->update(['jumlah_volume' => $newCount]);
+
+                            // Sinkronkan juga volume Hibah jika aset ini berasal dari hibah
+                            \App\Models\AstapHibah::where('astap_id', $astap->id)
                                 ->update(['jumlah_volume' => $newCount]);
 
                             $allRegs = $astap->registers()->where('is_deleted', 0)->get();
