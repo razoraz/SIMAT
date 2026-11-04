@@ -39,15 +39,15 @@
     </div>
 
     <div class="overflow-x-auto custom-scrollbar">
-        <table class="w-full text-left text-xs text-slate-300 relative border-collapse min-w-[880px]">
+        <table class="w-full text-left text-xs text-slate-300 relative border-collapse min-w-[940px]">
             <thead class="bg-slate-950 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800 font-extrabold select-none">
                 <tr>
-                    <th class="py-3.5 px-4 w-12 text-center bg-slate-950">No</th>
-                    <th class="py-3.5 px-4 min-w-[210px] bg-slate-950">Dokumen Faktur &amp; Toko</th>
-                    <th class="py-3.5 px-4 min-w-[240px] bg-slate-950">Rincian Barang (Akun 108)</th>
-                    <th class="py-3.5 px-4 min-w-[170px] bg-slate-950">Alokasi Penempatan</th>
-                    <th class="py-3.5 px-4 min-w-[170px] text-right whitespace-nowrap bg-slate-950">Total Pembelian (Rp)</th>
-                    <th class="py-3.5 px-4 w-[240px] min-w-[240px] text-center whitespace-nowrap border-l border-slate-800 shrink-0 sticky-aksi-belanja">Aksi</th>
+                    <th class="py-3 px-2 w-10 text-center bg-slate-950">No</th>
+                    <th class="py-3 px-3 w-[195px] bg-slate-950">Dokumen Faktur &amp; Toko</th>
+                    <th class="py-3 px-3 min-w-[200px] bg-slate-950">Rincian Barang (Akun 108)</th>
+                    <th class="py-3 px-3 w-[150px] text-center bg-slate-950">Alokasi Penempatan</th>
+                    <th class="py-3 px-3 w-[165px] text-right whitespace-nowrap bg-slate-950">Total Pembelian (Rp)</th>
+                    <th class="py-3 px-3 w-[230px] min-w-[230px] text-center whitespace-nowrap border-l border-slate-800 shrink-0 sticky-aksi-belanja">Aksi</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-800/60">
@@ -112,18 +112,18 @@
                     @endphp
                     <tr class="hover:bg-slate-800/40 transition-colors group">
                         <!-- 1. Nomor -->
-                        <td class="py-4 px-4 text-center font-mono text-slate-500 text-xs">
+                        <td class="py-3.5 px-2 text-center font-mono text-slate-500 text-xs">
                             {{ $idx + 1 }}
                         </td>
 
                         <!-- 2. Dokumen Faktur & Toko -->
-                        <td class="py-4 px-4">
+                        <td class="py-3.5 px-3">
                             <div class="flex items-center gap-1.5 mb-1">
-                                <span class="text-xs font-bold text-white truncate max-w-[210px]" title="{{ $row->toko_penyedia }}">
+                                <span class="text-xs font-bold text-white truncate max-w-[195px]" title="{{ $row->toko_penyedia }}">
                                     🏪 {{ $row->toko_penyedia }}
                                 </span>
                             </div>
-                            <div class="text-[11px] font-mono text-slate-300 truncate max-w-[210px]" title="{{ $row->nomor_faktur }}">
+                            <div class="text-[11px] font-mono text-slate-300 truncate max-w-[195px]" title="{{ $row->nomor_faktur }}">
                                 No: <strong class="text-indigo-300">{{ $row->nomor_faktur }}</strong>
                             </div>
                             <div class="text-[10px] text-slate-500 mt-0.5">
@@ -152,7 +152,7 @@
                         </td>
 
                         <!-- 3. Rincian Barang (Akun 108) -->
-                        <td class="py-4 px-4">
+                        <td class="py-3.5 px-3">
                             @if($totalItemCount > 1)
                                 <div class="flex items-center gap-1.5 mb-1 flex-wrap">
                                     <span class="text-xs font-extrabold text-white group-hover:text-indigo-300 transition-colors">
@@ -177,7 +177,7 @@
                                         </span>
                                     @endforeach
                                 </div>
-                                <div class="text-[11px] text-slate-300 truncate max-w-[240px]" title="{{ $firstAstap?->nama_barang }}">
+                                <div class="text-[11px] text-slate-300 truncate max-w-[220px]" title="{{ $firstAstap?->nama_barang }}">
                                     1. {{ $firstAstap?->nama_barang }} ({{ $firstAstap?->jumlah_volume }} {{ $firstAstap?->satuan }})
                                 </div>
                                 <div class="text-[10px] text-slate-500 mt-0.5">
@@ -218,11 +218,11 @@
                         </td>
 
                         <!-- 4. Alokasi Penempatan -->
-                        <td class="py-4 px-4 whitespace-nowrap">
+                        <td class="py-3.5 px-3 text-center whitespace-nowrap">
                             @if($row->status_alokasi === 'ruangan' && $firstAstap?->unit)
                                 <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-bold shadow-sm select-none">
                                     <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
-                                    <span class="truncate max-w-[150px]" title="{{ $firstAstap->unit->nama }}">
+                                    <span class="truncate max-w-[140px]" title="{{ $firstAstap->unit->nama }}">
                                         {{ $firstAstap->unit->nama }}
                                     </span>
                                 </div>
@@ -240,7 +240,7 @@
                         </td>
 
                         <!-- 5. Total Pembelian (Rp) -->
-                        <td class="py-4 px-4 text-right whitespace-nowrap">
+                        <td class="py-3.5 px-3 text-right whitespace-nowrap">
                             <div class="text-sm font-extrabold text-emerald-400 font-mono tracking-tight whitespace-nowrap">
                                 Rp {{ number_format($row->total_pembelian, 0, ',', '.') }}
                             </div>
@@ -250,7 +250,7 @@
                         </td>
 
                         <!-- 7. Aksi (Detail, Reklas, Ubah, Hapus) -->
-                        <td class="px-3 py-3 text-center whitespace-nowrap border-l border-slate-800/80 w-[240px] min-w-[240px] shrink-0 sticky-aksi-belanja" style="position: sticky; right: 0; z-index: 2; background-color: #0f172a !important;">
+                        <td class="py-3 px-2.5 text-center whitespace-nowrap border-l border-slate-800/80 w-[230px] min-w-[230px] shrink-0 sticky-aksi-belanja">
                             <div class="flex items-center justify-center gap-1.5">
                                 <!-- 1. Tombol Detail -->
                                 <button type="button"

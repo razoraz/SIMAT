@@ -841,6 +841,76 @@
                 }
             },
 
+            async reaktivasiMutasi(item) {
+                if (!item) return;
+                const id = item.mutasi_id || item.id;
+                const nama = item.nama_barang || item.nomor_bamb || 'Mutasi Eksternal';
+
+                const performReaktivasi = async () => {
+                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+                    try {
+                        const res = await fetch(`{{ url('/mutasi-eksternal') }}/${id}/sahkan`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': token,
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            const targetAstapId = item.id;
+                            const targetMutasiId = item.mutasi_id;
+
+                            this.mutasiEksternals = this.mutasiEksternals.map(m => {
+                                if (Number(m.id) === Number(targetAstapId) || (targetMutasiId && Number(m.mutasi_id) === Number(targetMutasiId))) {
+                                    return {
+                                        ...m,
+                                        status: 'Disahkan (Selesai)',
+                                        alasan_batal: null,
+                                        dibatalkan_by: null,
+                                        dibatalkan_at: null
+                                    };
+                                }
+                                return m;
+                            });
+
+                            const curDetail = this.selectedAstapDetail || this.selectedMutasi;
+                            if (curDetail && (Number(curDetail.id) === Number(targetAstapId) || (targetMutasiId && Number(curDetail.mutasi_id) === Number(targetMutasiId)))) {
+                                curDetail.status = 'Disahkan (Selesai)';
+                                curDetail.alasan_batal = null;
+                                curDetail.dibatalkan_by = null;
+                                curDetail.dibatalkan_at = null;
+                            }
+
+                            this.showToast(data.message || 'Transaksi Mutasi Eksternal berhasil diaktifkan kembali.', 'success');
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1000);
+                        } else {
+                            this.showToast(data.message || 'Gagal mengaktifkan kembali mutasi.', 'error');
+                        }
+                    } catch (err) {
+                        console.error('Reaktivasi error:', err);
+                        this.showToast('Terjadi kesalahan jaringan saat mengaktifkan kembali mutasi.', 'error');
+                    }
+                };
+
+                if (typeof window.askSimatConfirm === 'function') {
+                    window.askSimatConfirm({
+                        title: 'Konfirmasi Aktifkan Kembali Mutasi',
+                        message: `Apakah Anda yakin ingin membatalkan status pembatalan dan mengaktifkan kembali dokumen transaksi mutasi "${nama}" ke inventaris aktif?`,
+                        itemName: 'BAST: ' + (item.nomor_bamb || '-'),
+                        type: 'info',
+                        btnText: 'Ya, Aktifkan Kembali',
+                        onConfirm: performReaktivasi
+                    });
+                } else if (confirm(`Apakah Anda yakin ingin mengaktifkan kembali mutasi "${nama}"?`)) {
+                    performReaktivasi();
+                }
+            },
+
             // =====================================================================
             // AKSI REGISTER NIBAR: EDIT KONDISI, RIWAYAT MUTASI, DAN HAPUS REGISTER
             // =====================================================================

@@ -142,7 +142,7 @@
                                     <span>Cetak</span>
                                 </button>
 
-                                <!-- 3. Tombol Hapus (Hanya untuk transaksi aktif) -->
+                                <!-- 3. Tombol Hapus & Indikator Terkunci -->
                                 <template x-if="!((item.status || '').toLowerCase().includes('batal'))">
                                     <button type="button" @click="deleteMutasi(item)"
                                         title="Hapus Data Mutasi Keluar"
@@ -152,6 +152,23 @@
                                         </svg>
                                         <span>Hapus</span>
                                     </button>
+                                </template>
+                                <template x-if="((item.status || '').toLowerCase().includes('batal'))">
+                                    <div class="flex items-center gap-1.5">
+                                        <span title="Dokumen ini berstatus Dibatalkan sehingga aksi operasional dinonaktifkan."
+                                              class="inline-flex items-center space-x-1 px-2 py-1 rounded-xl bg-slate-800/80 text-slate-400 border border-slate-700/80 font-bold text-[11px] select-none shadow-sm cursor-help">
+                                            <svg class="w-3.5 h-3.5 text-rose-400/80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                            <span class="text-rose-300/80">Terkunci</span>
+                                        </span>
+                                        @if(in_array(auth()->user()?->role, ['master_admin', 'admin']))
+                                        <button type="button" @click="deleteMutasi(item)"
+                                            title="Pindahkan Berkas Batal ini ke Pusat Data Terhapus (Recycle Bin)"
+                                            class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 hover:border-rose-400 font-bold text-xs transition-all duration-200 shadow-sm active:scale-95 cursor-pointer leading-none">
+                                            <svg class="w-3.5 h-3.5 text-rose-400 group-hover/btn:text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                            <span>Hapus</span>
+                                        </button>
+                                        @endif
+                                    </div>
                                 </template>
                             </div>
                         </td>

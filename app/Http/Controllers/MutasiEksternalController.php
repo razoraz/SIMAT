@@ -1590,10 +1590,12 @@ class MutasiEksternalController extends Controller
         }
 
         if ($mutasi && $mutasi->status === 'Dibatalkan') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Dokumen ini berstatus Dibatalkan dan disimpan sebagai arsip pembatalan resmi, tidak dapat dihapus.'
-            ], 422);
+            if (!in_array($user?->role, ['master_admin', 'admin'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Hanya Master Admin dan Admin BMD yang berhak memindahkan dokumen Dibatalkan ke Recycle Bin.'
+                ], 403);
+            }
         }
 
         DB::transaction(function () use ($mutasi, $astap, $deleterName, $user, $reason) {
@@ -1861,14 +1863,95 @@ class MutasiEksternalController extends Controller
     }
 
     /**
-     * Mutasi eksternal yang dibatalkan tidak dapat disahkan kembali.
+     * Aktifkan kembali (Reaktivasi) transaksi Mutasi Eksternal yang sebelumnya dibatalkan.
      */
     public function sahkan(Request $request, $id)
     {
+        $user = Auth::user();
+        if (!in_array($user?->role, ['master_admin', 'admin'])) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengaktifkan kembali mutasi eksternal.'
+            ], 403);
+        }
+
+        $mutasi = MutasiEksternal::with(['astap.registers', 'mutasiRegisters.register'])->find($id);
+        if (!$mutasi) {
+            $mutasi = MutasiEksternal::with(['astap.registers', 'mutasiRegisters.register'])
+                ->where('astap_id', $id)
+                ->first();
+        }
+
+        if (!$mutasi) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'Data Mutasi Eksternal tidak ditemukan.'
+            ], 404);
+        }
+
+        DB::transaction(function () use ($mutasi) {
+            $mutasi->update([
+                'status'           => 'Disahkan (Selesai)',
+                'alasan_batal'     => null,
+                'dibatalkan_at'    => null,
+                'dibatalkan_by'    => null,
+                'dibatalkan_by_id' => null,
+            ]);
+
+            if ($mutasi->tipe === 'keluar') {
+                $targetRegIds = $mutasi->mutasiRegisters->pluck('astap_register_id')->filter()->all();
+                if (!empty($targetRegIds)) {
+                    $regs = AstapRegister::whereIn('id', $targetRegIds)->get();
+                } elseif ($mutasi->astap_id) {
+                    $regs = AstapRegister::where('astap_id', $mutasi->astap_id)->get();
+                } else {
+                    $regs = collect();
+                }
+
+                foreach ($regs as $reg) {
+                    $reg->update([
+                        'status'         => 'Mutasi Keluar OPD',
+                        'ruang_pemegang' => 'Dinas / Instansi Luar (' . ($mutasi->opd_tujuan ?: 'Luar OPD') . ')',
+                    ]);
+                }
+
+                if ($mutasi->astap) {
+                    $mutasi->astap->update([
+                        'is_reklas'             => 1,
+                        'jenis_reklas'          => 'MUTASI_EKSTERNAL',
+                        'is_mutasi_keluar_full' => 1,
+                    ]);
+                }
+            } else {
+                // Mutasi masuk: pulihkan ASTAP dan register kembali ke aktif (is_deleted = 0)
+                if ($mutasi->astap_id) {
+                    $astap = Astap::find($mutasi->astap_id);
+                    if ($astap) {
+                        $astap->update([
+                            'is_deleted'          => 0,
+                            'deleted_by'          => null,
+                            'deleted_by_id'       => null,
+                            'deleted_at'          => null,
+                            'keterangan_tambahan' => null,
+                        ]);
+
+                        AstapRegister::where('astap_id', $astap->id)->update([
+                            'status'        => 'Tersedia',
+                            'is_deleted'    => 0,
+                            'deleted_by'    => null,
+                            'deleted_by_id' => null,
+                            'deleted_at'    => null,
+                        ]);
+                    }
+                }
+            }
+        });
+
         return response()->json([
-            'success' => false, 
-            'message' => 'Dokumen Mutasi Eksternal yang telah dibatalkan tidak dapat disahkan kembali.'
-        ], 422);
+            'success' => true,
+            'message' => 'Status transaksi Mutasi Eksternal berhasil diaktifkan kembali menjadi Disahkan (Selesai).',
+            'status'  => 'Disahkan (Selesai)',
+        ]);
     }
 
     /**
