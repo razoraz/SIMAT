@@ -4168,14 +4168,16 @@ class AstapController extends Controller
             if (!in_array(auth()->user()->role ?? '', ['master_admin', 'admin'])) {
                 return response()->json(['success' => false, 'message' => 'Anda tidak memiliki hak akses untuk mengubah register ASTAP.'], 403);
             }
-            $reg = \App\Models\AstapRegister::with('astap.registers')->find($id);
+            $reg = \App\Models\AstapRegister::with(['astap.registers', 'astap.kemitraan'])->find($id);
             if (!$reg) {
                 return response()->json(['success' => false, 'message' => 'Register tidak ditemukan.'], 404);
             }
-            if (in_array($reg->status, ['Dihibahkan', 'Dikembalikan ke Rekanan', 'Mutasi Keluar OPD'], true)) {
+            $isAstapHibahKeluar = $reg->astap && ($reg->astap->jenis_reklas === 'HIBAH_KELUAR' || $reg->astap->status_barang === 'Dihibahkan');
+            $isAstapKemitraanReturned = $reg->astap && in_array($reg->astap->kemitraan?->status_konsesi ?? '', ['Dikembalikan ke Rekanan', 'Dibatalkan']);
+            if (in_array($reg->status, ['Dihibahkan', 'Dikembalikan ke Rekanan', 'Mutasi Keluar OPD'], true) || $isAstapHibahKeluar || $isAstapKemitraanReturned) {
                 return response()->json([
                     'success' => false,
-                    'message' => "Unit register ini berstatus '{$reg->status}' (non-aktif/keluar dari RSUD) dan terkunci permanen dari perubahan kondisi."
+                    'message' => "Unit register ini berstatus non-aktif/telah keluar dari RSUD atau menjadi milik mitra dan terkunci permanen dari perubahan kondisi."
                 ], 422);
             }
             $stats = [];

@@ -167,7 +167,7 @@
                                 <span x-text="selectedDetail.tipe_hibah === 'masuk' ? 'Hibah Masuk (Non-APBD)' : 'Hibah Keluar (Pengurangan)'"></span>
                             </span>
 
-                            <button type="button" @click="showModalDetail = false; openPrintBast(selectedDetail);"
+                            <button type="button" @click.stop="openPrintBast(selectedDetail);"
                                 class="px-3 py-1.5 rounded-xl text-[10.5px] font-extrabold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 border border-amber-400/40 flex items-center gap-1.5 transition-all active:scale-95 shadow-md shadow-amber-500/20 cursor-pointer"
                                 title="Cetak Format Lembar BAST Resmi">
                                 <span>🖨️</span>
@@ -201,16 +201,18 @@
                         <div class="p-3 rounded-xl bg-slate-950/70 border border-slate-800/80">
                             <span class="text-slate-400 block text-[10px] uppercase font-extrabold tracking-wider mb-1" x-text="selectedDetail.tipe_hibah === 'masuk' ? 'Instansi Pemberi:' : 'Pihak Penerima:'"></span>
                             <span class="text-white font-bold text-xs sm:text-sm block truncate" :title="selectedDetail.pihak_hibah" x-text="selectedDetail.pihak_hibah || '-'"></span>
-                            <template x-if="getSpecDetail(selectedDetail).hibah_pimpinan">
-                                <span class="text-[10px] text-amber-300/80 block truncate mt-0.5" :title="getSpecDetail(selectedDetail).hibah_pimpinan" x-text="getSpecDetail(selectedDetail).hibah_pimpinan"></span>
+                            <template x-if="selectedDetail.tipe_hibah === 'keluar' ? (selectedDetail.nama_penerima || selectedDetail.jabatan_penerima) : getSpecDetail(selectedDetail).hibah_pimpinan">
+                                <span class="text-[10px] text-amber-300/80 block truncate mt-0.5" 
+                                      :title="selectedDetail.tipe_hibah === 'keluar' ? (selectedDetail.nama_penerima + (selectedDetail.jabatan_penerima ? ' (' + selectedDetail.jabatan_penerima + ')' : '')) : getSpecDetail(selectedDetail).hibah_pimpinan" 
+                                      x-text="selectedDetail.tipe_hibah === 'keluar' ? (selectedDetail.nama_penerima + (selectedDetail.jabatan_penerima ? ' (' + selectedDetail.jabatan_penerima + ')' : '')) : getSpecDetail(selectedDetail).hibah_pimpinan"></span>
                             </template>
                         </div>
 
                         <div class="p-3 rounded-xl bg-slate-950/70 border border-slate-800/80">
-                            <span class="text-slate-400 block text-[10px] uppercase font-extrabold tracking-wider mb-1">Alamat Instansi Pemberi:</span>
+                            <span class="text-slate-400 block text-[10px] uppercase font-extrabold tracking-wider mb-1" x-text="selectedDetail.tipe_hibah === 'masuk' ? 'Alamat Instansi Pemberi:' : 'Alamat Pihak Penerima:'"></span>
                             <span class="text-slate-300 text-[11px] sm:text-xs block leading-tight truncate" 
-                                  :title="getSpecDetail(selectedDetail).hibah_alamat_pemberi || 'Alamat domisili instansi pemberi'" 
-                                  x-text="getSpecDetail(selectedDetail).hibah_alamat_pemberi || '-'"></span>
+                                  :title="(selectedDetail.tipe_hibah === 'keluar' ? (selectedDetail.alamat_penerima || getSpecDetail(selectedDetail).hibah_alamat_pemberi) : getSpecDetail(selectedDetail).hibah_alamat_pemberi) || 'Alamat domisili'" 
+                                  x-text="(selectedDetail.tipe_hibah === 'keluar' ? (selectedDetail.alamat_penerima || getSpecDetail(selectedDetail).hibah_alamat_pemberi) : getSpecDetail(selectedDetail).hibah_alamat_pemberi) || '-'"></span>
                         </div>
                     </div>
 
@@ -293,36 +295,53 @@
                         </div>
                     </div>
 
-                    <!-- KARTU INFORMASI PARA PIHAK: PEMBERI HIBAH & PPK RSUD (GAMBAR 2 ATAS) -->
+                    <!-- KARTU INFORMASI PARA PIHAK: PEMBERI HIBAH & PPK RSUD -->
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3.5 text-[11px] pt-1">
-                        <!-- Card Pihak Pemberi Hibah -->
+                        <!-- Card Pihak Luar (Pemberi jika Hibah Masuk, Penerima jika Hibah Keluar) -->
                         <div class="p-4 rounded-xl bg-slate-900/70 border border-slate-800/90 space-y-3">
                             <span class="text-[10.5px] font-extrabold text-amber-400 uppercase tracking-wider block flex items-center space-x-1.5">
-                                <span>🏢 Informasi Instansi Pemberi Hibah</span>
+                                <span x-text="selectedDetail.tipe_hibah === 'keluar' ? '🏢 Informasi Pihak / Instansi Penerima Hibah' : '🏢 Informasi Instansi Pemberi Hibah'"></span>
                             </span>
                             <div class="space-y-2 divide-y divide-slate-800/60">
                                 <div class="flex items-start justify-between gap-2 pt-1">
-                                    <span class="text-slate-400 shrink-0">Nama Lembaga / Instansi:</span>
+                                    <span class="text-slate-400 shrink-0" x-text="selectedDetail.tipe_hibah === 'keluar' ? 'Lembaga / Pihak Penerima:' : 'Nama Lembaga / Instansi:'"></span>
                                     <strong class="text-white font-bold text-right" :title="selectedDetail.pihak_hibah" x-text="selectedDetail.pihak_hibah || '-'"></strong>
                                 </div>
                                 <div class="flex items-start justify-between gap-2 pt-2">
-                                    <span class="text-slate-400 shrink-0">Pimpinan / Direktur Instansi:</span>
-                                    <strong class="text-amber-300 font-bold text-right" :title="getSpecDetail(selectedDetail).hibah_pimpinan" x-text="getSpecDetail(selectedDetail).hibah_pimpinan || '-'"></strong>
+                                    <span class="text-slate-400 shrink-0" x-text="selectedDetail.tipe_hibah === 'keluar' ? 'Nama Pejabat Penerima:' : 'Pimpinan / Direktur Instansi:'"></span>
+                                    <strong class="text-amber-300 font-bold text-right" 
+                                            :title="(selectedDetail.tipe_hibah === 'keluar' ? selectedDetail.nama_penerima : getSpecDetail(selectedDetail).hibah_pimpinan) || '-'" 
+                                            x-text="(selectedDetail.tipe_hibah === 'keluar' ? selectedDetail.nama_penerima : getSpecDetail(selectedDetail).hibah_pimpinan) || '-'"></strong>
                                 </div>
+                                <template x-if="selectedDetail.tipe_hibah === 'keluar'">
+                                    <div class="flex items-start justify-between gap-2 pt-2">
+                                        <span class="text-slate-400 shrink-0">Jabatan & NIP Penerima:</span>
+                                        <span class="text-cyan-300 font-medium text-right leading-relaxed" 
+                                              x-text="(selectedDetail.jabatan_penerima || '-') + (selectedDetail.nip_penerima && selectedDetail.nip_penerima !== '-' ? ' (NIP: ' + selectedDetail.nip_penerima + ')' : '')"></span>
+                                    </div>
+                                </template>
                                 <div class="flex items-start justify-between gap-2 pt-2">
-                                    <span class="text-slate-400 shrink-0">Alamat Kantor Pemberi:</span>
-                                    <span class="text-teal-300 font-medium text-right leading-relaxed" :title="getSpecDetail(selectedDetail).hibah_alamat_pemberi" x-text="getSpecDetail(selectedDetail).hibah_alamat_pemberi || '-'"></span>
+                                    <span class="text-slate-400 shrink-0" x-text="selectedDetail.tipe_hibah === 'keluar' ? 'Alamat Domisili Penerima:' : 'Alamat Kantor Pemberi:'"></span>
+                                    <span class="text-teal-300 font-medium text-right leading-relaxed" 
+                                          :title="(selectedDetail.tipe_hibah === 'keluar' ? (selectedDetail.alamat_penerima || getSpecDetail(selectedDetail).hibah_alamat_pemberi) : getSpecDetail(selectedDetail).hibah_alamat_pemberi) || '-'" 
+                                          x-text="(selectedDetail.tipe_hibah === 'keluar' ? (selectedDetail.alamat_penerima || getSpecDetail(selectedDetail).hibah_alamat_pemberi) : getSpecDetail(selectedDetail).hibah_alamat_pemberi) || '-'"></span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Card Pejabat Pembuat Komitmen (Kolom 24 & Kolom 25) -->
+                        <!-- Card Pihak RSUD (Penyerah jika Hibah Keluar, Penerima jika Hibah Masuk) -->
                         <div class="p-4 rounded-xl bg-slate-900/70 border border-slate-800/90 space-y-3">
                             <span class="text-[10.5px] font-extrabold text-amber-400 uppercase tracking-wider block flex items-center space-x-1.5">
-                                <span>👔 Pejabat Pembuat Komitmen (PPK RSUD)</span>
+                                <span x-text="selectedDetail.tipe_hibah === 'keluar' ? '🏛️ Instansi Pemberi Hibah (RSUD Dr. H. Koesnandi)' : '👔 Pejabat Pembuat Komitmen (PPK RSUD)'"></span>
                             </span>
                             <div class="space-y-2 divide-y divide-slate-800/60">
-                                <div class="flex items-start justify-between gap-2 pt-1">
+                                <template x-if="selectedDetail.tipe_hibah === 'keluar'">
+                                    <div class="flex items-start justify-between gap-2 pt-1">
+                                        <span class="text-slate-400 shrink-0">Instansi Penyerah / Pemberi:</span>
+                                        <strong class="text-white font-bold text-right">RSUD Dr. H. Koesnandi Bondowoso</strong>
+                                    </div>
+                                </template>
+                                <div class="flex items-start justify-between gap-2" :class="selectedDetail.tipe_hibah === 'keluar' ? 'pt-2' : 'pt-1'">
                                     <span class="text-slate-400 shrink-0">Nama PPK (Kolom 24):</span>
                                     <strong class="text-white font-bold text-right" :title="selectedDetail.astap?.ppk_nama || selectedDetail.astap?.spesifikasi_json?.ppk_nama" x-text="selectedDetail.astap?.ppk_nama || selectedDetail.astap?.spesifikasi_json?.ppk_nama || 'BUDI HARTONO, S.Sos'"></strong>
                                 </div>
@@ -788,17 +807,17 @@
                                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[10.5px]">
                                     <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
                                         <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏷️ Judul / Pencipta</span>
-                                        <span class="text-purple-300 font-bold block truncate" x-text="getSpecDetail(selectedDetail).lainnya_judul || '-'"></span>
+                                        <span class="text-purple-300 font-bold block truncate" x-text="getSpecDetail(selectedDetail).lainnya_judul || selectedDetail.nama_barang || selectedDetail.astap?.nama_barang || '-'"></span>
                                         <span class="text-slate-300 text-[10px]" x-text="'Pencipta: ' + (getSpecDetail(selectedDetail).lainnya_pencipta || '-')"></span>
                                     </div>
                                     <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
                                         <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🧪 Bahan &amp; Ukuran</span>
                                         <span class="text-amber-300 font-semibold block truncate" x-text="getSpecDetail(selectedDetail).lainnya_bahan || '-'"></span>
-                                        <span class="text-slate-300 text-[9.5px] block truncate" x-text="'Uk: ' + (getSpecDetail(selectedDetail).ukuran || '-')"></span>
+                                        <span class="text-slate-300 text-[9.5px] block truncate" x-text="'Uk: ' + (getSpecDetail(selectedDetail).ukuran || getSpecDetail(selectedDetail).lainnya_ukuran || '-')"></span>
                                     </div>
                                     <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
                                         <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">💰 Nilai Wajar Satuan</span>
-                                        <span class="text-emerald-300 font-mono font-bold block text-[11px]" x-text="'Rp ' + Number(selectedDetail.total_nilai || selectedDetail.astap?.nilai_aset || 0).toLocaleString('id-ID')"></span>
+                                        <span class="text-emerald-300 font-mono font-bold block text-[11px]" x-text="'Rp ' + Number(selectedDetail.astap?.harga_satuan || (selectedDetail.nilai_aset / (selectedDetail.jumlah_volume || 1)) || selectedDetail.total_nilai || 0).toLocaleString('id-ID')"></span>
                                     </div>
                                 </div>
                             </template>
@@ -819,12 +838,25 @@
                         </div>
                         <div class="flex items-center space-x-2 shrink-0">
                             @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
-                            <button type="button" @click="resequenceSingleAstap(selectedDetail)"
-                                class="px-2.5 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[10.5px] font-bold transition-all flex items-center space-x-1 cursor-pointer shadow-sm active:scale-95"
-                                title="Urutkan ulang register NIBAR barang ini agar berurutan tanpa celah">
-                                <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                <span>Rapikan NIBAR Barang Ini</span>
-                            </button>
+                            <!-- Tombol Rapikan NIBAR Terkunci untuk Hibah Keluar -->
+                            <template x-if="selectedDetail.tipe_hibah === 'keluar'">
+                                <button type="button" disabled
+                                    class="px-2.5 py-1 rounded-xl bg-slate-800/80 text-slate-500 border border-slate-700/60 text-[10.5px] font-bold flex items-center space-x-1.5 cursor-not-allowed opacity-75 shadow-sm select-none"
+                                    title="Aset telah dihibahkan keluar ke pihak luar — susunan NIBAR bersifat permanen dan tidak dapat diurutkan ulang">
+                                    <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                    <span>NIBAR Terkunci (Hibah Keluar)</span>
+                                </button>
+                            </template>
+
+                            <!-- Tombol Rapikan NIBAR Aktif untuk Hibah Masuk -->
+                            <template x-if="selectedDetail.tipe_hibah !== 'keluar'">
+                                <button type="button" @click="resequenceSingleAstap(selectedDetail)"
+                                    class="px-2.5 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[10.5px] font-bold transition-all flex items-center space-x-1 cursor-pointer shadow-sm active:scale-95"
+                                    title="Urutkan ulang register NIBAR barang ini agar berurutan tanpa celah">
+                                    <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                    <span>Rapikan NIBAR Barang Ini</span>
+                                </button>
+                            </template>
                             @endif
                             <span class="text-[10px] font-extrabold px-3 py-1 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 font-mono shadow-sm"
                                   x-text="filteredDetailRegisters.length + ' / ' + getRegistersList(selectedDetail).length + ' Aset'"></span>
@@ -957,14 +989,24 @@
 
                                                 @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
                                                 <!-- Ubah Kondisi Barang -->
-                                                <button type="button" @click.stop="openEditKondisiModal(reg)" title="Ubah Kondisi Aset Ini"
-                                                        class="p-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 hover:text-amber-300 transition-all cursor-pointer">
+                                                <button type="button"
+                                                        @click.stop="isRegisterLockedForEdit(reg) ? null : openEditKondisiModal(reg)"
+                                                        :title="isRegisterLockedForEdit(reg) ? getRegisterLockedMessage(reg) : 'Ubah Kondisi Aset Ini'"
+                                                        :disabled="isRegisterLockedForEdit(reg)"
+                                                        :class="isRegisterLockedForEdit(reg)
+                                                            ? 'p-1.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-600 cursor-not-allowed shadow-sm opacity-50'
+                                                            : 'p-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 hover:text-amber-300 transition-all cursor-pointer shadow-sm active:scale-95'">
                                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 0L20.586 7a2 2 0 010 2.828l-8.586 8.586z"/></svg>
                                                 </button>
 
                                                 <!-- Hapus Register -->
-                                                <button type="button" @click.stop="deleteRegister(reg)" title="Hapus Aset Register Ini"
-                                                        class="p-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 hover:text-rose-300 transition-all cursor-pointer">
+                                                <button type="button" 
+                                                        @click.stop="selectedDetail.tipe_hibah === 'keluar' ? null : deleteRegister(reg)"
+                                                        :title="selectedDetail.tipe_hibah === 'keluar' ? 'Unit terkunci karena telah dihibahkan keluar' : 'Hapus Aset Register Ini'"
+                                                        :disabled="selectedDetail.tipe_hibah === 'keluar'"
+                                                        :class="selectedDetail.tipe_hibah === 'keluar'
+                                                            ? 'p-1.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-600 cursor-not-allowed shadow-sm opacity-50'
+                                                            : 'p-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 hover:text-rose-300 transition-all cursor-pointer shadow-sm active:scale-95'">
                                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                                 </button>
                                                 @endif
@@ -1001,7 +1043,7 @@
             <template x-if="selectedDetail">
                 <div class="flex items-center space-x-2">
                     <!-- Cetak BAST -->
-                    <button type="button" @click="showModalDetail = false; openPrintBast(selectedDetail);"
+                    <button type="button" @click.stop="openPrintBast(selectedDetail);"
                         class="px-4 py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold text-xs transition-all flex items-center space-x-1.5 active:scale-95 cursor-pointer shadow-md shadow-amber-500/10">
                         <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />

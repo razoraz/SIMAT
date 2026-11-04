@@ -13868,9 +13868,9 @@
                         return true;
                     }
                     if (this.selectedAstapDetail) {
-                        if (this.isHibahKeluar(this.selectedAstapDetail)) return true;
-                        if (this.isKemitraanReturned(this.selectedAstapDetail)) return true;
-                        if (this.isMutasiKeluarFull(this.selectedAstapDetail)) return true;
+                        if (this.isHibahKeluar(this.selectedAstapDetail) || this.selectedAstapDetail.jenis_reklas === 'HIBAH_KELUAR') return true;
+                        if (this.isKemitraanReturned(this.selectedAstapDetail) || this.selectedAstapDetail.kemitraan?.status_konsesi === 'Dikembalikan ke Rekanan' || this.selectedAstapDetail.status_konsesi === 'Dikembalikan ke Rekanan') return true;
+                        if (this.isMutasiKeluarFull(this.selectedAstapDetail) || this.selectedAstapDetail.jenis_reklas === 'MUTASI_EKSTERNAL') return true;
                     }
                     return false;
                 },

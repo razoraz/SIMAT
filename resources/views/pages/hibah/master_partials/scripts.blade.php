@@ -437,7 +437,9 @@
                 const firstGedung = (Array.isArray(spec.gedung_items) && spec.gedung_items.length > 0) ? spec.gedung_items[0] : {};
                 const firstTanah = (Array.isArray(spec.tanah_items) && spec.tanah_items.length > 0) ? spec.tanah_items[0] : {};
                 const firstJaringan = (Array.isArray(spec.jaringan_items) && spec.jaringan_items.length > 0) ? spec.jaringan_items[0] : {};
-                const firstLainnya = (Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0) ? spec.lainnya_items[0] : {};
+                const firstLainnya = (Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0)
+                    ? spec.lainnya_items[0]
+                    : ((Array.isArray(spec.aset_lain_items) && spec.aset_lain_items.length > 0) ? spec.aset_lain_items[0] : {});
 
                 return {
                     merk: firstMesin.mesin_merk || spec.merk || spec.mesin_merk || item.astap?.merk_type || '',
@@ -460,9 +462,10 @@
                     jaringan_panjang_m: firstJaringan.jaringan_panjang_m || spec.jaringan_panjang_m || '',
                     jaringan_lebar_m: firstJaringan.jaringan_lebar_m || spec.jaringan_lebar_m || '',
                     jaringan_luas_m2: firstJaringan.jaringan_luas_m2 || spec.jaringan_luas_m2 || '',
-                    lainnya_judul: firstLainnya.lainnya_judul_pencipta || spec.lainnya_judul_pencipta || '',
-                    lainnya_bahan: firstLainnya.lainnya_bahan || spec.lainnya_bahan || '',
-                    lainnya_ukuran: firstLainnya.lainnya_ukuran || spec.lainnya_ukuran || '',
+                    lainnya_judul: firstLainnya.lainnya_judul || firstLainnya.lainnya_buku_judul || firstLainnya.lainnya_judul_pencipta || firstLainnya.item_nama || spec.lainnya_judul || spec.judul || item.astap?.nama_barang || '',
+                    lainnya_pencipta: firstLainnya.lainnya_pencipta || firstLainnya.lainnya_buku_pencipta || firstLainnya.lainnya_kesenian_pencipta || spec.lainnya_pencipta || spec.pencipta || '-',
+                    lainnya_bahan: firstLainnya.lainnya_bahan || firstLainnya.mesin_bahan || spec.lainnya_bahan || spec.bahan || '-',
+                    lainnya_ukuran: firstLainnya.lainnya_ukuran || firstLainnya.mesin_ukuran || spec.lainnya_ukuran || spec.ukuran || '-',
                     hibah_pimpinan: spec.hibah_pimpinan || spec.pimpinan_pemberi || item.astap?.hibah_pimpinan || '',
                     hibah_alamat_pemberi: spec.hibah_alamat_pemberi || spec.alamat_pemberi || item.astap?.hibah_alamat_pemberi || '',
                     dokumen_path: item.dokumen_path || spec.dokumen_bast_path || spec.dokumen_path || item.astap?.dokumen_bast_path || '',
@@ -638,8 +641,24 @@
             // =========================================================================
             // UBAH KONDISI REGISTER
             // =========================================================================
+            isRegisterLockedForEdit(reg) {
+                if (!reg) return false;
+                if (this.selectedDetail && this.selectedDetail.tipe_hibah === 'keluar') return true;
+                if (reg.status === 'Dihibahkan' || (reg.ruang_pemegang && reg.ruang_pemegang.toLowerCase().startsWith('dihibahkan'))) return true;
+                if (this.selectedDetail?.astap?.jenis_reklas === 'HIBAH_KELUAR' || this.selectedDetail?.jenis_reklas === 'HIBAH_KELUAR') return true;
+                return false;
+            },
+
+            getRegisterLockedMessage(reg) {
+                return 'Unit ini telah dihibahkan keluar dari RSUD — kondisi tidak dapat diubah';
+            },
+
             openEditKondisiModal(reg) {
                 if (!reg) return;
+                if (this.isRegisterLockedForEdit(reg)) {
+                    this.showToast(this.getRegisterLockedMessage(reg), 'warning');
+                    return;
+                }
                 this.editingRegisterItem = reg;
                 this.newKondisiValue = reg.kondisi === 'B' ? 'Baik' : ((reg.kondisi === 'KB' || reg.kondisi === 'RR' || reg.kondisi === 'Rusak Ringan') ? 'Kurang Baik' : ((reg.kondisi === 'RB' || reg.kondisi === 'Rusak') ? 'Rusak Berat' : (reg.kondisi || 'Baik')));
                 this.showEditKondisiModal = true;
@@ -743,6 +762,10 @@
             // RAPIKAN NIBAR (AUTO-RESEQUENCE)
             // =========================================================================
             resequenceSingleAstap(hibahItem) {
+                if (hibahItem?.tipe_hibah === 'keluar') {
+                    this.showToast('NIBAR untuk Hibah Keluar bersifat permanen dan tidak dapat diurutkan ulang.', 'warning');
+                    return;
+                }
                 const astapId = hibahItem?.astap?.id || hibahItem?.astap_id || (hibahItem?.category ? hibahItem?.id : null);
                 if (!astapId) {
                     this.showToast('Data ASTAP induk untuk barang ini tidak ditemukan.', 'warning');
@@ -797,6 +820,16 @@
 
             deleteRegister(reg) {
                 if (!reg) return;
+                if (this.selectedDetail && this.selectedDetail.tipe_hibah === 'keluar') {
+                    this.askConfirmation({
+                        title: 'Unit Terkunci (Hibah Keluar)',
+                        message: 'Aset ini merupakan catatan transaksi Hibah Keluar (Pengurangan Aset Tetap). Unit register tidak dapat dihapus satu per satu dari rincian ini.\n\nJika ingin membatalkan hibah keluar dan mengembalikan aset ke saldo aktif RSUD, silakan gunakan tombol "Hapus" pada tabel utama transaksi hibah.',
+                        itemName: reg.nibar || reg.no_register || 'Register Hibah Keluar',
+                        type: 'warning',
+                        isBlocked: true
+                    });
+                    return;
+                }
                 if (this.isRegisterPlacedInUnit(reg)) {
                     const roomName = String(reg.ruang_pemegang || 'Unit / Paviliun RSUD').trim();
                     const nibarStr = reg.nibar || reg.no_register || 'NIBAR';
@@ -1254,26 +1287,44 @@
                     try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
                 }
                 spec = spec || {};
-                if (Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0) {
-                    const valid = spec.lainnya_items.filter(l => l.lainnya_nama_barang || l.lainnya_judul || l.lainnya_pencipta || (parseFloat(l.lainnya_nilai_satuan) > 0));
-                    const rawList = valid.length > 0 ? valid : spec.lainnya_items;
+
+                const rawItems = (Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0)
+                    ? spec.lainnya_items
+                    : ((Array.isArray(spec.aset_lain_items) && spec.aset_lain_items.length > 0) ? spec.aset_lain_items : null);
+
+                if (rawItems && rawItems.length > 0) {
+                    const valid = rawItems.filter(l => l.lainnya_nama_barang || l.lainnya_judul || l.item_nama || l.lainnya_pencipta || (parseFloat(l.lainnya_nilai_satuan) > 0));
+                    const rawList = valid.length > 0 ? valid : rawItems;
+                    const defaultUnitVal = parseFloat(astap.harga_satuan || (item.nilai_aset / (item.jumlah_volume || 1)) || 0);
+
                     const toSync = rawList.map(l => {
-                        const judul = l.lainnya_judul || l.lainnya_judul_pencipta || l.lainnya_nama_barang || spec.judul || astap.nama_barang || '';
-                        const pencipta = l.lainnya_pencipta || spec.pencipta || '';
-                        const spesifikasi = l.lainnya_spesifikasi || spec.spesifikasi || '';
-                        const bahan = l.lainnya_bahan || spec.bahan || '';
-                        const ukuran = l.lainnya_ukuran || spec.ukuran || '';
+                        const judul = l.lainnya_judul || l.lainnya_buku_judul || l.lainnya_judul_pencipta || l.lainnya_nama_barang || l.item_nama || spec.judul || astap.nama_barang || '';
+                        const pencipta = l.lainnya_pencipta || l.lainnya_buku_pencipta || l.lainnya_kesenian_pencipta || spec.pencipta || '';
+                        const spesifikasi = l.lainnya_spesifikasi || l.lainnya_buku_spesifikasi || l.lainnya_kesenian_spesifikasi || spec.spesifikasi || '';
+                        const bahan = l.lainnya_bahan || l.mesin_bahan || spec.bahan || '';
+                        const ukuran = l.lainnya_ukuran || l.mesin_ukuran || spec.ukuran || '';
+                        const asal = l.lainnya_asal_daerah || l.lainnya_kesenian_asal || l.lainnya_asal || '';
+                        const qty = parseInt(l.lainnya_jumlah || l.lainnya_jumlah_barang || l.item_volume) || 1;
+                        const unitVal = parseFloat(l.lainnya_nilai_satuan || defaultUnitVal || 0);
+
                         return {
                             ...l,
+                            is_extracom: Boolean(l.is_extracom || spec.is_extracomtable || astap.is_extracomtable),
+                            kib_e_type: l.kib_e_type || spec.kib_e_type || 'buku',
+                            lainnya_nama_barang: l.lainnya_nama_barang || l.item_nama || judul || astap.nama_barang || 'Aset Tetap Lainnya',
                             lainnya_judul: judul,
                             lainnya_pencipta: pencipta,
                             lainnya_spesifikasi: spesifikasi,
                             lainnya_bahan: bahan,
                             lainnya_ukuran: ukuran,
-                            lainnya_jumlah: l.lainnya_jumlah || l.lainnya_jumlah_barang || 1,
-                            lainnya_jumlah_barang: l.lainnya_jumlah_barang || l.lainnya_jumlah || 1,
+                            lainnya_asal: asal,
+                            lainnya_jumlah: qty,
+                            lainnya_jumlah_barang: qty,
+                            lainnya_satuan: l.lainnya_satuan || l.item_satuan || astap.satuan || item.satuan || 'Buah',
+                            lainnya_nilai_satuan: unitVal,
                         };
                     });
+
                     const sumQty = toSync.reduce((s, it) => s + Math.max(1, parseInt(it.lainnya_jumlah || it.lainnya_jumlah_barang) || 1), 0);
                     const targetTotal = Math.max(
                         this.getActiveRegisters(astap).length,
@@ -1281,21 +1332,28 @@
                         sumQty,
                         toSync.length
                     );
-                    return this.syncRepeaterItemsWithVolume(toSync, targetTotal, ['lainnya_jumlah', 'lainnya_jumlah_barang']);
+                    return this.syncRepeaterItemsWithVolume(toSync, targetTotal, ['lainnya_jumlah', 'lainnya_jumlah_barang', 'item_volume']);
                 }
 
-                if (spec && (spec.judul || spec.pencipta || spec.nama_barang || spec.ukuran || spec.bahan || (astap.nama_barang && (astap.nama_barang.toLowerCase().includes('buku') || astap.nama_barang.toLowerCase().includes('kesenian'))))) {
+                const cat = String(astap.category || item.category || '').toUpperCase();
+                const kd = String(astap.kode_108 || item.kode_108 || '');
+                const isKibE = cat.includes('KIB E') || kd.startsWith('1.3.5') || (spec && (spec.judul || spec.pencipta || spec.nama_barang || spec.ukuran || spec.bahan || (astap.nama_barang && (astap.nama_barang.toLowerCase().includes('buku') || astap.nama_barang.toLowerCase().includes('kesenian')))));
+
+                if (isKibE) {
                     const targetTotal = Math.max(this.getActiveRegisters(astap).length, parseInt(astap.jumlah_volume || item.jumlah_volume) || 1);
+                    const unitVal = parseFloat(astap.harga_satuan || (item.nilai_aset / targetTotal) || 0);
                     return [{
                         is_extracom: Boolean(spec.is_extracomtable || astap.is_extracomtable),
                         kib_e_type: spec.kib_e_type || 'buku',
                         lainnya_nama_barang: spec.nama_barang || astap.nama_barang,
-                        lainnya_judul: spec.judul || astap.nama_barang,
-                        lainnya_pencipta: spec.pencipta || '',
-                        lainnya_spesifikasi: spec.spesifikasi || spec.keterangan || '',
-                        lainnya_bahan: spec.bahan || '',
+                        lainnya_judul: spec.lainnya_judul || spec.judul || astap.nama_barang,
+                        lainnya_pencipta: spec.lainnya_pencipta || spec.pencipta || '-',
+                        lainnya_spesifikasi: spec.lainnya_spesifikasi || spec.spesifikasi || spec.keterangan || '-',
+                        lainnya_bahan: spec.lainnya_bahan || spec.bahan || '-',
+                        lainnya_ukuran: spec.lainnya_ukuran || spec.ukuran || '-',
                         lainnya_jumlah: targetTotal,
-                        lainnya_nilai_satuan: parseFloat(astap.harga_satuan || (item.nilai_aset / targetTotal) || 0)
+                        lainnya_satuan: astap.satuan || item.satuan || 'Buah',
+                        lainnya_nilai_satuan: unitVal
                     }];
                 }
                 return [];
@@ -1500,20 +1558,10 @@
                 const hargaSat = vol > 0 ? (nilaiTotal / vol) : nilaiTotal;
 
                 let itemsList = [];
-                if (item.register) {
-                    itemsList.push({
-                        nama: namaBarang,
-                        kode_108: kode108,
-                        nibar: item.register.nibar || item.register.no_register || '-',
-                        volume: 1,
-                        satuan: satuan,
-                        kondisi: item.register.kondisi || 'Baik',
-                        harga_satuan: hargaSat,
-                        nilai_total: hargaSat,
-                    });
-                } else if (item.astap && item.astap.registers && Array.isArray(item.astap.registers) && item.astap.registers.length > 0) {
-                    const regs = item.astap.registers.slice(0, vol);
-                    regs.forEach((r) => {
+                const allRegs = this.getRegistersList(item);
+                if (allRegs && allRegs.length > 0) {
+                    const regsToTake = vol > 0 ? allRegs.slice(0, vol) : allRegs;
+                    regsToTake.forEach((r) => {
                         itemsList.push({
                             nama: namaBarang,
                             kode_108: kode108,
@@ -1524,6 +1572,17 @@
                             harga_satuan: hargaSat,
                             nilai_total: hargaSat,
                         });
+                    });
+                } else if (item.register) {
+                    itemsList.push({
+                        nama: namaBarang,
+                        kode_108: kode108,
+                        nibar: item.register.nibar || item.register.no_register || '-',
+                        volume: 1,
+                        satuan: satuan,
+                        kondisi: item.register.kondisi || 'Baik',
+                        harga_satuan: hargaSat,
+                        nilai_total: hargaSat,
                     });
                 }
 
@@ -1541,6 +1600,17 @@
                 }
 
                 const isMasuk = item.tipe_hibah === 'masuk';
+                const rsudNama = item.nama_ppk || 'BUDI HARTONO, S.Sos';
+                const rsudNip = item.nip_ppk || '19760229 200801 1 010';
+                const rsudJabatan = 'Pengurus Barang Pengguna Aset';
+                const rsudInstansi = 'RSUD dr. H. Koesnadi Kabupaten Bondowoso';
+
+                const pihakLuarNama = isMasuk 
+                    ? (item.pihak_hibah || item.nama_penerima || 'Pemberi Hibah')
+                    : (item.nama_penerima || item.penerima_hibah || item.pihak_hibah || 'Penerima Hibah');
+                const pihakLuarNip = (!isMasuk && item.nip_penerima) ? item.nip_penerima : '-';
+                const pihakLuarJabatan = (!isMasuk && item.jabatan_penerima) ? item.jabatan_penerima : (isMasuk ? 'Pemberi Hibah' : 'Penerima Hibah');
+                const pihakLuarInstansi = (!isMasuk && item.alamat_penerima) ? (item.penerima_hibah || item.pihak_hibah || '-') : (item.pihak_hibah || item.penerima_hibah || '-');
 
                 this.printBastDoc = {
                     id: item.id,
@@ -1556,16 +1626,16 @@
                     keterangan: item.keterangan || '',
 
                     // Pihak 1 (Yang Menyerahkan)
-                    pihak_1_nama: isMasuk ? (item.pihak_hibah || 'Pemberi Hibah') : 'BUDI HARTONO, S.Sos',
-                    pihak_1_nip: isMasuk ? '-' : '19760229 200801 1 010',
-                    pihak_1_jabatan: isMasuk ? 'Pemberi Hibah' : 'Pengurus Barang Pengguna Aset',
-                    pihak_1_instansi: isMasuk ? (item.pihak_hibah || '-') : 'RSUD dr. H. Koesnadi Kabupaten Bondowoso',
+                    pihak_1_nama: isMasuk ? pihakLuarNama : rsudNama,
+                    pihak_1_nip: isMasuk ? pihakLuarNip : rsudNip,
+                    pihak_1_jabatan: isMasuk ? pihakLuarJabatan : rsudJabatan,
+                    pihak_1_instansi: isMasuk ? pihakLuarInstansi : rsudInstansi,
 
                     // Pihak 2 (Yang Menerima)
-                    pihak_2_nama: isMasuk ? 'BUDI HARTONO, S.Sos' : (item.pihak_hibah || 'Penerima Hibah'),
-                    pihak_2_nip: isMasuk ? '19760229 200801 1 010' : '-',
-                    pihak_2_jabatan: isMasuk ? 'Pengurus Barang Pengguna Aset' : 'Penerima Hibah',
-                    pihak_2_instansi: isMasuk ? 'RSUD dr. H. Koesnadi Kabupaten Bondowoso' : (item.pihak_hibah || '-'),
+                    pihak_2_nama: isMasuk ? rsudNama : pihakLuarNama,
+                    pihak_2_nip: isMasuk ? rsudNip : pihakLuarNip,
+                    pihak_2_jabatan: isMasuk ? rsudJabatan : pihakLuarJabatan,
+                    pihak_2_instansi: isMasuk ? rsudInstansi : pihakLuarInstansi,
 
                     // Mengetahui Direktur
                     direktur_nama: 'dr. DIAN ARISANDI, M.Kes',

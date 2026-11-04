@@ -3111,9 +3111,38 @@
                 });
             },
 
+            // Helper Cek Kunci Edit Register (Dikembalikan ke Rekanan / Sudah Milik Mitra / Dibatalkan)
+            isRegisterLockedForEdit(reg) {
+                if (!reg) return false;
+                if (reg.status === 'Dikembalikan ke Rekanan' || (reg.ruang_pemegang && reg.ruang_pemegang.toLowerCase().startsWith('telah dikembalikan'))) {
+                    return true;
+                }
+                if (this.selectedDetail) {
+                    const status = this.selectedDetail.status_konsesi;
+                    if (status === 'Dikembalikan ke Rekanan' || status === 'Dibatalkan') {
+                        return true;
+                    }
+                }
+                if (this.selectedAstapDetail) {
+                    const status = this.selectedAstapDetail.kemitraan?.status_konsesi || this.selectedAstapDetail.status_konsesi;
+                    if (status === 'Dikembalikan ke Rekanan' || status === 'Dibatalkan') {
+                        return true;
+                    }
+                }
+                return false;
+            },
+
+            getRegisterLockedMessage(reg) {
+                return 'Unit ini telah menjadi milik mitra / dikembalikan ke rekanan — kondisi tidak dapat diubah';
+            },
+
             // Modal Ubah Kondisi Barang Unit Register
             openEditKondisiModal(reg) {
                 if (!reg) return;
+                if (this.isRegisterLockedForEdit(reg)) {
+                    this.showToast(this.getRegisterLockedMessage(reg), 'warning');
+                    return;
+                }
                 this.editingRegisterItem = reg;
                 this.newKondisiValue = reg.kondisi || 'Baik';
                 this.showEditKondisiModal = true;

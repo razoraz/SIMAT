@@ -504,6 +504,12 @@ class HibahController extends Controller
     public function edit($id)
     {
         $astap = Astap::with(['registers.unit', 'jenisAstap', 'hibahs', 'unit', 'rekeningBelanja'])->findOrFail($id);
+
+        $isFullHibahKeluar = ($astap->jenis_reklas === 'HIBAH_KELUAR') || ($astap->hibahs && $astap->hibahs->where('tipe_hibah', 'keluar')->count() > 0);
+        if ($isFullHibahKeluar) {
+            return redirect()->route('master.hibah')->with('error', "Aset \"{$astap->nama_barang}\" merupakan aset Hibah Keluar yang telah diserahkan keluar dari RSUD dan terkunci dari perubahan.");
+        }
+
         $dbMaster108 = JenisAstap::getNested108();
         $dbUnits = Unit::orderBy('nama')->get();
         $dbRekeningBelanjas = RekeningBelanja::orderBy('kode_rek')->get();
@@ -528,6 +534,17 @@ class HibahController extends Controller
     public function update(Request $request, $id)
     {
         $astap = Astap::with(['registers', 'hibahs', 'jenisAstap'])->findOrFail($id);
+
+        $isFullHibahKeluar = ($astap->jenis_reklas === 'HIBAH_KELUAR') || ($astap->hibahs && $astap->hibahs->where('tipe_hibah', 'keluar')->count() > 0);
+        if ($isFullHibahKeluar) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Aset \"{$astap->nama_barang}\" merupakan aset Hibah Keluar yang telah diserahkan keluar dari RSUD dan terkunci permanen dari perubahan."
+                ], 422);
+            }
+            return redirect()->route('master.hibah')->with('error', "Aset \"{$astap->nama_barang}\" merupakan aset Hibah Keluar yang telah diserahkan keluar dari RSUD dan terkunci permanen dari perubahan.");
+        }
 
         // Normalisasi nilai format Rupiah jika dikirimkan sebagai string berformat
         $data = $request->all();
