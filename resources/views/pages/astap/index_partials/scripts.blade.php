@@ -10028,6 +10028,7 @@
                 isHibahKeluar(item) {
                     if (!item) return false;
                     if (item.is_hibah_keluar) return true;
+                    if (item.jenis_reklas === 'HIBAH_KELUAR' || item.tujuan_kib === 'HIBAH') return true;
                     if (item.keterangan_tambahan && item.keterangan_tambahan.toLowerCase().includes('dihibahkan')) return true;
                     if (item.registers && Array.isArray(item.registers) && item.registers.length > 0) {
                         const hasHibah = item.registers.some(r => r.status === 'Dihibahkan');
@@ -10071,6 +10072,17 @@
                         btnText: null,
                         onConfirm: null
                     });
+                },
+
+                // Helper Cek apakah Aksi Reklas & Ubah pada Aset ASTAP Terkunci
+                isAstapActionLocked(item) {
+                    if (!item) return false;
+                    return !!(
+                        this.isItemLocked(item) || 
+                        this.isMutasiKeluarFull(item) || 
+                        this.isKemitraanReturned(item) || 
+                        this.isHibahKeluar(item)
+                    );
                 },
 
                 isReklasBelanjaModal() {
@@ -13843,8 +13855,46 @@
                 newKondisiValue: 'Baik',
                 isSavingKondisi: false,
 
+                // Helper Cek Kunci Edit Register (Hibah Keluar, Dikembalikan ke Rekanan, Mutasi Keluar OPD)
+                isRegisterLockedForEdit(reg) {
+                    if (!reg) return false;
+                    if (reg.status === 'Dikembalikan ke Rekanan' || (reg.ruang_pemegang && reg.ruang_pemegang.toLowerCase().startsWith('telah dikembalikan'))) {
+                        return true;
+                    }
+                    if (reg.status === 'Dihibahkan' || (reg.ruang_pemegang && reg.ruang_pemegang.toLowerCase().startsWith('dihibahkan'))) {
+                        return true;
+                    }
+                    if (reg.status === 'Mutasi Keluar OPD' || (reg.ruang_pemegang && reg.ruang_pemegang.toLowerCase().startsWith('mutasi keluar'))) {
+                        return true;
+                    }
+                    if (this.selectedAstapDetail) {
+                        if (this.isHibahKeluar(this.selectedAstapDetail)) return true;
+                        if (this.isKemitraanReturned(this.selectedAstapDetail)) return true;
+                        if (this.isMutasiKeluarFull(this.selectedAstapDetail)) return true;
+                    }
+                    return false;
+                },
+
+                getRegisterLockedMessage(reg) {
+                    if (!reg) return 'Unit terkunci dari perubahan';
+                    if (reg.status === 'Dihibahkan' || (reg.ruang_pemegang && reg.ruang_pemegang.toLowerCase().startsWith('dihibahkan')) || (this.selectedAstapDetail && this.isHibahKeluar(this.selectedAstapDetail))) {
+                        return 'Unit ini telah dihibahkan keluar dari RSUD — kondisi tidak dapat diubah';
+                    }
+                    if (reg.status === 'Dikembalikan ke Rekanan' || (reg.ruang_pemegang && reg.ruang_pemegang.toLowerCase().startsWith('telah dikembalikan')) || (this.selectedAstapDetail && this.isKemitraanReturned(this.selectedAstapDetail))) {
+                        return 'Unit ini telah dikembalikan ke rekanan mitra — kondisi tidak dapat diubah';
+                    }
+                    if (reg.status === 'Mutasi Keluar OPD' || (this.selectedAstapDetail && this.isMutasiKeluarFull(this.selectedAstapDetail))) {
+                        return 'Unit ini telah dimutasi keluar ke OPD lain — kondisi tidak dapat diubah';
+                    }
+                    return 'Unit terkunci dari perubahan';
+                },
+
                 openEditKondisiModal(reg) {
                     if (!reg) return;
+                    if (this.isRegisterLockedForEdit(reg)) {
+                        this.showToast(this.getRegisterLockedMessage(reg), 'warning');
+                        return;
+                    }
                     this.editingRegisterItem = reg;
                     this.newKondisiValue = reg.kondisi || 'Baik';
                     this.showEditKondisiModal = true;
@@ -14908,7 +14958,7 @@
                         let matchSumber = true;
                         if (this.sumberDanaFilter && this.sumberDanaFilter !== 'all') {
                             const isKemitraan = item.category === 'KEMITRAAN' || item.sumber_dana === 'kemitraan' || item.sumber_dana_raw === 'kemitraan' || !!item.kemitraan;
-                            const isHibah = item.sumber_dana === 'hibah' || item.sumber_dana_raw === 'hibah' || item.jenis_reklas === 'HIBAH_MASUK' || String(item.asal_usul || '').toUpperCase().includes('HIBAH');
+                            const isHibah = item.sumber_dana === 'hibah' || item.sumber_dana_raw === 'hibah' || item.jenis_reklas === 'HIBAH_MASUK' || item.jenis_reklas === 'HIBAH_KELUAR' || this.isHibahKeluar(item) || String(item.asal_usul || '').toUpperCase().includes('HIBAH');
                             const isBelanjaBarang = item.sumber_dana === 'belanja_barang' || item.sumber_dana_raw === 'belanja_barang' || item.sumber_dana === 'belanja_rekening' || (item.jenis_pengadaan && item.jenis_pengadaan.includes('barang'));
                             const isMutasiMasuk = item.sumber_dana === 'mutasi_eksternal' || item.sumber_dana === 'pelimpahan' || item.sumber_dana === 'pelimpahan_skpd' || item.sumber_dana === 'mutasi_masuk' || item.sumber_dana === 'mutasi' || item.sumber_dana_raw === 'mutasi_eksternal' || item.sumber_dana_raw === 'pelimpahan_skpd' || item.sumber_dana_raw === 'mutasi_masuk';
                             const isMutasiKeluar = item.jenis_reklas === 'MUTASI_EKSTERNAL' || !!item.is_mutasi_keluar_full || !!item.is_mutasi_keluar_partial || !!item.mutasi_keluar;

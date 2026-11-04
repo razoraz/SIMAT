@@ -944,6 +944,12 @@ class AstapController extends Controller
                     return redirect()->route($targetRoute)->with('error', "Aset kemitraan '{$astap->nama_barang}' berstatus {$kemitraanCheck->status_konsesi} dan terkunci dari perubahan.");
                 }
 
+                $isFullHibahKeluar = ($astap->jenis_reklas === 'HIBAH_KELUAR') || ($astap->registers && $astap->registers->where('status', 'Dihibahkan')->count() > 0 && $astap->registers->where('status', '!=', 'Dihibahkan')->where('is_deleted', 0)->count() === 0);
+                if ($isFullHibahKeluar) {
+                    $penerima = $astap->hibahs->where('tipe_hibah', 'keluar')->first()?->penerima_nama ?: 'Pihak Luar RSUD';
+                    return redirect()->route('astap.index')->with('error', "Aset \"{$astap->nama_barang}\" telah resmi dihibahkan keluar kepada {$penerima}. Data terkunci permanen demi tertib inventaris BMD RSUD.");
+                }
+
                 if (!$astap->isBelanjaModal() && in_array($astap->sumber_dana, ['mutasi_eksternal', 'pelimpahan_skpd', 'pelimpahan', 'mutasi_masuk'], true)) {
                     return redirect()->route('astap.edit_mutasi_eksternal', ['id' => $id, 'from' => request('from', 'eksternal')]);
                 }
@@ -2621,6 +2627,14 @@ class AstapController extends Controller
                 ], 422);
             }
 
+            $isFullHibahKeluar = ($astap->jenis_reklas === 'HIBAH_KELUAR') || ($astap->registers && $astap->registers->where('status', 'Dihibahkan')->count() > 0 && $astap->registers->where('status', '!=', 'Dihibahkan')->where('is_deleted', 0)->count() === 0);
+            if ($isFullHibahKeluar) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Data ASTAP \"{$astap->nama_barang}\" tidak dapat diubah karena telah resmi dihibahkan keluar dari RSUD."
+                ], 422);
+            }
+
             // Validasi Volume Minimum untuk Kasus Mutasi Keluar Parsial
             $newVolume = max(1, (int) ($request->input('jumlah_volume') ?? 1));
             if ($mutatedRegsCount > 0 && $newVolume < $mutatedRegsCount) {
@@ -4157,6 +4171,12 @@ class AstapController extends Controller
             $reg = \App\Models\AstapRegister::with('astap.registers')->find($id);
             if (!$reg) {
                 return response()->json(['success' => false, 'message' => 'Register tidak ditemukan.'], 404);
+            }
+            if (in_array($reg->status, ['Dihibahkan', 'Dikembalikan ke Rekanan', 'Mutasi Keluar OPD'], true)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Unit register ini berstatus '{$reg->status}' (non-aktif/keluar dari RSUD) dan terkunci permanen dari perubahan kondisi."
+                ], 422);
             }
             $stats = [];
             \Illuminate\Support\Facades\DB::transaction(function() use ($reg, $request, &$stats) {

@@ -60,10 +60,18 @@
                                             </span>
                                         </template>
 
-                                        {{-- 4. Hibah --}}
+                                        {{-- 4. Hibah Masuk --}}
                                         <template x-if="item.sumber_dana === 'hibah' || item.sumber_dana_raw === 'hibah' || item.jenis_reklas === 'HIBAH_MASUK'">
                                             <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[9px] font-black whitespace-nowrap leading-none shrink-0 bg-gradient-to-r from-amber-500/25 via-amber-400/20 to-orange-500/25 text-amber-300 border border-amber-400/60 shadow-sm shadow-amber-500/20 tracking-wider">
                                                 <span>🎁</span><span>HIBAH</span>
+                                            </span>
+                                        </template>
+
+                                        {{-- 4.b Hibah Keluar --}}
+                                        <template x-if="isHibahKeluar(item)">
+                                            <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[9px] font-black whitespace-nowrap leading-none shrink-0 bg-gradient-to-r from-amber-500/25 via-amber-400/20 to-orange-500/25 text-amber-300 border border-amber-400/60 shadow-sm shadow-amber-500/20 tracking-wider"
+                                                  title="Aset telah dihibahkan keluar dari RSUD">
+                                                <span>🎁</span><span>HIBAH KELUAR</span>
                                             </span>
                                         </template>
 
@@ -100,7 +108,7 @@
                                         </template>
 
                                         {{-- 7. Belanja Modal (APBD / BLUD RSUD) --}}
-                                        <template x-if="!item.kemitraan && item.sumber_dana !== 'kemitraan' && item.sumber_dana_raw !== 'kemitraan' && item.sumber_dana !== 'hibah' && item.sumber_dana_raw !== 'hibah' && item.jenis_reklas !== 'HIBAH_MASUK' && item.sumber_dana !== 'belanja_barang' && item.sumber_dana !== 'belanja_rekening' && item.sumber_dana !== 'mutasi_eksternal' && item.sumber_dana !== 'pelimpahan' && item.sumber_dana !== 'pelimpahan_skpd' && item.sumber_dana !== 'mutasi_masuk' && item.sumber_dana !== 'mutasi'">
+                                        <template x-if="!isHibahKeluar(item) && !item.kemitraan && item.sumber_dana !== 'kemitraan' && item.sumber_dana_raw !== 'kemitraan' && item.sumber_dana !== 'hibah' && item.sumber_dana_raw !== 'hibah' && item.jenis_reklas !== 'HIBAH_MASUK' && item.sumber_dana !== 'belanja_barang' && item.sumber_dana !== 'belanja_rekening' && item.sumber_dana !== 'mutasi_eksternal' && item.sumber_dana !== 'pelimpahan' && item.sumber_dana !== 'pelimpahan_skpd' && item.sumber_dana !== 'mutasi_masuk' && item.sumber_dana !== 'mutasi'">
                                             <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[9px] font-black whitespace-nowrap leading-none shrink-0 bg-emerald-500/25 text-emerald-300 border border-emerald-500/50 shadow-sm tracking-wider">
                                                 <span>🏛️</span><span>BELANJA MODAL</span>
                                             </span>
@@ -172,7 +180,14 @@
                                             <span>Mutasi Keluar</span>
                                         </span>
                                     </template>
-                                    <template x-if="!isItemLocked(item) && !isMutasiKeluarFull(item) && getKemitraanStatusInfo(item)">
+                                    <template x-if="!isItemLocked(item) && !isMutasiKeluarFull(item) && isHibahKeluar(item)">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10.5px] font-extrabold bg-amber-500/15 text-amber-300 border border-amber-500/30 shadow-sm select-none"
+                                              title="Seluruh unit aset telah resmi diserahkan / dihibahkan ke luar RSUD">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                                            <span>Dihibahkan Keluar</span>
+                                        </span>
+                                    </template>
+                                    <template x-if="!isItemLocked(item) && !isMutasiKeluarFull(item) && !isHibahKeluar(item) && getKemitraanStatusInfo(item)">
                                         <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10.5px] font-extrabold shadow-sm select-none"
                                               :class="getKemitraanStatusInfo(item).badgeClass"
                                               :title="getKemitraanStatusInfo(item).title">
@@ -180,7 +195,7 @@
                                             <span x-text="getKemitraanStatusInfo(item).label"></span>
                                         </span>
                                     </template>
-                                    <template x-if="!isItemLocked(item) && !isMutasiKeluarFull(item) && !getKemitraanStatusInfo(item)">
+                                    <template x-if="!isItemLocked(item) && !isMutasiKeluarFull(item) && !isHibahKeluar(item) && !getKemitraanStatusInfo(item)">
                                         <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10.5px] font-extrabold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shadow-sm select-none">
                                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                                             <span>Aktif (Tersedia)</span>
@@ -207,29 +222,39 @@
                                         <button type="button" @click="if (isItemLocked(item)) { showLockedWarning(item); } else if (isMutasiKeluarFull(item)) { showMutasiKeluarLockedWarning(item, 'reklas'); } else if (isKemitraanReturned(item)) { showKemitraanReturnedWarning(item, 'reklas'); } else if (isHibahKeluar(item)) { showHibahKeluarLockedWarning(item, 'reklas'); } else { openReklas(item); }"
                                             :title="isItemLocked(item) ? 'Periode Terkunci (Tutup Buku BPKAD)' : (isMutasiKeluarFull(item) ? 'Terkunci (Aset Telah Dimutasi Keluar Penuh ke OPD Lain)' : (isKemitraanReturned(item) ? 'Terkunci (Aset Telah Dikembalikan ke Rekanan Mitra)' : (isHibahKeluar(item) ? 'Terkunci (Aset Telah Dihibahkan Keluar dari RSUD)' : 'Reklasifikasi Aset (Pindah KIB / Ekstrakom / Koreksi)')))"
                                             class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl font-bold text-xs transition-all duration-200 shadow-sm active:scale-95 cursor-pointer leading-none"
-                                            :class="(isItemLocked(item) || isMutasiKeluarFull(item) || isKemitraanReturned(item) || isHibahKeluar(item))
+                                            :class="isAstapActionLocked(item)
                                                 ? 'bg-slate-800/60 text-slate-500 border border-slate-700/60 cursor-pointer hover:bg-slate-800 hover:text-slate-400' 
                                                 : 'bg-indigo-500/10 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 hover:border-indigo-400'">
-                                            <svg class="w-3.5 h-3.5" :class="(isItemLocked(item) || isMutasiKeluarFull(item) || isKemitraanReturned(item) || isHibahKeluar(item)) ? 'text-slate-500' : 'text-indigo-400 group-hover/btn:text-white shrink-0'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <!-- Icon Terkunci (Gembok SVG Elegan) -->
+                                            <svg x-show="isAstapActionLocked(item)" class="w-3.5 h-3.5 text-slate-500 group-hover/btn:text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                            </svg>
+                                            <!-- Icon Normal Reklas -->
+                                            <svg x-show="!isAstapActionLocked(item)" class="w-3.5 h-3.5 text-indigo-400 group-hover/btn:text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
                                             </svg>
-                                            <span x-text="(isItemLocked(item) || isMutasiKeluarFull(item) || isKemitraanReturned(item) || isHibahKeluar(item)) ? '🔒 Reklas' : 'Reklas'"></span>
+                                            <span>Reklas</span>
                                         </button>
                                         @endif
 
                                         <!-- 3. Tombol Ubah -->
                                         @if(Auth::user()?->role === 'master_admin' || Auth::user()?->canDo('astap', 'edit'))
-                                        <a :href="(isItemLocked(item) || isMutasiKeluarFull(item) || isKemitraanReturned(item) || isHibahKeluar(item)) ? '#' : ('/astap/' + item.id + '/edit?from=astap')"
+                                        <a :href="isAstapActionLocked(item) ? '#' : ('/astap/' + item.id + '/edit?from=astap')"
                                             @click="if (isItemLocked(item)) { $event.preventDefault(); showLockedWarning(item); } else if (isMutasiKeluarFull(item)) { $event.preventDefault(); showMutasiKeluarLockedWarning(item, 'ubah'); } else if (isKemitraanReturned(item)) { $event.preventDefault(); showKemitraanReturnedWarning(item, 'ubah'); } else if (isHibahKeluar(item)) { $event.preventDefault(); showHibahKeluarLockedWarning(item, 'ubah'); }"
                                             :title="isItemLocked(item) ? 'Periode Terkunci (Tutup Buku BPKAD)' : (isMutasiKeluarFull(item) ? 'Terkunci (Aset Telah Dimutasi Keluar Penuh ke OPD Lain)' : (isKemitraanReturned(item) ? 'Terkunci (Aset Telah Dikembalikan ke Rekanan Mitra)' : (isHibahKeluar(item) ? 'Terkunci (Aset Telah Dihibahkan Keluar dari RSUD)' : 'Ubah Data ASTAP (Form Lengkap)')))"
                                             class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl font-bold text-xs transition-all duration-200 shadow-sm active:scale-95 cursor-pointer leading-none"
-                                            :class="(isItemLocked(item) || isMutasiKeluarFull(item) || isKemitraanReturned(item) || isHibahKeluar(item))
+                                            :class="isAstapActionLocked(item)
                                                 ? 'bg-slate-800/60 text-slate-500 border border-slate-700/60 cursor-pointer hover:bg-slate-800 hover:text-slate-400'
                                                 : 'bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 hover:border-cyan-400'">
-                                            <svg class="w-3.5 h-3.5" :class="(isItemLocked(item) || isMutasiKeluarFull(item) || isKemitraanReturned(item) || isHibahKeluar(item)) ? 'text-slate-500' : 'text-cyan-400 group-hover/btn:text-white shrink-0'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <!-- Icon Terkunci (Gembok SVG Elegan) -->
+                                            <svg x-show="isAstapActionLocked(item)" class="w-3.5 h-3.5 text-slate-500 group-hover/btn:text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                            </svg>
+                                            <!-- Icon Normal Ubah -->
+                                            <svg x-show="!isAstapActionLocked(item)" class="w-3.5 h-3.5 text-cyan-400 group-hover/btn:text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                             </svg>
-                                            <span x-text="(isItemLocked(item) || isMutasiKeluarFull(item) || isKemitraanReturned(item) || isHibahKeluar(item)) ? '🔒 Ubah' : 'Ubah'"></span>
+                                            <span>Ubah</span>
                                         </a>
                                         @endif
 

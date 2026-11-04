@@ -56,10 +56,18 @@
                                 </span>
                             </template>
 
-                            {{-- 4. Dan Lain-Lain: Hibah --}}
+                            {{-- 4. Dan Lain-Lain: Hibah Masuk --}}
                             <template x-if="selectedAstapDetail?.sumber_dana === 'hibah' || selectedAstapDetail?.sumber_dana_raw === 'hibah' || selectedAstapDetail?.jenis_reklas === 'HIBAH_MASUK'">
                                 <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 bg-amber-400/20 text-amber-300 border-amber-400/30">
                                     🎁 HIBAH
+                                </span>
+                            </template>
+
+                            {{-- 4.b Hibah Keluar --}}
+                            <template x-if="isHibahKeluar(selectedAstapDetail)">
+                                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-black border uppercase tracking-wider shrink-0 bg-amber-500/25 text-amber-300 border-amber-400/50 shadow-md shadow-amber-500/20"
+                                      title="Aset telah resmi diserahkan / dihibahkan keluar dari RSUD">
+                                    <span>🎁 HIBAH KELUAR</span>
                                 </span>
                             </template>
 
@@ -1431,7 +1439,12 @@
                                                             🏛️ MUTASI KELUAR
                                                         </span>
                                                     </template>
-                                                    <template x-if="(reg.status === 'Kemitraan' || selectedAstapDetail?.sumber_dana === 'kemitraan' || selectedAstapDetail?.category === 'KEMITRAAN' || !!selectedAstapDetail?.kemitraan) && reg.status !== 'Mutasi Keluar OPD' && selectedAstapDetail?.jenis_reklas !== 'MUTASI_EKSTERNAL'">
+                                                    <template x-if="reg.status === 'Dihibahkan' || selectedAstapDetail?.jenis_reklas === 'HIBAH_KELUAR' || isHibahKeluar(selectedAstapDetail)">
+                                                        <span class="px-2.5 py-1 rounded-xl text-[9.5px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm">
+                                                            🎁 DIHIBAHKAN
+                                                        </span>
+                                                    </template>
+                                                    <template x-if="(reg.status === 'Kemitraan' || selectedAstapDetail?.sumber_dana === 'kemitraan' || selectedAstapDetail?.category === 'KEMITRAAN' || !!selectedAstapDetail?.kemitraan) && reg.status !== 'Mutasi Keluar OPD' && selectedAstapDetail?.jenis_reklas !== 'MUTASI_EKSTERNAL' && reg.status !== 'Dihibahkan' && selectedAstapDetail?.jenis_reklas !== 'HIBAH_KELUAR'">
                                                         <span class="px-2.5 py-1 rounded-xl text-[9.5px] font-black uppercase tracking-wider border shadow-sm"
                                                               :class="(selectedAstapDetail?.is_kemitraan_reklas || selectedAstapDetail?.kemitraan?.status_konsesi === 'Selesai / Reklasifikasi' || selectedAstapDetail?.kemitraan?.status_konsesi === 'Selesai') 
                                                                   ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-emerald-500/10' 
@@ -1445,7 +1458,7 @@
                                                                       : (reg.status === 'Dikembalikan ke Rekanan' ? '📦 DIKEMBALIKAN' : '🤝 KEMITRAAN'))">
                                                         </span>
                                                     </template>
-                                                    <template x-if="reg.status !== 'Mutasi Keluar OPD' && selectedAstapDetail?.jenis_reklas !== 'MUTASI_EKSTERNAL' && reg.status !== 'Kemitraan' && selectedAstapDetail?.sumber_dana !== 'kemitraan' && selectedAstapDetail?.category !== 'KEMITRAAN' && !selectedAstapDetail?.kemitraan">
+                                                    <template x-if="reg.status !== 'Mutasi Keluar OPD' && selectedAstapDetail?.jenis_reklas !== 'MUTASI_EKSTERNAL' && reg.status !== 'Dihibahkan' && selectedAstapDetail?.jenis_reklas !== 'HIBAH_KELUAR' && !isHibahKeluar(selectedAstapDetail) && reg.status !== 'Kemitraan' && selectedAstapDetail?.sumber_dana !== 'kemitraan' && selectedAstapDetail?.category !== 'KEMITRAAN' && !selectedAstapDetail?.kemitraan">
                                                         <span class="px-2.5 py-1 rounded-xl text-[9.5px] font-bold uppercase tracking-wider bg-slate-950 text-slate-400 border border-slate-800"
                                                               x-text="(isRegisterPlacedInUnit(reg) || reg.status === 'Tidak Tersedia') ? 'Tidak Tersedia' : (reg.status || 'Tersedia')">
                                                         </span>
@@ -1560,12 +1573,12 @@
                                                         </button>
 
                                                         @if(Auth::user()?->role === 'master_admin' || Auth::user()?->canDo('astap', 'edit'))
-                                                        <!-- 2. Tombol Ubah Kondisi Barang (Modal Khusus) — Dinonaktifkan jika unit dikembalikan ke rekanan mitra -->
+                                                        <!-- 2. Tombol Ubah Kondisi Barang (Modal Khusus) — Dinonaktifkan jika unit telah dihibahkan, dikembalikan ke rekanan, atau mutasi keluar -->
                                                         <button type="button"
-                                                                @click.stop="(reg.status === 'Dikembalikan ke Rekanan' || (reg.ruang_pemegang && reg.ruang_pemegang.toLowerCase().startsWith('telah dikembalikan'))) ? null : openEditKondisiModal(reg)"
-                                                                :title="(reg.status === 'Dikembalikan ke Rekanan' || (reg.ruang_pemegang && reg.ruang_pemegang.toLowerCase().startsWith('telah dikembalikan'))) ? 'Unit ini telah dikembalikan ke rekanan mitra — kondisi tidak dapat diubah' : 'Ubah Kondisi Aset Ini'"
-                                                                :disabled="reg.status === 'Dikembalikan ke Rekanan' || (reg.ruang_pemegang && reg.ruang_pemegang.toLowerCase().startsWith('telah dikembalikan'))"
-                                                                :class="(reg.status === 'Dikembalikan ke Rekanan' || (reg.ruang_pemegang && reg.ruang_pemegang.toLowerCase().startsWith('telah dikembalikan')))
+                                                                @click.stop="isRegisterLockedForEdit(reg) ? null : openEditKondisiModal(reg)"
+                                                                :title="isRegisterLockedForEdit(reg) ? getRegisterLockedMessage(reg) : 'Ubah Kondisi Aset Ini'"
+                                                                :disabled="isRegisterLockedForEdit(reg)"
+                                                                :class="isRegisterLockedForEdit(reg)
                                                                     ? 'p-1.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-600 cursor-not-allowed shadow-sm opacity-50'
                                                                     : 'p-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 hover:text-amber-300 transition-all cursor-pointer shadow-sm active:scale-95'">
                                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 0L20.586 7a2 2 0 010 2.828l-8.586 8.586z"/></svg>
