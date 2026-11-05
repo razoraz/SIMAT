@@ -650,6 +650,9 @@ class MutasiEksternalController extends Controller
                 'alasan_batal'              => $m->alasan_batal,
                 'dibatalkan_at'             => $m->dibatalkan_at ? $m->dibatalkan_at->format('d/m/Y H:i') : null,
                 'dibatalkan_by'             => $m->dibatalkan_by,
+                'alasan_reaktivasi'         => $m->alasan_reaktivasi,
+                'diaktifkan_at'             => $m->diaktifkan_at ? $m->diaktifkan_at->format('d/m/Y H:i') : null,
+                'diaktifkan_by'             => $m->diaktifkan_by,
                 'tgl_estimasi_kembali'      => $m->tgl_estimasi_kembali ? $m->tgl_estimasi_kembali->format('Y-m-d') : null,
                 'dokumen_lampiran'          => $m->dokumen_lampiran ?: ($astap?->spesifikasi_json['dokumen_lampiran'] ?? null),
                 'dokumen_lampiran_url'      => ($m->dokumen_lampiran ?: ($astap?->spesifikasi_json['dokumen_lampiran'] ?? null)) ? asset('storage/' . ($m->dokumen_lampiran ?: $astap->spesifikasi_json['dokumen_lampiran'])) : null,
@@ -1889,13 +1892,27 @@ class MutasiEksternalController extends Controller
             ], 404);
         }
 
-        DB::transaction(function () use ($mutasi) {
+        $reason = trim($request->input('alasan_reaktivasi', ''));
+        if (empty($reason)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Alasan pengaktifan kembali (reaktivasi) wajib diisi untuk catatan riwayat audit sistem.'
+            ], 422);
+        }
+
+        $actorName = $user ? ($user->name . ' (' . ($user->role === 'master_admin' ? 'Master Admin' : 'Admin BMD') . ')') : 'Petugas SIMAT';
+
+        DB::transaction(function () use ($mutasi, $reason, $actorName, $user) {
             $mutasi->update([
-                'status'           => 'Disahkan (Selesai)',
-                'alasan_batal'     => null,
-                'dibatalkan_at'    => null,
-                'dibatalkan_by'    => null,
-                'dibatalkan_by_id' => null,
+                'status'                 => 'Disahkan (Selesai)',
+                'alasan_reaktivasi'      => $reason,
+                'diaktifkan_at'          => now(),
+                'diaktifkan_by'          => $actorName,
+                'diaktifkan_by_id'       => $user?->id,
+                'alasan_batal'           => null,
+                'dibatalkan_at'          => null,
+                'dibatalkan_by'          => null,
+                'dibatalkan_by_id'       => null,
             ]);
 
             if ($mutasi->tipe === 'keluar') {
@@ -1927,30 +1944,41 @@ class MutasiEksternalController extends Controller
                 if ($mutasi->astap_id) {
                     $astap = Astap::find($mutasi->astap_id);
                     if ($astap) {
-                        $astap->update([
+                        $astapRestorePayload = [
                             'is_deleted'          => 0,
                             'deleted_by'          => null,
                             'deleted_by_id'       => null,
                             'deleted_at'          => null,
                             'keterangan_tambahan' => null,
-                        ]);
+                        ];
+                        if (\Illuminate\Support\Facades\Schema::hasColumn('astaps', 'alasan_hapus')) {
+                            $astapRestorePayload['alasan_hapus'] = null;
+                        }
+                        $astap->update($astapRestorePayload);
 
-                        AstapRegister::where('astap_id', $astap->id)->update([
-                            'status'        => 'Tersedia',
-                            'is_deleted'    => 0,
-                            'deleted_by'    => null,
-                            'deleted_by_id' => null,
-                            'deleted_at'    => null,
-                        ]);
+                        $regs = AstapRegister::where('astap_id', $astap->id)->get();
+                        foreach ($regs as $reg) {
+                            $hasUnit = !empty($reg->unit_id);
+                            $reg->update([
+                                'status'        => $hasUnit ? 'Tidak Tersedia' : 'Tersedia',
+                                'is_deleted'    => 0,
+                                'deleted_by'    => null,
+                                'deleted_by_id' => null,
+                                'deleted_at'    => null,
+                            ]);
+                        }
                     }
                 }
             }
         });
 
         return response()->json([
-            'success' => true,
-            'message' => 'Status transaksi Mutasi Eksternal berhasil diaktifkan kembali menjadi Disahkan (Selesai).',
-            'status'  => 'Disahkan (Selesai)',
+            'success'               => true,
+            'message'               => 'Status transaksi Mutasi Eksternal berhasil diaktifkan kembali menjadi Disahkan (Selesai).',
+            'status'                => 'Disahkan (Selesai)',
+            'alasan_reaktivasi'     => $reason,
+            'diaktifkan_by'         => $actorName,
+            'diaktifkan_at'         => now()->format('d/m/Y H:i'),
         ]);
     }
 
