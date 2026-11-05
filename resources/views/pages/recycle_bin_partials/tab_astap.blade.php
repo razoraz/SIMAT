@@ -140,7 +140,6 @@
                                 <th class="px-4 py-3.5">Kode 108 / Kategori</th>
                                 <th class="px-4 py-3.5">Volume & Satuan</th>
                                 <th class="px-4 py-3.5">Tahun & Nilai Realisasi</th>
-                                <th class="px-4 py-3.5">Penyedia / SPK</th>
                                 <th class="px-4 py-3.5">Dihapus Oleh</th>
                                 <th class="px-4 py-3.5">Waktu Penghapusan</th>
                                 <th class="px-4 py-3.5 text-center shrink-0 min-w-[220px] w-[220px]" style="position: sticky; right: 0; z-index: 10; background-color: #020617;">Aksi</th>
@@ -186,10 +185,6 @@
                                         <span class="text-[10px] text-slate-400" x-text="'Tahun: ' + item.tahun"></span>
                                     </td>
                                     <td class="px-4 py-4">
-                                        <span class="text-slate-200 block" x-text="item.penyedia"></span>
-                                        <span class="text-[10px] font-mono text-slate-500" x-text="'SPK: ' + item.spk_nomor"></span>
-                                    </td>
-                                    <td class="px-4 py-4">
                                         <span class="font-bold text-red-300 block" x-text="item.deleted_by"></span>
                                         <span class="text-[10px] text-slate-500">Label: 1 (Soft Delete)</span>
                                     </td>
@@ -212,6 +207,7 @@
                                             <button type="button" @click="forceDeleteSingle('astap', item)" title="Hapus Permanen dari Database"
                                                 class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
                                                 <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                <span>Hapus</span>
                                             </button>
                                         </div>
                                     </td>
@@ -219,7 +215,7 @@
                             </template>
                             <template x-if="filteredItems.length === 0">
                                 <tr>
-                                    <td colspan="9" class="py-14 text-center">
+                                    <td colspan="8" class="py-14 text-center">
                                         <div class="flex flex-col items-center justify-center space-y-2">
                                             <div class="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-2xl text-emerald-400 shadow-inner">📦</div>
                                             <template x-if="currentList.length === 0">
@@ -343,6 +339,7 @@
                                             <button type="button" @click="forceDeleteSingle('nibar', item)" title="Hapus Permanen dari Database"
                                                 class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
                                                 <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                <span>Hapus</span>
                                             </button>
                                         </div>
                                     </td>

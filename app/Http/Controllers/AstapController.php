@@ -4517,7 +4517,7 @@ class AstapController extends Controller
             $twOrder = ['TW I' => 1, 'TW 1' => 1, 'TW II' => 2, 'TW 2' => 2, 'TW III' => 3, 'TW 3' => 3, 'TW IV' => 4, 'TW 4' => 4];
             $totalUpdated = 0;
 
-            \Illuminate\Support\Facades\DB::transaction(function() use ($grouped, $twOrder, &$totalUpdated) {
+            \Illuminate\Support\Facades\DB::transaction(function() use ($grouped, $twOrder, $astapId, &$totalUpdated) {
                 foreach ($grouped as $key => $astapsInGroup) {
                     // Urutkan ASTAP berdasarkan Triwulan (TW I -> TW IV), lalu created_at, lalu id
                     $sortedAstaps = $astapsInGroup->sort(function($a, $b) use ($twOrder) {
@@ -4536,7 +4536,7 @@ class AstapController extends Controller
                     // Aturan Bisnis:
                     // 1. Aset yang SUDAH DITEMPATKAN nomornya DIKUNCI (tidak boleh berubah karena label fisik QR di ruangan sudah terpasang).
                     // 2. Aset yang BELUM DITEMPATKAN akan disusun mengisi celah nomor register yang kosong dari nomor 1 secara berurutan.
-                    // 3. Jika tidak ada aset gudang di atasnya untuk mengisi celah, nomor urut yang sudah ditempatkan tetap dipertahankan.
+                    // 3. Jika targeted resequence untuk single barang ($astapId), register milik barang target tersebut ikut dirapatkan mengisi celah kosong.
                     $placedRegs = [];
                     $unplacedRegs = [];
                     $lockedSlots = [];
@@ -4548,8 +4548,9 @@ class AstapController extends Controller
                         });
 
                         foreach ($orderedRegs as $reg) {
-                            $isPlaced = !empty($reg->ruang_pemegang) || !empty($reg->unit_id);
                             $curSlot = $reg->no_register_int ?: intval(substr($reg->nibar ?? '', -7));
+                            $isTargetAstap = ($astapId && $astap->id == $astapId);
+                            $isPlaced = (!$isTargetAstap) && (!empty($reg->ruang_pemegang) || !empty($reg->unit_id));
 
                             if ($isPlaced) {
                                 $placedRegs[] = ['reg' => $reg, 'astap' => $astap, 'slot' => $curSlot];

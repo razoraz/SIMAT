@@ -572,64 +572,6 @@
                             </div>
                         </template>
                     </div>
-                            <div class="p-8 text-center rounded-2xl border border-dashed border-emerald-500/30 space-y-2" style="background-color: #020617;">
-                                <span class="text-3xl block">🔄</span>
-                                <h4 class="text-sm font-bold text-slate-200">Belum Ada Reklasifikasi Aset</h4>
-                                <p class="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
-                                    Aset ini belum pernah direklasifikasi kelompok KIB, kemitraan (akun 1.5.2), maupun penyesuaian nilai kapitalisasi koreksi.
-                                </p>
-                            </div>
-                        </template>
-
-                        <template x-if="selectedRiwayatReklas && selectedRiwayatReklas.length > 0">
-                            <div class="space-y-3 relative pl-4 border-l-2 border-emerald-500/30 my-2">
-                                <template x-for="(rk, idx) in selectedRiwayatReklas" :key="'reklas-hibah-' + (rk.id || idx)">
-                                    <div class="relative group">
-                                        <div class="absolute -left-[21px] top-2.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-4 ring-slate-900"></div>
-                                        <div class="p-4 rounded-2xl border border-slate-800 space-y-2.5 hover:border-emerald-500/40 transition-colors" style="background-color: #020617;">
-                                            <div class="flex flex-wrap items-center justify-between gap-2">
-                                                <div class="flex items-center space-x-2">
-                                                    <span class="text-xs font-mono font-extrabold text-white flex items-center space-x-1">
-                                                        <span>📅</span>
-                                                        <span x-text="rk.tanggal_reklas"></span>
-                                                    </span>
-                                                    <span class="px-2 py-0.5 rounded text-[9.5px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" x-text="rk.sub_koreksi_label || rk.jenis_reklas"></span>
-                                                    <span class="text-[10px] font-mono text-slate-400" x-text="'(' + (rk.nomor_ba || 'BA-REKLAS') + ')'"></span>
-                                                </div>
-                                                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border"
-                                                      :class="rk.tipe_koreksi === 'tambah' ? 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30' : 'bg-rose-500/15 text-rose-300 border-rose-500/30'"
-                                                      x-text="rk.tipe_koreksi === 'tambah' ? '➕ Bertambah' : '➖ Berkurang'"></span>
-                                            </div>
-
-                                            <div class="p-2.5 bg-slate-900/80 rounded-xl border border-slate-800 flex items-center justify-between text-xs">
-                                                <div>
-                                                    <span class="text-[9.5px] uppercase font-bold text-slate-500 block">Akun / KIB Asal:</span>
-                                                    <span class="font-semibold text-slate-200" x-text="rk.asal_kib || rk.asal_kode || '-'"></span>
-                                                </div>
-                                                <span class="text-emerald-400 font-extrabold text-sm px-1">➔</span>
-                                                <div>
-                                                    <span class="text-[9.5px] uppercase font-bold text-slate-500 block">Akun / KIB Tujuan:</span>
-                                                    <span class="font-bold text-emerald-300" x-text="rk.tujuan_kib || rk.tujuan_kode || '-'"></span>
-                                                </div>
-                                            </div>
-
-                                            <div class="p-2.5 bg-slate-900/90 rounded-xl border border-slate-800 text-xs space-y-1">
-                                                <div class="flex items-center justify-between">
-                                                    <span class="text-[10px] font-bold text-slate-400 uppercase">Nilai Reklasifikasi:</span>
-                                                    <span class="font-mono font-bold text-white text-xs" x-text="rk.nilai_reklas"></span>
-                                                </div>
-                                                <p class="text-[11px] text-slate-300 italic pt-1 border-t border-slate-800/80" x-text="'Keterangan: ' + (rk.alasan_reklas || '-')"></p>
-                                            </div>
-
-                                            <div class="text-[10px] text-slate-400 pt-0.5 px-1 border-t border-slate-800/60">
-                                                <span>Operator Pencatat: <strong class="text-slate-300 font-semibold" x-text="rk.user_nama || 'Administrator'"></strong></span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </template>
-                            </div>
-                        </template>
-                    </div>
 
                     <div class="pt-3 border-t border-slate-800 flex justify-end">
                         <button type="button" @click.stop="showRiwayatModal = false" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs transition-all cursor-pointer">

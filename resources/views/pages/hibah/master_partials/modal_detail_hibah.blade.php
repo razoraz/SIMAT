@@ -850,7 +850,7 @@
 
                             <!-- Tombol Rapikan NIBAR Aktif untuk Hibah Masuk -->
                             <template x-if="selectedDetail.tipe_hibah !== 'keluar'">
-                                <button type="button" @click="resequenceSingleAstap(selectedDetail)"
+                                <button type="button" @click.stop="resequenceSingleAstap(selectedDetail)"
                                     class="px-2.5 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[10.5px] font-bold transition-all flex items-center space-x-1 cursor-pointer shadow-sm active:scale-95"
                                     title="Urutkan ulang register NIBAR barang ini agar berurutan tanpa celah">
                                     <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
@@ -1001,7 +1001,7 @@
 
                                                 <!-- Hapus Register -->
                                                 <button type="button" 
-                                                        @click.stop="selectedDetail.tipe_hibah === 'keluar' ? null : deleteRegister(reg)"
+                                                        @click.stop="deleteRegister(reg)"
                                                         :title="selectedDetail.tipe_hibah === 'keluar' ? 'Unit terkunci karena telah dihibahkan keluar' : 'Hapus Aset Register Ini'"
                                                         :disabled="selectedDetail.tipe_hibah === 'keluar'"
                                                         :class="selectedDetail.tipe_hibah === 'keluar'
@@ -1058,5 +1058,6 @@
                 Tutup
             </button>
         </div>
+    </div>
     </div>
 </template>

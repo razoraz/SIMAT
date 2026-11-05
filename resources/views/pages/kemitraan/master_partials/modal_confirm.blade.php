@@ -79,22 +79,22 @@
 <template x-teleport="body">
     <div x-show="showConfirmModal" x-cloak
          @click.self="showConfirmModal = false"
-         class="fixed inset-0 flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
-         style="background-color: rgba(2, 6, 23, 0.9); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); z-index: 100005;"
+         class="fixed inset-0 w-screen h-screen min-h-screen flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+         style="background-color: rgba(2, 6, 23, 0.9); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); z-index: 100005 !important;"
          x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="opacity-0"
          x-transition:enter-end="opacity-100"
          x-transition:leave="transition ease-in duration-150"
          x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0">
-    <div x-show="showConfirmModal"
+    <div @click.stop
          x-transition:enter="transition ease-out duration-200 transform opacity-0 scale-95"
          x-transition:enter-start="opacity-0 scale-95"
          x-transition:enter-end="opacity-100 scale-100"
          x-transition:leave="transition ease-in duration-150 transform opacity-100 scale-100"
          x-transition:leave-start="opacity-100 scale-100"
          x-transition:leave-end="opacity-0 scale-95"
-         class="bg-slate-900 border rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-4 relative overflow-hidden"
+         class="bg-slate-900 border rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-4 relative overflow-hidden my-auto"
          :class="{
              'border-rose-500/40': confirmData.type === 'danger',
              'border-amber-500/40': confirmData.type === 'warning',

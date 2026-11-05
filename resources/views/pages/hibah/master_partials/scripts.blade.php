@@ -51,7 +51,20 @@
 
             // Generic Dialog Confirmation State
             showConfirmModal: false,
-            confirmData: {},
+            confirmData: {
+                title: '',
+                message: '',
+                itemName: '',
+                itemDetails: null,
+                type: 'warning',
+                btnText: '',
+                isBlocked: false,
+                actionUrl: null,
+                actionText: null,
+                assetWarning: null,
+                onActionClick: null,
+                onConfirm: null
+            },
 
             // Global Toast Notification State
             toast: {
@@ -224,7 +237,6 @@
                 this.searchQuery = '';
             },
 
-
             get filteredActiveAstaps() {
                 if (!this.searchAsetKeluar || this.searchAsetKeluar.trim() === '') {
                     return (this.activeAstaps || []).slice(0, 30);
@@ -234,13 +246,6 @@
                     (a.nama_barang || '').toLowerCase().includes(q) ||
                     (a.kode_barang || '').toLowerCase().includes(q)
                 ).slice(0, 30);
-            },
-
-            resetFilter() {
-                this.activeTab = 'all';
-                this.selectedYear = 'all';
-                this.selectedTw = 'all';
-                this.searchQuery = '';
             },
 
             formatRupiah(val) {
@@ -540,26 +545,29 @@
             // DIALOG KONFIRMASI CUSTOM & AKSI REGISTER
             // =========================================================================
             askConfirmation(cfg) {
-                this.confirmData = {
-                    title: cfg.title || 'Konfirmasi Tindakan',
-                    message: cfg.message || '',
-                    itemName: cfg.itemName || '',
-                    itemDetails: cfg.itemDetails || null,
-                    type: cfg.type || 'warning',
-                    btnText: cfg.btnText || 'Ya, Lanjutkan',
-                    isBlocked: Boolean(cfg.isBlocked),
-                    actionUrl: cfg.actionUrl || null,
-                    actionText: cfg.actionText || '',
-                    onConfirm: cfg.onConfirm || null
-                };
+                // ⚠️ PENTING: Mutate per-property (JANGAN replace seluruh objek dengan `this.confirmData = {...}`)
+                // Alpine.js v3 melacak reaktivitas via Proxy. Jika objek di-replace penuh,
+                // Alpine kehilangan track pada sub-properties dan template tidak akan reaktif.
+                this.confirmData.title        = cfg.title        || 'Konfirmasi Tindakan';
+                this.confirmData.message      = cfg.message      || '';
+                this.confirmData.itemName     = cfg.itemName     || '';
+                this.confirmData.itemDetails  = cfg.itemDetails  || null;
+                this.confirmData.type         = cfg.type         || 'warning';
+                this.confirmData.btnText      = cfg.btnText      || 'Ya, Lanjutkan';
+                this.confirmData.isBlocked    = Boolean(cfg.isBlocked);
+                this.confirmData.actionUrl    = cfg.actionUrl    || null;
+                this.confirmData.actionText   = cfg.actionText   || '';
+                this.confirmData.assetWarning = cfg.assetWarning || null;
+                this.confirmData.onActionClick= cfg.onActionClick|| null;
+                this.confirmData.onConfirm    = cfg.onConfirm    || null;
                 this.showConfirmModal = true;
             },
 
-            async executeConfirmedAction() {
-                this.showConfirmModal = false;
+            executeConfirmedAction() {
                 if (typeof this.confirmData.onConfirm === 'function') {
-                    await this.confirmData.onConfirm();
+                    this.confirmData.onConfirm();
                 }
+                this.showConfirmModal = false;
             },
 
             // =========================================================================
@@ -766,18 +774,24 @@
                     this.showToast('NIBAR untuk Hibah Keluar bersifat permanen dan tidak dapat diurutkan ulang.', 'warning');
                     return;
                 }
-                const astapId = hibahItem?.astap?.id || hibahItem?.astap_id || (hibahItem?.category ? hibahItem?.id : null);
+                // Ambil astap_id dari berbagai kemungkinan struktur data
+                const astap = hibahItem ? (hibahItem.astap || null) : null;
+                const astapId = (astap && astap.id)
+                    ? astap.id
+                    : (hibahItem?.astap_id || null);
+
                 if (!astapId) {
                     this.showToast('Data ASTAP induk untuk barang ini tidak ditemukan.', 'warning');
                     return;
                 }
-                const astap = hibahItem ? (hibahItem.astap || hibahItem) : null;
+                const namaBarang = astap?.nama_barang || hibahItem?.nama_barang || 'Barang Hibah';
+                const tahunBarang = hibahItem?.tahun || astap?.tahun_perolehan || new Date().getFullYear();
                 this.askConfirmation({
                     title: '🔄 Konfirmasi Rapikan NIBAR Barang Ini',
                     message: 'Sistem akan merapatkan nomor urut register (NIBAR) yang kosong khusus untuk aset yang BELUM DITEMPATKAN (di gudang).\n\n🔒 Aset yang SUDAH DITEMPATKAN di unit/ruangan TIDAK AKAN BERUBAH agar label stiker QR fisik di ruangan tidak tertukar.\n\n⚡ Aset gudang setelahnya akan dimajukan untuk mengisi nomor yang kosong.',
-                    itemName: (astap?.nama_barang || hibahItem?.nama_barang || 'Barang Hibah') + ' (Tahun ' + (hibahItem?.tahun || astap?.tahun_perolehan || '2026') + ')',
+                    itemName: namaBarang + ' (Tahun ' + tahunBarang + ')',
                     type: 'warning',
-                    btnText: '✓ Ya, Rapikan NIBAR',
+                    btnText: '⚡ Ya, Rapikan NIBAR',
                     onConfirm: async () => {
                         const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                         try {
@@ -794,6 +808,7 @@
                             });
                             const data = await res.json();
                             if (data.success) {
+                                this.showModalDetail = false;
                                 this.showToast(data.message || 'NIBAR berhasil dirapikan!', 'success');
                                 setTimeout(() => window.location.reload(), 1200);
                             } else {
@@ -830,26 +845,50 @@
                     });
                     return;
                 }
+
+                const nibarStr = reg.nibar || reg.no_register || 'NIBAR';
+                const parentName = this.selectedDetail?.astap?.nama_barang || this.selectedDetail?.nama_barang || 'Aset Hibah';
+
+                // 1. Validasi Penempatan: Cek apakah unit register SUDAH DITEMPATKAN di unit / ruangan (Persis Kemitraan)
                 if (this.isRegisterPlacedInUnit(reg)) {
-                    const roomName = String(reg.ruang_pemegang || 'Unit / Paviliun RSUD').trim();
-                    const nibarStr = reg.nibar || reg.no_register || 'NIBAR';
+                    const roomName = String(reg.ruang_pemegang || 'Unit / Ruangan RSUD').trim();
                     this.askConfirmation({
                         title: 'Unit Tidak Dapat Dihapus',
-                        message: `Unit register NIBAR "${nibarStr}" saat ini belum dapat dihapus karena masih aktif ditempatkan di ruangan "${roomName}" di database RSUD.\n\nSilakan ajukan mutasi pemindahan aset terlebih dahulu atau kembalikan ke gudang perbekalan sebelum menghapus register.`,
-                        itemName: `NIBAR: ${nibarStr}`,
+                        message: `Unit register NIBAR "${nibarStr}" saat ini belum dapat dihapus karena masih aktif ditempatkan di ruangan "${roomName}" di database RSUD.`,
+                        itemName: `${parentName} (NIBAR: ${nibarStr})`,
+                        itemDetails: {
+                            nama: parentName,
+                            kode: nibarStr,
+                            badgeText: '1 ASET AKTIF',
+                            totalAset: 1,
+                            nilaiFmt: this.selectedDetail?.nilai_aset ? ('Rp ' + Number(this.selectedDetail.nilai_aset).toLocaleString('id-ID')) : 'Rp 0'
+                        },
                         type: 'danger',
-                        isBlocked: true
+                        isBlocked: true,
+                        actionUrl: '/mutasi-aset',
+                        actionText: 'Ajukan Mutasi Aset',
+                        assetWarning: `Sistem mendeteksi bahwa ruangan "${roomName}" saat ini masih memegang aset aktif dengan NIBAR ${nibarStr}. Demi akuntabilitas dan pencegahan kehilangan aset RSUD Koesnandi, seluruh aset harus dipindahkan (mutasi) ke ruangan lain terlebih dahulu sampai ruangan ini kosong atau dikembalikan ke gudang perbekalan.`,
+                        btnText: null,
+                        onConfirm: null
                     });
                     return;
                 }
 
-                const nibarStr = reg.nibar || reg.no_register || 'NIBAR';
+                // 2. Jika belum ditempatkan (di gudang): Izinkan hapus ke Tong Sampah
                 this.askConfirmation({
-                    title: 'Konfirmasi Hapus Unit Register',
-                    message: `Apakah Anda yakin ingin menghapus unit register NIBAR "${nibarStr}" ini? Unit register akan dipindahkan ke Recycle Bin.`,
+                    title: 'Konfirmasi Pindahkan ke Tong Sampah',
+                    message: `Apakah Anda yakin ingin memindahkan unit register NIBAR "${nibarStr}" ini ke Recycle Bin (Tong Sampah)? Data dapat dipulihkan kembali jika diperlukan.`,
                     itemName: `NIBAR: ${nibarStr}`,
+                    itemDetails: {
+                        nama: parentName,
+                        kode: nibarStr,
+                        badgeText: 'Belum Ditempatkan',
+                        totalAset: 0,
+                        nilaiFmt: 'Gudang Aset'
+                    },
                     type: 'danger',
-                    btnText: 'Hapus Unit Register',
+                    isBlocked: false,
+                    btnText: 'Pindahkan ke Tong Sampah',
                     onConfirm: async () => {
                         const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                         try {
@@ -896,6 +935,16 @@
                                     }
                                     this.showToast(data.message || 'Unit register berhasil dihapus ke Recycle Bin', 'success');
                                 }
+                            } else if (data.is_blocked) {
+                                this.askConfirmation({
+                                    title: 'Unit Tidak Dapat Dihapus',
+                                    message: data.message,
+                                    itemName: `NIBAR: ${nibarStr}`,
+                                    type: 'danger',
+                                    isBlocked: true,
+                                    actionUrl: data.action_url || '/mutasi-aset',
+                                    actionText: data.action_text || 'Ajukan Mutasi Aset'
+                                });
                             } else {
                                 this.showToast(data.message || 'Gagal menghapus unit register.', 'error');
                             }

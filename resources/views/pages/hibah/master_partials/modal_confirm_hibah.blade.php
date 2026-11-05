@@ -3,6 +3,7 @@
 <!-- ========================================================================= -->
 
 <!-- 1. MODAL KONFIRMASI PROSES HIBAH KELUAR -->
+<template x-teleport="body">
 <div x-show="showConfirmKeluarModal" x-cloak
     @click.self="if (!isSubmittingKeluar) { showConfirmKeluarModal = false; showModalHibahKeluar = true; }"
     class="fixed inset-0 flex items-center justify-center p-4"
@@ -92,14 +93,15 @@
         </div>
     </div>
 </div>
+</template>
 
 
 <!-- 2. MODAL KONFIRMASI HAPUS / PINDAHKAN TRANSAKSI HIBAH KE RECYCLE BIN -->
 <template x-teleport="body">
     <div x-show="showConfirmDeleteModal" x-cloak
          @click.self="if (!isDeleting) showConfirmDeleteModal = false"
-         class="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
-         style="background-color: rgba(2, 6, 23, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); z-index: 99999;"
+         class="fixed inset-0 w-screen h-screen min-h-screen flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+         style="background-color: rgba(2, 6, 23, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); z-index: 99999 !important;"
          x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="opacity-0"
          x-transition:enter-end="opacity-100"
@@ -107,7 +109,7 @@
          x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0">
 
-        <div x-show="showConfirmDeleteModal"
+        <div x-show="showConfirmDeleteModal" @click.stop
              x-transition:enter="transition ease-out duration-200 transform opacity-0 scale-95"
              x-transition:enter-start="opacity-0 scale-95"
              x-transition:enter-end="opacity-100 scale-100"
@@ -176,22 +178,22 @@
 <template x-teleport="body">
     <div x-show="showConfirmModal" x-cloak
          @click.self="showConfirmModal = false"
-         class="fixed inset-0 flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
-         style="background-color: rgba(2, 6, 23, 0.9); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); z-index: 100005;"
+         class="fixed inset-0 w-screen h-screen min-h-screen flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+         style="background-color: rgba(2, 6, 23, 0.9); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); z-index: 100005 !important;"
          x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="opacity-0"
          x-transition:enter-end="opacity-100"
          x-transition:leave="transition ease-in duration-150"
          x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0">
-        <div x-show="showConfirmModal"
+        <div x-show="showConfirmModal" @click.stop
              x-transition:enter="transition ease-out duration-200 transform opacity-0 scale-95"
              x-transition:enter-start="opacity-0 scale-95"
              x-transition:enter-end="opacity-100 scale-100"
              x-transition:leave="transition ease-in duration-150 transform opacity-100 scale-100"
              x-transition:leave-start="opacity-100 scale-100"
              x-transition:leave-end="opacity-0 scale-95"
-             class="bg-slate-900 border rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-4 relative overflow-hidden"
+             class="bg-slate-900 border rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-4 relative overflow-hidden my-auto"
              :class="{
                  'border-rose-500/40': confirmData.type === 'danger',
                  'border-amber-500/40': confirmData.type === 'warning',
@@ -248,12 +250,46 @@
                 </div>
             </template>
 
+            <!-- Warning Card Khusus: Penempatan di Unit / Ruangan (Peringatan Akuntabilitas Aset RSUD) -->
+            <template x-if="confirmData.assetWarning">
+                <div class="p-4 bg-gradient-to-br from-rose-950/40 via-slate-950 to-slate-950 border border-rose-500/30 rounded-2xl space-y-2.5 shadow-inner">
+                    <div class="flex items-center space-x-2 text-rose-300 font-extrabold text-xs">
+                        <span class="p-1 rounded-md bg-rose-500/20 text-rose-400">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        </span>
+                        <span class="tracking-wide uppercase text-[11px]">Peringatan Akuntabilitas Aset RSUD</span>
+                    </div>
+                    <p class="text-xs text-rose-200/90 leading-relaxed whitespace-pre-line" x-text="confirmData.assetWarning"></p>
+                    <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center space-x-2 text-[11px] text-slate-300">
+                        <span class="text-amber-400">💡</span>
+                        <span>Silakan kosongkan penempatan unit dengan mengajukan mutasi aset ke ruangan lain atau kembalikan ke gudang perbekalan.</span>
+                    </div>
+                </div>
+            </template>
+
             <!-- Footer Action Buttons -->
             <div class="pt-3 border-t border-slate-800/90 flex items-center justify-end space-x-2.5 flex-wrap sm:flex-nowrap gap-y-2">
                 <button type="button" @click="showConfirmModal = false"
                     class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold text-xs sm:text-sm border border-slate-700 transition-all active:scale-95 cursor-pointer text-center">
                     <span x-text="confirmData.isBlocked ? 'Tutup' : 'Batal'"></span>
                 </button>
+
+                <!-- Tombol Action URL / Ajukan Mutasi Aset jika diblokir -->
+                <template x-if="confirmData.actionUrl">
+                    <a :href="confirmData.actionUrl"
+                        class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-blue-600/30 border border-blue-400/30 transition-all active:scale-95 flex items-center justify-center space-x-2 cursor-pointer">
+                        <svg class="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                        <span x-text="confirmData.actionText || 'Ajukan Mutasi Aset'"></span>
+                    </a>
+                </template>
+
+                <!-- Tombol Aksi Kustom (Jika Diblokir dan Memiliki Callback JS) -->
+                <template x-if="confirmData.isBlocked && !confirmData.actionUrl && confirmData.onActionClick">
+                    <button type="button" @click="confirmData.onActionClick()"
+                        class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-emerald-600/30 border border-emerald-400/30 transition-all active:scale-95 flex items-center justify-center space-x-2 cursor-pointer">
+                        <span x-text="confirmData.actionText || 'Lanjutkan Aksi'"></span>
+                    </button>
+                </template>
 
                 <template x-if="!confirmData.isBlocked && confirmData.btnText">
                     <button type="button" @click="executeConfirmedAction()"
