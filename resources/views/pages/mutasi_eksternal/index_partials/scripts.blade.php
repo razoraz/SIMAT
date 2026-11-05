@@ -31,6 +31,28 @@
             reaktivasiAlasan: '',
             isReactivating: false,
 
+            // Modal Edit Mutasi Keluar & Swap NIBAR State
+            showEditKeluarModal: false,
+            editingKeluarItem: null,
+            editKeluarForm: {
+                id: null,
+                nomor_bamb: '',
+                tanggal_mutasi: '',
+                opd_tujuan: '',
+                pj_tujuan_nama: '',
+                pj_tujuan_nip: '',
+                pj_tujuan_jabatan: '',
+                pj_asal_nama: '',
+                pj_asal_nip: '',
+                pj_asal_jabatan: '',
+                nomor_sk_dasar: '',
+                alasan_mutasi: '',
+                selected_register_ids: [],
+            },
+            editKeluarAllRegisters: [],
+            editKeluarSearchNibar: '',
+            isSavingKeluar: false,
+
             // Modal Edit Kondisi Register NIBAR State
             showEditKondisiModal: false,
             editingRegisterItem: null,
@@ -938,6 +960,135 @@
             // Alias fallback
             reaktivasiMutasi(item) {
                 this.openReaktivasiModal(item);
+            },
+
+            // =====================================================================
+            // EDIT MUTASI KELUAR OPD & SELEKSI REGISTER NIBAR
+            // =====================================================================
+            openEditKeluarModal(item) {
+                if (!item) return;
+                this.editingKeluarItem = item;
+
+                const targetDate = item.mutasi_tanggal || (item.tgl_raw ? item.tgl_raw.substring(0, 10) : new Date().toISOString().substring(0, 10));
+
+                this.editKeluarForm = {
+                    id: item.mutasi_id || item.id,
+                    nomor_bamb: item.bast_nomor || item.kode || '',
+                    tanggal_mutasi: targetDate,
+                    opd_tujuan: item.opd_tujuan || '',
+                    pj_tujuan_nama: item.pejabat_opd_tujuan || item.pj_tujuan_nama || '',
+                    pj_tujuan_nip: item.nip_pejabat_opd_tujuan || item.pj_tujuan_nip || '',
+                    pj_tujuan_jabatan: item.jabatan_opd_tujuan || item.pj_tujuan_jabatan || '',
+                    pj_asal_nama: item.pj_asal_nama || 'BUDI HARTONO, S.Sos',
+                    pj_asal_nip: item.pj_asal_nip || '19760229 200801 1 010',
+                    pj_asal_jabatan: item.pj_asal_jabatan || 'Pengurus Barang Pengguna RSUD Dr. H. Koesnandi',
+                    nomor_sk_dasar: item.nomor_sk_dasar || item.bast_nomor || item.kode || '',
+                    alasan_mutasi: item.alasan_mutasi || item.mutasi_keterangan || '',
+                    selected_register_ids: Array.isArray(item.mutasi_register_ids) ? [...item.mutasi_register_ids] : []
+                };
+
+                this.editKeluarAllRegisters = Array.isArray(item.all_astap_registers) 
+                    ? JSON.parse(JSON.stringify(item.all_astap_registers)) 
+                    : [];
+
+                // Defensive: jika mutasi_register_ids kosong tapi ada all_astap_registers
+                if (this.editKeluarForm.selected_register_ids.length === 0 && this.editKeluarAllRegisters.length > 0) {
+                    this.editKeluarForm.selected_register_ids = this.editKeluarAllRegisters
+                        .filter(r => r.is_selected)
+                        .map(r => r.id);
+                }
+
+                this.editKeluarSearchNibar = '';
+                this.isSavingKeluar = false;
+                this.showEditKeluarModal = true;
+            },
+
+            toggleEditKeluarRegister(regId) {
+                const id = Number(regId);
+                const idx = this.editKeluarForm.selected_register_ids.findIndex(item => Number(item) === id);
+                if (idx > -1) {
+                    this.editKeluarForm.selected_register_ids.splice(idx, 1);
+                } else {
+                    this.editKeluarForm.selected_register_ids.push(id);
+                }
+            },
+
+            selectAllAvailableKeluar() {
+                const availableIds = this.editKeluarAllRegisters
+                    .filter(r => r.is_available)
+                    .map(r => r.id);
+                this.editKeluarForm.selected_register_ids = [...availableIds];
+            },
+
+            deselectAllKeluar() {
+                this.editKeluarForm.selected_register_ids = [];
+            },
+
+            get filteredEditKeluarRegisters() {
+                const q = (this.editKeluarSearchNibar || '').toLowerCase().trim();
+                if (!q) return this.editKeluarAllRegisters;
+                return this.editKeluarAllRegisters.filter(r => 
+                    (r.nibar || '').toLowerCase().includes(q) ||
+                    (r.nomor_register || '').toLowerCase().includes(q) ||
+                    (r.ruang_pemegang || '').toLowerCase().includes(q) ||
+                    (r.kondisi || '').toLowerCase().includes(q)
+                );
+            },
+
+            async saveEditKeluar() {
+                if (this.isSavingKeluar) return;
+
+                if (!this.editKeluarForm.nomor_bamb || !this.editKeluarForm.nomor_bamb.trim()) {
+                    this.showToast('Nomor BAST wajib diisi.', 'error');
+                    return;
+                }
+                if (!this.editKeluarForm.tanggal_mutasi) {
+                    this.showToast('Tanggal penyerahan mutasi wajib diisi.', 'error');
+                    return;
+                }
+                if (!this.editKeluarForm.opd_tujuan || !this.editKeluarForm.opd_tujuan.trim()) {
+                    this.showToast('Nama SKPD / OPD penerima wajib diisi.', 'error');
+                    return;
+                }
+                if (this.editKeluarAllRegisters.length > 0 && this.editKeluarForm.selected_register_ids.length === 0) {
+                    this.showToast('Pilih minimal 1 unit NIBAR yang diserahterimakan.', 'error');
+                    return;
+                }
+
+                this.isSavingKeluar = true;
+                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+                const id = this.editKeluarForm.id;
+                const targetUrl = "{{ url('/mutasi-eksternal') }}/" + id + "/update-keluar";
+
+                try {
+                    const res = await fetch(targetUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': token,
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify(this.editKeluarForm)
+                    });
+
+                    const data = await res.json();
+                    this.isSavingKeluar = false;
+
+                    if (res.ok && data.success) {
+                        this.showEditKeluarModal = false;
+                        this.showToast(data.message || 'Perubahan Mutasi Keluar berhasil disimpan.', 'success');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 900);
+                    } else {
+                        this.showToast(data.message || 'Gagal menyimpan perubahan mutasi keluar.', 'error');
+                    }
+                } catch (err) {
+                    this.isSavingKeluar = false;
+                    console.error('Save mutasi keluar error:', err);
+                    this.showToast('Terjadi kesalahan jaringan saat menyimpan perubahan mutasi keluar.', 'error');
+                }
             },
 
             // =====================================================================
