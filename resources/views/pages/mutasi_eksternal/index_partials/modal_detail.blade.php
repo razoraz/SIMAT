@@ -72,12 +72,6 @@
 
             <!-- Tombol Action Header: Cetak & Close -->
             <div class="flex items-center space-x-2 shrink-0">
-                <button type="button" @click="openPrintModal(selectedAstapDetail || selectedMutasi)"
-                    title="Cetak Berita Acara Serah Terima (BAST)"
-                    class="px-3.5 py-1.5 rounded-xl bg-purple-500/20 hover:bg-purple-600 text-purple-300 hover:text-white border border-purple-500/40 text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer active:scale-95 shadow-sm">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2h6z"/></svg>
-                    <span>Cetak BAST</span>
-                </button>
                 <button type="button" @click="showDetailModal = false"
                     class="w-8 h-8 rounded-full bg-slate-800/80 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 border border-transparent hover:border-rose-500/30 flex items-center justify-center transition-all shrink-0 cursor-pointer">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -742,6 +736,32 @@
                     <span class="text-slate-400 text-[10px] block font-bold uppercase tracking-wider" x-text="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? '💡 Maksud &amp; Alasan Mutasi Keluar Antar-OPD:' : '💡 Maksud &amp; Alasan Mutasi Masuk Antar-OPD:'"></span>
                     <p class="text-slate-200 text-xs leading-relaxed" x-text="(selectedAstapDetail || selectedMutasi).alasan_mutasi || (selectedAstapDetail || selectedMutasi).mutasi_keterangan || '-'"></p>
                 </div>
+
+                <!-- ALASAN PEMBATALAN JIKA TRANSAKSI DIBATALKAN -->
+                <template x-if="((selectedAstapDetail || selectedMutasi)?.status || '').toLowerCase().includes('batal')">
+                    <div class="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 space-y-1.5">
+                        <div class="flex items-center space-x-2">
+                            <span class="w-2 h-2 rounded-full bg-rose-400 animate-pulse"></span>
+                            <span class="text-rose-400 text-[10px] font-extrabold uppercase tracking-wider">Informasi Pembatalan Transaksi</span>
+                            <span class="text-rose-300/80 text-[10px] font-semibold" x-show="(selectedAstapDetail || selectedMutasi)?.dibatalkan_by" x-text="'• Oleh: ' + (selectedAstapDetail || selectedMutasi)?.dibatalkan_by"></span>
+                            <span class="text-slate-400 text-[10px]" x-show="(selectedAstapDetail || selectedMutasi)?.dibatalkan_at" x-text="'(' + (selectedAstapDetail || selectedMutasi)?.dibatalkan_at + ')'"></span>
+                        </div>
+                        <p class="text-rose-200 text-xs leading-relaxed" x-text="(selectedAstapDetail || selectedMutasi)?.alasan_batal ? ('Alasan: ' + (selectedAstapDetail || selectedMutasi)?.alasan_batal) : 'Alasan pembatalan tidak dicantumkan.'"></p>
+                    </div>
+                </template>
+
+                <!-- RIWAYAT REAKTIVASI JIKA PERNAH DIAKTIFKAN KEMBALI -->
+                <template x-if="(selectedAstapDetail || selectedMutasi)?.alasan_reaktivasi && !((selectedAstapDetail || selectedMutasi)?.status || '').toLowerCase().includes('batal')">
+                    <div class="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 space-y-1.5">
+                        <div class="flex items-center space-x-2">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                            <span class="text-emerald-400 text-[10px] font-extrabold uppercase tracking-wider">Riwayat Pengaktifan Kembali (Reaktivasi)</span>
+                            <span class="text-emerald-300/80 text-[10px] font-semibold" x-show="(selectedAstapDetail || selectedMutasi)?.diaktifkan_by" x-text="'• Oleh: ' + (selectedAstapDetail || selectedMutasi)?.diaktifkan_by"></span>
+                            <span class="text-slate-400 text-[10px]" x-show="(selectedAstapDetail || selectedMutasi)?.diaktifkan_at" x-text="'(' + (selectedAstapDetail || selectedMutasi)?.diaktifkan_at + ')'"></span>
+                        </div>
+                        <p class="text-emerald-200 text-xs leading-relaxed" x-text="'Alasan Reaktivasi: ' + (selectedAstapDetail || selectedMutasi)?.alasan_reaktivasi"></p>
+                    </div>
+                </template>
             </div>
         </template>
 
@@ -752,6 +772,14 @@
                 Tutup Detail
             </button>
             <div class="flex items-center space-x-2">
+                {{-- Indikator Status Dibatalkan --}}
+                <template x-if="((selectedAstapDetail || selectedMutasi)?.status || '').toLowerCase().includes('batal')">
+                    <span class="inline-flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 font-extrabold text-xs select-none">
+                        <span class="w-2 h-2 rounded-full bg-rose-400"></span>
+                        <span>Status: Dibatalkan</span>
+                    </span>
+                </template>
+
                 @if(in_array(auth()->user()?->role, ['master_admin', 'admin']))
                     {{-- Jika Belum Dibatalkan: Tombol Batalkan Mutasi --}}
                     <template x-if="!((selectedAstapDetail || selectedMutasi)?.status || '').toLowerCase().includes('batal')">
@@ -762,26 +790,37 @@
                         </button>
                     </template>
 
-                    {{-- Jika Sudah Dibatalkan: Indikator Status Dibatalkan + Tombol Aktifkan Kembali --}}
+                    {{-- Jika Sudah Dibatalkan: Tombol Aktifkan Kembali Mutasi --}}
                     <template x-if="((selectedAstapDetail || selectedMutasi)?.status || '').toLowerCase().includes('batal')">
-                        <div class="flex items-center space-x-2">
-                            <span class="inline-flex items-center space-x-1.5 px-3 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 font-extrabold text-xs select-none">
-                                <span class="w-2 h-2 rounded-full bg-rose-400"></span>
-                                <span>Status: Dibatalkan</span>
-                            </span>
-                            <button type="button" @click="reaktivasiMutasi(selectedAstapDetail || selectedMutasi)"
-                                class="px-4 py-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 hover:border-emerald-400 font-extrabold text-xs transition-all shadow-md flex items-center space-x-1.5 active:scale-95 cursor-pointer">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                <span>Aktifkan Kembali Mutasi</span>
-                            </button>
-                        </div>
+                        <button type="button" @click="openReaktivasiModal(selectedAstapDetail || selectedMutasi)"
+                            title="Batalkan status pembatalan dan aktifkan kembali dokumen transaksi mutasi ini"
+                            class="px-4 py-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 hover:border-emerald-400 font-extrabold text-xs transition-all shadow-md flex items-center space-x-1.5 active:scale-95 cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                            <span>Aktifkan Kembali Mutasi</span>
+                        </button>
                     </template>
                 @endif
 
-                <button type="button" @click="openPrintModal(selectedAstapDetail || selectedMutasi)"
-                    class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-400 hover:to-indigo-500 text-white font-extrabold text-xs shadow-lg shadow-purple-500/25 transition-all flex items-center space-x-2 active:scale-95 cursor-pointer">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                    <span>🖨️ Cetak / Preview BAST</span>
+                {{-- Tombol Cetak / Preview BAST (Dinamis: Aktif jika Disahkan, Disabled jika Dibatalkan) --}}
+                <button type="button" 
+                    :disabled="((selectedAstapDetail || selectedMutasi)?.status || '').toLowerCase().includes('batal')"
+                    @click="openPrintModal(selectedAstapDetail || selectedMutasi)"
+                    :title="((selectedAstapDetail || selectedMutasi)?.status || '').toLowerCase().includes('batal') ? 'Pencetakan BAST dinonaktifkan karena transaksi telah dibatalkan.' : 'Cetak Dokumen Resmi Berita Acara Serah Terima (BAST)'"
+                    class="px-5 py-2.5 rounded-xl font-extrabold text-xs transition-all flex items-center space-x-2 select-none leading-none"
+                    :class="((selectedAstapDetail || selectedMutasi)?.status || '').toLowerCase().includes('batal')
+                        ? 'bg-slate-900 border border-slate-800 text-slate-500 cursor-not-allowed opacity-60 shadow-none'
+                        : 'bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-400 hover:to-indigo-500 text-white shadow-lg shadow-purple-500/25 active:scale-95 cursor-pointer'">
+                    
+                    <template x-if="!((selectedAstapDetail || selectedMutasi)?.status || '').toLowerCase().includes('batal')">
+                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                    </template>
+                    <template x-if="((selectedAstapDetail || selectedMutasi)?.status || '').toLowerCase().includes('batal')">
+                        <svg class="w-4 h-4 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                    </template>
+
+                    <span x-text="((selectedAstapDetail || selectedMutasi)?.status || '').toLowerCase().includes('batal') ? '🔒 Cetak / Preview BAST' : '🖨️ Cetak / Preview BAST'"></span>
                 </button>
             </div>
         </div>

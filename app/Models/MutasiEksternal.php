@@ -23,6 +23,7 @@ class MutasiEksternal extends Model
         'is_deleted'           => 'integer',
         'deleted_at'           => 'datetime',
         'dibatalkan_at'        => 'datetime',
+        'diaktifkan_at'        => 'datetime',
     ];
 
     /**

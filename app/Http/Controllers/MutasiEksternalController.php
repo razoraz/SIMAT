@@ -480,7 +480,7 @@ class MutasiEksternalController extends Controller
 
         // Ambil data aktif dari tabel mutasi_eksternals
         $records = MutasiEksternal::with([
-                'astap.registers', 
+                'astap.registers.unit', 
                 'astap.jenisAstap', 
                 'unit', 
                 'user',
@@ -583,6 +583,9 @@ class MutasiEksternalController extends Controller
             $volAset = (int) ($m->jumlah_volume ?: ($itemCount ?: 1));
 
             $displayRegisters = $registers;
+            $currentMutasiRegIds = [];
+            $allAstapRegisters = [];
+
             if ($isKeluar && $m->mutasiRegisters && $m->mutasiRegisters->isNotEmpty()) {
                 $outRegs = $m->mutasiRegisters->map(function ($mr) {
                     $r = $mr->register;
@@ -596,6 +599,32 @@ class MutasiEksternalController extends Controller
 
                 if ($outRegs->isNotEmpty()) {
                     $displayRegisters = $outRegs;
+                }
+            }
+
+            if ($isKeluar) {
+                if ($m->mutasiRegisters && $m->mutasiRegisters->isNotEmpty()) {
+                    $currentMutasiRegIds = $m->mutasiRegisters->pluck('astap_register_id')->filter()->map(fn($v) => (int)$v)->all();
+                } elseif ($astap && $astap->registers) {
+                    $currentMutasiRegIds = $astap->registers->where('status', 'Mutasi Keluar OPD')->pluck('id')->map(fn($v) => (int)$v)->all();
+                }
+
+                if ($astap && $astap->registers) {
+                    $allAstapRegisters = $astap->registers->where('is_deleted', 0)->map(function ($r) use ($currentMutasiRegIds) {
+                        $isInThis = in_array((int)$r->id, $currentMutasiRegIds, true);
+                        $isAvailable = $isInThis || !in_array($r->status, ['Mutasi Keluar OPD', 'Dihibahkan', 'Kemitraan', 'Dibatalkan']);
+                        return [
+                            'id'             => (int) $r->id,
+                            'nibar'          => $r->nibar ?: '-',
+                            'nomor_register' => $r->nomor_register ?: '-',
+                            'kondisi'        => $r->kondisi ?: 'Baik',
+                            'status'         => $r->status ?: 'Tersedia',
+                            'ruang_pemegang' => $r->unit?->nama ?: ($r->ruang_pemegang ?: '-'),
+                            'harga_satuan'   => (float) ($r->harga_satuan ?: 0),
+                            'is_selected'    => $isInThis,
+                            'is_available'   => (bool) $isAvailable,
+                        ];
+                    })->values()->all();
                 }
             }
 
@@ -650,6 +679,9 @@ class MutasiEksternalController extends Controller
                 'alasan_batal'              => $m->alasan_batal,
                 'dibatalkan_at'             => $m->dibatalkan_at ? $m->dibatalkan_at->format('d/m/Y H:i') : null,
                 'dibatalkan_by'             => $m->dibatalkan_by,
+                'alasan_reaktivasi'         => $m->alasan_reaktivasi,
+                'diaktifkan_at'             => $m->diaktifkan_at ? $m->diaktifkan_at->format('d/m/Y H:i') : null,
+                'diaktifkan_by'             => $m->diaktifkan_by,
                 'tgl_estimasi_kembali'      => $m->tgl_estimasi_kembali ? $m->tgl_estimasi_kembali->format('Y-m-d') : null,
                 'dokumen_lampiran'          => $m->dokumen_lampiran ?: ($astap?->spesifikasi_json['dokumen_lampiran'] ?? null),
                 'dokumen_lampiran_url'      => ($m->dokumen_lampiran ?: ($astap?->spesifikasi_json['dokumen_lampiran'] ?? null)) ? asset('storage/' . ($m->dokumen_lampiran ?: $astap->spesifikasi_json['dokumen_lampiran'])) : null,
@@ -667,6 +699,8 @@ class MutasiEksternalController extends Controller
                 'alamat_barang'             => $astap?->alamat_barang ?: 'RSUD Dr. H. Koesnandi',
                 'created_at'                => $astap?->created_at ? $astap->created_at->format('Y-m-d H:i:s') : (string) $tglRaw,
                 'spesifikasi_json'          => $astap?->spesifikasi_json ?: [],
+                'all_astap_registers'       => $allAstapRegisters,
+                'mutasi_register_ids'       => $currentMutasiRegIds,
             ];
         })->values()->toArray();
 
@@ -1889,13 +1923,27 @@ class MutasiEksternalController extends Controller
             ], 404);
         }
 
-        DB::transaction(function () use ($mutasi) {
+        $reason = trim($request->input('alasan_reaktivasi', ''));
+        if (empty($reason)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Alasan pengaktifan kembali (reaktivasi) wajib diisi untuk catatan riwayat audit sistem.'
+            ], 422);
+        }
+
+        $actorName = $user ? ($user->name . ' (' . ($user->role === 'master_admin' ? 'Master Admin' : 'Admin BMD') . ')') : 'Petugas SIMAT';
+
+        DB::transaction(function () use ($mutasi, $reason, $actorName, $user) {
             $mutasi->update([
-                'status'           => 'Disahkan (Selesai)',
-                'alasan_batal'     => null,
-                'dibatalkan_at'    => null,
-                'dibatalkan_by'    => null,
-                'dibatalkan_by_id' => null,
+                'status'                 => 'Disahkan (Selesai)',
+                'alasan_reaktivasi'      => $reason,
+                'diaktifkan_at'          => now(),
+                'diaktifkan_by'          => $actorName,
+                'diaktifkan_by_id'       => $user?->id,
+                'alasan_batal'           => null,
+                'dibatalkan_at'          => null,
+                'dibatalkan_by'          => null,
+                'dibatalkan_by_id'       => null,
             ]);
 
             if ($mutasi->tipe === 'keluar') {
@@ -1927,30 +1975,246 @@ class MutasiEksternalController extends Controller
                 if ($mutasi->astap_id) {
                     $astap = Astap::find($mutasi->astap_id);
                     if ($astap) {
-                        $astap->update([
+                        $astapRestorePayload = [
                             'is_deleted'          => 0,
                             'deleted_by'          => null,
                             'deleted_by_id'       => null,
                             'deleted_at'          => null,
                             'keterangan_tambahan' => null,
-                        ]);
+                        ];
+                        if (\Illuminate\Support\Facades\Schema::hasColumn('astaps', 'alasan_hapus')) {
+                            $astapRestorePayload['alasan_hapus'] = null;
+                        }
+                        $astap->update($astapRestorePayload);
 
-                        AstapRegister::where('astap_id', $astap->id)->update([
-                            'status'        => 'Tersedia',
-                            'is_deleted'    => 0,
-                            'deleted_by'    => null,
-                            'deleted_by_id' => null,
-                            'deleted_at'    => null,
-                        ]);
+                        $regs = AstapRegister::where('astap_id', $astap->id)->get();
+                        foreach ($regs as $reg) {
+                            $hasUnit = !empty($reg->unit_id);
+                            $reg->update([
+                                'status'        => $hasUnit ? 'Tidak Tersedia' : 'Tersedia',
+                                'is_deleted'    => 0,
+                                'deleted_by'    => null,
+                                'deleted_by_id' => null,
+                                'deleted_at'    => null,
+                            ]);
+                        }
                     }
                 }
             }
         });
 
         return response()->json([
+            'success'               => true,
+            'message'               => 'Status transaksi Mutasi Eksternal berhasil diaktifkan kembali menjadi Disahkan (Selesai).',
+            'status'                => 'Disahkan (Selesai)',
+            'alasan_reaktivasi'     => $reason,
+            'diaktifkan_by'         => $actorName,
+            'diaktifkan_at'         => now()->format('d/m/Y H:i'),
+        ]);
+    }
+
+    /**
+     * Perbarui data BAST dan pilihan alokasi unit NIBAR pada Mutasi Eksternal Keluar.
+     */
+    public function updateKeluar(Request $request, $id)
+    {
+        if (!in_array(Auth::user()?->role, ['master_admin', 'admin'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengubah data mutasi keluar.'
+            ], 403);
+        }
+
+        $mutasi = MutasiEksternal::with(['astap.registers.unit', 'mutasiRegisters'])->find($id);
+        if (!$mutasi) {
+            $mutasi = MutasiEksternal::with(['astap.registers.unit', 'mutasiRegisters'])
+                ->where('astap_id', $id)
+                ->where('tipe', 'keluar')
+                ->where('is_deleted', 0)
+                ->first();
+        }
+
+        if (!$mutasi) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data Mutasi Keluar tidak ditemukan.'
+            ], 404);
+        }
+
+        if (str_contains(strtolower($mutasi->status ?? ''), 'batal')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Transaksi yang telah dibatalkan tidak dapat diubah. Silakan aktifkan kembali (reaktivasi) terlebih dahulu jika ingin melakukan koreksi.'
+            ], 422);
+        }
+
+        $astap = $mutasi->astap;
+        $hasRegisters = $astap && $astap->registers && $astap->registers->isNotEmpty();
+
+        $rules = [
+            'nomor_bamb'        => 'required|string|max:100',
+            'tanggal_mutasi'    => 'required|date',
+            'opd_tujuan'        => 'required|string|max:255',
+            'pj_tujuan_nama'    => 'nullable|string|max:150',
+            'pj_tujuan_nip'     => 'nullable|string|max:50',
+            'pj_tujuan_jabatan' => 'nullable|string|max:150',
+            'pj_asal_nama'      => 'nullable|string|max:150',
+            'pj_asal_nip'       => 'nullable|string|max:50',
+            'pj_asal_jabatan'   => 'nullable|string|max:150',
+            'nomor_sk_dasar'    => 'nullable|string|max:150',
+            'alasan_mutasi'     => 'nullable|string|max:1000',
+        ];
+
+        if ($hasRegisters) {
+            $rules['selected_register_ids'] = 'required|array|min:1';
+            $rules['selected_register_ids.*'] = 'integer|exists:astap_registers,id';
+        } else {
+            $rules['selected_register_ids'] = 'nullable|array';
+        }
+
+        $validated = $request->validate($rules, [
+            'nomor_bamb.required'            => 'Nomor BAST serah terima wajib diisi.',
+            'tanggal_mutasi.required'        => 'Tanggal serah terima mutasi wajib diisi.',
+            'opd_tujuan.required'            => 'Nama OPD / Instansi tujuan wajib diisi.',
+            'selected_register_ids.required' => 'Pilih minimal 1 unit NIBAR yang diserahterimakan.',
+            'selected_register_ids.min'      => 'Pilih minimal 1 unit NIBAR yang diserahterimakan.',
+        ]);
+
+        $newRegisterIds = array_values(array_unique(array_map('intval', $request->input('selected_register_ids', []))));
+
+        // Validasi: pastikan semua register yang dipilih benar-benar milik parent ASTAP
+        if ($hasRegisters && !empty($newRegisterIds)) {
+            $invalidRegs = AstapRegister::whereIn('id', $newRegisterIds)
+                ->where('astap_id', '!=', $astap->id)
+                ->pluck('id')
+                ->all();
+            if (!empty($invalidRegs)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terdapat unit NIBAR yang tidak valid atau bukan milik aset ini.'
+                ], 422);
+            }
+        }
+
+        DB::transaction(function () use ($mutasi, $astap, $hasRegisters, $validated, $newRegisterIds) {
+            $newCount = $mutasi->jumlah_volume ?: 1;
+            $sumNilai = (float) $mutasi->nilai_perolehan;
+
+            if ($hasRegisters && !empty($newRegisterIds)) {
+                $existingMutasiRegs = $mutasi->mutasiRegisters;
+                $oldRegisterIds = $existingMutasiRegs->pluck('astap_register_id')->filter()->map(fn($v) => (int)$v)->all();
+
+                // 1. Register yang dicopot dari mutasi ini -> kembalikan ke RSUD
+                $removedIds = array_diff($oldRegisterIds, $newRegisterIds);
+                if (!empty($removedIds)) {
+                    \App\Models\MutasiEksternalRegister::where('mutasi_eksternal_id', $mutasi->id)
+                        ->whereIn('astap_register_id', $removedIds)
+                        ->delete();
+
+                    $restoredRegs = AstapRegister::with('unit')->whereIn('id', $removedIds)->get();
+                    foreach ($restoredRegs as $r) {
+                        $hasUnit = !empty($r->unit_id);
+                        $r->update([
+                            'status'         => $hasUnit ? 'Tidak Tersedia' : 'Tersedia',
+                            'ruang_pemegang' => $hasUnit ? ($r->unit?->nama ?? $r->ruang_pemegang) : null,
+                        ]);
+                    }
+                }
+
+                // 2. Register baru yang ditambahkan ke mutasi ini -> set Mutasi Keluar OPD
+                $addedIds = array_diff($newRegisterIds, $oldRegisterIds);
+                if (!empty($addedIds)) {
+                    $newRegs = AstapRegister::whereIn('id', $addedIds)->get();
+                    foreach ($newRegs as $r) {
+                        \App\Models\MutasiEksternalRegister::firstOrCreate(
+                            [
+                                'mutasi_eksternal_id' => $mutasi->id,
+                                'astap_register_id'   => $r->id,
+                            ],
+                            [
+                                'kondisi' => $r->kondisi ?: 'Baik',
+                                'catatan' => 'Mutasi Keluar Antar-OPD ke ' . $validated['opd_tujuan'],
+                            ]
+                        );
+
+                        $r->update([
+                            'status'         => 'Mutasi Keluar OPD',
+                            'ruang_pemegang' => null,
+                        ]);
+                    }
+                }
+
+                // 3. Update catatan pada semua register terpilih
+                \App\Models\MutasiEksternalRegister::where('mutasi_eksternal_id', $mutasi->id)
+                    ->whereIn('astap_register_id', $newRegisterIds)
+                    ->update([
+                        'catatan' => 'Mutasi Keluar Antar-OPD ke ' . $validated['opd_tujuan'],
+                    ]);
+
+                // 4. Hitung ulang volume & nilai perolehan mutasi berdasarkan register terpilih
+                $newCount = count($newRegisterIds);
+                $selectedRegModels = AstapRegister::whereIn('id', $newRegisterIds)->get();
+                $sumNilai = (float) $selectedRegModels->sum('harga_satuan');
+
+                if ($sumNilai <= 0 && $astap) {
+                    if ($astap->jumlah_volume > 0) {
+                        $sumNilai = ((float) $astap->total_realisasi / (float) $astap->jumlah_volume) * $newCount;
+                    } else {
+                        $sumNilai = (float) $astap->total_realisasi;
+                    }
+                }
+            }
+
+            // 5. Update dokumen Mutasi Eksternal
+            $mutasi->update([
+                'nomor_bamb'        => trim($validated['nomor_bamb']),
+                'tanggal_mutasi'    => $validated['tanggal_mutasi'],
+                'opd_tujuan'        => trim($validated['opd_tujuan']),
+                'pj_tujuan_nama'    => trim($validated['pj_tujuan_nama'] ?? '') ?: 'Pejabat Penerima OPD',
+                'pj_tujuan_nip'     => trim($validated['pj_tujuan_nip'] ?? '') ?: '-',
+                'pj_tujuan_jabatan' => trim($validated['pj_tujuan_jabatan'] ?? '') ?: 'Pejabat Penerima OPD',
+                'pj_asal_nama'      => trim($validated['pj_asal_nama'] ?? '') ?: 'BUDI HARTONO, S.Sos',
+                'pj_asal_nip'       => trim($validated['pj_asal_nip'] ?? '') ?: '19760229 200801 1 010',
+                'pj_asal_jabatan'   => trim($validated['pj_asal_jabatan'] ?? '') ?: 'Pengurus Barang Pengguna RSUD Dr. H. Koesnandi',
+                'nomor_sk_dasar'    => trim($validated['nomor_sk_dasar'] ?? '') ?: trim($validated['nomor_bamb']),
+                'alasan_mutasi'     => trim($validated['alasan_mutasi'] ?? '') ?: 'Pemindahtanganan aset RSUD ke SKPD / OPD luar.',
+                'jumlah_volume'     => $newCount,
+                'nilai_perolehan'   => $sumNilai,
+            ]);
+
+            // 6. Sinkronkan ke tabel Reklasifikasi jika ada
+            if ($astap) {
+                $reklas = \App\Models\Reklasifikasi::where('astap_id', $astap->id)
+                    ->where('jenis_reklas', 'MUTASI_EKSTERNAL')
+                    ->where('is_deleted', 0)
+                    ->first();
+                if ($reklas) {
+                    $reklas->update([
+                        'nomor_reklas'     => trim($validated['nomor_bamb']),
+                        'tanggal_reklas'   => $validated['tanggal_mutasi'],
+                        'tujuan_instansi'  => trim($validated['opd_tujuan']),
+                        'volume_reklas'    => $newCount,
+                        'nilai_reklas'     => $sumNilai,
+                        'keterangan'       => trim($validated['alasan_mutasi'] ?? '') ?: 'Pemindahtanganan aset RSUD ke SKPD / OPD luar.',
+                    ]);
+                }
+
+                // 7. Perbarui status full / partial mutasi pada ASTAP induk
+                $totalActiveRegs = AstapRegister::where('astap_id', $astap->id)->where('is_deleted', 0)->count();
+                $mutatedRegs = AstapRegister::where('astap_id', $astap->id)->where('status', 'Mutasi Keluar OPD')->where('is_deleted', 0)->count();
+                $isFull = ($totalActiveRegs > 0 && $mutatedRegs >= $totalActiveRegs);
+
+                $astap->update([
+                    'is_mutasi_keluar_full' => $isFull ? 1 : 0,
+                    'is_reklas'             => ($mutatedRegs > 0) ? 1 : 0,
+                    'jenis_reklas'          => ($mutatedRegs > 0) ? 'MUTASI_EKSTERNAL' : null,
+                ]);
+            }
+        });
+
+        return response()->json([
             'success' => true,
-            'message' => 'Status transaksi Mutasi Eksternal berhasil diaktifkan kembali menjadi Disahkan (Selesai).',
-            'status'  => 'Disahkan (Selesai)',
+            'message' => 'Data BAST Mutasi Keluar OPD dan alokasi unit NIBAR berhasil diperbarui.'
         ]);
     }
 

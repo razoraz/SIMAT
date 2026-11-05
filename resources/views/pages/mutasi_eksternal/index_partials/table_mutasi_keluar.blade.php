@@ -13,7 +13,7 @@
                     <th class="px-3 py-3.5 text-center whitespace-nowrap w-36 bg-slate-950">Nilai Perolehan</th>
                     <th class="px-3 py-3.5 text-center whitespace-nowrap w-28 bg-slate-950">Kondisi</th>
                     <th class="px-3.5 py-3.5 text-center whitespace-nowrap w-36 bg-slate-950">Status</th>
-                    <th class="px-3 py-3.5 text-center whitespace-nowrap w-[230px] min-w-[230px] bg-slate-950 border-l border-slate-800 shrink-0" style="position: sticky; right: 0; z-index: 20; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">Aksi</th>
+                    <th class="px-3 py-3.5 text-center whitespace-nowrap w-[210px] min-w-[210px] bg-slate-950 border-l border-slate-800 shrink-0" style="position: sticky; right: 0; z-index: 20; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">Aksi</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-800/80">
@@ -118,8 +118,8 @@
                             </span>
                         </td>
 
-                        <!-- Aksi (Detail, Cetak BAST, Hapus) — FREEZE STICKY RIGHT -->
-                        <td class="px-3 py-3 text-center whitespace-nowrap border-l border-slate-800/80 w-[230px] min-w-[230px] shrink-0" style="position: sticky; right: 0; z-index: 2; background-color: #0f172a !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
+                        <!-- Aksi (Detail, Ubah, Hapus) — FREEZE STICKY RIGHT -->
+                        <td class="px-3 py-3 text-center whitespace-nowrap border-l border-slate-800/80 w-[210px] min-w-[210px] shrink-0" style="position: sticky; right: 0; z-index: 2; background-color: #0f172a !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
                             <div class="flex items-center justify-center gap-1.5">
                                 <!-- 1. Tombol Detail -->
                                 <button type="button" @click="openDetail(item)"
@@ -132,44 +132,38 @@
                                     <span>Detail</span>
                                 </button>
 
-                                <!-- 2. Tombol Cetak BAST -->
-                                <button type="button" @click="openPrintModal(item)"
-                                    title="Cetak Dokumen BAST Serah Terima Keluar"
-                                    class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-purple-500/10 hover:bg-purple-600 text-purple-300 hover:text-white border border-purple-500/30 hover:border-purple-400 font-bold text-xs transition-all duration-200 shadow-sm active:scale-95 cursor-pointer leading-none">
-                                    <svg class="w-3.5 h-3.5 text-purple-400 group-hover/btn:text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2h6z"/>
-                                    </svg>
-                                    <span>Cetak</span>
-                                </button>
-
-                                <!-- 3. Tombol Hapus & Indikator Terkunci -->
-                                <template x-if="!((item.status || '').toLowerCase().includes('batal'))">
-                                    <button type="button" @click="deleteMutasi(item)"
-                                        title="Hapus Data Mutasi Keluar"
-                                        class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 hover:border-rose-400 font-bold text-xs transition-all duration-200 shadow-sm active:scale-95 cursor-pointer leading-none">
-                                        <svg class="w-3.5 h-3.5 text-rose-400 group-hover/btn:text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                <!-- 2. Tombol Ubah (Aktif jika Belum Dibatalkan, Terkunci jika Dibatalkan) -->
+                                <template x-if="!(item.status || '').toLowerCase().includes('batal')">
+                                    <button type="button" @click="openEditKeluarModal(item)"
+                                        title="Ubah Data BAST & Seleksi Unit NIBAR Mutasi Keluar"
+                                        class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-500/30 hover:border-amber-400 font-bold text-xs transition-all duration-200 shadow-sm active:scale-95 cursor-pointer leading-none">
+                                        <svg class="w-3.5 h-3.5 text-amber-400 group-hover/btn:text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                         </svg>
-                                        <span>Hapus</span>
+                                        <span>Ubah</span>
                                     </button>
                                 </template>
-                                <template x-if="((item.status || '').toLowerCase().includes('batal'))">
-                                    <div class="flex items-center gap-1.5">
-                                        <span title="Dokumen ini berstatus Dibatalkan sehingga aksi operasional dinonaktifkan."
-                                              class="inline-flex items-center space-x-1 px-2 py-1 rounded-xl bg-slate-800/80 text-slate-400 border border-slate-700/80 font-bold text-[11px] select-none shadow-sm cursor-help">
-                                            <svg class="w-3.5 h-3.5 text-rose-400/80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                                            <span class="text-rose-300/80">Terkunci</span>
-                                        </span>
-                                        @if(in_array(auth()->user()?->role, ['master_admin', 'admin']))
-                                        <button type="button" @click="deleteMutasi(item)"
-                                            title="Pindahkan Berkas Batal ini ke Pusat Data Terhapus (Recycle Bin)"
-                                            class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 hover:border-rose-400 font-bold text-xs transition-all duration-200 shadow-sm active:scale-95 cursor-pointer leading-none">
-                                            <svg class="w-3.5 h-3.5 text-rose-400 group-hover/btn:text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                            <span>Hapus</span>
-                                        </button>
-                                        @endif
-                                    </div>
+                                <template x-if="(item.status || '').toLowerCase().includes('batal')">
+                                    <span title="Ubah data dinonaktifkan karena transaksi mutasi telah dibatalkan."
+                                          class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-500 font-bold text-xs select-none cursor-not-allowed opacity-75 shadow-none leading-none">
+                                        <svg class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                        </svg>
+                                        <span>Ubah</span>
+                                    </span>
                                 </template>
+
+                                <!-- 3. Tombol Hapus (Aktif untuk Master Admin & Admin, baik aktif maupun dibatalkan) -->
+                                @if(in_array(auth()->user()?->role, ['master_admin', 'admin']))
+                                <button type="button" @click="deleteMutasi(item)"
+                                    :title="((item.status || '').toLowerCase().includes('batal')) ? 'Pindahkan Berkas Batal ini ke Pusat Data Terhapus (Recycle Bin)' : 'Hapus Data Mutasi Keluar'"
+                                    class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 hover:border-rose-400 font-bold text-xs transition-all duration-200 shadow-sm active:scale-95 cursor-pointer leading-none">
+                                    <svg class="w-3.5 h-3.5 text-rose-400 group-hover/btn:text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                    </svg>
+                                    <span>Hapus</span>
+                                </button>
+                                @endif
                             </div>
                         </td>
                     </tr>

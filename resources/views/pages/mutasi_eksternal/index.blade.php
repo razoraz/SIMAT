@@ -35,6 +35,12 @@
 
         <!-- MODAL KONFIRMASI PEMBATALAN TRANSAKSI MUTASI EKSTERNAL -->
         @include('pages.mutasi_eksternal.index_partials.modal_batal')
+
+        <!-- MODAL KONFIRMASI PENGAKTIFAN KEMBALI TRANSAKSI MUTASI EKSTERNAL -->
+        @include('pages.mutasi_eksternal.index_partials.modal_reaktivasi')
+
+        <!-- MODAL UBAH MUTASI KELUAR & ALOKASI REGISTER NIBAR -->
+        @include('pages.mutasi_eksternal.index_partials.modal_edit_keluar')
     </div>
 
     <!-- Print Media Query Styling untuk Cetak BAST Kertas Putih Sempurna -->

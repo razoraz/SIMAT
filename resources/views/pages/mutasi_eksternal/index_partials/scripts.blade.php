@@ -25,6 +25,34 @@
             batalAlasan: '',
             isCancelling: false,
 
+            // Modal Reaktivasi Mutasi State
+            showReaktivasiModal: false,
+            itemToReaktivasi: null,
+            reaktivasiAlasan: '',
+            isReactivating: false,
+
+            // Modal Edit Mutasi Keluar & Swap NIBAR State
+            showEditKeluarModal: false,
+            editingKeluarItem: null,
+            editKeluarForm: {
+                id: null,
+                nomor_bamb: '',
+                tanggal_mutasi: '',
+                opd_tujuan: '',
+                pj_tujuan_nama: '',
+                pj_tujuan_nip: '',
+                pj_tujuan_jabatan: '',
+                pj_asal_nama: '',
+                pj_asal_nip: '',
+                pj_asal_jabatan: '',
+                nomor_sk_dasar: '',
+                alasan_mutasi: '',
+                selected_register_ids: [],
+            },
+            editKeluarAllRegisters: [],
+            editKeluarSearchNibar: '',
+            isSavingKeluar: false,
+
             // Modal Edit Kondisi Register NIBAR State
             showEditKondisiModal: false,
             editingRegisterItem: null,
@@ -480,6 +508,10 @@
 
             openPrintModal(item) {
                 if (!item) return;
+                if (((item.status || '').toLowerCase().includes('batal'))) {
+                    this.showToast('Pencetakan BAST dinonaktifkan karena transaksi mutasi telah dibatalkan.', 'error');
+                    return;
+                }
                 this.showDetailModal = false;
 
                 const hariMap = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
@@ -841,73 +873,221 @@
                 }
             },
 
-            async reaktivasiMutasi(item) {
+            openReaktivasiModal(item) {
                 if (!item) return;
-                const id = item.mutasi_id || item.id;
-                const nama = item.nama_barang || item.nomor_bamb || 'Mutasi Eksternal';
+                this.itemToReaktivasi = item;
+                this.reaktivasiAlasan = '';
+                this.isReactivating = false;
+                this.showReaktivasiModal = true;
+            },
 
-                const performReaktivasi = async () => {
-                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
-                    try {
-                        const res = await fetch(`{{ url('/mutasi-eksternal') }}/${id}/sahkan`, {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRF-TOKEN': token,
-                                'Accept': 'application/json',
-                                'Content-Type': 'application/json',
-                                'X-Requested-With': 'XMLHttpRequest'
+            async executeReaktivasi() {
+                if (!this.itemToReaktivasi || this.isReactivating) return;
+                const reason = (this.reaktivasiAlasan || '').trim();
+                if (!reason) {
+                    this.showToast('Alasan pengaktifan kembali (reaktivasi) wajib diisi.', 'error');
+                    return;
+                }
+
+                this.isReactivating = true;
+                const id = this.itemToReaktivasi.mutasi_id || this.itemToReaktivasi.id;
+                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+
+                try {
+                    const res = await fetch(`{{ url('/mutasi-eksternal') }}/${id}/sahkan`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': token,
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({
+                            alasan_reaktivasi: reason
+                        })
+                    });
+
+                    const data = await res.json();
+                    this.isReactivating = false;
+
+                    if (res.ok && data.success) {
+                        const targetAstapId = this.itemToReaktivasi.id;
+                        const targetMutasiId = this.itemToReaktivasi.mutasi_id;
+
+                        this.mutasiEksternals = this.mutasiEksternals.map(m => {
+                            if (Number(m.id) === Number(targetAstapId) || (targetMutasiId && Number(m.mutasi_id) === Number(targetMutasiId))) {
+                                return {
+                                    ...m,
+                                    status: 'Disahkan (Selesai)',
+                                    alasan_batal: null,
+                                    dibatalkan_by: null,
+                                    dibatalkan_at: null,
+                                    alasan_reaktivasi: reason,
+                                    diaktifkan_by: data.diaktifkan_by,
+                                    diaktifkan_at: data.diaktifkan_at
+                                };
                             }
+                            return m;
                         });
-                        const data = await res.json();
-                        if (res.ok && data.success) {
-                            const targetAstapId = item.id;
-                            const targetMutasiId = item.mutasi_id;
 
-                            this.mutasiEksternals = this.mutasiEksternals.map(m => {
-                                if (Number(m.id) === Number(targetAstapId) || (targetMutasiId && Number(m.mutasi_id) === Number(targetMutasiId))) {
-                                    return {
-                                        ...m,
-                                        status: 'Disahkan (Selesai)',
-                                        alasan_batal: null,
-                                        dibatalkan_by: null,
-                                        dibatalkan_at: null
-                                    };
-                                }
-                                return m;
-                            });
-
-                            const curDetail = this.selectedAstapDetail || this.selectedMutasi;
-                            if (curDetail && (Number(curDetail.id) === Number(targetAstapId) || (targetMutasiId && Number(curDetail.mutasi_id) === Number(targetMutasiId)))) {
-                                curDetail.status = 'Disahkan (Selesai)';
-                                curDetail.alasan_batal = null;
-                                curDetail.dibatalkan_by = null;
-                                curDetail.dibatalkan_at = null;
-                            }
-
-                            this.showToast(data.message || 'Transaksi Mutasi Eksternal berhasil diaktifkan kembali.', 'success');
-                            setTimeout(() => {
-                                window.location.reload();
-                            }, 1000);
-                        } else {
-                            this.showToast(data.message || 'Gagal mengaktifkan kembali mutasi.', 'error');
+                        const curDetail = this.selectedAstapDetail || this.selectedMutasi;
+                        if (curDetail && (Number(curDetail.id) === Number(targetAstapId) || (targetMutasiId && Number(curDetail.mutasi_id) === Number(targetMutasiId)))) {
+                            curDetail.status = 'Disahkan (Selesai)';
+                            curDetail.alasan_batal = null;
+                            curDetail.dibatalkan_by = null;
+                            curDetail.dibatalkan_at = null;
+                            curDetail.alasan_reaktivasi = reason;
+                            curDetail.diaktifkan_by = data.diaktifkan_by;
+                            curDetail.diaktifkan_at = data.diaktifkan_at;
                         }
-                    } catch (err) {
-                        console.error('Reaktivasi error:', err);
-                        this.showToast('Terjadi kesalahan jaringan saat mengaktifkan kembali mutasi.', 'error');
+
+                        this.showReaktivasiModal = false;
+                        this.itemToReaktivasi = null;
+                        this.showToast(data.message || 'Transaksi Mutasi Eksternal berhasil diaktifkan kembali.', 'success');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    } else {
+                        this.showToast(data.message || 'Gagal mengaktifkan kembali mutasi.', 'error');
                     }
+                } catch (err) {
+                    this.isReactivating = false;
+                    console.error('Reaktivasi error:', err);
+                    this.showToast('Terjadi kesalahan jaringan saat mengaktifkan kembali mutasi.', 'error');
+                }
+            },
+
+            // Alias fallback
+            reaktivasiMutasi(item) {
+                this.openReaktivasiModal(item);
+            },
+
+            // =====================================================================
+            // EDIT MUTASI KELUAR OPD & SELEKSI REGISTER NIBAR
+            // =====================================================================
+            openEditKeluarModal(item) {
+                if (!item) return;
+                this.editingKeluarItem = item;
+
+                const targetDate = item.mutasi_tanggal || (item.tgl_raw ? item.tgl_raw.substring(0, 10) : new Date().toISOString().substring(0, 10));
+
+                this.editKeluarForm = {
+                    id: item.mutasi_id || item.id,
+                    nomor_bamb: item.bast_nomor || item.kode || '',
+                    tanggal_mutasi: targetDate,
+                    opd_tujuan: item.opd_tujuan || '',
+                    pj_tujuan_nama: item.pejabat_opd_tujuan || item.pj_tujuan_nama || '',
+                    pj_tujuan_nip: item.nip_pejabat_opd_tujuan || item.pj_tujuan_nip || '',
+                    pj_tujuan_jabatan: item.jabatan_opd_tujuan || item.pj_tujuan_jabatan || '',
+                    pj_asal_nama: item.pj_asal_nama || 'BUDI HARTONO, S.Sos',
+                    pj_asal_nip: item.pj_asal_nip || '19760229 200801 1 010',
+                    pj_asal_jabatan: item.pj_asal_jabatan || 'Pengurus Barang Pengguna RSUD Dr. H. Koesnandi',
+                    nomor_sk_dasar: item.nomor_sk_dasar || item.bast_nomor || item.kode || '',
+                    alasan_mutasi: item.alasan_mutasi || item.mutasi_keterangan || '',
+                    selected_register_ids: Array.isArray(item.mutasi_register_ids) ? [...item.mutasi_register_ids] : []
                 };
 
-                if (typeof window.askSimatConfirm === 'function') {
-                    window.askSimatConfirm({
-                        title: 'Konfirmasi Aktifkan Kembali Mutasi',
-                        message: `Apakah Anda yakin ingin membatalkan status pembatalan dan mengaktifkan kembali dokumen transaksi mutasi "${nama}" ke inventaris aktif?`,
-                        itemName: 'BAST: ' + (item.nomor_bamb || '-'),
-                        type: 'info',
-                        btnText: 'Ya, Aktifkan Kembali',
-                        onConfirm: performReaktivasi
+                this.editKeluarAllRegisters = Array.isArray(item.all_astap_registers) 
+                    ? JSON.parse(JSON.stringify(item.all_astap_registers)) 
+                    : [];
+
+                // Defensive: jika mutasi_register_ids kosong tapi ada all_astap_registers
+                if (this.editKeluarForm.selected_register_ids.length === 0 && this.editKeluarAllRegisters.length > 0) {
+                    this.editKeluarForm.selected_register_ids = this.editKeluarAllRegisters
+                        .filter(r => r.is_selected)
+                        .map(r => r.id);
+                }
+
+                this.editKeluarSearchNibar = '';
+                this.isSavingKeluar = false;
+                this.showEditKeluarModal = true;
+            },
+
+            toggleEditKeluarRegister(regId) {
+                const id = Number(regId);
+                const idx = this.editKeluarForm.selected_register_ids.findIndex(item => Number(item) === id);
+                if (idx > -1) {
+                    this.editKeluarForm.selected_register_ids.splice(idx, 1);
+                } else {
+                    this.editKeluarForm.selected_register_ids.push(id);
+                }
+            },
+
+            selectAllAvailableKeluar() {
+                const availableIds = this.editKeluarAllRegisters
+                    .filter(r => r.is_available)
+                    .map(r => r.id);
+                this.editKeluarForm.selected_register_ids = [...availableIds];
+            },
+
+            deselectAllKeluar() {
+                this.editKeluarForm.selected_register_ids = [];
+            },
+
+            get filteredEditKeluarRegisters() {
+                const q = (this.editKeluarSearchNibar || '').toLowerCase().trim();
+                if (!q) return this.editKeluarAllRegisters;
+                return this.editKeluarAllRegisters.filter(r => 
+                    (r.nibar || '').toLowerCase().includes(q) ||
+                    (r.nomor_register || '').toLowerCase().includes(q) ||
+                    (r.ruang_pemegang || '').toLowerCase().includes(q) ||
+                    (r.kondisi || '').toLowerCase().includes(q)
+                );
+            },
+
+            async saveEditKeluar() {
+                if (this.isSavingKeluar) return;
+
+                if (!this.editKeluarForm.nomor_bamb || !this.editKeluarForm.nomor_bamb.trim()) {
+                    this.showToast('Nomor BAST wajib diisi.', 'error');
+                    return;
+                }
+                if (!this.editKeluarForm.tanggal_mutasi) {
+                    this.showToast('Tanggal penyerahan mutasi wajib diisi.', 'error');
+                    return;
+                }
+                if (!this.editKeluarForm.opd_tujuan || !this.editKeluarForm.opd_tujuan.trim()) {
+                    this.showToast('Nama SKPD / OPD penerima wajib diisi.', 'error');
+                    return;
+                }
+                if (this.editKeluarAllRegisters.length > 0 && this.editKeluarForm.selected_register_ids.length === 0) {
+                    this.showToast('Pilih minimal 1 unit NIBAR yang diserahterimakan.', 'error');
+                    return;
+                }
+
+                this.isSavingKeluar = true;
+                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+                const id = this.editKeluarForm.id;
+                const targetUrl = "{{ url('/mutasi-eksternal') }}/" + id + "/update-keluar";
+
+                try {
+                    const res = await fetch(targetUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': token,
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify(this.editKeluarForm)
                     });
-                } else if (confirm(`Apakah Anda yakin ingin mengaktifkan kembali mutasi "${nama}"?`)) {
-                    performReaktivasi();
+
+                    const data = await res.json();
+                    this.isSavingKeluar = false;
+
+                    if (res.ok && data.success) {
+                        this.showEditKeluarModal = false;
+                        this.showToast(data.message || 'Perubahan Mutasi Keluar berhasil disimpan.', 'success');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 900);
+                    } else {
+                        this.showToast(data.message || 'Gagal menyimpan perubahan mutasi keluar.', 'error');
+                    }
+                } catch (err) {
+                    this.isSavingKeluar = false;
+                    console.error('Save mutasi keluar error:', err);
+                    this.showToast('Terjadi kesalahan jaringan saat menyimpan perubahan mutasi keluar.', 'error');
                 }
             },
 
