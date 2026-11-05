@@ -2475,6 +2475,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/master-data/hibah/{id}/cetak', [\App\Http\Controllers\HibahController::class, 'cetak'])->name('master.hibah.cetak');
         Route::post('/master-data/hibah/keluar', [\App\Http\Controllers\HibahController::class, 'storeHibahKeluar'])->name('master.hibah.keluar');
         Route::delete('/master-data/hibah/{id}', [\App\Http\Controllers\HibahController::class, 'destroy'])->name('master.hibah.destroy');
+        Route::delete('/master-data/hibah/{id}/register/{regId}', [\App\Http\Controllers\HibahController::class, 'destroyRegisterKeluar'])->name('master.hibah.destroy_register_keluar');
     });
 
     // Master Kemitraan Aset (KSO, BGS, Sewa Akun 1.5.2)

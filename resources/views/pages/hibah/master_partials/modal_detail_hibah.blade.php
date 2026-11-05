@@ -838,25 +838,13 @@
                         </div>
                         <div class="flex items-center space-x-2 shrink-0">
                             @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
-                            <!-- Tombol Rapikan NIBAR Terkunci untuk Hibah Keluar -->
-                            <template x-if="selectedDetail.tipe_hibah === 'keluar'">
-                                <button type="button" disabled
-                                    class="px-2.5 py-1 rounded-xl bg-slate-800/80 text-slate-500 border border-slate-700/60 text-[10.5px] font-bold flex items-center space-x-1.5 cursor-not-allowed opacity-75 shadow-sm select-none"
-                                    title="Aset telah dihibahkan keluar ke pihak luar — susunan NIBAR bersifat permanen dan tidak dapat diurutkan ulang">
-                                    <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                                    <span>NIBAR Terkunci (Hibah Keluar)</span>
-                                </button>
-                            </template>
-
-                            <!-- Tombol Rapikan NIBAR Aktif untuk Hibah Masuk -->
-                            <template x-if="selectedDetail.tipe_hibah !== 'keluar'">
-                                <button type="button" @click.stop="resequenceSingleAstap(selectedDetail)"
-                                    class="px-2.5 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[10.5px] font-bold transition-all flex items-center space-x-1 cursor-pointer shadow-sm active:scale-95"
-                                    title="Urutkan ulang register NIBAR barang ini agar berurutan tanpa celah">
-                                    <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                    <span>Rapikan NIBAR Barang Ini</span>
-                                </button>
-                            </template>
+                            <!-- Tombol Rapikan NIBAR Aktif (Masuk & Keluar) -->
+                            <button type="button" @click.stop="resequenceSingleAstap(selectedDetail)"
+                                class="px-2.5 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[10.5px] font-bold transition-all flex items-center space-x-1 cursor-pointer shadow-sm active:scale-95"
+                                title="Urutkan ulang register NIBAR barang ini agar berurutan tanpa celah">
+                                <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                <span>Rapikan NIBAR Barang Ini</span>
+                            </button>
                             @endif
                             <span class="text-[10px] font-extrabold px-3 py-1 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 font-mono shadow-sm"
                                   x-text="filteredDetailRegisters.length + ' / ' + getRegistersList(selectedDetail).length + ' Aset'"></span>
@@ -1002,11 +990,8 @@
                                                 <!-- Hapus Register -->
                                                 <button type="button" 
                                                         @click.stop="deleteRegister(reg)"
-                                                        :title="selectedDetail.tipe_hibah === 'keluar' ? 'Unit terkunci karena telah dihibahkan keluar' : 'Hapus Aset Register Ini'"
-                                                        :disabled="selectedDetail.tipe_hibah === 'keluar'"
-                                                        :class="selectedDetail.tipe_hibah === 'keluar'
-                                                            ? 'p-1.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-600 cursor-not-allowed shadow-sm opacity-50'
-                                                            : 'p-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 hover:text-rose-300 transition-all cursor-pointer shadow-sm active:scale-95'">
+                                                        :title="selectedDetail.tipe_hibah === 'keluar' ? 'Batalkan Hibah Keluar Unit NIBAR Ini (Kembalikan ke Inventaris RSUD)' : 'Hapus Aset Register Ini'"
+                                                        class="p-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 hover:text-rose-300 transition-all cursor-pointer shadow-sm active:scale-95">
                                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                                 </button>
                                                 @endif

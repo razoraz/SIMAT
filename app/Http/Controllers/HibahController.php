@@ -1088,6 +1088,93 @@ class HibahController extends Controller
     }
 
     /**
+     * Batalkan / Hapus Unit Register dari Transaksi Hibah Keluar (Pulihkan Unit ke Inventaris RSUD)
+     */
+    public function destroyRegisterKeluar(Request $request, $id, $regId)
+    {
+        $user = Auth::user();
+        if (!in_array($user?->role ?? '', ['master_admin', 'admin'])) {
+            return response()->json(['success' => false, 'message' => 'Anda tidak memiliki hak akses.'], 403);
+        }
+
+        $hibah = AstapHibah::findOrFail($id);
+        $reg = AstapRegister::findOrFail($regId);
+        $astap = Astap::find($hibah->astap_id);
+
+        $hibahAutoDeleted = false;
+
+        DB::transaction(function () use ($hibah, $reg, $astap, $user, &$hibahAutoDeleted) {
+            $now = now();
+            $deleterName = $user ? ($user->name . ' (' . ucfirst($user->role ?? 'user') . ')') : 'Administrator';
+            $deleterId = $user?->id;
+
+            // 1. Pulihkan unit register kembali ke status aktif / tersedia di RSUD
+            $statusBalik = (!empty($reg->ruang_pemegang) && !in_array($reg->ruang_pemegang, ['-', 'Belum Ditempatkan / Di Gudang', 'Gudang Aset']))
+                ? 'Aktif'
+                : 'Tersedia';
+
+            $reg->update([
+                'status'        => $statusBalik,
+                'is_deleted'    => 0,
+                'deleted_at'    => null,
+                'deleted_by'    => null,
+                'deleted_by_id' => null,
+            ]);
+
+            // 2. Pulihkan induk ASTAP jika sebelumnya non-aktif (is_deleted = 1)
+            if ($astap) {
+                $sisaAktif = AstapRegister::where('astap_id', $astap->id)
+                    ->where('is_deleted', 0)
+                    ->count();
+
+                $astap->update([
+                    'is_deleted'          => 0,
+                    'deleted_at'          => null,
+                    'deleted_by'          => null,
+                    'deleted_by_id'       => null,
+                    'keterangan_tambahan' => null,
+                    'jumlah_volume'       => max(1, $sisaAktif),
+                ]);
+            }
+
+            // 3. Kurangi volume transaksi hibah keluar
+            $currentVol = (int) $hibah->jumlah_volume;
+            $newVol = max(0, $currentVol - 1);
+
+            if ($newVol <= 0) {
+                // Jika semua unit habis dibatalkan, tandai transaksi hibah keluar sebagai terhapus
+                $hibah->update([
+                    'is_deleted'    => 1,
+                    'deleted_at'    => $now,
+                    'deleted_by'    => $deleterName,
+                    'deleted_by_id' => $deleterId,
+                    'jumlah_volume' => 0,
+                ]);
+                $hibahAutoDeleted = true;
+            } else {
+                // Kurangi nilai aset proporsional
+                $hargaSatuan = $currentVol > 0 ? ((float) $hibah->nilai_aset / $currentVol) : 0;
+                $newNilai = max(0, (float) $hibah->nilai_aset - $hargaSatuan);
+
+                $hibah->update([
+                    'jumlah_volume' => $newVol,
+                    'nilai_aset'    => $newNilai,
+                ]);
+            }
+        });
+
+        $nibarStr = $reg->nibar ?: $reg->no_register;
+
+        return response()->json([
+            'success'            => true,
+            'message'            => "Unit NIBAR \"{$nibarStr}\" berhasil dibatalkan dari Hibah Keluar dan dipulihkan ke inventaris aktif RSUD.",
+            'hibah_auto_deleted' => $hibahAutoDeleted,
+            'new_volume'         => max(0, (int) $hibah->jumlah_volume),
+            'new_nilai_aset'     => (float) $hibah->nilai_aset,
+        ]);
+    }
+
+    /**
      * Cetak Lembar Berita Acara Serah Terima (BAST) Hibah Aset Resmi
      */
     public function cetak($id)

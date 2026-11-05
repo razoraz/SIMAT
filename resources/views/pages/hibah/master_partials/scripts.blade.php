@@ -835,19 +835,88 @@
 
             deleteRegister(reg) {
                 if (!reg) return;
+                const nibarStr = reg.nibar || reg.no_register || 'NIBAR';
+                const parentName = this.selectedDetail?.astap?.nama_barang || this.selectedDetail?.nama_barang || 'Aset Hibah';
+
+                // =========================================================
+                // KASUS 1: HIBAH KELUAR (PENGURANGAN ASET KE PIHAK LUAR)
+                // =========================================================
                 if (this.selectedDetail && this.selectedDetail.tipe_hibah === 'keluar') {
+                    const pihakPenerima = this.selectedDetail.pihak_hibah || this.selectedDetail.nama_penerima || 'Pihak Luar';
                     this.askConfirmation({
-                        title: 'Unit Terkunci (Hibah Keluar)',
-                        message: 'Aset ini merupakan catatan transaksi Hibah Keluar (Pengurangan Aset Tetap). Unit register tidak dapat dihapus satu per satu dari rincian ini.\n\nJika ingin membatalkan hibah keluar dan mengembalikan aset ke saldo aktif RSUD, silakan gunakan tombol "Hapus" pada tabel utama transaksi hibah.',
-                        itemName: reg.nibar || reg.no_register || 'Register Hibah Keluar',
-                        type: 'warning',
-                        isBlocked: true
+                        title: 'Batalkan Hibah Keluar Unit Ini',
+                        message: `Apakah Anda yakin ingin membatalkan hibah keluar untuk unit NIBAR "${nibarStr}" (Penerima: ${pihakPenerima})?\n\nUnit register ini akan dipulihkan kembali ke status aktif di database inventaris RSUD Dr. H. Koesnandi dan volume transaksi hibah keluar akan disesuaikan.`,
+                        itemName: `${parentName} (NIBAR: ${nibarStr})`,
+                        itemDetails: {
+                            nama: parentName,
+                            kode: nibarStr,
+                            badgeText: 'Pulihkan ke RSUD',
+                            totalAset: 1,
+                            nilaiFmt: pihakPenerima
+                        },
+                        type: 'danger',
+                        isBlocked: false,
+                        btnText: 'Batalkan Hibah & Pulihkan Unit',
+                        onConfirm: async () => {
+                            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                            try {
+                                const hibahId = this.selectedDetail.id;
+                                const res = await fetch(`/master-data/hibah/${hibahId}/register/${reg.id}`, {
+                                    method: 'DELETE',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': token,
+                                        'Accept': 'application/json'
+                                    }
+                                });
+                                const data = await res.json();
+                                if (data.success) {
+                                    if (this.selectedDetail) {
+                                        if (this.selectedDetail.astap && Array.isArray(this.selectedDetail.astap.registers)) {
+                                            this.selectedDetail.astap.registers = this.selectedDetail.astap.registers.filter(r => r.id !== reg.id);
+                                        }
+                                        if (Array.isArray(this.selectedDetail.registers)) {
+                                            this.selectedDetail.registers = this.selectedDetail.registers.filter(r => r.id !== reg.id);
+                                        }
+                                    }
+
+                                    if (data.hibah_auto_deleted) {
+                                        this.hibahList = this.hibahList.filter(h => h.id !== hibahId);
+                                        this.showModalDetail = false;
+                                        this.selectedDetail = null;
+                                        this.showToast(data.message || 'Transaksi hibah keluar otomatis dibatalkan karena seluruh unit telah dipulihkan ke RSUD.', 'success');
+                                    } else {
+                                        if (this.selectedDetail) {
+                                            const remainingCount = (this.selectedDetail.astap?.registers || this.selectedDetail.registers || []).length;
+                                            this.selectedDetail.jumlah_volume = remainingCount;
+                                            if (data.new_nilai_aset !== undefined) {
+                                                this.selectedDetail.nilai_aset = data.new_nilai_aset;
+                                            }
+                                            const itemInList = this.hibahList.find(h => h.id === this.selectedDetail.id);
+                                            if (itemInList) {
+                                                itemInList.jumlah_volume = remainingCount;
+                                                if (data.new_nilai_aset !== undefined) {
+                                                    itemInList.nilai_aset = data.new_nilai_aset;
+                                                }
+                                            }
+                                        }
+                                        this.showToast(data.message || 'Unit NIBAR berhasil dibatalkan dari hibah keluar dan dipulihkan ke inventaris RSUD.', 'success');
+                                    }
+                                } else {
+                                    this.showToast(data.message || 'Gagal memproses pembatalan unit hibah keluar.', 'error');
+                                }
+                            } catch (e) {
+                                console.error('Error canceling hibah keluar register:', e);
+                                this.showToast('Terjadi kesalahan jaringan saat membatalkan register.', 'error');
+                            }
+                        }
                     });
                     return;
                 }
 
-                const nibarStr = reg.nibar || reg.no_register || 'NIBAR';
-                const parentName = this.selectedDetail?.astap?.nama_barang || this.selectedDetail?.nama_barang || 'Aset Hibah';
+                // =========================================================
+                // KASUS 2: HIBAH MASUK (PEROLEHAN ASET)
+                // =========================================================
 
                 // 1. Validasi Penempatan: Cek apakah unit register SUDAH DITEMPATKAN di unit / ruangan (Persis Kemitraan)
                 if (this.isRegisterPlacedInUnit(reg)) {
