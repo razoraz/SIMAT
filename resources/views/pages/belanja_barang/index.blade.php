@@ -22,5 +22,8 @@
 
         <!-- MODAL KONFIRMASI HAPUS / BATALKAN -->
         @include('pages.belanja_barang.index_partials.modal_confirm')
+
+        <!-- MODAL CETAK BAST BELANJA BARANG -->
+        @include('pages.belanja_barang.index_partials.modal_print_bast')
     </div>
 </x-layout>

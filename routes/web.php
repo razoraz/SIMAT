@@ -441,6 +441,7 @@ Route::middleware('auth')->group(function () {
 
             // ─── Belanja Barang (Akun 5.1.02 / Perbekalan Ruangan) ────────
             Route::get('/master-data/belanja-barang', [\App\Http\Controllers\BelanjaBarangController::class, 'index'])->name('master.belanja_barang');
+            Route::get('/master-data/belanja-barang/{id}/cetak', [\App\Http\Controllers\BelanjaBarangController::class, 'cetak'])->name('master.belanja_barang.cetak');
             Route::delete('/master-data/belanja-barang/{id}', [\App\Http\Controllers\BelanjaBarangController::class, 'destroy'])->name('master.belanja_barang.destroy');
             Route::get('/astap/create-belanja-barang', [\App\Http\Controllers\BelanjaBarangController::class, 'create'])->name('astap.create_belanja_barang');
             Route::post('/astap/store-belanja-barang', [\App\Http\Controllers\BelanjaBarangController::class, 'store'])->name('astap.store_belanja_barang');

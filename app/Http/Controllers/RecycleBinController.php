@@ -308,8 +308,8 @@ class RecycleBinController extends Controller
             return [
                 'id'                  => $r->id,
                 'astap_id'            => $r->astap_id,
-                'nibar'               => $r->nibar ?: ($r->no_register ?: 'REG-' . $r->id),
-                'no_register'         => $r->no_register ?: '-',
+                'nibar'               => preg_replace('/^DEL_\d+_/', '', $r->nibar ?: ($r->no_register ?: 'REG-' . $r->id)),
+                'no_register'         => preg_replace('/^DEL_\d+_/', '', $r->no_register ?: '-'),
                 'nama_barang'         => $r->nama_barang ?: ($r->astap?->nama_barang ?? 'Aset Belanja Modal'),
                 'nama_aset_induk'     => $r->astap?->nama_barang,
                 'kode_108'            => $r->astap?->kode_108 ?: ($r->astap?->jenisAstap?->kode_108 ?: '-'),
@@ -403,8 +403,8 @@ class RecycleBinController extends Controller
             return [
                 'id'                  => $r->id,
                 'astap_id'            => $r->astap_id,
-                'nibar'               => $r->nibar ?: ($r->no_register ?: 'REG-' . $r->id),
-                'no_register'         => $r->no_register ?: '-',
+                'nibar'               => preg_replace('/^DEL_\d+_/', '', $r->nibar ?: ($r->no_register ?: 'REG-' . $r->id)),
+                'no_register'         => preg_replace('/^DEL_\d+_/', '', $r->no_register ?: '-'),
                 'nama_barang'         => $r->nama_barang ?: ($r->astap?->nama_barang ?? 'Aset ASTAP'),
                 'nama_aset_induk'     => $r->astap?->nama_barang,
                 'kode_108'            => $r->astap?->kode_108 ?: ($r->astap?->jenisAstap?->kode_108 ?: '-'),
@@ -628,12 +628,12 @@ class RecycleBinController extends Controller
         // =========================================================================
         $rawDeletedBelanjaBarangs = AstapBelanjaBarang::onlyDeleted()
             ->with([
-                'astaps.jenisAstap',
-                'astaps.registers.unit',
-                'astaps.unit',
-                'astap.jenisAstap',
-                'astap.registers.unit',
-                'astap.unit'
+                'allAstaps.jenisAstap',
+                'allAstaps.registers.unit',
+                'allAstaps.unit',
+                'allAstap.jenisAstap',
+                'allAstap.registers.unit',
+                'allAstap.unit'
             ])
             ->latest('deleted_at')
             ->latest('id')
@@ -642,9 +642,9 @@ class RecycleBinController extends Controller
         $deletedBelanjaBarangs = $rawDeletedBelanjaBarangs->map(function ($b) {
             $tglFaktur  = $b->tanggal_faktur ? Carbon::parse($b->tanggal_faktur)->timezone('Asia/Jakarta') : null;
 
-            $astaps = $b->astaps;
-            if ($astaps->isEmpty() && $b->astap) {
-                $astaps = collect([$b->astap]);
+            $astaps = $b->allAstaps;
+            if ($astaps->isEmpty() && $b->allAstap) {
+                $astaps = collect([$b->allAstap]);
             }
             $itemCount = $astaps->count();
             $firstAstap = $astaps->first();
@@ -1481,9 +1481,9 @@ class RecycleBinController extends Controller
                 $faktur = $belanja->nomor_faktur ?: 'Faktur Belanja';
                 DB::transaction(function () use ($belanja) {
                     $belanja->restoreData();
-                    $astaps = $belanja->astaps;
-                    if ($astaps->isEmpty() && $belanja->astap) {
-                        $astaps = collect([$belanja->astap]);
+                    $astaps = $belanja->allAstaps;
+                    if ($astaps->isEmpty() && $belanja->allAstap) {
+                        $astaps = collect([$belanja->allAstap]);
                     }
                     foreach ($astaps as $astap) {
                         $this->restoreAstapWithRegisters($astap);
@@ -1526,12 +1526,18 @@ class RecycleBinController extends Controller
             case 'hibah_nibar':
             case 'belanja_barang_nibar':
                 $reg = AstapRegister::findOrFail($id);
-                $nibar = $reg->nibar ?: $reg->no_register;
                 $astap = $reg->astap;
                 $astapRestored = false;
+                $restoredNibar = null;
 
-                DB::transaction(function () use ($reg, $astap, &$astapRestored) {
+                DB::transaction(function () use ($reg, $astap, &$astapRestored, &$restoredNibar) {
+                    $cleanNibar = $this->resolveCleanNibarForRestore($reg, $astap);
+                    $reg->nibar = $cleanNibar;
+                    $reg->no_register = $cleanNibar;
+                    $reg->qr_code_path = "/scan/{$cleanNibar}";
                     $reg->restoreData();
+                    $restoredNibar = $cleanNibar;
+
                     // Jika paket induk sedang berstatus terhapus, ikut pulihkan paket induk agar data tidak menjadi orphan
                     if ($astap && $astap->is_deleted) {
                         $astap->restoreData();
@@ -1565,12 +1571,13 @@ class RecycleBinController extends Controller
                 $isBelanjaModal = ($module === 'belanja_modal_nibar') || ($astap && $astap->sumber_dana === 'belanja_modal');
                 $tipeLabel = $isBelanjaModal ? 'paket Belanja Modal' : 'paket pengadaan';
 
+                $displayNibar = $restoredNibar ?: ($reg->nibar ?: $reg->no_register);
                 if ($astapRestored) {
-                    $msg = "Unit Register NIBAR \"{$nibar}\" dan {$tipeLabel} induknya \"{$astap->nama_barang}\" berhasil dipulihkan ke status aktif.";
+                    $msg = "Unit Register NIBAR \"{$displayNibar}\" dan {$tipeLabel} induknya \"{$astap->nama_barang}\" berhasil dipulihkan ke status aktif.";
                 } elseif ($astap) {
-                    $msg = "Unit Register NIBAR \"{$nibar}\" berhasil dipulihkan ke {$tipeLabel} \"{$astap->nama_barang}\" (Volume aktif: {$astap->jumlah_volume}).";
+                    $msg = "Unit Register NIBAR \"{$displayNibar}\" berhasil dipulihkan ke {$tipeLabel} \"{$astap->nama_barang}\" (Volume aktif: {$astap->jumlah_volume}).";
                 } else {
-                    $msg = "Unit Register NIBAR \"{$nibar}\" berhasil dipulihkan ke katalog aktif.";
+                    $msg = "Unit Register NIBAR \"{$displayNibar}\" berhasil dipulihkan ke katalog aktif.";
                 }
                 break;
 
@@ -1753,6 +1760,10 @@ class RecycleBinController extends Controller
 
                 DB::transaction(function () use ($regs, &$astapParents, &$restoredCount, &$parentRestoredCount) {
                     foreach ($regs as $r) {
+                        $cleanNibar = $this->resolveCleanNibarForRestore($r, $r->astap);
+                        $r->nibar = $cleanNibar;
+                        $r->no_register = $cleanNibar;
+                        $r->qr_code_path = "/scan/{$cleanNibar}";
                         $r->restoreData();
                         if ($r->astap) {
                             if ($r->astap->is_deleted && !isset($astapParents[$r->astap_id])) {
@@ -2626,9 +2637,9 @@ class RecycleBinController extends Controller
                 $belanja = AstapBelanjaBarang::findOrFail($id);
                 $faktur = $belanja->nomor_faktur ?: 'Belanja Barang';
                 DB::transaction(function () use ($belanja) {
-                    $astaps = $belanja->astaps;
-                    if ($astaps->isEmpty() && $belanja->astap) {
-                        $astaps = collect([$belanja->astap]);
+                    $astaps = $belanja->allAstaps;
+                    if ($astaps->isEmpty() && $belanja->allAstap) {
+                        $astaps = collect([$belanja->allAstap]);
                     }
                     foreach ($astaps as $astap) {
                         $astap->registers()->delete();
@@ -2874,6 +2885,40 @@ class RecycleBinController extends Controller
     }
 
     /**
+     * Cari NIBAR bersih yang aman untuk dipulihkan (regenerasi nomor jika nomor lama telah terpakai oleh resequence)
+     */
+    private function resolveCleanNibarForRestore(AstapRegister $reg, ?Astap $astap = null): string
+    {
+        $cleanNibar = preg_replace('/^DEL_\d+_/', '', $reg->nibar ?: $reg->no_register);
+        $astap = $astap ?: $reg->astap;
+
+        // Jika nomor aslinya sedang dipakai oleh register aktif lain di database
+        if (\App\Models\AstapRegister::where('is_deleted', 0)->where('nibar', $cleanNibar)->where('id', '!=', $reg->id)->exists()) {
+            $tahun = $reg->tahun_perolehan ?? ($astap?->tahun_perolehan ?? date('Y'));
+            $ja = $astap?->jenisAstap;
+            $kode108Raw = $ja ? ($ja->sub_sub_rincian_objek ?: $ja->jenis) : '1.3.2.00.00.00';
+            $kode108Clean = str_replace('.', '', $kode108Raw);
+            $prefix = "1201351102000000280000{$tahun}{$kode108Clean}";
+
+            $maxSlot = \App\Models\AstapRegister::where('is_deleted', 0)
+                ->where('nibar', 'like', "{$prefix}%")
+                ->max('no_register_int') ?? 0;
+            $newSlot = (int)$maxSlot + 1;
+            $noRegStr = str_pad($newSlot, 7, '0', STR_PAD_LEFT);
+            $cleanNibar = "{$prefix}{$noRegStr}";
+
+            while (\App\Models\AstapRegister::where('is_deleted', 0)->where('nibar', $cleanNibar)->exists()) {
+                $newSlot++;
+                $noRegStr = str_pad($newSlot, 7, '0', STR_PAD_LEFT);
+                $cleanNibar = "{$prefix}{$noRegStr}";
+            }
+            $reg->no_register_int = $newSlot;
+        }
+
+        return $cleanNibar;
+    }
+
+    /**
      * Pulihkan data aset induk ASTAP beserta seluruh register NIBAR dan update volume
      */
     private function restoreAstapWithRegisters(?Astap $astap): int
@@ -2883,12 +2928,17 @@ class RecycleBinController extends Controller
         }
 
         $astap->restoreData();
-        $astap->allRegisters()->update([
-            'is_deleted'    => 0,
-            'deleted_by'    => null,
-            'deleted_by_id' => null,
-            'deleted_at'    => null,
-        ]);
+        foreach ($astap->allRegisters as $r) {
+            $cleanNibar = $this->resolveCleanNibarForRestore($r, $astap);
+            $r->nibar = $cleanNibar;
+            $r->no_register = $cleanNibar;
+            $r->qr_code_path = "/scan/{$cleanNibar}";
+            $r->is_deleted = 0;
+            $r->deleted_by = null;
+            $r->deleted_by_id = null;
+            $r->deleted_at = null;
+            $r->save();
+        }
 
         $count = max(1, $astap->allRegisters()->where('is_deleted', 0)->count());
         $astap->jumlah_volume = $count;

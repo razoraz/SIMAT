@@ -69,6 +69,7 @@
                             'id'                   => $row->id,
                             'nomor_faktur'         => $row->nomor_faktur,
                             'tanggal_faktur'       => $row->tanggal_faktur ? \Carbon\Carbon::parse($row->tanggal_faktur)->translatedFormat('d F Y') : '-',
+                            'tanggal_faktur_raw'   => $row->tanggal_faktur,
                             'toko_penyedia'        => $row->toko_penyedia,
                             'total_pembelian'      => (float) $row->total_pembelian,
                             'status_alokasi'       => $row->status_alokasi ?: 'gudang',

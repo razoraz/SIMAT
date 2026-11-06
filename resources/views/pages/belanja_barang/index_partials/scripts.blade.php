@@ -43,6 +43,11 @@
             showInlineFakturImg: false,
             showInlineKuitansiImg: false,
 
+            // State Cetak BAST Belanja Barang (Akun 5.1.02)
+            showModalPrintBast: false,
+            showEditBastForm: false,
+            printBastDoc: null,
+
             openDocPreview(url, title) {
                 if (!url) return;
                 this.previewDocUrl = url;
@@ -461,7 +466,199 @@
             formatRupiah(val) {
                 if (!val || isNaN(val)) return '0';
                 return new Intl.NumberFormat('id-ID').format(Math.round(val));
+            },
+
+            // =====================================================================
+            // FITUR CETAK BAST BELANJA BARANG RESMI (AKUN 5.1.02)
+            // =====================================================================
+            openPrintBastModal(item) {
+                if (!item) return;
+
+                const hariMap = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                const bulanMap = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+                let dateObj = new Date();
+                if (item.tanggal_faktur_raw) {
+                    const parsed = new Date(item.tanggal_faktur_raw);
+                    if (!isNaN(parsed.getTime())) dateObj = parsed;
+                }
+
+                const hari = hariMap[dateObj.getDay()] || 'Senin';
+                const tglAngka = dateObj.getDate();
+                const bulan = bulanMap[dateObj.getMonth() + 1] || 'Januari';
+                const tahun = dateObj.getFullYear();
+
+                const id = item.id || 1;
+                const nomorBast = `000.2.3.2/BAST-BLJ/${String(id).padStart(3, '0')}/430.10.7/${tahun}`;
+
+                let itemsList = [];
+                if (item.items && Array.isArray(item.items) && item.items.length > 0) {
+                    itemsList = item.items.map((it, idx) => ({
+                        id: it.id,
+                        nama_barang: it.nama_barang || 'Barang Milik Daerah',
+                        kode_108: it.kode_108 || '-',
+                        jumlah_volume: it.jumlah_volume || 1,
+                        satuan: it.satuan || 'Unit',
+                        harga_satuan: it.harga_satuan || 0,
+                        subtotal: it.subtotal || (it.jumlah_volume * it.harga_satuan) || 0,
+                        ruangan: it.ruangan || 'Gudang Perbekalan',
+                        registers: it.registers || []
+                    }));
+                } else {
+                    itemsList = [{
+                        id: item.id || 1,
+                        nama_barang: item.first_nama || 'Barang Belanja',
+                        kode_108: '-',
+                        jumlah_volume: item.total_volume || 1,
+                        satuan: 'Unit',
+                        harga_satuan: item.total_pembelian || 0,
+                        subtotal: item.total_pembelian || 0,
+                        ruangan: 'Gudang Perbekalan',
+                        registers: []
+                    }];
+                }
+
+                const totalVol = item.total_volume || itemsList.reduce((acc, it) => acc + (parseInt(it.jumlah_volume) || 0), 0);
+                const totalBeli = item.total_pembelian || itemsList.reduce((acc, it) => acc + (parseFloat(it.subtotal) || 0), 0);
+                const terbilangStr = (terbilangBelanjaJs(totalBeli).trim() || 'Nol') + ' Rupiah';
+
+                this.printBastDoc = {
+                    id: item.id,
+                    nomor_faktur: item.nomor_faktur || '-',
+                    tanggal_faktur: item.tanggal_faktur || `${tglAngka} ${bulan} ${tahun}`,
+                    nomor_bast: nomorBast,
+                    hari: hari,
+                    tgl_angka: tglAngka,
+                    bulan: bulan,
+                    tahun: tahun,
+                    toko_penyedia: item.toko_penyedia || '-',
+                    pihak_1_nama: item.toko_penyedia || 'Toko Rekanan Penyedia',
+                    pihak_1_jabatan: 'Pimpinan / Rekanan Penyedia',
+                    pihak_2_nama: 'BUDI HARTONO, S.Sos',
+                    pihak_2_nip: '19760229 200801 1 010',
+                    pihak_2_jabatan: 'Pengurus Barang Pengguna',
+                    pihak_2_instansi: 'RSUD dr. H. Koesnandi Kabupaten Bondowoso',
+                    ppk_nama: 'dr. YUS PRIYATNA ADRYANTO, Sp.P, FISR.',
+                    ppk_nip: '19771002 200604 1 006',
+                    total_pembelian: totalBeli,
+                    total_volume: totalVol,
+                    status_alokasi: item.status_alokasi || 'gudang',
+                    terbilang: terbilangStr,
+                    keterangan: item.keterangan || '-',
+                    signed: true,
+                    items: itemsList
+                };
+
+                this.showModalPrintBast = true;
+                this.showEditBastForm = false;
+            },
+
+            toggleSignBast() {
+                if (!this.printBastDoc) return;
+                this.printBastDoc.signed = !this.printBastDoc.signed;
+                if (this.printBastDoc.signed) {
+                    if (typeof window.showSimatToast === 'function') {
+                        window.showSimatToast('✍️ BAST Belanja Barang berhasil disahkan secara digital (BSrE Aktif)!', 'success');
+                    }
+                } else {
+                    if (typeof window.showSimatToast === 'function') {
+                        window.showSimatToast('↩️ Tanda tangan digital BSrE dibatalkan.', 'info');
+                    }
+                }
+            },
+
+            printCurrentBast() {
+                const el = document.getElementById('print-area-bast-belanja');
+                if (!el) {
+                    window.print();
+                    return;
+                }
+
+                let iframe = document.getElementById('simat-print-frame-belanja');
+                if (iframe) {
+                    iframe.remove();
+                }
+
+                iframe = document.createElement('iframe');
+                iframe.id = 'simat-print-frame-belanja';
+                iframe.style.position = 'fixed';
+                iframe.style.right = '0';
+                iframe.style.bottom = '0';
+                iframe.style.width = '0';
+                iframe.style.height = '0';
+                iframe.style.border = '0';
+                document.body.appendChild(iframe);
+
+                const headStyles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+                    .map(elem => elem.outerHTML)
+                    .join('\n');
+
+                const doc = iframe.contentWindow.document;
+                doc.open();
+                doc.write(`<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>BAST Belanja Barang - ${this.printBastDoc?.nomor_bast || 'RSUD Dr. H. Koesnandi'}</title>
+    ${headStyles}
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 12mm 15mm 12mm 15mm;
+        }
+        *, *::before, *::after {
+            box-sizing: border-box !important;
+        }
+        html, body {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            font-family: Arial, "Helvetica Neue", Helvetica, sans-serif !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        table {
+            border-collapse: collapse !important;
+            width: 100% !important;
+        }
+        tr {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+    </style>
+</head>
+<body style="background:#ffffff; color:#000000; padding:0; margin:0;">
+    <div style="width:100%; max-width:100%;">
+        ${el.innerHTML}
+    </div>
+</body>
+</html>`);
+                doc.close();
+
+                setTimeout(() => {
+                    iframe.contentWindow.focus();
+                    iframe.contentWindow.print();
+                }, 350);
             }
         };
+    }
+
+    function terbilangBelanjaJs(angka) {
+        angka = Math.floor(Math.abs(Number(angka) || 0));
+        const bil = ['', 'Satu', 'Dua', 'Tiga', 'Empat', 'Lima', 'Enam', 'Tujuh', 'Delapan', 'Sembilan', 'Sepuluh', 'Sebelas'];
+        if (angka < 12) return ' ' + bil[angka];
+        if (angka < 20) return terbilangBelanjaJs(angka - 10) + ' Belas';
+        if (angka < 100) return terbilangBelanjaJs(Math.floor(angka / 10)) + ' Puluh' + terbilangBelanjaJs(angka % 10);
+        if (angka < 200) return ' Seratus' + terbilangBelanjaJs(angka - 100);
+        if (angka < 1000) return terbilangBelanjaJs(Math.floor(angka / 100)) + ' Ratus' + terbilangBelanjaJs(angka % 100);
+        if (angka < 2000) return ' Seribu' + terbilangBelanjaJs(angka - 1000);
+        if (angka < 1000000) return terbilangBelanjaJs(Math.floor(angka / 1000)) + ' Ribu' + terbilangBelanjaJs(angka % 1000);
+        if (angka < 1000000000) return terbilangBelanjaJs(Math.floor(angka / 1000000)) + ' Juta' + terbilangBelanjaJs(angka % 1000000);
+        if (angka < 1000000000000) return terbilangBelanjaJs(Math.floor(angka / 1000000000)) + ' Miliar' + terbilangBelanjaJs(angka % 1000000000);
+        if (angka < 1000000000000000) return terbilangBelanjaJs(Math.floor(angka / 1000000000000)) + ' Triliun' + terbilangBelanjaJs(angka % 1000000000000);
+        return ' Banyak';
     }
 </script>
