@@ -156,7 +156,45 @@ class TutupBukuController extends Controller
                 $sumberLabel = 'BELANJA MODAL';
             }
 
-            $reklasCount = $a->reklas ? $a->reklas->count() : ($a->is_reklas ? 1 : 0);
+            $reklasHistory = $a->reklas && $a->reklas->count() > 0 
+                ? $a->reklas->map(function($r, $idx) {
+                    return [
+                        'urutan'           => $idx + 1,
+                        'id'               => $r->id,
+                        'tanggal_reklas'   => $r->tanggal_reklas ? $r->tanggal_reklas->format('d/m/Y') : ($r->created_at ? $r->created_at->format('d/m/Y') : '-'),
+                        'nomor_ba_reklas'  => $r->nomor_ba_reklas ?: '-',
+                        'jenis_reklas'     => $r->jenis_reklas ?: 'Reklasifikasi Akun',
+                        'sub_koreksi_label'=> $r->sub_koreksi_label,
+                        'alasan_reklas'    => $r->alasan_reklas ?: ($r->keterangan ?: 'Penyesuaian klasifikasi akun Simda BMD 108'),
+                        'nilai_reklas'     => (float) ($r->nilai_reklas ?: 0),
+                        'nilai_formatted'  => 'Rp ' . number_format($r->nilai_reklas ?: 0, 0, ',', '.'),
+                        'asal_kib'         => $r->asal_kib ?: '-',
+                        'tujuan_kib'       => $r->tujuan_kib ?: '-',
+                        'asal_kode'        => $r->asal_kode ?: '-',
+                        'tujuan_kode'      => $r->tujuan_kode ?: '-',
+                    ];
+                })->values()->all() 
+                : [];
+
+            if (empty($reklasHistory) && ($a->is_reklas || !empty($a->jenis_reklas))) {
+                $reklasHistory[] = [
+                    'urutan'           => 1,
+                    'id'               => 'legacy_' . $a->id,
+                    'tanggal_reklas'   => $a->tanggal_spk ? $a->tanggal_spk->format('d/m/Y') : ($a->created_at ? $a->created_at->format('d/m/Y') : '-'),
+                    'nomor_ba_reklas'  => $a->nomor_ba_reklas ?: ($a->nomor_spk ?: '-'),
+                    'jenis_reklas'     => $a->jenis_reklas ?: 'Reklasifikasi Akun',
+                    'sub_koreksi_label'=> null,
+                    'alasan_reklas'    => $a->keterangan ?: 'Pencatatan Reklasifikasi Buku Inventaris',
+                    'nilai_reklas'     => (float) ($a->total_realisasi ?: 0),
+                    'nilai_formatted'  => 'Rp ' . number_format($a->total_realisasi ?: 0, 0, ',', '.'),
+                    'asal_kib'         => $a->category ?: '-',
+                    'tujuan_kib'       => $a->category ?: '-',
+                    'asal_kode'        => $a->kode_108 ?: '-',
+                    'tujuan_kode'      => $a->kode_108 ?: '-',
+                ];
+            }
+
+            $reklasCount = count($reklasHistory);
             $reklasJenis = $latestReklas?->jenis_reklas ?? $a->jenis_reklas ?? '';
 
             return [
@@ -182,7 +220,8 @@ class TutupBukuController extends Controller
                 'asal_usul'           => $a->asal_usul,
                 'jenis_aset_nama'     => $ja ? ($ja->uraian_sub_rincian ?: $ja->nama_jenis) : 'Aset Tetap',
                 'reklas_count'        => $reklasCount,
-                'is_reklas'           => $reklasCount > 0 || (bool) $a->is_reklas,
+                'reklas_history'      => $reklasHistory,
+                'is_reklas'           => $reklasCount > 0,
                 'jenis_reklas'        => $reklasJenis,
                 'unit_id'             => $a->unit_id,
                 'unit_nama'           => $a->unit?->nama ?? '',

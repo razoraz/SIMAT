@@ -592,23 +592,21 @@
                                         </span>
                                     </td>
 
-                                    <!-- 7. Riwayat Reklasifikasi (Kolom Khusus Reklas) -->
+                                    <!-- 7. Riwayat Reklasifikasi (Tombol Interaktif Terpusat Tanpa Subtitle) -->
                                     <td class="py-3.5 px-4 text-center whitespace-nowrap">
                                         <template x-if="item.is_reklas || item.reklas_count > 0">
-                                            <div class="inline-flex flex-col items-center gap-0.5">
-                                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[10px] font-black bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 shadow-sm shadow-indigo-500/10">
-                                                    <svg class="w-3 h-3 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
-                                                    </svg>
-                                                    <span x-text="(item.reklas_count ? item.reklas_count : 1) + 'x Direklas'"></span>
-                                                </span>
-                                                <template x-if="item.jenis_reklas">
-                                                    <span class="text-[9px] font-bold text-indigo-400/80 font-mono tracking-tight" x-text="item.jenis_reklas"></span>
-                                                </template>
-                                            </div>
+                                            <button type="button" 
+                                                    @click="openRiwayatReklasModal(item)"
+                                                    class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/40 hover:border-indigo-400 font-extrabold text-[11px] transition-all shadow-sm shadow-indigo-500/10 active:scale-95 cursor-pointer leading-none mx-auto group"
+                                                    title="Klik untuk melihat seluruh riwayat transaksi reklasifikasi aset ini">
+                                                <svg class="w-3.5 h-3.5 text-indigo-400 group-hover:text-white shrink-0 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                                                </svg>
+                                                <span x-text="(item.reklas_count ? item.reklas_count : 1) + 'x Direklas'"></span>
+                                            </button>
                                         </template>
                                         <template x-if="!item.is_reklas && (!item.reklas_count || item.reklas_count === 0)">
-                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-medium text-slate-500 bg-slate-950/60 border border-slate-800/80">
+                                            <span class="inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-xl text-[10.5px] font-medium text-slate-500 bg-slate-950/60 border border-slate-800/80 mx-auto select-none">
                                                 <span class="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
                                                 <span>Belum Direklas</span>
                                             </span>
@@ -666,10 +664,11 @@
         </div>
 
         <!-- ========================================================================= -->
-        <!-- 6. MODAL DETAIL, MODAL REKLASIFIKASI, MODAL CONFIRM & TOAST               -->
+        <!-- 6. MODAL DETAIL, MODAL REKLASIFIKASI, RIWAYAT REKLAS, CONFIRM & TOAST     -->
         <!-- ========================================================================= -->
         @include('pages.astap.index_partials.modal_detail')
         @include('pages.astap.index_partials.modal_reklas')
+        @include('pages.tutup_buku.modal_riwayat_reklas')
         @include('pages.astap.index_partials.modal_confirm')
         @include('pages.astap.index_partials.toast')
 
@@ -692,6 +691,18 @@
                 tableTahunFilter: 'all',
                 tableKibFilter: 'all',
                 tableKondisiFilter: 'all',
+
+                // State Modal Riwayat Reklasifikasi
+                showRiwayatReklasModal: false,
+                selectedRiwayatItem: null,
+                openRiwayatReklasModal(item) {
+                    this.selectedRiwayatItem = item;
+                    this.showRiwayatReklasModal = true;
+                },
+                closeRiwayatReklasModal() {
+                    this.showRiwayatReklasModal = false;
+                    this.selectedRiwayatItem = null;
+                },
 
                 // Inisialisasi awal
                 initTutupBuku() {
