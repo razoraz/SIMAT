@@ -108,6 +108,7 @@ class AstapController extends Controller
                 'mutasiEksternal',
                 'mutasiEksternalMasuk',
                 'hibahDetail',
+                'hibahs',
                 'reklas' => function($q) {
                     $q->orderBy('id', 'desc');
                 },
@@ -257,6 +258,69 @@ class AstapController extends Controller
                     ];
                 }
 
+                // Data Transaksi Hibah Keluar & Hibah Masuk
+                $hibahKeluarRecord = $a->hibahs?->where('tipe_hibah', 'keluar')->first();
+                $hibahKeluarData = null;
+                if ($hibahKeluarRecord) {
+                    $hibahKeluarData = [
+                        'id' => $hibahKeluarRecord->id,
+                        'penerima' => $hibahKeluarRecord->pihak_hibah ?: ($hibahKeluarRecord->nama_penerima ?: 'Pihak Luar RSUD'),
+                        'penerima_hibah' => $hibahKeluarRecord->pihak_hibah ?: ($hibahKeluarRecord->nama_penerima ?: 'Pihak Luar RSUD'),
+                        'nama_penerima' => $hibahKeluarRecord->nama_penerima ?: '-',
+                        'jabatan_penerima' => $hibahKeluarRecord->jabatan_penerima ?: '-',
+                        'nip_penerima' => $hibahKeluarRecord->nip_penerima ?: '-',
+                        'alamat_penerima' => $hibahKeluarRecord->alamat_penerima ?: '-',
+                        'nomor_bast' => $hibahKeluarRecord->nomor_bast ?: '-',
+                        'tanggal_bast' => $hibahKeluarRecord->tanggal_bast ? $fmtDate($hibahKeluarRecord->tanggal_bast) : '-',
+                        'tanggal_bast_raw' => $hibahKeluarRecord->tanggal_bast ? (is_string($hibahKeluarRecord->tanggal_bast) ? $hibahKeluarRecord->tanggal_bast : $hibahKeluarRecord->tanggal_bast->format('Y-m-d')) : '',
+                        'jumlah_volume' => (int) $hibahKeluarRecord->jumlah_volume,
+                        'satuan' => $hibahKeluarRecord->satuan ?: ($a->satuan ?: 'Unit'),
+                        'nilai_aset' => (float) $hibahKeluarRecord->nilai_aset,
+                        'keterangan' => $hibahKeluarRecord->keterangan ?: '-',
+                        'dokumen_path' => $hibahKeluarRecord->dokumen_path ?: null,
+                        'cetak_url' => route('master.hibah.cetak', ['id' => $hibahKeluarRecord->id]),
+                    ];
+                } elseif ($a->jenis_reklas === 'HIBAH_KELUAR') {
+                    $hibahKeluarData = [
+                        'id' => null,
+                        'penerima' => $spec['penerima_hibah'] ?? ($spec['pihak_hibah'] ?? 'Pihak Penerima Hibah'),
+                        'penerima_hibah' => $spec['penerima_hibah'] ?? ($spec['pihak_hibah'] ?? 'Pihak Penerima Hibah'),
+                        'nama_penerima' => $spec['nama_penerima'] ?? '-',
+                        'jabatan_penerima' => $spec['jabatan_penerima'] ?? '-',
+                        'nip_penerima' => $spec['nip_penerima'] ?? '-',
+                        'alamat_penerima' => $spec['alamat_penerima'] ?? '-',
+                        'nomor_bast' => $spec['nomor_bast'] ?? ($a->bast_dokumen_nomor ?? '-'),
+                        'tanggal_bast' => !empty($spec['tanggal_bast']) ? $fmtDate($spec['tanggal_bast']) : ($a->bast_dokumen_tanggal ? $fmtDate($a->bast_dokumen_tanggal) : '-'),
+                        'tanggal_bast_raw' => $spec['tanggal_bast'] ?? ($a->bast_dokumen_tanggal ? (is_string($a->bast_dokumen_tanggal) ? $a->bast_dokumen_tanggal : $a->bast_dokumen_tanggal->format('Y-m-d')) : ''),
+                        'jumlah_volume' => (int) ($a->jumlah_volume ?: 1),
+                        'satuan' => $a->satuan ?: 'Unit',
+                        'nilai_aset' => (float) $a->total_realisasi,
+                        'keterangan' => $spec['keterangan'] ?? ($a->keterangan_tambahan ?? '-'),
+                        'dokumen_path' => null,
+                        'cetak_url' => null,
+                    ];
+                }
+
+                $hibahMasukRecord = $a->hibahs?->where('tipe_hibah', 'masuk')->first() ?: $a->hibahDetail;
+                $hibahMasukData = null;
+                if ($hibahMasukRecord || $a->sumber_dana === 'hibah' || ($spec['sumber_dana'] ?? '') === 'hibah') {
+                    $hibahMasukData = [
+                        'id' => $hibahMasukRecord?->id,
+                        'pemberi' => $hibahMasukRecord?->pihak_hibah ?: ($a->hibah_pemberi ?: ($spec['pemberi'] ?? ($spec['hibah_pemberi'] ?? ($a->penyedia_nama ?: '-')))),
+                        'pemberi_hibah' => $hibahMasukRecord?->pihak_hibah ?: ($a->hibah_pemberi ?: ($spec['pemberi'] ?? ($spec['hibah_pemberi'] ?? ($a->penyedia_nama ?: '-')))),
+                        'pimpinan_pemberi' => $spec['hibah_pimpinan'] ?? ($spec['pimpinan_pemberi'] ?? ($a->penyedia_pemilik ?: '-')),
+                        'alamat_pemberi' => $spec['hibah_alamat_pemberi'] ?? ($spec['alamat_pemberi'] ?? ($a->penyedia_alamat ?: '-')),
+                        'nomor_bast' => $hibahMasukRecord?->nomor_bast ?: ($a->hibah_nomor_bast ?: ($spec['nomor_bast'] ?? ($spec['hibah_nomor_bast'] ?? ($a->bast_dokumen_nomor ?: '-')))),
+                        'tanggal_bast' => $hibahMasukRecord?->tanggal_bast ? $fmtDate($hibahMasukRecord->tanggal_bast) : ($a->hibah_tanggal_bast ? $fmtDate($a->hibah_tanggal_bast) : (!empty($spec['tanggal_bast']) ? $fmtDate($spec['tanggal_bast']) : (!empty($spec['hibah_tanggal_bast']) ? $fmtDate($spec['hibah_tanggal_bast']) : ($a->bast_dokumen_tanggal ? $fmtDate($a->bast_dokumen_tanggal) : '-')))),
+                        'tanggal_bast_raw' => $hibahMasukRecord?->tanggal_bast ? (is_string($hibahMasukRecord->tanggal_bast) ? $hibahMasukRecord->tanggal_bast : $hibahMasukRecord->tanggal_bast->format('Y-m-d')) : '',
+                        'keterangan' => $hibahMasukRecord?->keterangan ?: ($a->hibah_keterangan ?: ($spec['keterangan'] ?? ($spec['hibah_keterangan'] ?? ($a->keterangan_tambahan ?: '-')))),
+                        'dokumen_path' => $hibahMasukRecord?->dokumen_path ?: ($spec['dokumen_bast_path'] ?? ($spec['dokumen_path'] ?? null)),
+                        'cetak_url' => $hibahMasukRecord ? route('master.hibah.cetak', ['id' => $hibahMasukRecord->id]) : null,
+                    ];
+                }
+
+                $isHibahKeluarAset = !empty($hibahKeluarData) || ($a->jenis_reklas === 'HIBAH_KELUAR');
+
                 return [
                     'id' => $a->id,
                     'created_at' => $a->created_at ? $a->created_at->format('Y-m-d H:i:s') : null,
@@ -272,6 +336,9 @@ class AstapController extends Controller
                     'mutasi_keluar_count' => $mutatedRegsCount,
                     'active_regs_count' => $activeRegsCount,
                     'mutasi_keluar' => $mutasiKeluarData,
+                    'is_hibah_keluar' => $isHibahKeluarAset,
+                    'hibah_keluar' => $hibahKeluarData,
+                    'hibah_masuk' => $hibahMasukData,
                     'opd_tujuan' => $skpdTujuanNama,
                     'tujuan_kib' => $latestReklas?->tujuan_kib,
                     'tujuan_kode' => $latestReklas?->tujuan_kode,
