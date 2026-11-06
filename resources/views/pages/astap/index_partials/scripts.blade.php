@@ -6114,35 +6114,90 @@
             const cat = String(item.category || '').toUpperCase();
             const nama = String(item.sub_rincian_nama || item.nama_barang || '').toUpperCase();
 
-            const matchedDef = reklasDefs.find(d => code && (code.startsWith(d.prefix) || (d.code === '1.5.2' && (code.startsWith('1.4') || code.startsWith('1.5.2') || code.startsWith('1.5.1')))));
-            if (matchedDef) {
-                targetCode = matchedDef.code;
-            } else if (cat === 'KIB A') {
-                targetCode = '1.3.1.01';
-            } else if (cat === 'KIB B') {
-                const found = reklasDefs.filter(d => d.group === 'PERALATAN DAN MESIN').find(d => nama.includes(d.label));
-                targetCode = found ? found.code : '1.3.2.05';
-            } else if (cat === 'KIB C') {
-                targetCode = '1.3.3.01';
-            } else if (cat === 'KIB D') {
-                targetCode = '1.3.4.01';
-            } else if (cat === 'KIB E') {
-                targetCode = '1.3.5.01';
-            } else if (cat === 'KIB F') {
-                targetCode = '1.3.6.01';
-            } else if (cat === 'ATB') {
-                targetCode = '1.5.3';
-            } else if (cat === 'KEMITRAAN' || item.sumber_dana === 'kemitraan') {
-                targetCode = '1.5.2';
-            } else if (cat === 'ASET LAIN' || cat === 'ASET LAIN-LAIN') {
-                targetCode = '1.5.4';
+            // Resolusi Rekening Asal Pengadaan (targetCode):
+            // Jika aset direklasifikasi (misal KIB B -> Kemitraan 1.5.2), rekening asal pengadaan
+            // harus berada di rekening/KIB ASAL (KIB B), bukan di rekening tujuan (1.5.2) agar neraca tidak minus
+            // dan angka kemitraan tidak terisi dobel di kolom kurang & awal.
+            let originCode = null;
+            if (item.is_reklas) {
+                const asalKode = String(item.asal_kode || '').trim();
+                const asalKib = String(item.asal_kib || '').toUpperCase().trim();
+                if (asalKode) {
+                    const m = reklasDefs.find(d => asalKode.startsWith(d.prefix));
+                    if (m) originCode = m.code;
+                }
+                if (!originCode && asalKib) {
+                    if (asalKib === 'KIB A') originCode = '1.3.1.01';
+                    else if (asalKib === 'KIB B') originCode = '1.3.2.05';
+                    else if (asalKib === 'KIB C') originCode = '1.3.3.01';
+                    else if (asalKib === 'KIB D') originCode = '1.3.4.01';
+                    else if (asalKib === 'KIB E') originCode = '1.3.5.01';
+                    else if (asalKib === 'KIB F') originCode = '1.3.6.01';
+                    else if (asalKib === 'ATB') originCode = '1.5.3';
+                    else if (asalKib === 'KEMITRAAN') originCode = '1.5.2';
+                    else if (asalKib === 'ASET LAIN' || asalKib === 'ASET LAIN-LAIN') originCode = '1.5.4';
+                }
+                if (!originCode && cat) {
+                    if (cat === 'KIB A') originCode = '1.3.1.01';
+                    else if (cat === 'KIB B') originCode = '1.3.2.05';
+                    else if (cat === 'KIB C') originCode = '1.3.3.01';
+                    else if (cat === 'KIB D') originCode = '1.3.4.01';
+                    else if (cat === 'KIB E') originCode = '1.3.5.01';
+                    else if (cat === 'KIB F') originCode = '1.3.6.01';
+                    else if (cat === 'ATB') originCode = '1.5.3';
+                }
+            }
+
+            if (originCode) {
+                targetCode = originCode;
+            } else {
+                const matchedDef = reklasDefs.find(d => code && (code.startsWith(d.prefix) || (d.code === '1.5.2' && (code.startsWith('1.4') || code.startsWith('1.5.2') || code.startsWith('1.5.1')))));
+                if (matchedDef) {
+                    targetCode = matchedDef.code;
+                } else if (cat === 'KIB A') {
+                    targetCode = '1.3.1.01';
+                } else if (cat === 'KIB B') {
+                    const found = reklasDefs.filter(d => d.group === 'PERALATAN DAN MESIN').find(d => nama.includes(d.label));
+                    targetCode = found ? found.code : '1.3.2.05';
+                } else if (cat === 'KIB C') {
+                    targetCode = '1.3.3.01';
+                } else if (cat === 'KIB D') {
+                    targetCode = '1.3.4.01';
+                } else if (cat === 'KIB E') {
+                    targetCode = '1.3.5.01';
+                } else if (cat === 'KIB F') {
+                    targetCode = '1.3.6.01';
+                } else if (cat === 'ATB') {
+                    targetCode = '1.5.3';
+                } else if (cat === 'KEMITRAAN' || item.sumber_dana === 'kemitraan') {
+                    targetCode = '1.5.2';
+                } else if (cat === 'ASET LAIN' || cat === 'ASET LAIN-LAIN') {
+                    targetCode = '1.5.4';
+                }
+            }
+
+            // Khusus HIBAH_MASUK: bukan dari Saldo Awal Belanja Modal, melainkan masuk langsung sebagai Mutasi Tambah
+            if (item.jenis_reklas === 'HIBAH_MASUK') {
+                if (rowVals[targetCode]) {
+                    rowVals[targetCode].tambah += val;
+                }
+                reklasNotesItems.push({
+                    item: item,
+                    val: val,
+                    targetCode: targetCode,
+                    jenis: 'HIBAH_MASUK'
+                });
+                return;
             }
 
             if (rowVals[targetCode]) {
                 rowVals[targetCode].saldo_awal += val;
                 const isKoreksiRek = (item.jenis_reklas === 'KOREKSI_REKENING');
                 const isKdp = (item.jenis_reklas === 'KDP_TO_DEFINITIF');
+                const isDefinitifToKdp = (item.jenis_reklas === 'DEFINITIF_TO_KDP');
                 const isKoreksiLain = (item.jenis_reklas === 'KOREKSI_LAIN');
+                const isHibahKeluar = (item.jenis_reklas === 'HIBAH_KELUAR') || Boolean(item.is_hibah_keluar);
+                const isMutasiKeluar = (item.jenis_reklas === 'MUTASI_EKSTERNAL');
 
                 if (isExtracom) {
                     rowVals[targetCode].kurang += val;
@@ -6152,13 +6207,29 @@
                         targetCode: targetCode,
                         jenis: 'EKSTRAKOMPTABEL'
                     });
+                } else if (isHibahKeluar) {
+                    rowVals[targetCode].kurang += val;
+                    reklasNotesItems.push({
+                        item: item,
+                        val: val,
+                        targetCode: targetCode,
+                        jenis: 'HIBAH_KELUAR'
+                    });
+                } else if (isMutasiKeluar) {
+                    rowVals[targetCode].kurang += val;
+                    reklasNotesItems.push({
+                        item: item,
+                        val: val,
+                        targetCode: targetCode,
+                        jenis: 'MUTASI_EKSTERNAL'
+                    });
                 } else if (isKoreksiRek) {
                     rowVals[targetCode].kurang += val;
 
                     // Akumulasi tambah pada rekening tujuan reklasifikasi
                     let destCode = null;
                     const destCat = String(item.tujuan_kib || '').toUpperCase();
-                    const destBarangCode = String(item.tujuan_kode_barang || '').trim();
+                    const destBarangCode = String(item.tujuan_kode_barang || item.tujuan_kode || '').trim();
                     if (destCat === 'ASET LAIN' || destCat.includes('ASET LAIN') || destBarangCode.startsWith('1.5.4')) {
                         destCode = '1.5.4';
                     } else if (destCat === 'ATB' || destCat.includes('BERWUJUD') || destBarangCode.startsWith('1.5.3')) {
@@ -6189,11 +6260,26 @@
                     });
                 } else if (isKdp) {
                     rowVals[targetCode].kurang += val;
+                    let destCode = '1.3.3.01';
+                    const destCat = String(item.tujuan_kib || '').toUpperCase();
+                    if (destCat === 'KIB D') destCode = '1.3.4.01';
+                    else if (destCat === 'KIB B') destCode = '1.3.2.01';
+                    if (rowVals[destCode]) rowVals[destCode].tambah += val;
+
                     reklasNotesItems.push({
                         item: item,
                         val: val,
                         targetCode: targetCode,
                         jenis: 'KDP_TO_DEFINITIF'
+                    });
+                } else if (isDefinitifToKdp) {
+                    rowVals[targetCode].kurang += val;
+                    if (rowVals['1.3.6.01']) rowVals['1.3.6.01'].tambah += val;
+                    reklasNotesItems.push({
+                        item: item,
+                        val: val,
+                        targetCode: targetCode,
+                        jenis: 'DEFINITIF_TO_KDP'
                     });
                 } else if (isKoreksiLain) {
                     rowVals[targetCode].kurang += val;
@@ -6341,15 +6427,6 @@
         asetLainnyaDefs.forEach(it => {
             const vals = rowVals[it.code];
             sheet3Rows.push([
-                it.label,
-                vals.saldo_awal,
-                vals.tambah,
-                vals.kurang,
-                vals.akhir
-            ]);
-            s3Meta.groupHeaderRows.push(sheet3Rows.length - 1);
-
-            sheet3Rows.push([
                 "  " + it.label,
                 vals.saldo_awal,
                 vals.tambah,
@@ -6375,20 +6452,24 @@
 
         filteredAstaps.forEach(item => {
             const val = parseFloat(item.total_realisasi_num) || parseFloat(item.total_realisasi) || 0;
-            const isHibah = String(item.asal_usul || item.sumber_dana || '').toUpperCase().includes('HIBAH') || (item.jenis_reklas === 'HIBAH_MASUK');
+            const isHibah = String(item.asal_usul || item.sumber_dana || '').toUpperCase().includes('HIBAH') 
+                || (item.jenis_reklas === 'HIBAH_MASUK')
+                || (item.jenis_reklas === 'HIBAH_KELUAR')
+                || Boolean(item.is_hibah_keluar);
             const isExtracom = Boolean(item.is_extracomtable || resolveItemCategory(item) === 'EXTRACOM' || item.jenis_reklas === 'EKSTRAKOMPTABEL');
-            const isOtherReklas = Boolean((item.is_reklas && !isExtracom) || (item.jenis_reklas === 'KOREKSI_LAIN' || item.jenis_reklas === 'KOREKSI_REKENING' || item.jenis_reklas === 'KDP_TO_DEFINITIF' || item.jenis_reklas === 'DEFINITIF_TO_KDP' || item.jenis_reklas === 'KAPITALISASI_INTRAKOM'));
+            const isOtherReklas = Boolean((item.is_reklas && !isExtracom && !isHibah) 
+                || (item.jenis_reklas === 'KOREKSI_LAIN' || item.jenis_reklas === 'KOREKSI_REKENING' || item.jenis_reklas === 'KDP_TO_DEFINITIF' || item.jenis_reklas === 'DEFINITIF_TO_KDP' || item.jenis_reklas === 'KAPITALISASI_INTRAKOM' || item.jenis_reklas === 'MUTASI_EKSTERNAL'));
 
             // Format Resmi 3 Baris Koreksi Penyeimbang (Sesuai Template RSUD Koesnandi / BPK):
-            // 1. Hibah: Koreksi yang berasal dari barang Hibah atau pengadaan hibah masuk
-            if (isHibah && (isOtherReklas || isExtracom || item.is_reklas)) {
+            // 1. Hibah: Transaksi hibah (Hibah Keluar BAST, Hibah Masuk, maupun barang perolehan hibah)
+            if (isHibah) {
                 totalHibahVal += val;
             }
             // 2. Ekstrakomptabel: Koreksi / reklasifikasi barang di bawah nilai kapitalisasi (<= Rp 300.000)
             else if (isExtracom) {
                 totalExtracomVal += val;
             }
-            // 3. Koreksi Lain-Lain: Pindah KIB / Rekening, Kapitalisasi KDP, dan Koreksi Nilai Audit BPK / LKD
+            // 3. Koreksi Lain-Lain: Pindah KIB / Rekening, Kapitalisasi KDP, Mutasi OPD, dan Koreksi Nilai Audit BPK / LKD
             else if (isOtherReklas) {
                 totalKoreksiLainVal += val;
             }
@@ -6492,6 +6573,14 @@
                     noteText = `${idx + 1}. Reklasifikasi dan koreksi rekening dari rekening ${subRek} ${subNama} senilai Rp ${fmtNilaiText} ${buktiStr} pada RSUD dr.H.Koesnadi${tujuanStr} berupa ${kdBrg} ${nmBrg} (${vol}) karena penyesuaian klasifikasi wujud aset / kodefikasi Simda BMD 108.`;
                 } else if (n.jenis === 'KDP_TO_DEFINITIF' || it.jenis_reklas === 'KDP_TO_DEFINITIF') {
                     noteText = `${idx + 1}. Kapitalisasi KDP selesai dari rekening ${subRek} ${subNama} senilai Rp ${fmtNilaiText} ${buktiStr} pada RSUD dr.H.Koesnadi ke Aset Definitif berupa ${kdBrg} ${nmBrg} (${vol}) karena pekerjaan fisik telah selesai 100% dan terbit BAST.`;
+                } else if (n.jenis === 'DEFINITIF_TO_KDP' || it.jenis_reklas === 'DEFINITIF_TO_KDP') {
+                    noteText = `${idx + 1}. Reklasifikasi Aset Definitif ke KDP dari rekening ${subRek} ${subNama} senilai Rp ${fmtNilaiText} ${buktiStr} pada RSUD dr.H.Koesnadi untuk renovasi/rehabilitasi fisik bertahap.`;
+                } else if (n.jenis === 'HIBAH_KELUAR' || it.jenis_reklas === 'HIBAH_KELUAR') {
+                    noteText = `${idx + 1}. Hibah keluar barang milik daerah dari rekening ${subRek} ${subNama} senilai Rp ${fmtNilaiText} ${buktiStr} kepada pihak penerima hibah sesuai Berita Acara Serah Terima (BAST).`;
+                } else if (n.jenis === 'HIBAH_MASUK' || it.jenis_reklas === 'HIBAH_MASUK') {
+                    noteText = `${idx + 1}. Penerimaan hibah masuk barang milik daerah ke rekening ${subRek} ${subNama} senilai Rp ${fmtNilaiText} ${buktiStr} dari pihak pemberi hibah sesuai BAST.`;
+                } else if (n.jenis === 'MUTASI_EKSTERNAL' || it.jenis_reklas === 'MUTASI_EKSTERNAL') {
+                    noteText = `${idx + 1}. Mutasi eksternal keluar barang milik daerah dari rekening ${subRek} ${subNama} senilai Rp ${fmtNilaiText} ${buktiStr} ke ${it.opd_tujuan || 'OPD lain'} sesuai BAMB.`;
                 } else if (n.jenis === 'KOREKSI_LAIN' || it.jenis_reklas === 'KOREKSI_LAIN') {
                     noteText = `${idx + 1}. Koreksi nilai aset tetap pada rekening ${subRek} ${subNama} senilai Rp ${fmtNilaiText} ${buktiStr} pada RSUD dr.H.Koesnandi berdasarkan rekomendasi audit BPK / rekonsiliasi LKD.`;
                 } else {
