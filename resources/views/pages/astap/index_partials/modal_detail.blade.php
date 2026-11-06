@@ -1513,7 +1513,7 @@
                                             <div class="flex items-center justify-between pt-1.5">
                                                 <span class="text-slate-400">Status Konsesi:</span>
                                                 <span class="px-2 py-0.5 rounded text-[10px] font-extrabold"
-                                                      :class="(selectedAstapDetail.is_kemitraan_reklas || selectedAstapDetail.kemitraan?.status_konsesi === 'Selesai / Reklasifikasi' || selectedAstapDetail.kemitraan?.status_konsesi === 'Selesai') ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'"
+                                                      :class="(selectedAstapDetail.is_kemitraan_reklas || selectedAstapDetail.kemitraan?.status_konsesi === 'Selesai / Reklasifikasi' || selectedAstapDetail.kemitraan?.status_konsesi === 'Selesai') ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : (selectedAstapDetail.kemitraan?.status_konsesi === 'Dikembalikan ke Rekanan' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : (selectedAstapDetail.kemitraan?.status_konsesi === 'Konsesi Berakhir' || (selectedAstapDetail.kemitraan?.sisa_hari !== null && selectedAstapDetail.kemitraan?.sisa_hari < 0) ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'))"
                                                       x-text="selectedAstapDetail.kemitraan?.status_konsesi || 'Aktif'"></span>
                                             </div>
                                             <div class="flex items-center justify-between pt-1.5">
@@ -1522,7 +1522,31 @@
                                             </div>
                                             <div class="flex items-center justify-between pt-1.5">
                                                 <span class="text-slate-400">Sisa Masa Berlaku:</span>
-                                                <span class="text-amber-300 font-mono font-bold truncate max-w-[55%]" x-text="selectedAstapDetail.kemitraan?.sisa_hari !== null && selectedAstapDetail.kemitraan?.sisa_hari !== undefined ? selectedAstapDetail.kemitraan.sisa_hari + ' Hari' : '-'"></span>
+                                                <span class="font-mono font-bold truncate max-w-[55%]"
+                                                      :class="(() => {
+                                                          const status = (selectedAstapDetail.kemitraan?.status_konsesi || '').trim();
+                                                          const sisa = selectedAstapDetail.kemitraan?.sisa_hari;
+                                                          if (status === 'Dikembalikan ke Rekanan') return 'text-purple-300';
+                                                          if (status === 'Selesai / Reklasifikasi' || status === 'Selesai') return 'text-emerald-300';
+                                                          if (status === 'Dihentikan' || status === 'Dibatalkan') return 'text-rose-400';
+                                                          if (sisa === null || sisa === undefined) return 'text-slate-400';
+                                                          if (sisa < 0 || status === 'Konsesi Berakhir') return 'text-rose-400 font-extrabold';
+                                                          if (sisa <= 30) return 'text-amber-300 font-extrabold';
+                                                          return 'text-emerald-400';
+                                                      })()"
+                                                      x-text="(() => {
+                                                          const status = (selectedAstapDetail.kemitraan?.status_konsesi || '').trim();
+                                                          const sisa = selectedAstapDetail.kemitraan?.sisa_hari;
+                                                          if (status === 'Dikembalikan ke Rekanan') return '📦 Dikembalikan (Selesai)';
+                                                          if (status === 'Selesai / Reklasifikasi') return '🏛️ Milik RSUD (Selesai)';
+                                                          if (status === 'Selesai') return '✅ Masa Konsesi Selesai';
+                                                          if (status === 'Dihentikan' || status === 'Dibatalkan') return '🚫 ' + status;
+                                                          if (sisa === null || sisa === undefined) return '-';
+                                                          if (sisa > 0) return '⏱️ ' + sisa + ' Hari Lagi';
+                                                          if (sisa === 0) return '⚠️ Berakhir Hari Ini';
+                                                          return '🛑 Telah Berakhir (' + Math.abs(sisa) + ' Hari Lalu)';
+                                                      })()">
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
@@ -1659,7 +1683,7 @@
                                         <div class="space-y-1.5 divide-y divide-slate-800/60">
                                             <div class="flex items-center justify-between pt-1">
                                                 <span class="text-slate-400">Nama Perusahaan / Rekanan:</span>
-                                                <strong class="text-white font-bold truncate max-w-[55%]" :title="selectedAstapDetail.penyedia_nama" x-text="selectedAstapDetail.penyedia_nama || '-'"></strong>
+                                                <strong class="text-white font-bold truncate max-w-[55%]" :title="selectedAstapDetail.penyedia_nama || selectedAstapDetail.rekening_penyedia" x-text="selectedAstapDetail.penyedia_nama || selectedAstapDetail.rekening_penyedia || '-'"></strong>
                                             </div>
                                             <div class="flex items-center justify-between pt-1.5">
                                                 <span class="text-slate-400">Nama Pimpinan / Pemilik:</span>
