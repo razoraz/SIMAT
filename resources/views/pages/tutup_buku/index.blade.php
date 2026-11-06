@@ -116,10 +116,50 @@
                 </button>
             </div>
 
-            <!-- Petunjuk Singkat -->
-            <div class="text-xs text-slate-400 flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
-                <span>Klik kartu triwulan atau tahun untuk membuka <strong>Tabel Aset</strong> &amp; <strong>Reklasifikasi</strong></span>
+            <!-- Sisi Kanan: Filter / Pemilih Tahun Interaktif (Bespoke Dark Dashboard) -->
+            <div class="flex flex-wrap items-center gap-2.5">
+                <!-- Mode Triwulan: Pemilih Tahun Aktif Triwulan -->
+                <div x-show="activeTab === 'triwulan'" class="flex items-center gap-2 bg-slate-900/90 border border-slate-800 rounded-2xl p-1.5 shadow-inner">
+                    <label for="filter-tahun-tab" class="text-xs font-bold text-slate-400 pl-2.5 flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        <span>T.A. Triwulan:</span>
+                    </label>
+                    <select id="filter-tahun-tab" 
+                            onchange="window.location.href = '{{ route('tutup_buku.index') }}?tahun=' + this.value"
+                            class="bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-1.5 text-xs font-black text-cyan-300 focus:outline-none focus:border-cyan-500 cursor-pointer hover:border-cyan-500/50 transition-colors">
+                        @foreach($distinctYears as $yr)
+                            <option value="{{ $yr }}" {{ $currentYear === $yr ? 'selected' : '' }}>
+                                T.A. {{ $yr }} {{ $yr === $actualYear ? '(Tahun Berjalan)' : '' }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- Mode Tahunan: Filter Kartu Tahun Alpine (Instant Client-side) -->
+                <div x-show="activeTab === 'tahunan'" class="flex items-center gap-2 bg-slate-900/90 border border-slate-800 rounded-2xl p-1.5 shadow-inner">
+                    <label for="filter-tahun-tahunan" class="text-xs font-bold text-slate-400 pl-2.5 flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+                        </svg>
+                        <span>Filter Tahun:</span>
+                    </label>
+                    <select id="filter-tahun-tahunan" 
+                            x-model="filterTahunTahunan"
+                            class="bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-1.5 text-xs font-black text-indigo-300 focus:outline-none focus:border-indigo-500 cursor-pointer hover:border-indigo-500/50 transition-colors">
+                        <option value="all">Semua Tahun ({{ count($tahunanData) }} Tahun)</option>
+                        @foreach($tahunanData as $yrData)
+                            <option value="{{ $yrData['tahun'] }}">T.A. {{ $yrData['tahun'] }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- Petunjuk Singkat -->
+                <div class="text-xs text-slate-400 hidden lg:flex items-center gap-2 pl-2 border-l border-slate-800">
+                    <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+                    <span>Klik kartu untuk buka <strong>Tabel Aset</strong></span>
+                </div>
             </div>
         </div>
 
@@ -247,9 +287,41 @@
         <!-- 4. KONTEN TAB 2: KARTU TUTUP BUKU TAHUNAN (ARSIP & KONSOLIDASI)          -->
         <!-- ========================================================================= -->
         <div x-show="activeTab === 'tahunan'" x-transition:enter="transition ease-out duration-200 opacity-0" x-transition:enter-end="opacity-100" class="space-y-6">
+            
+            <!-- Quick Year Filter Pills (Bespoke Filter Bar untuk Tahunan) -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/60 p-3 rounded-2xl border border-slate-800">
+                <div class="flex items-center gap-2 text-xs">
+                    <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
+                    <span class="font-bold text-slate-300">Pilih Tahun Arsip:</span>
+                    <span class="text-[11px] text-indigo-300 font-mono bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-lg" 
+                          x-text="filterTahunTahunan === 'all' ? 'Menampilkan Seluruh Tahun ({{ count($tahunanData) }})' : ('Tahun Anggaran ' + filterTahunTahunan)"></span>
+                </div>
+                
+                <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 max-w-full">
+                    <button type="button" 
+                            @click="filterTahunTahunan = 'all'"
+                            :class="filterTahunTahunan === 'all' ? 'bg-indigo-600 text-white font-extrabold shadow-md shadow-indigo-500/20' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
+                            class="px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer shrink-0">
+                        Semua ({{ count($tahunanData) }})
+                    </button>
+                    @foreach($tahunanData as $yrData)
+                        <button type="button" 
+                                @click="filterTahunTahunan = '{{ $yrData['tahun'] }}'"
+                                :class="filterTahunTahunan == '{{ $yrData['tahun'] }}' ? 'bg-indigo-600 text-white font-extrabold shadow-md shadow-indigo-500/20' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
+                                class="px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer shrink-0 font-mono">
+                            {{ $yrData['tahun'] }}
+                        </button>
+                    @endforeach
+                </div>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 @foreach($tahunanData as $yrData)
-                    <div class="relative bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl transition-all duration-200 hover:-translate-y-1 flex flex-col justify-between overflow-hidden group
+                    <div x-show="filterTahunTahunan === 'all' || filterTahunTahunan == '{{ $yrData['tahun'] }}'"
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 scale-95"
+                         x-transition:enter-end="opacity-100 scale-100"
+                         class="relative bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl transition-all duration-200 hover:-translate-y-1 flex flex-col justify-between overflow-hidden group
                         {{ $yrData['is_past_year'] ? 'hover:border-indigo-500/40' : 'border-cyan-500/40 ring-1 ring-cyan-500/30' }}"
                         :class="{ 'ring-2 ring-indigo-500 border-indigo-500': selectedPeriod?.type === 'tahunan' && selectedPeriod?.year === {{ $yrData['tahun'] }} }">
 
@@ -384,8 +456,17 @@
                            class="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors">
                 </div>
 
-                <!-- Filter Kategori KIB -->
+                <!-- Filter Tahun, Kategori KIB & Kondisi -->
                 <div class="flex flex-wrap items-center gap-2 shrink-0">
+                    <!-- Filter Tahun Aset -->
+                    <select x-model="tableTahunFilter" 
+                            class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-slate-200 focus:outline-none focus:border-cyan-500 cursor-pointer">
+                        <option value="all">Semua Tahun</option>
+                        @foreach($distinctYears as $yr)
+                            <option value="{{ $yr }}">T.A. {{ $yr }}</option>
+                        @endforeach
+                    </select>
+
                     <select x-model="tableKibFilter" 
                             class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-slate-200 focus:outline-none focus:border-cyan-500 cursor-pointer">
                         <option value="all">Semua KIB / Akun</option>
@@ -586,7 +667,9 @@
                 // State Khusus Halaman Tutup Buku
                 activeTab: 'triwulan', // 'triwulan' | 'tahunan'
                 selectedPeriod: null,
+                filterTahunTahunan: 'all',
                 tableSearch: '',
+                tableTahunFilter: 'all',
                 tableKibFilter: 'all',
                 tableKondisiFilter: 'all',
 
@@ -604,12 +687,14 @@
                         isLocked: false,
                         rentang: 'Triwulan Berjalan'
                     };
+                    this.tableTahunFilter = String(defaultYr);
                 },
 
                 // Pemilihan Periode (Triwulan atau Tahunan)
                 selectPeriod(p) {
                     this.selectedPeriod = p;
                     this.tableSearch = '';
+                    this.tableTahunFilter = p.year ? String(p.year) : 'all';
                     this.tableKibFilter = 'all';
                     this.tableKondisiFilter = 'all';
 
@@ -628,10 +713,12 @@
                     const p = this.selectedPeriod;
 
                     return this.astaps.filter(item => {
-                        // 1. Filter Berdasarkan Periode
+                        // 1. Filter Berdasarkan Periode & Filter Tahun
+                        const itemYr = parseInt(item.tahun_perolehan) || 0;
+
                         if (p.type === 'triwulan') {
-                            const itemYr = parseInt(item.tahun_perolehan) || 0;
-                            if (itemYr !== p.year) return false;
+                            const targetYr = (this.tableTahunFilter !== 'all') ? parseInt(this.tableTahunFilter) : p.year;
+                            if (itemYr !== targetYr) return false;
 
                             let twNum = 1;
                             if (typeof item.triwulan_num === 'number' && item.triwulan_num > 0) {
@@ -646,8 +733,10 @@
 
                             if (twNum !== p.tw) return false;
                         } else if (p.type === 'tahunan') {
-                            const itemYr = parseInt(item.tahun_perolehan) || 0;
-                            if (itemYr !== p.year) return false;
+                            const targetYr = (this.tableTahunFilter !== 'all') ? parseInt(this.tableTahunFilter) : p.year;
+                            if (itemYr !== targetYr) return false;
+                        } else if (this.tableTahunFilter !== 'all') {
+                            if (itemYr !== parseInt(this.tableTahunFilter)) return false;
                         }
 
                         // 2. Filter Kategori KIB
