@@ -135,6 +135,30 @@ class TutupBukuController extends Controller
             $kode108Val = $a->kode_108 ?: ($ja ? ($ja->sub_sub_rincian_objek ?: $ja->jenis) : '');
             $latestReklas = $a->reklas ? $a->reklas->first() : null;
 
+            // Klasifikasi Sumber Perolehan / Dana Eksplisit (BLUD, Belanja Modal, Hibah, Mutasi, Kemitraan)
+            $sumberType = 'belanja_modal';
+            $sumberLabel = 'BELANJA MODAL';
+
+            if ($a->isKemitraan()) {
+                $sumberType = 'kemitraan';
+                $sumberLabel = 'KEMITRAAN';
+            } elseif ($a->isHibah() || $a->sumber_dana === 'hibah') {
+                $sumberType = 'hibah';
+                $sumberLabel = 'HIBAH';
+            } elseif ($a->isMutasiMasuk() || $a->isMutasiEksternal() || in_array($a->sumber_dana, ['mutasi', 'mutasi_masuk', 'mutasi_eksternal', 'pelimpahan', 'pelimpahan_skpd'], true)) {
+                $sumberType = 'mutasi';
+                $sumberLabel = 'MUTASI';
+            } elseif ($a->sumber_dana === 'blud' || $a->isBelanjaBarang() || str_contains(strtolower($a->asal_usul ?? ''), 'blud')) {
+                $sumberType = 'blud';
+                $sumberLabel = 'BLUD';
+            } else {
+                $sumberType = 'belanja_modal';
+                $sumberLabel = 'BELANJA MODAL';
+            }
+
+            $reklasCount = $a->reklas ? $a->reklas->count() : ($a->is_reklas ? 1 : 0);
+            $reklasJenis = $latestReklas?->jenis_reklas ?? $a->jenis_reklas ?? '';
+
             return [
                 'id'                  => $a->id,
                 'category'            => $a->category,
@@ -151,11 +175,15 @@ class TutupBukuController extends Controller
                 'jumlah_realisasi'    => 'Rp ' . number_format($a->total_realisasi, 0, ',', '.'),
                 'total_realisasi_num' => (float) $a->total_realisasi,
                 'kondisi'             => $a->kondisi ?: 'Baik',
-                'sumber_dana'         => $a->isKemitraan() ? 'kemitraan' : ($a->sumber_dana ?: 'belanja_modal'),
+                'sumber_dana'         => $sumberType,
                 'sumber_dana_raw'     => $a->sumber_dana,
+                'sumber_type'         => $sumberType,
+                'sumber_label'        => $sumberLabel,
+                'asal_usul'           => $a->asal_usul,
                 'jenis_aset_nama'     => $ja ? ($ja->uraian_sub_rincian ?: $ja->nama_jenis) : 'Aset Tetap',
-                'is_reklas'           => (bool) $a->is_reklas,
-                'jenis_reklas'        => $a->jenis_reklas,
+                'reklas_count'        => $reklasCount,
+                'is_reklas'           => $reklasCount > 0 || (bool) $a->is_reklas,
+                'jenis_reklas'        => $reklasJenis,
                 'unit_id'             => $a->unit_id,
                 'unit_nama'           => $a->unit?->nama ?? '',
                 'rekening_belanja'    => $a->rekeningBelanja ? $a->rekeningBelanja->nama_rekening : '',

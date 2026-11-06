@@ -498,13 +498,13 @@
                         <thead>
                             <tr class="bg-slate-950/80 border-b border-slate-800 text-slate-400 font-extrabold uppercase tracking-wider text-[10px]">
                                 <th class="py-3.5 px-4 w-12 text-center">No</th>
-                                <th class="py-3.5 px-4 min-w-[140px]">Kode 108 &amp; KIB</th>
-                                <th class="py-3.5 px-4 min-w-[220px]">Nama Barang &amp; Rincian</th>
-                                <th class="py-3.5 px-4 min-w-[140px]">No Register / NIBAR</th>
+                                <th class="py-3.5 px-4 min-w-[170px]">Kode 108 &amp; Klasifikasi</th>
+                                <th class="py-3.5 px-4 min-w-[240px]">Nama Barang &amp; Rincian</th>
                                 <th class="py-3.5 px-4 min-w-[90px] text-center">Volume</th>
                                 <th class="py-3.5 px-4 min-w-[140px] text-right">Nilai Realisasi</th>
-                                <th class="py-3.5 px-4 min-w-[130px] text-center">Sumber &amp; Status</th>
-                                <th class="py-3.5 px-4 w-[215px] min-w-[215px] text-center">Aksi Transaksi</th>
+                                <th class="py-3.5 px-4 min-w-[120px] text-center">Kondisi Aset</th>
+                                <th class="py-3.5 px-4 min-w-[150px] text-center">Riwayat Reklas</th>
+                                <th class="py-3.5 px-4 w-[160px] min-w-[160px] text-center">Aksi Transaksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-800/80 text-slate-300 font-medium">
@@ -513,63 +513,50 @@
                                     <!-- 1. Nomor Urut -->
                                     <td class="py-3.5 px-4 text-center font-mono text-slate-500 text-[11px]" x-text="idx + 1"></td>
 
-                                    <!-- 2. Kode 108 & KIB -->
+                                    <!-- 2. Kode 108 & Klasifikasi (Badge KIB + Badge Sumber Dana Berdampingan) -->
                                     <td class="py-3.5 px-4">
-                                        <div class="space-y-1">
-                                            <span class="inline-block px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider border shadow-sm"
-                                                :class="{
-                                                    'bg-cyan-500/20 text-cyan-300 border-cyan-500/30': getEffectiveKibCategory(item) === 'KIB B',
-                                                    'bg-purple-500/20 text-purple-300 border-purple-500/30': getEffectiveKibCategory(item) === 'KIB C',
-                                                    'bg-amber-500/20 text-amber-300 border-amber-500/30': getEffectiveKibCategory(item) === 'KIB A',
-                                                    'bg-teal-500/20 text-teal-300 border-teal-500/30': getEffectiveKibCategory(item) === 'KIB D',
-                                                    'bg-orange-500/20 text-orange-300 border-orange-500/30': getEffectiveKibCategory(item) === 'KIB E',
-                                                    'bg-rose-500/20 text-rose-300 border-rose-500/30': getEffectiveKibCategory(item) === 'KIB F',
-                                                    'bg-indigo-500/20 text-indigo-300 border-indigo-500/30': getEffectiveKibCategory(item) === 'ATB',
-                                                    'bg-amber-400/20 text-amber-300 border-amber-400/30': item.category === 'EXTRACOM'
-                                                }"
-                                                x-text="item.category === 'EXTRACOM' ? 'EXTRACOM' : getEffectiveKibCategory(item)"></span>
+                                        <div class="space-y-1.5">
+                                            <div class="flex flex-wrap items-center gap-1.5">
+                                                <!-- Badge KIB -->
+                                                <span class="inline-block px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider border shadow-sm"
+                                                    :class="{
+                                                        'bg-cyan-500/20 text-cyan-300 border-cyan-500/30': getEffectiveKibCategory(item) === 'KIB B',
+                                                        'bg-purple-500/20 text-purple-300 border-purple-500/30': getEffectiveKibCategory(item) === 'KIB C',
+                                                        'bg-amber-500/20 text-amber-300 border-amber-500/30': getEffectiveKibCategory(item) === 'KIB A',
+                                                        'bg-teal-500/20 text-teal-300 border-teal-500/30': getEffectiveKibCategory(item) === 'KIB D',
+                                                        'bg-orange-500/20 text-orange-300 border-orange-500/30': getEffectiveKibCategory(item) === 'KIB E',
+                                                        'bg-rose-500/20 text-rose-300 border-rose-500/30': getEffectiveKibCategory(item) === 'KIB F',
+                                                        'bg-indigo-500/20 text-indigo-300 border-indigo-500/30': getEffectiveKibCategory(item) === 'ATB',
+                                                        'bg-amber-400/20 text-amber-300 border-amber-400/30': item.category === 'EXTRACOM'
+                                                    }"
+                                                    x-text="item.category === 'EXTRACOM' ? 'EXTRACOM' : getEffectiveKibCategory(item)"></span>
+
+                                                <!-- Badge Sumber Perolehan (BLUD, BM, Hibah, Mutasi, Kemitraan) -->
+                                                <span class="inline-block px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider border shadow-sm"
+                                                    :class="{
+                                                        'bg-cyan-500/15 text-cyan-300 border-cyan-500/30': item.sumber_type === 'kemitraan',
+                                                        'bg-teal-500/15 text-teal-300 border-teal-500/30': item.sumber_type === 'blud',
+                                                        'bg-purple-500/15 text-purple-300 border-purple-500/30': item.sumber_type === 'hibah',
+                                                        'bg-indigo-500/15 text-indigo-300 border-indigo-500/30': item.sumber_type === 'mutasi',
+                                                        'bg-amber-500/15 text-amber-300 border-amber-500/30': item.sumber_type === 'belanja_modal' || !item.sumber_type
+                                                    }"
+                                                    x-text="item.sumber_label || 'BELANJA MODAL'"></span>
+                                            </div>
                                             <div class="font-mono text-[11px] font-bold text-cyan-400" x-text="item.kode_barang || '-'"></div>
                                         </div>
                                     </td>
 
                                     <!-- 3. Nama Barang & Rincian -->
                                     <td class="py-3.5 px-4">
-                                        <div class="space-y-1">
+                                        <div class="space-y-0.5">
                                             <div class="font-bold text-white text-xs leading-snug" x-text="cleanNamaBarang(item.nama_barang)"></div>
                                             <div class="text-[11px] text-slate-400 truncate max-w-xs" 
                                                  x-show="item.jenis_aset_nama && item.jenis_aset_nama !== '-' && item.jenis_aset_nama.toLowerCase() !== cleanNamaBarang(item.nama_barang).toLowerCase()" 
                                                  x-text="item.jenis_aset_nama"></div>
-                                            <template x-if="item.is_reklas">
-                                                <div class="pt-0.5">
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[9.5px] font-extrabold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shadow-sm">
-                                                        <span>🔄 Reklas:</span>
-                                                        <span x-text="item.jenis_reklas || 'Tereklarasi'"></span>
-                                                    </span>
-                                                </div>
-                                            </template>
                                         </div>
                                     </td>
 
-                                    <!-- 4. Register / NIBAR -->
-                                    <td class="py-3.5 px-4 font-mono text-[11px]">
-                                        <template x-if="Array.isArray(item.registers) && item.registers.length > 0">
-                                            <div class="space-y-1">
-                                                <div class="text-slate-300 font-bold tracking-tight break-all max-w-[210px] leading-tight select-all text-[10.5px]" 
-                                                     x-text="item.registers[0].nibar || item.registers[0].no_register"></div>
-                                                <template x-if="item.registers.length > 1">
-                                                    <div>
-                                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9.5px] font-extrabold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 shadow-sm" 
-                                                              x-text="'+ ' + (item.registers.length - 1) + ' NIBAR lainnya'"></span>
-                                                    </div>
-                                                </template>
-                                            </div>
-                                        </template>
-                                        <template x-if="!Array.isArray(item.registers) || item.registers.length === 0">
-                                            <span class="text-slate-500">-</span>
-                                        </template>
-                                    </td>
-
-                                    <!-- 5. Volume -->
+                                    <!-- 4. Volume -->
                                     <td class="py-3.5 px-4 text-center">
                                         <div class="inline-flex flex-col items-center">
                                             <span class="font-extrabold text-white text-xs font-mono" x-text="item.jumlah_volume || 1"></span>
@@ -577,45 +564,59 @@
                                         </div>
                                     </td>
 
-                                    <!-- 6. Nilai Realisasi -->
-                                    <td class="py-3.5 px-4 text-right font-mono">
-                                        <span class="font-extrabold text-xs"
-                                              :class="item.total_realisasi_num > 0 ? 'text-cyan-400' : 'text-slate-500'"
-                                              x-text="item.jumlah_realisasi || 'Rp 0'"></span>
-                                    </td>
-
-                                    <!-- 7. Sumber Dana & Kondisi -->
-                                    <td class="py-3.5 px-4 text-center">
-                                        <div class="inline-flex flex-col items-center gap-1">
-                                            <!-- Badge Kondisi -->
-                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-extrabold uppercase border shadow-sm"
-                                                :class="{
-                                                    'bg-emerald-500/15 text-emerald-300 border-emerald-500/30': item.kondisi === 'Baik',
-                                                    'bg-amber-500/15 text-amber-300 border-amber-500/30': item.kondisi === 'Kurang Baik',
-                                                    'bg-rose-500/15 text-rose-300 border-rose-500/30': item.kondisi === 'Rusak Berat'
-                                                }">
-                                                <span class="w-1.5 h-1.5 rounded-full"
-                                                      :class="{
-                                                          'bg-emerald-400 animate-pulse': item.kondisi === 'Baik',
-                                                          'bg-amber-400': item.kondisi === 'Kurang Baik',
-                                                          'bg-rose-400': item.kondisi === 'Rusak Berat'
-                                                      }"></span>
-                                                <span x-text="item.kondisi || 'Baik'"></span>
-                                            </span>
-
-                                            <!-- Badge Sumber Dana -->
-                                            <span class="px-2 py-0.5 rounded-md text-[9.5px] font-bold border"
-                                                  :class="{
-                                                      'bg-cyan-500/10 text-cyan-300 border-cyan-500/25': (item.sumber_dana || '').includes('kemitraan'),
-                                                      'bg-purple-500/10 text-purple-300 border-purple-500/25': (item.sumber_dana || '').includes('hibah'),
-                                                      'bg-slate-800 text-slate-300 border-slate-700/60': !(item.sumber_dana || '').includes('kemitraan') && !(item.sumber_dana || '').includes('hibah')
-                                                  }"
-                                                  x-text="item.sumber_dana ? (item.sumber_dana.replace(/_/g, ' ').toUpperCase()) : 'BELANJA MODAL'"></span>
+                                    <!-- 5. Nilai Realisasi (Accounting Tabular-Nums Lurus Sempurna) -->
+                                    <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                                        <div class="flex items-center justify-end font-mono text-xs">
+                                            <span class="text-slate-500 font-bold text-[10px] mr-1.5 select-none">Rp</span>
+                                            <span class="font-black tabular-nums text-xs tracking-tight"
+                                                  :class="item.total_realisasi_num > 0 ? 'text-cyan-400' : 'text-slate-500'"
+                                                  x-text="(Number(item.total_realisasi_num || 0)).toLocaleString('id-ID')"></span>
                                         </div>
                                     </td>
 
-                                    <!-- 8. Aksi Transaksi -->
-                                    <td class="py-3.5 px-4 text-center">
+                                    <!-- 6. Kondisi Aset (Murni Status Kondisi) -->
+                                    <td class="py-3.5 px-4 text-center whitespace-nowrap">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10px] font-extrabold uppercase border shadow-sm"
+                                            :class="{
+                                                'bg-emerald-500/15 text-emerald-300 border-emerald-500/30': item.kondisi === 'Baik',
+                                                'bg-amber-500/15 text-amber-300 border-amber-500/30': item.kondisi === 'Kurang Baik',
+                                                'bg-rose-500/15 text-rose-300 border-rose-500/30': item.kondisi === 'Rusak Berat'
+                                            }">
+                                            <span class="w-1.5 h-1.5 rounded-full"
+                                                  :class="{
+                                                      'bg-emerald-400 animate-pulse': item.kondisi === 'Baik',
+                                                      'bg-amber-400': item.kondisi === 'Kurang Baik',
+                                                      'bg-rose-400': item.kondisi === 'Rusak Berat'
+                                                  }"></span>
+                                            <span x-text="item.kondisi || 'Baik'"></span>
+                                        </span>
+                                    </td>
+
+                                    <!-- 7. Riwayat Reklasifikasi (Kolom Khusus Reklas) -->
+                                    <td class="py-3.5 px-4 text-center whitespace-nowrap">
+                                        <template x-if="item.is_reklas || item.reklas_count > 0">
+                                            <div class="inline-flex flex-col items-center gap-0.5">
+                                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[10px] font-black bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 shadow-sm shadow-indigo-500/10">
+                                                    <svg class="w-3 h-3 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                                                    </svg>
+                                                    <span x-text="(item.reklas_count ? item.reklas_count : 1) + 'x Direklas'"></span>
+                                                </span>
+                                                <template x-if="item.jenis_reklas">
+                                                    <span class="text-[9px] font-bold text-indigo-400/80 font-mono tracking-tight" x-text="item.jenis_reklas"></span>
+                                                </template>
+                                            </div>
+                                        </template>
+                                        <template x-if="!item.is_reklas && (!item.reklas_count || item.reklas_count === 0)">
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-medium text-slate-500 bg-slate-950/60 border border-slate-800/80">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
+                                                <span>Belum Direklas</span>
+                                            </span>
+                                        </template>
+                                    </td>
+
+                                    <!-- 8. Aksi Transaksi (Hanya Detail & Reklas) -->
+                                    <td class="py-3.5 px-4 text-center whitespace-nowrap">
                                         <div class="inline-flex items-center justify-center gap-1.5">
                                             <!-- Tombol 1: Detail Lengkap -->
                                             <button type="button" 
@@ -638,17 +639,6 @@
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
                                                 </svg>
                                                 <span>Reklas</span>
-                                            </button>
-
-                                            <!-- Tombol 3: Ubah (DINONAKTIFKAN / DIKUNCI Pada Periode Tutup Buku) -->
-                                            <button type="button" 
-                                                    disabled
-                                                    class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-950/70 border border-slate-800 text-slate-500 cursor-not-allowed select-none font-bold text-[11px] leading-none opacity-60"
-                                                    title="Tombol Ubah Terkunci: Periode ini telah ditutup buku (LKPD audited BPK RI). Gunakan Reklasifikasi untuk penyesuaian saldo.">
-                                                <svg class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                                                </svg>
-                                                <span>Ubah</span>
                                             </button>
                                         </div>
                                     </td>
