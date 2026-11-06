@@ -9,7 +9,9 @@
 
                 <div class="flex items-center space-x-3 w-full sm:w-auto justify-end">
                     @php
-                        $cancelUrl = request('from') === 'eksternal' ? route('mutasi.eksternal') : route('astap.index');
+                        $cancelUrl = request('from') === 'belanja_barang'
+                            ? route('master.belanja_barang')
+                            : (request('from') === 'eksternal' ? route('mutasi.eksternal') : route('astap.index'));
                     @endphp
                     <a href="{{ $cancelUrl }}" class="flex-1 sm:flex-initial text-center px-4 sm:px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-all">
                         Batal

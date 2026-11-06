@@ -33,12 +33,22 @@ class AstapBelanjaBarang extends Model
 
     public function astap()
     {
-        return $this->hasOne(Astap::class, 'belanja_barang_id');
+        return $this->hasOne(Astap::class, 'belanja_barang_id')->where('is_deleted', 0);
     }
 
     public function astaps()
     {
+        return $this->hasMany(Astap::class, 'belanja_barang_id')->where('is_deleted', 0);
+    }
+
+    public function allAstaps()
+    {
         return $this->hasMany(Astap::class, 'belanja_barang_id');
+    }
+
+    public function allAstap()
+    {
+        return $this->hasOne(Astap::class, 'belanja_barang_id');
     }
 
     public function items()

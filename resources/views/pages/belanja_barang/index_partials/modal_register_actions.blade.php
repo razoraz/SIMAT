@@ -300,6 +300,31 @@
                                 <p class="text-xs text-slate-400 max-w-sm mx-auto">Unit ini belum pernah dimutasi/dilimpahkan ke instansi di luar RSUD Koesnandi.</p>
                             </div>
                         </template>
+                        <template x-if="selectedRiwayatMutasisEksternal && selectedRiwayatMutasisEksternal.length > 0">
+                            <div class="space-y-2">
+                                <template x-for="ext in selectedRiwayatMutasisEksternal" :key="'ext-' + ext.id">
+                                    <div class="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
+                                        <div class="flex items-center justify-between text-xs">
+                                            <div class="flex items-center space-x-2">
+                                                <span class="font-mono font-bold text-cyan-300" x-text="ext.nomor_bast || ext.nomor_bamb || '-'"></span>
+                                                <span class="px-2 py-0.5 rounded text-[9.5px] font-extrabold uppercase border"
+                                                      :class="ext.tipe === 'keluar' ? 'bg-rose-500/20 text-rose-300 border-rose-500/30' : 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30'"
+                                                      x-text="ext.tipe === 'keluar' ? 'Mutasi Keluar' : 'Mutasi Masuk'"></span>
+                                            </div>
+                                            <span class="text-slate-400 font-mono text-[11px]" x-text="ext.tanggal_mutasi || '-'"></span>
+                                        </div>
+                                        <div class="p-2 bg-slate-900 rounded-xl border border-slate-800/60 flex items-center justify-between text-xs">
+                                            <span class="text-slate-300 truncate max-w-[200px]" x-text="ext.opd_asal || 'RSUD Koesnandi'"></span>
+                                            <span class="text-cyan-400 font-bold px-2">➔</span>
+                                            <span class="text-cyan-300 font-bold truncate max-w-[200px]" x-text="ext.opd_tujuan || '-'"></span>
+                                        </div>
+                                        <template x-if="ext.alasan_mutasi">
+                                            <p class="text-[10.5px] text-slate-400 italic px-1" x-text="ext.alasan_mutasi"></p>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
                     </div>
 
                     <!-- TAB 4: REKLASIFIKASI -->

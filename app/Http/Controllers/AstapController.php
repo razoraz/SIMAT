@@ -4051,6 +4051,14 @@ class AstapController extends Controller
             ], 500);
         }
 
+        // Sinkronkan total faktur Belanja Barang jika aset ini berasal dari belanja barang
+        if ($astap->belanjaBarang) {
+            $newFakturTotal = (float) $astap->belanjaBarang->astaps()
+                ->where('is_deleted', 0)
+                ->sum('total_realisasi');
+            $astap->belanjaBarang->update(['total_pembelian' => $newFakturTotal]);
+        }
+
         // Kirim Notifikasi Sistem ke Admin & Super Admin saat Terjadi Perubahan ASTAP
         try {
             \App\Services\NotificationService::sendToAdminAndMaster(
@@ -4333,6 +4341,12 @@ class AstapController extends Controller
 
                 // 2. Lakukan Soft Delete & Sinkronisasi di dalam DB Transaction
                 \Illuminate\Support\Facades\DB::transaction(function() use ($reg, $astap, &$astapAutoDeleted, &$spec) {
+                    // Lepaskan string NIBAR dengan prefix DEL_ agar tidak membentur unique index MySQL dan slot nomor bisa dirapikan
+                    $origNibar = $reg->nibar ?: $reg->no_register;
+                    if ($origNibar && !str_starts_with($origNibar, 'DEL_')) {
+                        $reg->nibar = substr("DEL_{$reg->id}_{$origNibar}", 0, 60);
+                        $reg->no_register = substr("DEL_{$reg->id}_" . ($reg->no_register ?: $origNibar), 0, 60);
+                    }
                     $reg->softDelete();
 
                     if ($astap) {
@@ -4363,9 +4377,21 @@ class AstapController extends Controller
                                 $astap->belanjaModal->softDelete();
                             }
 
-                            // 3. Soft delete Belanja Barang jika ada
+                            // 3. Soft delete Belanja Barang jika ada dan tidak ada item aktif lainnya
                             if ($astap->belanjaBarang) {
-                                $astap->belanjaBarang->softDelete();
+                                $hasOtherActiveBelanjaItems = $astap->belanjaBarang->astaps()
+                                    ->where('id', '!=', $astap->id)
+                                    ->where('is_deleted', 0)
+                                    ->exists();
+                                if (!$hasOtherActiveBelanjaItems) {
+                                    $astap->belanjaBarang->softDelete();
+                                } else {
+                                    $newFakturTotal = (float) $astap->belanjaBarang->astaps()
+                                        ->where('id', '!=', $astap->id)
+                                        ->where('is_deleted', 0)
+                                        ->sum('total_realisasi');
+                                    $astap->belanjaBarang->update(['total_pembelian' => $newFakturTotal]);
+                                }
                             }
 
                             // 4. Soft delete Hibah jika ada
@@ -4396,6 +4422,18 @@ class AstapController extends Controller
                             $spec = $astap->spesifikasi_json ?? [];
                         } else {
                             $astap->jumlah_volume = $newCount;
+                            $astap->total_realisasi = $newCount * (float) $astap->harga_satuan;
+                            if ($astap->jumlah_anggaran > 0) {
+                                $astap->jumlah_anggaran = $astap->total_realisasi;
+                            }
+
+                            // Sinkronkan juga total faktur Belanja Barang jika aset terikat faktur
+                            if ($astap->belanjaBarang) {
+                                $newFakturTotal = (float) $astap->belanjaBarang->astaps()
+                                    ->where('is_deleted', 0)
+                                    ->sum('total_realisasi');
+                                $astap->belanjaBarang->update(['total_pembelian' => $newFakturTotal]);
+                            }
 
                             // Sinkronkan juga volume PKS Kemitraan jika aset ini terikat kontrak
                             \App\Models\AstapKemitraan::where('astap_id', $astap->id)
@@ -4529,7 +4567,22 @@ class AstapController extends Controller
             $category = $request->input('category', 'all');
             $astapId = $request->input('astap_id');
 
-            $query = \App\Models\Astap::with(['registers' => fn($q) => $q->orderBy('no_register_int', 'asc')->orderBy('id', 'asc'), 'jenisAstap']);
+            // 0. Self-heal: Lepaskan string NIBAR pada data register yang sudah terhapus (soft-deleted)
+            // agar tidak membentur index UNIQUE di MySQL dan tidak mengunci nomor urut aktif
+            \App\Models\AstapRegister::where('is_deleted', 1)
+                ->where('nibar', 'not like', 'DEL_%')
+                ->each(function($delReg) {
+                    $origNibar = $delReg->nibar ?: $delReg->no_register;
+                    if ($origNibar) {
+                        $delReg->update([
+                            'nibar'       => substr("DEL_{$delReg->id}_{$origNibar}", 0, 60),
+                            'no_register' => substr("DEL_{$delReg->id}_" . ($delReg->no_register ?: $origNibar), 0, 60),
+                        ]);
+                    }
+                });
+
+            $query = \App\Models\Astap::where('is_deleted', 0)
+                ->with(['registers' => fn($q) => $q->where('is_deleted', 0)->orderBy('no_register_int', 'asc')->orderBy('id', 'asc'), 'jenisAstap']);
 
             if ($astapId) {
                 $target = \App\Models\Astap::find($astapId);
@@ -4602,11 +4655,18 @@ class AstapController extends Controller
                     // Pisahkan register yang SUDAH DITEMPATKAN (di unit/ruangan) dan BELUM DITEMPATKAN (di gudang)
                     // Aturan Bisnis:
                     // 1. Aset yang SUDAH DITEMPATKAN nomornya DIKUNCI (tidak boleh berubah karena label fisik QR di ruangan sudah terpasang).
-                    // 2. Aset yang BELUM DITEMPATKAN akan disusun mengisi celah nomor register yang kosong dari nomor 1 secara berurutan.
-                    // 3. Jika targeted resequence untuk single barang ($astapId), register milik barang target tersebut ikut dirapatkan mengisi celah kosong.
+                    // 2. Aset yang BELUM DITEMPATKAN (di gudang aset/gudang perbekalan) akan disusun mengisi celah nomor register yang kosong dari nomor 1 secara berurutan.
+                    // 3. Jika resequence spesifik untuk barang tertentu ($astapId), seluruh register barang target yang belum memiliki riwayat distribusi/mutasi ikut dirapatkan.
                     $placedRegs = [];
                     $unplacedRegs = [];
                     $lockedSlots = [];
+
+                    $unplacedPlaceholders = [
+                        '', '-', 'belum ditempatkan', 'belum ditempatkan / di gudang',
+                        'belum ditempatkan / di gudang aset', 'gudang aset',
+                        'gudang aset utama / belum ditempatkan', 'gudang perbekalan',
+                        'gudang farmasi', 'gudang umum', 'gudang'
+                    ];
 
                     foreach ($sortedAstaps as $astap) {
                         // Pastikan registers terurut berdasarkan no_register_int atau id
@@ -4616,8 +4676,13 @@ class AstapController extends Controller
 
                         foreach ($orderedRegs as $reg) {
                             $curSlot = $reg->no_register_int ?: intval(substr($reg->nibar ?? '', -7));
+                            $cleanRuang = strtolower(trim((string)$reg->ruang_pemegang));
+                            $isGudang = empty($cleanRuang) || in_array($cleanRuang, $unplacedPlaceholders);
                             $isTargetAstap = ($astapId && $astap->id == $astapId);
-                            $isPlaced = (!$isTargetAstap) && (!empty($reg->ruang_pemegang) || !empty($reg->unit_id));
+
+                            // Aset dianggap placed (dikunci nomornya) JIKA:
+                            // Bukan target barang tunggal ($astapId), DAN (bukan di gudang ATAU sudah dialokasikan ke unit_id)
+                            $isPlaced = (!$isTargetAstap) && (!$isGudang || !empty($reg->unit_id));
 
                             if ($isPlaced) {
                                 $placedRegs[] = ['reg' => $reg, 'astap' => $astap, 'slot' => $curSlot];
@@ -4630,7 +4695,7 @@ class AstapController extends Controller
                         }
                     }
 
-                    // Kunci juga slot register eksternal (misal unit yang sedang dialihkan ke Kemitraan namun tetap mempertahankan NIBAR fisik 131)
+                    // Kunci juga slot register eksternal AKTIF (hanya yang is_deleted = 0)
                     $firstAstap = $sortedAstaps->first();
                     if ($firstAstap) {
                         $sampleTahun = $firstAstap->tahun_perolehan ?? '2026';
@@ -4643,7 +4708,8 @@ class AstapController extends Controller
                         $groupNibarPrefix = "1201351102000000280000{$sampleTahun}{$sampleKode108Clean}";
                         $allGroupRegIds = $sortedAstaps->pluck('registers')->flatten()->pluck('id')->filter()->all();
 
-                        $externalRegs = \App\Models\AstapRegister::where('nibar', 'like', $groupNibarPrefix . '%')
+                        $externalRegs = \App\Models\AstapRegister::where('is_deleted', 0)
+                            ->where('nibar', 'like', $groupNibarPrefix . '%')
                             ->whereNotIn('id', $allGroupRegIds)
                             ->get();
 
@@ -4708,8 +4774,8 @@ class AstapController extends Controller
                         $noRegStr = str_pad($newSlot, 7, '0', STR_PAD_LEFT);
                         $finalNibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
 
-                        // Defensive Check: Jika slot bentrok dengan register yang ada di database, lewati ke slot unik berikutnya
-                        while (\App\Models\AstapRegister::where('nibar', $finalNibar)->where('id', '!=', $reg->id)->exists()) {
+                        // Defensive Check: Jika slot bentrok dengan register aktif yang ada di database, lewati ke slot unik berikutnya
+                        while (\App\Models\AstapRegister::where('is_deleted', 0)->where('nibar', $finalNibar)->where('id', '!=', $reg->id)->exists()) {
                             $newSlot++;
                             $noRegStr = str_pad($newSlot, 7, '0', STR_PAD_LEFT);
                             $finalNibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
@@ -4727,7 +4793,7 @@ class AstapController extends Controller
             });
 
             $message = $totalUpdated > 0
-                ? "Berhasil merapikan {$totalUpdated} unit register NIBAR (hanya aset belum ditempatkan yang dirapatkan; aset di ruangan tetap dikunci)."
+                ? "Berhasil merapikan {$totalUpdated} unit register NIBAR (nomor yang kosong berhasil dirapatkan berurutan rapi)."
                 : "Nomor register NIBAR sudah berurutan rapi. Aset yang sudah ditempatkan di ruangan tetap dikunci.";
 
             return response()->json([

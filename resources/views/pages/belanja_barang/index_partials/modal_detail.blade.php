@@ -71,13 +71,11 @@
                 </div>
 
                 <!-- Tombol Action Header: Close -->
-                <div class="flex items-center space-x-2 shrink-0">
-                    <button type="button" @click="closeDetailModal()"
-                        title="Tutup Modal"
-                        class="w-8 h-8 rounded-full bg-slate-800/80 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 border border-transparent hover:border-rose-500/30 flex items-center justify-center transition-all shrink-0 cursor-pointer">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
-                </div>
+                <button type="button" @click="closeDetailModal()"
+                    title="Tutup Modal"
+                    class="w-8 h-8 rounded-full bg-slate-800/80 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 border border-transparent hover:border-rose-500/30 flex items-center justify-center transition-all shrink-0 cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
             </div>
 
             <template x-if="selectedItem">
@@ -512,7 +510,13 @@
             </template>
 
             <!-- 8. MODAL FOOTER -->
-            <div class="flex items-center justify-end pt-3 border-t border-slate-800">
+            <div class="flex items-center justify-between pt-3 border-t border-slate-800 gap-2 flex-wrap">
+                <button type="button" @click="openPrintBastModal(selectedItem)"
+                    class="px-4 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 hover:text-white border border-emerald-500/40 text-xs font-bold transition-all flex items-center space-x-2 shadow-sm active:scale-95 cursor-pointer">
+                    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                    <span>🖨️ Cetak BAST Belanja Barang</span>
+                </button>
+
                 <button type="button" @click="closeDetailModal()"
                     class="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold transition-all cursor-pointer">
                     Tutup Rincian

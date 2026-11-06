@@ -93,15 +93,17 @@ class BelanjaBarangController extends Controller
 
         $belanjaBarangRecords = $query->get();
 
-        // Hitung Statistik KPI (hanya yang aktif)
-        $allBelanja = AstapBelanjaBarang::where('is_deleted', 0)
-            ->with('astaps')
-            ->get();
-
-        $totalNilaiBelanja = (float) $allBelanja->sum('total_pembelian');
-        $totalVolumeUnit   = (int) $allBelanja->sum(fn($b) => $b->astaps->sum('jumlah_volume'));
-        $totalFaktur       = $allBelanja->pluck('nomor_faktur')->filter()->unique()->count();
-        $totalTokoUnik     = $allBelanja->pluck('toko_penyedia')->filter()->unique()->count();
+        // Hitung Statistik KPI sesuai filter aktif
+        $totalNilaiBelanja = (float) $belanjaBarangRecords->sum('total_pembelian');
+        $totalVolumeUnit   = (int) $belanjaBarangRecords->sum(function ($b) {
+            $astaps = $b->astaps;
+            if ($astaps->isEmpty() && $b->astap) {
+                $astaps = collect([$b->astap]);
+            }
+            return (int) $astaps->sum('jumlah_volume');
+        });
+        $totalFaktur       = $belanjaBarangRecords->pluck('nomor_faktur')->filter()->unique()->count();
+        $totalTokoUnik     = $belanjaBarangRecords->pluck('toko_penyedia')->filter()->unique()->count();
 
         // Daftar Unit & Jenis 108 untuk modal atau filter
         $dbUnits = Unit::orderBy('nama')->get();
@@ -533,6 +535,36 @@ class BelanjaBarangController extends Controller
     {
         $belanja = AstapBelanjaBarang::with('astaps.registers')->findOrFail($id);
 
+        // Validasi Proteksi Audit: Tolak hapus jika aset sudah ada di BAST Distribusi atau Mutasi
+        $astapsForCheck = $belanja->astaps;
+        if ($astapsForCheck->isEmpty() && $belanja->astap) {
+            $astapsForCheck = collect([$belanja->astap]);
+        }
+
+        $allRegIds = [];
+        foreach ($astapsForCheck as $a) {
+            $allRegIds = array_merge($allRegIds, $a->registers->pluck('id')->toArray());
+        }
+        $allRegIds = array_unique(array_filter($allRegIds));
+
+        if (!empty($allRegIds)) {
+            $hasDistribusi = \App\Models\DistribusiItemRegister::whereIn('astap_register_id', $allRegIds)->exists();
+            $hasMutasi = \App\Models\AstapMutasiRegister::whereIn('astap_register_id', $allRegIds)->exists();
+
+            if ($hasDistribusi || $hasMutasi) {
+                $reason = $hasDistribusi ? 'telah resmi diserahterimakan ke ruangan via BAST Distribusi' : 'memiliki riwayat mutasi aset';
+                $msg = "Penghapusan ditolak: Faktur Belanja Barang \"{$belanja->nomor_faktur}\" memiliki unit aset yang {$reason}. Demi tertib administrasi BMD, aset yang telah memiliki riwayat distribusi/mutasi tidak dapat dihapus. Silakan lakukan mutasi aset atau ubah kondisinya.";
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'success'    => false,
+                        'is_blocked' => true,
+                        'message'    => $msg
+                    ], 422);
+                }
+                return redirect()->route('master.belanja_barang')->with('error', $msg);
+            }
+        }
+
         DB::transaction(function () use ($belanja) {
             $user = Auth::user();
             $deleterName = $user ? ($user->name . ' (' . ucfirst($user->role ?? 'user') . ')') : 'Administrator';
@@ -549,12 +581,18 @@ class BelanjaBarangController extends Controller
             }
 
             foreach ($astaps as $astap) {
-                AstapRegister::where('astap_id', $astap->id)->update([
-                    'is_deleted'    => 1,
-                    'deleted_by'    => $deleterName,
-                    'deleted_by_id' => $deleterId,
-                    'deleted_at'    => $now,
-                ]);
+                $regs = AstapRegister::where('astap_id', $astap->id)->get();
+                foreach ($regs as $r) {
+                    $origNibar = $r->nibar ?: $r->no_register;
+                    $r->update([
+                        'nibar'         => ($origNibar && !str_starts_with($origNibar, 'DEL_')) ? substr("DEL_{$r->id}_{$origNibar}", 0, 60) : $r->nibar,
+                        'no_register'   => ($origNibar && !str_starts_with($origNibar, 'DEL_')) ? substr("DEL_{$r->id}_" . ($r->no_register ?: $origNibar), 0, 60) : $r->no_register,
+                        'is_deleted'    => 1,
+                        'deleted_by'    => $deleterName,
+                        'deleted_by_id' => $deleterId,
+                        'deleted_at'    => $now,
+                    ]);
+                }
 
                 $astap->update([
                     'is_deleted'    => 1,
@@ -574,5 +612,22 @@ class BelanjaBarangController extends Controller
 
         return redirect()->route('master.belanja_barang')
             ->with('success', 'Faktur Belanja Barang beserta seluruh item aset terkait berhasil dipindahkan ke Pusat Pemulihan Data (Recycle Bin).');
+    }
+
+    /**
+     * Cetak Lembar Berita Acara Serah Terima (BAST) Penerimaan Belanja Barang Resmi
+     */
+    public function cetak($id)
+    {
+        Carbon::setLocale('id');
+
+        $belanja = AstapBelanjaBarang::with([
+            'astaps.jenisAstap',
+            'astaps.registers.unit',
+            'astaps.unit',
+            'user'
+        ])->findOrFail($id);
+
+        return view('pages.belanja_barang.cetak_bast', compact('belanja'));
     }
 }
