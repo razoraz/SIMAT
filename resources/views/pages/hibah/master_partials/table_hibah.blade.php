@@ -144,9 +144,9 @@
                         <td class="px-5 py-4 text-right whitespace-nowrap">
                             <div class="font-mono font-black text-xs sm:text-sm"
                                 :class="item.tipe_hibah === 'masuk' ? 'text-amber-300' : 'text-rose-400'"
-                                x-text="'Rp ' + formatRupiah(item.nilai_aset)"></div>
+                                x-text="formatRupiah(item.nilai_aset)"></div>
                             <div class="text-[10px] text-slate-500 font-mono"
-                                x-text="'@ Rp ' + formatRupiah(item.nilai_aset / Math.max(1, item.jumlah_volume || 1))"></div>
+                                x-text="'@ ' + formatRupiah(item.nilai_aset / Math.max(1, item.jumlah_volume || 1))"></div>
                         </td>
 
                         <!-- 9. Periode (TW & Tahun) -->
@@ -241,7 +241,7 @@
                                 </div>
                                 <div class="text-sm font-bold text-white">Belum Ada Data Transaksi Hibah</div>
                                 <p class="text-xs text-slate-400 max-w-md">
-                                    Tidak ada catatan hibah yang cocok dengan filter yang dipilih. Silakan klik tombol "Tambah Hibah Masuk" atau "Hibahkan Barang (Keluar)".
+                                    Tidak ada catatan hibah yang cocok dengan filter yang dipilih. Silakan klik tombol "Tambah Hibah Masuk".
                                 </p>
                             </div>
                         </td>
@@ -258,7 +258,7 @@
         </div>
         <div class="flex items-center space-x-4">
             <div>
-                Total Nilai: <strong class="text-amber-400 font-mono font-bold text-sm" x-text="'Rp ' + formatRupiah(computedFilteredTotal)"></strong>
+                Total Nilai: <strong class="text-amber-400 font-mono font-bold text-sm" x-text="formatRupiah(computedFilteredTotal)"></strong>
             </div>
         </div>
     </div>

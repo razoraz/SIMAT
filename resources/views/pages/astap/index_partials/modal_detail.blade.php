@@ -142,23 +142,60 @@
                             </div>
                         </div>
 
-                        <!-- DOKUMEN BAST HIBAH (KHUSUS ASET HIBAH) -->
-                        <div x-show="selectedAstapDetail?.sumber_dana === 'hibah' || selectedAstapDetail?.sumber_dana_raw === 'hibah' || selectedAstapDetail?.hibah_pemberi" class="p-4 rounded-2xl bg-amber-400/10 border border-amber-400/30 space-y-2">
-                            <div class="flex items-center space-x-2 text-amber-300 font-extrabold text-xs uppercase tracking-wider">
-                                <span>📜 Dokumen Berita Acara Serah Terima (BAST) Hibah</span>
+                        <!-- DOKUMEN BAST HIBAH KELUAR (KHUSUS ASET HIBAH KELUAR) -->
+                        <div x-show="isHibahKeluar(selectedAstapDetail) || selectedAstapDetail?.is_hibah_keluar || !!selectedAstapDetail?.hibah_keluar" class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-2 text-amber-300 font-extrabold text-xs uppercase tracking-wider">
+                                    <span>🏛️ Dokumen Berita Acara Serah Terima (BAST) Hibah Keluar RSUD</span>
+                                </div>
+                                <template x-if="selectedAstapDetail?.hibah_keluar?.cetak_url">
+                                    <a :href="selectedAstapDetail.hibah_keluar.cetak_url" target="_blank"
+                                       class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 text-[11px] font-bold transition shadow-sm cursor-pointer">
+                                        <span>🖨️ Cetak BAST Hibah Keluar</span>
+                                    </a>
+                                </template>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
+                                <div>
+                                    <span class="text-slate-400 block text-[10px] uppercase font-bold">Instansi / Pihak Penerima:</span>
+                                    <span class="font-bold text-white text-sm" x-text="selectedAstapDetail?.hibah_keluar?.penerima_hibah || selectedAstapDetail?.hibah_keluar?.penerima || selectedAstapDetail?.hibah_pemberi || '-'"></span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 block text-[10px] uppercase font-bold">Nomor BAST:</span>
+                                    <span class="font-mono text-amber-300 font-semibold" x-text="selectedAstapDetail?.hibah_keluar?.nomor_bast || selectedAstapDetail?.hibah_nomor_bast || '-'"></span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 block text-[10px] uppercase font-bold">Tanggal BAST:</span>
+                                    <span class="text-slate-200 font-medium" x-text="formatTanggalIndo(selectedAstapDetail?.hibah_keluar?.tanggal_bast || selectedAstapDetail?.hibah_tanggal_bast)"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- DOKUMEN BAST HIBAH MASUK (KHUSUS ASET HIBAH MASUK) -->
+                        <div x-show="!isHibahKeluar(selectedAstapDetail) && !selectedAstapDetail?.is_hibah_keluar && !selectedAstapDetail?.hibah_keluar && (selectedAstapDetail?.sumber_dana === 'hibah' || selectedAstapDetail?.sumber_dana_raw === 'hibah' || selectedAstapDetail?.hibah_pemberi)" class="p-4 rounded-2xl bg-amber-400/10 border border-amber-400/30 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-2 text-amber-300 font-extrabold text-xs uppercase tracking-wider">
+                                    <span>📜 Dokumen Berita Acara Serah Terima (BAST) Hibah Masuk RSUD</span>
+                                </div>
+                                <template x-if="selectedAstapDetail?.hibah_masuk?.cetak_url">
+                                    <a :href="selectedAstapDetail.hibah_masuk.cetak_url" target="_blank"
+                                       class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 text-[11px] font-bold transition shadow-sm cursor-pointer">
+                                        <span>🖨️ Cetak BAST Hibah</span>
+                                    </a>
+                                </template>
                             </div>
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
                                 <div>
                                     <span class="text-slate-400 block text-[10px] uppercase font-bold">Pemberi Hibah:</span>
-                                    <span class="font-bold text-white text-sm" x-text="selectedAstapDetail?.hibah_pemberi || '-'"></span>
+                                    <span class="font-bold text-white text-sm" x-text="selectedAstapDetail?.hibah_masuk?.pemberi_hibah || selectedAstapDetail?.hibah_pemberi || '-'"></span>
                                 </div>
                                 <div>
                                     <span class="text-slate-400 block text-[10px] uppercase font-bold">Nomor BAST:</span>
-                                    <span class="font-mono text-cyan-300 font-semibold" x-text="selectedAstapDetail?.hibah_nomor_bast || '-'"></span>
+                                    <span class="font-mono text-cyan-300 font-semibold" x-text="selectedAstapDetail?.hibah_masuk?.nomor_bast || selectedAstapDetail?.hibah_nomor_bast || '-'"></span>
                                 </div>
                                 <div>
                                     <span class="text-slate-400 block text-[10px] uppercase font-bold">Tanggal BAST:</span>
-                                    <span class="text-slate-200 font-medium" x-text="formatTanggalIndo(selectedAstapDetail?.hibah_tanggal_bast)"></span>
+                                    <span class="text-slate-200 font-medium" x-text="formatTanggalIndo(selectedAstapDetail?.hibah_masuk?.tanggal_bast || selectedAstapDetail?.hibah_tanggal_bast)"></span>
                                 </div>
                             </div>
                         </div>
@@ -1219,8 +1256,9 @@
 
                         </div>
 
-                        <!-- Dokumen Legalisasi & Pengadaan (Responsive Grid) -->
-                        <div class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-2.5">
+                        <!-- Dokumen Legalisasi & Pengadaan (Khusus Belanja Modal / Belanja Barang) -->
+                        <div x-show="!isHibahKeluar(selectedAstapDetail) && !selectedAstapDetail?.is_hibah_keluar && !selectedAstapDetail?.hibah_keluar && selectedAstapDetail?.sumber_dana !== 'hibah' && selectedAstapDetail?.sumber_dana_raw !== 'hibah' && !selectedAstapDetail?.hibah_masuk && selectedAstapDetail?.sumber_dana !== 'kemitraan' && !selectedAstapDetail?.kemitraan && selectedAstapDetail?.sumber_dana !== 'mutasi_eksternal' && !selectedAstapDetail?.mutasi_keluar"
+                             class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-2.5">
                             <h4 class="text-xs font-extrabold text-amber-400 uppercase tracking-wider flex items-center space-x-1.5">
                                 <span>📄 Dokumen Pengadaan &amp; Legalisasi BAST</span>
                             </h4>
@@ -1282,72 +1320,418 @@
                             </div>
                         </div>
 
-                        <!-- Pihak Penyedia & Pejabat Pembuat Komitmen (PPK) -->
-                        <div class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3">
-                            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                                <h4 class="text-xs font-extrabold text-teal-400 uppercase tracking-wider flex items-center space-x-1.5">
-                                    <span>🏢 Pihak Penyedia (Rekanan) &amp; Pejabat Pembuat Komitmen (PPK)</span>
-                                </h4>
-                                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">Langkah 4 - Rekanan &amp; PPK</span>
-                            </div>
+                        <!-- SECTION 4A: HIBAH KELUAR (PENYERAHAN ASET KE LUAR RSUD) -->
+                        <template x-if="isHibahKeluar(selectedAstapDetail) || selectedAstapDetail?.is_hibah_keluar || !!selectedAstapDetail?.hibah_keluar">
+                            <div class="p-4 rounded-2xl bg-gradient-to-br from-slate-950/80 via-slate-900/70 to-amber-950/20 border border-amber-500/30 space-y-3 shadow-lg">
+                                <div class="flex items-center justify-between border-b border-amber-500/20 pb-2">
+                                    <h4 class="text-xs font-extrabold text-amber-300 uppercase tracking-wider flex items-center space-x-1.5">
+                                        <span>🏛️ Informasi Pihak Penerima &amp; Legalitas Hibah Keluar</span>
+                                    </h4>
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/20 border border-amber-500/30 text-amber-300">Langkah 4 - Hibah Keluar</span>
+                                </div>
 
-                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 text-[11px]">
-                                <!-- Card Pihak Penyedia -->
-                                <div class="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800/90 space-y-2.5">
-                                    <span class="text-[10.5px] font-extrabold text-cyan-400 uppercase tracking-wider block flex items-center space-x-1">
-                                        <span>🏢 Informasi Rekanan / Vendor</span>
-                                    </span>
-                                    <div class="space-y-1.5 divide-y divide-slate-800/60">
-                                        <div class="flex items-center justify-between pt-1">
-                                            <span class="text-slate-400">Nama Perusahaan / Rekanan:</span>
-                                            <strong class="text-white font-bold truncate max-w-[55%]" :title="selectedAstapDetail.penyedia_nama" x-text="selectedAstapDetail.penyedia_nama || '-'"></strong>
-                                        </div>
-                                        <div class="flex items-center justify-between pt-1.5">
-                                            <span class="text-slate-400">Nama Pimpinan / Pemilik:</span>
-                                            <span class="text-slate-200 font-medium truncate max-w-[55%]" :title="selectedAstapDetail.penyedia_pemilik" x-text="selectedAstapDetail.penyedia_pemilik || '-'"></span>
-                                        </div>
-                                        <template x-if="selectedAstapDetail.category === 'EXTRACOM' || selectedAstapDetail.category === 'Extracom' || selectedAstapDetail.is_extracomtable || selectedAstapDetail.category === 'ATB'">
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 text-[11px]">
+                                    <!-- Card Pihak Penerima -->
+                                    <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800/90 space-y-2.5">
+                                        <span class="text-[10.5px] font-extrabold text-amber-400 uppercase tracking-wider block flex items-center space-x-1">
+                                            <span>🏢 Informasi Instansi / Pihak Penerima</span>
+                                        </span>
+                                        <div class="space-y-1.5 divide-y divide-slate-800/60">
+                                            <div class="flex items-center justify-between pt-1">
+                                                <span class="text-slate-400">Instansi / Lembaga Penerima:</span>
+                                                <strong class="text-white font-bold truncate max-w-[55%]" :title="selectedAstapDetail.hibah_keluar?.penerima_hibah || selectedAstapDetail.hibah_keluar?.penerima || selectedAstapDetail.hibah_pemberi" x-text="selectedAstapDetail.hibah_keluar?.penerima_hibah || selectedAstapDetail.hibah_keluar?.penerima || selectedAstapDetail.hibah_pemberi || '-'"></strong>
+                                            </div>
                                             <div class="flex items-center justify-between pt-1.5">
-                                                <span class="text-slate-400">No. HP / WhatsApp Aktif:</span>
-                                                <span class="text-amber-400 font-mono font-bold truncate max-w-[55%] flex items-center gap-1.5">
-                                                    <span class="text-xs">📱</span>
-                                                    <span x-text="selectedAstapDetail.penyedia_telepon || selectedAstapDetail.spesifikasi_json?.penyedia_telepon || selectedAstapDetail.spesifikasi_json?.penyedia_kontak || '-'"></span>
+                                                <span class="text-slate-400">Pejabat Penerima Hibah:</span>
+                                                <span class="text-slate-200 font-medium truncate max-w-[55%]" :title="selectedAstapDetail.hibah_keluar?.nama_penerima" x-text="selectedAstapDetail.hibah_keluar?.nama_penerima || '-'"></span>
+                                            </div>
+                                            <div class="flex items-center justify-between pt-1.5">
+                                                <span class="text-slate-400">Jabatan Pejabat:</span>
+                                                <span class="text-teal-300 font-medium truncate max-w-[55%]" :title="selectedAstapDetail.hibah_keluar?.jabatan_penerima" x-text="selectedAstapDetail.hibah_keluar?.jabatan_penerima || '-'"></span>
+                                            </div>
+                                            <div class="flex items-center justify-between pt-1.5">
+                                                <span class="text-slate-400">NIP Pejabat Penerima:</span>
+                                                <span class="text-cyan-300 font-mono font-bold truncate max-w-[55%]" x-text="selectedAstapDetail.hibah_keluar?.nip_penerima || '-'"></span>
+                                            </div>
+                                            <div class="flex items-start justify-between pt-1.5">
+                                                <span class="text-slate-400 shrink-0">Alamat Domisili Penerima:</span>
+                                                <span class="text-slate-300 font-medium text-right truncate max-w-[55%]" :title="selectedAstapDetail.hibah_keluar?.alamat_penerima || selectedAstapDetail.alamat_barang" x-text="selectedAstapDetail.hibah_keluar?.alamat_penerima || selectedAstapDetail.alamat_barang || '-'"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Card Dokumen BAST Keluar & Status -->
+                                    <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800/90 space-y-2.5 flex flex-col justify-between">
+                                        <div class="space-y-2.5">
+                                            <div class="flex items-center justify-between">
+                                                <span class="text-[10.5px] font-extrabold text-rose-400 uppercase tracking-wider block flex items-center space-x-1">
+                                                    <span>📜 Dokumen Penyerahan BAST Keluar</span>
                                                 </span>
+                                                <span class="px-2 py-0.5 rounded text-[9.5px] font-extrabold bg-rose-500/20 text-rose-300 border border-rose-500/40">Dihibahkan Keluar</span>
+                                            </div>
+                                            <div class="space-y-1.5 divide-y divide-slate-800/60">
+                                                <div class="flex items-center justify-between pt-1">
+                                                    <span class="text-slate-400">Nomor BAST Hibah:</span>
+                                                    <span class="font-mono text-amber-300 font-bold truncate max-w-[55%]" :title="selectedAstapDetail.hibah_keluar?.nomor_bast || selectedAstapDetail.bast_dokumen_nomor" x-text="selectedAstapDetail.hibah_keluar?.nomor_bast || selectedAstapDetail.bast_dokumen_nomor || '-'"></span>
+                                                </div>
+                                                <div class="flex items-center justify-between pt-1.5">
+                                                    <span class="text-slate-400">Tanggal Serah Terima:</span>
+                                                    <span class="text-white font-bold truncate max-w-[55%]" x-text="formatTanggalIndo(selectedAstapDetail.hibah_keluar?.tanggal_bast || selectedAstapDetail.bast_dokumen_tanggal)"></span>
+                                                </div>
+                                                <div class="flex items-center justify-between pt-1.5">
+                                                    <span class="text-slate-400">Volume &amp; Nilai Barang:</span>
+                                                    <span class="text-emerald-400 font-mono font-bold truncate max-w-[55%]" x-text="(selectedAstapDetail.hibah_keluar?.jumlah_volume || selectedAstapDetail.jumlah_volume || 1) + ' ' + (selectedAstapDetail.satuan || 'Unit') + ' • ' + formatRupiah(selectedAstapDetail.hibah_keluar?.nilai_aset || selectedAstapDetail.total_realisasi_num || selectedAstapDetail.total_realisasi)"></span>
+                                                </div>
+                                                <div class="flex items-start justify-between pt-1.5">
+                                                    <span class="text-slate-400 shrink-0">Keterangan / Alasan:</span>
+                                                    <span class="text-slate-300 italic text-right truncate max-w-[55%]" :title="selectedAstapDetail.hibah_keluar?.keterangan || selectedAstapDetail.keterangan_tambahan" x-text="selectedAstapDetail.hibah_keluar?.keterangan || selectedAstapDetail.keterangan_tambahan || '-'"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Tombol Cetak BAST Hibah Keluar -->
+                                        <template x-if="selectedAstapDetail.hibah_keluar?.cetak_url">
+                                            <div class="pt-2 border-t border-slate-800/80 flex justify-end">
+                                                <a :href="selectedAstapDetail.hibah_keluar.cetak_url" target="_blank"
+                                                   class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 border border-amber-400/40 text-[11px] font-extrabold transition-all shadow-md flex items-center space-x-1.5 cursor-pointer active:scale-95">
+                                                    <span>🖨️</span>
+                                                    <span>Cetak Dokumen BAST Keluar</span>
+                                                </a>
                                             </div>
                                         </template>
-                                        <div class="flex items-center justify-between pt-1.5">
-                                            <span class="text-slate-400">Rekening Bank:</span>
-                                            <span class="text-amber-300 font-mono font-bold truncate max-w-[55%]" x-text="selectedAstapDetail.penyedia_rekening_nomor ? ((selectedAstapDetail.penyedia_rekening_nama ? selectedAstapDetail.penyedia_rekening_nama + ' - ' : '') + selectedAstapDetail.penyedia_rekening_nomor) : (selectedAstapDetail.penyedia_rekening_nama || '-')"></span>
-                                        </div>
-                                        <div class="flex items-start justify-between pt-1.5">
-                                            <span class="text-slate-400 shrink-0">Alamat Perusahaan:</span>
-                                            <span class="text-teal-300 font-medium text-right truncate max-w-[55%]" :title="selectedAstapDetail.penyedia_alamat" x-text="selectedAstapDetail.penyedia_alamat || '-'"></span>
-                                        </div>
                                     </div>
                                 </div>
+                            </div>
+                        </template>
 
-                                <!-- Card PPK -->
-                                <div class="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800/90 space-y-2.5">
-                                    <span class="text-[10.5px] font-extrabold text-amber-400 uppercase tracking-wider block flex items-center space-x-1">
-                                        <span>👔 Pejabat Pembuat Komitmen (PPK)</span>
-                                    </span>
-                                    <div class="space-y-1.5 divide-y divide-slate-800/60">
-                                        <div class="flex items-center justify-between pt-1">
-                                            <span class="text-slate-400">Nama Pejabat (PPK):</span>
-                                            <strong class="text-white font-bold truncate max-w-[55%]" :title="selectedAstapDetail.ppk_nama" x-text="selectedAstapDetail.ppk_nama || '-'"></strong>
+                        <!-- SECTION 4B: HIBAH MASUK (PEROLEHAN ASET DARI PIHAK LUAR) -->
+                        <template x-if="!isHibahKeluar(selectedAstapDetail) && !selectedAstapDetail?.is_hibah_keluar && !selectedAstapDetail?.hibah_keluar && (selectedAstapDetail?.sumber_dana === 'hibah' || selectedAstapDetail?.sumber_dana_raw === 'hibah' || !!selectedAstapDetail?.hibah_masuk)">
+                            <div class="p-4 rounded-2xl bg-gradient-to-br from-slate-950/80 via-slate-900/70 to-amber-950/20 border border-amber-500/30 space-y-3 shadow-lg">
+                                <div class="flex items-center justify-between border-b border-amber-500/20 pb-2">
+                                    <h4 class="text-xs font-extrabold text-amber-300 uppercase tracking-wider flex items-center space-x-1.5">
+                                        <span>🎁 Informasi Instansi Pemberi Hibah &amp; Pejabat PPK RSUD</span>
+                                    </h4>
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/20 border border-amber-500/30 text-amber-300">Langkah 4 - Hibah Masuk</span>
+                                </div>
+
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 text-[11px]">
+                                    <!-- Card Instansi Pemberi Hibah -->
+                                    <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800/90 space-y-2.5">
+                                        <span class="text-[10.5px] font-extrabold text-amber-400 uppercase tracking-wider block flex items-center space-x-1">
+                                            <span>🏢 Informasi Instansi Pemberi Hibah</span>
+                                        </span>
+                                        <div class="space-y-1.5 divide-y divide-slate-800/60">
+                                            <div class="flex items-center justify-between pt-1">
+                                                <span class="text-slate-400">Instansi / Lembaga Pemberi:</span>
+                                                <strong class="text-white font-bold truncate max-w-[55%]" :title="selectedAstapDetail.hibah_masuk?.pemberi_hibah || selectedAstapDetail.hibah_pemberi || selectedAstapDetail.penyedia_nama" x-text="selectedAstapDetail.hibah_masuk?.pemberi_hibah || selectedAstapDetail.hibah_pemberi || selectedAstapDetail.penyedia_nama || '-'"></strong>
+                                            </div>
+                                            <div class="flex items-center justify-between pt-1.5">
+                                                <span class="text-slate-400">Nama Pimpinan / Kepala:</span>
+                                                <span class="text-slate-200 font-medium truncate max-w-[55%]" :title="selectedAstapDetail.hibah_masuk?.pimpinan_pemberi || selectedAstapDetail.penyedia_pemilik" x-text="selectedAstapDetail.hibah_masuk?.pimpinan_pemberi || selectedAstapDetail.penyedia_pemilik || '-'"></span>
+                                            </div>
+                                            <div class="flex items-center justify-between pt-1.5">
+                                                <span class="text-slate-400">Nomor BAST Hibah:</span>
+                                                <span class="font-mono text-cyan-300 font-bold truncate max-w-[55%]" :title="selectedAstapDetail.hibah_masuk?.nomor_bast || selectedAstapDetail.hibah_nomor_bast || selectedAstapDetail.bast_dokumen_nomor" x-text="selectedAstapDetail.hibah_masuk?.nomor_bast || selectedAstapDetail.hibah_nomor_bast || selectedAstapDetail.bast_dokumen_nomor || '-'"></span>
+                                            </div>
+                                            <div class="flex items-center justify-between pt-1.5">
+                                                <span class="text-slate-400">Tanggal Naskah BAST:</span>
+                                                <span class="text-slate-200 font-medium truncate max-w-[55%]" x-text="formatTanggalIndo(selectedAstapDetail.hibah_masuk?.tanggal_bast || selectedAstapDetail.hibah_tanggal_bast || selectedAstapDetail.bast_dokumen_tanggal)"></span>
+                                            </div>
+                                            <div class="flex items-start justify-between pt-1.5">
+                                                <span class="text-slate-400 shrink-0">Alamat Instansi Pemberi:</span>
+                                                <span class="text-teal-300 font-medium text-right truncate max-w-[55%]" :title="selectedAstapDetail.hibah_masuk?.alamat_pemberi || selectedAstapDetail.penyedia_alamat" x-text="selectedAstapDetail.hibah_masuk?.alamat_pemberi || selectedAstapDetail.penyedia_alamat || '-'"></span>
+                                            </div>
                                         </div>
-                                        <div class="flex items-center justify-between pt-1.5">
-                                            <span class="text-slate-400">NIP Pejabat (PPK):</span>
-                                            <span class="text-cyan-300 font-mono font-bold truncate max-w-[55%]" x-text="selectedAstapDetail.ppk_nip || '-'"></span>
+                                    </div>
+
+                                    <!-- Card PPK & Penerimaan RSUD -->
+                                    <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800/90 space-y-2.5 flex flex-col justify-between">
+                                        <div class="space-y-2.5">
+                                            <span class="text-[10.5px] font-extrabold text-amber-400 uppercase tracking-wider block flex items-center space-x-1">
+                                                <span>👔 Pejabat Pembuat Komitmen (PPK RSUD)</span>
+                                            </span>
+                                            <div class="space-y-1.5 divide-y divide-slate-800/60">
+                                                <div class="flex items-center justify-between pt-1">
+                                                    <span class="text-slate-400">Nama Pejabat (PPK):</span>
+                                                    <strong class="text-white font-bold truncate max-w-[55%]" :title="selectedAstapDetail.ppk_nama" x-text="selectedAstapDetail.ppk_nama || '-'"></strong>
+                                                </div>
+                                                <div class="flex items-center justify-between pt-1.5">
+                                                    <span class="text-slate-400">NIP Pejabat (PPK):</span>
+                                                    <span class="text-cyan-300 font-mono font-bold truncate max-w-[55%]" x-text="selectedAstapDetail.ppk_nip || '-'"></span>
+                                                </div>
+                                                <div class="flex items-center justify-between pt-1.5">
+                                                    <span class="text-slate-400">Sumber Perolehan:</span>
+                                                    <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/30">Hibah Masuk (Non-APBD)</span>
+                                                </div>
+                                                <div class="flex items-start justify-between pt-1.5">
+                                                    <span class="text-slate-400 shrink-0">Catatan / Peruntukan:</span>
+                                                    <span class="text-slate-300 italic text-right truncate max-w-[55%]" :title="selectedAstapDetail.hibah_masuk?.keterangan || selectedAstapDetail.hibah_keterangan || selectedAstapDetail.keterangan_tambahan" x-text="selectedAstapDetail.hibah_masuk?.keterangan || selectedAstapDetail.hibah_keterangan || selectedAstapDetail.keterangan_tambahan || '-'"></span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="flex items-start justify-between pt-1.5">
-                                            <span class="text-slate-400 shrink-0">Keterangan / Catatan:</span>
-                                            <span class="text-slate-300 italic text-right truncate max-w-[55%]" :title="selectedAstapDetail.keterangan_tambahan || selectedAstapDetail.keterangan" x-text="selectedAstapDetail.keterangan_tambahan || selectedAstapDetail.keterangan || '-'"></span>
+
+                                        <!-- Tombol Cetak Dokumen BAST -->
+                                        <template x-if="selectedAstapDetail.hibah_masuk?.cetak_url">
+                                            <div class="pt-2 border-t border-slate-800/80 flex justify-end">
+                                                <a :href="selectedAstapDetail.hibah_masuk.cetak_url" target="_blank"
+                                                   class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 border border-amber-400/40 text-[11px] font-extrabold transition-all shadow-md flex items-center space-x-1.5 cursor-pointer active:scale-95">
+                                                    <span>🖨️</span>
+                                                    <span>Cetak Dokumen BAST Hibah</span>
+                                                </a>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- SECTION 4C: KEMITRAAN PIHAK KETIGA (KSO / SEWA BMD) -->
+                        <template x-if="selectedAstapDetail?.sumber_dana === 'kemitraan' || selectedAstapDetail?.sumber_dana_raw === 'kemitraan' || !!selectedAstapDetail?.kemitraan">
+                            <div class="p-4 rounded-2xl bg-gradient-to-br from-slate-950/80 via-slate-900/70 to-cyan-950/25 border border-cyan-500/30 space-y-3 shadow-lg">
+                                <div class="flex items-center justify-between border-b border-cyan-500/20 pb-2">
+                                    <h4 class="text-xs font-extrabold text-cyan-300 uppercase tracking-wider flex items-center space-x-1.5">
+                                        <span>🤝 Informasi Pihak Mitra &amp; Perjanjian Kerja Sama (PKS)</span>
+                                    </h4>
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-cyan-500/20 border border-cyan-500/30 text-cyan-300">Langkah 4 - Mitra &amp; PKS</span>
+                                </div>
+
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 text-[11px]">
+                                    <!-- Card Mitra Kerja Sama -->
+                                    <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800/90 space-y-2.5">
+                                        <span class="text-[10.5px] font-extrabold text-cyan-400 uppercase tracking-wider block flex items-center space-x-1">
+                                            <span>🏢 Informasi Badan Usaha / Mitra Kerja Sama</span>
+                                        </span>
+                                        <div class="space-y-1.5 divide-y divide-slate-800/60">
+                                            <div class="flex items-center justify-between pt-1">
+                                                <span class="text-slate-400">Nama Mitra Kerja Sama:</span>
+                                                <strong class="text-white font-bold truncate max-w-[55%]" :title="selectedAstapDetail.kemitraan?.mitra_nama || selectedAstapDetail.penyedia_nama" x-text="selectedAstapDetail.kemitraan?.mitra_nama || selectedAstapDetail.penyedia_nama || '-'"></strong>
+                                            </div>
+                                            <div class="flex items-center justify-between pt-1.5">
+                                                <span class="text-slate-400">Skema Kerja Sama:</span>
+                                                <span class="text-teal-300 font-bold truncate max-w-[55%]" x-text="selectedAstapDetail.kemitraan?.skema_kemitraan || 'Sewa BMD'"></span>
+                                            </div>
+                                            <div class="flex items-center justify-between pt-1.5">
+                                                <span class="text-slate-400">Status Konsesi:</span>
+                                                <span class="px-2 py-0.5 rounded text-[10px] font-extrabold"
+                                                      :class="(selectedAstapDetail.is_kemitraan_reklas || selectedAstapDetail.kemitraan?.status_konsesi === 'Selesai / Reklasifikasi' || selectedAstapDetail.kemitraan?.status_konsesi === 'Selesai') ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : (selectedAstapDetail.kemitraan?.status_konsesi === 'Dikembalikan ke Rekanan' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : (selectedAstapDetail.kemitraan?.status_konsesi === 'Konsesi Berakhir' || (selectedAstapDetail.kemitraan?.sisa_hari !== null && selectedAstapDetail.kemitraan?.sisa_hari < 0) ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'))"
+                                                      x-text="selectedAstapDetail.kemitraan?.status_konsesi || 'Aktif'"></span>
+                                            </div>
+                                            <div class="flex items-center justify-between pt-1.5">
+                                                <span class="text-slate-400">Masa Berlaku Konsesi:</span>
+                                                <span class="text-slate-200 font-mono text-[10.5px] truncate max-w-[55%]" x-text="(selectedAstapDetail.kemitraan?.tanggal_mulai ? formatTanggalIndo(selectedAstapDetail.kemitraan.tanggal_mulai) : '-') + ' s/d ' + (selectedAstapDetail.kemitraan?.tanggal_selesai ? formatTanggalIndo(selectedAstapDetail.kemitraan.tanggal_selesai) : '-')"></span>
+                                            </div>
+                                            <div class="flex items-center justify-between pt-1.5">
+                                                <span class="text-slate-400">Sisa Masa Berlaku:</span>
+                                                <span class="font-mono font-bold truncate max-w-[55%]"
+                                                      :class="(() => {
+                                                          const status = (selectedAstapDetail.kemitraan?.status_konsesi || '').trim();
+                                                          const sisa = selectedAstapDetail.kemitraan?.sisa_hari;
+                                                          if (status === 'Dikembalikan ke Rekanan') return 'text-purple-300';
+                                                          if (status === 'Selesai / Reklasifikasi' || status === 'Selesai') return 'text-emerald-300';
+                                                          if (status === 'Dihentikan' || status === 'Dibatalkan') return 'text-rose-400';
+                                                          if (sisa === null || sisa === undefined) return 'text-slate-400';
+                                                          if (sisa < 0 || status === 'Konsesi Berakhir') return 'text-rose-400 font-extrabold';
+                                                          if (sisa <= 30) return 'text-amber-300 font-extrabold';
+                                                          return 'text-emerald-400';
+                                                      })()"
+                                                      x-text="(() => {
+                                                          const status = (selectedAstapDetail.kemitraan?.status_konsesi || '').trim();
+                                                          const sisa = selectedAstapDetail.kemitraan?.sisa_hari;
+                                                          if (status === 'Dikembalikan ke Rekanan') return '📦 Dikembalikan (Selesai)';
+                                                          if (status === 'Selesai / Reklasifikasi') return '🏛️ Milik RSUD (Selesai)';
+                                                          if (status === 'Selesai') return '✅ Masa Konsesi Selesai';
+                                                          if (status === 'Dihentikan' || status === 'Dibatalkan') return '🚫 ' + status;
+                                                          if (sisa === null || sisa === undefined) return '-';
+                                                          if (sisa > 0) return '⏱️ ' + sisa + ' Hari Lagi';
+                                                          if (sisa === 0) return '⚠️ Berakhir Hari Ini';
+                                                          return '🛑 Telah Berakhir (' + Math.abs(sisa) + ' Hari Lalu)';
+                                                      })()">
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Card Dokumen PKS & PPK RSUD -->
+                                    <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800/90 space-y-2.5">
+                                        <span class="text-[10.5px] font-extrabold text-cyan-400 uppercase tracking-wider block flex items-center space-x-1">
+                                            <span>📜 Dokumen Perjanjian Kerja Sama (PKS)</span>
+                                        </span>
+                                        <div class="space-y-1.5 divide-y divide-slate-800/60">
+                                            <div class="flex items-center justify-between pt-1">
+                                                <span class="text-slate-400">Nomor Dokumen PKS:</span>
+                                                <span class="font-mono text-cyan-300 font-bold truncate max-w-[55%]" :title="selectedAstapDetail.kemitraan?.nomor_pks || selectedAstapDetail.bast_dokumen_nomor" x-text="selectedAstapDetail.kemitraan?.nomor_pks || selectedAstapDetail.bast_dokumen_nomor || '-'"></span>
+                                            </div>
+                                            <div class="flex items-center justify-between pt-1.5">
+                                                <span class="text-slate-400">Tanggal Naskah PKS:</span>
+                                                <span class="text-slate-200 font-medium truncate max-w-[55%]" x-text="formatTanggalIndo(selectedAstapDetail.kemitraan?.tanggal_pks || selectedAstapDetail.bast_dokumen_tanggal)"></span>
+                                            </div>
+                                            <div class="flex items-center justify-between pt-1.5">
+                                                <span class="text-slate-400">Pejabat RSUD (PPK):</span>
+                                                <strong class="text-white font-bold truncate max-w-[55%]" :title="selectedAstapDetail.ppk_nama" x-text="selectedAstapDetail.ppk_nama || '-'"></strong>
+                                            </div>
+                                            <div class="flex items-center justify-between pt-1.5">
+                                                <span class="text-slate-400">NIP Pejabat RSUD:</span>
+                                                <span class="text-cyan-300 font-mono font-bold truncate max-w-[55%]" x-text="selectedAstapDetail.ppk_nip || '-'"></span>
+                                            </div>
+                                            <div class="flex items-start justify-between pt-1.5">
+                                                <span class="text-slate-400 shrink-0">Catatan / Keterangan:</span>
+                                                <span class="text-slate-300 italic text-right truncate max-w-[55%]" :title="selectedAstapDetail.kemitraan?.keterangan || selectedAstapDetail.keterangan_tambahan" x-text="selectedAstapDetail.kemitraan?.keterangan || selectedAstapDetail.keterangan_tambahan || '-'"></span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </template>
+
+                        <!-- SECTION 4D: MUTASI EKSTERNAL (MUTASI ANTAR-OPD / SKPD) -->
+                        <template x-if="(selectedAstapDetail?.sumber_dana === 'mutasi_eksternal' || !!selectedAstapDetail?.mutasi_keluar) && !isHibahKeluar(selectedAstapDetail) && !selectedAstapDetail?.is_hibah_keluar">
+                            <div class="p-4 rounded-2xl bg-gradient-to-br from-slate-950/80 via-slate-900/70 to-indigo-950/25 border border-indigo-500/30 space-y-3 shadow-lg">
+                                <div class="flex items-center justify-between border-b border-indigo-500/20 pb-2">
+                                    <h4 class="text-xs font-extrabold text-indigo-300 uppercase tracking-wider flex items-center space-x-1.5">
+                                        <span>🏛️ Informasi Mutasi Antar-OPD &amp; Berita Acara (BAMB)</span>
+                                    </h4>
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-500/20 border border-indigo-500/30 text-indigo-300">Langkah 4 - SKPD &amp; BAMB</span>
+                                </div>
+
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 text-[11px]">
+                                    <!-- Card Instansi OPD -->
+                                    <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800/90 space-y-2.5">
+                                        <span class="text-[10.5px] font-extrabold text-indigo-400 uppercase tracking-wider block flex items-center space-x-1">
+                                            <span>🏢 Instansi &amp; Pihak Terkait Mutasi</span>
+                                        </span>
+                                        <div class="space-y-1.5 divide-y divide-slate-800/60">
+                                            <div class="flex items-center justify-between pt-1">
+                                                <span class="text-slate-400">OPD / SKPD Asal:</span>
+                                                <span class="text-slate-200 font-bold truncate max-w-[55%]" x-text="selectedAstapDetail.mutasi_keluar?.opd_asal || selectedAstapDetail.mutasi_asal || 'RSUD Dr. H. Koesnandi'"></span>
+                                            </div>
+                                            <div class="flex items-center justify-between pt-1.5">
+                                                <span class="text-slate-400">OPD / SKPD Tujuan:</span>
+                                                <strong class="text-white font-bold truncate max-w-[55%]" :title="selectedAstapDetail.mutasi_keluar?.opd_tujuan || selectedAstapDetail.opd_tujuan" x-text="selectedAstapDetail.mutasi_keluar?.opd_tujuan || selectedAstapDetail.opd_tujuan || '-'"></strong>
+                                            </div>
+                                            <div class="flex items-center justify-between pt-1.5">
+                                                <span class="text-slate-400">Pejabat Penerima OPD:</span>
+                                                <span class="text-slate-200 font-medium truncate max-w-[55%]" :title="selectedAstapDetail.mutasi_keluar?.pj_tujuan_nama" x-text="selectedAstapDetail.mutasi_keluar?.pj_tujuan_nama || '-'"></span>
+                                            </div>
+                                            <div class="flex items-center justify-between pt-1.5">
+                                                <span class="text-slate-400">Jabatan &amp; NIP Pejabat:</span>
+                                                <span class="text-cyan-300 font-mono font-bold truncate max-w-[55%]" x-text="(selectedAstapDetail.mutasi_keluar?.pj_tujuan_jabatan || '-') + (selectedAstapDetail.mutasi_keluar?.pj_tujuan_nip ? ' (' + selectedAstapDetail.mutasi_keluar.pj_tujuan_nip + ')' : '')"></span>
+                                            </div>
+                                            <div class="flex items-start justify-between pt-1.5">
+                                                <span class="text-slate-400 shrink-0">Alamat Kantor OPD:</span>
+                                                <span class="text-teal-300 font-medium text-right truncate max-w-[55%]" :title="selectedAstapDetail.mutasi_keluar?.alamat_instansi" x-text="selectedAstapDetail.mutasi_keluar?.alamat_instansi || '-'"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Card Dokumen BAMB -->
+                                    <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800/90 space-y-2.5 flex flex-col justify-between">
+                                        <div class="space-y-2.5">
+                                            <span class="text-[10.5px] font-extrabold text-indigo-400 uppercase tracking-wider block flex items-center space-x-1">
+                                                <span>📜 Dokumen Berita Acara Mutasi Barang (BAMB)</span>
+                                            </span>
+                                            <div class="space-y-1.5 divide-y divide-slate-800/60">
+                                                <div class="flex items-center justify-between pt-1">
+                                                    <span class="text-slate-400">Nomor Berita Acara (BAMB):</span>
+                                                    <span class="font-mono text-indigo-300 font-bold truncate max-w-[55%]" :title="selectedAstapDetail.mutasi_keluar?.nomor_bamb || selectedAstapDetail.mutasi_nomor_bamb || selectedAstapDetail.bast_dokumen_nomor" x-text="selectedAstapDetail.mutasi_keluar?.nomor_bamb || selectedAstapDetail.mutasi_nomor_bamb || selectedAstapDetail.bast_dokumen_nomor || '-'"></span>
+                                                </div>
+                                                <div class="flex items-center justify-between pt-1.5">
+                                                    <span class="text-slate-400">Tanggal Naskah Mutasi:</span>
+                                                    <span class="text-slate-200 font-medium truncate max-w-[55%]" x-text="formatTanggalIndo(selectedAstapDetail.mutasi_keluar?.tanggal_mutasi_raw || selectedAstapDetail.mutasi_tanggal || selectedAstapDetail.bast_dokumen_tanggal)"></span>
+                                                </div>
+                                                <div class="flex items-center justify-between pt-1.5">
+                                                    <span class="text-slate-400">Nomor SK / Dasar Hukum:</span>
+                                                    <span class="text-slate-300 font-mono font-medium truncate max-w-[55%]" x-text="selectedAstapDetail.mutasi_keluar?.nomor_sk_dasar || '-'"></span>
+                                                </div>
+                                                <div class="flex items-start justify-between pt-1.5">
+                                                    <span class="text-slate-400 shrink-0">Status Berita Acara:</span>
+                                                    <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30" x-text="selectedAstapDetail.mutasi_keluar?.status || 'Selesai'"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Tombol Cetak Dokumen BAMB -->
+                                        <template x-if="selectedAstapDetail.mutasi_keluar?.cetak_url">
+                                            <div class="pt-2 border-t border-slate-800/80 flex justify-end">
+                                                <a :href="selectedAstapDetail.mutasi_keluar.cetak_url" target="_blank"
+                                                   class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-slate-950 border border-cyan-400/40 text-[11px] font-extrabold transition-all shadow-md flex items-center space-x-1.5 cursor-pointer active:scale-95">
+                                                    <span>🖨️</span>
+                                                    <span>Cetak Dokumen BAMB Mutasi</span>
+                                                </a>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- SECTION 4E: BELANJA MODAL / BELANJA BARANG (REKANAN VENDOR & PPK) -->
+                        <template x-if="!isHibahKeluar(selectedAstapDetail) && !selectedAstapDetail?.is_hibah_keluar && !selectedAstapDetail?.hibah_keluar && selectedAstapDetail?.sumber_dana !== 'hibah' && selectedAstapDetail?.sumber_dana_raw !== 'hibah' && !selectedAstapDetail?.hibah_masuk && selectedAstapDetail?.sumber_dana !== 'kemitraan' && !selectedAstapDetail?.kemitraan && selectedAstapDetail?.sumber_dana !== 'mutasi_eksternal' && !selectedAstapDetail?.mutasi_keluar">
+                            <div class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3">
+                                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                                    <h4 class="text-xs font-extrabold text-teal-400 uppercase tracking-wider flex items-center space-x-1.5">
+                                        <span>🏢 Pihak Penyedia (Rekanan) &amp; Pejabat Pembuat Komitmen (PPK)</span>
+                                    </h4>
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">Langkah 4 - Rekanan &amp; PPK</span>
+                                </div>
+
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 text-[11px]">
+                                    <!-- Card Pihak Penyedia -->
+                                    <div class="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800/90 space-y-2.5">
+                                        <span class="text-[10.5px] font-extrabold text-cyan-400 uppercase tracking-wider block flex items-center space-x-1">
+                                            <span>🏢 Informasi Rekanan / Vendor</span>
+                                        </span>
+                                        <div class="space-y-1.5 divide-y divide-slate-800/60">
+                                            <div class="flex items-center justify-between pt-1">
+                                                <span class="text-slate-400">Nama Perusahaan / Rekanan:</span>
+                                                <strong class="text-white font-bold truncate max-w-[55%]" :title="selectedAstapDetail.penyedia_nama || selectedAstapDetail.rekening_penyedia" x-text="selectedAstapDetail.penyedia_nama || selectedAstapDetail.rekening_penyedia || '-'"></strong>
+                                            </div>
+                                            <div class="flex items-center justify-between pt-1.5">
+                                                <span class="text-slate-400">Nama Pimpinan / Pemilik:</span>
+                                                <span class="text-slate-200 font-medium truncate max-w-[55%]" :title="selectedAstapDetail.penyedia_pemilik" x-text="selectedAstapDetail.penyedia_pemilik || '-'"></span>
+                                            </div>
+                                            <template x-if="selectedAstapDetail.category === 'EXTRACOM' || selectedAstapDetail.category === 'Extracom' || selectedAstapDetail.is_extracomtable || selectedAstapDetail.category === 'ATB'">
+                                                <div class="flex items-center justify-between pt-1.5">
+                                                    <span class="text-slate-400">No. HP / WhatsApp Aktif:</span>
+                                                    <span class="text-amber-400 font-mono font-bold truncate max-w-[55%] flex items-center gap-1.5">
+                                                        <span class="text-xs">📱</span>
+                                                        <span x-text="selectedAstapDetail.penyedia_telepon || selectedAstapDetail.spesifikasi_json?.penyedia_telepon || selectedAstapDetail.spesifikasi_json?.penyedia_kontak || '-'"></span>
+                                                    </span>
+                                                </div>
+                                            </template>
+                                            <div class="flex items-center justify-between pt-1.5">
+                                                <span class="text-slate-400">Rekening Bank:</span>
+                                                <span class="text-amber-300 font-mono font-bold truncate max-w-[55%]" x-text="selectedAstapDetail.penyedia_rekening_nomor ? ((selectedAstapDetail.penyedia_rekening_nama ? selectedAstapDetail.penyedia_rekening_nama + ' - ' : '') + selectedAstapDetail.penyedia_rekening_nomor) : (selectedAstapDetail.penyedia_rekening_nama || '-')"></span>
+                                            </div>
+                                            <div class="flex items-start justify-between pt-1.5">
+                                                <span class="text-slate-400 shrink-0">Alamat Perusahaan:</span>
+                                                <span class="text-teal-300 font-medium text-right truncate max-w-[55%]" :title="selectedAstapDetail.penyedia_alamat" x-text="selectedAstapDetail.penyedia_alamat || '-'"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Card PPK -->
+                                    <div class="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800/90 space-y-2.5">
+                                        <span class="text-[10.5px] font-extrabold text-amber-400 uppercase tracking-wider block flex items-center space-x-1">
+                                            <span>👔 Pejabat Pembuat Komitmen (PPK)</span>
+                                        </span>
+                                        <div class="space-y-1.5 divide-y divide-slate-800/60">
+                                            <div class="flex items-center justify-between pt-1">
+                                                <span class="text-slate-400">Nama Pejabat (PPK):</span>
+                                                <strong class="text-white font-bold truncate max-w-[55%]" :title="selectedAstapDetail.ppk_nama" x-text="selectedAstapDetail.ppk_nama || '-'"></strong>
+                                            </div>
+                                            <div class="flex items-center justify-between pt-1.5">
+                                                <span class="text-slate-400">NIP Pejabat (PPK):</span>
+                                                <span class="text-cyan-300 font-mono font-bold truncate max-w-[55%]" x-text="selectedAstapDetail.ppk_nip || '-'"></span>
+                                            </div>
+                                            <div class="flex items-start justify-between pt-1.5">
+                                                <span class="text-slate-400 shrink-0">Keterangan / Catatan:</span>
+                                                <span class="text-slate-300 italic text-right truncate max-w-[55%]" :title="selectedAstapDetail.keterangan_tambahan || selectedAstapDetail.keterangan" x-text="selectedAstapDetail.keterangan_tambahan || selectedAstapDetail.keterangan || '-'"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
 
                         <!-- TABEL RINCIAN REGISTER NIBAR PER-UNIT (FULLY RESPONSIVE SCROLL) -->
                         <div class="p-3.5 sm:p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">

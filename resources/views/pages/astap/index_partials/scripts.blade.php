@@ -10028,6 +10028,7 @@
                 isHibahKeluar(item) {
                     if (!item) return false;
                     if (item.is_hibah_keluar) return true;
+                    if (item.hibah_keluar) return true;
                     if (item.jenis_reklas === 'HIBAH_KELUAR' || item.tujuan_kib === 'HIBAH') return true;
                     if (item.keterangan_tambahan && item.keterangan_tambahan.toLowerCase().includes('dihibahkan')) return true;
                     if (item.registers && Array.isArray(item.registers) && item.registers.length > 0) {

@@ -62,11 +62,63 @@ class HibahController extends Controller
         $hibahRecords = $query->get();
 
         // Hitung Statistik KPI dari data aktif via aggregate query / collection
-        $allHibahs = AstapHibah::active()->with('astap')->get();
+        $allHibahs = AstapHibah::active()->with(['astap.allRegisters'])->get();
         $totalMasukUnit = $allHibahs->where('tipe_hibah', 'masuk')->sum('jumlah_volume');
         $totalMasukNominal = $allHibahs->where('tipe_hibah', 'masuk')->sum('nilai_aset');
         $totalKeluarUnit = $allHibahs->where('tipe_hibah', 'keluar')->sum('jumlah_volume');
         $totalKeluarNominal = $allHibahs->where('tipe_hibah', 'keluar')->sum('nilai_aset');
+
+        // 1. Ekstrak nama instansi unik (dinormalisasi huruf kecil & trim agar instansi yang sama dihitung 1 meskipun beda alamat)
+        $uniqueInstansiNames = $allHibahs
+            ->pluck('pihak_hibah')
+            ->map(fn($name) => trim((string)$name))
+            ->filter(fn($name) => !empty($name) && $name !== '-')
+            ->map(fn($name) => mb_strtolower($name))
+            ->unique()
+            ->values();
+
+        $totalInstansiUnik = $uniqueInstansiNames->count();
+
+        // Rincian pihak donatur pemberi vs instansi penerima hibah
+        $pemberiUnik = $allHibahs->where('tipe_hibah', 'masuk')
+            ->pluck('pihak_hibah')
+            ->map(fn($n) => mb_strtolower(trim((string)$n)))
+            ->filter(fn($n) => !empty($n) && $n !== '-')
+            ->unique()
+            ->count();
+
+        $penerimaUnik = $allHibahs->where('tipe_hibah', 'keluar')
+            ->pluck('pihak_hibah')
+            ->map(fn($n) => mb_strtolower(trim((string)$n)))
+            ->filter(fn($n) => !empty($n) && $n !== '-')
+            ->unique()
+            ->count();
+
+        // 2. Hitung Kondisi Fisik Barang Seluruh Aset Hibah (Masuk & Keluar)
+        $totalBaik = 0;
+        $totalRusak = 0;
+
+        foreach ($allHibahs as $h) {
+            $regs = $h->astap?->allRegisters;
+            if ($regs && $regs->count() > 0) {
+                $vol = max(1, (int)$h->jumlah_volume);
+                $sliceRegs = $regs->take($vol);
+                foreach ($sliceRegs as $r) {
+                    $kondisi = strtolower(trim((string)($r->kondisi ?? 'baik')));
+                    if (in_array($kondisi, ['baik', 'b', ''])) {
+                        $totalBaik++;
+                    } else {
+                        $totalRusak++;
+                    }
+                }
+            } else {
+                $vol = max(1, (int)$h->jumlah_volume);
+                $totalBaik += $vol;
+            }
+        }
+
+        $totalSemuaFisik = $totalBaik + $totalRusak;
+        $persenBaik = $totalSemuaFisik > 0 ? round(($totalBaik / $totalSemuaFisik) * 100) : 100;
 
         // Daftar Aset Aktif yang dapat dihibahkan keluar (berstatus 'Tersedia' atau 'Aktif', belum dihibahkan/dihapus)
         $activeAstaps = Astap::where('is_deleted', 0)
@@ -148,6 +200,12 @@ class HibahController extends Controller
             'totalMasukNominal',
             'totalKeluarUnit',
             'totalKeluarNominal',
+            'totalInstansiUnik',
+            'pemberiUnik',
+            'penerimaUnik',
+            'totalBaik',
+            'totalRusak',
+            'persenBaik',
             'activeAstaps',
             'availableYears',
             'filterTipe',

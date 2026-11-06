@@ -134,7 +134,7 @@
                         <span class="text-slate-400 text-[10px] uppercase font-extrabold tracking-wider block mb-1">💰 Taksiran Nilai Wajar</span>
                         <span class="font-black font-mono text-sm sm:text-base block truncate tracking-tight drop-shadow-sm" 
                               :class="selectedDetail.tipe_hibah === 'masuk' ? 'text-amber-400' : 'text-rose-400'"
-                              x-text="'Rp ' + formatRupiah(selectedDetail.nilai_aset)"></span>
+                              x-text="formatRupiah(selectedDetail.nilai_aset)"></span>
                     </div>
                 </div>
 

@@ -37,15 +37,6 @@
                 <span>Sheet Hibah (Excel)</span>
             </button>
 
-            <!-- Catat Hibah Keluar -->
-            <button type="button" @click="openModalHibahKeluar()"
-                class="group px-4 py-2.5 rounded-xl bg-slate-950/80 hover:bg-rose-950/30 border border-slate-800 hover:border-rose-500/50 text-slate-300 hover:text-rose-300 font-bold text-xs transition-all shadow-md flex items-center gap-2 cursor-pointer active:scale-95">
-                <svg class="w-4 h-4 text-rose-400 group-hover:scale-110 transition-transform duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                <span>Hibahkan Barang (Keluar)</span>
-            </button>
-
             <!-- Tambah Hibah Masuk (Primary Solid Amber) -->
             <a href="{{ route('astap.create_hibah') }}"
                 class="group px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs transition-all duration-200 shadow-lg shadow-amber-500/20 hover:shadow-xl hover:shadow-amber-400/35 flex items-center gap-2 cursor-pointer active:scale-95 transform hover:-translate-y-0.5">
@@ -101,51 +92,53 @@
             </div>
         </div>
 
-        <!-- Card 3: Total Transaksi Dokumen BAST -->
-        <div class="p-4 rounded-3xl bg-slate-900/80 border border-slate-800 relative overflow-hidden shadow-xl group hover:border-cyan-500/40 transition-all before:absolute before:top-0 before:left-0 before:right-0 before:h-0.5 before:bg-gradient-to-r before:from-transparent before:via-cyan-400/80 before:to-transparent">
+        <!-- Card 3: Instansi & Mitra Hibah (Universal) -->
+        <div class="p-4 rounded-3xl bg-slate-900/80 border border-slate-800 relative overflow-hidden shadow-xl group hover:border-purple-500/40 transition-all before:absolute before:top-0 before:left-0 before:right-0 before:h-0.5 before:bg-gradient-to-r before:from-transparent before:via-purple-400/80 before:to-transparent">
             <div class="flex items-center justify-between">
-                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">📜 Legalitas BAST</span>
-                <span class="px-2 py-0.5 rounded-lg text-[10px] font-black bg-cyan-500/15 text-cyan-300 border border-cyan-500/20">
-                    Dokumen
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">🏢 Instansi &amp; Mitra</span>
+                <span class="px-2 py-0.5 rounded-lg text-[10px] font-black bg-purple-500/15 text-purple-300 border border-purple-500/20">
+                    Kerjasama
                 </span>
             </div>
             <div class="mt-2.5">
-                <div class="text-2xl font-black text-white group-hover:text-cyan-300 transition-colors">
-                    {{ count($hibahRecords) }} <span class="text-xs font-semibold text-slate-400">Berkas</span>
+                <div class="text-2xl font-black text-white group-hover:text-purple-300 transition-colors">
+                    {{ number_format($totalInstansiUnik ?? 0, 0, ',', '.') }} <span class="text-xs font-semibold text-slate-400">Instansi</span>
                 </div>
-                <div class="text-xs font-extrabold text-cyan-400 font-mono mt-0.5">
-                    100% Berkas Terverifikasi
+                <div class="text-xs font-extrabold text-purple-400 font-mono mt-0.5">
+                    {{ $pemberiUnik ?? 0 }} Donatur · {{ $penerimaUnik ?? 0 }} Penerima
                 </div>
             </div>
             <div class="text-[10px] text-slate-500 mt-2 flex items-center justify-between border-t border-slate-800/80 pt-2">
-                <span>Bukti Fisik &amp; Administrasi</span>
-                <span class="text-cyan-400/80 font-bold">Valid SIPD</span>
+                <span>Pihak Hibah Terverifikasi</span>
+                <span class="text-purple-400/80 font-bold">Mitra Terdaftar</span>
             </div>
         </div>
 
-        <!-- Card 4: Netto Saldo Hibah -->
-        @php
-            $nettoUnit = $totalMasukUnit - $totalKeluarUnit;
-            $nettoNominal = $totalMasukNominal - $totalKeluarNominal;
-        @endphp
+        <!-- Card 4: Kondisi Fisik Aset Hibah (Universal) -->
         <div class="p-4 rounded-3xl bg-slate-900/80 border border-slate-800 relative overflow-hidden shadow-xl group hover:border-emerald-500/40 transition-all before:absolute before:top-0 before:left-0 before:right-0 before:h-0.5 before:bg-gradient-to-r before:from-transparent before:via-emerald-400/80 before:to-transparent">
             <div class="flex items-center justify-between">
-                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">⚖️ Mutasi Bersih (Netto)</span>
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">🩺 Kondisi Fisik Barang</span>
                 <span class="px-2 py-0.5 rounded-lg text-[10px] font-black bg-emerald-500/15 text-emerald-300 border border-emerald-500/20">
-                    Posisi Saldo
+                    Kelaikan
                 </span>
             </div>
             <div class="mt-2.5">
-                <div class="text-2xl font-black text-emerald-400">
-                    {{ $nettoUnit >= 0 ? '+' : '' }}{{ number_format($nettoUnit, 0, ',', '.') }} <span class="text-xs font-semibold text-slate-400">Unit</span>
+                <div class="text-2xl font-black text-white group-hover:text-emerald-300 transition-colors">
+                    {{ number_format($totalBaik ?? 0, 0, ',', '.') }} <span class="text-xs font-semibold text-emerald-400">Unit Baik</span>
                 </div>
-                <div class="text-xs font-extrabold text-emerald-300 font-mono mt-0.5">
-                    {{ $nettoNominal >= 0 ? '+' : '' }}Rp {{ number_format($nettoNominal, 0, ',', '.') }}
+                <div class="text-xs font-extrabold text-emerald-400 font-mono mt-0.5">
+                    {{ $persenBaik ?? 100 }}% Laik Operasional
                 </div>
             </div>
             <div class="text-[10px] text-slate-500 mt-2 flex items-center justify-between border-t border-slate-800/80 pt-2">
-                <span>Dampak Neraca Aset</span>
-                <span class="text-emerald-400/80 font-bold">Aktif di RSUD</span>
+                <span>Kondisi Aset Serah Terima</span>
+                <span class="text-emerald-400/80 font-bold">
+                    @if(($totalRusak ?? 0) > 0)
+                        <span class="text-amber-400">{{ $totalRusak }} Perlu Cek</span>
+                    @else
+                        Siap Pakai
+                    @endif
+                </span>
             </div>
         </div>
     </div>
