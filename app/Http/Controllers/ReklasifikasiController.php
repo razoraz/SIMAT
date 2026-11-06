@@ -126,6 +126,18 @@ class ReklasifikasiController extends Controller
             }
         }
 
+        // Hitung saldo awal tambahan dari aset tahun perolehan sebelumnya yang direklasifikasi pada periode ini
+        // (Aset tahun lampau yang direklasifikasi keluar mengurangi neraca, sehingga harus diakui di Saldo Awal rekening asalnya)
+        $priorYearSaldoAwalByRow = [];
+        foreach ($reklasMutasis as $reklas) {
+            if ($reklas->astap && $reklas->astap->tahun_perolehan != $selectedTahun) {
+                $asalRowId = $this->resolveAsalRowId($reklas, $templateRows);
+                if ($asalRowId) {
+                    $priorYearSaldoAwalByRow[$asalRowId] = ($priorYearSaldoAwalByRow[$asalRowId] ?? 0) + (float) $reklas->nilai_reklas;
+                }
+            }
+        }
+
         foreach ($templateRows as $row) {
             $prefix = $row->kode_prefix;
             $saldoAwal = 0;
@@ -140,6 +152,11 @@ class ReklasifikasiController extends Controller
                     if ($matchedRowId === $row->id) {
                         $saldoAwal += (float) ($astap->total_realisasi ?: ($astap->jumlah_anggaran ?: 0));
                     }
+                }
+
+                // Tambahkan saldo awal dari aset tahun perolehan sebelumnya yang direklasifikasi pada periode ini
+                if (isset($priorYearSaldoAwalByRow[$row->id])) {
+                    $saldoAwal += $priorYearSaldoAwalByRow[$row->id];
                 }
             }
 
