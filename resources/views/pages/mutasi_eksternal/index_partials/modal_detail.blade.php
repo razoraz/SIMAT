@@ -641,8 +641,8 @@
                             <thead class="bg-slate-950 text-slate-400 font-bold uppercase text-[9.5px] border-b border-slate-800 shadow-sm" style="position: sticky; top: 0; z-index: 10; background-color: #020617;">
                                 <tr>
                                     <th class="px-3.5 py-2.5 text-center">NIBAR RESMI</th>
-                                    <th class="px-3.5 py-2.5 text-center" x-text="(selectedMutasi && selectedMutasi.tipe === 'keluar') ? 'Instansi Tujuan' : 'Penempatan Ruangan'">Penempatan Ruangan</th>
-                                    <th class="px-3.5 py-2.5 text-center">Kondisi</th>
+                                    <th class="px-3.5 py-2.5 text-center whitespace-nowrap" x-text="(selectedMutasi && selectedMutasi.tipe === 'keluar') ? 'Instansi Tujuan' : 'Penempatan Ruangan'">Penempatan Ruangan</th>
+                                    <th class="px-3.5 py-2.5 text-center whitespace-nowrap">Kondisi</th>
                                     <th class="px-3.5 py-2.5 text-center whitespace-nowrap">QR Code</th>
                                     <th class="px-3.5 py-2.5 text-center whitespace-nowrap">Aksi</th>
                                 </tr>
@@ -651,7 +651,7 @@
                                 <template x-for="reg in filteredRegisters" :key="reg.id">
                                     <tr class="hover:bg-slate-800/60 transition-colors">
                                         <td class="px-3.5 py-2.5 font-mono font-bold text-emerald-400 whitespace-nowrap text-center" x-text="reg.nibar || reg.no_register"></td>
-                                        <td class="px-3.5 py-2.5 text-center">
+                                        <td class="px-3.5 py-2.5 text-center whitespace-nowrap">
                                             <!-- 1. Barang Mutasi Keluar OPD -->
                                             <template x-if="(selectedMutasi && selectedMutasi.tipe === 'keluar') || reg.status === 'Mutasi Keluar OPD'">
                                                 <span class="inline-flex items-center space-x-1.5 text-cyan-300 font-bold bg-cyan-500/10 px-2.5 py-1 rounded-lg border border-cyan-500/30 text-[10.5px] justify-center">
@@ -668,10 +668,15 @@
                                             </template>
                                             <!-- 3. Barang Masuk / Internal yang belum ditempatkan (Gudang) -->
                                             <template x-if="!(selectedMutasi && selectedMutasi.tipe === 'keluar') && reg.status !== 'Mutasi Keluar OPD' && !reg.ruang_pemegang">
-                                                <span class="inline-flex items-center space-x-1.5 text-amber-400 font-bold bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/30 text-[10px] justify-center">
-                                                    <span>📦</span>
-                                                    <span>Gudang Aset (Belum Ditempatkan)</span>
-                                                </span>
+                                                <div class="inline-flex flex-col items-center justify-center leading-tight py-1 px-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 shadow-sm">
+                                                    <span class="inline-flex items-center gap-1 text-[10.5px] font-bold">
+                                                        <span>📦</span>
+                                                        <span>Gudang Aset</span>
+                                                    </span>
+                                                    <span class="text-[9px] text-amber-400/80 font-medium">
+                                                        (Belum Ditempatkan)
+                                                    </span>
+                                                </div>
                                             </template>
                                         </td>
                                         <td class="px-3.5 py-2.5 text-center whitespace-nowrap">
