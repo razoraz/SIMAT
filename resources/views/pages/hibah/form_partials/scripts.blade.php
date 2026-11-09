@@ -334,7 +334,9 @@
                         gedung_kode_barang: '',
                         isFilterOpen: false,
                         searchFilter: '',
-                        gedung_luas_m2: 0,
+                        gedung_luas_m2: '',
+                        gedung_luas_lantai: '',
+                        gedung_luas_lantai_m2: '',
                         gedung_kondisi: 'Baik',
                         gedung_bertingkat: 'Tidak',
                         gedung_beton: 'Beton',
@@ -1378,7 +1380,9 @@
                 this.formData.gedung_items.push({
                     gedung_nama_barang: this.formData.nama_barang || this.formData.sub_rincian_nama || '',
                     gedung_kode_barang: this.activeKodeBarang || this.formData.sub_rincian_kode || '',
-                    gedung_luas_m2: 0,
+                    gedung_luas_m2: '',
+                    gedung_luas_lantai: '',
+                    gedung_luas_lantai_m2: '',
                     gedung_kondisi: 'B',
                     gedung_bertingkat: 'Bertingkat',
                     gedung_beton: 'Beton',
@@ -1408,7 +1412,7 @@
 
             get totalLuasGedung() {
                 if (!this.formData.gedung_items) return 0;
-                return this.formData.gedung_items.reduce((s, it) => s + (parseFloat(it.gedung_luas_m2 || it.gedung_luas_lantai) || 0), 0);
+                return this.formData.gedung_items.reduce((s, it) => s + (parseFloat(it.gedung_luas_m2 || it.gedung_luas_lantai || it.gedung_luas_lantai_m2) || 0), 0);
             },
 
             syncGedungFieldsToMain() {
@@ -1418,6 +1422,10 @@
                     this.formData.kondisi = first.gedung_kondisi;
                     this.formData.satuan = first.gedung_satuan || 'Gedung';
                     this.formData.gedung_luas_m2 = this.totalLuasGedung;
+                    if (first.gedung_luas_m2 !== undefined && first.gedung_luas_m2 !== '') {
+                        first.gedung_luas_lantai = first.gedung_luas_m2;
+                        first.gedung_luas_lantai_m2 = first.gedung_luas_m2;
+                    }
                     if (first.gedung_alamat) {
                         this.formData.alamat_barang = first.gedung_alamat;
                     }

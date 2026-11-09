@@ -45,7 +45,7 @@
                             </span>
                             <span class="text-xs text-white font-bold" x-show="item.gedung_nama_barang" x-text="item.gedung_nama_barang"></span>
                             <span class="text-[10.5px] text-slate-400 font-mono" x-show="item.gedung_luas_m2 || item.gedung_luas_lantai">
-                                • Luas: <strong class="text-amber-300" x-text="(item.gedung_luas_m2 || item.gedung_luas_lantai || 0) + ' m²'"></strong>
+                                • Luas: <strong class="text-amber-300" x-text="((parseFloat(item.gedung_luas_m2 || item.gedung_luas_lantai) || 0).toLocaleString('id-ID')) + ' m²'"></strong>
                             </span>
                             <span class="text-[10.5px] text-slate-400 font-mono">
                                 • Subtotal: <strong class="text-emerald-400" x-text="'Rp ' + formatRupiah(getGedungSubtotal(item))"></strong>
@@ -146,6 +146,7 @@
                                     </label>
                                     <div class="flex items-center rounded-xl bg-slate-900 border border-slate-700 focus-within:border-amber-500 overflow-hidden transition-all">
                                         <input type="number" step="0.01" min="0" x-model.number="item.gedung_luas_m2"
+                                            @input="item.gedung_luas_lantai = item.gedung_luas_m2; item.gedung_luas_lantai_m2 = item.gedung_luas_m2; syncGedungFieldsToMain(); syncActiveKibTotals();"
                                             placeholder="850"
                                             class="w-full bg-transparent px-3 py-2 text-xs text-white font-mono font-bold focus:outline-none">
                                         <span class="px-2.5 py-2 text-[10px] font-mono font-bold text-slate-400 bg-slate-800/80 border-l border-slate-700 shrink-0">m²</span>

@@ -398,7 +398,7 @@
                                                 <span class="w-5 h-5 rounded-full bg-amber-500/20 text-amber-300 font-mono text-[10px] font-bold flex items-center justify-center border border-amber-500/30" x-text="gIdx + 1"></span>
                                                 <span class="font-bold text-white text-xs truncate max-w-[200px]" x-text="gItem.gedung_nama_barang || ('Bangunan #' + (gIdx + 1))"></span>
                                             </div>
-                                            <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-amber-950/60 text-amber-300 border border-amber-500/30" x-text="((parseFloat(gItem.gedung_luas_m2 || gItem.gedung_luas_lantai) || 0).toLocaleString('id-ID')) + ' m²'"></span>
+                                            <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-amber-950/60 text-amber-300 border border-amber-500/30" x-text="((parseFloat(gItem.gedung_luas_m2 || gItem.gedung_luas_lantai || gItem.gedung_luas_lantai_m2) || 0).toLocaleString('id-ID')) + ' m²'"></span>
                                         </div>
                                         <div class="grid grid-cols-2 gap-2 text-[11px] text-slate-300 pt-1 border-t border-slate-800/60">
                                             <div>
@@ -435,7 +435,7 @@
                             </div>
                             <div>
                                 <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Luas Total Lantai:</span>
-                                <span class="font-mono font-bold text-amber-400 text-sm block" x-text="((formData.gedung_items?.[0]?.gedung_luas_m2 || formData.gedung_items?.[0]?.gedung_luas_lantai || formData.gedung_luas_m2 || 0).toLocaleString('id-ID')) + ' m²'"></span>
+                                <span class="font-mono font-bold text-amber-400 text-sm block" x-text="((parseFloat(formData.gedung_items?.[0]?.gedung_luas_m2) || parseFloat(formData.gedung_items?.[0]?.gedung_luas_lantai) || parseFloat(formData.gedung_items?.[0]?.gedung_luas_lantai_m2) || parseFloat(formData.gedung_luas_m2) || parseFloat(totalLuasGedung) || 0).toLocaleString('id-ID')) + ' m²'"></span>
                             </div>
                             <div class="col-span-2">
                                 <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Status Tanah Tempat Berdiri:</span>
@@ -496,7 +496,7 @@
                             </div>
                             <div>
                                 <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Luas Total:</span>
-                                <span class="font-mono text-amber-400 font-bold block" x-text="((formData.jaringan_items?.[0]?.jaringan_luas || formData.jaringan_items?.[0]?.jaringan_luas_m2 || 0).toLocaleString('id-ID')) + ' m²'"></span>
+                                <span class="font-mono text-amber-400 font-bold block" x-text="((parseFloat(formData.jaringan_items?.[0]?.jaringan_luas) || parseFloat(formData.jaringan_items?.[0]?.jaringan_luas_m2) || parseFloat(totalLuasJaringan) || 0).toLocaleString('id-ID')) + ' m²'"></span>
                             </div>
                         </div>
                     </template>
@@ -914,7 +914,7 @@
                         </div>
                         <div>
                             <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Luas Bangunan:</span>
-                            <span class="font-mono text-amber-400 font-bold block" x-text="(formData.kdp_items?.[0]?.kdp_luas_m2 || 0) + ' m²'"></span>
+                            <span class="font-mono text-amber-400 font-bold block" x-text="((parseFloat(formData.kdp_items?.[0]?.kdp_luas_m2) || 0).toLocaleString('id-ID')) + ' m²'"></span>
                         </div>
                         <div>
                             <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Status Fisik:</span>
