@@ -258,7 +258,6 @@ class TutupBukuController extends Controller
                 'keterangan'       => $hibahDetail->keterangan ?: ($a->hibah_keterangan ?: ($spec['keterangan'] ?? '')),
             ] : null;
 
-            $isHibahKeluarAset = $a->isHibahKeluar() || $a->jenis_reklas === 'HIBAH_KELUAR' || !empty($hibahKeluarModel);
             $hibahKeluarData = $hibahKeluarModel ? [
                 'id'               => $hibahKeluarModel->id,
                 'penerima_hibah'   => $hibahKeluarModel->penerima_hibah ?: ($hibahKeluarModel->penerima ?: ($a->hibah_pemberi ?: ($spec['penerima_hibah'] ?? ''))),
@@ -269,6 +268,8 @@ class TutupBukuController extends Controller
                 'nomor_bast'       => $hibahKeluarModel->nomor_bast ?: ($hibahKeluarModel->nomor_naskah ?: ($a->bast_dokumen_nomor ?: '')),
                 'tanggal_bast'     => $hibahKeluarModel->tanggal_bast ? $hibahKeluarModel->tanggal_bast->format('Y-m-d') : ($a->bast_dokumen_tanggal ? (is_string($a->bast_dokumen_tanggal) ? $a->bast_dokumen_tanggal : $a->bast_dokumen_tanggal->format('Y-m-d')) : null),
             ] : null;
+
+            $isHibahKeluarAset = !empty($hibahKeluarData) || ($a->jenis_reklas === 'HIBAH_KELUAR') || $a->isHibahKeluar();
 
             // 3. Data Mutasi Eksternal
             $mutasiKeluarData = $mutasiKeluar ? [

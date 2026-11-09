@@ -235,6 +235,14 @@ class Astap extends Model
         return $this->sumber_dana === 'hibah';
     }
 
+    public function isHibahKeluar(): bool
+    {
+        return $this->jenis_reklas === 'HIBAH_KELUAR' 
+            || ($this->relationLoaded('hibahs') 
+                ? (bool) $this->hibahs->firstWhere('tipe', 'keluar') 
+                : $this->hibahs()->where('tipe', 'keluar')->exists());
+    }
+
     public function isMutasiMasuk(): bool
     {
         return in_array($this->sumber_dana, ['mutasi_eksternal', 'pelimpahan_skpd', 'pelimpahan', 'mutasi_masuk'], true);
