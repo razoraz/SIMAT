@@ -224,15 +224,15 @@
                                 <span>📏</span>
                                 <span>{{ $totalVolFaktur }} {{ $astaps->first()?->satuan ?: 'Unit' }}</span>
                             </div>
+                            <div class="text-[10px] text-slate-400 font-mono mt-0.5 whitespace-nowrap">
+                                {{ $totalItemCount }} macam
+                            </div>
                         </td>
 
                         <!-- 5. Total Pembelian (Rp) -->
                         <td class="py-3.5 px-3 text-right whitespace-nowrap">
                             <div class="text-sm font-extrabold text-emerald-400 font-mono tracking-tight whitespace-nowrap">
                                 Rp {{ number_format($row->total_pembelian, 0, ',', '.') }}
-                            </div>
-                            <div class="text-[10px] text-slate-400 font-mono mt-0.5 whitespace-nowrap">
-                                {{ $totalItemCount }} macam · {{ $totalVolFaktur }} unit
                             </div>
                         </td>
 
