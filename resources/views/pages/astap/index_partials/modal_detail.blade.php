@@ -1796,8 +1796,8 @@
                                                 class="px-4 py-3 text-center whitespace-nowrap min-w-[190px]">Rekanan &amp; Skema</th>
                                             <th class="px-4 py-3 text-center whitespace-nowrap min-w-[200px]">Lokasi Penempatan</th>
                                             <th class="px-3.5 py-3 text-center whitespace-nowrap">Kondisi</th>
-                                            <th class="px-3.5 py-3 text-center whitespace-nowrap">QR Code</th>
                                             @if(empty($isTutupBuku))
+                                            <th class="px-3.5 py-3 text-center whitespace-nowrap">QR Code</th>
                                             <th class="px-3.5 py-3 text-center whitespace-nowrap">Aksi</th>
                                             @endif
                                         </tr>
@@ -1934,6 +1934,7 @@
                                                     </span>
                                                 </td>
 
+                                                @if(empty($isTutupBuku))
                                                 <!-- 6. QR Code Download -->
                                                 <td class="px-3.5 py-3 text-center whitespace-nowrap align-middle">
                                                     @if(Auth::user()?->role === 'master_admin' || Auth::user()?->canDo('astap', 'qr'))
@@ -1950,7 +1951,6 @@
                                                     @endif
                                                 </td>
 
-                                                @if(empty($isTutupBuku))
                                                 <!-- 7. Tombol Aksi -->
                                                 <td class="px-3.5 py-3 text-center whitespace-nowrap align-middle">
                                                     <div class="flex items-center justify-center gap-1.5">
@@ -1987,7 +1987,7 @@
                                         </template>
                                         <template x-if="filteredRegisters.length === 0">
                                             <tr>
-                                                <td :colspan="(selectedAstapDetail?.sumber_dana === 'kemitraan' || selectedAstapDetail?.sumber_dana_raw === 'kemitraan' || !!selectedAstapDetail?.kemitraan) ? ({{ !empty($isTutupBuku) ? 6 : 7 }}) : ({{ !empty($isTutupBuku) ? 5 : 6 }})" class="px-3 py-6 text-center text-slate-500 italic text-xs">
+                                                <td :colspan="(selectedAstapDetail?.sumber_dana === 'kemitraan' || selectedAstapDetail?.sumber_dana_raw === 'kemitraan' || !!selectedAstapDetail?.kemitraan) ? ({{ !empty($isTutupBuku) ? 5 : 7 }}) : ({{ !empty($isTutupBuku) ? 4 : 6 }})" class="px-3 py-6 text-center text-slate-500 italic text-xs">
                                                     Tidak ditemukan rincian register NIBAR yang sesuai dengan filter pencarian.
                                                 </td>
                                             </tr>
