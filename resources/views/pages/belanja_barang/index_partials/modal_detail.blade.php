@@ -46,12 +46,12 @@
                                 ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
                                 : (selectedItem?.status_alokasi === 'sebagian'
                                     ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
-                                    : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30')"
+                                    : 'bg-slate-800 text-slate-300 border-slate-700')"
                             x-text="selectedItem?.status_alokasi === 'ruangan'
                                 ? '🏢 Penempatan Ruangan'
                                 : (selectedItem?.status_alokasi === 'sebagian'
                                     ? '🔀 Sebagian Ruang & Gudang'
-                                    : '📦 Gudang Perbekalan')">
+                                    : '📦 Belum Ditempatkan')">
                         </span>
 
                         <!-- Nomor Faktur Badge -->
@@ -291,7 +291,7 @@
                             <div class="space-y-1">
                                 <span class="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Status Penempatan Aset:</span>
                                 <p class="text-white font-bold text-xs sm:text-sm leading-snug"
-                                    x-text="selectedItem?.status_alokasi === 'ruangan' ? 'Langsung Ditempatkan di Ruangan RSUD' : (selectedItem?.status_alokasi === 'sebagian' ? 'Sebagian Gudang & Ruangan' : 'Disimpan di Gudang Perbekalan')"></p>
+                                    x-text="selectedItem?.status_alokasi === 'ruangan' ? 'Langsung Ditempatkan di Ruangan RSUD' : (selectedItem?.status_alokasi === 'sebagian' ? 'Sebagian Gudang & Ruangan' : 'Belum Ditempatkan (Gudang Transit)')"></p>
                                 <div class="flex items-center gap-2 pt-0.5 text-[10.5px] text-slate-400">
                                     <span>Instansi: <strong class="text-slate-300 font-semibold">RSUD Dr. H. Koesnandi</strong></span>
                                 </div>
@@ -354,8 +354,8 @@
                                             <td class="py-3 px-3 text-right font-mono font-bold text-emerald-400" x-text="'Rp ' + formatRupiah(item.subtotal)"></td>
                                             <td class="py-3 px-3">
                                                 <span class="px-2 py-0.5 rounded-lg text-[10px] font-bold border"
-                                                    :class="item.ruangan && item.ruangan !== 'Gudang Perbekalan' ? 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30' : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'"
-                                                    x-text="item.ruangan || 'Gudang Perbekalan'"></span>
+                                                    :class="item.ruangan && item.ruangan !== 'Belum Ditempatkan' && item.ruangan !== 'Gudang Perbekalan' ? 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30' : 'bg-slate-800 text-slate-300 border-slate-700'"
+                                                    x-text="item.ruangan || 'Belum Ditempatkan'"></span>
                                             </td>
                                         </tr>
                                     </template>
@@ -388,7 +388,7 @@
                                 <select x-model="detailPenempatanFilter" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-cyan-500">
                                     <option value="all">Semua Penempatan</option>
                                     <option value="ruangan">🏢 Sudah di Ruangan</option>
-                                    <option value="gudang">📦 Gudang Perbekalan</option>
+                                    <option value="gudang">📦 Belum Ditempatkan</option>
                                 </select>
                             </div>
 
@@ -433,8 +433,8 @@
                                             </td>
                                             <td class="px-3.5 py-2.5 text-center">
                                                 <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border"
-                                                    :class="reg.ruang && reg.ruang !== 'Gudang Perbekalan' ? 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30' : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'"
-                                                    x-text="reg.ruang || 'Gudang Perbekalan'"></span>
+                                                    :class="reg.ruang && reg.ruang !== 'Belum Ditempatkan' && reg.ruang !== 'Gudang Perbekalan' ? 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30' : 'bg-slate-800 text-slate-300 border-slate-700'"
+                                                    x-text="reg.ruang || 'Belum Ditempatkan'"></span>
                                             </td>
                                             <td class="px-3.5 py-2.5 text-center">
                                                 <span class="px-2 py-0.5 rounded text-[10px] font-bold border"

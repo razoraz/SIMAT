@@ -268,7 +268,7 @@
                                             <td class="border border-black p-1 text-center align-top" x-text="it.satuan || 'Unit'"></td>
                                             <td class="border border-black p-1 text-right font-mono align-top" x-text="Number(it.harga_satuan || 0).toLocaleString('id-ID')"></td>
                                             <td class="border border-black p-1 text-right font-mono font-bold align-top" x-text="Number(it.subtotal || (it.jumlah_volume * it.harga_satuan) || 0).toLocaleString('id-ID')"></td>
-                                            <td class="border border-black p-1 text-center text-[8pt] align-top" x-text="it.ruangan || 'Gudang Perbekalan'"></td>
+                                            <td class="border border-black p-1 text-center text-[8pt] align-top" x-text="it.ruangan || 'Belum Ditempatkan'"></td>
                                         </tr>
                                     </template>
                                 </tbody>
@@ -279,7 +279,7 @@
                                         <td class="border border-black p-1 text-center">Unit</td>
                                         <td class="border border-black p-1 text-center">-</td>
                                         <td class="border border-black p-1 text-right font-mono font-black text-[9.5pt]" x-text="'Rp ' + Number(printBastDoc.total_pembelian || 0).toLocaleString('id-ID')"></td>
-                                        <td class="border border-black p-1 text-center text-[7.5pt] text-gray-700" x-text="printBastDoc.status_alokasi === 'ruangan' ? 'Ruangan Unit' : 'Gudang Perbekalan'"></td>
+                                        <td class="border border-black p-1 text-center text-[7.5pt] text-gray-700" x-text="printBastDoc.status_alokasi === 'ruangan' ? 'Ruangan Unit' : 'Belum Ditempatkan'"></td>
                                     </tr>
                                 </tfoot>
                             </table>

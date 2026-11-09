@@ -76,23 +76,19 @@
             </div>
         </div>
 
-        <!-- Status 3: Alokasi Penempatan (Opsi A) -->
-        <div class="p-4 rounded-2xl bg-slate-950/80 border border-indigo-500/30 shadow-lg space-y-1 relative overflow-hidden group">
+        <!-- Status 3: Alokasi Penempatan (Belum Ditempatkan) -->
+        <div class="p-4 rounded-2xl bg-slate-950/80 border border-emerald-500/30 shadow-lg space-y-1 relative overflow-hidden group">
             <div class="flex items-center justify-between">
-                <span class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">3. ALUR PENEMPATAN</span>
-                <span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full border"
-                    :class="globalAlokasiMode === 'ruangan' ? 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20' : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'"
-                    x-text="globalAlokasiMode === 'ruangan' ? 'KIR Ruangan' : 'Gudang Stok'">
+                <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">3. ALUR PENEMPATAN</span>
+                <span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full border bg-emerald-500/10 text-emerald-300 border-emerald-500/20">
+                    📦 Belum Ditempatkan
                 </span>
             </div>
-            <div class="text-xs font-bold text-white truncate"
-                x-text="globalAlokasiMode === 'ruangan' ? (getUnitNameById(globalUnitId) || 'Ruangan Belum Dipilih') : 'Gudang Perbekalan RSUD'"></div>
-            <div class="text-[10px] text-slate-400 truncate"
-                x-text="globalAlokasiMode === 'ruangan' ? 'Langsung Aktif di KIR Ruangan' : 'Buffer Stok · Siap Distribusi'"></div>
+            <div class="text-xs font-bold text-white truncate">Belum Ditempatkan</div>
+            <div class="text-[10px] text-slate-400 truncate">Transit Stok Gudang · Siap BAST Distribusi</div>
             <div class="text-[10px] text-slate-400 pt-1 border-t border-slate-900 flex items-center justify-between">
                 <span>Status Register:</span>
-                <span class="font-bold" :class="globalAlokasiMode === 'ruangan' ? 'text-indigo-400' : 'text-emerald-400'"
-                    x-text="globalAlokasiMode === 'ruangan' ? 'Tidak Tersedia (Di Ruangan)' : 'Tersedia di Gudang'"></span>
+                <span class="font-bold text-emerald-400">Tersedia</span>
             </div>
         </div>
     </div>
@@ -203,9 +199,7 @@
                         </div>
                         <div>
                             <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Tujuan Distribusi Fisik:</span>
-                            <span class="font-bold text-xs block"
-                                :class="globalAlokasiMode === 'ruangan' ? 'text-indigo-300' : 'text-emerald-400'"
-                                x-text="globalAlokasiMode === 'ruangan' ? ('Langsung ke KIR: ' + (getUnitNameById(globalUnitId) || 'Ruangan RSUD')) : 'Transit Stok Gudang Perbekalan (Siap BAST Distribusi)'"></span>
+                            <span class="font-bold text-xs block text-emerald-400">Belum Ditempatkan (Gudang Transit · Siap BAST Distribusi)</span>
                         </div>
                     </div>
                 </div>

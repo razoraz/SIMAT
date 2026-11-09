@@ -39,10 +39,48 @@ class BelanjaBarangController extends Controller
                 'nomor_faktur'    => $spec['nomor_faktur'] ?? ($spec['rekening_nomor_faktur'] ?? '-'),
                 'tanggal_faktur'  => $spec['tanggal_faktur'] ?? ($spec['rekening_tanggal_faktur'] ?? now()),
                 'total_pembelian' => (float) $astap->total_realisasi,
-                'status_alokasi'  => !empty($astap->unit_id) ? 'ruangan' : 'gudang',
+                'status_alokasi'  => 'belum_ditempatkan',
                 'keterangan'      => $astap->keterangan_tambahan ?? ($spec['keterangan'] ?? null),
             ]);
             $astap->update(['belanja_barang_id' => $header->id]);
+        }
+
+        // Penyeragaman (sama ratakan) status alokasi belanja barang menjadi "Belum Ditempatkan" (Tersedia)
+        // Kecuali register yang telah memiliki catatan resmi BAST Distribusi ke ruangan
+        $belanjaAstapIds = Astap::where(function($q) {
+                $q->whereIn('sumber_dana', ['belanja_barang', 'belanja_rekening'])
+                  ->orWhereNotNull('belanja_barang_id');
+            })
+            ->pluck('id');
+
+        if ($belanjaAstapIds->isNotEmpty()) {
+            $distributedRegIds = \App\Models\DistribusiItemRegister::pluck('astap_register_id')->filter()->unique()->toArray();
+
+            AstapRegister::whereIn('astap_id', $belanjaAstapIds)
+                ->whereNotIn('id', $distributedRegIds)
+                ->where(function($q) {
+                    $q->where('ruang_pemegang', '!=', 'Belum Ditempatkan')
+                      ->orWhereNotNull('unit_id')
+                      ->orWhere('status', '!=', 'Tersedia');
+                })
+                ->update([
+                    'unit_id'        => null,
+                    'ruang_pemegang' => 'Belum Ditempatkan',
+                    'status'         => 'Tersedia',
+                ]);
+
+            Astap::whereIn('id', $belanjaAstapIds)
+                ->where(function($q) {
+                    $q->whereNotNull('unit_id')
+                      ->orWhere('alamat_barang', '!=', 'Belum Ditempatkan');
+                })
+                ->update([
+                    'unit_id'       => null,
+                    'alamat_barang' => 'Belum Ditempatkan',
+                ]);
+
+            AstapBelanjaBarang::where('status_alokasi', '!=', 'belum_ditempatkan')
+                ->update(['status_alokasi' => 'belum_ditempatkan']);
         }
 
         $filterTahun = $request->query('tahun', 'all');
@@ -342,18 +380,8 @@ class BelanjaBarangController extends Controller
             $totalPembelian += ($vol * $hrg);
         }
 
-        // Tentukan status alokasi faktur
-        $hasGudang = false;
-        $hasRuangan = false;
-        foreach ($itemsList as $it) {
-            $mode = $it['mode_penempatan'] ?? 'gudang';
-            if ($mode === 'ruangan' && !empty($it['unit_id'])) {
-                $hasRuangan = true;
-            } else {
-                $hasGudang = true;
-            }
-        }
-        $statusAlokasiFaktur = ($hasGudang && $hasRuangan) ? 'sebagian' : ($hasRuangan ? 'ruangan' : 'gudang');
+        // Seluruh pengadaan belanja barang berstatus awal 'belum_ditempatkan' (Tersedia / siap BAST Distribusi)
+        $statusAlokasiFaktur = 'belum_ditempatkan';
 
         // 5. Eksekusi Atomic Database Transaction
         $fakturHeader = DB::transaction(function () use (
@@ -395,12 +423,10 @@ class BelanjaBarangController extends Controller
                 $hargaSatuan  = (float) $it['harga_satuan'];
                 $subtotal     = $vol * $hargaSatuan;
 
-                $modePenempatan = $it['mode_penempatan'] ?? 'gudang';
-                $unitId = ($modePenempatan === 'ruangan' && !empty($it['unit_id'])) ? (int) $it['unit_id'] : null;
-                $unitModel = $unitId ? Unit::find($unitId) : null;
-
+                $modePenempatan = 'belum_ditempatkan';
+                $unitId = null;
                 $kondisi = !empty($it['kondisi']) ? $it['kondisi'] : 'Baik';
-                $alamatBarang = !empty($it['alamat_barang']) ? $it['alamat_barang'] : ($unitModel ? $unitModel->nama : 'RSUD Dr. H. Koesnandi');
+                $alamatBarang = 'Belum Ditempatkan';
 
                 // Siapkan JSON spesifikasi teknis
                 $spesifikasi = [
@@ -408,7 +434,8 @@ class BelanjaBarangController extends Controller
                     'toko_penyedia'      => $tokoPenyedia,
                     'nomor_faktur'       => $nomorFaktur,
                     'tanggal_faktur'     => $tanggalFaktur,
-                    'mode_penempatan'    => $modePenempatan,
+                    'mode_penempatan'    => 'belum_ditempatkan',
+                    'ruang_pemegang'     => 'Belum Ditempatkan',
                     'kondisi'            => $kondisi,
                     'dokumen_faktur'     => $dokumenFakturPath,
                     'dokumen_kuitansi'   => $dokumenKuitansiPath,
@@ -457,12 +484,9 @@ class BelanjaBarangController extends Controller
 
                 $runningRegNum = (int) $maxRegInt;
 
-                // Tentukan lokasi & status register sesuai Opsi A:
-                // - Jika di Gudang: unit_id = null, ruang_pemegang = 'Gudang Perbekalan', status = 'Tersedia' (siap didistribusikan via BAST Distribusi)
-                // - Jika di Ruangan: unit_id = $unitId, ruang_pemegang = $unitModel->nama, status = 'Tidak Tersedia' (muncul di KIR Ruangan)
-                $isDirectToRoom = ($modePenempatan === 'ruangan' && $unitId && $unitModel);
-                $ruangPemegang = $isDirectToRoom ? $unitModel->nama : 'Gudang Perbekalan';
-                $registerStatus = $isDirectToRoom ? 'Tidak Tersedia' : 'Tersedia';
+                // Seluruh register belanja barang disamaratakan berstatus "Belum Ditempatkan" (Tersedia / siap BAST Distribusi)
+                $ruangPemegang = 'Belum Ditempatkan';
+                $registerStatus = 'Tersedia';
 
                 for ($i = 0; $i < $vol; $i++) {
                     $runningRegNum++;
@@ -478,7 +502,7 @@ class BelanjaBarangController extends Controller
                     $qrPath = "/scan/{$nibar}";
                     AstapRegister::create([
                         'astap_id'        => $astap->id,
-                        'unit_id'         => $isDirectToRoom ? $unitId : null,
+                        'unit_id'         => null,
                         'tahun_perolehan' => $tahun,
                         'no_register_int' => $runningRegNum,
                         'no_register'     => $nibar,

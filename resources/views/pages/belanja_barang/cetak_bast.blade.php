@@ -261,7 +261,7 @@
                     @foreach($astaps as $i => $item)
                         @php
                             $kodeBarang = $item->kode_108 ?: ($item->jenisAstap?->sub_sub_rincian_objek ?: ($item->jenisAstap?->kode_108 ?: '-'));
-                            $alokasiTxt = $item->unit?->nama ?: ($item->registers?->first()?->ruang_pemegang ?: ($belanja->status_alokasi === 'ruangan' ? 'Ruangan Unit' : 'Gudang Perbekalan'));
+                            $alokasiTxt = $item->unit?->nama ?: ($item->registers?->first()?->ruang_pemegang ?: ($belanja->status_alokasi === 'ruangan' ? 'Ruangan Unit' : 'Belum Ditempatkan'));
                         @endphp
                         <tr>
                             <td class="border border-black p-1.5 text-center align-top">{{ $i + 1 }}</td>
@@ -296,7 +296,7 @@
                             Rp {{ number_format($totalPembelian, 0, ',', '.') }}
                         </td>
                         <td class="border border-black p-1.5 text-center text-[8pt] text-gray-700">
-                            {{ $belanja->status_alokasi === 'ruangan' ? 'Ruangan Unit' : ($belanja->status_alokasi === 'sebagian' ? 'Sebagian Ruang/Gudang' : 'Gudang Perbekalan') }}
+                            {{ $belanja->status_alokasi === 'ruangan' ? 'Ruangan Unit' : ($belanja->status_alokasi === 'sebagian' ? 'Sebagian Ruang/Gudang' : 'Belum Ditempatkan') }}
                         </td>
                     </tr>
                 </tfoot>

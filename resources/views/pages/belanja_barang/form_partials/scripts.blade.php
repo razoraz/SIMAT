@@ -27,10 +27,10 @@
             // Kategori KIB Aktif (Default Mesin untuk Belanja Barang/Alkes)
             activeKibCategory: 'mesin',
 
-            // Mode Alokasi Fisik Global (Opsi A: gudang buffer vs ruangan KIR)
-            globalAlokasiMode: 'gudang',
-            globalUnitId: '',
-            globalAlamatBarang: '',
+            // Mode Alokasi Fisik Global (Disamaratakan ke Belum Ditempatkan)
+            globalAlokasiMode: 'belum_ditempatkan',
+            globalUnitId: null,
+            globalAlamatBarang: 'Belum Ditempatkan',
 
             // Form Data State
             formData: {
@@ -532,9 +532,6 @@
             // Repeater Actions: Mesin (KIB B)
             addMesinItem() {
                 if (!this.formData.mesin_items) this.formData.mesin_items = [];
-                const defaultRuang = this.globalAlokasiMode === 'ruangan' && this.globalUnitId 
-                    ? this.getUnitNameById(this.globalUnitId) 
-                    : '';
 
                 this.formData.mesin_items.push({
                     is_extracom: Boolean(this.formData.is_extracomtable),
@@ -557,9 +554,7 @@
                     mesin_satuan: this.formData.satuan || 'Unit',
                     mesin_nilai_satuan: 0,
                     mesin_keterangan: '',
-                    ruang_pemegang: defaultRuang,
-                    isRuangOpen: false,
-                    searchRuang: ''
+                    ruang_pemegang: 'Belum Ditempatkan'
                 });
                 this.syncTotalsFromItems();
             },
@@ -678,9 +673,6 @@
             // Repeater Actions: Lainnya (KIB E)
             addLainnyaItem() {
                 if (!this.formData.lainnya_items) this.formData.lainnya_items = [];
-                const defaultRuang = this.globalAlokasiMode === 'ruangan' && this.globalUnitId 
-                    ? this.getUnitNameById(this.globalUnitId) 
-                    : '';
 
                 this.formData.lainnya_items.push({
                     is_extracom: Boolean(this.formData.is_extracomtable),
@@ -703,9 +695,7 @@
                     lainnya_nilai_satuan: 0,
                     lainnya_no_pabrik: '',
                     lainnya_keterangan: '',
-                    ruang_pemegang: defaultRuang,
-                    isRuangOpen: false,
-                    searchRuang: ''
+                    ruang_pemegang: 'Belum Ditempatkan'
                 });
                 this.syncTotalsFromItems();
             },
@@ -1053,7 +1043,7 @@
                             subtotal: this.getMesinSubtotal(it),
                             spesifikasi: [it.mesin_merk, it.mesin_type, it.mesin_ukuran].filter(Boolean).join(' • '),
                             kondisi: it.mesin_kondisi || 'Baik',
-                            penempatan: it.ruang_pemegang || (this.globalAlokasiMode === 'ruangan' ? this.getUnitNameById(this.globalUnitId) : 'Gudang Perbekalan')
+                            penempatan: 'Belum Ditempatkan'
                         });
                     });
                 } else if (this.isLainnya && this.formData.lainnya_items) {
@@ -1067,7 +1057,7 @@
                             subtotal: this.getLainnyaSubtotal(it),
                             spesifikasi: [it.lainnya_pencipta, it.lainnya_spesifikasi].filter(Boolean).join(' • '),
                             kondisi: it.lainnya_kondisi || 'Baik',
-                            penempatan: it.ruang_pemegang || (this.globalAlokasiMode === 'ruangan' ? this.getUnitNameById(this.globalUnitId) : 'Gudang Perbekalan')
+                            penempatan: 'Belum Ditempatkan'
                         });
                     });
                 } else if (this.isTanah && this.formData.tanah_items) {
@@ -1081,7 +1071,7 @@
                             subtotal: this.getTanahSubtotal(it),
                             spesifikasi: (it.tanah_luas_m2 ? it.tanah_luas_m2 + ' m² • ' : '') + (it.tanah_hak || 'Hak Pakai'),
                             kondisi: it.tanah_kondisi || 'Baik',
-                            penempatan: 'Tanah Pemkab Bondowoso'
+                            penempatan: 'Belum Ditempatkan'
                         });
                     });
                 } else if (this.isGedung && this.formData.gedung_items) {
@@ -1095,7 +1085,7 @@
                             subtotal: this.getGedungSubtotal(it),
                             spesifikasi: (it.gedung_luas_m2 ? it.gedung_luas_m2 + ' m² • ' : '') + (it.gedung_beton || 'Beton'),
                             kondisi: it.gedung_kondisi || 'Baik',
-                            penempatan: it.gedung_alamat || 'RSUD Dr. H. Koesnandi'
+                            penempatan: 'Belum Ditempatkan'
                         });
                     });
                 } else if (this.isJaringan && this.formData.jaringan_items) {
@@ -1109,7 +1099,7 @@
                             subtotal: this.getJaringanSubtotal(it),
                             spesifikasi: it.jaringan_konstruksi || 'Instalasi Jaringan',
                             kondisi: it.jaringan_kondisi || 'Baik',
-                            penempatan: it.jaringan_alamat || 'RSUD Dr. H. Koesnandi'
+                            penempatan: 'Belum Ditempatkan'
                         });
                     });
                 }
@@ -1189,7 +1179,7 @@
                             unitNumber: count,
                             nama: it.nama_barang,
                             kode108: it.kode_108,
-                            ruang: it.penempatan || (this.globalAlokasiMode === 'ruangan' ? this.getUnitNameById(this.globalUnitId) : 'Gudang Perbekalan'),
+                            ruang: 'Belum Ditempatkan',
                             kondisi: it.kondisi || 'Baik'
                         });
                     }
@@ -1402,7 +1392,7 @@
                     payload.append('rekening_nomor_faktur', this.formData.rekening_nomor_faktur);
                     payload.append('rekening_tanggal_faktur', this.formData.rekening_tanggal_faktur);
                     payload.append('rekening_keterangan', this.formData.rekening_keterangan || '');
-                    payload.append('status_alokasi_global', this.globalAlokasiMode);
+                    payload.append('status_alokasi_global', 'belum_ditempatkan');
                     payload.append('is_extracomtable', this.formData.is_extracomtable ? 1 : 0);
                     payload.append('is_data_verified', this.isDataVerified ? 1 : 0);
 
@@ -1414,7 +1404,7 @@
                         payload.append('dokumen_kuitansi', this.fileKuitansi);
                     }
 
-                    // Petakan Items dari Sheet KIB Aktif
+                    // Petakan Items dari Sheet KIB Aktif (Semua penempatan disamaratakan ke 'Belum Ditempatkan')
                     const mappedItems = [];
                     const defaultJenisId = this.formData.jenis_astap_id || (this.allFlat108[0]?.id || 1);
 
@@ -1427,10 +1417,10 @@
                                 jumlah_volume: maxVal(m.mesin_jumlah_barang, 1),
                                 satuan: m.mesin_satuan || 'Unit',
                                 harga_satuan: parseFloat(m.mesin_nilai_satuan) || 0,
-                                mode_penempatan: this.globalAlokasiMode,
-                                unit_id: this.globalAlokasiMode === 'ruangan' ? this.globalUnitId : null,
+                                mode_penempatan: 'belum_ditempatkan',
+                                unit_id: null,
                                 kondisi: m.mesin_kondisi || 'Baik',
-                                alamat_barang: this.globalAlokasiMode === 'ruangan' ? (this.globalAlamatBarang || 'RSUD Koesnandi') : 'Gudang Perbekalan',
+                                alamat_barang: 'Belum Ditempatkan',
                                 spesifikasi_json: {
                                     merk: m.mesin_merk || '',
                                     type: m.mesin_type || '',
@@ -1438,7 +1428,7 @@
                                     bahan: m.mesin_bahan || '',
                                     no_pabrik: m.mesin_no_pabrik || '',
                                     tahun_pembuatan: m.mesin_tahun_pembuatan || null,
-                                    ruang_pemegang: m.ruang_pemegang || '',
+                                    ruang_pemegang: 'Belum Ditempatkan',
                                     is_extracom: Boolean(m.is_extracom)
                                 }
                             });
@@ -1452,15 +1442,15 @@
                                 jumlah_volume: maxVal(l.lainnya_jumlah, 1),
                                 satuan: l.lainnya_satuan || 'Buah',
                                 harga_satuan: parseFloat(l.lainnya_nilai_satuan) || 0,
-                                mode_penempatan: this.globalAlokasiMode,
-                                unit_id: this.globalAlokasiMode === 'ruangan' ? this.globalUnitId : null,
+                                mode_penempatan: 'belum_ditempatkan',
+                                unit_id: null,
                                 kondisi: l.lainnya_kondisi || 'Baik',
-                                alamat_barang: this.globalAlokasiMode === 'ruangan' ? (this.globalAlamatBarang || 'RSUD Koesnandi') : 'Gudang Perbekalan',
+                                alamat_barang: 'Belum Ditempatkan',
                                 spesifikasi_json: {
                                     lainnya_judul: l.lainnya_judul || '',
                                     lainnya_pencipta: l.lainnya_pencipta || '',
                                     lainnya_spesifikasi: l.lainnya_spesifikasi || '',
-                                    ruang_pemegang: l.ruang_pemegang || '',
+                                    ruang_pemegang: 'Belum Ditempatkan',
                                     is_extracom: Boolean(l.is_extracom)
                                 }
                             });
@@ -1473,11 +1463,11 @@
                                 jumlah_volume: maxVal(t.tanah_jumlah_barang, 1),
                                 satuan: t.tanah_satuan || 'Bidang',
                                 harga_satuan: parseFloat(t.tanah_nilai_satuan) || 0,
-                                mode_penempatan: 'gudang',
+                                mode_penempatan: 'belum_ditempatkan',
                                 unit_id: null,
                                 kondisi: t.tanah_kondisi || 'Baik',
-                                alamat_barang: t.tanah_alamat || 'RSUD Koesnandi',
-                                spesifikasi_json: { luas_m2: t.tanah_luas_m2, hak_tanah: t.tanah_hak }
+                                alamat_barang: 'Belum Ditempatkan',
+                                spesifikasi_json: { luas_m2: t.tanah_luas_m2, hak_tanah: t.tanah_hak, ruang_pemegang: 'Belum Ditempatkan' }
                             });
                         });
                     } else if (this.isGedung && this.formData.gedung_items) {
@@ -1488,11 +1478,11 @@
                                 jumlah_volume: maxVal(g.gedung_jumlah_bangunan, 1),
                                 satuan: g.gedung_satuan || 'Gedung',
                                 harga_satuan: parseFloat(g.gedung_nilai_satuan) || 0,
-                                mode_penempatan: 'gudang',
+                                mode_penempatan: 'belum_ditempatkan',
                                 unit_id: null,
                                 kondisi: g.gedung_kondisi || 'Baik',
-                                alamat_barang: g.gedung_alamat || 'RSUD Koesnandi',
-                                spesifikasi_json: { gedung_luas_m2: g.gedung_luas_m2, beton: g.gedung_beton }
+                                alamat_barang: 'Belum Ditempatkan',
+                                spesifikasi_json: { gedung_luas_m2: g.gedung_luas_m2, beton: g.gedung_beton, ruang_pemegang: 'Belum Ditempatkan' }
                             });
                         });
                     } else if (this.isJaringan && this.formData.jaringan_items) {
@@ -1503,11 +1493,11 @@
                                 jumlah_volume: maxVal(j.jaringan_jumlah, 1),
                                 satuan: j.jaringan_satuan || 'Ruas',
                                 harga_satuan: parseFloat(j.jaringan_nilai_satuan) || 0,
-                                mode_penempatan: 'gudang',
+                                mode_penempatan: 'belum_ditempatkan',
                                 unit_id: null,
                                 kondisi: j.jaringan_kondisi || 'Baik',
-                                alamat_barang: j.jaringan_alamat || 'RSUD Koesnandi',
-                                spesifikasi_json: { jaringan_panjang_m: j.jaringan_panjang_m }
+                                alamat_barang: 'Belum Ditempatkan',
+                                spesifikasi_json: { jaringan_panjang_m: j.jaringan_panjang_m, ruang_pemegang: 'Belum Ditempatkan' }
                             });
                         });
                     }

@@ -99,9 +99,9 @@
                 });
                 return list.filter(reg => {
                     if (this.detailPenempatanFilter === 'ruangan') {
-                        if (!reg.ruang || reg.ruang === 'Gudang Perbekalan') return false;
+                        if (!reg.ruang || reg.ruang === 'Gudang Perbekalan' || reg.ruang === 'Belum Ditempatkan') return false;
                     } else if (this.detailPenempatanFilter === 'gudang') {
-                        if (reg.ruang && reg.ruang !== 'Gudang Perbekalan') return false;
+                        if (reg.ruang && reg.ruang !== 'Gudang Perbekalan' && reg.ruang !== 'Belum Ditempatkan') return false;
                     }
 
                     if (this.detailKondisiFilter !== 'all') {
@@ -333,7 +333,7 @@
                     kode_barang: reg.nibar || reg.no_register || 'ASET',
                     nama_barang: reg.nama_barang || (parent ? parent.toko_penyedia : 'Belanja Barang'),
                     tahun_perolehan: parent ? parent.tahun : new Date().getFullYear(),
-                    ruang_pemegang: reg.ruang || reg.ruang_pemegang || 'Gudang Perbekalan',
+                    ruang_pemegang: reg.ruang || reg.ruang_pemegang || 'Belum Ditempatkan',
                     kondisi: reg.kondisi || 'Baik'
                 };
                 this.showQrModal = true;
@@ -501,7 +501,7 @@
                         satuan: it.satuan || 'Unit',
                         harga_satuan: it.harga_satuan || 0,
                         subtotal: it.subtotal || (it.jumlah_volume * it.harga_satuan) || 0,
-                        ruangan: it.ruangan || 'Gudang Perbekalan',
+                        ruangan: it.ruangan || 'Belum Ditempatkan',
                         registers: it.registers || []
                     }));
                 } else {
@@ -513,7 +513,7 @@
                         satuan: 'Unit',
                         harga_satuan: item.total_pembelian || 0,
                         subtotal: item.total_pembelian || 0,
-                        ruangan: 'Gudang Perbekalan',
+                        ruangan: 'Belum Ditempatkan',
                         registers: []
                     }];
                 }

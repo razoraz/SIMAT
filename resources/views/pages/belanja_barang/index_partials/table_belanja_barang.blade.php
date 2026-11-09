@@ -96,7 +96,7 @@
                                     'satuan'        => $a->satuan ?: 'Unit',
                                     'harga_satuan'  => (float) $a->harga_satuan,
                                     'subtotal'      => (float) $a->total_realisasi,
-                                    'ruangan'       => $a->unit?->nama ?: ($a->registers?->first()?->ruang_pemegang ?: 'Gudang Perbekalan'),
+                                    'ruangan'       => $a->unit?->nama ?: ($a->registers?->first()?->ruang_pemegang ?: 'Belum Ditempatkan'),
                                     'kondisi'       => $a->registers?->first()?->kondisi ?: 'Baik',
                                     'status'        => $a->registers?->first()?->status ?: 'Tersedia',
                                     'registers'     => $a->registers->map(fn($r) => [
@@ -104,7 +104,7 @@
                                         'nibar'   => $r->nibar,
                                         'kondisi' => $r->kondisi ?: 'Baik',
                                         'status'  => $r->status,
-                                        'ruang'   => $r->ruang_pemegang ?: ($r->unit?->nama ?: 'Gudang Perbekalan'),
+                                        'ruang'   => $r->ruang_pemegang ?: ($r->unit?->nama ?: 'Belum Ditempatkan'),
                                         'qr_url'  => url('/scan/' . $r->nibar),
                                     ])->values()
                                 ];
@@ -233,9 +233,9 @@
                                     <span>Sebagian Gudang / Ruang</span>
                                 </div>
                             @else
-                                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-bold shadow-sm select-none">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                                    <span>Gudang Perbekalan</span>
+                                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-300 text-xs font-bold shadow-sm select-none">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                    <span>Belum Ditempatkan</span>
                                 </div>
                             @endif
                         </td>
