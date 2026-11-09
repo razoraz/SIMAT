@@ -193,22 +193,16 @@
                                 <div>
                                     @if($tw['is_locked'])
                                         <div class="w-9 h-9 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shadow-inner"
-                                             title="Ditutup Buku Otomatis (Triwulan Berlalu)">
+                                             title="Ditutup Buku (Terkunci)">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                                             </svg>
                                         </div>
-                                    @elseif($tw['is_active'])
-                                        <div class="w-9 h-9 rounded-2xl bg-cyan-500/15 border border-cyan-500/40 text-cyan-300 flex items-center justify-center shadow-inner animate-pulse"
-                                             title="Triwulan Sedang Berjalan">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                                            </svg>
-                                        </div>
                                     @else
-                                        <div class="w-9 h-9 rounded-2xl bg-slate-800/80 border border-slate-700/60 text-slate-500 flex items-center justify-center">
+                                        <div class="w-9 h-9 rounded-2xl bg-cyan-500/15 border border-cyan-500/40 text-cyan-300 flex items-center justify-center shadow-inner {{ $tw['is_active'] ? 'animate-pulse' : '' }}"
+                                             title="Terbuka Transaksi">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>
                                             </svg>
                                         </div>
                                     @endif
@@ -224,13 +218,11 @@
                                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                                             Ditutup Buku
                                         </span>
-                                    @elseif($tw['is_active'])
-                                        <span class="font-bold text-cyan-300 flex items-center gap-1">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span>
-                                            Sedang Berjalan
-                                        </span>
                                     @else
-                                        <span class="font-bold text-slate-500">Belum Berjalan</span>
+                                        <span class="font-bold text-cyan-300 flex items-center gap-1">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 {{ $tw['is_active'] ? 'animate-ping' : '' }}"></span>
+                                            Terbuka (Berjalan)
+                                        </span>
                                     @endif
                                 </div>
 
@@ -238,11 +230,9 @@
                                     <span>Keterangan:</span>
                                     <span class="text-slate-400 font-mono truncate max-w-[150px]">
                                         @if($tw['is_locked'])
-                                            Otomatis (Bulan Lewat)
-                                        @elseif($tw['is_active'])
-                                            Terbuka Transaksi
+                                            {{ $tw['nomor_bar'] }}
                                         @else
-                                            Menunggu Periode
+                                            Terbuka Transaksi
                                         @endif
                                     </span>
                                 </div>
@@ -684,7 +674,7 @@
                 ...base,
 
                 // State Khusus Halaman Tutup Buku
-                activeTab: 'triwulan', // 'triwulan' | 'tahunan'
+                activeTab: 'tahunan', // 'triwulan' | 'tahunan' (Default fokus Tutup Buku Tahunan)
                 selectedPeriod: null,
                 filterTahunTahunan: 'all',
                 tableSearch: '',
@@ -737,17 +727,15 @@
 
                 // Inisialisasi awal
                 initTutupBuku() {
-                    // Default memilih triwulan yang aktif atau triwulan sebelumnya jika ada
-                    const defaultTw = {{ $actualQuarter }};
                     const defaultYr = {{ $currentYear }};
                     
                     this.selectedPeriod = {
-                        type: 'triwulan',
-                        tw: defaultTw,
+                        type: 'tahunan',
+                        tw: 0,
                         year: defaultYr,
-                        label: 'Triwulan ' + (['I', 'II', 'III', 'IV'][defaultTw - 1] || 'I') + ' T.A. ' + defaultYr,
+                        label: 'Tahun Anggaran ' + defaultYr + ' (Konsolidasi)',
                         isLocked: false,
-                        rentang: 'Triwulan Berjalan'
+                        rentang: '1 Januari - 31 Desember ' + defaultYr
                     };
                     this.tableTahunFilter = String(defaultYr);
                 },

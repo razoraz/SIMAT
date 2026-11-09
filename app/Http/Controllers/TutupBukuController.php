@@ -56,18 +56,20 @@ class TutupBukuController extends Controller
 
         // Status DB jika ada catatan kunci manual
         $lockedRecords = PeriodeTutupBuku::where('tahun', $currentYear)->get()->keyBy('triwulan');
+        $annualRecord = $lockedRecords->get(0);
+        $isAnnualLocked = ($currentYear < $actualYear) || (bool) ($annualRecord?->is_locked ?? false);
 
         $triwulanData = [];
         foreach ($triwulanDefs as $tw => $def) {
-            // Aturan Otomatis:
-            // Jika tahun dipilih < tahun sekarang -> otomatis tutup buku
-            // Jika tahun dipilih == tahun sekarang dan triwulan < triwulan sekarang -> otomatis tutup buku
-            $isAutoPassed = ($currentYear < $actualYear) || ($currentYear == $actualYear && $tw < $actualQuarter);
+            // Tutup buku sekarang berbasis per tahun:
+            // Triwulan di tahun berjalan terbuka (tidak dikunci otomatis berdasarkan bulan).
+            // Triwulan hanya terkunci jika:
+            // 1. Tahun tersebut merupakan tahun lampau ($currentYear < $actualYear) ATAU Tutup Buku Tahunan terkunci ($isAnnualLocked)
+            // 2. ATAU ada catatan kunci manual di tabel periode_tutup_bukus untuk triwulan tersebut
+            $manualRecord = $lockedRecords->get($tw);
+            $isLocked = $isAnnualLocked || (bool) ($manualRecord?->is_locked ?? false);
             $isActive = ($currentYear == $actualYear && $tw == $actualQuarter);
             $isFuture = ($currentYear > $actualYear) || ($currentYear == $actualYear && $tw > $actualQuarter);
-
-            $manualRecord = $lockedRecords->get($tw);
-            $isLocked = $isAutoPassed || (bool) ($manualRecord?->is_locked ?? false);
 
             // Filter aset untuk triwulan ini
             $itemsTw = $astaps->filter(function($item) use ($currentYear, $tw) {
@@ -87,16 +89,16 @@ class TutupBukuController extends Controller
                 'rentang'                 => $def['rentang'],
                 'badge'                   => $def['badge'],
                 'is_locked'               => $isLocked,
-                'is_auto_passed'          => $isAutoPassed,
+                'is_auto_passed'          => false,
                 'is_active'               => $isActive,
                 'is_future'               => $isFuture,
-                'status_label'            => $isLocked ? 'Ditutup Buku' : ($isActive ? 'Sedang Berjalan' : 'Belum Berjalan'),
+                'status_label'            => $isLocked ? 'Ditutup Buku' : ($isActive ? 'Sedang Berjalan' : ($currentYear == $actualYear ? 'Terbuka' : 'Belum Berjalan')),
                 'total_item'              => $totalItem,
                 'total_volume'            => $totalVolume,
                 'total_nominal'           => $totalNominal,
                 'total_nominal_formatted' => 'Rp ' . number_format($totalNominal, 0, ',', '.'),
-                'nomor_bar'               => $manualRecord?->nomor_bar_bpkad ?: ($isLocked ? 'Otomatis Sistem (Triwulan Berlalu)' : '-'),
-                'tanggal_tutup'           => $manualRecord?->tanggal_tutup?->format('d/m/Y') ?: ($isLocked ? 'Auto-Closed' : '-'),
+                'nomor_bar'               => $manualRecord?->nomor_bar_bpkad ?: ($isAnnualLocked ? ($annualRecord?->nomor_bar_bpkad ?: 'Tutup Buku Tahunan') : '-'),
+                'tanggal_tutup'           => $manualRecord?->tanggal_tutup?->format('d/m/Y') ?: ($isAnnualLocked ? ($annualRecord?->tanggal_tutup?->format('d/m/Y') ?: 'Tutup Buku Tahunan') : '-'),
             ];
         }
 
