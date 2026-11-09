@@ -643,6 +643,7 @@ class MutasiEksternalController extends Controller
                 'category'                  => $astap?->category ?: 'KIB B',
                 'is_extracomtable'          => (bool) ($astap?->is_extracomtable ?? false),
                 'is_reklas'                 => (bool) ($astap?->is_reklas ?? false),
+                'is_tutup_buku'             => $astap ? $astap->isTutupBuku() : ($m->tahun && $m->tahun < (int) date('Y')),
                 'jenis_reklas'              => $astap?->jenis_reklas,
                 'sumber_dana'               => $astap?->sumber_dana ?: 'mutasi_eksternal',
                 'sumber_dana_raw'           => $astap?->sumber_dana ?: 'mutasi_eksternal',

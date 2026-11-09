@@ -169,13 +169,25 @@
                                     <span>Detail</span>
                                 </button>
 
-                                <!-- 2. Tombol Reklas (Aktif untuk Hibah Masuk, Terkunci untuk Hibah Keluar) -->
-                                <template x-if="item.tipe_hibah === 'masuk' && item.astap_id">
+                                <!-- 2. Tombol Reklas (Aktif jika Hibah Masuk DAN Sudah Tutup Buku) -->
+                                <template x-if="item.tipe_hibah === 'masuk' && item.astap_id && isTutupBuku(item)">
                                     <button type="button" @click="openReklas(item.astap || item)"
                                         title="Reklasifikasi Aset (Pindah KIB / Ekstrakom / Koreksi)"
                                         class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 hover:border-indigo-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-indigo-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
                                         <svg class="w-3.5 h-3.5 text-indigo-400 group-hover/btn:text-white group-hover/btn:rotate-180 transition-all duration-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                                        </svg>
+                                        <span>Reklas</span>
+                                    </button>
+                                </template>
+
+                                <!-- Tombol Reklas Terkunci (Jika Belum Tutup Buku) -->
+                                <template x-if="item.tipe_hibah === 'masuk' && item.astap_id && !isTutupBuku(item)">
+                                    <button type="button" @click="showBelumTutupBukuReklasWarning(item)"
+                                        title="Aset belum ditutup buku. Reklasifikasi hanya dapat dilakukan setelah aset resmi ditutup buku."
+                                        class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-800/40 text-slate-500 border border-slate-700/50 font-bold text-xs cursor-not-allowed select-none leading-none">
+                                        <svg class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                                         </svg>
                                         <span>Reklas</span>
                                     </button>
@@ -193,8 +205,8 @@
                                     </button>
                                 </template>
 
-                                <!-- 3. Tombol Ubah (Aktif untuk Hibah Masuk, Terkunci untuk Hibah Keluar) -->
-                                <template x-if="item.tipe_hibah === 'masuk' && item.astap_id">
+                                <!-- 3. Tombol Ubah (Aktif jika Hibah Masuk DAN Belum Tutup Buku) -->
+                                <template x-if="item.tipe_hibah === 'masuk' && item.astap_id && !isTutupBuku(item)">
                                     <a :href="'/astap/' + item.astap_id + '/edit-hibah'"
                                         title="Ubah Data Aset Hibah (Form Lengkap)"
                                         class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 hover:border-cyan-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-cyan-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
@@ -203,6 +215,18 @@
                                         </svg>
                                         <span>Ubah</span>
                                     </a>
+                                </template>
+
+                                <!-- Tombol Ubah Terkunci (Jika Sudah Tutup Buku) -->
+                                <template x-if="item.tipe_hibah === 'masuk' && item.astap_id && isTutupBuku(item)">
+                                    <button type="button" @click="showSudahTutupBukuEditWarning(item)"
+                                        title="Aset telah berstatus Tutup Buku. Data perolehan tidak dapat diubah lagi."
+                                        class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-800/40 text-slate-500 border border-slate-700/50 font-bold text-xs cursor-not-allowed select-none leading-none">
+                                        <svg class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                        </svg>
+                                        <span>Ubah</span>
+                                    </button>
                                 </template>
 
                                 <!-- Tombol Ubah Terkunci (Khusus Hibah Keluar) -->

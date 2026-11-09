@@ -219,18 +219,19 @@
 
                                         <!-- 2. Tombol Reklas -->
                                         @if(Auth::user()?->role === 'master_admin' || Auth::user()?->canDo('astap', 'reklas'))
-                                        <button type="button" @click="if (isItemLocked(item)) { showLockedWarning(item); } else if (isMutasiKeluarFull(item)) { showMutasiKeluarLockedWarning(item, 'reklas'); } else if (isKemitraanReturned(item)) { showKemitraanReturnedWarning(item, 'reklas'); } else if (isHibahKeluar(item)) { showHibahKeluarLockedWarning(item, 'reklas'); } else { openReklas(item); }"
-                                            :title="isItemLocked(item) ? 'Periode Terkunci (Tutup Buku BPKAD)' : (isMutasiKeluarFull(item) ? 'Terkunci (Aset Telah Dimutasi Keluar Penuh ke OPD Lain)' : (isKemitraanReturned(item) ? 'Terkunci (Aset Telah Dikembalikan ke Rekanan Mitra)' : (isHibahKeluar(item) ? 'Terkunci (Aset Telah Dihibahkan Keluar dari RSUD)' : 'Reklasifikasi Aset (Pindah KIB / Ekstrakom / Koreksi)')))"
+                                        <button type="button" 
+                                            @click="if (!isItemLocked(item)) { showBelumTutupBukuReklasWarning(item); } else if (isMutasiKeluarFull(item)) { showMutasiKeluarLockedWarning(item, 'reklas'); } else if (isKemitraanReturned(item)) { showKemitraanReturnedWarning(item, 'reklas'); } else if (isHibahKeluar(item)) { showHibahKeluarLockedWarning(item, 'reklas'); } else { openReklas(item); }"
+                                            :title="!isItemLocked(item) ? 'Terkunci (Aset Belum Ditutup Buku)' : (isMutasiKeluarFull(item) ? 'Terkunci (Aset Telah Dimutasi Keluar Penuh ke OPD Lain)' : (isKemitraanReturned(item) ? 'Terkunci (Aset Telah Dikembalikan ke Rekanan Mitra)' : (isHibahKeluar(item) ? 'Terkunci (Aset Telah Dihibahkan Keluar dari RSUD)' : 'Reklasifikasi Aset (Pindah KIB / Ekstrakom / Koreksi)')))"
                                             class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl font-bold text-xs transition-all duration-200 shadow-sm active:scale-95 cursor-pointer leading-none"
-                                            :class="isAstapActionLocked(item)
+                                            :class="!isReklasAllowed(item)
                                                 ? 'bg-slate-800/60 text-slate-500 border border-slate-700/60 cursor-pointer hover:bg-slate-800 hover:text-slate-400' 
                                                 : 'bg-indigo-500/10 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 hover:border-indigo-400'">
                                             <!-- Icon Terkunci (Gembok SVG Elegan) -->
-                                            <svg x-show="isAstapActionLocked(item)" class="w-3.5 h-3.5 text-slate-500 group-hover/btn:text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg x-show="!isReklasAllowed(item)" class="w-3.5 h-3.5 text-slate-500 group-hover/btn:text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                                             </svg>
                                             <!-- Icon Normal Reklas -->
-                                            <svg x-show="!isAstapActionLocked(item)" class="w-3.5 h-3.5 text-indigo-400 group-hover/btn:text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg x-show="isReklasAllowed(item)" class="w-3.5 h-3.5 text-indigo-400 group-hover/btn:text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
                                             </svg>
                                             <span>Reklas</span>
@@ -239,19 +240,19 @@
 
                                         <!-- 3. Tombol Ubah -->
                                         @if(Auth::user()?->role === 'master_admin' || Auth::user()?->canDo('astap', 'edit'))
-                                        <a :href="isAstapActionLocked(item) ? '#' : ('/astap/' + item.id + '/edit?from=astap')"
-                                            @click="if (isItemLocked(item)) { $event.preventDefault(); showLockedWarning(item); } else if (isMutasiKeluarFull(item)) { $event.preventDefault(); showMutasiKeluarLockedWarning(item, 'ubah'); } else if (isKemitraanReturned(item)) { $event.preventDefault(); showKemitraanReturnedWarning(item, 'ubah'); } else if (isHibahKeluar(item)) { $event.preventDefault(); showHibahKeluarLockedWarning(item, 'ubah'); }"
-                                            :title="isItemLocked(item) ? 'Periode Terkunci (Tutup Buku BPKAD)' : (isMutasiKeluarFull(item) ? 'Terkunci (Aset Telah Dimutasi Keluar Penuh ke OPD Lain)' : (isKemitraanReturned(item) ? 'Terkunci (Aset Telah Dikembalikan ke Rekanan Mitra)' : (isHibahKeluar(item) ? 'Terkunci (Aset Telah Dihibahkan Keluar dari RSUD)' : 'Ubah Data ASTAP (Form Lengkap)')))"
+                                        <a :href="!isEditAllowed(item) ? '#' : ('/astap/' + item.id + '/edit?from=astap')"
+                                            @click="if (isItemLocked(item)) { $event.preventDefault(); showSudahTutupBukuEditWarning(item); } else if (isMutasiKeluarFull(item)) { $event.preventDefault(); showMutasiKeluarLockedWarning(item, 'ubah'); } else if (isKemitraanReturned(item)) { $event.preventDefault(); showKemitraanReturnedWarning(item, 'ubah'); } else if (isHibahKeluar(item)) { $event.preventDefault(); showHibahKeluarLockedWarning(item, 'ubah'); }"
+                                            :title="isItemLocked(item) ? 'Terkunci (Aset Telah Ditutup Buku)' : (isMutasiKeluarFull(item) ? 'Terkunci (Aset Telah Dimutasi Keluar Penuh ke OPD Lain)' : (isKemitraanReturned(item) ? 'Terkunci (Aset Telah Dikembalikan ke Rekanan Mitra)' : (isHibahKeluar(item) ? 'Terkunci (Aset Telah Dihibahkan Keluar dari RSUD)' : 'Ubah Data ASTAP (Form Lengkap)')))"
                                             class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl font-bold text-xs transition-all duration-200 shadow-sm active:scale-95 cursor-pointer leading-none"
-                                            :class="isAstapActionLocked(item)
+                                            :class="!isEditAllowed(item)
                                                 ? 'bg-slate-800/60 text-slate-500 border border-slate-700/60 cursor-pointer hover:bg-slate-800 hover:text-slate-400'
                                                 : 'bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 hover:border-cyan-400'">
                                             <!-- Icon Terkunci (Gembok SVG Elegan) -->
-                                            <svg x-show="isAstapActionLocked(item)" class="w-3.5 h-3.5 text-slate-500 group-hover/btn:text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg x-show="!isEditAllowed(item)" class="w-3.5 h-3.5 text-slate-500 group-hover/btn:text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                                             </svg>
                                             <!-- Icon Normal Ubah -->
-                                            <svg x-show="!isAstapActionLocked(item)" class="w-3.5 h-3.5 text-cyan-400 group-hover/btn:text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg x-show="isEditAllowed(item)" class="w-3.5 h-3.5 text-cyan-400 group-hover/btn:text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                             </svg>
                                             <span>Ubah</span>

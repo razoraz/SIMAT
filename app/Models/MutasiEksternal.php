@@ -26,6 +26,16 @@ class MutasiEksternal extends Model
         'diaktifkan_at'        => 'datetime',
     ];
 
+    protected $appends = ['is_tutup_buku', 'nilai_perolehan_formatted'];
+
+    public function getIsTutupBukuAttribute(): bool
+    {
+        if ($this->astap) {
+            return $this->astap->isTutupBuku();
+        }
+        return ($this->tahun && $this->tahun < (int) date('Y'));
+    }
+
     /**
      * Mutator agar tanggal mutasi otomatis diparsing dari berbagai format input (dd/mm/yyyy, yyyy-mm-dd)
      */

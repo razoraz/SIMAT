@@ -23,6 +23,16 @@ class AstapHibah extends Model
         'deleted_at'   => 'datetime',
     ];
 
+    protected $appends = ['is_tutup_buku'];
+
+    public function getIsTutupBukuAttribute(): bool
+    {
+        if ($this->astap) {
+            return $this->astap->isTutupBuku();
+        }
+        return ($this->tahun && $this->tahun < (int) date('Y'));
+    }
+
     public function astap()
     {
         return $this->belongsTo(Astap::class, 'astap_id');

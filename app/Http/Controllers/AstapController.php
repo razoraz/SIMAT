@@ -329,6 +329,7 @@ class AstapController extends Controller
                     'has_reklas' => $hasEverReklas,
                     'reklas_count' => $reklasCount,
                     'jenis_reklas' => $a->jenis_reklas ?: ($latestReklas?->jenis_reklas),
+                    'is_tutup_buku' => $a->isTutupBuku(),
                     'is_bmd_dimanfaatkan' => $isBmdDimanfaatkan,
                     'is_kemitraan_reklas' => $isKemitraanReklas,
                     'is_mutasi_keluar_full' => $isFullMutasiKeluar,
@@ -2670,14 +2671,14 @@ class AstapController extends Controller
             }
 
             // Proteksi Integritas Tutup Buku (Periode Terkunci)
-            $twInt = \App\Models\PeriodeTutupBuku::parseTriwulan($astap->triwulan);
-            $tahunAset = (int) ($astap->tahun_perolehan ?: date('Y'));
-            if (\App\Models\PeriodeTutupBuku::isLocked($tahunAset, $twInt)) {
+            if ($astap->isTutupBuku()) {
+                $twInt = \App\Models\PeriodeTutupBuku::parseTriwulan($astap->triwulan);
+                $tahunAset = (int) ($astap->tahun_perolehan ?: date('Y'));
                 $lockInfo = \App\Models\PeriodeTutupBuku::getLockInfo($tahunAset, $twInt);
-                $barNo = $lockInfo?->nomor_bar_bpkad ?: '-';
+                $barNo = $lockInfo?->nomor_bar_bpkad ?: 'Tutup Buku Tahunan (Audited)';
                 return response()->json([
                     'success' => false,
-                    'message' => "Data ASTAP \"{$astap->nama_barang}\" tidak dapat diubah karena periode T.A. {$tahunAset} Triwulan {$twInt} telah resmi DITUTUP BUKU (BAR BPKAD: {$barNo}). Buka kunci periode terlebih dahulu jika terdapat revisi darurat."
+                    'message' => "Data ASTAP \"{$astap->nama_barang}\" tidak dapat diubah karena periode T.A. {$tahunAset} telah resmi DITUTUP BUKU ({$barNo}). Gunakan mekanisme Reklasifikasi untuk penyesuaian aset yang telah ditutup buku."
                 ], 422);
             }
 

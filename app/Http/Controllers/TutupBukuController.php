@@ -15,6 +15,7 @@ class TutupBukuController extends Controller
     public function index(Request $request)
     {
         $currentYear = (int) ($request->input('tahun', date('Y')));
+        $currentTab = $request->input('tab', 'triwulan');
         $actualYear = (int) date('Y');
         $actualMonth = (int) date('n');
         $actualQuarter = (int) ceil($actualMonth / 3);
@@ -321,6 +322,7 @@ class TutupBukuController extends Controller
                 'reklas_history'        => $reklasHistory,
                 'is_reklas'             => $reklasCount > 0,
                 'jenis_reklas'          => $reklasJenis,
+                'is_tutup_buku'         => $a->isTutupBuku(),
                 'unit_id'               => $a->unit_id,
                 'unit_nama'             => $a->unit?->nama ?? '',
                 'rekening_belanja'      => $a->rekeningBelanja ? $a->rekeningBelanja->nama_rekening : '',
@@ -389,6 +391,7 @@ class TutupBukuController extends Controller
 
         return view('pages.tutup_buku.index', compact(
             'currentYear',
+            'currentTab',
             'actualYear',
             'actualQuarter',
             'triwulanData',
