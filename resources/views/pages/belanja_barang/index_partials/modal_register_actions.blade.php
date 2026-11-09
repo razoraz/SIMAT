@@ -117,7 +117,7 @@
                             <div class="flex items-center space-x-2 flex-wrap gap-y-1">
                                 <span class="text-purple-300 font-mono font-bold text-xs" x-text="selectedRiwayatRegister.nibar || selectedRiwayatRegister.no_register"></span>
                                 <span class="text-slate-500 text-[11px]">•</span>
-                                <span class="text-cyan-400 text-[11px] font-semibold truncate" x-text="selectedRiwayatRegister.ruang || selectedRiwayatRegister.ruang_pemegang || 'Gudang Perbekalan'"></span>
+                                <span class="text-cyan-400 text-[11px] font-semibold truncate" x-text="selectedRiwayatRegister.ruang || selectedRiwayatRegister.ruang_pemegang || 'Belum Ditempatkan'"></span>
                             </div>
                         </div>
                         <div class="shrink-0 text-right">
@@ -193,7 +193,7 @@
                                 <span class="text-3xl block">📦</span>
                                 <h4 class="text-sm font-bold text-slate-200">Belum Ada Riwayat Tercatat</h4>
                                 <p class="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
-                                    Unit register ini belum pernah dimutasi internal antar-ruangan atau direklasifikasi. Unit saat ini berada di lokasi: <strong class="text-slate-300" x-text="selectedRiwayatRegister.ruang || selectedRiwayatRegister.ruang_pemegang || 'Gudang Perbekalan'"></strong> dengan kondisi <strong class="text-emerald-400" x-text="selectedRiwayatRegister.kondisi"></strong>.
+                                    Unit register ini belum pernah dimutasi internal antar-ruangan atau direklasifikasi. Unit saat ini berada di lokasi: <strong class="text-slate-300" x-text="selectedRiwayatRegister.ruang || selectedRiwayatRegister.ruang_pemegang || 'Belum Ditempatkan'"></strong> dengan kondisi <strong class="text-emerald-400" x-text="selectedRiwayatRegister.kondisi"></strong>.
                                 </p>
                             </div>
                         </template>
