@@ -525,70 +525,71 @@
                     </template>
                 </div>
 
-                <!-- 6. AREA DOKUMEN LAMPIRAN BERKAS BAMB / BAST -->
-                <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3" x-data="{ showImgPreview: false }">
-                    <template x-if="(selectedAstapDetail || selectedMutasi).dokumen_lampiran_url">
-                        <div class="space-y-3">
-                            <div class="flex items-center justify-between flex-wrap gap-2.5">
-                                <div class="flex items-center space-x-2.5">
-                                    <div class="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-sm">
-                                        <span x-text="(selectedAstapDetail || selectedMutasi).dokumen_lampiran_url.toLowerCase().endsWith('.pdf') ? '📄' : '🖼️'"></span>
-                                    </div>
-                                    <div>
-                                        <div class="flex items-center gap-2">
-                                            <span class="text-[10px] text-slate-400 block font-semibold uppercase tracking-wider">Berkas Lampiran Berita Acara:</span>
-                                            <span class="px-1.5 py-0.2 rounded text-[9px] font-bold font-mono border"
-                                                :class="(selectedAstapDetail || selectedMutasi).dokumen_lampiran_url.toLowerCase().endsWith('.pdf') ? 'bg-rose-500/20 text-rose-300 border-rose-500/30' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'"
-                                                x-text="(selectedAstapDetail || selectedMutasi).dokumen_lampiran_url.toLowerCase().endsWith('.pdf') ? 'PDF' : 'GAMBAR'">
-                                            </span>
-                                        </div>
-                                        <span class="text-xs text-indigo-300 font-mono font-bold truncate max-w-xs block mt-0.5"
-                                              x-text="((selectedAstapDetail || selectedMutasi).dokumen_lampiran || '').split('/').pop()"></span>
-                                    </div>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <!-- Tombol Pratinjau Cepat jika Gambar -->
-                                    <template x-if="!(selectedAstapDetail || selectedMutasi).dokumen_lampiran_url.toLowerCase().endsWith('.pdf')">
-                                        <button type="button" @click="showImgPreview = !showImgPreview"
-                                            class="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 font-bold text-xs flex items-center space-x-1 transition-all cursor-pointer">
-                                            <span x-text="showImgPreview ? '✕ Tutup Pratinjau' : '🔍 Pratinjau Cepat'"></span>
-                                        </button>
+                <!-- 6. BERKAS LEGALITAS & DOKUMEN MUTASI DIGITAL -->
+                <div class="p-4 sm:p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3.5 shadow-lg">
+                    <div class="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
+                        <span class="text-xs font-black text-white uppercase tracking-wider flex items-center space-x-2">
+                            <span class="text-indigo-400">📜</span>
+                            <span>BERKAS LEGALITAS &amp; DOKUMEN MUTASI DIGITAL</span>
+                        </span>
+                        <span class="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full border bg-slate-900 border-slate-800 text-slate-300"
+                            x-text="((selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? 'No. BAST: ' : 'No. BAMB: ') + ((selectedAstapDetail || selectedMutasi)?.mutasi_nomor_bamb || (selectedAstapDetail || selectedMutasi)?.kode || '-')"></span>
+                    </div>
+
+                    <!-- KARTU BERKAS: BERITA ACARA (BAMB / BAST) -->
+                    <div class="p-3.5 rounded-2xl border transition-all duration-200"
+                        :class="(selectedAstapDetail || selectedMutasi)?.dokumen_lampiran_url
+                            ? 'bg-slate-900/90 border-indigo-500/40 shadow-md shadow-indigo-500/5'
+                            : 'bg-slate-950/50 border-slate-800/80 opacity-75'">
+                        <div class="flex items-start justify-between gap-2.5">
+                            <div class="flex items-center space-x-2.5 min-w-0">
+                                <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border"
+                                    :class="(selectedAstapDetail || selectedMutasi)?.dokumen_lampiran_url
+                                        ? ((selectedAstapDetail || selectedMutasi).dokumen_lampiran_url.toLowerCase().endsWith('.pdf') ? 'bg-rose-500/15 border-rose-500/30 text-rose-400' : 'bg-indigo-500/15 border-indigo-500/30 text-indigo-400')
+                                        : 'bg-slate-900 border-slate-800 text-slate-600'">
+                                    <template x-if="(selectedAstapDetail || selectedMutasi)?.dokumen_lampiran_url && (selectedAstapDetail || selectedMutasi).dokumen_lampiran_url.toLowerCase().endsWith('.pdf')">
+                                        <span class="text-lg">📄</span>
                                     </template>
-
-                                    <!-- Tombol Buka / Lihat File -->
-                                    <a :href="(selectedAstapDetail || selectedMutasi).dokumen_lampiran_url" target="_blank" rel="noopener noreferrer"
-                                        class="px-3 py-1.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/40 font-bold text-xs flex items-center space-x-1.5 transition-all shadow-sm">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-                                        <span>Lihat / Buka Berkas</span>
-                                    </a>
-
-                                    <!-- Tombol Unduh File -->
-                                    <a :href="(selectedAstapDetail || selectedMutasi).dokumen_lampiran_url" :download="((selectedAstapDetail || selectedMutasi).dokumen_lampiran || '').split('/').pop()" target="_blank"
-                                        class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 font-bold text-xs flex items-center space-x-1.5 transition-all">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                                        <span>Unduh</span>
-                                    </a>
+                                    <template x-if="(selectedAstapDetail || selectedMutasi)?.dokumen_lampiran_url && !(selectedAstapDetail || selectedMutasi).dokumen_lampiran_url.toLowerCase().endsWith('.pdf')">
+                                        <span class="text-lg">🖼️</span>
+                                    </template>
+                                    <template x-if="!(selectedAstapDetail || selectedMutasi)?.dokumen_lampiran_url">
+                                        <span class="text-lg">📑</span>
+                                    </template>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="flex items-center gap-1.5 flex-wrap">
+                                        <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider"
+                                            x-text="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? 'Berkas Berita Acara (BAST Transfer Keluar)' : 'Berkas Berita Acara (BAMB / SK Pelimpahan)'"></span>
+                                        <template x-if="(selectedAstapDetail || selectedMutasi)?.dokumen_lampiran_url">
+                                            <span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-extrabold border"
+                                                :class="(selectedAstapDetail || selectedMutasi).dokumen_lampiran_url.toLowerCase().endsWith('.pdf') ? 'bg-rose-500/20 text-rose-300 border-rose-500/30' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'"
+                                                x-text="(selectedAstapDetail || selectedMutasi).dokumen_lampiran_url.toLowerCase().endsWith('.pdf') ? 'PDF' : 'GAMBAR'"></span>
+                                        </template>
+                                    </div>
+                                    <p class="text-xs font-bold text-white truncate max-w-[260px] sm:max-w-md mt-0.5"
+                                       :title="((selectedAstapDetail || selectedMutasi)?.dokumen_lampiran || '').split('/').pop() || 'Belum Ada Berkas'"
+                                       x-text="((selectedAstapDetail || selectedMutasi)?.dokumen_lampiran || '').split('/').pop() || 'Belum diunggah'"></p>
                                 </div>
                             </div>
-
-                            <!-- Pratinjau Gambar Inline -->
-                            <div x-show="showImgPreview && !(selectedAstapDetail || selectedMutasi).dokumen_lampiran_url.toLowerCase().endsWith('.pdf')"
-                                 x-transition:enter="transition ease-out duration-200"
-                                 x-transition:enter-start="opacity-0 scale-95"
-                                 x-transition:enter-end="opacity-100 scale-100"
-                                 class="p-2 bg-slate-900/90 rounded-2xl border border-slate-800 flex justify-center">
-                                <img :src="(selectedAstapDetail || selectedMutasi).dokumen_lampiran_url" alt="Pratinjau Berkas" class="max-h-80 w-auto rounded-xl object-contain border border-slate-700 shadow-xl">
-                            </div>
                         </div>
-                    </template>
 
-                    <template x-if="!(selectedAstapDetail || selectedMutasi).dokumen_lampiran_url">
-                        <div class="flex items-center text-slate-500 py-1">
-                            <span class="text-[11px] flex items-center gap-1.5 italic">
-                                <span>📎</span> Berkas Berita Acara: Belum ada berkas scan yang diunggah (opsional).
-                            </span>
+                        <!-- Aksi Kartu Berkas -->
+                        <div class="mt-3 pt-2.5 border-t border-slate-800/80">
+                            <template x-if="(selectedAstapDetail || selectedMutasi)?.dokumen_lampiran_url">
+                                <button type="button" @click="openDocPreview((selectedAstapDetail || selectedMutasi).dokumen_lampiran_url, ((selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? 'BAST Transfer Keluar: ' : 'BAMB Pelimpahan Masuk: ') + ((selectedAstapDetail || selectedMutasi)?.mutasi_nomor_bamb || (selectedAstapDetail || selectedMutasi)?.kode || ''))"
+                                    class="w-full py-1.5 px-2.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/40 text-[11px] font-bold transition-all flex items-center justify-center space-x-1.5 shadow-sm active:scale-95 cursor-pointer">
+                                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    <span>Lihat Berkas</span>
+                                </button>
+                            </template>
+                            <template x-if="!(selectedAstapDetail || selectedMutasi)?.dokumen_lampiran_url">
+                                <span class="text-[10.5px] text-slate-500 italic flex items-center gap-1.5 py-1">
+                                    <span>📎</span> Belum ada berkas scan berita acara yang diunggah (opsional).
+                                </span>
+                            </template>
                         </div>
-                    </template>
+                    </div>
                 </div>
 
                 <!-- 7. TABEL RINCIAN REGISTER NIBAR PER-UNIT PERSIS DATA ASTAP -->
@@ -827,4 +828,105 @@
 
     </div>
 </div>
+</template>
+
+<!-- ========================================================================= -->
+<!-- MODAL VIEWER PRATINJAU DOKUMEN DIGITAL (PDF & GAMBAR BERKAS BAMB / BAST)  -->
+<!-- ========================================================================= -->
+<template x-teleport="body">
+    <div x-show="previewDocModalOpen" x-cloak
+        @click.self="closeDocPreview()"
+        @keydown.escape.window="closeDocPreview()"
+        class="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-5 md:p-8 overflow-y-auto"
+        style="background-color: rgba(2, 6, 23, 0.90); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); z-index: 99999;"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0">
+
+        <!-- Click outside backdrop to close -->
+        <div class="fixed inset-0" @click="closeDocPreview()"></div>
+
+        <!-- Modal Dialog Box -->
+        <div class="relative w-full max-w-5xl rounded-3xl border border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[92vh] z-10"
+             style="background-color: #0f172a;"
+             @click.stop>
+
+            <!-- Viewer Header -->
+            <div class="px-5 py-3.5 border-b border-slate-800 flex items-center justify-between gap-3 bg-slate-950/90">
+                <div class="flex items-center space-x-3 min-w-0">
+                    <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border"
+                        :class="previewDocType === 'pdf' ? 'bg-rose-500/20 border-rose-500/30 text-rose-400' : 'bg-cyan-500/20 border-cyan-500/30 text-cyan-400'">
+                        <span x-text="previewDocType === 'pdf' ? '📄' : '🖼️'" class="text-base"></span>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-sm font-black text-white truncate" x-text="previewDocTitle || 'Pratinjau Berkas Dokumen'"></h3>
+                            <span class="px-1.5 py-0.5 rounded text-[9px] font-mono font-extrabold border uppercase"
+                                :class="previewDocType === 'pdf' ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' : 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'"
+                                x-text="previewDocType === 'pdf' ? 'PDF DOKUMEN' : 'GAMBAR SCAN'"></span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 font-mono truncate mt-0.5" x-text="previewDocUrl"></p>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2 shrink-0">
+                    <!-- Buka Tab Baru -->
+                    <a :href="previewDocUrl" target="_blank" rel="noopener noreferrer"
+                        title="Buka Penuh di Tab Baru"
+                        class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 font-bold text-xs flex items-center space-x-1.5 transition-all">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                        <span class="hidden sm:inline">Tab Baru</span>
+                    </a>
+
+                    <!-- Unduh -->
+                    <a :href="previewDocUrl" :download="(previewDocTitle || 'dokumen').replace(/[^a-zA-Z0-9_-]/g, '_')"
+                        title="Unduh Berkas Ini"
+                        class="px-3 py-1.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/40 font-bold text-xs flex items-center space-x-1.5 transition-all shadow-sm">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                        <span class="hidden sm:inline">Unduh</span>
+                    </a>
+
+                    <!-- Tutup -->
+                    <button type="button" @click="closeDocPreview()"
+                        class="w-8 h-8 rounded-xl bg-slate-900 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-slate-800 flex items-center justify-center transition-all cursor-pointer">
+                        ✕
+                    </button>
+                </div>
+            </div>
+
+            <!-- Viewer Body Container -->
+            <div class="flex-1 overflow-auto bg-slate-950 p-2 sm:p-4 flex items-center justify-center min-h-[60vh] max-h-[78vh] custom-scrollbar">
+                <!-- Jika PDF: Tampilkan Iframe Viewer -->
+                <template x-if="previewDocType === 'pdf'">
+                    <iframe :src="previewDocUrl"
+                            class="w-full h-full min-h-[70vh] rounded-2xl border border-slate-800 shadow-inner bg-slate-900"
+                            frameborder="0"></iframe>
+                </template>
+
+                <!-- Jika Gambar: Tampilkan Image Viewer Responsif -->
+                <template x-if="previewDocType === 'image'">
+                    <div class="w-full h-full flex items-center justify-center p-2">
+                        <img :src="previewDocUrl"
+                             :alt="previewDocTitle"
+                             class="max-h-[72vh] max-w-full w-auto h-auto rounded-2xl object-contain border border-slate-800 shadow-2xl">
+                    </div>
+                </template>
+            </div>
+
+            <!-- Viewer Footer Bar -->
+            <div class="px-5 py-2.5 bg-slate-950 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                <span class="flex items-center gap-1.5">
+                    <span>💡</span> Gunakan kontrol zoom dan rotasi bawaan browser untuk memeriksa berkas lebih teliti.
+                </span>
+                <button type="button" @click="closeDocPreview()"
+                    class="px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition-all cursor-pointer">
+                    Tutup Pratinjau
+                </button>
+            </div>
+
+        </div>
+    </div>
 </template>

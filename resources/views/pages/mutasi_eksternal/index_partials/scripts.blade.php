@@ -33,6 +33,12 @@
 
             // Modal Edit Mutasi Keluar & Swap NIBAR State
             showEditKeluarModal: false,
+
+            // State Dokumen Viewer Interaktif
+            previewDocModalOpen: false,
+            previewDocUrl: '',
+            previewDocTitle: '',
+            previewDocType: '',
             editingKeluarItem: null,
             editKeluarForm: {
                 id: null,
@@ -466,6 +472,24 @@
                 const nibar = reg.nibar || reg.no_register || (astap ? (astap.kode_barang || astap.kode) : 'ASET');
                 const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(window.location.origin + '/scan/' + nibar);
                 window.open(qrUrl, '_blank');
+            },
+
+            openDocPreview(url, title) {
+                if (!url) return;
+                const cleanUrl = String(url).split('?')[0].split('#')[0].toLowerCase();
+                this.previewDocUrl = url;
+                this.previewDocTitle = title || 'Dokumen Mutasi Eksternal';
+                this.previewDocType = cleanUrl.endsWith('.pdf') ? 'pdf' : 'image';
+                this.previewDocModalOpen = true;
+            },
+
+            closeDocPreview() {
+                this.previewDocModalOpen = false;
+                setTimeout(() => {
+                    this.previewDocUrl = '';
+                    this.previewDocTitle = '';
+                    this.previewDocType = '';
+                }, 200);
             },
 
             openDetail(item) {
