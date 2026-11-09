@@ -9763,12 +9763,39 @@
                     return this.isPeriodLocked(yr, this.triwulanFilter);
                 },
 
-                // Cek apakah aset tertentu berada pada periode terkunci
+                // Cek apakah aset tertentu berada pada periode terkunci (sudah tutup buku)
                 isItemLocked(item) {
                     if (!item) return false;
-                    const yr = parseInt(item.tahun_perolehan || (item.kemitraan && item.kemitraan.tahun));
+                    if (item.is_tutup_buku !== undefined && item.is_tutup_buku !== null) {
+                        return !!item.is_tutup_buku;
+                    }
+                    const currentYear = new Date().getFullYear();
+                    const yr = parseInt(item.tahun_perolehan || (item.kemitraan && item.kemitraan.tahun) || currentYear);
+                    if (yr < currentYear) return true;
                     const tw = item.triwulan || 'TW I';
                     return this.isPeriodLocked(yr, tw);
+                },
+
+                // Helper Cek apakah Aset Boleh Direklas (Hanya jika SUDAH TUTUP BUKU)
+                isReklasAllowed(item) {
+                    if (!item) return false;
+                    const isClosed = this.isItemLocked(item);
+                    if (!isClosed) return false; // Belum tutup buku: reklas dinonaktifkan
+                    if (this.isMutasiKeluarFull(item) || this.isKemitraanReturned(item) || this.isHibahKeluar(item)) {
+                        return false;
+                    }
+                    return true;
+                },
+
+                // Helper Cek apakah Aset Boleh Diubah (Hanya jika BELUM TUTUP BUKU)
+                isEditAllowed(item) {
+                    if (!item) return false;
+                    const isClosed = this.isItemLocked(item);
+                    if (isClosed) return false; // Sudah tutup buku: ubah dinonaktifkan
+                    if (this.isMutasiKeluarFull(item) || this.isKemitraanReturned(item) || this.isHibahKeluar(item)) {
+                        return false;
+                    }
+                    return true;
                 },
 
                 // Buka Modal Tutup Buku
@@ -9904,6 +9931,48 @@
                         isBlocked: true,
                         actionUrl: null,
                         assetWarning: 'Data aset pada periode yang telah ditutup buku dilindungi secara permanen demi kepatuhan LKPD audited BPK RI. Jika diperlukan revisi mendesak, silakan lakukan pembukaan kunci melalui tombol Tutup Buku (khusus Master Administrator).',
+                        btnText: null,
+                        onConfirm: null
+                    });
+                },
+
+                showBelumTutupBukuReklasWarning(item) {
+                    const yr = item?.tahun_perolehan || '-';
+                    const name = item?.nama_barang || 'Aset';
+                    this.askConfirmation({
+                        title: 'Aset Belum Ditutup Buku (Reklas Terkunci)',
+                        message: `Aset "${name}" (T.A. ${yr}) belum berstatus Tutup Buku. Sesuai tata kelola aset, Reklasifikasi (pindah KIB, ekstrakomptabel, koreksi rekening) hanya dapat dilakukan pada aset yang telah resmi ditutup buku.`,
+                        itemName: `${name} (T.A. ${yr})`,
+                        itemDetails: {
+                            nama: name,
+                            kode: item?.kode_barang || '-',
+                            badgeText: 'BELUM TUTUP BUKU ⏳'
+                        },
+                        type: 'warning',
+                        isBlocked: true,
+                        actionUrl: null,
+                        assetWarning: 'Silakan gunakan tombol "Ubah" untuk memperbaiki data perolehan aset jika terdapat kesalahan sebelum buku tahunan ditutup.',
+                        btnText: null,
+                        onConfirm: null
+                    });
+                },
+
+                showSudahTutupBukuEditWarning(item) {
+                    const yr = item?.tahun_perolehan || '-';
+                    const name = item?.nama_barang || 'Aset';
+                    this.askConfirmation({
+                        title: 'Periode Telah Ditutup Buku (Ubah Terkunci)',
+                        message: `Aset "${name}" (T.A. ${yr}) telah resmi ditutup buku. Data perolehan awal dilindungi dan tidak dapat diubah lagi secara langsung.`,
+                        itemName: `${name} (T.A. ${yr})`,
+                        itemDetails: {
+                            nama: name,
+                            kode: item?.kode_barang || '-',
+                            badgeText: 'STATUS TUTUP BUKU 🔒'
+                        },
+                        type: 'danger',
+                        isBlocked: true,
+                        actionUrl: null,
+                        assetWarning: 'Untuk melakukan penyesuaian nilai atau koreksi klasifikasi pada aset yang telah ditutup buku, silakan gunakan tombol "Reklas" (Reklasifikasi).',
                         btnText: null,
                         onConfirm: null
                     });

@@ -618,16 +618,43 @@
                                                 <span>Detail</span>
                                             </button>
 
-                                            <!-- Tombol 2: Reklasifikasi (Berfungsi Penuh Sesuai Kebijakan Tutup Buku) -->
+                                            <!-- Tombol 2: Reklasifikasi (Hanya Aktif Jika Aset SUDAH DITUTUP BUKU) -->
                                             <button type="button" 
-                                                    @click="openReklas(item)"
-                                                    class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-indigo-500/15 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 hover:border-indigo-400 font-extrabold text-[11px] transition-all shadow-sm active:scale-95 cursor-pointer leading-none"
-                                                    title="Proses Reklasifikasi Aset (Pindah KIB, Ekstrakom, Koreksi Nilai, Hibah, Mutasi)">
-                                                <svg class="w-3.5 h-3.5 text-indigo-400 group-hover:text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    @click="if (!isItemLocked(item)) { showBelumTutupBukuReklasWarning(item); } else { openReklas(item); }"
+                                                    class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl font-extrabold text-[11px] transition-all shadow-sm active:scale-95 cursor-pointer leading-none"
+                                                    :class="!isItemLocked(item)
+                                                        ? 'bg-slate-800/60 text-slate-500 border border-slate-700/60 hover:bg-slate-800 hover:text-slate-400' 
+                                                        : 'bg-indigo-500/15 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 hover:border-indigo-400'"
+                                                    :title="!isItemLocked(item) ? 'Terkunci (Aset Belum Ditutup Buku. Reklasifikasi hanya dapat dilakukan pada aset yang telah tutup buku)' : 'Proses Reklasifikasi Aset (Pindah KIB, Ekstrakom, Koreksi Nilai)'">
+                                                <!-- Icon Gembok Jika Belum Tutup Buku -->
+                                                <svg x-show="!isItemLocked(item)" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                                </svg>
+                                                <!-- Icon Panah Bolak-balik Jika Sudah Tutup Buku -->
+                                                <svg x-show="isItemLocked(item)" class="w-3.5 h-3.5 text-indigo-400 group-hover:text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
                                                 </svg>
                                                 <span>Reklas</span>
                                             </button>
+
+                                            <!-- Tombol 3: Ubah Data (Hanya Aktif Jika Aset BELUM DITUTUP BUKU) -->
+                                            <a :href="isItemLocked(item) ? '#' : ('/astap/' + item.id + '/edit?from=tutup_buku')"
+                                               @click="if (isItemLocked(item)) { $event.preventDefault(); showSudahTutupBukuEditWarning(item); }"
+                                               class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl font-extrabold text-[11px] transition-all shadow-sm active:scale-95 cursor-pointer leading-none"
+                                               :class="isItemLocked(item)
+                                                   ? 'bg-slate-800/60 text-slate-500 border border-slate-700/60 hover:bg-slate-800 hover:text-slate-400' 
+                                                   : 'bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 hover:border-cyan-400'"
+                                               :title="isItemLocked(item) ? 'Terkunci (Aset Telah Ditutup Buku. Data tidak dapat diubah lagi)' : 'Ubah Data Aset (Tahun Berjalan)'">
+                                                <!-- Icon Gembok Jika Sudah Tutup Buku -->
+                                                <svg x-show="isItemLocked(item)" class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                                </svg>
+                                                <!-- Icon Pensil Jika Belum Tutup Buku -->
+                                                <svg x-show="!isItemLocked(item)" class="w-3.5 h-3.5 text-cyan-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                                </svg>
+                                                <span>Ubah</span>
+                                            </a>
                                         </div>
                                     </td>
                                 </tr>

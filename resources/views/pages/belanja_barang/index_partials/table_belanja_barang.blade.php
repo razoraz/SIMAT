@@ -265,7 +265,12 @@
                                     <span>Detail</span>
                                 </button>
 
-                                <!-- 2. Tombol Reklas -->
+                                @php
+                                    $isAstapClosed = $firstAstap ? $firstAstap->isTutupBuku() : false;
+                                @endphp
+
+                                <!-- 2. Tombol Reklas (Hanya Aktif Jika Aset SUDAH DITUTUP BUKU) -->
+                                @if($isAstapClosed)
                                 <button type="button"
                                     @click="openReklas({{ $firstAstap?->id ?? 'null' }}, '{{ addslashes($row->nomor_faktur) }}')"
                                     title="Reklasifikasi Aset (Pindah KIB / Ekstrakom / Koreksi)"
@@ -275,9 +280,19 @@
                                     </svg>
                                     <span>Reklas</span>
                                 </button>
+                                @else
+                                <button type="button" disabled
+                                    title="Aset belum ditutup buku. Reklasifikasi hanya dapat dilakukan setelah aset resmi ditutup buku."
+                                    class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-800/40 text-slate-500 border border-slate-700/50 font-bold text-xs cursor-not-allowed opacity-60 leading-none">
+                                    <svg class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                    </svg>
+                                    <span>Reklas</span>
+                                </button>
+                                @endif
 
-                                <!-- 3. Tombol Ubah -->
-                                @if($firstAstap)
+                                <!-- 3. Tombol Ubah (Hanya Aktif Jika Aset BELUM DITUTUP BUKU) -->
+                                @if(!$isAstapClosed && $firstAstap)
                                     <a href="{{ url('/astap/' . $firstAstap->id . '/edit?from=belanja_barang') }}"
                                         title="Ubah Data Aset Belanja Barang"
                                         class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 hover:border-cyan-400 font-bold text-xs transition-all duration-200 shadow-sm active:scale-95 cursor-pointer leading-none">
@@ -286,6 +301,15 @@
                                         </svg>
                                         <span>Ubah</span>
                                     </a>
+                                @elseif($isAstapClosed)
+                                    <button type="button" disabled
+                                        title="Aset telah berstatus Tutup Buku. Data perolehan tidak dapat diubah lagi."
+                                        class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-800/40 text-slate-500 border border-slate-700/50 font-bold text-xs cursor-not-allowed opacity-60 leading-none">
+                                        <svg class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                        </svg>
+                                        <span>Ubah</span>
+                                    </button>
                                 @else
                                     <button type="button" disabled
                                         title="Aset Tidak Ditemukan"

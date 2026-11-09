@@ -129,18 +129,42 @@
                                 </button>
                                 <template x-if="!((item.status || '').toLowerCase().includes('batal'))">
                                     <div class="flex items-center gap-1.5">
-                                        <button type="button" @click="openReklas(item)"
-                                            title="Reklasifikasi Aset"
-                                            class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 hover:border-indigo-400 font-bold text-xs transition-all duration-200 shadow-sm active:scale-95 cursor-pointer leading-none">
-                                            <svg class="w-3.5 h-3.5 text-indigo-400 group-hover/btn:text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-                                            <span>Reklas</span>
-                                        </button>
-                                        <a :href="'/astap/' + item.id + '/edit-mutasi-eksternal?from=eksternal'"
-                                            title="Ubah Data Aset Mutasi Masuk"
-                                            class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 hover:border-cyan-400 font-bold text-xs transition-all duration-200 shadow-sm active:scale-95 cursor-pointer leading-none">
-                                            <svg class="w-3.5 h-3.5 text-cyan-400 group-hover/btn:text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                            <span>Ubah</span>
-                                        </a>
+                                        <!-- Tombol Reklas: Enabled jika item.is_tutup_buku, Disabled jika !item.is_tutup_buku -->
+                                        <template x-if="item.is_tutup_buku">
+                                            <button type="button" @click="openReklas(item)"
+                                                title="Reklasifikasi Aset"
+                                                class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 hover:border-indigo-400 font-bold text-xs transition-all duration-200 shadow-sm active:scale-95 cursor-pointer leading-none">
+                                                <svg class="w-3.5 h-3.5 text-indigo-400 group-hover/btn:text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                                                <span>Reklas</span>
+                                            </button>
+                                        </template>
+                                        <template x-if="!item.is_tutup_buku">
+                                            <button type="button" @click="showBelumTutupBukuReklasWarning(item)"
+                                                title="Aset belum ditutup buku. Reklasifikasi hanya dapat dilakukan setelah aset resmi ditutup buku."
+                                                class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-800/40 text-slate-500 border border-slate-700/50 font-bold text-xs cursor-not-allowed select-none leading-none">
+                                                <svg class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                                <span>Reklas</span>
+                                            </button>
+                                        </template>
+
+                                        <!-- Tombol Ubah: Enabled jika !item.is_tutup_buku, Disabled jika item.is_tutup_buku -->
+                                        <template x-if="!item.is_tutup_buku">
+                                            <a :href="'/astap/' + item.id + '/edit-mutasi-eksternal?from=eksternal'"
+                                                title="Ubah Data Aset Mutasi Masuk"
+                                                class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 hover:border-cyan-400 font-bold text-xs transition-all duration-200 shadow-sm active:scale-95 cursor-pointer leading-none">
+                                                <svg class="w-3.5 h-3.5 text-cyan-400 group-hover/btn:text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                                <span>Ubah</span>
+                                            </a>
+                                        </template>
+                                        <template x-if="item.is_tutup_buku">
+                                            <button type="button" @click="showSudahTutupBukuEditWarning(item)"
+                                                title="Aset telah berstatus Tutup Buku. Data perolehan tidak dapat diubah lagi."
+                                                class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-800/40 text-slate-500 border border-slate-700/50 font-bold text-xs cursor-not-allowed select-none leading-none">
+                                                <svg class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                                <span>Ubah</span>
+                                            </button>
+                                        </template>
+
                                         <button type="button" @click="deleteMutasi(item)"
                                             title="Hapus Data Mutasi Eksternal"
                                             class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 hover:border-rose-400 font-bold text-xs transition-all duration-200 shadow-sm active:scale-95 cursor-pointer leading-none">

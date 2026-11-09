@@ -321,6 +321,7 @@ class TutupBukuController extends Controller
                 'reklas_history'        => $reklasHistory,
                 'is_reklas'             => $reklasCount > 0,
                 'jenis_reklas'          => $reklasJenis,
+                'is_tutup_buku'         => $a->isTutupBuku(),
                 'unit_id'               => $a->unit_id,
                 'unit_nama'             => $a->unit?->nama ?? '',
                 'rekening_belanja'      => $a->rekeningBelanja ? $a->rekeningBelanja->nama_rekening : '',

@@ -399,6 +399,14 @@ class ReklasifikasiController extends Controller
 
 
         $astap = Astap::findOrFail($validated['astap_id']);
+
+        // Proteksi Kebijakan Tutup Buku: Reklasifikasi HANYA dapat dilakukan pada aset yang SUDAH DITUTUP BUKU
+        if (!$astap->isTutupBuku()) {
+            return response()->json([
+                'success' => false,
+                'message' => "Aset \"{$astap->nama_barang}\" belum berstatus Tutup Buku. Reklasifikasi hanya dapat dilakukan pada aset yang telah resmi ditutup buku per tahun perolehannya. Silakan gunakan fitur Ubah Data jika terdapat perbaikan sebelum tutup buku.",
+            ], 422);
+        }
         $existingKem = $astap->kemitraan ?? \App\Models\AstapKemitraan::where(function($q) use ($astap) {
             $q->where('astap_id', $astap->id)->orWhere('objek_astap_id', $astap->id);
         })->where('is_deleted', 0)->first();

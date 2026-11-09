@@ -795,6 +795,7 @@
                                     @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
                                     @php
                                         $isLockedKonsesi1 = in_array($row->status_konsesi, ['Dikembalikan ke Rekanan', 'Dibatalkan']);
+                                        $isAstapClosed1 = $astap ? $astap->isTutupBuku() : false;
                                     @endphp
                                     <!-- 2. Tombol Reklas -->
                                     @if($isLockedKonsesi1)
@@ -815,6 +816,15 @@
                                         </svg>
                                         <span>Reklas</span>
                                     </button>
+                                    @elseif(!$isAstapClosed1)
+                                    <button type="button" @click="showBelumTutupBukuReklasWarning({{ json_encode($astap) }})"
+                                        title="Aset belum ditutup buku. Reklasifikasi hanya dapat dilakukan setelah aset resmi ditutup buku."
+                                        class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-800/40 text-slate-500 border border-slate-700/50 font-bold text-xs cursor-not-allowed select-none leading-none">
+                                        <svg class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                        </svg>
+                                        <span>Reklas</span>
+                                    </button>
                                     @else
                                     <button type="button" @click="openReklas({{ json_encode($astap) }}, {{ json_encode($row) }})"
                                         title="Reklasifikasi Aset (Pindah KIB / Ekstrakom / Koreksi)"
@@ -832,6 +842,15 @@
                                         title="Terkunci (Aset Telah {{ $row->status_konsesi }})"
                                         class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-800/60 text-slate-500 border border-slate-700/60 hover:bg-slate-800 hover:text-slate-400 font-bold text-xs transition-all duration-200 shadow-sm active:scale-95 cursor-pointer leading-none">
                                         <svg class="w-3.5 h-3.5 text-slate-500 group-hover/btn:text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                        </svg>
+                                        <span>Ubah</span>
+                                    </button>
+                                    @elseif($isAstapClosed1)
+                                    <button type="button" @click="showSudahTutupBukuEditWarning({{ json_encode($astap) }})"
+                                        title="Aset telah berstatus Tutup Buku. Data perolehan tidak dapat diubah lagi."
+                                        class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-800/40 text-slate-500 border border-slate-700/50 font-bold text-xs cursor-not-allowed select-none leading-none">
+                                        <svg class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                                         </svg>
                                         <span>Ubah</span>
@@ -1219,6 +1238,7 @@
                                     @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
                                     @php
                                         $isLockedKonsesi2 = in_array($row->status_konsesi, ['Dikembalikan ke Rekanan', 'Dibatalkan']);
+                                        $isAstapClosed2 = $astap ? $astap->isTutupBuku() : false;
                                     @endphp
                                     <!-- 2. Tombol Reklas -->
                                     @if($isLockedKonsesi2)
@@ -1239,6 +1259,15 @@
                                         </svg>
                                         <span>Reklas</span>
                                     </button>
+                                    @elseif(!$isAstapClosed2)
+                                    <button type="button" @click="showBelumTutupBukuReklasWarning({{ json_encode($astap) }})"
+                                        title="Aset belum ditutup buku. Reklasifikasi hanya dapat dilakukan setelah aset resmi ditutup buku."
+                                        class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-800/40 text-slate-500 border border-slate-700/50 font-bold text-xs cursor-not-allowed select-none leading-none">
+                                        <svg class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                        </svg>
+                                        <span>Reklas</span>
+                                    </button>
                                     @else
                                     <button type="button" @click="openReklas({{ json_encode($astap) }}, {{ json_encode($row) }})"
                                         title="Reklasifikasi Aset (Pindah KIB / Ekstrakom / Koreksi)"
@@ -1256,6 +1285,15 @@
                                         title="Terkunci (Aset Telah {{ $row->status_konsesi }})"
                                         class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-800/60 text-slate-500 border border-slate-700/60 hover:bg-slate-800 hover:text-slate-400 font-bold text-xs transition-all duration-200 shadow-sm active:scale-95 cursor-pointer leading-none">
                                         <svg class="w-3.5 h-3.5 text-slate-500 group-hover/btn:text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                        </svg>
+                                        <span>Ubah</span>
+                                    </button>
+                                    @elseif($isAstapClosed2)
+                                    <button type="button" @click="showSudahTutupBukuEditWarning({{ json_encode($astap) }})"
+                                        title="Aset telah berstatus Tutup Buku. Data perolehan tidak dapat diubah lagi."
+                                        class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-800/40 text-slate-500 border border-slate-700/50 font-bold text-xs cursor-not-allowed select-none leading-none">
+                                        <svg class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                                         </svg>
                                         <span>Ubah</span>
@@ -1539,6 +1577,7 @@
                                     @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
                                     @php
                                         $isLockedKonsesi3 = in_array($row->status_konsesi, ['Dikembalikan ke Rekanan', 'Dibatalkan']);
+                                        $isAstapClosed3 = $astap ? $astap->isTutupBuku() : false;
                                     @endphp
                                     <!-- 2. Tombol Reklas -->
                                     @if($isLockedKonsesi3)
@@ -1559,6 +1598,15 @@
                                         </svg>
                                         <span>Reklas</span>
                                     </button>
+                                    @elseif(!$isAstapClosed3)
+                                    <button type="button" @click="showBelumTutupBukuReklasWarning({{ json_encode($astap) }})"
+                                        title="Aset belum ditutup buku. Reklasifikasi hanya dapat dilakukan setelah aset resmi ditutup buku."
+                                        class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-800/40 text-slate-500 border border-slate-700/50 font-bold text-xs cursor-not-allowed select-none leading-none">
+                                        <svg class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                        </svg>
+                                        <span>Reklas</span>
+                                    </button>
                                     @else
                                     <button type="button" @click="openReklas({{ json_encode($astap) }}, {{ json_encode($row) }})"
                                         title="Reklasifikasi Aset (Pindah KIB / Ekstrakom / Koreksi)"
@@ -1576,6 +1624,15 @@
                                         title="Terkunci (Aset Telah {{ $row->status_konsesi }})"
                                         class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-800/60 text-slate-500 border border-slate-700/60 hover:bg-slate-800 hover:text-slate-400 font-bold text-xs transition-all duration-200 shadow-sm active:scale-95 cursor-pointer leading-none">
                                         <svg class="w-3.5 h-3.5 text-slate-500 group-hover/btn:text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                        </svg>
+                                        <span>Ubah</span>
+                                    </button>
+                                    @elseif($isAstapClosed3)
+                                    <button type="button" @click="showSudahTutupBukuEditWarning({{ json_encode($astap) }})"
+                                        title="Aset telah berstatus Tutup Buku. Data perolehan tidak dapat diubah lagi."
+                                        class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-800/40 text-slate-500 border border-slate-700/50 font-bold text-xs cursor-not-allowed select-none leading-none">
+                                        <svg class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                                         </svg>
                                         <span>Ubah</span>

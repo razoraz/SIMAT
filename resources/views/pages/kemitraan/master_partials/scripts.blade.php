@@ -4646,6 +4646,42 @@
                 }
             },
 
+            showBelumTutupBukuReklasWarning(astap) {
+                const yr = astap?.tahun_perolehan || '-';
+                const name = astap?.nama_barang || 'Aset Kemitraan';
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Aset Belum Ditutup Buku',
+                        html: `<p class="text-sm text-slate-300">Aset <b>"${name}"</b> (T.A. ${yr}) belum berstatus Tutup Buku.<br>Sesuai tata kelola aset, Reklasifikasi (pindah KIB, ekstrakomptabel, koreksi rekening) hanya dapat dilakukan pada aset yang telah resmi ditutup buku.</p><p class="mt-2 text-xs text-amber-400">Silakan gunakan tombol "Ubah" untuk memperbaiki data aset sebelum buku tahunan ditutup.</p>`,
+                        confirmButtonColor: '#06b6d4',
+                        background: '#0f172a',
+                        color: '#f8fafc',
+                        confirmButtonText: 'Mengerti'
+                    });
+                } else {
+                    alert(`Aset "${name}" belum berstatus Tutup Buku. Reklasifikasi hanya dapat dilakukan setelah aset resmi ditutup buku.`);
+                }
+            },
+
+            showSudahTutupBukuEditWarning(astap) {
+                const yr = astap?.tahun_perolehan || '-';
+                const name = astap?.nama_barang || 'Aset Kemitraan';
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Periode Telah Ditutup Buku',
+                        html: `<p class="text-sm text-slate-300">Aset <b>"${name}"</b> (T.A. ${yr}) telah resmi ditutup buku.<br>Data perolehan awal dilindungi dan tidak dapat diubah lagi secara langsung.</p><p class="mt-2 text-xs text-cyan-400">Untuk koreksi klasifikasi atau mutasi, silakan gunakan tombol Reklasifikasi.</p>`,
+                        confirmButtonColor: '#06b6d4',
+                        background: '#0f172a',
+                        color: '#f8fafc',
+                        confirmButtonText: 'Mengerti'
+                    });
+                } else {
+                    alert(`Aset "${name}" telah berstatus Tutup Buku. Data perolehan tidak dapat diubah lagi.`);
+                }
+            },
+
             openReklas(astapItem, kemitraanRow) {
                 let item = Object.assign({}, astapItem || {});
                 item.kemitraan = kemitraanRow || {};

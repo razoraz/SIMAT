@@ -1854,11 +1854,59 @@
                 this.showModalDetail = true;
             },
 
+            isTutupBuku(item) {
+                if (!item) return false;
+                if (typeof item.is_tutup_buku !== 'undefined') return Boolean(item.is_tutup_buku);
+                if (item.astap && typeof item.astap.is_tutup_buku !== 'undefined') return Boolean(item.astap.is_tutup_buku);
+                const yr = Number(item.tahun || item.tahun_perolehan || (item.astap ? item.astap.tahun_perolehan : 0));
+                return yr > 0 && yr < new Date().getFullYear();
+            },
+
+            showBelumTutupBukuReklasWarning(item) {
+                const yr = item?.tahun || item?.tahun_perolehan || item?.astap?.tahun_perolehan || '-';
+                const name = item?.astap?.nama_barang || item?.nama_barang || 'Aset Hibah';
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Aset Belum Ditutup Buku',
+                        html: `<p class="text-sm text-slate-300">Aset <b>"${name}"</b> (T.A. ${yr}) belum berstatus Tutup Buku.<br>Sesuai tata kelola aset, Reklasifikasi (pindah KIB, ekstrakomptabel, koreksi rekening) hanya dapat dilakukan pada aset yang telah resmi ditutup buku.</p><p class="mt-2 text-xs text-amber-400">Silakan gunakan tombol "Ubah" untuk memperbaiki data aset sebelum buku tahunan ditutup.</p>`,
+                        background: '#0f172a',
+                        color: '#f8fafc',
+                        confirmButtonColor: '#4f46e5',
+                        confirmButtonText: 'Mengerti'
+                    });
+                } else {
+                    alert(`Aset "${name}" belum berstatus Tutup Buku. Reklasifikasi hanya dapat dilakukan setelah aset resmi ditutup buku.`);
+                }
+            },
+
+            showSudahTutupBukuEditWarning(item) {
+                const yr = item?.tahun || item?.tahun_perolehan || item?.astap?.tahun_perolehan || '-';
+                const name = item?.astap?.nama_barang || item?.nama_barang || 'Aset Hibah';
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Periode Telah Ditutup Buku',
+                        html: `<p class="text-sm text-slate-300">Aset <b>"${name}"</b> (T.A. ${yr}) telah resmi ditutup buku.<br>Data perolehan awal dilindungi dan tidak dapat diubah lagi secara langsung.</p><p class="mt-2 text-xs text-indigo-400">Untuk koreksi klasifikasi atau mutasi, silakan gunakan tombol Reklasifikasi.</p>`,
+                        background: '#0f172a',
+                        color: '#f8fafc',
+                        confirmButtonColor: '#4f46e5',
+                        confirmButtonText: 'Mengerti'
+                    });
+                } else {
+                    alert(`Aset "${name}" telah berstatus Tutup Buku. Data perolehan tidak dapat diubah lagi.`);
+                }
+            },
+
             // =========================================================================
             // MODAL REKLASIFIKASI ASET TETAP - STANDAR (SAMA DENGAN ASTAP & KEMITRAAN)
             // =========================================================================
             openReklas(item, specificReg = null) {
                 if (!item) return;
+                if (!this.isTutupBuku(item)) {
+                    this.showBelumTutupBukuReklasWarning(item);
+                    return;
+                }
                 const astap = item.astap ? item.astap : item;
                 const hibah = item.astap ? item : (item.hibah_detail || item.hibah || {});
 

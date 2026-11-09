@@ -104,6 +104,7 @@ class Astap extends Model
         'rekening_belanja_id',
         'category',
         'kode_108',
+        'is_tutup_buku',
     ];
 
     /**
@@ -265,6 +266,29 @@ class Astap extends Model
             || str_starts_with($jenisKode, '1.5.2')
             || str_starts_with($this->kode_108 ?? '', '1.5.2')
             || !empty($this->kemitraan);
+    }
+
+    /**
+     * Cek apakah aset sudah berstatus Tutup Buku.
+     * - Tahun lampau (< date('Y')) otomatis berstatus Tutup Buku final.
+     * - Tahun berjalan: Tutup Buku jika penguncian tahunan (triwulan = 0) atau manual terkunci di database.
+     */
+    public function isTutupBuku(): bool
+    {
+        $currentYear = (int) date('Y');
+        $tahun = (int) ($this->tahun_perolehan ?: ($this->kemitraan?->tahun ?? $currentYear));
+
+        if ($tahun < $currentYear) {
+            return true;
+        }
+
+        $tw = \App\Models\PeriodeTutupBuku::parseTriwulan($this->triwulan);
+        return \App\Models\PeriodeTutupBuku::isLocked($tahun, $tw);
+    }
+
+    public function getIsTutupBukuAttribute(): bool
+    {
+        return $this->isTutupBuku();
     }
 
     public function getSumberDanaLabelAttribute(): string
