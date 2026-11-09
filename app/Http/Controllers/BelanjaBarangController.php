@@ -71,11 +71,10 @@ class BelanjaBarangController extends Controller
 
             Astap::whereIn('id', $belanjaAstapIds)
                 ->where(function($q) {
-                    $q->whereNotNull('unit_id')
+                    $q->whereNull('alamat_barang')
                       ->orWhere('alamat_barang', '!=', 'Belum Ditempatkan');
                 })
                 ->update([
-                    'unit_id'       => null,
                     'alamat_barang' => 'Belum Ditempatkan',
                 ]);
 
@@ -91,7 +90,6 @@ class BelanjaBarangController extends Controller
         $query = AstapBelanjaBarang::with([
                 'astaps.jenisAstap',
                 'astaps.registers.unit',
-                'astaps.unit',
                 'user'
             ])
             ->where('is_deleted', 0)
@@ -243,10 +241,10 @@ class BelanjaBarangController extends Controller
                 'jumlah_volume'    => $request->input('jumlah_volume', 1),
                 'satuan'           => $request->input('satuan', 'Unit'),
                 'harga_satuan'     => $request->input('harga_satuan', 0) ?: ($request->input('total_realisasi', 0) / max(1, (int)$request->input('jumlah_volume', 1))),
-                'mode_penempatan'  => $request->input('unit_id') ? 'ruangan' : 'gudang',
-                'unit_id'          => $request->input('unit_id'),
+                'mode_penempatan'  => 'belum_ditempatkan',
+                'unit_id'          => null,
                 'kondisi'          => $request->input('kondisi', 'Baik'),
-                'alamat_barang'    => $request->input('alamat_barang', 'RSUD Dr. H. Koesnandi'),
+                'alamat_barang'    => 'Belum Ditempatkan',
                 'spesifikasi_json' => $request->input('spesifikasi_json', []),
             ]];
         }
@@ -460,7 +458,6 @@ class BelanjaBarangController extends Controller
                     'triwulan'                  => $triwulan,
                     'sumber_dana'               => 'belanja_barang',
                     'keterangan_tambahan'       => $keteranganFaktur,
-                    'unit_id'                   => $unitId,
                     'alamat_barang'             => $alamatBarang,
                     'user_id'                   => Auth::id(),
                     'is_extracomtable'          => !empty($it['is_extracom']) || (!empty($spesifikasi['is_extracom'])) || $request->boolean('is_extracomtable'),
@@ -648,7 +645,6 @@ class BelanjaBarangController extends Controller
         $belanja = AstapBelanjaBarang::with([
             'astaps.jenisAstap',
             'astaps.registers.unit',
-            'astaps.unit',
             'user'
         ])->findOrFail($id);
 
