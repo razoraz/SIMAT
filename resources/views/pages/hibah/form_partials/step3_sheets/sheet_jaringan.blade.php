@@ -368,6 +368,7 @@
                                            @input="
                                                let raw = $event.target.value.replace(/\D/g, '');
                                                item.jaringan_nilai_satuan = raw ? parseInt(raw, 10) : 0;
+                                               item.jaringan_nilai_fisik = item.jaringan_nilai_satuan;
                                                $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
                                                syncTotalsFromItems();
                                            "

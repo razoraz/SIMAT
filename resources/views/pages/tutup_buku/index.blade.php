@@ -32,14 +32,33 @@
                             <span>Kembali ke ASTAP</span>
                         </a>
 
-                        <span class="px-3 py-1 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-black tracking-wider uppercase flex items-center gap-1.5">
-                            <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
-                            T.A. {{ $currentYear }} (Aktif)
-                        </span>
+                        @if($currentYear === $actualYear)
+                            <span class="px-3 py-1 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-black tracking-wider uppercase flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                                T.A. {{ $currentYear }} (Tahun Berjalan)
+                            </span>
 
-                        <span class="px-3 py-1 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-black tracking-wider uppercase">
-                            Triwulan {{ ['I', 'II', 'III', 'IV'][$actualQuarter - 1] ?? 'I' }} Berjalan
-                        </span>
+                            <span class="px-3 py-1 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-black tracking-wider uppercase">
+                                Triwulan {{ ['I', 'II', 'III', 'IV'][$actualQuarter - 1] ?? 'I' }} Berjalan
+                            </span>
+                        @elseif($currentYear < $actualYear)
+                            <span class="px-3 py-1 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-black tracking-wider uppercase flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                </svg>
+                                T.A. {{ $currentYear }} (Tutup Buku Final)
+                            </span>
+
+                            <span class="px-3 py-1 rounded-xl bg-slate-800/80 border border-slate-700/80 text-slate-300 text-xs font-black tracking-wider uppercase flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                                Semua Triwulan Terkunci
+                            </span>
+                        @else
+                            <span class="px-3 py-1 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-black tracking-wider uppercase flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                                T.A. {{ $currentYear }} (Belum Dibuka)
+                            </span>
+                        @endif
 
                         <span class="px-3 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-black tracking-wider uppercase flex items-center gap-1.5">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -64,21 +83,6 @@
                         </p>
                     </div>
                 </div>
-
-                <!-- Sisi Kanan: Pemilih Tahun & Ringkasan Cepat -->
-                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
-                    <form method="GET" action="{{ route('tutup_buku.index') }}" class="flex items-center gap-2 bg-slate-950/70 p-1.5 rounded-2xl border border-slate-800">
-                        <label for="filter-tahun" class="text-xs font-bold text-slate-400 pl-3">Tahun:</label>
-                        <select id="filter-tahun" name="tahun" onchange="this.form.submit()"
-                                class="bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-1.5 text-xs font-bold text-white focus:outline-none focus:border-cyan-500 cursor-pointer">
-                            @foreach($distinctYears as $yr)
-                                <option value="{{ $yr }}" {{ $currentYear === $yr ? 'selected' : '' }}>
-                                    T.A. {{ $yr }} {{ $yr === $actualYear ? '(Tahun Berjalan)' : '' }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </form>
-                </div>
             </div>
         </div>
 
@@ -88,7 +92,7 @@
         <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
             <div class="inline-flex p-1.5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-inner">
                 <button type="button" 
-                        @click="activeTab = 'triwulan'"
+                        @click="setTab('triwulan')"
                         :class="activeTab === 'triwulan' ? 'bg-gradient-to-r from-cyan-600 to-indigo-600 text-white shadow-lg shadow-cyan-500/20' : 'text-slate-400 hover:text-slate-200'"
                         class="px-5 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -102,7 +106,7 @@
                 </button>
 
                 <button type="button" 
-                        @click="activeTab = 'tahunan'"
+                        @click="setTab('tahunan')"
                         :class="activeTab === 'tahunan' ? 'bg-gradient-to-r from-cyan-600 to-indigo-600 text-white shadow-lg shadow-cyan-500/20' : 'text-slate-400 hover:text-slate-200'"
                         class="px-5 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -127,7 +131,7 @@
                         <span>T.A. Triwulan:</span>
                     </label>
                     <select id="filter-tahun-tab" 
-                            onchange="window.location.href = '{{ route('tutup_buku.index') }}?tahun=' + this.value"
+                            onchange="window.location.href = '{{ route('tutup_buku.index') }}?tahun=' + this.value + '&tab=triwulan'"
                             class="bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-1.5 text-xs font-black text-cyan-300 focus:outline-none focus:border-cyan-500 cursor-pointer hover:border-cyan-500/50 transition-colors">
                         @foreach($distinctYears as $yr)
                             <option value="{{ $yr }}" {{ $currentYear === $yr ? 'selected' : '' }}>
@@ -701,13 +705,45 @@
                 ...base,
 
                 // State Khusus Halaman Tutup Buku
-                activeTab: 'tahunan', // 'triwulan' | 'tahunan' (Default fokus Tutup Buku Tahunan)
+                activeTab: (new URLSearchParams(window.location.search).get('tab')) || '{{ $currentTab ?? "triwulan" }}',
                 selectedPeriod: null,
                 filterTahunTahunan: 'all',
                 tableSearch: '',
                 tableTahunFilter: 'all',
                 tableKibFilter: 'all',
                 tableKondisiFilter: 'all',
+
+                // Tab Switcher dengan Sinkronisasi URL
+                setTab(tab) {
+                    this.activeTab = tab;
+                    try {
+                        const url = new URL(window.location.href);
+                        url.searchParams.set('tab', tab);
+                        window.history.replaceState({}, '', url.toString());
+                    } catch (e) {}
+
+                    const defaultYr = {{ $currentYear }};
+                    if (tab === 'triwulan' && this.selectedPeriod?.type !== 'triwulan') {
+                        const defaultTw = {{ $currentYear === $actualYear ? $actualQuarter : 1 }};
+                        this.selectedPeriod = {
+                            type: 'triwulan',
+                            tw: defaultTw,
+                            year: defaultYr,
+                            label: 'Triwulan ' + (['I', 'II', 'III', 'IV'][defaultTw - 1] || 'I') + ' T.A. ' + defaultYr,
+                            isLocked: {{ ($currentYear < $actualYear) ? 'true' : 'false' }},
+                            rentang: 'Triwulan ' + (['I', 'II', 'III', 'IV'][defaultTw - 1] || 'I')
+                        };
+                    } else if (tab === 'tahunan' && this.selectedPeriod?.type !== 'tahunan') {
+                        this.selectedPeriod = {
+                            type: 'tahunan',
+                            tw: 0,
+                            year: defaultYr,
+                            label: 'Tahun Anggaran ' + defaultYr + ' (Konsolidasi)',
+                            isLocked: {{ ($currentYear < $actualYear) ? 'true' : 'false' }},
+                            rentang: '1 Januari - 31 Desember ' + defaultYr
+                        };
+                    }
+                },
 
                 // State Modal Riwayat Reklasifikasi
                 showRiwayatReklasModal: false,
@@ -755,15 +791,31 @@
                 // Inisialisasi awal
                 initTutupBuku() {
                     const defaultYr = {{ $currentYear }};
-                    
-                    this.selectedPeriod = {
-                        type: 'tahunan',
-                        tw: 0,
-                        year: defaultYr,
-                        label: 'Tahun Anggaran ' + defaultYr + ' (Konsolidasi)',
-                        isLocked: false,
-                        rentang: '1 Januari - 31 Desember ' + defaultYr
-                    };
+                    const urlTab = (new URLSearchParams(window.location.search).get('tab'));
+                    if (urlTab === 'triwulan' || urlTab === 'tahunan') {
+                        this.activeTab = urlTab;
+                    }
+
+                    if (this.activeTab === 'triwulan') {
+                        const defaultTw = {{ $currentYear === $actualYear ? $actualQuarter : 1 }};
+                        this.selectedPeriod = {
+                            type: 'triwulan',
+                            tw: defaultTw,
+                            year: defaultYr,
+                            label: 'Triwulan ' + (['I', 'II', 'III', 'IV'][defaultTw - 1] || 'I') + ' T.A. ' + defaultYr,
+                            isLocked: {{ ($currentYear < $actualYear) ? 'true' : 'false' }},
+                            rentang: 'Triwulan ' + (['I', 'II', 'III', 'IV'][defaultTw - 1] || 'I')
+                        };
+                    } else {
+                        this.selectedPeriod = {
+                            type: 'tahunan',
+                            tw: 0,
+                            year: defaultYr,
+                            label: 'Tahun Anggaran ' + defaultYr + ' (Konsolidasi)',
+                            isLocked: {{ ($currentYear < $actualYear) ? 'true' : 'false' }},
+                            rentang: '1 Januari - 31 Desember ' + defaultYr
+                        };
+                    }
                     this.tableTahunFilter = String(defaultYr);
                 },
 

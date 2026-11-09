@@ -429,14 +429,15 @@ class HibahController extends Controller
         }
 
         // Sinkronisasi spesifikasi spesifik Tanah jika KIB A
-        if ($request->has('tanah_items') && is_array($request->input('tanah_items')) && count($request->input('tanah_items')) > 0) {
-            $tItems = $request->input('tanah_items');
+        $tItems = $astapPayload['spesifikasi_json']['tanah_items'] ?? ($request->input('tanah_items') ?? null);
+        if (is_array($tItems) && count($tItems) > 0) {
             $firstT = $tItems[0];
             $totalLuas = array_sum(array_map(fn($it) => (float)($it['tanah_luas_m2'] ?? 0), $tItems));
             $allSertifikat = array_filter(array_map(fn($it) => $it['tanah_sertifikat_no'] ?? null, $tItems));
 
             $astapPayload['spesifikasi_json']['tanah_items'] = $tItems;
             $astapPayload['spesifikasi_json']['luas_m2'] = $totalLuas;
+            $astapPayload['spesifikasi_json']['tanah_luas_m2'] = $totalLuas;
             $astapPayload['spesifikasi_json']['hak_tanah'] = $firstT['tanah_hak'] ?? 'Hak Pakai';
             $astapPayload['spesifikasi_json']['sertifikat_no'] = count($allSertifikat) > 0 ? implode(', ', $allSertifikat) : ($firstT['tanah_sertifikat_no'] ?? null);
             $astapPayload['spesifikasi_json']['sertifikat_tgl'] = $firstT['tanah_sertifikat_tgl'] ?? null;
@@ -469,6 +470,52 @@ class HibahController extends Controller
             $astapPayload['spesifikasi_json']['gedung_beton'] = $firstG['gedung_beton'] ?? 'Beton';
             $astapPayload['spesifikasi_json']['gedung_is_baru'] = $firstG['gedung_is_baru'] ?? 'Lama';
             $astapPayload['spesifikasi_json']['kondisi'] = $firstG['gedung_kondisi'] ?? ($astapPayload['spesifikasi_json']['kondisi'] ?? 'Baik');
+        }
+
+        // Sinkronisasi spesifikasi spesifik Jaringan jika KIB D
+        $jItems = $astapPayload['spesifikasi_json']['jaringan_items'] ?? ($request->input('jaringan_items') ?? null);
+        if (is_array($jItems) && count($jItems) > 0) {
+            $firstJ = $jItems[0];
+            $astapPayload['spesifikasi_json']['jaringan_konstruksi'] = $firstJ['jaringan_konstruksi'] ?? null;
+            $astapPayload['spesifikasi_json']['jaringan_panjang_m'] = $firstJ['jaringan_panjang'] ?? ($firstJ['jaringan_panjang_m'] ?? 0);
+            $astapPayload['spesifikasi_json']['jaringan_lebar_m'] = $firstJ['jaringan_lebar'] ?? ($firstJ['jaringan_lebar_m'] ?? 0);
+            $astapPayload['spesifikasi_json']['jaringan_luas_m2'] = $firstJ['jaringan_luas'] ?? ($firstJ['jaringan_luas_m2'] ?? 0);
+            $astapPayload['spesifikasi_json']['kondisi'] = $firstJ['jaringan_kondisi'] ?? ($astapPayload['spesifikasi_json']['kondisi'] ?? 'Baik');
+        }
+
+        // Sinkronisasi spesifikasi spesifik Lainnya jika KIB E
+        $lItems = $astapPayload['spesifikasi_json']['lainnya_items'] ?? ($request->input('lainnya_items') ?? null);
+        if (is_array($lItems) && count($lItems) > 0) {
+            $firstL = $lItems[0];
+            $subType = $firstL['kib_e_type'] ?? ($firstL['kib_e_sub_type'] ?? 'buku');
+            $astapPayload['spesifikasi_json']['kib_e_sub_type'] = $subType;
+            $astapPayload['spesifikasi_json']['judul'] = $firstL['lainnya_judul'] ?? ($firstL['lainnya_buku_judul'] ?? ($firstL['lainnya_nama_barang'] ?? null));
+            $astapPayload['spesifikasi_json']['pencipta'] = $firstL['lainnya_pencipta'] ?? ($firstL['lainnya_buku_pencipta'] ?? null);
+            $astapPayload['spesifikasi_json']['spesifikasi'] = $firstL['lainnya_spesifikasi'] ?? null;
+            $astapPayload['spesifikasi_json']['kondisi'] = $firstL['lainnya_kondisi'] ?? ($astapPayload['spesifikasi_json']['kondisi'] ?? 'Baik');
+
+            if ($isExtracom) {
+                $astapPayload['merk'] = $firstL['lainnya_pencipta'] ?? ($firstL['lainnya_merk'] ?? ($astapPayload['merk'] ?? null));
+                $astapPayload['type'] = $firstL['lainnya_spesifikasi'] ?? ($firstL['lainnya_type'] ?? ($astapPayload['type'] ?? null));
+                $astapPayload['ukuran'] = $firstL['lainnya_ukuran'] ?? ($astapPayload['ukuran'] ?? null);
+                $astapPayload['no_pabrik'] = $firstL['lainnya_no_pabrik'] ?? ($astapPayload['no_pabrik'] ?? null);
+                $astapPayload['bahan'] = $firstL['lainnya_bahan'] ?? ($astapPayload['bahan'] ?? null);
+
+                $astapPayload['spesifikasi_json']['merk'] = $astapPayload['merk'];
+                $astapPayload['spesifikasi_json']['type'] = $astapPayload['type'];
+                $astapPayload['spesifikasi_json']['ukuran'] = $astapPayload['ukuran'];
+                $astapPayload['spesifikasi_json']['no_pabrik'] = $astapPayload['no_pabrik'];
+                $astapPayload['spesifikasi_json']['bahan'] = $astapPayload['bahan'];
+            } elseif ($subType === 'kesenian') {
+                $astapPayload['spesifikasi_json']['asal_daerah'] = $firstL['lainnya_asal_daerah'] ?? ($firstL['lainnya_kesenian_asal'] ?? null);
+                $astapPayload['spesifikasi_json']['bahan'] = $firstL['lainnya_bahan'] ?? ($firstL['lainnya_kesenian_bahan'] ?? null);
+                $astapPayload['spesifikasi_json']['ukuran'] = $firstL['lainnya_ukuran'] ?? ($firstL['lainnya_kesenian_ukuran'] ?? null);
+                $astapPayload['bahan'] = $astapPayload['spesifikasi_json']['bahan'];
+                $astapPayload['ukuran'] = $astapPayload['spesifikasi_json']['ukuran'];
+            } elseif ($subType === 'hewan_tumbuhan') {
+                $astapPayload['spesifikasi_json']['ukuran'] = $firstL['lainnya_ukuran'] ?? ($firstL['lainnya_hewan_ukuran'] ?? null);
+                $astapPayload['ukuran'] = $astapPayload['spesifikasi_json']['ukuran'];
+            }
         }
 
         if ($request->filled('ppk_nama')) {
@@ -766,6 +813,23 @@ class HibahController extends Controller
             }
         }
 
+        // Sinkronisasi spesifikasi spesifik Tanah jika KIB A
+        $tItems = $specJson['tanah_items'] ?? ($request->input('tanah_items') ?? null);
+        if (is_array($tItems) && count($tItems) > 0) {
+            $firstT = $tItems[0];
+            $totalLuas = array_sum(array_map(fn($it) => (float)($it['tanah_luas_m2'] ?? 0), $tItems));
+            $allSertifikat = array_filter(array_map(fn($it) => $it['tanah_sertifikat_no'] ?? null, $tItems));
+
+            $specJson['tanah_items'] = $tItems;
+            $specJson['luas_m2'] = $totalLuas;
+            $specJson['tanah_luas_m2'] = $totalLuas;
+            $specJson['hak_tanah'] = $firstT['tanah_hak'] ?? 'Hak Pakai';
+            $specJson['sertifikat_no'] = count($allSertifikat) > 0 ? implode(', ', $allSertifikat) : ($firstT['tanah_sertifikat_no'] ?? null);
+            $specJson['sertifikat_tgl'] = $firstT['tanah_sertifikat_tgl'] ?? null;
+            $specJson['penggunaan'] = $firstT['tanah_penggunaan'] ?? null;
+            $specJson['tanah_jumlah_bidang'] = count($tItems);
+        }
+
         // Sinkronisasi spesifikasi spesifik Mesin jika KIB B
         $mItems = $specJson['mesin_items'] ?? ($request->input('mesin_items') ?? null);
         if (is_array($mItems) && count($mItems) > 0) {
@@ -791,6 +855,43 @@ class HibahController extends Controller
             $specJson['gedung_beton'] = $firstG['gedung_beton'] ?? 'Beton';
             $specJson['gedung_is_baru'] = $firstG['gedung_is_baru'] ?? 'Lama';
             $specJson['kondisi'] = $firstG['gedung_kondisi'] ?? ($specJson['kondisi'] ?? 'Baik');
+        }
+
+        // Sinkronisasi spesifikasi spesifik Jaringan jika KIB D
+        $jItems = $specJson['jaringan_items'] ?? ($request->input('jaringan_items') ?? null);
+        if (is_array($jItems) && count($jItems) > 0) {
+            $firstJ = $jItems[0];
+            $specJson['jaringan_konstruksi'] = $firstJ['jaringan_konstruksi'] ?? null;
+            $specJson['jaringan_panjang_m'] = $firstJ['jaringan_panjang'] ?? ($firstJ['jaringan_panjang_m'] ?? 0);
+            $specJson['jaringan_lebar_m'] = $firstJ['jaringan_lebar'] ?? ($firstJ['jaringan_lebar_m'] ?? 0);
+            $specJson['jaringan_luas_m2'] = $firstJ['jaringan_luas'] ?? ($firstJ['jaringan_luas_m2'] ?? 0);
+            $specJson['kondisi'] = $firstJ['jaringan_kondisi'] ?? ($specJson['kondisi'] ?? 'Baik');
+        }
+
+        // Sinkronisasi spesifikasi spesifik Lainnya jika KIB E
+        $lItems = $specJson['lainnya_items'] ?? ($request->input('lainnya_items') ?? null);
+        if (is_array($lItems) && count($lItems) > 0) {
+            $firstL = $lItems[0];
+            $subType = $firstL['kib_e_type'] ?? ($firstL['kib_e_sub_type'] ?? 'buku');
+            $specJson['kib_e_sub_type'] = $subType;
+            $specJson['judul'] = $firstL['lainnya_judul'] ?? ($firstL['lainnya_buku_judul'] ?? ($firstL['lainnya_nama_barang'] ?? null));
+            $specJson['pencipta'] = $firstL['lainnya_pencipta'] ?? ($firstL['lainnya_buku_pencipta'] ?? null);
+            $specJson['spesifikasi'] = $firstL['lainnya_spesifikasi'] ?? null;
+            $specJson['kondisi'] = $firstL['lainnya_kondisi'] ?? ($specJson['kondisi'] ?? 'Baik');
+
+            if ($isExtracom) {
+                $specJson['merk'] = $firstL['lainnya_pencipta'] ?? ($firstL['lainnya_merk'] ?? null);
+                $specJson['type'] = $firstL['lainnya_spesifikasi'] ?? ($firstL['lainnya_type'] ?? null);
+                $specJson['ukuran'] = $firstL['lainnya_ukuran'] ?? null;
+                $specJson['no_pabrik'] = $firstL['lainnya_no_pabrik'] ?? null;
+                $specJson['bahan'] = $firstL['lainnya_bahan'] ?? null;
+            } elseif ($subType === 'kesenian') {
+                $specJson['asal_daerah'] = $firstL['lainnya_asal_daerah'] ?? ($firstL['lainnya_kesenian_asal'] ?? null);
+                $specJson['bahan'] = $firstL['lainnya_bahan'] ?? ($firstL['lainnya_kesenian_bahan'] ?? null);
+                $specJson['ukuran'] = $firstL['lainnya_ukuran'] ?? ($firstL['lainnya_kesenian_ukuran'] ?? null);
+            } elseif ($subType === 'hewan_tumbuhan') {
+                $specJson['ukuran'] = $firstL['lainnya_ukuran'] ?? ($firstL['lainnya_hewan_ukuran'] ?? null);
+            }
         }
 
         $vol = max(1, (int) $validated['jumlah_volume']);

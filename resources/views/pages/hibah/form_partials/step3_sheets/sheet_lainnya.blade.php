@@ -428,11 +428,13 @@
                                         let raw = String($event.target.value).replace(/\D/g, '');
                                         if (raw.startsWith('0')) raw = raw.replace(/^0+/, '');
                                         item.lainnya_jumlah = raw ? parseInt(raw, 10) : '';
+                                        item.lainnya_jumlah_barang = item.lainnya_jumlah;
                                         syncTotalsFromItems();
                                     "
                                     @blur="
                                         if (!item.lainnya_jumlah || Number(item.lainnya_jumlah) < 1) {
                                             item.lainnya_jumlah = 1;
+                                            item.lainnya_jumlah_barang = 1;
                                             syncTotalsFromItems();
                                         }
                                     "

@@ -15,6 +15,7 @@ class TutupBukuController extends Controller
     public function index(Request $request)
     {
         $currentYear = (int) ($request->input('tahun', date('Y')));
+        $currentTab = $request->input('tab', 'triwulan');
         $actualYear = (int) date('Y');
         $actualMonth = (int) date('n');
         $actualQuarter = (int) ceil($actualMonth / 3);
@@ -390,6 +391,7 @@ class TutupBukuController extends Controller
 
         return view('pages.tutup_buku.index', compact(
             'currentYear',
+            'currentTab',
             'actualYear',
             'actualQuarter',
             'triwulanData',
