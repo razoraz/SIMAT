@@ -382,9 +382,9 @@
                                     <tr>
                                         <th class="px-3.5 py-2.5 text-center">NIBAR RESMI</th>
                                         <th class="px-3.5 py-2.5 text-left">Nama Barang</th>
-                                        <th class="px-3.5 py-2.5 text-center">Penempatan Ruangan</th>
-                                        <th class="px-3.5 py-2.5 text-center">Kondisi</th>
-                                        <th class="px-3.5 py-2.5 text-center">Status</th>
+                                        <th class="px-3.5 py-2.5 text-center whitespace-nowrap">Penempatan Ruangan</th>
+                                        <th class="px-3.5 py-2.5 text-center whitespace-nowrap">Kondisi</th>
+                                        <th class="px-3.5 py-2.5 text-center whitespace-nowrap">Status</th>
                                         <th class="px-3.5 py-2.5 text-center whitespace-nowrap">QR Code</th>
                                         <th class="px-3.5 py-2.5 text-center whitespace-nowrap">Aksi</th>
                                     </tr>
@@ -397,30 +397,44 @@
                                                 <div class="font-bold text-white truncate max-w-[200px]" :title="reg.nama_barang" x-text="reg.nama_barang"></div>
                                                 <div class="text-[9.5px] font-mono text-cyan-400/90" x-text="reg.kode_108"></div>
                                             </td>
-                                            <td class="px-3.5 py-2.5 text-center">
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border"
-                                                    :class="reg.ruang && reg.ruang !== 'Belum Ditempatkan' && reg.ruang !== 'Gudang Perbekalan' ? 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30' : 'bg-slate-800 text-slate-300 border-slate-700'"
-                                                    x-text="reg.ruang || 'Belum Ditempatkan'"></span>
+                                            <td class="px-3.5 py-2.5 text-center whitespace-nowrap">
+                                                <!-- 1. Jika memiliki penempatan ruangan di RSUD -->
+                                                <template x-if="reg.ruang && reg.ruang !== 'Belum Ditempatkan' && reg.ruang !== 'Gudang Perbekalan' && reg.ruang !== '-'">
+                                                    <span class="inline-flex items-center space-x-1.5 text-slate-200 font-semibold justify-center">
+                                                        <span class="text-teal-400 text-xs">📍</span>
+                                                        <span x-text="reg.ruang"></span>
+                                                    </span>
+                                                </template>
+                                                <!-- 2. Belum ditempatkan / Masih di Gudang Aset -->
+                                                <template x-if="!reg.ruang || reg.ruang === 'Belum Ditempatkan' || reg.ruang === 'Gudang Perbekalan' || reg.ruang === '-'">
+                                                    <span class="inline-flex items-center space-x-1.5 text-amber-400 font-bold bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/30 text-[10px] justify-center">
+                                                        <span>📦</span>
+                                                        <span>Gudang Aset (Belum Ditempatkan)</span>
+                                                    </span>
+                                                </template>
                                             </td>
-                                            <td class="px-3.5 py-2.5 text-center">
-                                                <span class="px-2 py-0.5 rounded text-[10px] font-bold border"
-                                                    :class="(reg.kondisi || 'Baik') === 'Baik' ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30' : ((reg.kondisi || '') === 'Kurang Baik' ? 'bg-amber-500/10 text-amber-300 border-amber-500/30' : 'bg-rose-500/10 text-rose-300 border-rose-500/30')"
-                                                    x-text="reg.kondisi || 'Baik'"></span>
+                                            <td class="px-3.5 py-2.5 text-center whitespace-nowrap">
+                                                <span class="px-2.5 py-1 rounded-xl text-[10.5px] font-bold border inline-block shadow-sm"
+                                                      :class="{
+                                                          'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': reg.kondisi === 'Baik' || reg.kondisi === 'B',
+                                                          'bg-amber-500/20 text-amber-300 border-amber-500/30': reg.kondisi === 'Kurang Baik' || reg.kondisi === 'KB' || reg.kondisi === 'Rusak Ringan' || reg.kondisi === 'RR',
+                                                          'bg-rose-500/20 text-rose-300 border-rose-500/30': reg.kondisi === 'Rusak Berat' || reg.kondisi === 'RB' || reg.kondisi === 'Rusak'
+                                                      }" x-text="reg.kondisi === 'B' ? 'Baik' : ((reg.kondisi === 'KB' || reg.kondisi === 'RR' || reg.kondisi === 'Rusak Ringan') ? 'Kurang Baik' : ((reg.kondisi === 'RB' || reg.kondisi === 'Rusak') ? 'Rusak Berat' : (reg.kondisi || 'Baik')))"></span>
                                             </td>
-                                            <td class="px-3.5 py-2.5 text-center">
-                                                <span class="px-2 py-0.5 rounded text-[10px] font-bold border"
-                                                    :class="reg.status === 'Tersedia' ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30' : 'bg-slate-800 text-slate-300 border-slate-700'"
+                                            <td class="px-3.5 py-2.5 text-center whitespace-nowrap">
+                                                <span class="px-2.5 py-1 rounded-xl text-[10.5px] font-bold border inline-block shadow-sm"
+                                                    :class="reg.status === 'Tersedia' ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : 'bg-slate-800 text-slate-300 border-slate-700'"
                                                     x-text="reg.status || 'Tersedia'"></span>
                                             </td>
                                             <!-- Kolom QR Code -->
                                             <td class="px-3.5 py-2.5 text-center whitespace-nowrap align-middle">
                                                 <button type="button" @click.stop="downloadQrCodeNibar(reg, selectedItem)"
                                                     title="Pratinjau & Download QR NIBAR Aset Ini"
-                                                    class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 border border-emerald-500/40 font-bold text-xs transition-all shadow-sm active:scale-95 cursor-pointer leading-none">
-                                                    <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/25 border border-emerald-500/30 hover:border-emerald-400 text-emerald-400 hover:text-emerald-300 font-bold text-[10.5px] transition-all shadow-sm active:scale-95 group cursor-pointer leading-none">
+                                                    <svg class="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                                                     </svg>
-                                                    <span>Download QR</span>
+                                                    <span class="leading-none pt-0.5">Download QR</span>
                                                 </button>
                                             </td>
 
