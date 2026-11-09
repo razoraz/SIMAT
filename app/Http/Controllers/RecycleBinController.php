@@ -338,6 +338,7 @@ class RecycleBinController extends Controller
             })
             ->whereDoesntHave('kemitraan')
             ->whereDoesntHave('objekKemitraans')
+            ->whereDoesntHave('belanjaBarang')
             ->with(['jenisAstap', 'rekeningBelanja', 'registers.unit', 'belanjaBarang'])
             ->latest('deleted_at')
             ->latest('id')
@@ -875,13 +876,18 @@ class RecycleBinController extends Controller
         });
 
         // 4) REGISTER NIBAR BELANJA BARANG INDIVIDUAL
+        // Tampilkan seluruh register NIBAR belanja barang yang terhapus selama Faktur Belanja Barang masih aktif (belum dihapus faktur utuhnya)
         $rawDeletedBelanjaBarangNibars = AstapRegister::onlyDeleted()
             ->whereHas('astap', function ($q) {
-                $q->where('is_deleted', 0)
-                  ->where(function ($sq) {
-                      $sq->whereIn('sumber_dana', ['belanja_barang', 'belanja_rekening'])
-                         ->orWhereHas('belanjaBarang');
-                  });
+                $q->where(function ($sq) {
+                    $sq->whereIn('sumber_dana', ['belanja_barang', 'belanja_rekening'])
+                       ->orWhereNotNull('belanja_barang_id')
+                       ->orWhereHas('belanjaBarang');
+                })
+                ->where(function ($sq) {
+                    $sq->whereDoesntHave('belanjaBarang')
+                       ->orWhereHas('belanjaBarang', fn($bq) => $bq->where('is_deleted', 0));
+                });
             })
             ->with(['astap.jenisAstap', 'astap.belanjaBarang', 'unit'])
             ->latest('deleted_at')
@@ -893,8 +899,8 @@ class RecycleBinController extends Controller
             return [
                 'id'                  => $r->id,
                 'astap_id'            => $r->astap_id,
-                'nibar'               => $r->nibar ?: ($r->no_register ?: 'REG-' . $r->id),
-                'no_register'         => $r->no_register ?: '-',
+                'nibar'               => preg_replace('/^DEL_\d+_/', '', $r->nibar ?: ($r->no_register ?: 'REG-' . $r->id)),
+                'no_register'         => preg_replace('/^DEL_\d+_/', '', $r->no_register ?: '-'),
                 'nama_barang'         => $r->nama_barang ?: ($r->astap?->nama_barang ?? 'Aset Belanja Barang'),
                 'nama_aset_induk'     => $r->astap?->nama_barang,
                 'kode_108'            => $r->astap?->kode_108 ?: ($r->astap?->jenisAstap?->kode_108 ?: '-'),
@@ -2272,6 +2278,9 @@ class RecycleBinController extends Controller
                     }
                     foreach ($astapParents as $parent) {
                         $this->syncAstapAfterRegisterChange($parent);
+                        if ($parent->is_deleted && $parent->registers()->count() === 0) {
+                            $parent->delete();
+                        }
                     }
                 });
                 $msg = "Sebanyak {$deletedCount} register NIBAR telah dihapus permanen dari database.";
@@ -2716,6 +2725,9 @@ class RecycleBinController extends Controller
                     $reg->delete();
                     if ($parentAstap) {
                         $this->syncAstapAfterRegisterChange($parentAstap);
+                        if ($parentAstap->is_deleted && $parentAstap->registers()->count() === 0) {
+                            $parentAstap->delete();
+                        }
                     }
                 });
                 $msg = "Register NIBAR \"{$nibar}\" telah dihapus secara permanen dari database.";
@@ -2749,6 +2761,10 @@ class RecycleBinController extends Controller
         if (!$astap) return;
         $newCount = $astap->registers()->where('is_deleted', 0)->count();
         $astap->jumlah_volume = max(1, $newCount);
+        $astap->total_realisasi = $newCount * (float) $astap->harga_satuan;
+        if ($astap->jumlah_anggaran > 0) {
+            $astap->jumlah_anggaran = $astap->total_realisasi;
+        }
 
         $allRegs = $astap->registers()->where('is_deleted', 0)->get();
         $totalRegs = $allRegs->count();
@@ -2821,6 +2837,14 @@ class RecycleBinController extends Controller
             $astap->spesifikasi_json = $spec;
         }
         $astap->save();
+
+        // Sinkronisasi total nilai faktur Belanja Barang jika aset terikat faktur
+        if ($astap->belanjaBarang) {
+            $newFakturTotal = (float) $astap->belanjaBarang->astaps()
+                ->where('is_deleted', 0)
+                ->sum('total_realisasi');
+            $astap->belanjaBarang->update(['total_pembelian' => $newFakturTotal]);
+        }
     }
 
     /**
@@ -2943,6 +2967,14 @@ class RecycleBinController extends Controller
         $count = max(1, $astap->allRegisters()->where('is_deleted', 0)->count());
         $astap->jumlah_volume = $count;
         $astap->save();
+
+        // Sinkronisasi total nilai faktur Belanja Barang jika aset terikat faktur
+        if ($astap->belanjaBarang) {
+            $newFakturTotal = (float) $astap->belanjaBarang->astaps()
+                ->where('is_deleted', 0)
+                ->sum('total_realisasi');
+            $astap->belanjaBarang->update(['total_pembelian' => $newFakturTotal]);
+        }
 
         return $count;
     }
