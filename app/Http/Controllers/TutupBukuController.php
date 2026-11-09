@@ -19,16 +19,29 @@ class TutupBukuController extends Controller
         $actualMonth = (int) date('n');
         $actualQuarter = (int) ceil($actualMonth / 3);
 
-        // Ambil data semua aset non-deleted
+        // Ambil data semua aset non-deleted beserta seluruh relasi sumber perolehan
         $astaps = Astap::where('is_deleted', 0)
             ->with([
-                'registers' => function($q) { $q->where('is_deleted', 0); },
+                'registers' => function($q) { 
+                    $q->where('is_deleted', 0)->with('unit'); 
+                },
                 'jenisAstap',
                 'rekeningBelanja',
                 'jenisPengadaan',
                 'unit',
-                'reklas',
-                'kemitraan'
+                'reklas' => function($q) {
+                    $q->orderBy('id', 'desc');
+                },
+                'kemitraan',
+                'belanjaModal',
+                'belanjaBarang',
+                'hibahDetail',
+                'hibahs',
+                'mutasiEksternal',
+                'mutasiEksternalMasuk',
+                'mutasiEksternals' => function($q) {
+                    $q->where('is_deleted', 0)->orderBy('id', 'desc');
+                }
             ])
             ->orderBy('id', 'desc')
             ->get();
@@ -197,50 +210,172 @@ class TutupBukuController extends Controller
             $reklasCount = count($reklasHistory);
             $reklasJenis = $latestReklas?->jenis_reklas ?? $a->jenis_reklas ?? '';
 
+            // Sumber Perolehan Relasional
+            $bm = $a->belanjaModal;
+            $bb = $a->belanjaBarang;
+            $km = $a->kemitraan;
+            $hibahDetail = $a->hibahDetail;
+            $mutasiMasuk = $a->mutasiEksternalMasuk ?: $a->mutasiEksternal;
+            $mutasiKeluar = $a->mutasiEksternals ? $a->mutasiEksternals->firstWhere('tipe', 'keluar') : null;
+            $hibahKeluarModel = $a->hibahs ? $a->hibahs->firstWhere('tipe', 'keluar') : null;
+
+            // 1. Data Kemitraan Pihak Ketiga (KSO / Sewa BMD)
+            $isKemitraanAset = $a->isKemitraan() || $sumberType === 'kemitraan' || !empty($km);
+            $kemitraanData = $km ? [
+                'id'              => $km->id,
+                'mitra_nama'      => $km->mitra_nama ?: ($spec['mitra_nama'] ?? ($a->penyedia_nama ?: '-')),
+                'nomor_pks'       => $km->nomor_pks ?: ($spec['nomor_pks'] ?? ($a->bast_dokumen_nomor ?: '-')),
+                'tanggal_pks'     => $km->tanggal_pks ? $km->tanggal_pks->format('Y-m-d') : ($spec['tanggal_pks'] ?? ($a->bast_dokumen_tanggal ? (is_string($a->bast_dokumen_tanggal) ? $a->bast_dokumen_tanggal : $a->bast_dokumen_tanggal->format('Y-m-d')) : null)),
+                'skema_kemitraan' => $km->skema_kemitraan ?: ($spec['skema_kemitraan'] ?? 'Sewa BMD'),
+                'tipe_kemitraan'  => $km->tipe_kemitraan ?: 'dimanfaatkan',
+                'status_konsesi'  => $km->status_konsesi ?: 'Aktif',
+                'tanggal_mulai'   => $km->tanggal_mulai ? $km->tanggal_mulai->format('Y-m-d') : ($spec['tanggal_mulai'] ?? null),
+                'tanggal_selesai' => $km->tanggal_selesai ? $km->tanggal_selesai->format('Y-m-d') : ($spec['tanggal_selesai'] ?? null),
+                'sisa_hari'       => $km->sisa_hari_konsesi,
+                'keterangan'      => $km->keterangan ?: ($spec['keterangan'] ?? null),
+            ] : ($isKemitraanAset ? [
+                'id'              => null,
+                'mitra_nama'      => $spec['mitra_nama'] ?? ($a->penyedia_nama ?: 'Mitra Pihak Ketiga'),
+                'nomor_pks'       => $a->bast_dokumen_nomor ?: ($spec['nomor_pks'] ?? '-'),
+                'tanggal_pks'     => $a->bast_dokumen_tanggal ? (is_string($a->bast_dokumen_tanggal) ? $a->bast_dokumen_tanggal : $a->bast_dokumen_tanggal->format('Y-m-d')) : ($spec['tanggal_pks'] ?? null),
+                'skema_kemitraan' => $spec['skema_kemitraan'] ?? 'Sewa BMD',
+                'tipe_kemitraan'  => 'dimanfaatkan',
+                'status_konsesi'  => 'Aktif',
+                'tanggal_mulai'   => $spec['tanggal_mulai'] ?? null,
+                'tanggal_selesai' => $spec['tanggal_selesai'] ?? null,
+                'sisa_hari'       => null,
+                'keterangan'      => $spec['keterangan'] ?? null,
+            ] : null);
+
+            // 2. Data Hibah Masuk & Hibah Keluar
+            $hibahMasukData = $hibahDetail ? [
+                'id'               => $hibahDetail->id,
+                'pemberi_hibah'    => $hibahDetail->pemberi_hibah ?: ($a->hibah_pemberi ?: ($spec['pemberi_hibah'] ?? ($spec['hibah_pemberi'] ?? ''))),
+                'pimpinan_pemberi' => $hibahDetail->pimpinan_pemberi ?: ($spec['pimpinan_pemberi'] ?? ($a->penyedia_pemilik ?? '')),
+                'nomor_bast'       => $hibahDetail->nomor_bast ?: ($a->hibah_nomor_bast ?: ($a->bast_dokumen_nomor ?: ($spec['nomor_bast'] ?? ''))),
+                'tanggal_bast'     => $hibahDetail->tanggal_bast ? $hibahDetail->tanggal_bast->format('Y-m-d') : ($a->hibah_tanggal_bast ? (is_string($a->hibah_tanggal_bast) ? $a->hibah_tanggal_bast : $a->hibah_tanggal_bast->format('Y-m-d')) : ($a->bast_dokumen_tanggal ? (is_string($a->bast_dokumen_tanggal) ? $a->bast_dokumen_tanggal : $a->bast_dokumen_tanggal->format('Y-m-d')) : ($spec['tanggal_bast'] ?? null))),
+                'nilai_hibah'      => (float) ($hibahDetail->nilai_hibah ?: $a->total_realisasi),
+                'keterangan'       => $hibahDetail->keterangan ?: ($a->hibah_keterangan ?: ($spec['keterangan'] ?? '')),
+            ] : null;
+
+            $isHibahKeluarAset = $a->isHibahKeluar() || $a->jenis_reklas === 'HIBAH_KELUAR' || !empty($hibahKeluarModel);
+            $hibahKeluarData = $hibahKeluarModel ? [
+                'id'               => $hibahKeluarModel->id,
+                'penerima_hibah'   => $hibahKeluarModel->penerima_hibah ?: ($hibahKeluarModel->penerima ?: ($a->hibah_pemberi ?: ($spec['penerima_hibah'] ?? ''))),
+                'nama_penerima'    => $hibahKeluarModel->nama_penerima ?: ($spec['nama_penerima'] ?? ''),
+                'jabatan_penerima' => $hibahKeluarModel->jabatan_penerima ?: ($spec['jabatan_penerima'] ?? ''),
+                'nip_penerima'     => $hibahKeluarModel->nip_penerima ?: ($spec['nip_penerima'] ?? ''),
+                'alamat_penerima'  => $hibahKeluarModel->alamat_penerima ?: ($spec['alamat_penerima'] ?? ($a->alamat_barang ?: '')),
+                'nomor_bast'       => $hibahKeluarModel->nomor_bast ?: ($hibahKeluarModel->nomor_naskah ?: ($a->bast_dokumen_nomor ?: '')),
+                'tanggal_bast'     => $hibahKeluarModel->tanggal_bast ? $hibahKeluarModel->tanggal_bast->format('Y-m-d') : ($a->bast_dokumen_tanggal ? (is_string($a->bast_dokumen_tanggal) ? $a->bast_dokumen_tanggal : $a->bast_dokumen_tanggal->format('Y-m-d')) : null),
+            ] : null;
+
+            // 3. Data Mutasi Eksternal
+            $mutasiKeluarData = $mutasiKeluar ? [
+                'id'                => $mutasiKeluar->id,
+                'opd_asal'          => $mutasiKeluar->opd_asal ?: 'RSUD Dr. H. Koesnandi',
+                'opd_tujuan'        => $mutasiKeluar->opd_tujuan ?: '-',
+                'pj_tujuan_nama'    => $mutasiKeluar->pj_tujuan_nama ?: '-',
+                'pj_tujuan_jabatan' => $mutasiKeluar->pj_tujuan_jabatan ?: '-',
+                'pj_tujuan_nip'     => $mutasiKeluar->pj_tujuan_nip ?: '-',
+                'nomor_bamb'        => $mutasiKeluar->nomor_bamb ?: ($a->bast_dokumen_nomor ?: '-'),
+                'tanggal_mutasi'    => $mutasiKeluar->tanggal_mutasi ? $mutasiKeluar->tanggal_mutasi->format('Y-m-d') : ($a->bast_dokumen_tanggal ? (is_string($a->bast_dokumen_tanggal) ? $a->bast_dokumen_tanggal : $a->bast_dokumen_tanggal->format('Y-m-d')) : null),
+            ] : null;
+
+            // 4. Data Rekanan Vendor & PPK (Belanja Modal / Belanja Barang)
+            $ppkNama = $a->ppk_nama ?: ($spec['ppk_nama'] ?? ($bm?->ppk_nama ?? 'BUDI HARTONO, S.Sos'));
+            $ppkNip = $a->ppk_nip ?: ($spec['ppk_nip'] ?? ($bm?->ppk_nip ?? '19760229 200801 1 010'));
+            $penyediaNama = $bm?->penyedia_nama ?: ($a->penyedia_nama ?: ($bb?->nama_toko ?: ($spec['penyedia_nama'] ?? ($spec['mitra_nama'] ?? ''))));
+            $penyediaPemilik = $bm?->penyedia_pemilik ?: ($a->penyedia_pemilik ?: ($spec['penyedia_pemilik'] ?? ''));
+            $penyediaAlamat = $bm?->penyedia_alamat ?: ($a->penyedia_alamat ?: ($spec['penyedia_alamat'] ?? ''));
+            $penyediaTelepon = $bm?->penyedia_telepon ?: ($a->penyedia_telepon ?: ($spec['penyedia_telepon'] ?? ''));
+            $penyediaRekNama = $bm?->penyedia_rekening_nama ?: ($a->penyedia_rekening_nama ?: ($spec['penyedia_rekening_nama'] ?? ''));
+            $penyediaRekNomor = $bm?->penyedia_rekening_nomor ?: ($a->penyedia_rekening_nomor ?: ($spec['penyedia_rekening_nomor'] ?? ''));
+
             return [
-                'id'                  => $a->id,
-                'category'            => $a->category,
-                'kode_barang'         => $kode108Val,
-                'nama_barang'         => $a->nama_barang,
-                'tahun_perolehan'     => (int) ($a->tahun_perolehan ?: date('Y')),
-                'triwulan'            => $a->triwulan ?: ($spec['triwulan'] ?? 'TW I'),
-                'triwulan_num'        => PeriodeTutupBuku::parseTriwulan($a->triwulan),
-                'volume_satuan'       => ($a->jumlah_volume ?: 1) . ' ' . ($a->satuan ?: 'Aset'),
-                'jumlah_volume'       => (int) ($a->jumlah_volume ?: 1),
-                'satuan'              => $a->satuan ?: 'Unit',
-                'harga_satuan'        => (float) $a->harga_satuan,
-                'jumlah_anggaran'     => (float) ($a->jumlah_anggaran ?: 0),
-                'jumlah_realisasi'    => 'Rp ' . number_format($a->total_realisasi, 0, ',', '.'),
-                'total_realisasi_num' => (float) $a->total_realisasi,
-                'kondisi'             => $a->kondisi ?: 'Baik',
-                'sumber_dana'         => $sumberType,
-                'sumber_dana_raw'     => $a->sumber_dana,
-                'sumber_type'         => $sumberType,
-                'sumber_label'        => $sumberLabel,
-                'asal_usul'           => $a->asal_usul,
-                'jenis_aset_nama'     => $ja ? ($ja->uraian_sub_rincian ?: $ja->nama_jenis) : 'Aset Tetap',
-                'reklas_count'        => $reklasCount,
-                'reklas_history'      => $reklasHistory,
-                'is_reklas'           => $reklasCount > 0,
-                'jenis_reklas'        => $reklasJenis,
-                'unit_id'             => $a->unit_id,
-                'unit_nama'           => $a->unit?->nama ?? '',
-                'rekening_belanja'    => $a->rekeningBelanja ? $a->rekeningBelanja->nama_rekening : '',
-                'spk_nomor'           => $a->nomor_spk,
-                'spk_tanggal'         => $a->tanggal_spk ? $a->tanggal_spk->format('Y-m-d') : '',
-                'bap_nomor'           => $a->nomor_bap,
-                'bap_tanggal'         => $a->tanggal_bap ? $a->tanggal_bap->format('Y-m-d') : '',
-                'bast_dokumen_nomor'  => $a->nomor_bast,
-                'bast_dokumen_tanggal'=> $a->tanggal_bast ? $a->tanggal_bast->format('Y-m-d') : '',
-                'keterangan'          => $a->keterangan,
-                'registers'           => $a->registers ? $a->registers->map(fn($r) => [
-                    'id'             => $r->id,
-                    'no_register'    => $r->nibar ?: $r->no_register,
-                    'nibar'          => $r->nibar,
-                    'ruang_pemegang' => $r->ruang_pemegang ?: ($r->unit?->nama ?? '-'),
-                    'kondisi'        => $r->kondisi ?: 'Baik',
-                ])->values() : [],
-                'spesifikasi_json'    => $spec,
+                'id'                    => $a->id,
+                'category'              => $a->category,
+                'kode_barang'           => $kode108Val,
+                'nama_barang'           => $a->nama_barang,
+                'tahun_perolehan'       => (int) ($a->tahun_perolehan ?: date('Y')),
+                'triwulan'              => $a->triwulan ?: ($spec['triwulan'] ?? 'TW I'),
+                'triwulan_num'          => PeriodeTutupBuku::parseTriwulan($a->triwulan),
+                'volume_satuan'         => ($a->jumlah_volume ?: 1) . ' ' . ($a->satuan ?: 'Aset'),
+                'jumlah_volume'         => (int) ($a->jumlah_volume ?: 1),
+                'satuan'                => $a->satuan ?: 'Unit',
+                'harga_satuan'          => (float) $a->harga_satuan,
+                'jumlah_anggaran'       => (float) ($a->jumlah_anggaran ?: 0),
+                'jumlah_realisasi'      => 'Rp ' . number_format($a->total_realisasi, 0, ',', '.'),
+                'total_realisasi_num'   => (float) $a->total_realisasi,
+                'kondisi'               => $a->kondisi ?: 'Baik',
+                'sumber_dana'           => $sumberType,
+                'sumber_dana_raw'       => $a->sumber_dana,
+                'sumber_type'           => $sumberType,
+                'sumber_label'          => $sumberLabel,
+                'asal_usul'             => $a->asal_usul ?: ($sumberType === 'blud' ? 'BLUD RSUD' : 'APBD Kabupaten Bondowoso'),
+                'jenis_aset_nama'       => $ja ? ($ja->uraian_sub_rincian ?: $ja->nama_jenis) : 'Aset Tetap',
+                'reklas_count'          => $reklasCount,
+                'reklas_history'        => $reklasHistory,
+                'is_reklas'             => $reklasCount > 0,
+                'jenis_reklas'          => $reklasJenis,
+                'unit_id'               => $a->unit_id,
+                'unit_nama'             => $a->unit?->nama ?? '',
+                'rekening_belanja'      => $a->rekeningBelanja ? $a->rekeningBelanja->nama_rekening : '',
+                'spk_nomor'             => $bm?->spk_nomor ?: ($a->nomor_spk ?: ($spec['spk_nomor'] ?? '')),
+                'spk_tanggal'           => $bm?->spk_tanggal ? (is_string($bm->spk_tanggal) ? $bm->spk_tanggal : $bm->spk_tanggal->format('Y-m-d')) : ($a->tanggal_spk ? $a->tanggal_spk->format('Y-m-d') : ($spec['spk_tanggal'] ?? '')),
+                'bap_nomor'             => $bm?->bap_nomor ?: ($a->nomor_bap ?: ($spec['bap_nomor'] ?? '')),
+                'bap_tanggal'           => $bm?->bap_tanggal ? (is_string($bm->bap_tanggal) ? $bm->bap_tanggal : $bm->bap_tanggal->format('Y-m-d')) : ($a->tanggal_bap ? $a->tanggal_bap->format('Y-m-d') : ($spec['bap_tanggal'] ?? '')),
+                'bast_dokumen_nomor'    => $bm?->bast_dokumen_nomor ?: ($a->bast_dokumen_nomor ?: ($a->nomor_bast ?: ($spec['bast_dokumen_nomor'] ?? ''))),
+                'bast_dokumen_tanggal'  => $bm?->bast_dokumen_tanggal ? (is_string($bm->bast_dokumen_tanggal) ? $bm->bast_dokumen_tanggal : $bm->bast_dokumen_tanggal->format('Y-m-d')) : ($a->bast_dokumen_tanggal ? (is_string($a->bast_dokumen_tanggal) ? $a->bast_dokumen_tanggal : $a->bast_dokumen_tanggal->format('Y-m-d')) : ($a->tanggal_bast ? $a->tanggal_bast->format('Y-m-d') : ($spec['bast_dokumen_tanggal'] ?? ''))),
+                'faktur_nomor'          => $bm?->faktur_nomor ?: ($bb?->nomor_faktur ?: ($a->faktur_nomor ?: ($spec['faktur_nomor'] ?? ''))),
+                'faktur_tanggal'        => $bm?->faktur_tanggal ? (is_string($bm->faktur_tanggal) ? $bm->faktur_tanggal : $bm->faktur_tanggal->format('Y-m-d')) : ($bb?->tanggal_faktur ? (is_string($bb->tanggal_faktur) ? $bb->tanggal_faktur : $bb->tanggal_faktur->format('Y-m-d')) : ($a->faktur_tanggal ? $a->faktur_tanggal->format('Y-m-d') : ($spec['faktur_tanggal'] ?? ''))),
+                'sp2d_nomor'            => $bm?->sp2d_nomor ?: ($a->sp2d_nomor ?: ($spec['sp2d_nomor'] ?? '')),
+                'sp2d_tanggal'          => $bm?->sp2d_tanggal ? (is_string($bm->sp2d_tanggal) ? $bm->sp2d_tanggal : $bm->sp2d_tanggal->format('Y-m-d')) : ($a->sp2d_tanggal ? $a->sp2d_tanggal->format('Y-m-d') : ($spec['sp2d_tanggal'] ?? '')),
+                'ppk_nama'              => $ppkNama,
+                'ppk_nip'               => $ppkNip,
+                'penyedia_nama'         => $penyediaNama,
+                'penyedia_pemilik'      => $penyediaPemilik,
+                'penyedia_alamat'       => $penyediaAlamat,
+                'penyedia_telepon'      => $penyediaTelepon,
+                'penyedia_rekening_nama'  => $penyediaRekNama,
+                'penyedia_rekening_nomor' => $penyediaRekNomor,
+                'alamat_barang'         => $a->alamat_barang ?: ($spec['alamat_barang'] ?? 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1'),
+                'keterangan_tambahan'   => $a->keterangan_tambahan ?: ($a->keterangan ?: ($spec['keterangan'] ?? '-')),
+                'keterangan'            => $a->keterangan,
+                'kemitraan'             => $kemitraanData,
+                'hibah_masuk'           => $hibahMasukData,
+                'hibah_keluar'          => $hibahKeluarData,
+                'is_hibah_keluar'       => $isHibahKeluarAset,
+                'hibah_pemberi'         => $a->hibah_pemberi ?: ($spec['hibah_pemberi'] ?? ''),
+                'hibah_nomor_bast'      => $a->hibah_nomor_bast ?: ($spec['hibah_nomor_bast'] ?? ''),
+                'hibah_tanggal_bast'    => $a->hibah_tanggal_bast ? (is_string($a->hibah_tanggal_bast) ? $a->hibah_tanggal_bast : $a->hibah_tanggal_bast->format('Y-m-d')) : ($spec['hibah_tanggal_bast'] ?? ''),
+                'hibah_keterangan'      => $a->hibah_keterangan ?: ($spec['hibah_keterangan'] ?? ''),
+                'mutasi_keluar'         => $mutasiKeluarData,
+                'mutasi_asal'           => $mutasiMasuk?->opd_asal ?: ($a->mutasi_asal ?: ($spec['skpd_asal'] ?? '')),
+                'mutasi_nomor_bamb'     => $mutasiMasuk?->nomor_bamb ?: ($a->mutasi_nomor_bamb ?: ($spec['nomor_bamb'] ?? '')),
+                'mutasi_tanggal'        => $mutasiMasuk?->tanggal_mutasi ? $mutasiMasuk->tanggal_mutasi->format('Y-m-d') : ($a->mutasi_tanggal ? (is_string($a->mutasi_tanggal) ? $a->mutasi_tanggal : $a->mutasi_tanggal->format('Y-m-d')) : ($spec['mutasi_tanggal'] ?? '')),
+                'mutasi_keterangan'     => $mutasiMasuk?->alasan_mutasi ?: ($a->mutasi_keterangan ?: ($spec['mutasi_keterangan'] ?? '')),
+                'rekening_penyedia'     => $bb?->nama_toko ?: ($spec['rekening_penyedia'] ?? $penyediaNama),
+                'rekening_nomor_faktur' => $bb?->nomor_faktur ?: ($spec['rekening_nomor_faktur'] ?? ($a->faktur_nomor ?: '')),
+                'rekening_tanggal_faktur'=> $bb?->tanggal_faktur ? (is_string($bb->tanggal_faktur) ? $bb->tanggal_faktur : $bb->tanggal_faktur->format('Y-m-d')) : ($a->faktur_tanggal ? $a->faktur_tanggal->format('Y-m-d') : ''),
+                'rekening_keterangan'   => $bb?->keterangan ?: ($spec['rekening_keterangan'] ?? ''),
+                'registers'             => $a->registers ? $a->registers->sortBy(function($r) {
+                    return $r->no_register_int ?: intval(substr($r->nibar ?? '', -7));
+                })->values()->map(function($r) {
+                    return [
+                        'id'              => $r->id,
+                        'unit_id'         => $r->unit_id,
+                        'no_register_int' => $r->no_register_int ?: intval(substr($r->nibar ?? '', -7)),
+                        'no_register'     => $r->nibar ?: $r->no_register,
+                        'nibar'           => $r->nibar,
+                        'ruang_pemegang'  => $r->ruang_pemegang ?: ($r->unit?->nama ?? '-'),
+                        'kondisi'         => $r->kondisi ?: 'Baik',
+                        'status'          => $r->status ?: 'Tersedia',
+                        'qr_code_path'    => $r->qr_code_path ?: ('/scan/' . ($r->nibar ?: $r->no_register)),
+                        'nama_barang'     => $r->nama_barang,
+                    ];
+                })->values() : [],
+                'spesifikasi_json'      => $spec,
             ];
         });
 

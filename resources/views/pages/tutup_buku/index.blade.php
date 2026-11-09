@@ -704,6 +704,37 @@
                     this.selectedRiwayatItem = null;
                 },
 
+                // Getter reaktif rincian register NIBAR pada modal detail
+                get filteredRegisters() {
+                    if (!this.selectedAstapDetail || !Array.isArray(this.selectedAstapDetail.registers)) return [];
+                    const query = (this.detailSearchQuery || '').toLowerCase().trim();
+                    const filtered = this.selectedAstapDetail.registers.filter(reg => {
+                        const matchKondisi = this.detailKondisiFilter === 'all' || reg.kondisi === this.detailKondisiFilter;
+                        
+                        let matchPenempatan = true;
+                        const isPlaced = !!(reg.unit_id || (reg.ruang_pemegang && reg.ruang_pemegang !== '-' && !reg.ruang_pemegang.toLowerCase().includes('belum') && !reg.ruang_pemegang.toLowerCase().includes('gudang aset utama')));
+                        if (this.detailPenempatanFilter === 'sudah') {
+                            matchPenempatan = isPlaced;
+                        } else if (this.detailPenempatanFilter === 'belum') {
+                            matchPenempatan = !isPlaced;
+                        }
+
+                        const matchQuery = !query || 
+                            (reg.nibar || '').toLowerCase().includes(query) ||
+                            (reg.no_register || '').toLowerCase().includes(query) ||
+                            (reg.ruang_pemegang || '').toLowerCase().includes(query);
+
+                        return matchKondisi && matchPenempatan && matchQuery;
+                    });
+
+                    return filtered.sort((a, b) => {
+                        const numA = a.no_register_int || parseInt((a.nibar || a.no_register || '').slice(-7)) || 0;
+                        const numB = b.no_register_int || parseInt((b.nibar || b.no_register || '').slice(-7)) || 0;
+                        if (numA !== numB) return numA - numB;
+                        return (a.nibar || a.no_register || '').localeCompare(b.nibar || b.no_register || '');
+                    });
+                },
+
                 // Inisialisasi awal
                 initTutupBuku() {
                     // Default memilih triwulan yang aktif atau triwulan sebelumnya jika ada

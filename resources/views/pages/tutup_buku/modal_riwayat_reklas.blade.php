@@ -109,7 +109,8 @@
                                         <div class="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800/80">
                                             <div class="text-[9.5px] font-extrabold uppercase text-rose-400/90 mb-1">Klasifikasi Asal</div>
                                             <div class="flex items-center gap-1.5 text-xs text-slate-300">
-                                                <span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-bold text-[10px]" x-text="'KIB ' + (rek.asal_kib || '-')"></span>
+                                                <span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-bold text-[10px]" 
+                                                      x-text="rek.asal_kib ? (rek.asal_kib.toUpperCase().startsWith('KIB') ? rek.asal_kib : (['EKSTRAKOMPTABEL', 'EXTRACOM', 'ATB', 'KDP'].includes(rek.asal_kib.toUpperCase()) ? rek.asal_kib : 'KIB ' + rek.asal_kib)) : '-'"></span>
                                                 <span class="font-mono text-[11px] text-slate-400" x-text="rek.asal_kode || '-'"></span>
                                             </div>
                                         </div>
@@ -118,7 +119,8 @@
                                         <div class="p-2.5 rounded-lg bg-indigo-950/20 border border-indigo-500/20">
                                             <div class="text-[9.5px] font-extrabold uppercase text-emerald-400/90 mb-1">Klasifikasi Tujuan Baru</div>
                                             <div class="flex items-center gap-1.5 text-xs text-indigo-200">
-                                                <span class="px-1.5 py-0.5 rounded bg-indigo-500/30 text-indigo-200 font-bold text-[10px]" x-text="'KIB ' + (rek.tujuan_kib || '-')"></span>
+                                                <span class="px-1.5 py-0.5 rounded bg-indigo-500/30 text-indigo-200 font-bold text-[10px]" 
+                                                      x-text="rek.tujuan_kib ? (rek.tujuan_kib.toUpperCase().startsWith('KIB') ? rek.tujuan_kib : (['EKSTRAKOMPTABEL', 'EXTRACOM', 'ATB', 'KDP'].includes(rek.tujuan_kib.toUpperCase()) ? rek.tujuan_kib : 'KIB ' + rek.tujuan_kib)) : '-'"></span>
                                                 <span class="font-mono text-[11px] text-indigo-300 font-bold" x-text="rek.tujuan_kode || '-'"></span>
                                             </div>
                                         </div>
