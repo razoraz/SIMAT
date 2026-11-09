@@ -1,3 +1,4 @@
+        @php $isTutupBuku = !empty($isTutupBuku) || request()->routeIs('tutup_buku.*') || request()->is('tutup-buku*'); @endphp
         <!-- FRONTEND MODAL: DETAIL ASTAP & RINCIAN REGISTER NIBAR -->
         <template x-teleport="body">
             <div x-show="showDetailModal" x-cloak @click.self="showDetailModal = false"
@@ -1743,7 +1744,7 @@
                                     <p class="text-[10px] text-slate-400 mt-0.5">Daftar unik kode NIBAR per-aset beserta lokasi penempatannya.</p>
                                 </div>
                                 <div class="flex items-center space-x-2 shrink-0">
-                                    @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
+                                    @if(empty($isTutupBuku) && in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
                                     <button type="button" @click="resequenceSingleAstap(selectedAstapDetail)"
                                         class="px-2.5 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[10.5px] font-bold transition-all flex items-center space-x-1 cursor-pointer shadow-sm active:scale-95"
                                         title="Urutkan ulang register NIBAR barang ini agar berurutan tanpa celah">
@@ -1796,7 +1797,9 @@
                                             <th class="px-4 py-3 text-center whitespace-nowrap min-w-[200px]">Lokasi Penempatan</th>
                                             <th class="px-3.5 py-3 text-center whitespace-nowrap">Kondisi</th>
                                             <th class="px-3.5 py-3 text-center whitespace-nowrap">QR Code</th>
+                                            @if(empty($isTutupBuku))
                                             <th class="px-3.5 py-3 text-center whitespace-nowrap">Aksi</th>
+                                            @endif
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-slate-800/80 bg-slate-900/50">
@@ -1947,6 +1950,7 @@
                                                     @endif
                                                 </td>
 
+                                                @if(empty($isTutupBuku))
                                                 <!-- 7. Tombol Aksi -->
                                                 <td class="px-3.5 py-3 text-center whitespace-nowrap align-middle">
                                                     <div class="flex items-center justify-center gap-1.5">
@@ -1978,11 +1982,12 @@
                                                         @endif
                                                     </div>
                                                 </td>
+                                                @endif
                                             </tr>
                                         </template>
                                         <template x-if="filteredRegisters.length === 0">
                                             <tr>
-                                                <td :colspan="(selectedAstapDetail?.sumber_dana === 'kemitraan' || selectedAstapDetail?.sumber_dana_raw === 'kemitraan' || !!selectedAstapDetail?.kemitraan) ? 7 : 6" class="px-3 py-6 text-center text-slate-500 italic text-xs">
+                                                <td :colspan="(selectedAstapDetail?.sumber_dana === 'kemitraan' || selectedAstapDetail?.sumber_dana_raw === 'kemitraan' || !!selectedAstapDetail?.kemitraan) ? ({{ !empty($isTutupBuku) ? 6 : 7 }}) : ({{ !empty($isTutupBuku) ? 5 : 6 }})" class="px-3 py-6 text-center text-slate-500 italic text-xs">
                                                     Tidak ditemukan rincian register NIBAR yang sesuai dengan filter pencarian.
                                                 </td>
                                             </tr>

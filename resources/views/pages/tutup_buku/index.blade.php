@@ -666,7 +666,7 @@
         <!-- ========================================================================= -->
         <!-- 6. MODAL DETAIL, MODAL REKLASIFIKASI, RIWAYAT REKLAS, CONFIRM & TOAST     -->
         <!-- ========================================================================= -->
-        @include('pages.astap.index_partials.modal_detail')
+        @include('pages.astap.index_partials.modal_detail', ['isTutupBuku' => true])
         @include('pages.astap.index_partials.modal_reklas')
         @include('pages.tutup_buku.modal_riwayat_reklas')
         @include('pages.astap.index_partials.modal_confirm')
