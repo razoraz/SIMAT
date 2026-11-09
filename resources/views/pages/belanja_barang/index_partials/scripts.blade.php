@@ -50,9 +50,10 @@
 
             openDocPreview(url, title) {
                 if (!url) return;
+                const cleanUrl = String(url).split('?')[0].split('#')[0].toLowerCase();
                 this.previewDocUrl = url;
                 this.previewDocTitle = title || 'Dokumen Belanja Barang';
-                this.previewDocType = url.toLowerCase().endsWith('.pdf') ? 'pdf' : 'image';
+                this.previewDocType = cleanUrl.endsWith('.pdf') ? 'pdf' : 'image';
                 this.previewDocModalOpen = true;
             },
 
