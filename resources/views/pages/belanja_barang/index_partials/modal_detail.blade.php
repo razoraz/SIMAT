@@ -407,10 +407,15 @@
                                                 </template>
                                                 <!-- 2. Belum ditempatkan / Masih di Gudang Aset -->
                                                 <template x-if="!reg.ruang || reg.ruang === 'Belum Ditempatkan' || reg.ruang === 'Gudang Perbekalan' || reg.ruang === '-'">
-                                                    <span class="inline-flex items-center space-x-1.5 text-amber-400 font-bold bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/30 text-[10px] justify-center">
-                                                        <span>📦</span>
-                                                        <span>Gudang Aset (Belum Ditempatkan)</span>
-                                                    </span>
+                                                    <div class="inline-flex flex-col items-center justify-center leading-tight py-1 px-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 shadow-sm">
+                                                        <span class="inline-flex items-center gap-1 text-[10.5px] font-bold">
+                                                            <span>📦</span>
+                                                            <span>Gudang Aset</span>
+                                                        </span>
+                                                        <span class="text-[9px] text-amber-400/80 font-medium">
+                                                            (Belum Ditempatkan)
+                                                        </span>
+                                                    </div>
                                                 </template>
                                             </td>
                                             <td class="px-3.5 py-2.5 text-center whitespace-nowrap">
