@@ -4337,10 +4337,11 @@ class AstapController extends Controller
                 $nibar = $reg->nibar ?: $reg->no_register;
                 $nama = $astap?->nama_barang ?? 'Aset ASTAP';
                 $astapAutoDeleted = false;
+                $hasOtherActiveBelanjaItems = false;
                 $spec = null;
 
                 // 2. Lakukan Soft Delete & Sinkronisasi di dalam DB Transaction
-                \Illuminate\Support\Facades\DB::transaction(function() use ($reg, $astap, &$astapAutoDeleted, &$spec) {
+                \Illuminate\Support\Facades\DB::transaction(function() use ($reg, $astap, &$astapAutoDeleted, &$spec, &$hasOtherActiveBelanjaItems) {
                     // Lepaskan string NIBAR dengan prefix DEL_ agar tidak membentur unique index MySQL dan slot nomor bisa dirapikan
                     $origNibar = $reg->nibar ?: $reg->no_register;
                     if ($origNibar && !str_starts_with($origNibar, 'DEL_')) {
@@ -4543,9 +4544,15 @@ class AstapController extends Controller
             $isKemitraan = ($astap?->sumber_dana === 'kemitraan') || !empty($astap?->kemitraan) || str_starts_with((string) $astap?->kode_108, '1.5.2');
             $namaPaket = $isKemitraan ? "Dokumen Kontrak / PKS Kemitraan \"{$nama}\"" : "Paket pengadaan ASTAP \"{$nama}\"";
 
-            $responseMessage = ($astapAutoDeleted ?? false)
-                ? "Unit NIBAR terakhir dihapus. {$namaPaket} otomatis dipindahkan ke Pusat Data Terhapus (Recycle Bin)."
-                : 'Unit register NIBAR berhasil dipindahkan ke Pusat Data Terhapus (Recycle Bin).';
+            if ($astapAutoDeleted ?? false) {
+                if ($astap && $astap->belanjaBarang && ($hasOtherActiveBelanjaItems ?? false)) {
+                    $responseMessage = "Barang \"{$nama}\" (seluruh unit register habis) berhasil dipindahkan ke Recycle Bin. Faktur tetap aktif untuk item barang lainnya.";
+                } else {
+                    $responseMessage = "Unit NIBAR terakhir dihapus. {$namaPaket} otomatis dipindahkan ke Pusat Data Terhapus (Recycle Bin).";
+                }
+            } else {
+                $responseMessage = 'Unit register NIBAR berhasil dipindahkan ke Pusat Data Terhapus (Recycle Bin).';
+            }
 
             session()->flash('success', $responseMessage);
             return response()->json([
