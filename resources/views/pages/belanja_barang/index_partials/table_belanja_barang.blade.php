@@ -45,7 +45,7 @@
                     <th class="py-3 px-2 w-10 text-center bg-slate-950">No</th>
                     <th class="py-3 px-3 w-[195px] bg-slate-950">Dokumen Faktur &amp; Toko</th>
                     <th class="py-3 px-3 min-w-[200px] bg-slate-950">Rincian Barang (Akun 108)</th>
-                    <th class="py-3 px-3 w-[150px] text-center bg-slate-950">Alokasi Penempatan</th>
+                    <th class="py-3 px-3 w-32 text-center bg-slate-950">Volume / Kuantitas</th>
                     <th class="py-3 px-3 w-[165px] text-right whitespace-nowrap bg-slate-950">Total Pembelian (Rp)</th>
                     <th class="py-3 px-3 w-[230px] min-w-[230px] text-center whitespace-nowrap border-l border-slate-800 shrink-0 sticky-aksi-belanja">Aksi</th>
                 </tr>
@@ -218,26 +218,12 @@
                             @endif
                         </td>
 
-                        <!-- 4. Alokasi Penempatan -->
-                        <td class="py-3.5 px-3 text-center whitespace-nowrap">
-                            @if($row->status_alokasi === 'ruangan' && $firstAstap?->unit)
-                                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-bold shadow-sm select-none">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
-                                    <span class="truncate max-w-[140px]" title="{{ $firstAstap->unit->nama }}">
-                                        {{ $firstAstap->unit->nama }}
-                                    </span>
-                                </div>
-                            @elseif($row->status_alokasi === 'sebagian')
-                                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold shadow-sm select-none">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
-                                    <span>Sebagian Gudang / Ruang</span>
-                                </div>
-                            @else
-                                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-300 text-xs font-bold shadow-sm select-none">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                                    <span>Belum Ditempatkan</span>
-                                </div>
-                            @endif
+                        <!-- 4. Volume / Kuantitas -->
+                        <td class="py-3.5 px-3 text-center whitespace-nowrap w-32">
+                            <div class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-xl bg-slate-950 border border-slate-800 text-teal-300 font-semibold font-mono text-xs whitespace-nowrap">
+                                <span>📏</span>
+                                <span>{{ $totalVolFaktur }} {{ $astaps->first()?->satuan ?: 'Unit' }}</span>
+                            </div>
                         </td>
 
                         <!-- 5. Total Pembelian (Rp) -->
