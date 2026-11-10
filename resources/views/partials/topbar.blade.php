@@ -303,12 +303,18 @@
                         }
 
                         const initialNotifs = @json($systemNotifications ?? []);
+                        // Sinkronisasi baseline ID secara senyap agar tidak memicu lonceng/pop-up saat buka halaman awal / dari cache
                         if (Array.isArray(initialNotifs) && initialNotifs.length > 0) {
-                            this.checkAndAlertNew(initialNotifs);
+                            const maxInitialId = Math.max(...initialNotifs.map(n => parseInt(n.id) || 0));
+                            const storedAlertedId = parseInt(localStorage.getItem('simat_last_alerted_id') || '0', 10);
+                            if (maxInitialId > storedAlertedId) {
+                                localStorage.setItem('simat_last_alerted_id', String(maxInitialId));
+                            }
                         } else if (!localStorage.getItem('simat_last_alerted_id')) {
                             localStorage.setItem('simat_last_alerted_id', '0');
                         }
 
+                        // Polling berkala: hanya saat server aktif dan fetch sukses menghasilkan notifikasi baru, barulah suara & notifikasi desktop dipicu
                         this.timer = setInterval(() => {
                             this.refreshNotif();
                         }, 15000);

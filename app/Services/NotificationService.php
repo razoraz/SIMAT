@@ -17,6 +17,9 @@ class NotificationService
      */
     public static function sendToAdminAndMaster(string $title, string $message, string $type = 'info', ?string $link = null): SystemNotification
     {
+        $currentUserId = auth()->id();
+        $initialReaders = $currentUserId ? [$currentUserId] : [];
+
         return SystemNotification::create([
             'role_target'   => 'admin,master_admin',
             'unit_id'       => null,
@@ -26,7 +29,7 @@ class NotificationService
             'message'       => $message,
             'type'          => $type,
             'link'          => $link,
-            'read_by_users' => [],
+            'read_by_users' => $initialReaders,
         ]);
     }
 
@@ -35,6 +38,9 @@ class NotificationService
      */
     public static function sendToUnitSubAdmin(?int $unitId, ?string $ruanganName, string $title, string $message, string $type = 'info', ?string $link = null): SystemNotification
     {
+        $currentUserId = auth()->id();
+        $initialReaders = $currentUserId ? [$currentUserId] : [];
+
         return SystemNotification::create([
             'role_target'   => 'sub_admin',
             'unit_id'       => $unitId,
@@ -44,7 +50,7 @@ class NotificationService
             'message'       => $message,
             'type'          => $type,
             'link'          => $link,
-            'read_by_users' => [],
+            'read_by_users' => $initialReaders,
         ]);
     }
 
