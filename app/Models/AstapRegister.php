@@ -16,6 +16,10 @@ class AstapRegister extends Model
         'deleted_at' => 'datetime',
     ];
 
+    protected $hidden = [
+        'astap',
+    ];
+
     protected static function booted()
     {
         static::saving(function ($reg) {

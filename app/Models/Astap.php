@@ -108,6 +108,21 @@ class Astap extends Model
     ];
 
     /**
+     * Sembunyikan relasi balik agar tidak memicu circular recursion saat serialisasi JSON / toArray()
+     */
+    protected $hidden = [
+        'hibahDetail',
+        'hibahs',
+        'kemitraan',
+        'kemitraans',
+        'objekKemitraans',
+        'mutasiEksternal',
+        'mutasiEksternals',
+        'mutasiEksternalMasuk',
+        'reklas',
+    ];
+
+    /**
      * Izinkan mass assignment untuk kolom ekstensi agar tidak tertahan oleh accessor
      */
     public function isFillable($key)
