@@ -2623,7 +2623,14 @@ class ReklasifikasiController extends Controller
             if ($validated['jenis_reklas'] === 'MUTASI_EKSTERNAL') {
                 $skpdTujuan = $validated['skpd_tujuan'] ?? ($request->input('skpd_tujuan') ?? 'SKPD / OPD Luar');
                 $tglBast = $validated['tanggal_bast'] ?? ($request->input('tanggal_bast') ?? ($validated['tanggal_reklas'] ?? date('Y-m-d')));
-                $nomorBast = $validated['nomor_ba_reklas'] ?? ('000.2.3.2/BAST-KLR-' . str_pad($astap->id, 3, '0', STR_PAD_LEFT) . '/430.10.7/' . date('Y'));
+                $nomorBast = !empty(trim((string)($validated['nomor_ba_reklas'] ?? ''))) 
+                    ? trim($validated['nomor_ba_reklas']) 
+                    : ('000.2.3.2/BAST-KLR-' . str_pad($astap->id, 3, '0', STR_PAD_LEFT) . '/430.10.7/' . date('Y'));
+                
+                if (empty($reklas->nomor_ba_reklas)) {
+                    $reklas->nomor_ba_reklas = $nomorBast;
+                    $reklas->save();
+                }
                 
                 $pjAsal = $request->input('pj_asal_nama') ?: ($astap->ppk_nama ?: 'BUDI HARTONO, S.Sos');
                 $pjAsalNip = $request->input('pj_asal_nip') ?: ($astap->ppk_nip ?: '19760229 200801 1 010');

@@ -3291,10 +3291,10 @@
                                         <label class="flex items-center gap-1.5 text-[10px] font-bold text-slate-300 uppercase tracking-wider h-5 min-w-0">
                                             <svg class="w-3.5 h-3.5 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
                                             <span class="truncate" title="Nomor BAST Mutasi Eksternal">Nomor BAST Mutasi Eksternal</span>
-                                            <span class="text-rose-400 font-bold shrink-0">*</span>
+                                            <span class="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-300 font-medium shrink-0">Otomatis / Opsional</span>
                                         </label>
                                         <input type="text" x-model="reklasNomorBastMutasi"
-                                               placeholder="000.2.3.2/.../430.10.7/2026"
+                                               placeholder="Otomatis diterbitkan sistem saat disimpan..."
                                                class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none font-mono tracking-wider transition-all shadow-inner">
                                     </div>
 
@@ -3303,7 +3303,7 @@
                                             <label class="flex items-center gap-1.5 text-[10px] font-bold text-slate-300 uppercase tracking-wider min-w-0">
                                                 <svg class="w-3.5 h-3.5 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                                                 <span class="truncate" title="Tanggal BAST Mutasi">Tanggal BAST Mutasi</span>
-                                                <span class="text-rose-400 font-bold shrink-0">*</span>
+                                                <span class="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 font-medium shrink-0">Tanggal Dokumen</span>
                                             </label>
                                         </div>
                                         <input type="date" x-model="reklasTanggalBastMutasi"

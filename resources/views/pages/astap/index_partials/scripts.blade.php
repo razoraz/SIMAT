@@ -13115,15 +13115,7 @@
                             this.showToast('Pilih minimal 1 unit register NIBAR yang akan dimutasikan!', 'warning');
                             return;
                         }
-                        if (!this.reklasNomorBastMutasi || !this.reklasNomorBastMutasi.trim()) {
-                            this.showToast('Nomor BAST Mutasi Antar-OPD wajib diisi!', 'warning');
-                            return;
-                        }
-                        if (!this.reklasTanggalBastMutasi) {
-                            this.showToast('Tanggal BAST Mutasi Antar-OPD wajib dipilih!', 'warning');
-                            return;
-                        }
-                        if (this.isTanggalBastInvalid()) {
+                        if (this.reklasTanggalBastMutasi && this.isTanggalBastInvalid()) {
                             this.showToast('Tanggal BAST tidak boleh melebihi tanggal hari ini!', 'error');
                             return;
                         }
@@ -13251,7 +13243,7 @@
                         if (this.reklasJenis === 'hibah') {
                             nomorBaFinal = (this.reklasNomorBastHibah || '').trim() || nomorBaFinal;
                         } else if (this.reklasJenis === 'mutasi_eksternal') {
-                            nomorBaFinal = (this.reklasNomorBastMutasi || '').trim() || nomorBaFinal;
+                            nomorBaFinal = (this.reklasNomorBastMutasi || '').trim() || null;
                         }
 
                         const payload = {
@@ -13287,7 +13279,7 @@
                             pj_asal_jabatan: (this.reklasJenis === 'mutasi_eksternal' || this.reklasJenis === 'hibah') ? (this.reklasPjAsalJabatan || 'Pengurus Barang Pengguna') : null,
                             alamat_instansi: (this.reklasJenis === 'hibah') ? this.reklasPenerimaAlamat : ((this.reklasJenis === 'mutasi_eksternal') ? this.reklasAlamatInstansi : null),
                             nomor_sk_dasar: (this.reklasJenis === 'mutasi_eksternal') ? this.reklasNomorSkDasar : null,
-                            tanggal_bast: (this.reklasJenis === 'hibah') ? this.reklasTanggalBastHibah : ((this.reklasJenis === 'mutasi_eksternal') ? this.reklasTanggalBastMutasi : null),
+                            tanggal_bast: (this.reklasJenis === 'hibah') ? this.reklasTanggalBastHibah : ((this.reklasJenis === 'mutasi_eksternal') ? (this.reklasTanggalBastMutasi || new Date().toLocaleDateString('en-CA')) : null),
                             tanggal_dokumen_koreksi: (this.reklasJenis === 'koreksi_nilai') ? this.reklasDokumenTglKoreksi : null,
                             selected_register_ids: ((this.reklasJenis === 'mutasi_eksternal' || this.reklasJenis === 'hibah') && (this.selectedAstapReklas?.registers && this.selectedAstapReklas.registers.length > 0)) ? this.reklasSelectedNibarIds : null,
                             register_kondisi_map: (this.reklasJenis === 'mutasi_eksternal' || this.reklasJenis === 'hibah') ? this.reklasRegisterKondisiMap : null,

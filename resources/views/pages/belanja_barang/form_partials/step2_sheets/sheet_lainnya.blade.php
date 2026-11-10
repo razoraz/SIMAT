@@ -180,10 +180,10 @@
 
                     <!-- 1. Pilihan Jenis & Nama Barang PMDN 108 (Satu Input Filter & Ketik Langsung) -->
                     <div class="p-4 rounded-2xl bg-slate-900/90 border border-purple-500/40 space-y-2 shadow-inner">
-                        <div class="relative" @click.outside="item.isFilterOpen = false">
+                        <div class="relative" @click.outside="item.isFilterOpen = false; handle108Blur(item, 'lainnya');">
                             <div class="flex items-center justify-between mb-1.5">
                                 <label class="text-purple-300 text-[10.5px] font-bold uppercase tracking-wider flex items-center gap-1.5">
-                                    <span>🏷️ Pilih / Ketik Jenis Barang PMDN 108 (Aset Tetap Lainnya)</span>
+                                    <span>🏷️ Pilih Jenis Barang PMDN 108 (Aset Tetap Lainnya)</span>
                                     <span class="text-rose-400">*</span>
                                 </label>
                                 <span class="text-[9.5px] px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold font-mono"
@@ -202,7 +202,8 @@
                                        @focus="item.isFilterOpen = true"
                                        @click="item.isFilterOpen = true"
                                        @input="item.isFilterOpen = true; syncTotalsFromItems();"
-                                       placeholder="Ketik untuk mencari jenis barang PMDN 108 atau tulis rincian aset lainnya..."
+                                       @keydown.enter.prevent="item.isFilterOpen = false; handle108Blur(item, 'lainnya');"
+                                       placeholder="Ketik kata kunci untuk mencari &amp; memilih klasifikasi PMDN 108 Aset Tetap Lainnya... (Wajib pilih)"
                                        style="padding-left: 38px; padding-right: 36px;"
                                        class="w-full bg-slate-950 border border-slate-700 hover:border-purple-500 focus:border-purple-500 rounded-xl py-2.5 text-xs text-white font-bold focus:outline-none transition-all shadow-inner">
                                 <button type="button" 
@@ -236,8 +237,8 @@
                                     </div>
                                 </template>
                                 <div x-show="filterJenisAstap108(getKibEPrefix(item), item.lainnya_nama_barang, item.isFilterOpen).length === 0" 
-                                     class="px-3.5 py-2.5 text-center text-xs text-slate-400 italic">
-                                    <span>Gunakan nama yang Anda ketik jika tidak ada dalam daftar PMDN 108 di atas.</span>
+                                     class="px-3.5 py-2.5 text-center text-xs text-rose-400/90 font-medium">
+                                    <span>❌ Tidak ditemukan jenis barang PMDN 108 yang cocok. Wajib memilih dari klasifikasi resmi yang tersedia.</span>
                                 </div>
                             </div>
                         </div>
