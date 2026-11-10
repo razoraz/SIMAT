@@ -1469,14 +1469,6 @@
                     }
                 }, 200);
             },
-                               document.querySelector('input.border-rose-500') ||
-                               document.querySelector('input[placeholder*="Maks. 300.000"]');
-                    if (el) {
-                        el.focus();
-                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                }, 200);
-            },
 
             validateStep(s) {
                 // Bersihkan error lama untuk step ini sebelum validasi ulang
