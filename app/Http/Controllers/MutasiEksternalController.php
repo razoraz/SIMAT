@@ -484,7 +484,6 @@ class MutasiEksternalController extends Controller
                 'astap.jenisAstap', 
                 'unit', 
                 'user',
-                'mutasiRegisters.register.astap.jenisAstap',
                 'mutasiRegisters.register.unit'
             ])
             ->where('is_deleted', 0)
@@ -525,7 +524,7 @@ class MutasiEksternalController extends Controller
             if ($isKeluar && $m->mutasiRegisters && $m->mutasiRegisters->isNotEmpty()) {
                 foreach ($m->mutasiRegisters as $idx => $mr) {
                     $reg = $mr->register;
-                    $ast = $reg?->astap;
+                    $ast = $astap ?: $reg?->astap;
                     $kd108 = $ast?->kode_108 ?: ($ast?->jenisAstap?->sub_sub_rincian_objek ?: ($ast?->jenisAstap?->jenis ?: '-'));
                     $items[] = [
                         'no'          => $idx + 1,
@@ -590,14 +589,20 @@ class MutasiEksternalController extends Controller
                 $outRegs = $m->mutasiRegisters->map(function ($mr) {
                     $r = $mr->register;
                     if (!$r) return null;
-                    $arr = $r->toArray();
-                    if ($mr->kondisi) {
-                        $arr['kondisi'] = $mr->kondisi;
-                    }
-                    return $arr;
-                })->filter()->values();
+                    return [
+                        'id'             => (int) $r->id,
+                        'nibar'          => $r->nibar ?: '-',
+                        'nomor_register' => $r->nomor_register ?: ($r->no_register ?: '-'),
+                        'no_register'    => $r->no_register ?: ($r->nomor_register ?: '-'),
+                        'kondisi'        => $mr->kondisi ?: ($r->kondisi ?: 'Baik'),
+                        'status'         => $r->status ?: 'Mutasi Keluar OPD',
+                        'ruang_pemegang' => $r->unit?->nama ?: ($r->ruang_pemegang ?: '-'),
+                        'harga_satuan'   => (float) ($r->harga_satuan ?: 0),
+                        'unit'           => $r->unit ? ['nama' => $r->unit->nama] : null,
+                    ];
+                })->filter()->values()->all();
 
-                if ($outRegs->isNotEmpty()) {
+                if (!empty($outRegs)) {
                     $displayRegisters = $outRegs;
                 }
             }
@@ -657,7 +662,22 @@ class MutasiEksternalController extends Controller
                 'total_realisasi_num'       => $nilaiReal,
                 'item_count'                => $itemCount,
                 'items'                     => $items,
-                'registers'                 => is_array($displayRegisters) ? $displayRegisters : $displayRegisters->toArray(),
+                'registers'                 => is_array($displayRegisters) ? $displayRegisters : (
+                    $displayRegisters instanceof \Illuminate\Support\Collection ? $displayRegisters->map(function($r) {
+                        if (is_array($r)) return $r;
+                        return [
+                            'id'             => (int) $r->id,
+                            'nibar'          => $r->nibar ?: '-',
+                            'nomor_register' => $r->nomor_register ?: ($r->no_register ?: '-'),
+                            'no_register'    => $r->no_register ?: ($r->nomor_register ?: '-'),
+                            'kondisi'        => $r->kondisi ?: 'Baik',
+                            'status'         => $r->status ?: 'Tersedia',
+                            'ruang_pemegang' => $r->unit?->nama ?: ($r->ruang_pemegang ?: '-'),
+                            'harga_satuan'   => (float) ($r->harga_satuan ?: 0),
+                            'unit'           => $r->unit ? ['nama' => $r->unit->nama] : null,
+                        ];
+                    })->values()->all() : []
+                ),
                 'kode_barang'               => $kode108 ?: $firstNibar,
                 'kode_108'                  => $kode108,
                 'kondisi'                   => $items[0]['kondisi'] ?? ($m->kondisi ?: 'Baik'),

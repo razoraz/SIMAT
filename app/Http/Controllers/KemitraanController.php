@@ -108,20 +108,10 @@ class KemitraanController extends Controller
             'astap.jenisAstap', 
             'astap.registers.unit', 
             'astap.unit', 
-            'astap.reklas.jenisReklasAsal',
-            'astap.reklas.jenisReklasTujuan',
-            'astap.belanjaModal.jenisPengadaan',
-            'astap.belanjaModal.rekeningBelanja',
-            'astap.belanjaBarang',
-            'astap.hibahs',
-            'astap.mutasiEksternals',
             'user', 
-            'objekRegister.astap.reklas.jenisReklasAsal',
-            'objekRegister.astap.belanjaModal.jenisPengadaan',
-            'objekRegister.astap.belanjaModal.rekeningBelanja',
-            'objekAstap.reklas.jenisReklasAsal',
-            'objekAstap.belanjaModal.jenisPengadaan',
-            'objekAstap.belanjaModal.rekeningBelanja'
+            'objekRegister.unit',
+            'objekRegister.astap.jenisAstap',
+            'objekAstap.jenisAstap'
         ])
             ->where('is_deleted', 0)
             ->whereHas('astap', function ($q) {
@@ -190,12 +180,7 @@ class KemitraanController extends Controller
             'kemitraan', 
             'jenisAstap', 
             'unit', 
-            'reklas.jenisReklasTujuan', 
-            'reklas.jenisReklasAsal',
-            'belanjaModal.jenisPengadaan',
-            'belanjaModal.rekeningBelanja',
-            'belanjaBarang',
-            'hibahs'
+            'reklas'
         ])
             ->where('is_deleted', 0)
             ->where(function ($q) {

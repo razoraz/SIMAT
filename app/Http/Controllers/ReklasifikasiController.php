@@ -138,55 +138,58 @@ class ReklasifikasiController extends Controller
             }
         }
 
+        // Pre-aggregate data per row template secara efisien O(N + M) untuk mencegah nested loop O(42 * N)
+        $astapSaldoAwalSumsByRow = [];
+        $extracomKurangByRow = [];
+        foreach ($astaps as $astap) {
+            $matchedRowId = $this->resolveAstapSaldoAwalRowId($astap, $templateRows, $allReklasByAstap);
+            if ($matchedRowId) {
+                $val = (float) ($astap->total_realisasi ?: ($astap->jumlah_anggaran ?: 0));
+                $astapSaldoAwalSumsByRow[$matchedRowId] = ($astapSaldoAwalSumsByRow[$matchedRowId] ?? 0) + $val;
+            }
+
+            if ($astap->is_extracomtable && !in_array($astap->id, $processedExtracomAstapIds)) {
+                $matchedRow = $this->matchAstapToRow($astap, $templateRows);
+                if ($matchedRow) {
+                    $val = (float) ($astap->total_realisasi ?: ($astap->jumlah_anggaran ?: 0));
+                    $extracomKurangByRow[$matchedRow->id] = ($extracomKurangByRow[$matchedRow->id] ?? 0) + $val;
+                }
+            }
+        }
+
+        $reklasKurangByRow = [];
+        $reklasTambahByRow = [];
+        foreach ($reklasMutasis as $reklas) {
+            $asalRowId = $this->resolveAsalRowId($reklas, $templateRows);
+            $tujuanRowId = $this->resolveTujuanRowId($reklas, $templateRows);
+            $val = (float) $reklas->nilai_reklas;
+
+            if ($asalRowId) {
+                $reklasKurangByRow[$asalRowId] = ($reklasKurangByRow[$asalRowId] ?? 0) + $val;
+            }
+            if ($tujuanRowId) {
+                $reklasTambahByRow[$tujuanRowId] = ($reklasTambahByRow[$tujuanRowId] ?? 0) + $val;
+            }
+        }
+
         foreach ($templateRows as $row) {
             $prefix = $row->kode_prefix;
             $saldoAwal = 0;
-            $mutasiTambah = 0;
-            $mutasiKurang = 0;
+            $mutasiTambah = $reklasTambahByRow[$row->id] ?? 0;
+            $mutasiKurang = $reklasKurangByRow[$row->id] ?? 0;
 
-            // 1. Hitung Saldo Awal Belanja Modal dari ASTAP berdasarkan Prefix PMDN 108
+            // 1. Saldo Awal Belanja Modal dari ASTAP berdasarkan Prefix PMDN 108
             // Catatan: Aset yang direklasifikasi ditempatkan saldo awalnya pada rekening asal pengadaan
             if ($prefix && !str_starts_with($prefix, 'KOR_')) {
-                foreach ($astaps as $astap) {
-                    $matchedRowId = $this->resolveAstapSaldoAwalRowId($astap, $templateRows, $allReklasByAstap);
-                    if ($matchedRowId === $row->id) {
-                        $saldoAwal += (float) ($astap->total_realisasi ?: ($astap->jumlah_anggaran ?: 0));
-                    }
-                }
+                $saldoAwal += ($astapSaldoAwalSumsByRow[$row->id] ?? 0);
 
                 // Tambahkan saldo awal dari aset tahun perolehan sebelumnya yang direklasifikasi pada periode ini
                 if (isset($priorYearSaldoAwalByRow[$row->id])) {
                     $saldoAwal += $priorYearSaldoAwalByRow[$row->id];
                 }
-            }
 
-            // 2. Hitung Mutasi dari Transaksi Reklasifikasi (AstapReklas)
-            foreach ($reklasMutasis as $reklas) {
-                $asalRowId = $this->resolveAsalRowId($reklas, $templateRows);
-                $tujuanRowId = $this->resolveTujuanRowId($reklas, $templateRows);
-
-                // Baris ini sebagai ASAL => Mutasi Kurang (-)
-                if ($asalRowId === $row->id) {
-                    $mutasiKurang += (float) $reklas->nilai_reklas;
-                }
-
-                // Baris ini sebagai TUJUAN => Mutasi Tambah (+)
-                if ($tujuanRowId === $row->id) {
-                    $mutasiTambah += (float) $reklas->nilai_reklas;
-                }
-            }
-
-            // 3. Tangani aset dengan status is_extracomtable di ASTAP yang belum tercatat di log reklasifikasi
-            if ($prefix && !str_starts_with($prefix, 'KOR_')) {
-                foreach ($astaps as $astap) {
-                    if ($astap->is_extracomtable && !in_array($astap->id, $processedExtracomAstapIds)) {
-                        $matchedRow = $this->matchAstapToRow($astap, $templateRows);
-                        if ($matchedRow && $matchedRow->id === $row->id) {
-                            $val = (float) ($astap->total_realisasi ?: ($astap->jumlah_anggaran ?: 0));
-                            $mutasiKurang += $val;
-                        }
-                    }
-                }
+                // 3. Tangani aset dengan status is_extracomtable di ASTAP yang belum tercatat di log reklasifikasi
+                $mutasiKurang += ($extracomKurangByRow[$row->id] ?? 0);
             }
 
             // 4. Khusus baris Koreksi Ekstrakomptabel (KOR_EXTRACOM)
@@ -268,7 +271,7 @@ class ReklasifikasiController extends Controller
         $kandidatAstaps = Astap::where('is_deleted', 0)
             ->where('tahun_perolehan', $selectedTahun)
             ->select('id', 'nama_barang', 'total_realisasi', 'jumlah_anggaran', 'tahun_perolehan', 'category', 'asal_kib', 'jenis_astap_id', 'is_reklas', 'jenis_reklas', 'satuan', 'merk_type', 'alamat_barang', 'spesifikasi_json', 'jumlah_volume', 'harga_satuan', 'is_extracomtable')
-            ->with(['jenisAstap', 'registers'])
+            ->with(['jenisAstap:id,jenis,sub_sub_rincian_objek', 'registers:id,astap_id,nibar,no_register,kondisi,status'])
             ->orderBy('nama_barang', 'asc')
             ->get();
 

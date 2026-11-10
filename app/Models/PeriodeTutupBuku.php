@@ -22,6 +22,16 @@ class PeriodeTutupBuku extends Model
         'unlocked_at'   => 'datetime',
     ];
 
+    protected static function booted()
+    {
+        static::saved(function () {
+            static::clearLocksCache();
+        });
+        static::deleted(function () {
+            static::clearLocksCache();
+        });
+    }
+
     public function lockedByUser()
     {
         return $this->belongsTo(User::class, 'locked_by');
@@ -32,28 +42,40 @@ class PeriodeTutupBuku extends Model
         return $this->belongsTo(User::class, 'unlocked_by');
     }
 
+    protected static ?array $activeLocksCache = null;
+
+    public static function clearLocksCache(): void
+    {
+        static::$activeLocksCache = null;
+    }
+
     /**
      * Cek apakah periode (tahun & triwulan) berstatus terkunci (locked).
      * Jika tutup buku tahunan (triwulan = 0) terkunci, maka seluruh triwulan di tahun tersebut otomatis terkunci.
+     * Menggunakan in-memory static cache agar tidak memicu ribuan query redundan saat iterasi ribuan aset.
      */
     public static function isLocked(int $tahun, ?int $triwulan = null): bool
     {
-        // 1. Cek kunci tahunan menyeluruh (triwulan = 0)
-        $annualLock = static::where('tahun', $tahun)
-            ->where('triwulan', 0)
-            ->where('is_locked', true)
-            ->exists();
+        if (static::$activeLocksCache === null) {
+            try {
+                static::$activeLocksCache = static::where('is_locked', true)
+                    ->get(['tahun', 'triwulan'])
+                    ->map(fn($row) => "{$row->tahun}_{$row->triwulan}")
+                    ->flip()
+                    ->all();
+            } catch (\Throwable $e) {
+                static::$activeLocksCache = [];
+            }
+        }
 
-        if ($annualLock) {
+        // 1. Cek kunci tahunan menyeluruh (triwulan = 0)
+        if (isset(static::$activeLocksCache["{$tahun}_0"])) {
             return true;
         }
 
         // 2. Cek kunci spesifik triwulan jika ditentukan (1-4)
         if ($triwulan !== null && $triwulan >= 1 && $triwulan <= 4) {
-            return static::where('tahun', $tahun)
-                ->where('triwulan', $triwulan)
-                ->where('is_locked', true)
-                ->exists();
+            return isset(static::$activeLocksCache["{$tahun}_{$triwulan}"]);
         }
 
         return false;

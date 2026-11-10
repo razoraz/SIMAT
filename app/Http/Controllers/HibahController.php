@@ -121,16 +121,19 @@ class HibahController extends Controller
         $persenBaik = $totalSemuaFisik > 0 ? round(($totalBaik / $totalSemuaFisik) * 100) : 100;
 
         // Daftar Aset Aktif yang dapat dihibahkan keluar (berstatus 'Tersedia' atau 'Aktif', belum dihibahkan/dihapus)
-        $activeAstaps = Astap::where('is_deleted', 0)
+        $activeAstaps = Astap::select(['id', 'nama_barang', 'kode_barang', 'id_jenis_astap', 'category', 'tahun_perolehan', 'jumlah_volume', 'satuan', 'harga_satuan', 'total_realisasi'])
+            ->where('is_deleted', 0)
             ->whereHas('registers', function ($q) {
                 $q->where('is_deleted', 0)
                   ->whereIn('status', ['Tersedia', 'Aktif']);
             })
             ->with(['registers' => function ($q) {
-                $q->where('is_deleted', 0)
+                $q->select(['id', 'astap_id', 'nibar', 'no_register', 'ruang_pemegang', 'kondisi', 'status'])
+                  ->where('is_deleted', 0)
                   ->whereIn('status', ['Tersedia', 'Aktif']);
-            }, 'jenisAstap'])
+            }, 'jenisAstap:id,jenis,sub_sub_rincian_objek'])
             ->orderBy('nama_barang', 'asc')
+            ->take(60)
             ->get()
             ->map(function ($a) {
                 $availRegisters = $a->registers;
@@ -159,14 +162,8 @@ class HibahController extends Controller
                 ];
             });
 
-        // Ambil data Astap Hibah lengkap untuk kebutuhan Engine Ekspor Excel Multi-Sheet (Client-Side)
-        $hibahAstaps = Astap::with(['registers.unit', 'hibahs', 'jenisAstap', 'unit'])
-            ->where('is_deleted', 0)
-            ->where(function ($q) {
-                $q->where('sumber_dana', 'hibah')
-                  ->orWhereHas('hibahs', fn($sq) => $sq->where('is_deleted', 0));
-            })
-            ->get();
+        // Ekspor Excel Client-Side menggunakan $allHibahs, kosongkan $hibahAstaps agar bebas OOM
+        $hibahAstaps = collect([]);
 
         // Daftar Unit & Jenis 108 untuk filter / modal
         $dbUnits = Unit::orderBy('nama')->get();

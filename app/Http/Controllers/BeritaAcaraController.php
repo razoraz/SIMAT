@@ -107,7 +107,7 @@ class BeritaAcaraController extends Controller
             $monthExprCreated = $isSqlite ? "CAST(strftime('%m', created_at) AS INTEGER)" : "MONTH(created_at)";
 
             $astaps = Astap::where('is_deleted', 0)
-                ->with(['jenisAstap', 'rekeningBelanja', 'registers', 'belanjaModal'])
+                ->with(['jenisAstap', 'rekeningBelanja', 'belanjaModal'])
                 ->where('tahun_perolehan', $tahun)
                 ->where(function ($q) use ($months, $tahun, $twValues, $monthExprSp2d, $monthExprBast, $monthExprCreated) {
                     // Prioritas 1: kolom triwulan sudah diisi dan sesuai
@@ -567,7 +567,7 @@ class BeritaAcaraController extends Controller
         // =========================================================================
         // 4. DATA MUTASI EKSTERNAL (TRANSFER ANTAR-OPD / MUTASI MASUK & KELUAR)
         // =========================================================================
-        $mutasiEksternals = MutasiEksternal::with(['astap.registers', 'astap.jenisAstap', 'unit', 'user'])
+        $mutasiEksternals = MutasiEksternal::with(['astap.registers:id,astap_id,nibar,no_register,kondisi', 'astap.jenisAstap:id,jenis,sub_sub_rincian_objek', 'unit', 'user'])
             ->where('is_deleted', 0)
             ->latest('tanggal_mutasi')
             ->latest('id')

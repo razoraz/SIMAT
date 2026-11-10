@@ -276,7 +276,7 @@ class Astap extends Model
     public function isTutupBuku(): bool
     {
         $currentYear = (int) date('Y');
-        $tahun = (int) ($this->tahun_perolehan ?: ($this->kemitraan?->tahun ?? $currentYear));
+        $tahun = (int) ($this->attributes['tahun_perolehan'] ?? ($this->relationLoaded('kemitraan') ? ($this->kemitraan?->tahun ?? $currentYear) : $currentYear));
 
         if ($tahun < $currentYear) {
             return true;

@@ -15,11 +15,18 @@ class JenisAstap extends Model
         'uraian_sub_sub_rincian',
     ];
 
+    protected static ?array $nested108Cache = null;
+
     /**
      * Mengambil seluruh data Jenis ASTAP dalam struktur bertingkat (Jenis -> Sub Rincian -> Sub-Sub Rincian)
+     * Menggunakan in-memory cache per request agar tidak mengulang query & nested map yang memakan RAM.
      */
     public static function getNested108(): array
     {
+        if (static::$nested108Cache !== null) {
+            return static::$nested108Cache;
+        }
+
         $all = self::whereNotNull('jenis')
             ->where('jenis', '!=', '')
             ->whereNotNull('nama_jenis')
@@ -30,10 +37,10 @@ class JenisAstap extends Model
             ->get();
 
         if ($all->isEmpty()) {
-            return [];
+            return static::$nested108Cache = [];
         }
 
-        return $all->groupBy('jenis')->map(function ($items, $jenisKode) {
+        return static::$nested108Cache = $all->groupBy('jenis')->map(function ($items, $jenisKode) {
             $firstItem = $items->first();
             $namaJenis = trim($firstItem->nama_jenis ?? '');
 
