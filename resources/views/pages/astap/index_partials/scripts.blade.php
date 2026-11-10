@@ -9787,7 +9787,7 @@
                     return true;
                 },
 
-                // Helper Cek apakah Aset Boleh Diubah (Hanya jika BELUM TUTUP BUKU)
+                // Helper Cek apakah Aset Boleh Diubah (Hanya jika BELUM TUTUP BUKU dan BELUM DIREKLASIFIKASI)
                 isEditAllowed(item) {
                     if (!item) return false;
                     const isClosed = this.isItemLocked(item);
@@ -9795,7 +9795,26 @@
                     if (this.isMutasiKeluarFull(item) || this.isKemitraanReturned(item) || this.isHibahKeluar(item)) {
                         return false;
                     }
+                    if (this.isReklasAset(item)) {
+                        return false;
+                    }
                     return true;
+                },
+
+                // Helper Cek apakah Aset Telah Direklasifikasi
+                isReklasAset(item) {
+                    if (!item) return false;
+                    const cat = (item.category || '').toUpperCase();
+                    const kd = String(item.kode_barang || item.kode_108 || '');
+                    const jkd = String(item.jenis_astap?.jenis || item.jenis_astap?.sub_sub_rincian_objek || '');
+                    return Boolean(
+                        item.is_reklas ||
+                        item.jenis_reklas ||
+                        cat === 'ASET LAIN' ||
+                        cat === 'ASET LAIN-LAIN' ||
+                        kd.startsWith('1.5.4') ||
+                        jkd.startsWith('1.5.4')
+                    );
                 },
 
                 // Buka Modal Tutup Buku
@@ -9973,6 +9992,31 @@
                         isBlocked: true,
                         actionUrl: null,
                         assetWarning: 'Untuk melakukan penyesuaian nilai atau koreksi klasifikasi pada aset yang telah ditutup buku, silakan gunakan tombol "Reklas" (Reklasifikasi).',
+                        btnText: null,
+                        onConfirm: null
+                    });
+                },
+
+                showReklasLockedWarning(item) {
+                    const name = item?.nama_barang || 'Aset';
+                    const cat = this.getEffectiveKibCategory ? this.getEffectiveKibCategory(item) : (item?.category || 'ASET LAIN');
+                    const isAsetLain = (cat === 'ASET LAIN' || cat === 'ASET LAIN-LAIN' || String(item?.kode_barang || item?.kode_108 || '').startsWith('1.5.4'));
+                    const statusText = isAsetLain ? 'Reklasifikasi ke Aset Lain-Lain (Akun 1.5.4)' : ('Reklasifikasi ' + (item?.jenis_reklas || 'Aset'));
+
+                    this.askConfirmation({
+                        title: 'Aset Telah Direklasifikasi (Ubah Terkunci)',
+                        message: `Aset "${name}" telah berpindah status melalui transaksi Reklasifikasi (${statusText}). Data belanja modal awal dilindungi demi konsistensi neraca BMD RSUD.`,
+                        itemName: `${name} (${statusText})`,
+                        itemDetails: {
+                            nama: name,
+                            kode: item?.kode_barang || item?.kode_108 || '-',
+                            badgeText: isAsetLain ? 'AKUN 1.5.4 (ASET LAIN) 📦' : 'REKLASIFIKASI 🔄'
+                        },
+                        type: 'danger',
+                        isBlocked: true,
+                        actionUrl: '/reklasifikasi',
+                        actionText: 'Buka Menu Reklasifikasi',
+                        assetWarning: 'Data pengadaan aset yang telah direklasifikasi tidak dapat diubah langsung melalui form belanja modal. Jika terdapat penyesuaian atau pembatalan, silakan kelola melalui Menu Reklasifikasi.',
                         btnText: null,
                         onConfirm: null
                     });

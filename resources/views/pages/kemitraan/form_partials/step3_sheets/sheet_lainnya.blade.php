@@ -172,6 +172,7 @@
                                        @focus="item.isFilterOpen = true"
                                        @click="item.isFilterOpen = true"
                                        @input="item.isFilterOpen = true; syncTotalsFromItems();"
+                                       @keydown.enter.prevent="if (item.lainnya_nama_barang && item.lainnya_nama_barang.trim()) { selectCustom108ForItem(item, 'lainnya'); }"
                                        placeholder="Ketik untuk memfilter jenis barang PMDN 108 atau tulis rincian aset lainnya..."
                                        class="w-full bg-slate-950 border border-slate-700 hover:border-purple-500 focus:border-purple-500 rounded-xl px-3.5 py-2.5 text-xs text-white font-bold focus:outline-none transition-all pl-9 pr-11">
                                 <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
@@ -210,9 +211,29 @@
                                         <span class="font-mono text-[10px] text-purple-400 bg-purple-950/60 px-2 py-0.5 rounded border border-purple-500/30 shrink-0" x-text="opt.kode"></span>
                                     </div>
                                 </template>
-                                <div x-show="filterJenisAstap108(getKibEPrefix(item), item.lainnya_nama_barang, item.isFilterOpen).length === 0" 
+                                <div x-show="Boolean(item.lainnya_nama_barang && item.lainnya_nama_barang.trim())"
+                                     @click="selectCustom108ForItem(item, 'lainnya')"
+                                     class="px-3.5 py-2.5 bg-purple-500/10 hover:bg-purple-500/25 border-t border-purple-500/30 cursor-pointer transition-all flex items-center justify-between group">
+                                    <div class="flex items-center gap-2 min-w-0 pr-2">
+                                        <span class="text-purple-400 text-sm shrink-0">✨</span>
+                                        <div class="min-w-0">
+                                            <div class="text-xs font-bold text-purple-300 group-hover:text-purple-200 truncate flex items-center gap-1.5">
+                                                <span>Gunakan:</span>
+                                                <span class="text-white underline decoration-purple-400/50" x-text="'&ldquo;' + item.lainnya_nama_barang.trim() + '&rdquo;'"></span>
+                                            </div>
+                                            <div class="text-[10px] text-slate-400 group-hover:text-slate-300 leading-tight">
+                                                Gunakan nama ini sebagai rincian aset tetap lainnya
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <span class="text-[9.5px] font-extrabold text-purple-300 bg-purple-950/80 px-2.5 py-1 rounded-lg border border-purple-500/40 group-hover:border-purple-400 shrink-0 shadow-sm flex items-center gap-1">
+                                        <span>Pilih</span>
+                                        <span>&crarr;</span>
+                                    </span>
+                                </div>
+                                <div x-show="!Boolean(item.lainnya_nama_barang && item.lainnya_nama_barang.trim()) && filterJenisAstap108(getKibEPrefix(item), item.lainnya_nama_barang, item.isFilterOpen).length === 0" 
                                      class="px-3.5 py-2.5 text-center text-xs text-slate-400 italic">
-                                    <span>Gunakan nama yang Anda ketik jika tidak ada dalam daftar PMDN 108 di atas.</span>
+                                    <span>Ketik kata kunci untuk memfilter daftar PMDN 108 atau tulis rincian aset lainnya.</span>
                                 </div>
                             </div>
                         </div>
@@ -263,6 +284,14 @@
                             <span class="text-[9px] px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20 font-bold">KIB E Reguler</span>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="sm:col-span-2">
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
+                                    Judul Karya Seni / Nama Benda Budaya <span class="text-rose-400">*</span>
+                                </label>
+                                <input type="text" x-model="item.lainnya_judul"
+                                    placeholder="Contoh: Lukisan Sejarah Pelayanan RSUD / Relief Ukir Mahabarata"
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:border-purple-500 focus:outline-none transition-all">
+                            </div>
                             <div>
                                 <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Asal Daerah / Wilayah</label>
                                 <input type="text" x-model="item.lainnya_asal_daerah"

@@ -1173,8 +1173,100 @@
                 } else if (type === 'lainnya') {
                     item.lainnya_kode_barang = opt.kode;
                     item.lainnya_nama_barang = opt.nama;
+                    if (!item.lainnya_judul && opt.nama) {
+                        item.lainnya_judul = opt.nama;
+                    }
                     item.searchFilter = opt.nama;
                 }
+                if (opt && opt.id) {
+                    this.formData.jenis_astap_id = opt.id;
+                }
+                if (opt && opt.kode) {
+                    this.formData.jenis_aset_kode = opt.kode;
+                    this.formData.jenis_aset_nama = opt.nama;
+                }
+                if (opt && opt.nama) {
+                    this.formData.nama_barang = opt.nama;
+                }
+                item.isFilterOpen = false;
+                this.syncTotalsFromItems();
+            },
+
+            selectCustom108ForItem(item, type) {
+                if (!item) return;
+
+                let customName = '';
+                let defaultPrefix = '1.3';
+
+                if (type === 'tanah') {
+                    customName = (item.tanah_nama_barang || '').trim();
+                    defaultPrefix = '1.3.1';
+                    if (!item.tanah_kode_barang) {
+                        item.tanah_kode_barang = (this.formData.jenis_aset_kode && this.formData.jenis_aset_kode.startsWith('1.3.1'))
+                            ? this.formData.jenis_aset_kode
+                            : (this.activeKodeBarang || defaultPrefix);
+                    }
+                    item.tanah_nama_barang = customName;
+                    item.searchFilter = customName;
+                } else if (type === 'mesin') {
+                    customName = (item.mesin_nama_barang || '').trim();
+                    defaultPrefix = '1.3.2';
+                    if (!item.mesin_kode_barang) {
+                        item.mesin_kode_barang = (this.formData.jenis_aset_kode && this.formData.jenis_aset_kode.startsWith('1.3.2'))
+                            ? this.formData.jenis_aset_kode
+                            : (this.activeKodeBarang || defaultPrefix);
+                    }
+                    item.mesin_nama_barang = customName;
+                    item.searchFilter = customName;
+                } else if (type === 'gedung') {
+                    customName = (item.gedung_nama_barang || '').trim();
+                    defaultPrefix = '1.3.3';
+                    if (!item.gedung_kode_barang) {
+                        item.gedung_kode_barang = (this.formData.jenis_aset_kode && this.formData.jenis_aset_kode.startsWith('1.3.3'))
+                            ? this.formData.jenis_aset_kode
+                            : (this.activeKodeBarang || defaultPrefix);
+                    }
+                    item.gedung_nama_barang = customName;
+                    item.gedung_nama_bangunan = customName;
+                    item.searchFilter = customName;
+                } else if (type === 'jaringan') {
+                    customName = (item.jaringan_nama_barang || '').trim();
+                    defaultPrefix = '1.3.4';
+                    if (!item.jaringan_kode_barang) {
+                        item.jaringan_kode_barang = (this.formData.jenis_aset_kode && this.formData.jenis_aset_kode.startsWith('1.3.4'))
+                            ? this.formData.jenis_aset_kode
+                            : (this.activeKodeBarang || defaultPrefix);
+                    }
+                    item.jaringan_nama_barang = customName;
+                    item.searchFilter = customName;
+                } else if (type === 'lainnya') {
+                    customName = (item.lainnya_nama_barang || '').trim();
+                    defaultPrefix = (typeof this.getKibEPrefix === 'function') ? this.getKibEPrefix(item) : '1.3.5';
+                    if (!item.lainnya_kode_barang) {
+                        item.lainnya_kode_barang = (this.formData.jenis_aset_kode && this.formData.jenis_aset_kode.startsWith('1.3.5'))
+                            ? this.formData.jenis_aset_kode
+                            : (this.activeKodeBarang || defaultPrefix);
+                    }
+                    item.lainnya_nama_barang = customName;
+                    if (!item.lainnya_judul && customName) {
+                        item.lainnya_judul = customName;
+                    }
+                    item.searchFilter = customName;
+                }
+
+                if (customName) {
+                    this.formData.nama_barang = customName;
+                }
+                if (!this.formData.jenis_aset_kode) {
+                    this.formData.jenis_aset_kode = defaultPrefix;
+                }
+                if (!this.formData.jenis_astap_id && Array.isArray(this.flat108)) {
+                    const matchObj = this.flat108.find(x => x.kode && x.kode.startsWith(defaultPrefix));
+                    if (matchObj && matchObj.id) {
+                        this.formData.jenis_astap_id = matchObj.id;
+                    }
+                }
+
                 item.isFilterOpen = false;
                 this.syncTotalsFromItems();
             },

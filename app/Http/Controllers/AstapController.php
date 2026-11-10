@@ -1018,6 +1018,12 @@ class AstapController extends Controller
                     return redirect()->route('astap.index')->with('error', "Aset \"{$astap->nama_barang}\" telah resmi dihibahkan keluar kepada {$penerima}. Data terkunci permanen demi tertib inventaris BMD RSUD.");
                 }
 
+                $isAsetLain = ($astap->category === 'ASET LAIN') || str_starts_with((string)($astap->kode_108 ?: $astap->kode_barang), '1.5.4');
+                if ($astap->is_reklas || $isAsetLain) {
+                    $statusLabel = $isAsetLain ? 'Akun 1.5.4 Aset Lain-Lain' : ($astap->jenis_reklas ?: 'Reklasifikasi');
+                    return redirect()->route('astap.index')->with('error', "Aset \"{$astap->nama_barang}\" telah berstatus Reklasifikasi ({$statusLabel}) dan terkunci dari perubahan data belanja modal. Silakan kelola penyesuaian melalui menu Reklasifikasi.");
+                }
+
                 if (!$astap->isBelanjaModal() && in_array($astap->sumber_dana, ['mutasi_eksternal', 'pelimpahan_skpd', 'pelimpahan', 'mutasi_masuk'], true)) {
                     return redirect()->route('astap.edit_mutasi_eksternal', ['id' => $id, 'from' => request('from', 'eksternal')]);
                 }

@@ -367,6 +367,10 @@
                     </template>
                     <template x-if="!formData.tanah_items || formData.tanah_items.length <= 1">
                         <div class="grid grid-cols-2 gap-3 text-xs">
+                            <div class="col-span-2">
+                                <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Nama / Rincian Bidang Tanah:</span>
+                                <span class="font-bold text-emerald-400 block text-sm" x-text="formData.tanah_nama_barang || formData.tanah_items?.[0]?.tanah_nama_barang || formData.nama_barang || '-'"></span>
+                            </div>
                             <div>
                                 <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Luas Tanah:</span>
                                 <span class="font-mono font-bold text-emerald-400 text-sm block" x-text="(formData.tanah_luas_m2 || 0) + ' m²'"></span>
@@ -442,6 +446,10 @@
                     </template>
                     <template x-if="!formData.mesin_items || formData.mesin_items.length <= 1">
                         <div class="grid grid-cols-2 gap-3 text-xs">
+                            <div class="col-span-2">
+                                <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Nama / Rincian Barang:</span>
+                                <span class="font-bold text-cyan-300 block text-sm" x-text="formData.mesin_nama_barang || formData.mesin_items?.[0]?.mesin_nama_barang || formData.nama_barang || '-'"></span>
+                            </div>
                             <div>
                                 <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Merk / Pabrikan:</span>
                                 <span class="font-bold text-white block" x-text="formData.merk || (formData.mesin_items?.[0]?.mesin_merk || '-')"></span>
@@ -525,6 +533,10 @@
                     </template>
                     <template x-if="!formData.gedung_items || formData.gedung_items.length <= 1">
                         <div class="grid grid-cols-2 gap-3 text-xs">
+                            <div class="col-span-2">
+                                <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Nama Gedung / Bangunan:</span>
+                                <span class="font-bold text-blue-300 block text-sm" x-text="formData.gedung_nama_barang || formData.gedung_nama_bangunan || formData.gedung_items?.[0]?.gedung_nama_barang || formData.gedung_items?.[0]?.gedung_nama_bangunan || formData.nama_barang || '-'"></span>
+                            </div>
                             <div>
                                 <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Status Fisik Bangunan:</span>
                                 <span class="font-bold block" :class="((formData.gedung_is_baru || formData.gedung_items?.[0]?.gedung_is_baru) === 'Baru') ? 'text-amber-400' : 'text-blue-300'" x-text="((formData.gedung_is_baru || formData.gedung_items?.[0]?.gedung_is_baru) === 'Baru') ? '✨ Bangunan Baru' : '🏛️ Bangunan Lama'"></span>
@@ -608,6 +620,10 @@
                     <template x-if="!formData.jaringan_items || formData.jaringan_items.length <= 1">
                         <div class="grid grid-cols-2 gap-3 text-xs">
                             <div class="col-span-2">
+                                <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Nama / Rincian Ruas Jaringan:</span>
+                                <span class="font-bold text-teal-300 block text-sm" x-text="formData.jaringan_nama_barang || formData.jaringan_items?.[0]?.jaringan_nama_barang || formData.nama_barang || '-'"></span>
+                            </div>
+                            <div class="col-span-2">
                                 <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Status Fisik Jaringan:</span>
                                 <span class="font-bold block" :class="((formData.jaringan_is_baru || formData.jaringan_items?.[0]?.jaringan_is_baru) === 'Baru') ? 'text-amber-400' : 'text-teal-300'" x-text="((formData.jaringan_is_baru || formData.jaringan_items?.[0]?.jaringan_is_baru) === 'Baru') ? '✨ Jaringan Baru' : '🌐 Jaringan Lama'"></span>
                             </div>
@@ -659,7 +675,7 @@
                                         <div class="flex items-center justify-between">
                                             <div class="flex items-center space-x-2">
                                                 <span class="w-5 h-5 rounded-full bg-purple-500/20 text-purple-300 font-mono text-[10px] font-bold flex items-center justify-center border border-purple-500/30" x-text="lIdx + 1"></span>
-                                                <span class="font-bold text-white text-xs truncate max-w-[170px]" x-text="lItem.lainnya_judul || ('Item #' + (lIdx + 1))"></span>
+                                                <span class="font-bold text-white text-xs truncate max-w-[170px]" x-text="lItem.lainnya_judul || lItem.lainnya_nama_barang || formData.nama_barang || ('Item #' + (lIdx + 1))"></span>
                                                 <span class="text-[9px] px-1.5 py-0.5 rounded font-bold border"
                                                       :class="lItem.is_extracom ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' : 'bg-purple-500/20 text-purple-300 border-purple-500/40'"
                                                       x-text="lItem.is_extracom ? '📦 Extracom' : '⚙️ Reguler'">
@@ -693,8 +709,8 @@
                     <template x-if="!formData.lainnya_items || formData.lainnya_items.length <= 1">
                         <div class="grid grid-cols-2 gap-3 text-xs">
                             <div class="col-span-2">
-                                <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Judul Spesifik Aset:</span>
-                                <span class="font-bold text-purple-300 block" x-text="formData.lainnya_judul || (formData.lainnya_items?.[0]?.lainnya_judul || '-')"></span>
+                                <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Judul / Nama Spesifik Aset:</span>
+                                <span class="font-bold text-purple-300 block text-sm" x-text="formData.lainnya_judul || formData.lainnya_items?.[0]?.lainnya_judul || formData.lainnya_items?.[0]?.lainnya_nama_barang || formData.nama_barang || '-'"></span>
                             </div>
                             <div>
                                 <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Jenis / Kategori:</span>

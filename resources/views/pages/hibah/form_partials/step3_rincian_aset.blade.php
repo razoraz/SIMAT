@@ -802,8 +802,8 @@
                                                 </span>
                                             </div>
                                             <div class="col-span-2">
-                                                <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Nama / Jenis Benda Seni:</span>
-                                                <span class="font-bold text-white text-sm block" x-text="formData.lainnya_items?.[0]?.lainnya_nama_barang || formData.nama_barang || '-'"></span>
+                                                <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Judul / Nama Benda Seni:</span>
+                                                <span class="font-bold text-white text-sm block" x-text="formData.lainnya_items?.[0]?.lainnya_judul || formData.lainnya_items?.[0]?.lainnya_nama_barang || formData.nama_barang || '-'"></span>
                                             </div>
                                             <div>
                                                 <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Asal Daerah / Wilayah:</span>

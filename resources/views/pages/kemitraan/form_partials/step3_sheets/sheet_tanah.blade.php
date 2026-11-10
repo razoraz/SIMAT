@@ -111,6 +111,7 @@
                                        @focus="item.isFilterOpen = true"
                                        @click="item.isFilterOpen = true"
                                        @input="item.isFilterOpen = true; syncTotalsFromItems();"
+                                       @keydown.enter.prevent="if (item.tanah_nama_barang && item.tanah_nama_barang.trim()) { selectCustom108ForItem(item, 'tanah'); }"
                                        placeholder="Ketik untuk memfilter jenis PMDN 108 atau tulis rincian bidang tanah..."
                                        class="w-full bg-slate-950 border border-slate-700 hover:border-emerald-500 focus:border-emerald-500 rounded-xl px-3.5 py-2.5 text-xs text-white font-bold focus:outline-none transition-all pl-9 pr-11">
                                 <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
@@ -149,9 +150,29 @@
                                         <span class="font-mono text-[10px] text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/30 shrink-0" x-text="opt.kode"></span>
                                     </div>
                                 </template>
-                                <div x-show="filterJenisAstap108('1.3.1', item.tanah_nama_barang, item.isFilterOpen).length === 0" 
+                                <div x-show="Boolean(item.tanah_nama_barang && item.tanah_nama_barang.trim())"
+                                     @click="selectCustom108ForItem(item, 'tanah')"
+                                     class="px-3.5 py-2.5 bg-emerald-500/10 hover:bg-emerald-500/25 border-t border-emerald-500/30 cursor-pointer transition-all flex items-center justify-between group">
+                                    <div class="flex items-center gap-2 min-w-0 pr-2">
+                                        <span class="text-emerald-400 text-sm shrink-0">✨</span>
+                                        <div class="min-w-0">
+                                            <div class="text-xs font-bold text-emerald-300 group-hover:text-emerald-200 truncate flex items-center gap-1.5">
+                                                <span>Gunakan:</span>
+                                                <span class="text-white underline decoration-emerald-400/50" x-text="'&ldquo;' + item.tanah_nama_barang.trim() + '&rdquo;'"></span>
+                                            </div>
+                                            <div class="text-[10px] text-slate-400 group-hover:text-slate-300 leading-tight">
+                                                Gunakan nama ini sebagai rincian bidang tanah
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <span class="text-[9.5px] font-extrabold text-emerald-300 bg-emerald-950/80 px-2.5 py-1 rounded-lg border border-emerald-500/40 group-hover:border-emerald-400 shrink-0 shadow-sm flex items-center gap-1">
+                                        <span>Pilih</span>
+                                        <span>&crarr;</span>
+                                    </span>
+                                </div>
+                                <div x-show="!Boolean(item.tanah_nama_barang && item.tanah_nama_barang.trim()) && filterJenisAstap108('1.3.1', item.tanah_nama_barang, item.isFilterOpen).length === 0" 
                                      class="px-3.5 py-2.5 text-center text-xs text-slate-400 italic">
-                                    <span>Gunakan nama yang Anda ketik jika tidak ada dalam daftar PMDN 108 di atas.</span>
+                                    <span>Ketik kata kunci untuk memfilter daftar PMDN 108 atau tulis rincian bidang tanah.</span>
                                 </div>
                             </div>
                         </div>
