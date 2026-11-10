@@ -262,17 +262,9 @@
                                         <!-- 4. Tombol Hapus (Pindahkan ke Tong Sampah) -->
                                         @if(Auth::user()?->role === 'master_admin' || Auth::user()?->canDo('astap', 'delete'))
                                         <button type="button" @click="deleteAstap(item)"
-                                            :title="isKemitraanReturned(item) ? 'Terkunci (Aset Telah Dikembalikan ke Rekanan Mitra)' : (isMutasiKeluarFull(item) ? 'Terkunci (Aset Telah Dimutasi Keluar Penuh ke OPD Lain)' : (isHibahKeluar(item) ? 'Terkunci (Aset Telah Dihibahkan Keluar dari RSUD)' : (isReklasAset(item) ? 'Terkunci (Aset Telah Direklasifikasi - Kelola di Menu Reklasifikasi)' : (isItemLocked(item) ? 'Terkunci (Aset Telah Ditutup Buku)' : 'Hapus Data ASTAP (Pindahkan ke Tong Sampah)'))))"
-                                            class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl font-bold text-xs transition-all duration-200 shadow-sm active:scale-95 cursor-pointer leading-none"
-                                            :class="!isDeleteAllowed(item)
-                                                ? 'bg-slate-800/60 text-slate-500 border border-slate-700/60 cursor-pointer hover:bg-slate-800 hover:text-slate-400'
-                                                : 'bg-rose-500/10 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 hover:border-rose-400'">
-                                            <!-- Icon Terkunci (Gembok SVG Elegan) jika terkunci -->
-                                            <svg x-show="!isDeleteAllowed(item)" class="w-3.5 h-3.5 text-slate-500 group-hover/btn:text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                                            </svg>
-                                            <!-- Icon Normal Trash -->
-                                            <svg x-show="isDeleteAllowed(item)" class="w-3.5 h-3.5 text-rose-400 group-hover/btn:text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            title="Hapus Data ASTAP (Pindahkan ke Tong Sampah)"
+                                            class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 hover:border-rose-400 font-bold text-xs transition-all duration-200 shadow-sm active:scale-95 cursor-pointer leading-none">
+                                            <svg class="w-3.5 h-3.5 text-rose-400 group-hover/btn:text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                             </svg>
                                             <span>Hapus</span>

@@ -4099,21 +4099,6 @@ class AstapController extends Controller
                 return response()->json(['success' => false, 'message' => 'Data ASTAP tidak ditemukan.'], 404);
             }
 
-            // Validasi Proteksi Tutup Buku (Periode Terkunci)
-            $twInt = \App\Models\PeriodeTutupBuku::parseTriwulan($astap->triwulan);
-            $tahunAset = (int) ($astap->tahun_perolehan ?: date('Y'));
-            if (\App\Models\PeriodeTutupBuku::isLocked($tahunAset, $twInt)) {
-                $lockInfo = \App\Models\PeriodeTutupBuku::getLockInfo($tahunAset, $twInt);
-                $barNo = $lockInfo?->nomor_bar_bpkad ?: '-';
-                return response()->json([
-                    'success' => false,
-                    'is_blocked' => true,
-                    'message' => "Aset \"{$astap->nama_barang}\" tidak dapat dihapus karena berada pada periode yang telah resmi DITUTUP BUKU (T.A. {$tahunAset} Triwulan {$twInt}) berdasarkan BAR BPKAD: {$barNo}. Buka kunci periode terlebih dahulu jika terdapat koreksi darurat."
-                ], 422);
-            }
-
-
-
             // Validasi Proteksi Kemitraan: Cegah penghapusan aset yang sedang aktif dalam perjanjian kemitraan / objek pemanfaatan
             $activeKemitraan = \App\Models\AstapKemitraan::where('is_deleted', 0)
                 ->where(function ($q) use ($astap) {
@@ -4132,39 +4117,6 @@ class AstapController extends Controller
                     'action_url' => '/master/kemitraan',
                     'action_text' => 'Buka Menu Kemitraan',
                     'message' => "Aset \"{$astap->nama_barang}\" tidak dapat dihapus karena masih terikat sebagai {$peran} (Nomor PKS: {$activeKemitraan->nomor_pks}). Silakan selesaikan atau batalkan status kemitraannya terlebih dahulu di menu Kemitraan."
-                ], 422);
-            }
-
-            // Validasi Proteksi Kemitraan: Cegah penghapusan aset kemitraan yang telah dikembalikan ke rekanan
-            $returnedKemitraan = \App\Models\AstapKemitraan::where('is_deleted', 0)
-                ->where(function ($q) use ($astap) {
-                    $q->where('astap_id', $astap->id)
-                      ->orWhere('objek_astap_id', $astap->id);
-                })
-                ->where('status_konsesi', 'Dikembalikan ke Rekanan')
-                ->first();
-
-            if ($returnedKemitraan) {
-                return response()->json([
-                    'success' => false,
-                    'is_blocked' => true,
-                    'action_url' => '/master/kemitraan',
-                    'action_text' => 'Buka Menu Kemitraan',
-                    'message' => "Aset \"{$astap->nama_barang}\" tidak dapat dihapus karena telah resmi dikembalikan kepada rekanan mitra (Nomor PKS: {$returnedKemitraan->nomor_pks}). Data aset telah terkunci permanen demi akuntabilitas pembukuan BMD RSUD."
-                ], 422);
-            }
-
-            // Validasi Proteksi Hibah Keluar: Cegah penghapusan aset yang telah dihibahkan ke luar RSUD
-            $hasHibahKeluar = ($astap->jenis_reklas === 'HIBAH_KELUAR')
-                || $astap->registers()->where('status', 'Dihibahkan')->exists();
-
-            if ($hasHibahKeluar) {
-                return response()->json([
-                    'success' => false,
-                    'is_blocked' => true,
-                    'action_url' => '/master-data/hibah',
-                    'action_text' => 'Buka Menu Hibah',
-                    'message' => "Aset \"{$astap->nama_barang}\" tidak dapat dihapus karena telah resmi diserahterimakan sebagai hibah keluar dari RSUD."
                 ], 422);
             }
 

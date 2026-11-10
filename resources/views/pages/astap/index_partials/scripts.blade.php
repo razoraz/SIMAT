@@ -9798,18 +9798,6 @@
                     return true;
                 },
 
-                // Helper Cek apakah Aset Boleh Dihapus (Hanya jika BELUM TUTUP BUKU, BELUM DIREKLAS, & BUKAN ASET TERMINAL KELUAR)
-                isDeleteAllowed(item) {
-                    if (!item) return false;
-                    if (this.isKemitraanReturned(item) || this.isMutasiKeluarFull(item) || this.isHibahKeluar(item) || this.isReklasAset(item)) {
-                        return false;
-                    }
-                    if (this.isItemLocked(item)) {
-                        return false;
-                    }
-                    return true;
-                },
-
                 // Helper Cek apakah Aset Telah Direklasifikasi
                 isReklasAset(item) {
                     if (!item) return false;
@@ -14389,36 +14377,6 @@
 
                 deleteAstap(item) {
                     if (!item) return;
-
-                    // 1. Proteksi Terminal: Kemitraan telah dikembalikan / dibatalkan
-                    if (this.isKemitraanReturned(item)) {
-                        this.showKemitraanReturnedWarning(item, 'hapus');
-                        return;
-                    }
-
-                    // 2. Proteksi Terminal: Mutasi Keluar ke OPD Luar Penuh
-                    if (this.isMutasiKeluarFull(item)) {
-                        this.showMutasiKeluarLockedWarning(item, 'hapus');
-                        return;
-                    }
-
-                    // 3. Proteksi Terminal: Hibah Keluar dari RSUD
-                    if (this.isHibahKeluar(item)) {
-                        this.showHibahKeluarLockedWarning(item, 'hapus');
-                        return;
-                    }
-
-                    // 4. Proteksi Reklas: Aset yang telah direklasifikasi (kelola di Menu Reklasifikasi)
-                    if (this.isReklasAset(item)) {
-                        this.showReklasLockedWarning(item);
-                        return;
-                    }
-
-                    // 5. Validasi Tutup Buku jika periode terkunci
-                    if (this.isItemLocked(item)) {
-                        this.showLockedWarning(item);
-                        return;
-                    }
 
                     this.itemToDelete = item;
                     this.deleteAlasan = '';
