@@ -63,10 +63,10 @@
 
                     <!-- 1. Pilihan Jenis & Nama Barang PMDN 108 Gedung 1.3.3 -->
                     <div class="p-4 rounded-2xl bg-slate-900/90 border border-blue-500/40 space-y-2 shadow-inner">
-                        <div class="relative" @click.outside="item.isFilterOpen = false">
+                        <div class="relative" @click.outside="item.isFilterOpen = false; handle108Blur(item, 'gedung');">
                             <div class="flex items-center justify-between mb-1.5">
                                 <label class="text-blue-300 text-[10.5px] font-bold uppercase tracking-wider flex items-center gap-1.5">
-                                    <span>🏢 Pilih / Ketik Jenis Barang PMDN 108 (Gedung &amp; Bangunan)</span>
+                                    <span>🏢 Pilih Jenis Barang PMDN 108 (Gedung &amp; Bangunan)</span>
                                     <span class="text-rose-400">*</span>
                                 </label>
                                 <span class="text-[9.5px] px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-300 border border-blue-500/30 font-bold font-mono"
@@ -81,7 +81,8 @@
                                        @focus="item.isFilterOpen = true"
                                        @click="item.isFilterOpen = true"
                                        @input="item.isFilterOpen = true; syncTotalsFromItems();"
-                                       placeholder="Ketik untuk memfilter jenis PMDN 108 atau tulis rincian unit gedung/bangunan..."
+                                       @keydown.enter.prevent="item.isFilterOpen = false; handle108Blur(item, 'gedung');"
+                                       placeholder="Ketik kata kunci untuk mencari &amp; memilih klasifikasi PMDN 108 Gedung &amp; Bangunan... (Wajib pilih)"
                                        class="w-full bg-slate-950 border border-slate-700 hover:border-blue-500 focus:border-blue-500 rounded-xl px-3.5 py-2.5 text-xs text-white font-bold focus:outline-none transition-all pl-9 pr-11">
                                 <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -120,8 +121,8 @@
                                     </div>
                                 </template>
                                 <div x-show="filterJenisAstap108('1.3.3', item.gedung_nama_barang, item.isFilterOpen).length === 0" 
-                                     class="px-3.5 py-2.5 text-center text-xs text-slate-400 italic">
-                                    <span>Gunakan nama yang Anda ketik jika tidak ada dalam daftar PMDN 108 di atas.</span>
+                                     class="px-3.5 py-2.5 text-center text-xs text-rose-400/90 font-medium">
+                                    <span>❌ Tidak ditemukan jenis barang PMDN 108 yang cocok. Wajib memilih dari klasifikasi resmi yang tersedia.</span>
                                 </div>
                             </div>
                         </div>

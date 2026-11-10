@@ -459,7 +459,7 @@
                 this.syncTotalsFromItems();
             },
 
-            // Pastikan jenis_astap_id terisi otomatis sesuai KIB aktif jika belum dipilih
+            // Pastikan jenis_astap_id terisi otomatis sesuai KIB aktif dari item yang dipilih
             ensureJenisAstapId() {
                 let activeItems = [];
                 let codeKey = '';
@@ -472,20 +472,14 @@
                 if (activeItems.length > 0 && codeKey) {
                     const itemWithKode = activeItems.find(i => i && i[codeKey]);
                     if (itemWithKode) {
-                        const found = this.allFlat108.find(x => x.kode === itemWithKode[codeKey]);
+                        const found = (this.allFlat108 || []).find(x => x.kode === itemWithKode[codeKey]);
                         if (found) {
                             this.formData.jenis_astap_id = found.id;
                             return;
                         }
                     }
                 }
-                const prefix = this.activeKibCode;
-                if (!this.formData.jenis_astap_id || !this.selected108Item?.kode?.startsWith(prefix)) {
-                    const match = this.allFlat108.find(x => x.kode && x.kode.startsWith(prefix));
-                    if (match) {
-                        this.formData.jenis_astap_id = match.id;
-                    }
-                }
+                this.formData.jenis_astap_id = '';
             },
 
             // Sinkronisasi Nama Barang ke Item Pertama
@@ -1104,6 +1098,61 @@
                 this.syncTotalsFromItems();
             },
 
+            // Validasi ketat PMDN 108: Hanya boleh memilih dari daftar PMDN 108 resmi pemerintah
+            handle108Blur(item, type) {
+                if (!item) return;
+                const nameKey = type + '_nama_barang';
+                const codeKey = type + '_kode_barang';
+                const typedText = (item[nameKey] || '').trim();
+
+                if (!typedText) {
+                    item[nameKey] = '';
+                    item[codeKey] = '';
+                    if (item.searchFilter !== undefined) item.searchFilter = '';
+                    this.syncTotalsFromItems();
+                    return;
+                }
+
+                // Tentukan prefix kode 108 berdasarkan kategori aset
+                let prefix = '';
+                if (type === 'tanah') prefix = '1.3.1';
+                else if (type === 'mesin') prefix = '1.3.2';
+                else if (type === 'gedung') prefix = '1.3.3';
+                else if (type === 'jaringan') prefix = '1.3.4';
+                else if (type === 'lainnya') prefix = this.getKibEPrefix ? this.getKibEPrefix(item) : '1.3.5';
+
+                // Jika codeKey sudah terisi, pastikan nama masih sinkron dengan kode tersebut
+                if (item[codeKey]) {
+                    const validMatch = (this.allFlat108 || []).find(x => 
+                        x.kode === item[codeKey] && 
+                        x.nama && x.nama.toLowerCase() === typedText.toLowerCase()
+                    );
+                    if (validMatch) {
+                        return; // Valid dan sesuai
+                    }
+                }
+
+                // Jika belum ada kode atau nama diubah secara manual, cari apakah ada match persis di daftar 108
+                const list = this.allFlat108 || [];
+                const exactMatch = list.find(x => 
+                    (prefix ? (x.kode && x.kode.startsWith(prefix.substring(0, 5))) : true) &&
+                    ((x.nama && x.nama.toLowerCase() === typedText.toLowerCase()) || x.kode === typedText)
+                );
+
+                if (exactMatch) {
+                    this.select108ForItem(item, exactMatch, type);
+                } else {
+                    // Reset input jika bukan klasifikasi resmi PMDN 108
+                    item[nameKey] = '';
+                    item[codeKey] = '';
+                    if (item.searchFilter !== undefined) item.searchFilter = '';
+                    if (type === 'gedung' && item.gedung_nama_bangunan) item.gedung_nama_bangunan = '';
+                    if (type === 'lainnya' && item.lainnya_judul) item.lainnya_judul = '';
+                    this.syncTotalsFromItems();
+                    this.showToast('Klasifikasi PMDN 108 Wajib', 'Jenis barang wajib dipilih dari daftar rekomendasi PMDN 108 resmi pemerintah (tidak boleh diisi teks bebas).', 'warning');
+                }
+            },
+
             // Helper Pencarian & Pemilihan Unit/Ruangan Penempatan
             filterUnitsForItem(item) {
                 let list = this.unitsList || [];
@@ -1524,7 +1573,7 @@
                         this.ensureJenisAstapId();
                     }
                     if (!this.formData.jenis_astap_id) {
-                        const msg = 'Mohon pilih klasifikasi kode barang 108 — pilih salah satu kategori KIB aset tetap.';
+                        const msg = 'Mohon pilih klasifikasi PMDN 108 resmi pemerintah dari daftar rekomendasi.';
                         this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
                         this.setStepError(2, msg);
                         return false;
@@ -1543,8 +1592,8 @@
                         for (let i = 0; i < this.formData.mesin_items.length; i++) {
                             const it = this.formData.mesin_items[i];
                             const num = i + 1;
-                            if (!it.mesin_nama_barang || !it.mesin_nama_barang.trim()) {
-                                const msg = `Nama Barang / Unit #${num} tidak boleh kosong.`;
+                            if (!it.mesin_kode_barang || !it.mesin_nama_barang || !it.mesin_nama_barang.trim()) {
+                                const msg = `Klasifikasi PMDN 108 pada Barang #${num} wajib dipilih dari daftar rekomendasi resmi PMDN 108.`;
                                 this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
                                 this.setStepError(2, msg);
                                 return false;
@@ -1579,8 +1628,8 @@
                         for (let i = 0; i < this.formData.tanah_items.length; i++) {
                             const it = this.formData.tanah_items[i];
                             const num = i + 1;
-                            if (!it.tanah_nama_barang || !it.tanah_nama_barang.trim()) {
-                                const msg = `Nama/Jenis Tanah pada Bidang #${num} tidak boleh kosong.`;
+                            if (!it.tanah_kode_barang || !it.tanah_nama_barang || !it.tanah_nama_barang.trim()) {
+                                const msg = `Klasifikasi PMDN 108 pada Bidang Tanah #${num} wajib dipilih dari daftar rekomendasi resmi PMDN 108.`;
                                 this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
                                 this.setStepError(2, msg);
                                 return false;
@@ -1621,8 +1670,8 @@
                         for (let i = 0; i < this.formData.gedung_items.length; i++) {
                             const it = this.formData.gedung_items[i];
                             const num = i + 1;
-                            if (!it.gedung_nama_barang || !it.gedung_nama_barang.trim()) {
-                                const msg = `Nama Bangunan #${num} tidak boleh kosong.`;
+                            if (!it.gedung_kode_barang || !it.gedung_nama_barang || !it.gedung_nama_barang.trim()) {
+                                const msg = `Klasifikasi PMDN 108 pada Bangunan Gedung #${num} wajib dipilih dari daftar rekomendasi resmi PMDN 108.`;
                                 this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
                                 this.setStepError(2, msg);
                                 return false;
@@ -1657,8 +1706,8 @@
                         for (let i = 0; i < this.formData.jaringan_items.length; i++) {
                             const it = this.formData.jaringan_items[i];
                             const num = i + 1;
-                            if (!it.jaringan_nama_barang || !it.jaringan_nama_barang.trim()) {
-                                const msg = `Nama Ruas #${num} tidak boleh kosong.`;
+                            if (!it.jaringan_kode_barang || !it.jaringan_nama_barang || !it.jaringan_nama_barang.trim()) {
+                                const msg = `Klasifikasi PMDN 108 pada Ruas Jaringan #${num} wajib dipilih dari daftar rekomendasi resmi PMDN 108.`;
                                 this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
                                 this.setStepError(2, msg);
                                 return false;
@@ -1694,8 +1743,8 @@
                             const it = this.formData.lainnya_items[i];
                             const num = i + 1;
                             const nama = it.lainnya_nama_barang || it.lainnya_judul;
-                            if (!nama || !nama.trim()) {
-                                const msg = `Nama Barang/Judul pada Item #${num} tidak boleh kosong.`;
+                            if (!it.lainnya_kode_barang || !nama || !nama.trim()) {
+                                const msg = `Klasifikasi PMDN 108 pada Item #${num} wajib dipilih dari daftar rekomendasi resmi PMDN 108.`;
                                 this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
                                 this.setStepError(2, msg);
                                 return false;
@@ -2066,7 +2115,10 @@
                     // Pastikan lembar repeater KIB aktif memiliki data (fallback dari flat specs legacy)
                     if (this.activeKibCategory === 'tanah' && (!this.formData.tanah_items || this.formData.tanah_items.length === 0)) {
                         this.formData.tanah_items = [{
+                            tanah_kode_barang: this.selected108Item?.kode || (init.kode_barang || ''),
                             tanah_nama_barang: init.nama_barang || '',
+                            isFilterOpen: false,
+                            searchFilter: '',
                             tanah_hak: init.tanah_hak || 'Hak Pakai',
                             tanah_sertifikat_tgl: init.tanah_sertifikat_tgl || '',
                             tanah_sertifikat_no: init.tanah_sertifikat_no || init.sertifikat_nomor || '',
