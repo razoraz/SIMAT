@@ -56,8 +56,8 @@
                     </a>
                 </div>
 
-                <!-- Advanced Filter Collapsible Bar (5 Kolom: KIB, Tahun, Triwulan, Kondisi, Sumber Perolehan) -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 pt-3 border-t border-slate-800/60">
+                <!-- Advanced Filter Collapsible Bar (6 Kolom: KIB, Tahun, Triwulan, Kondisi, Sumber Perolehan, Status Tutup Buku) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 pt-3 border-t border-slate-800/60">
                     
                     <!-- Filter KIB -->
                     <div>
@@ -154,6 +154,23 @@
                             </select>
                             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400">
                                 <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filter Status Tutup Buku -->
+                    <div>
+                        <label class="block text-[10px] font-bold text-rose-400 uppercase tracking-wider mb-1">Status Tutup Buku</label>
+                        <div class="relative">
+                            <select x-model="tutupBukuFilter"
+                                style="background-image: none !important; -webkit-appearance: none; -moz-appearance: none; appearance: none;"
+                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 pr-8 text-xs font-semibold text-slate-200 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/30 cursor-pointer hover:bg-slate-900/80 transition-all">
+                                <option value="all" class="bg-slate-900 text-slate-200 py-2 font-medium">Semua Status</option>
+                                <option value="locked" class="bg-slate-900 text-amber-300 py-2 font-medium">🔒 Sudah Tutup Buku</option>
+                                <option value="unlocked" class="bg-slate-900 text-emerald-400 py-2 font-medium">🔓 Belum Tutup Buku</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400">
+                                <svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                             </div>
                         </div>
                     </div>

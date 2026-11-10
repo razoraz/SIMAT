@@ -9776,26 +9776,35 @@
                     return this.isPeriodLocked(yr, tw);
                 },
 
-                // Helper Cek apakah Aset Boleh Direklas (Hanya jika SUDAH TUTUP BUKU)
+                // Helper Cek apakah Aset Boleh Direklas (Hanya jika SUDAH TUTUP BUKU & BUKAN ASET TERMINAL KELUAR)
                 isReklasAllowed(item) {
                     if (!item) return false;
-                    const isClosed = this.isItemLocked(item);
-                    if (!isClosed) return false; // Belum tutup buku: reklas dinonaktifkan
-                    if (this.isMutasiKeluarFull(item) || this.isKemitraanReturned(item) || this.isHibahKeluar(item)) {
+                    if (this.isKemitraanReturned(item) || this.isMutasiKeluarFull(item) || this.isHibahKeluar(item)) {
                         return false;
                     }
+                    const isClosed = this.isItemLocked(item);
+                    if (!isClosed) return false; // Belum tutup buku: reklas dinonaktifkan
                     return true;
                 },
 
-                // Helper Cek apakah Aset Boleh Diubah (Hanya jika BELUM TUTUP BUKU dan BELUM DIREKLASIFIKASI)
+                // Helper Cek apakah Aset Boleh Diubah (Hanya jika BELUM TUTUP BUKU, BELUM DIREKLAS, & BUKAN ASET TERMINAL KELUAR)
                 isEditAllowed(item) {
                     if (!item) return false;
-                    const isClosed = this.isItemLocked(item);
-                    if (isClosed) return false; // Sudah tutup buku: ubah dinonaktifkan
-                    if (this.isMutasiKeluarFull(item) || this.isKemitraanReturned(item) || this.isHibahKeluar(item)) {
+                    if (this.isKemitraanReturned(item) || this.isMutasiKeluarFull(item) || this.isHibahKeluar(item) || this.isReklasAset(item)) {
                         return false;
                     }
-                    if (this.isReklasAset(item)) {
+                    const isClosed = this.isItemLocked(item);
+                    if (isClosed) return false; // Sudah tutup buku: ubah dinonaktifkan
+                    return true;
+                },
+
+                // Helper Cek apakah Aset Boleh Dihapus (Hanya jika BELUM TUTUP BUKU, BELUM DIREKLAS, & BUKAN ASET TERMINAL KELUAR)
+                isDeleteAllowed(item) {
+                    if (!item) return false;
+                    if (this.isKemitraanReturned(item) || this.isMutasiKeluarFull(item) || this.isHibahKeluar(item) || this.isReklasAset(item)) {
+                        return false;
+                    }
+                    if (this.isItemLocked(item)) {
                         return false;
                     }
                     return true;
@@ -10203,6 +10212,9 @@
                     if (actionType === 'reklas') {
                         title = 'Aset Tidak Dapat Direklasifikasi';
                         msgAction = 'melakukan reklasifikasi pada aset ini';
+                    } else if (actionType === 'hapus') {
+                        title = 'Aset Tidak Dapat Dihapus';
+                        msgAction = 'menghapus data aset ini';
                     }
 
                     this.askConfirmation({
@@ -10253,6 +10265,9 @@
                     if (actionType === 'reklas') {
                         title = 'Aset Tidak Dapat Direklasifikasi';
                         msgAction = 'melakukan reklasifikasi pada aset ini';
+                    } else if (actionType === 'hapus') {
+                        title = 'Aset Tidak Dapat Dihapus';
+                        msgAction = 'menghapus data aset ini';
                     }
 
                     this.askConfirmation({
@@ -10810,15 +10825,27 @@
                 openReklas(item, specificReg = null) {
                     this.selectedAstapReklas = item;
 
+                    // Proteksi jika aset kemitraan telah dikembalikan ke rekanan / dibatalkan
+                    if (this.isKemitraanReturned(item)) {
+                        this.showKemitraanReturnedWarning(item, 'reklas');
+                        return;
+                    }
+
                     // Proteksi jika aset telah 100% mutasi keluar ke OPD lain
                     if (this.isMutasiKeluarFull(item)) {
                         this.showMutasiKeluarLockedWarning(item, 'reklas');
                         return;
                     }
 
-                    // Proteksi jika aset kemitraan telah dikembalikan ke rekanan / dibatalkan
-                    if (this.isKemitraanReturned(item)) {
-                        this.showKemitraanReturnedWarning(item, 'reklas');
+                    // Proteksi jika aset telah dihibahkan keluar dari RSUD
+                    if (this.isHibahKeluar(item)) {
+                        this.showHibahKeluarLockedWarning(item, 'reklas');
+                        return;
+                    }
+
+                    // Proteksi jika aset belum tutup buku
+                    if (!this.isItemLocked(item)) {
+                        this.showBelumTutupBukuReklasWarning(item);
                         return;
                     }
 
@@ -13115,7 +13142,15 @@
                             this.showToast('Pilih minimal 1 unit register NIBAR yang akan dimutasikan!', 'warning');
                             return;
                         }
-                        if (this.reklasTanggalBastMutasi && this.isTanggalBastInvalid()) {
+                        if (!this.reklasNomorBastMutasi || !this.reklasNomorBastMutasi.trim()) {
+                            this.showToast('Nomor BAST Mutasi Antar-OPD wajib diisi!', 'warning');
+                            return;
+                        }
+                        if (!this.reklasTanggalBastMutasi) {
+                            this.showToast('Tanggal BAST Mutasi Antar-OPD wajib dipilih!', 'warning');
+                            return;
+                        }
+                        if (this.isTanggalBastInvalid()) {
                             this.showToast('Tanggal BAST tidak boleh melebihi tanggal hari ini!', 'error');
                             return;
                         }
@@ -13243,7 +13278,7 @@
                         if (this.reklasJenis === 'hibah') {
                             nomorBaFinal = (this.reklasNomorBastHibah || '').trim() || nomorBaFinal;
                         } else if (this.reklasJenis === 'mutasi_eksternal') {
-                            nomorBaFinal = (this.reklasNomorBastMutasi || '').trim() || null;
+                            nomorBaFinal = (this.reklasNomorBastMutasi || '').trim() || nomorBaFinal;
                         }
 
                         const payload = {
@@ -13279,7 +13314,7 @@
                             pj_asal_jabatan: (this.reklasJenis === 'mutasi_eksternal' || this.reklasJenis === 'hibah') ? (this.reklasPjAsalJabatan || 'Pengurus Barang Pengguna') : null,
                             alamat_instansi: (this.reklasJenis === 'hibah') ? this.reklasPenerimaAlamat : ((this.reklasJenis === 'mutasi_eksternal') ? this.reklasAlamatInstansi : null),
                             nomor_sk_dasar: (this.reklasJenis === 'mutasi_eksternal') ? this.reklasNomorSkDasar : null,
-                            tanggal_bast: (this.reklasJenis === 'hibah') ? this.reklasTanggalBastHibah : ((this.reklasJenis === 'mutasi_eksternal') ? (this.reklasTanggalBastMutasi || new Date().toLocaleDateString('en-CA')) : null),
+                            tanggal_bast: (this.reklasJenis === 'hibah') ? this.reklasTanggalBastHibah : ((this.reklasJenis === 'mutasi_eksternal') ? this.reklasTanggalBastMutasi : null),
                             tanggal_dokumen_koreksi: (this.reklasJenis === 'koreksi_nilai') ? this.reklasDokumenTglKoreksi : null,
                             selected_register_ids: ((this.reklasJenis === 'mutasi_eksternal' || this.reklasJenis === 'hibah') && (this.selectedAstapReklas?.registers && this.selectedAstapReklas.registers.length > 0)) ? this.reklasSelectedNibarIds : null,
                             register_kondisi_map: (this.reklasJenis === 'mutasi_eksternal' || this.reklasJenis === 'hibah') ? this.reklasRegisterKondisiMap : null,
@@ -13798,6 +13833,7 @@
                 sumberDanaFilter: 'all',
                 tahunFilter: 'all',
                 triwulanFilter: 'all',
+                tutupBukuFilter: 'all',
                 viewMode: 'catalog',
                 showAddModal: false,
                 showEditModal: false,
@@ -14354,7 +14390,31 @@
                 deleteAstap(item) {
                     if (!item) return;
 
-                    // Validasi Tutup Buku jika periode terkunci
+                    // 1. Proteksi Terminal: Kemitraan telah dikembalikan / dibatalkan
+                    if (this.isKemitraanReturned(item)) {
+                        this.showKemitraanReturnedWarning(item, 'hapus');
+                        return;
+                    }
+
+                    // 2. Proteksi Terminal: Mutasi Keluar ke OPD Luar Penuh
+                    if (this.isMutasiKeluarFull(item)) {
+                        this.showMutasiKeluarLockedWarning(item, 'hapus');
+                        return;
+                    }
+
+                    // 3. Proteksi Terminal: Hibah Keluar dari RSUD
+                    if (this.isHibahKeluar(item)) {
+                        this.showHibahKeluarLockedWarning(item, 'hapus');
+                        return;
+                    }
+
+                    // 4. Proteksi Reklas: Aset yang telah direklasifikasi (kelola di Menu Reklasifikasi)
+                    if (this.isReklasAset(item)) {
+                        this.showReklasLockedWarning(item);
+                        return;
+                    }
+
+                    // 5. Validasi Tutup Buku jika periode terkunci
                     if (this.isItemLocked(item)) {
                         this.showLockedWarning(item);
                         return;
@@ -14805,6 +14865,7 @@
                     this.sumberDanaFilter = 'all';
                     this.tahunFilter = 'all';
                     this.triwulanFilter = 'all';
+                    this.tutupBukuFilter = 'all';
                 },
 
                 astaps: window.__simatAstaps || [],
@@ -15180,7 +15241,14 @@
                             }
                         }
 
-                        return matchSearch && matchCategory && matchKondisi && matchAsalUsul && matchTahun && matchTriwulan && matchSumber;
+                        let matchTutupBuku = true;
+                        if (this.tutupBukuFilter === 'locked') {
+                            matchTutupBuku = this.isItemLocked(item);
+                        } else if (this.tutupBukuFilter === 'unlocked') {
+                            matchTutupBuku = !this.isItemLocked(item);
+                        }
+
+                        return matchSearch && matchCategory && matchKondisi && matchAsalUsul && matchTahun && matchTriwulan && matchSumber && matchTutupBuku;
                     });
                 },
 
