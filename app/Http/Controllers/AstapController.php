@@ -4135,6 +4135,39 @@ class AstapController extends Controller
                 ], 422);
             }
 
+            // Validasi Proteksi Kemitraan: Cegah penghapusan aset kemitraan yang telah dikembalikan ke rekanan
+            $returnedKemitraan = \App\Models\AstapKemitraan::where('is_deleted', 0)
+                ->where(function ($q) use ($astap) {
+                    $q->where('astap_id', $astap->id)
+                      ->orWhere('objek_astap_id', $astap->id);
+                })
+                ->where('status_konsesi', 'Dikembalikan ke Rekanan')
+                ->first();
+
+            if ($returnedKemitraan) {
+                return response()->json([
+                    'success' => false,
+                    'is_blocked' => true,
+                    'action_url' => '/master/kemitraan',
+                    'action_text' => 'Buka Menu Kemitraan',
+                    'message' => "Aset \"{$astap->nama_barang}\" tidak dapat dihapus karena telah resmi dikembalikan kepada rekanan mitra (Nomor PKS: {$returnedKemitraan->nomor_pks}). Data aset telah terkunci permanen demi akuntabilitas pembukuan BMD RSUD."
+                ], 422);
+            }
+
+            // Validasi Proteksi Hibah Keluar: Cegah penghapusan aset yang telah dihibahkan ke luar RSUD
+            $hasHibahKeluar = ($astap->jenis_reklas === 'HIBAH_KELUAR')
+                || $astap->registers()->where('status', 'Dihibahkan')->exists();
+
+            if ($hasHibahKeluar) {
+                return response()->json([
+                    'success' => false,
+                    'is_blocked' => true,
+                    'action_url' => '/master-data/hibah',
+                    'action_text' => 'Buka Menu Hibah',
+                    'message' => "Aset \"{$astap->nama_barang}\" tidak dapat dihapus karena telah resmi diserahterimakan sebagai hibah keluar dari RSUD."
+                ], 422);
+            }
+
             // Validasi Proteksi Mutasi Keluar OPD: Cegah penghapusan aset yang memiliki riwayat serah terima keluar ke OPD lain
             $hasMutasiKeluar = $astap->mutasiEksternals()->where('tipe', 'keluar')->where('status', '!=', 'Dibatalkan')->exists()
                 || $astap->registers()->where('status', 'Mutasi Keluar OPD')->exists()
