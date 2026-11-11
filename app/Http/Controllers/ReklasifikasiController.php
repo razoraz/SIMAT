@@ -98,6 +98,13 @@ class ReklasifikasiController extends Controller
             ->filter()
             ->toArray();
 
+        // Kumpulkan ID astap yang sudah memiliki transaksi reklas HIBAH pada periode ini
+        $processedHibahAstapIds = $reklasMutasis
+            ->whereIn('jenis_reklas', ['HIBAH_MASUK', 'HIBAH_KELUAR'])
+            ->pluck('astap_id')
+            ->filter()
+            ->toArray();
+
         // 3. Susun Matriks 5 Kolom: Uraian, Saldo Awal, Mutasi Tambah, Mutasi Kurang, Saldo Akhir
         $matriks = [];
         $subtotals = [
@@ -123,6 +130,20 @@ class ReklasifikasiController extends Controller
         foreach ($astaps as $astap) {
             if ($astap->is_extracomtable && !in_array($astap->id, $processedExtracomAstapIds)) {
                 $totalUnloggedExtracom += (float) ($astap->total_realisasi ?: ($astap->jumlah_anggaran ?: 0));
+            }
+        }
+
+        // Hitung total nilai aset hibah masuk tanpa log transaksi reklas untuk penyeimbang double-entry
+        $totalUnloggedHibah = 0;
+        $hibahTambahByRow = [];
+        foreach ($astaps as $astap) {
+            if ($astap->sumber_dana === 'hibah' && !in_array($astap->id, $processedHibahAstapIds)) {
+                $matchedRow = $this->matchAstapToRow($astap, $templateRows);
+                if ($matchedRow) {
+                    $val = (float) ($astap->total_realisasi ?: ($astap->jumlah_anggaran ?: 0));
+                    $hibahTambahByRow[$matchedRow->id] = ($hibahTambahByRow[$matchedRow->id] ?? 0) + $val;
+                    $totalUnloggedHibah += $val;
+                }
             }
         }
 
@@ -164,11 +185,21 @@ class ReklasifikasiController extends Controller
             $tujuanRowId = $this->resolveTujuanRowId($reklas, $templateRows);
             $val = (float) $reklas->nilai_reklas;
 
-            if ($asalRowId) {
-                $reklasKurangByRow[$asalRowId] = ($reklasKurangByRow[$asalRowId] ?? 0) + $val;
-            }
-            if ($tujuanRowId) {
-                $reklasTambahByRow[$tujuanRowId] = ($reklasTambahByRow[$tujuanRowId] ?? 0) + $val;
+            if ($reklas->jenis_reklas === 'HIBAH_MASUK') {
+                $korHibahRow = $templateRows->firstWhere('kode_prefix', 'KOR_HIBAH');
+                if ($korHibahRow) {
+                    $reklasTambahByRow[$korHibahRow->id] = ($reklasTambahByRow[$korHibahRow->id] ?? 0) + $val;
+                }
+                if ($tujuanRowId && (!$korHibahRow || $tujuanRowId != $korHibahRow->id)) {
+                    $reklasTambahByRow[$tujuanRowId] = ($reklasTambahByRow[$tujuanRowId] ?? 0) + $val;
+                }
+            } else {
+                if ($asalRowId) {
+                    $reklasKurangByRow[$asalRowId] = ($reklasKurangByRow[$asalRowId] ?? 0) + $val;
+                }
+                if ($tujuanRowId) {
+                    $reklasTambahByRow[$tujuanRowId] = ($reklasTambahByRow[$tujuanRowId] ?? 0) + $val;
+                }
             }
         }
 
@@ -188,6 +219,9 @@ class ReklasifikasiController extends Controller
                     $saldoAwal += $priorYearSaldoAwalByRow[$row->id];
                 }
 
+                // 2. Tambahkan mutasi tambah dari perolehan hibah masuk pada rekening aset tetap tujuan
+                $mutasiTambah += ($hibahTambahByRow[$row->id] ?? 0);
+
                 // 3. Tangani aset dengan status is_extracomtable di ASTAP yang belum tercatat di log reklasifikasi
                 $mutasiKurang += ($extracomKurangByRow[$row->id] ?? 0);
             }
@@ -196,6 +230,12 @@ class ReklasifikasiController extends Controller
             // Rekap penyeimbang: menampung mutasi tambah untuk seluruh aset ekstrakomptabel
             if ($prefix === 'KOR_EXTRACOM') {
                 $mutasiTambah += $totalUnloggedExtracom;
+            }
+
+            // 5. Khusus baris Koreksi Hibah / Bantuan Pemerintah (KOR_HIBAH)
+            // Rekap penyeimbang: menampung mutasi tambah untuk seluruh aset hibah masuk
+            if ($prefix === 'KOR_HIBAH') {
+                $mutasiTambah += $totalUnloggedHibah;
             }
 
             $saldoAkhir = $saldoAwal + $mutasiTambah - $mutasiKurang;
@@ -292,6 +332,69 @@ class ReklasifikasiController extends Controller
             'selectedJenis'     => $selectedJenis,
             'templateRows'      => $templateRows,
             'kandidatAstaps'    => $kandidatAstaps,
+            'dbMaster108'       => JenisAstap::getNested108(),
+            'dbMitraKemitraans' => \App\Models\AstapKemitraan::getDistinctMitras(),
+            'dbSkpdDirectory'   => $dbSkpdDirectory,
+            'dbSkpdAsals'       => $dbSkpdAsals,
+            'dbPejabats'        => $dbPejabats,
+        ]);
+    }
+
+    /**
+     * Menampilkan Halaman Form Pencatatan Reklasifikasi Baru (Dedicated Full-Page)
+     */
+    public function create(Request $request)
+    {
+        $selectedTahun = (int) $request->get('tahun', date('Y'));
+        $targetAstapId = $request->get('astap_id');
+
+        // Daftar tahun perolehan yang ada di sistem
+        $tahunList = Astap::select('tahun_perolehan')
+            ->distinct()
+            ->orderBy('tahun_perolehan', 'desc')
+            ->pluck('tahun_perolehan')
+            ->toArray();
+
+        if (!in_array($selectedTahun, $tahunList)) {
+            array_unshift($tahunList, $selectedTahun);
+        }
+
+        // Ambil data kandidat aset ASTAP
+        $kandidatQuery = Astap::where('is_deleted', 0)
+            ->select('id', 'nama_barang', 'total_realisasi', 'jumlah_anggaran', 'tahun_perolehan', 'category', 'asal_kib', 'jenis_astap_id', 'is_reklas', 'jenis_reklas', 'satuan', 'merk_type', 'alamat_barang', 'spesifikasi_json', 'jumlah_volume', 'harga_satuan', 'is_extracomtable')
+            ->with(['jenisAstap:id,jenis,sub_sub_rincian_objek,uraian_sub_rincian,uraian_sub_sub_rincian', 'registers:id,astap_id,nibar,no_register,kondisi,status']);
+
+        // Jika tidak ada target spesifik, batasi ke tahun terpilih agar responsif
+        if (!$targetAstapId) {
+            $kandidatQuery->where('tahun_perolehan', $selectedTahun);
+        }
+
+        $kandidatAstaps = $kandidatQuery->orderBy('nama_barang', 'asc')->get();
+
+        // Jika targetAstapId diberikan tapi tidak ada di list tahun terpilih, tambahkan ke kandidatAstaps
+        $targetAstap = null;
+        if ($targetAstapId) {
+            $targetAstap = Astap::where('is_deleted', 0)
+                ->with(['jenisAstap:id,jenis,sub_sub_rincian_objek,uraian_sub_rincian,uraian_sub_sub_rincian', 'registers:id,astap_id,nibar,no_register,kondisi,status'])
+                ->find($targetAstapId);
+
+            if ($targetAstap && !$kandidatAstaps->contains('id', $targetAstap->id)) {
+                $kandidatAstaps->prepend($targetAstap);
+            }
+        }
+
+        $templateRows = JenisReklasifikasi::active()->get();
+        $dbSkpdDirectory = \App\Http\Controllers\MutasiEksternalController::getSkpdDirectory();
+        $dbSkpdAsals = array_values(array_unique(array_keys($dbSkpdDirectory)));
+        $dbPejabats = \App\Http\Controllers\MutasiEksternalController::getDistinctPejabats();
+
+        return view('pages.reklasifikasi.create', [
+            'tahunList'         => $tahunList,
+            'selectedTahun'     => $selectedTahun,
+            'kandidatAstaps'    => $kandidatAstaps,
+            'targetAstap'       => $targetAstap,
+            'targetAstapId'     => $targetAstapId,
+            'templateRows'      => $templateRows,
             'dbMaster108'       => JenisAstap::getNested108(),
             'dbMitraKemitraans' => \App\Models\AstapKemitraan::getDistinctMitras(),
             'dbSkpdDirectory'   => $dbSkpdDirectory,
@@ -3370,6 +3473,11 @@ class ReklasifikasiController extends Controller
      */
     private function resolveAstapSaldoAwalRowId(Astap $astap, $templateRows, $allReklasByAstap): ?int
     {
+        // Aset yang bersumber dari Hibah bukan Belanja Modal (tidak memiliki Saldo Awal Belanja Modal)
+        if ($astap->sumber_dana === 'hibah') {
+            return null;
+        }
+
         $history = $allReklasByAstap[$astap->id] ?? null;
         if ($history && $history->isNotEmpty()) {
             $firstReklas = $history->first();

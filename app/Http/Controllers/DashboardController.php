@@ -51,13 +51,13 @@ class DashboardController extends Controller
      */
     private function getDashboardData(): array
     {
-        // 1. Card 1: Total Keseluruhan Volume Aset ASTAP & Master ASTAP
-        $totalAsetVolumeCount   = (int) Astap::sum('jumlah_volume');
-        $totalAsetRegisterCount = AstapRegister::count();
-        $totalAstapMasterCount  = Astap::count();
+        // 1. Card 1: Total Keseluruhan Volume Aset ASTAP & Master ASTAP (Hanya aset aktif / bukan di tong sampah)
+        $totalAsetVolumeCount   = (int) Astap::where('is_deleted', 0)->sum('jumlah_volume');
+        $totalAsetRegisterCount = AstapRegister::where('is_deleted', 0)->count();
+        $totalAstapMasterCount  = Astap::where('is_deleted', 0)->count();
 
-        // 2. Card 2: Harga Aset Keseluruhan (Total Rupiah Dana Aset RSUD)
-        $totalValuasi = (float) Astap::sum('total_realisasi');
+        // 2. Card 2: Harga Aset Keseluruhan (Total Rupiah Dana Aset RSUD Aktif)
+        $totalValuasi = (float) Astap::where('is_deleted', 0)->sum('total_realisasi');
         if ($totalValuasi >= 1000000000) {
             $hargaAsetFormatted = 'Rp ' . number_format($totalValuasi / 1000000000, 2, ',', '.');
             $hargaAsetUnit = 'Miliar';
@@ -72,18 +72,19 @@ class DashboardController extends Controller
 
         // 3. Card 3: Jumlah Unit RSUD & Distribusi Barang
         $totalUnitRsudCount       = Unit::count();
-        $totalTerdistribusiUnit   = AstapRegister::whereNotNull('unit_id')->count();
+        $totalTerdistribusiUnit   = AstapRegister::where('is_deleted', 0)->whereNotNull('unit_id')->count();
         $totalTransaksiDistribusi = Distribusi::count();
 
         // 4. Card 4: Kondisi Aset
-        $kondisiBaik         = AstapRegister::where('kondisi', 'Baik')->count();
-        $kondisiKurangBaik   = AstapRegister::whereIn('kondisi', ['Kurang Baik', 'KB', 'Rusak Ringan', 'RR'])->count();
+        $kondisiBaik         = AstapRegister::where('is_deleted', 0)->where('kondisi', 'Baik')->count();
+        $kondisiKurangBaik   = AstapRegister::where('is_deleted', 0)->whereIn('kondisi', ['Kurang Baik', 'KB', 'Rusak Ringan', 'RR'])->count();
         $kondisiRusakRingan  = 0;
-        $kondisiRusakBerat   = AstapRegister::whereIn('kondisi', ['Rusak Berat', 'Rusak', 'RB'])->count();
+        $kondisiRusakBerat   = AstapRegister::where('is_deleted', 0)->whereIn('kondisi', ['Rusak Berat', 'Rusak', 'RB'])->count();
         $totalRusak          = $kondisiKurangBaik + $kondisiRusakBerat;
 
         // 5. Data Grafik Peningkatan Aset (Harga & Kuantitas per Tahun)
-        $yearlyStats = Astap::selectRaw('tahun_perolehan, SUM(jumlah_volume) as total_volume, SUM(total_realisasi) as total_harga')
+        $yearlyStats = Astap::where('is_deleted', 0)
+            ->selectRaw('tahun_perolehan, SUM(jumlah_volume) as total_volume, SUM(total_realisasi) as total_harga')
             ->whereNotNull('tahun_perolehan')
             ->where('tahun_perolehan', '>', 0)
             ->groupBy('tahun_perolehan')
@@ -117,7 +118,8 @@ class DashboardController extends Controller
         }
 
         // 6. Data ASTAP Terbaru dari SQLite DB
-        $recentAstaps = Astap::with(['jenisAstap', 'registers.unit'])
+        $recentAstaps = Astap::where('is_deleted', 0)
+            ->with(['jenisAstap', 'registers.unit'])
             ->orderBy('id', 'desc')
             ->get()
             ->map(function ($a) {
@@ -153,7 +155,8 @@ class DashboardController extends Controller
             });
 
         // 7. Data Grafik Distribusi per Unit/Ruangan Terbanyak
-        $topUnitsDist = AstapRegister::whereNotNull('unit_id')
+        $topUnitsDist = AstapRegister::where('astap_registers.is_deleted', 0)
+            ->whereNotNull('unit_id')
             ->join('units', 'astap_registers.unit_id', '=', 'units.id')
             ->selectRaw('units.nama as unit_nama, count(*) as total')
             ->groupBy('units.id', 'units.nama')
