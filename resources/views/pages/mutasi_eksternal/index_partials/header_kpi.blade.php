@@ -47,6 +47,16 @@
 
         <!-- Tombol Aksi Cepat (Bespoke Action Group) -->
         <div class="flex flex-wrap items-center gap-2.5 shrink-0 relative z-10">
+            <!-- Ekspor Excel Button -->
+            <button type="button" @click="openExportModal()"
+                class="group px-4 py-2.5 rounded-xl bg-slate-950/90 hover:bg-emerald-950/30 border border-slate-700/80 hover:border-emerald-500/60 text-xs font-bold text-slate-300 hover:text-emerald-300 transition-all duration-200 transform hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-500/15 flex items-center gap-2 cursor-pointer active:scale-95 shrink-0"
+                title="Ekspor Laporan Inventaris Mutasi Eksternal ke Format Microsoft Excel (.xlsx)">
+                <svg class="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Ekspor Excel</span>
+            </button>
+
             <!-- Action 1: Input Mutasi Masuk Baru -->
             <a href="{{ route('astap.create_mutasi_eksternal', ['from' => 'eksternal']) }}"
                 x-show="activeDirection === 'masuk'"

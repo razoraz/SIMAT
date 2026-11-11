@@ -34,6 +34,14 @@
             // Modal Edit Mutasi Keluar & Swap NIBAR State
             showEditKeluarModal: false,
 
+            // Modal Ekspor Excel State (Standar 7 Sheet BPKAD / SIMAT-RK)
+            showExportModal: false,
+            exportDirection: 'all',
+            exportYear: 'all',
+            exportTriwulan: 'all',
+            exportCategory: 'all',
+            isSubmittingExport: false,
+
             // State Dokumen Viewer Interaktif
             previewDocModalOpen: false,
             previewDocUrl: '',
@@ -85,6 +93,10 @@
             },
 
             mutasiEksternals: {{ Js::from($mutasiEksternals) }},
+
+            init() {
+                window.simatMutasiEksternals = this.mutasiEksternals;
+            },
 
             get countMasuk() {
                 return this.mutasiEksternals.filter(item => item.tipe !== 'keluar').length;
@@ -156,6 +168,108 @@
 
             get totalUnits() {
                 return this.currentDirectionItems.reduce((acc, curr) => acc + (parseInt(curr.jumlah_volume || curr.item_count || 1) || 1), 0);
+            },
+
+            // =========================================================================
+            // EKSPOR EXCEL MULTI-SHEET STANDAR 7 LEMBAR SHEET BPKAD / SIMAT-RK
+            // =========================================================================
+            openExportModal() {
+                this.exportDirection = this.activeDirection || 'all';
+                this.exportCategory = 'all';
+                this.exportYear = 'all';
+                this.exportTriwulan = 'all';
+                window.simatMutasiEksternals = this.mutasiEksternals;
+                this.showExportModal = true;
+            },
+
+            get exportAvailableYears() {
+                const years = new Set();
+                (this.mutasiEksternals || []).forEach(item => {
+                    if (item.tahun_perolehan) {
+                        const y = parseInt(item.tahun_perolehan);
+                        if (!isNaN(y) && y > 1900) years.add(y);
+                    }
+                    if (item.tgl_raw) {
+                        const y = new Date(item.tgl_raw).getFullYear();
+                        if (!isNaN(y) && y > 1900) years.add(y);
+                    }
+                });
+                years.add(new Date().getFullYear());
+                return Array.from(years).sort((a, b) => b - a);
+            },
+
+            get exportFilteredCount() {
+                const raw = this.mutasiEksternals || [];
+                const fDir = this.exportDirection;
+                const fYear = this.exportYear;
+                const fTw = this.exportTriwulan;
+                const fCat = this.exportCategory;
+
+                const isTwMatch = (itemDate, itemTw, targetTw) => {
+                    if (targetTw === 'all') return true;
+                    let tw = itemTw;
+                    if (!tw && itemDate) {
+                        const m = new Date(itemDate).getMonth() + 1;
+                        if (m <= 3) tw = 'TW I';
+                        else if (m <= 6) tw = 'TW II';
+                        else if (m <= 9) tw = 'TW III';
+                        else tw = 'TW IV';
+                    }
+                    const targetKey = String(targetTw).replace(/[\s_]/g, '').toUpperCase();
+                    const curTw = String(tw || 'TWI').replace(/[\s_]/g, '').toUpperCase();
+                    return (curTw === targetKey) ||
+                           (targetKey === 'TWI' && curTw === 'TW1') || (targetKey === 'TW1' && curTw === 'TWI') ||
+                           (targetKey === 'TWII' && curTw === 'TW2') || (targetKey === 'TW2' && curTw === 'TWII') ||
+                           (targetKey === 'TWIII' && curTw === 'TW3') || (targetKey === 'TW3' && curTw === 'TWIII') ||
+                           (targetKey === 'TWIV' && curTw === 'TW4') || (targetKey === 'TW4' && curTw === 'TWIV');
+                };
+
+                return raw.filter(item => {
+                    if (item.is_deleted === 1) return false;
+                    if (fDir === 'masuk' && item.tipe === 'keluar') return false;
+                    if (fDir === 'keluar' && item.tipe !== 'keluar') return false;
+
+                    const itemYear = String(item.tahun_perolehan || (item.tgl_raw ? new Date(item.tgl_raw).getFullYear() : ''));
+                    if (fYear !== 'all' && itemYear !== String(fYear)) return false;
+
+                    if (!isTwMatch(item.tgl_raw || item.mutasi_tanggal, item.triwulan, fTw)) return false;
+
+                    if (fCat !== 'all' && fCat !== 'REKAP') {
+                        const itemCat = typeof resolveItemCategory === 'function' ? resolveItemCategory(item) : (item.category || 'KIB B');
+                        if (itemCat !== fCat) return false;
+                    }
+                    return true;
+                }).length;
+            },
+
+            submitExport() {
+                this.isSubmittingExport = true;
+                window.simatMutasiEksternals = this.mutasiEksternals;
+                try {
+                    if (typeof exportMutasiEksternalToExcel !== 'function') {
+                        throw new Error('Pustaka engine ekspor belum siap. Silakan muat ulang halaman.');
+                    }
+                    exportMutasiEksternalToExcel({
+                        direction: this.exportDirection,
+                        year: this.exportYear,
+                        triwulan: this.exportTriwulan,
+                        category: this.exportCategory
+                    });
+                    setTimeout(() => {
+                        this.isSubmittingExport = false;
+                        this.showExportModal = false;
+                        const catLabel = this.exportCategory === 'all'
+                            ? 'Lengkap (7 Sheet: Rekap, KIB A-E & Extracom)'
+                            : (this.exportCategory === 'REKAP' ? 'Rekapitulasi' : (this.exportCategory === 'EXTRACOM' ? 'Extracom' : this.exportCategory));
+                        const arahText = this.exportDirection === 'all' ? 'Semua Arah' : (this.exportDirection === 'masuk' ? 'Mutasi Masuk' : 'Transfer Keluar');
+                        this.showToast(`Berhasil mengekspor Laporan Mutasi Eksternal [${arahText}] ${catLabel} (${this.exportTriwulan === 'all' ? 'Tahunan' : this.exportTriwulan}) ${this.exportYear === 'all' ? 'Semua Tahun' : this.exportYear}!`, 'success');
+                    }, 1000);
+                } catch (err) {
+                    console.error('Error ekspor excel mutasi eksternal:', err);
+                    this.isSubmittingExport = false;
+                    if (typeof isExportingMutasi !== 'undefined') isExportingMutasi = false;
+                    this.showToast('Gagal mengekspor file Excel: ' + (err.message || 'Terjadi kesalahan sistem'), 'error');
+                }
             },
 
             get countSkpd() {

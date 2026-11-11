@@ -3,6 +3,7 @@
     @section('breadcrumb', 'Master Aset / Mutasi Eksternal')
 
     @include('pages.mutasi_eksternal.index_partials.scripts')
+    @include('pages.mutasi_eksternal.index_partials.scripts_export')
 
     <div x-data="mutasiEksternalCatalog()" x-cloak>
         <!-- KONTEN UTAMA KATALOG MUTASI EKSTERNAL -->
@@ -41,6 +42,9 @@
 
         <!-- MODAL UBAH MUTASI KELUAR & ALOKASI REGISTER NIBAR -->
         @include('pages.mutasi_eksternal.index_partials.modal_edit_keluar')
+
+        <!-- MODAL EKSPOR EXCEL MUTASI EKSTERNAL 7 SHEET STANDAR BPKAD -->
+        @include('pages.mutasi_eksternal.index_partials.modal_export_excel')
     </div>
 
     <!-- Print Media Query Styling untuk Cetak BAST Kertas Putih Sempurna -->
