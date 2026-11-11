@@ -162,17 +162,18 @@
                     </a>
                 </div>
 
-                <!-- 4B. KHUSUS MUTASI MASUK: INFO & AKSI MUTASI EKSTERNAL -->
-                <div x-show="exportFormatType === 'sipenerbang' && (exportSumberDana === 'mutasi_eksternal' || exportSumberDana === 'pelimpahan')" class="p-3.5 rounded-2xl bg-indigo-950/20 border border-indigo-500/30 space-y-2">
-                    <div class="flex items-center gap-2 text-indigo-300 font-bold text-xs">
-                        <span>🔄 Laporan Aset Mutasi Masuk Antar-OPD</span>
+                <!-- 4B. KHUSUS MUTASI MASUK: INFO MUTASI EKSTERNAL -->
+                <div x-show="exportFormatType === 'sipenerbang' && (exportSumberDana === 'mutasi_eksternal' || exportSumberDana === 'pelimpahan')" class="p-3 rounded-2xl bg-indigo-950/30 border border-indigo-500/40 flex items-center justify-between">
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-lg">🔄</span>
+                        <div>
+                            <div class="text-xs font-bold text-indigo-300">Laporan Aset Mutasi Masuk (Antar-OPD)</div>
+                            <div class="text-[10.5px] text-indigo-200/70">Format Buku Inventaris 7 Sheet BPKAD / SIMAT-RK (PMDN 108)</div>
+                        </div>
                     </div>
-                    <p class="text-[11px] text-slate-300 leading-relaxed">
-                        Pencatatan aset dari transfer masuk SKPD atau Dinas luar Pemkab Bondowoso (BAMB Masuk) dengan Berita Acara Serah Terima Mutasi Masuk.
-                    </p>
-                    <a href="{{ route('mutasi.eksternal') }}" 
-                       class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-[11px] font-bold transition-all">
-                        <span>Buka Modul Mutasi Eksternal ↗</span>
+                    <a href="{{ route('mutasi.eksternal') }}" target="_blank"
+                       class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 text-[10px] font-semibold border border-indigo-500/30 transition-all">
+                        <span>Buka Modul ↗</span>
                     </a>
                 </div>
 
@@ -277,6 +278,7 @@
                         <span class="text-[10px] text-cyan-400 font-mono">Sheet Excel</span>
                     </label>
                     <select x-model="exportKemitraanCategory"
+                            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-slate-200 focus:outline-none focus:border-cyan-400">
                         <option value="all">Semua KIB (Buku Aset Kemitraan Lengkap 7 Sheet: Rekap, KIB A s/d E &amp; Extracom)</option>
                         <option value="REKAP">Lembar Rekapitulasi Realisasi Kemitraan (Sheet 1)</option>
                         <option value="KIB A">KIB A - Tanah (Akun 1.5.2.01.01.xx.001)</option>
@@ -284,6 +286,25 @@
                         <option value="KIB C">KIB C - Gedung &amp; Bangunan / BGS (Akun 1.5.2.01.01.xx.003)</option>
                         <option value="KIB D">KIB D - Jalan, Irigasi &amp; Jaringan (Akun 1.5.2.01.01.xx.004)</option>
                         <option value="KIB E">KIB E - Aset Tetap Lainnya (Akun 1.5.2.01.01.xx.005)</option>
+                        <option value="EXTRACOM">Extracom - Barang Ekstrakomtabel (&lt; Rp 300.000)</option>
+                    </select>
+                </div>
+
+                <!-- 5D. PILIHAN KLASIFIKASI SHEET KHUSUS MUTASI MASUK (PMDN 108) -->
+                <div x-show="exportFormatType === 'sipenerbang' && (exportSumberDana === 'mutasi_eksternal' || exportSumberDana === 'pelimpahan')">
+                    <label class="block text-indigo-300 font-bold text-xs mb-1 flex items-center justify-between">
+                        <span>📦 KLASIFIKASI LEMBAR SHEET MUTASI (PMDN 108)</span>
+                        <span class="text-[10px] text-indigo-400 font-mono">Sheet Excel</span>
+                    </label>
+                    <select x-model="exportMutasiCategory"
+                            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-slate-200 focus:outline-none focus:border-indigo-400">
+                        <option value="all">Semua KIB (Buku Aset Mutasi Masuk Lengkap 7 Sheet: Rekap, KIB A s/d E &amp; Extracom)</option>
+                        <option value="REKAP">Lembar Rekapitulasi Realisasi Mutasi Masuk (Sheet 1)</option>
+                        <option value="KIB A">KIB A - Tanah</option>
+                        <option value="KIB B">KIB B - Peralatan &amp; Mesin / Alkes Medis</option>
+                        <option value="KIB C">KIB C - Gedung &amp; Bangunan</option>
+                        <option value="KIB D">KIB D - Jalan, Irigasi &amp; Jaringan</option>
+                        <option value="KIB E">KIB E - Aset Tetap Lainnya</option>
                         <option value="EXTRACOM">Extracom - Barang Ekstrakomtabel (&lt; Rp 300.000)</option>
                     </select>
                 </div>
@@ -312,7 +333,7 @@
                     class="px-5 py-2 rounded-xl font-black text-xs shadow-lg transition-all flex items-center space-x-2 cursor-pointer active:scale-95 disabled:opacity-50"
                     :class="exportSumberDana === 'kemitraan' ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-cyan-500/20' : (exportSumberDana === 'hibah' ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/20' : ((exportSumberDana === 'mutasi_eksternal' || exportSumberDana === 'pelimpahan') ? 'bg-indigo-500 hover:bg-indigo-400 text-slate-950 shadow-indigo-500/20' : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-emerald-500/20'))">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                    <span x-text="isSubmittingExport ? 'Mengekspor...' : ((exportSumberDana === 'mutasi_eksternal' || exportSumberDana === 'pelimpahan') ? 'Buka Modul Mutasi' : (exportSumberDana === 'hibah' ? 'Buka Modul Hibah' : 'Unduh File Excel'))"></span>
+                    <span x-text="isSubmittingExport ? 'Mengekspor...' : (exportSumberDana === 'hibah' ? 'Buka Modul Hibah' : 'Unduh File Excel')"></span>
                 </button>
             </div>
         </div>

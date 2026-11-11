@@ -11,6 +11,7 @@
 
     <!-- 1. Script Ekspor Multi-Sheet Excel & Logika Alpine.js (astapCatalog) -->
     @include('pages.astap.index_partials.scripts')
+    @include('pages.mutasi_eksternal.index_partials.scripts_export')
 
     <div x-data="astapCatalog()" x-cloak class="space-y-6">
 
