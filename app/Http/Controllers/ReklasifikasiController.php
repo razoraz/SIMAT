@@ -98,6 +98,13 @@ class ReklasifikasiController extends Controller
             ->filter()
             ->toArray();
 
+        // Kumpulkan ID astap yang sudah memiliki transaksi reklas HIBAH pada periode ini
+        $processedHibahAstapIds = $reklasMutasis
+            ->whereIn('jenis_reklas', ['HIBAH_MASUK', 'HIBAH_KELUAR'])
+            ->pluck('astap_id')
+            ->filter()
+            ->toArray();
+
         // 3. Susun Matriks 5 Kolom: Uraian, Saldo Awal, Mutasi Tambah, Mutasi Kurang, Saldo Akhir
         $matriks = [];
         $subtotals = [
@@ -123,6 +130,20 @@ class ReklasifikasiController extends Controller
         foreach ($astaps as $astap) {
             if ($astap->is_extracomtable && !in_array($astap->id, $processedExtracomAstapIds)) {
                 $totalUnloggedExtracom += (float) ($astap->total_realisasi ?: ($astap->jumlah_anggaran ?: 0));
+            }
+        }
+
+        // Hitung total nilai aset hibah masuk tanpa log transaksi reklas untuk penyeimbang double-entry
+        $totalUnloggedHibah = 0;
+        $hibahTambahByRow = [];
+        foreach ($astaps as $astap) {
+            if ($astap->sumber_dana === 'hibah' && !in_array($astap->id, $processedHibahAstapIds)) {
+                $matchedRow = $this->matchAstapToRow($astap, $templateRows);
+                if ($matchedRow) {
+                    $val = (float) ($astap->total_realisasi ?: ($astap->jumlah_anggaran ?: 0));
+                    $hibahTambahByRow[$matchedRow->id] = ($hibahTambahByRow[$matchedRow->id] ?? 0) + $val;
+                    $totalUnloggedHibah += $val;
+                }
             }
         }
 
@@ -164,11 +185,21 @@ class ReklasifikasiController extends Controller
             $tujuanRowId = $this->resolveTujuanRowId($reklas, $templateRows);
             $val = (float) $reklas->nilai_reklas;
 
-            if ($asalRowId) {
-                $reklasKurangByRow[$asalRowId] = ($reklasKurangByRow[$asalRowId] ?? 0) + $val;
-            }
-            if ($tujuanRowId) {
-                $reklasTambahByRow[$tujuanRowId] = ($reklasTambahByRow[$tujuanRowId] ?? 0) + $val;
+            if ($reklas->jenis_reklas === 'HIBAH_MASUK') {
+                $korHibahRow = $templateRows->firstWhere('kode_prefix', 'KOR_HIBAH');
+                if ($korHibahRow) {
+                    $reklasTambahByRow[$korHibahRow->id] = ($reklasTambahByRow[$korHibahRow->id] ?? 0) + $val;
+                }
+                if ($tujuanRowId && (!$korHibahRow || $tujuanRowId != $korHibahRow->id)) {
+                    $reklasTambahByRow[$tujuanRowId] = ($reklasTambahByRow[$tujuanRowId] ?? 0) + $val;
+                }
+            } else {
+                if ($asalRowId) {
+                    $reklasKurangByRow[$asalRowId] = ($reklasKurangByRow[$asalRowId] ?? 0) + $val;
+                }
+                if ($tujuanRowId) {
+                    $reklasTambahByRow[$tujuanRowId] = ($reklasTambahByRow[$tujuanRowId] ?? 0) + $val;
+                }
             }
         }
 
@@ -188,6 +219,9 @@ class ReklasifikasiController extends Controller
                     $saldoAwal += $priorYearSaldoAwalByRow[$row->id];
                 }
 
+                // 2. Tambahkan mutasi tambah dari perolehan hibah masuk pada rekening aset tetap tujuan
+                $mutasiTambah += ($hibahTambahByRow[$row->id] ?? 0);
+
                 // 3. Tangani aset dengan status is_extracomtable di ASTAP yang belum tercatat di log reklasifikasi
                 $mutasiKurang += ($extracomKurangByRow[$row->id] ?? 0);
             }
@@ -196,6 +230,12 @@ class ReklasifikasiController extends Controller
             // Rekap penyeimbang: menampung mutasi tambah untuk seluruh aset ekstrakomptabel
             if ($prefix === 'KOR_EXTRACOM') {
                 $mutasiTambah += $totalUnloggedExtracom;
+            }
+
+            // 5. Khusus baris Koreksi Hibah / Bantuan Pemerintah (KOR_HIBAH)
+            // Rekap penyeimbang: menampung mutasi tambah untuk seluruh aset hibah masuk
+            if ($prefix === 'KOR_HIBAH') {
+                $mutasiTambah += $totalUnloggedHibah;
             }
 
             $saldoAkhir = $saldoAwal + $mutasiTambah - $mutasiKurang;
@@ -3433,6 +3473,11 @@ class ReklasifikasiController extends Controller
      */
     private function resolveAstapSaldoAwalRowId(Astap $astap, $templateRows, $allReklasByAstap): ?int
     {
+        // Aset yang bersumber dari Hibah bukan Belanja Modal (tidak memiliki Saldo Awal Belanja Modal)
+        if ($astap->sumber_dana === 'hibah') {
+            return null;
+        }
+
         $history = $allReklasByAstap[$astap->id] ?? null;
         if ($history && $history->isNotEmpty()) {
             $firstReklas = $history->first();

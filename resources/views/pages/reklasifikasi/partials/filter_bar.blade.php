@@ -46,12 +46,13 @@
         </div>
     </div>
 
-    <!-- BARIS 2: FILTER PANEL (FULL-WIDTH 3-COLUMN RESPONSIVE GRID) -->
+    <!-- BARIS 2: FILTER PANEL (ADAPTIF: 2 KOLOM UNTUK MATRIKS NERACA, 3 KOLOM UNTUK LOG TRANSAKSI) -->
     <div class="pt-1">
         <form method="GET" action="{{ route('master.reklasifikasi') }}" class="w-full">
             <input type="hidden" name="tab" :value="activeTab">
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 w-full">
+            <div class="grid gap-3 w-full transition-all duration-300"
+                 :class="activeTab === 'matriks' ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'">
                 <!-- 1. TAHUN ANGGARAN -->
                 <div>
                     <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
@@ -104,8 +105,11 @@
                     </div>
                 </div>
 
-                <!-- 3. KATEGORI / JENIS REKLASIFIKASI -->
-                <div>
+                <!-- 3. KATEGORI / JENIS REKLASIFIKASI (Hanya Tampil Pada Tab Log Transaksi) -->
+                <div x-show="activeTab === 'log'" x-cloak
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 translate-y-1"
+                     x-transition:enter-end="opacity-100 translate-y-0">
                     <div class="flex items-center justify-between mb-1.5">
                         <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                             <svg class="w-3.5 h-3.5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -123,6 +127,7 @@
                     </div>
                     <div class="relative">
                         <select name="jenis_reklas" onchange="this.form.submit()"
+                            :disabled="activeTab === 'matriks'"
                             style="background-image: none !important; -webkit-appearance: none; -moz-appearance: none; appearance: none;"
                             class="w-full bg-slate-950 border {{ ($selectedJenis ?? 'all') !== 'all' ? 'border-violet-500 ring-1 ring-violet-500/30' : 'border-slate-800' }} hover:border-violet-500/50 focus:border-violet-500 rounded-xl px-3.5 py-2.5 pr-8 text-xs font-bold text-white focus:outline-none transition-all cursor-pointer shadow-sm truncate">
                             <option value="all" {{ ($selectedJenis ?? 'all') == 'all' ? 'selected' : '' }} class="bg-slate-900 text-white">Semua Jenis (6 Kategori)</option>
