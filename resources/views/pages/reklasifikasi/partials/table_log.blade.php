@@ -35,10 +35,10 @@
                     Belum ada aset yang dimutasi antar rekening atau KIB pada periode tahun {{ $selectedTahun }}.
                 @endif
             </p>
-            <button type="button" @click="openModalTambah()"
+            <a href="{{ route('master.reklasifikasi.create', ['tahun' => $selectedTahun]) }}"
                 class="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all cursor-pointer">
                 <span>+ Catat Reklasifikasi Baru</span>
-            </button>
+            </a>
         </div>
     @else
         <div class="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-700">

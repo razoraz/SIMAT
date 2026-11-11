@@ -53,6 +53,17 @@
                         })
                         .catch(err => console.log('Fetch mitras silent fallback', err));
                 }
+
+                // Inisialisasi khusus jika sedang berada di Dedicated Create Page
+                if (window.isReklasCreatePage || window.location.pathname.includes('/reklasifikasi/create')) {
+                    this.openModalTambah();
+                    if (window.targetAstapPreselected && window.targetAstapPreselected.id) {
+                        this.$nextTick(() => {
+                            this.formData.astap_id = String(window.targetAstapPreselected.id);
+                            this.onSelectAstap(window.targetAstapPreselected.id);
+                        });
+                    }
+                }
             },
 
             get filteredReklasMitraList() {
@@ -1937,7 +1948,13 @@
                         if (typeof window.showSimatToast === 'function') {
                             window.showSimatToast(result.message, 'success');
                         }
-                        setTimeout(() => window.location.reload(), 600);
+                        if (window.isReklasCreatePage || window.location.pathname.includes('/reklasifikasi/create')) {
+                            setTimeout(() => {
+                                window.location.href = "{{ route('master.reklasifikasi') }}?tahun=" + (this.formData.tahun || '{{ $selectedTahun ?? date("Y") }}') + "&tab=log";
+                            }, 700);
+                        } else {
+                            setTimeout(() => window.location.reload(), 600);
+                        }
                     } else {
                         if (typeof window.showSimatToast === 'function') {
                             window.showSimatToast(result.message || 'Gagal menyimpan data reklasifikasi.', 'error');

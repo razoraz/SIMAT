@@ -2466,6 +2466,7 @@ Route::middleware('auth')->group(function () {
     // Master Reklasifikasi Aset (PMDN 108)
     Route::middleware('module:astap.reklas')->group(function () {
         Route::get('/master-data/reklasifikasi', [\App\Http\Controllers\ReklasifikasiController::class, 'index'])->name('master.reklasifikasi');
+        Route::get('/master-data/reklasifikasi/create', [\App\Http\Controllers\ReklasifikasiController::class, 'create'])->name('master.reklasifikasi.create');
         Route::post('/master-data/reklasifikasi', [\App\Http\Controllers\ReklasifikasiController::class, 'store'])->name('master.reklasifikasi.store');
         Route::delete('/master-data/reklasifikasi/{id}', [\App\Http\Controllers\ReklasifikasiController::class, 'destroy'])->name('master.reklasifikasi.destroy');
     });

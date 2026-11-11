@@ -301,6 +301,69 @@ class ReklasifikasiController extends Controller
     }
 
     /**
+     * Menampilkan Halaman Form Pencatatan Reklasifikasi Baru (Dedicated Full-Page)
+     */
+    public function create(Request $request)
+    {
+        $selectedTahun = (int) $request->get('tahun', date('Y'));
+        $targetAstapId = $request->get('astap_id');
+
+        // Daftar tahun perolehan yang ada di sistem
+        $tahunList = Astap::select('tahun_perolehan')
+            ->distinct()
+            ->orderBy('tahun_perolehan', 'desc')
+            ->pluck('tahun_perolehan')
+            ->toArray();
+
+        if (!in_array($selectedTahun, $tahunList)) {
+            array_unshift($tahunList, $selectedTahun);
+        }
+
+        // Ambil data kandidat aset ASTAP
+        $kandidatQuery = Astap::where('is_deleted', 0)
+            ->select('id', 'nama_barang', 'total_realisasi', 'jumlah_anggaran', 'tahun_perolehan', 'category', 'asal_kib', 'jenis_astap_id', 'is_reklas', 'jenis_reklas', 'satuan', 'merk_type', 'alamat_barang', 'spesifikasi_json', 'jumlah_volume', 'harga_satuan', 'is_extracomtable')
+            ->with(['jenisAstap:id,jenis,sub_sub_rincian_objek,uraian_sub_rincian,uraian_sub_sub_rincian', 'registers:id,astap_id,nibar,no_register,kondisi,status']);
+
+        // Jika tidak ada target spesifik, batasi ke tahun terpilih agar responsif
+        if (!$targetAstapId) {
+            $kandidatQuery->where('tahun_perolehan', $selectedTahun);
+        }
+
+        $kandidatAstaps = $kandidatQuery->orderBy('nama_barang', 'asc')->get();
+
+        // Jika targetAstapId diberikan tapi tidak ada di list tahun terpilih, tambahkan ke kandidatAstaps
+        $targetAstap = null;
+        if ($targetAstapId) {
+            $targetAstap = Astap::where('is_deleted', 0)
+                ->with(['jenisAstap:id,jenis,sub_sub_rincian_objek,uraian_sub_rincian,uraian_sub_sub_rincian', 'registers:id,astap_id,nibar,no_register,kondisi,status'])
+                ->find($targetAstapId);
+
+            if ($targetAstap && !$kandidatAstaps->contains('id', $targetAstap->id)) {
+                $kandidatAstaps->prepend($targetAstap);
+            }
+        }
+
+        $templateRows = JenisReklasifikasi::active()->get();
+        $dbSkpdDirectory = \App\Http\Controllers\MutasiEksternalController::getSkpdDirectory();
+        $dbSkpdAsals = array_values(array_unique(array_keys($dbSkpdDirectory)));
+        $dbPejabats = \App\Http\Controllers\MutasiEksternalController::getDistinctPejabats();
+
+        return view('pages.reklasifikasi.create', [
+            'tahunList'         => $tahunList,
+            'selectedTahun'     => $selectedTahun,
+            'kandidatAstaps'    => $kandidatAstaps,
+            'targetAstap'       => $targetAstap,
+            'targetAstapId'     => $targetAstapId,
+            'templateRows'      => $templateRows,
+            'dbMaster108'       => JenisAstap::getNested108(),
+            'dbMitraKemitraans' => \App\Models\AstapKemitraan::getDistinctMitras(),
+            'dbSkpdDirectory'   => $dbSkpdDirectory,
+            'dbSkpdAsals'       => $dbSkpdAsals,
+            'dbPejabats'        => $dbPejabats,
+        ]);
+    }
+
+    /**
      * Menyimpan transaksi reklasifikasi baru
      */
     public function store(Request $request)
