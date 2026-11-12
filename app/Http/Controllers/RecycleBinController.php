@@ -1517,29 +1517,41 @@ class RecycleBinController extends Controller
                 DB::transaction(function () use ($reklas) {
                     $reklas->restoreData();
                     if ($reklas->astap) {
-                        $reklas->astap->is_reklas = 1;
-                        if ($reklas->jenis_reklas) {
-                            $reklas->astap->jenis_reklas = $reklas->jenis_reklas;
-                        }
+                        $astap = $reklas->astap;
 
-                        // Pulihkan kategori KIB jika valid (bukan akun penyeimbang KOREKSI)
-                        if ($reklas->tujuan_kib && !in_array($reklas->tujuan_kib, ['KOREKSI', 'KOR_LAIN', 'KOR_EXTRACOM', 'KOR_HIBAH'])) {
-                            $reklas->astap->category = $reklas->tujuan_kib;
-                        }
+                        // Cari transaksi reklas aktif yang TERAKHIR (paling mutakhir) untuk aset ini
+                        $latestActiveReklas = AstapReklas::active()
+                            ->where('astap_id', $astap->id)
+                            ->orderBy('id', 'desc')
+                            ->first();
 
-                        // Sinkronkan status ekstrakomptabel
-                        if ($reklas->jenis_reklas === 'EKSTRAKOMPTABEL') {
-                            $reklas->astap->is_extracomtable = true;
-                        } elseif ($reklas->jenis_reklas === 'KAPITALISASI_INTRAKOM') {
-                            $reklas->astap->is_extracomtable = false;
-                        }
+                        if ($latestActiveReklas) {
+                            $astap->is_reklas = 1;
+                            if ($latestActiveReklas->jenis_reklas) {
+                                $astap->jenis_reklas = $latestActiveReklas->jenis_reklas;
+                            }
 
-                        // Pulihkan spesifikasi baru jika ada
-                        if (!empty($reklas->spesifikasi_baru) && is_array($reklas->spesifikasi_baru)) {
-                            $reklas->astap->spesifikasi_json = $reklas->spesifikasi_baru;
-                        }
+                            if ($latestActiveReklas->jenis_reklasifikasi_tujuan_id) {
+                                $astap->jenis_astap_id = $latestActiveReklas->jenis_reklasifikasi_tujuan_id;
+                            }
+                            if (!empty($latestActiveReklas->tujuan_nama)) {
+                                $astap->nama_barang = $latestActiveReklas->tujuan_nama;
+                            }
 
-                        $reklas->astap->save();
+                            // Sinkronkan status ekstrakomptabel
+                            if ($latestActiveReklas->jenis_reklas === 'EKSTRAKOMPTABEL') {
+                                $astap->is_extracomtable = true;
+                            } elseif ($latestActiveReklas->jenis_reklas === 'KAPITALISASI_INTRAKOM') {
+                                $astap->is_extracomtable = false;
+                            }
+
+                            // Pulihkan spesifikasi baru
+                            if (!empty($latestActiveReklas->spesifikasi_baru) && is_array($latestActiveReklas->spesifikasi_baru)) {
+                                $astap->spesifikasi_json = $latestActiveReklas->spesifikasi_baru;
+                            }
+
+                            $astap->save();
+                        }
                     }
                 });
                 $msg = "Transaksi Reklasifikasi {$nomorBa} berhasil dipulihkan ke daftar aktif.";

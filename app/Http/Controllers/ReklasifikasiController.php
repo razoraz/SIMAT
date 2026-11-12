@@ -3095,7 +3095,7 @@ class ReklasifikasiController extends Controller
 
             // Ambil sisa transaksi reklas untuk astap ini (yang masih aktif setelah dihapus)
             $remainingReklas = AstapReklas::active()->where('astap_id', $astapId)
-                ->orderBy('created_at', 'asc')
+                ->orderBy('id', 'asc')
                 ->get();
 
             $updateData = [];
@@ -3107,11 +3107,32 @@ class ReklasifikasiController extends Controller
                     'jenis_reklas'     => null,
                     'is_extracomtable' => false,
                 ];
-                if ($reklas->asal_kib && !in_array($reklas->asal_kib, ['KOREKSI', 'KOR_LAIN', 'KOR_EXTRACOM', 'KOR_HIBAH'])) {
-                    $updateData['category'] = $reklas->asal_kib;
-                }
-                if (!empty($reklas->spesifikasi_lama) && is_array($reklas->spesifikasi_lama)) {
-                    $updateData['spesifikasi_json'] = $reklas->spesifikasi_lama;
+
+                // Cari transaksi reklas paling awal dalam riwayat aset ini untuk mendapatkan status original/akar mula (root)
+                $rootReklas = AstapReklas::where('astap_id', $astapId)
+                    ->orderBy('id', 'asc')
+                    ->first();
+
+                if ($rootReklas) {
+                    if ($rootReklas->jenis_reklasifikasi_asal_id) {
+                        $updateData['jenis_astap_id'] = $rootReklas->jenis_reklasifikasi_asal_id;
+                    }
+                    if (!empty($rootReklas->asal_nama)) {
+                        $updateData['nama_barang'] = $rootReklas->asal_nama;
+                    }
+                    if (!empty($rootReklas->spesifikasi_lama) && is_array($rootReklas->spesifikasi_lama)) {
+                        $updateData['spesifikasi_json'] = $rootReklas->spesifikasi_lama;
+                    }
+                } else {
+                    if ($reklas->jenis_reklasifikasi_asal_id) {
+                        $updateData['jenis_astap_id'] = $reklas->jenis_reklasifikasi_asal_id;
+                    }
+                    if (!empty($reklas->asal_nama)) {
+                        $updateData['nama_barang'] = $reklas->asal_nama;
+                    }
+                    if (!empty($reklas->spesifikasi_lama) && is_array($reklas->spesifikasi_lama)) {
+                        $updateData['spesifikasi_json'] = $reklas->spesifikasi_lama;
+                    }
                 }
             } else {
                 // Masih ada transaksi lain — cek status ekstrakomptabel dari sisa log
@@ -3131,9 +3152,16 @@ class ReklasifikasiController extends Controller
 
                 $latestRemaining = $remainingReklas->last();
                 if ($latestRemaining) {
+                    $updateData['is_reklas'] = true;
                     $updateData['jenis_reklas'] = $latestRemaining->jenis_reklas;
-                    if ($latestRemaining->tujuan_kib) {
-                        $updateData['category'] = $latestRemaining->tujuan_kib;
+                    if ($latestRemaining->jenis_reklasifikasi_tujuan_id) {
+                        $updateData['jenis_astap_id'] = $latestRemaining->jenis_reklasifikasi_tujuan_id;
+                    }
+                    if (!empty($latestRemaining->tujuan_nama)) {
+                        $updateData['nama_barang'] = $latestRemaining->tujuan_nama;
+                    }
+                    if (!empty($latestRemaining->spesifikasi_baru) && is_array($latestRemaining->spesifikasi_baru)) {
+                        $updateData['spesifikasi_json'] = $latestRemaining->spesifikasi_baru;
                     }
                 }
             }
