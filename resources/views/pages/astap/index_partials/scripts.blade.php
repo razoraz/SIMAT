@@ -9625,6 +9625,7 @@
                 exportRekapSheet: 'all', // 'all' | 'sheet1' | 'sheet2' | 'sheet3' | 'sheet4'
                 exportKemitraanSkema: 'all', // 'all' | 'sewa' | 'ksp' | 'bgs_bsg' | 'kso'
                 exportKemitraanCategory: 'all', // 'all' | 'REKAP' | 'KIB A' | 'KIB B' | 'KIB C' | 'KIB D' | 'KIB E' | 'EXTRACOM'
+                exportMutasiCategory: 'all', // 'all' | 'REKAP' | 'KIB A' | 'KIB B' | 'KIB C' | 'KIB D' | 'KIB E' | 'EXTRACOM'
                 isSubmittingExport: false,
 
                 // State Modal Rapikan / Urutkan Ulang NIBAR (Auto-Resequence)
@@ -13594,6 +13595,7 @@
                     this.exportRekapSheet = 'all';
                     this.exportKemitraanSkema = 'all';
                     this.exportKemitraanCategory = 'all';
+                    this.exportMutasiCategory = 'all';
                     this.exportYear = this.tahunFilter !== 'all' ? this.tahunFilter : (this.availableYears.length > 0 ? this.availableYears[0] : '2026');
                     this.exportTriwulan = this.triwulanFilter !== 'all' ? this.triwulanFilter : 'all';
                     this.exportCategory = this.categoryFilter !== 'all' ? this.categoryFilter : 'all';
@@ -13685,11 +13687,34 @@
 
                     // KHUSUS MUTASI MASUK / TRANSFER ANTAR-OPD
                     if (sDana === 'mutasi_eksternal' || sDana === 'pelimpahan' || sDana === 'mutasi' || sDana === 'pelimpahan_skpd' || sDana === 'mutasi_masuk') {
+                        const fCat = this.exportMutasiCategory || 'all';
                         return (this.astaps || []).filter(item => {
-                            const isMutasiMasuk = item.sumber_dana === 'mutasi_eksternal' || item.sumber_dana === 'pelimpahan' || item.sumber_dana === 'pelimpahan_skpd' || item.sumber_dana === 'mutasi_masuk' || item.sumber_dana_raw === 'mutasi_eksternal' || item.sumber_dana_raw === 'pelimpahan_skpd' || item.sumber_dana_raw === 'mutasi_masuk';
+                            const isMutasiMasuk = item.sumber_dana === 'mutasi_eksternal' || item.sumber_dana === 'pelimpahan' || item.sumber_dana === 'pelimpahan_skpd' || item.sumber_dana === 'mutasi_masuk' || item.sumber_dana_raw === 'mutasi_eksternal' || item.sumber_dana_raw === 'pelimpahan_skpd' || item.sumber_dana_raw === 'mutasi_masuk' || !!item.mutasi_asal;
                             if (!isMutasiMasuk) return false;
                             const matchYear = fYear === 'all' || String(item.tahun_perolehan) === String(fYear);
-                            return matchYear && isTwMatch(item.triwulan, fTw);
+                            const matchTw = isTwMatch(item.triwulan, fTw);
+
+                            let matchCat = true;
+                            if (fCat !== 'all' && fCat !== 'REKAP') {
+                                const spec = (item.spesifikasi_json && typeof item.spesifikasi_json === 'object') ? item.spesifikasi_json : {};
+                                const isItemExtracom = !!item.is_extracomtable || 
+                                                       (item.category && item.category.toUpperCase() === 'EXTRACOM') || 
+                                                       (spec && spec.is_extracomtable) ||
+                                                       (Array.isArray(spec.mesin_items) && spec.mesin_items.some(m => !!m.is_extracom)) ||
+                                                       (Array.isArray(spec.lainnya_items) && spec.lainnya_items.some(l => !!l.is_extracom));
+                                if (fCat === 'EXTRACOM') {
+                                    matchCat = isItemExtracom;
+                                } else {
+                                    if (isItemExtracom) {
+                                        matchCat = false;
+                                    } else {
+                                        const itemCat = typeof resolveItemCategory === 'function' ? resolveItemCategory(item) : item.category;
+                                        matchCat = (itemCat === fCat);
+                                    }
+                                }
+                            }
+
+                            return matchYear && matchTw && matchCat;
                         }).length;
                     }
 
@@ -13763,6 +13788,23 @@
                         }
 
                         if (this.exportSumberDana === 'mutasi_eksternal' || this.exportSumberDana === 'pelimpahan' || this.exportSumberDana === 'mutasi') {
+                            if (typeof exportMutasiEksternalToExcel === 'function') {
+                                exportMutasiEksternalToExcel({
+                                    direction: 'masuk',
+                                    year: this.exportYear,
+                                    triwulan: this.exportTriwulan,
+                                    category: this.exportMutasiCategory || 'all'
+                                });
+                                setTimeout(() => {
+                                    this.isSubmittingExport = false;
+                                    this.showExportModal = false;
+                                    const catLabel = (this.exportMutasiCategory || 'all') === 'all'
+                                        ? 'Lengkap (7 Sheet: Rekap, KIB A-E & Extracom)'
+                                        : (this.exportMutasiCategory === 'REKAP' ? 'Rekapitulasi' : (this.exportMutasiCategory === 'EXTRACOM' ? 'Extracom' : this.exportMutasiCategory));
+                                    this.showToast('Berhasil mengekspor Laporan Mutasi Masuk ' + catLabel + ' (' + (this.exportTriwulan === 'all' ? 'Tahunan' : this.exportTriwulan) + ') ' + this.exportYear + '!', 'success');
+                                }, 800);
+                                return;
+                            }
                             this.isSubmittingExport = false;
                             this.showExportModal = false;
                             window.location.href = "{{ route('mutasi.eksternal') }}";
@@ -15392,6 +15434,11 @@
                         setTimeout(() => {
                             this.openExportModal();
                             this.exportSumberDana = 'kemitraan';
+                        }, 350);
+                    } else if (exportParam === 'mutasi' || exportParam === 'mutasi_eksternal' || exportParam === 'mutasi_masuk') {
+                        setTimeout(() => {
+                            this.openExportModal();
+                            this.exportSumberDana = 'mutasi_eksternal';
                         }, 350);
                     } else if (exportParam) {
                         setTimeout(() => {
