@@ -31,7 +31,7 @@ class TutupBukuController extends Controller
                 'jenisPengadaan',
                 'unit',
                 'reklas' => function($q) {
-                    $q->orderBy('id', 'desc');
+                    $q->where('is_deleted', 0)->orderBy('id', 'desc');
                 },
                 'kemitraan',
                 'belanjaModal',

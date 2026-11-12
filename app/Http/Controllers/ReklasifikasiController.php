@@ -3170,11 +3170,6 @@ class ReklasifikasiController extends Controller
                         $astap->update($updateData);
                     }
 
-                    // Sinkronkan kembali ke register fisik jika category dipulihkan
-                    if (isset($updateData['category']) && $astap->registers()->exists()) {
-                        $astap->registers()->update(['kelompok_kib' => $updateData['category']]);
-                    }
-
                     // Pulihkan status kemitraan jika aset terkait dengan Akun 1.5.2 Kemitraan
                     if ($reklas->tujuan_kib === 'KEMITRAAN') {
                         $astap->sumber_dana = 'belanja_modal';

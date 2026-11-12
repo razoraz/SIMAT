@@ -585,6 +585,11 @@ class Astap extends Model
 
     public function reklas()
     {
+        return $this->hasMany(AstapReklas::class)->where('is_deleted', 0)->orderBy('tanggal_reklas', 'desc');
+    }
+
+    public function allReklas()
+    {
         return $this->hasMany(AstapReklas::class)->orderBy('tanggal_reklas', 'desc');
     }
 

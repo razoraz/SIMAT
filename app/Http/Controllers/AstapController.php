@@ -110,7 +110,7 @@ class AstapController extends Controller
                 'hibahDetail',
                 'hibahs',
                 'reklas' => function($q) {
-                    $q->orderBy('id', 'desc');
+                    $q->where('is_deleted', 0)->orderBy('id', 'desc');
                 },
                 'kemitraan',
                 'mutasiEksternals' => function($q) {
@@ -910,6 +910,7 @@ class AstapController extends Controller
         // 3. Reklasifikasi Aset (Perubahan KIB, Akun 1.5.2 Kemitraan, Koreksi Nilai BPK/Manset)
         $rawReklas = \App\Models\AstapReklas::with('user')
             ->where('astap_id', $reg->astap_id)
+            ->where('is_deleted', 0)
             ->orderBy('tanggal_reklas', 'desc')
             ->orderBy('id', 'desc')
             ->get();

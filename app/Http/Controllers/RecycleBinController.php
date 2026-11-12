@@ -1540,11 +1540,6 @@ class RecycleBinController extends Controller
                         }
 
                         $reklas->astap->save();
-
-                        // Sinkronkan kembali ke register fisik jika category valid
-                        if ($reklas->astap->category && $reklas->astap->registers()->exists()) {
-                            $reklas->astap->registers()->update(['kelompok_kib' => $reklas->astap->category]);
-                        }
                     }
                 });
                 $msg = "Transaksi Reklasifikasi {$nomorBa} berhasil dipulihkan ke daftar aktif.";
@@ -2079,10 +2074,6 @@ class RecycleBinController extends Controller
                                 $rk->astap->spesifikasi_json = $rk->spesifikasi_baru;
                             }
                             $rk->astap->save();
-
-                            if ($rk->astap->category && $rk->astap->registers()->exists()) {
-                                $rk->astap->registers()->update(['kelompok_kib' => $rk->astap->category]);
-                            }
                         }
                         $restoredCount++;
                     }

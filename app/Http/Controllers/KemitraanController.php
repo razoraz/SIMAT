@@ -1193,8 +1193,10 @@ class KemitraanController extends Controller
 
         // 2. Jika tidak ada di tabel astap_kemitraans, cek apakah ada di tabel Astap atau AstapReklas (kasus reklasifikasi pending)
         $astap = $kemitraan ? $kemitraan->astap : Astap::find($id);
-        $reklas = AstapReklas::where('astap_id', $id)
-            ->orWhere('id', $id)
+        $reklas = AstapReklas::where('is_deleted', 0)
+            ->where(function($q) use ($id) {
+                $q->where('astap_id', $id)->orWhere('id', $id);
+            })
             ->get();
 
         if (!$kemitraan && !$astap && $reklas->isEmpty()) {
