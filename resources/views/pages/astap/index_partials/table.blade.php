@@ -133,7 +133,7 @@
                                 <td class="px-3 py-3 text-center whitespace-nowrap w-32">
                                     <div class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-xl bg-slate-950 border border-slate-800 text-teal-300 font-semibold font-mono text-xs whitespace-nowrap">
                                         <span>📏</span>
-                                        <span x-text="(item.jumlah_volume || parseInt(item.volume_satuan) || item.item_count || 1) + ' ' + (item.satuan || 'Aset')"></span>
+                                        <span x-text="(item.jumlah_volume || parseInt(item.volume_satuan) || item.item_count || 1) + ' Item'"></span>
                                     </div>
                                 </td>
 

@@ -304,7 +304,7 @@ class TutupBukuController extends Controller
                 'tahun_perolehan'       => (int) ($a->tahun_perolehan ?: date('Y')),
                 'triwulan'              => $a->triwulan ?: ($spec['triwulan'] ?? 'TW I'),
                 'triwulan_num'          => PeriodeTutupBuku::parseTriwulan($a->triwulan),
-                'volume_satuan'         => ($a->jumlah_volume ?: 1) . ' ' . ($a->satuan ?: 'Aset'),
+                'volume_satuan'         => ($a->jumlah_volume ?: 1) . ' Item',
                 'jumlah_volume'         => (int) ($a->jumlah_volume ?: 1),
                 'satuan'                => $a->satuan ?: 'Unit',
                 'harga_satuan'          => (float) $a->harga_satuan,

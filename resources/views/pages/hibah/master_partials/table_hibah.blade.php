@@ -136,7 +136,7 @@
                         <!-- 6. Volume & Satuan -->
                         <td class="px-4 py-4 text-center whitespace-nowrap">
                             <span class="inline-flex items-center px-2.5 py-1 rounded-xl bg-slate-950 border border-slate-800 font-mono font-bold text-teal-300 text-xs shadow-inner">
-                                <span x-text="(item.jumlah_volume || 1) + ' ' + (item.satuan || 'Unit')"></span>
+                                <span x-text="(item.jumlah_volume || 1) + ' Item'"></span>
                             </span>
                         </td>
 

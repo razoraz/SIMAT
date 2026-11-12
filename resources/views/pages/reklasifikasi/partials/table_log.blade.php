@@ -173,7 +173,7 @@
                                     </div>
                                     <div class="text-[10px] text-rose-300/85 mt-1 font-mono flex items-center gap-1" title="Nilai satuan barang di bawah batas kapitalisasi (≤ Rp 300.000)">
                                         <span>🏷️</span>
-                                        <span>{{ $volBarang }} Unit @ Rp {{ number_format($hrgSatuan, 0, ',', '.') }}</span>
+                                        <span>{{ $volBarang }} Item @ Rp {{ number_format($hrgSatuan, 0, ',', '.') }}</span>
                                     </div>
 
                                 @elseif ($item->jenis_reklas === 'KAPITALISASI_INTRAKOM')
@@ -191,7 +191,7 @@
                                     </div>
                                     <div class="text-[10px] text-emerald-300/85 mt-1 font-mono flex items-center gap-1" title="Nilai satuan melampaui batas kapitalisasi (> Rp 300.000)">
                                         <span>🏷️</span>
-                                        <span>{{ $volBarang }} Unit @ Rp {{ number_format($hrgSatuan, 0, ',', '.') }}</span>
+                                        <span>{{ $volBarang }} Item @ Rp {{ number_format($hrgSatuan, 0, ',', '.') }}</span>
                                     </div>
 
                                 @elseif ($item->jenis_reklas === 'KDP_TO_DEFINITIF')

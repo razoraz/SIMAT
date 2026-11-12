@@ -654,7 +654,7 @@ class MutasiEksternalController extends Controller
                 'sumber_dana_raw'           => $astap?->sumber_dana ?: 'mutasi_eksternal',
                 'jenis_aset_nama'           => $astap?->jenisAstap?->nama_jenis ?: ($astap?->jenisAstap?->jenis ?: ($isKeluar ? 'TRANSFER KE OPD' : 'MUTASI EKSTERNAL')),
                 'tahun_perolehan'           => $tahunMasuk,
-                'volume_satuan'             => $volAset . ' Aset',
+                'volume_satuan'             => $volAset . ' Item',
                 'jumlah_volume'             => $volAset,
                 'satuan'                    => $m->satuan ?: ($astap?->satuan ?: 'Unit'),
                 'harga_satuan'              => (float) ($astap?->harga_satuan ?: ($volAset > 0 ? ($nilaiReal / $volAset) : $nilaiReal)),

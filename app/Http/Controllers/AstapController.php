@@ -403,7 +403,7 @@ class AstapController extends Controller
                     'nama_barang' => $a->nama_barang,
                     'tahun_perolehan' => (string) $a->tahun_perolehan,
                     'triwulan' => $a->triwulan ?: ($spec['triwulan'] ?? 'TW I'),
-                    'volume_satuan' => ($a->jumlah_volume ?: 1) . ' Aset',
+                    'volume_satuan' => ($a->jumlah_volume ?: 1) . ' Item',
                     
                     // LANGKAH 1
                     'program_kode' => $jp ? ($jp->program_kode ?: '0.00.01') : '0.00.01',

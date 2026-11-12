@@ -261,7 +261,7 @@ class RecycleBinController extends Controller
                 'kode'                 => $a->kode_108 ?: ($a->spk_nomor ?: 'ASTAP-' . $a->id),
                 'nama'                 => $a->nama_barang ?: 'Aset Belanja Modal',
                 'tahun'                => $a->tahun_perolehan ?: '-',
-                'volume'               => $a->jumlah_volume . ' ' . ($a->satuan ?: 'Unit'),
+                'volume'               => $a->jumlah_volume . ' Item',
                 'total_realisasi'      => 'Rp ' . number_format($a->total_realisasi ?: ($a->jumlah_anggaran ?: 0), 0, ',', '.'),
                 'harga_satuan'         => 'Rp ' . number_format($a->harga_satuan ?: 0, 0, ',', '.'),
                 'category'             => $a->category ?: 'KIB B',
@@ -371,7 +371,7 @@ class RecycleBinController extends Controller
                 'kode'                => $a->kode_108 ?: ($a->spk_nomor ?: 'ASTAP-' . $a->id),
                 'nama'                => $a->nama_barang ?: 'Aset Tetap',
                 'tahun'               => $a->tahun_perolehan ?: '-',
-                'volume'              => $a->jumlah_volume . ' ' . ($a->satuan ?: 'Unit'),
+                'volume'              => $a->jumlah_volume . ' Item',
                 'total_realisasi'     => 'Rp ' . number_format($a->total_realisasi ?: ($a->jumlah_anggaran ?: 0), 0, ',', '.'),
                 'harga_satuan'        => 'Rp ' . number_format($a->harga_satuan ?: 0, 0, ',', '.'),
                 'category'            => $a->category ?: 'KIB B',
@@ -483,7 +483,7 @@ class RecycleBinController extends Controller
                 'pihak_hibah'         => $h->pihak_hibah,
                 'nama_barang'         => $namaBarang,
                 'kode_barang'         => $kodeBarang,
-                'volume'              => $h->jumlah_volume . ' ' . ($h->satuan ?: 'Unit'),
+                'volume'              => $h->jumlah_volume . ' Item',
                 'nilai_aset'          => (float) $h->nilai_aset,
                 'nilai_aset_rp'       => 'Rp ' . number_format($h->nilai_aset ?: 0, 0, ',', '.'),
                 'tanggal_bast'        => $tglBast ? $tglBast->locale('id')->translatedFormat('d M Y') : '-',
@@ -608,7 +608,7 @@ class RecycleBinController extends Controller
                 'sertifikat'          => $spec['sertifikat_no'] ?? ($spec['tanah_sertifikat_no'] ?? ($spec['gedung_dokumen_no'] ?? null)),
                 'objek_asal_nama'     => $objekAsalNama,
                 'objek_asal_nibar'    => $objekAsalNibar,
-                'volume'              => $k->jumlah_volume . ' ' . ($k->satuan ?: ($isDitambahkan ? 'Unit' : 'Bidang')),
+                'volume'              => $k->jumlah_volume . ' Item',
                 'nilai_aset'          => (float) $k->nilai_aset,
                 'nilai_aset_rp'       => 'Rp ' . number_format($k->nilai_aset ?: 0, 0, ',', '.'),
                 'tanggal_pks'         => $tglPks ? $tglPks->locale('id')->translatedFormat('d M Y') : '-',
@@ -659,7 +659,7 @@ class RecycleBinController extends Controller
             $ruangan    = $firstAstap?->unit?->nama ?: ($b->status_alokasi === 'gudang' ? 'Gudang Perbekalan' : '-');
             $totalBeli  = (float) ($b->total_pembelian ?: ($astaps->sum('total_realisasi') ?? 0));
             $totalVol   = (int) $astaps->sum('jumlah_volume');
-            $volume     = max(1, $totalVol ?: 1) . ' Unit';
+            $volume     = max(1, $totalVol ?: 1) . ' Item';
 
             $registersMapped = [];
             $regIdx = 1;

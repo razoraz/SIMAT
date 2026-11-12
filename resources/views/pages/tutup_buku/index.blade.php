@@ -250,7 +250,7 @@
                                 </div>
                                 <div class="flex items-baseline justify-between">
                                     <span class="text-xs text-slate-400 font-medium">Volume Fisik:</span>
-                                    <span class="text-xs font-bold text-slate-300 font-mono">{{ number_format($tw['total_volume'], 0, ',', '.') }} Unit</span>
+                                    <span class="text-xs font-bold text-slate-300 font-mono">{{ number_format($tw['total_volume'], 0, ',', '.') }} Item</span>
                                 </div>
                                 <div class="flex items-baseline justify-between pt-1 border-t border-slate-800/80">
                                     <span class="text-xs text-slate-400 font-medium">Nilai Realisasi:</span>
@@ -360,7 +360,7 @@
                                 </div>
                                 <div class="flex items-baseline justify-between">
                                     <span class="text-xs text-slate-400 font-medium">Akumulasi Volume:</span>
-                                    <span class="text-xs font-bold text-slate-300 font-mono">{{ number_format($yrData['total_volume'], 0, ',', '.') }} Unit</span>
+                                    <span class="text-xs font-bold text-slate-300 font-mono">{{ number_format($yrData['total_volume'], 0, ',', '.') }} Item</span>
                                 </div>
                                 <div class="flex items-baseline justify-between pt-1 border-t border-slate-800/80">
                                     <span class="text-xs text-slate-400 font-medium">Total Saldo Aset:</span>
@@ -554,7 +554,7 @@
                                     <td class="py-3.5 px-4 text-center">
                                         <div class="inline-flex flex-col items-center">
                                             <span class="font-extrabold text-white text-xs font-mono" x-text="item.jumlah_volume || 1"></span>
-                                            <span class="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider mt-0.5 px-1.5 py-0.2 rounded bg-slate-800/80 border border-slate-700/60" x-text="item.satuan || 'Unit'"></span>
+                                            <span class="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider mt-0.5 px-1.5 py-0.2 rounded bg-slate-800/80 border border-slate-700/60">Item</span>
                                         </div>
                                     </td>
 

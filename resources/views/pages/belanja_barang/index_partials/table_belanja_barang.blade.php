@@ -182,7 +182,7 @@
                                     1. {{ $firstAstap?->nama_barang }} ({{ $firstAstap?->jumlah_volume }} {{ $firstAstap?->satuan }})
                                 </div>
                                 <div class="text-[10px] text-slate-500 mt-0.5">
-                                    + {{ $totalItemCount - 1 }} barang lainnya · Total <strong>{{ $totalVolFaktur }} Unit</strong>
+                                    + {{ $totalItemCount - 1 }} barang lainnya · Total <strong>{{ $totalVolFaktur }} Item</strong>
                                 </div>
                             @elseif($firstAstap)
                                 @php
@@ -211,7 +211,7 @@
                                     {{ $firstAstap->kode_108 ?: ($firstAstap->jenisAstap?->sub_sub_rincian_objek ?: '-') }}
                                 </div>
                                 <div class="text-[10px] text-slate-400 mt-1">
-                                    Vol: <strong>{{ $firstAstap->jumlah_volume }} {{ $firstAstap->satuan }}</strong> · Kondisi: <strong class="text-emerald-400">{{ $firstReg?->kondisi ?: 'Baik' }}</strong>
+                                    Vol: <strong>{{ $firstAstap->jumlah_volume }} Item</strong> · Kondisi: <strong class="text-emerald-400">{{ $firstReg?->kondisi ?: 'Baik' }}</strong>
                                 </div>
                             @else
                                 <span class="text-slate-500 text-xs italic">Tanpa Rincian Barang</span>
@@ -222,7 +222,7 @@
                         <td class="py-3.5 px-3 text-center whitespace-nowrap w-32">
                             <div class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-xl bg-slate-950 border border-slate-800 text-teal-300 font-semibold font-mono text-xs whitespace-nowrap">
                                 <span>📏</span>
-                                <span>{{ $totalVolFaktur }} {{ $astaps->first()?->satuan ?: 'Unit' }}</span>
+                                <span>{{ $totalVolFaktur }} Item</span>
                             </div>
                             <div class="text-[10px] text-slate-400 font-mono mt-0.5 whitespace-nowrap">
                                 {{ $totalItemCount }} macam

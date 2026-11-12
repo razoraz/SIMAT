@@ -657,7 +657,7 @@
                                 <div class="flex items-center flex-wrap gap-2 mt-1 text-[10px] text-slate-400">
                                     <span class="inline-flex items-center gap-1 font-medium bg-slate-800/80 px-1.5 py-0.5 rounded text-slate-300">
                                         <span>📦</span>
-                                        <span>Vol: <strong class="text-white font-mono">{{ $row->jumlah_volume ?? ($astap?->jumlah_volume ?? 1) }} {{ $row->satuan ?? ($astap?->satuan ?? 'Bidang') }}</strong></span>
+                                        <span>Vol: <strong class="text-white font-mono">{{ $row->jumlah_volume ?? ($astap?->jumlah_volume ?? 1) }} Item</strong></span>
                                     </span>
 
                                     @if($luasObjek)
@@ -1102,7 +1102,7 @@
                                 <div class="flex items-center flex-wrap gap-2 mt-1 text-[10px] text-slate-400">
                                     <span class="inline-flex items-center gap-1 font-medium bg-slate-800/80 px-1.5 py-0.5 rounded text-slate-300">
                                         <span>📦</span>
-                                        <span>Vol: <strong class="text-white font-mono">{{ $row->jumlah_volume }} {{ $row->satuan }}</strong></span>
+                                        <span>Vol: <strong class="text-white font-mono">{{ $row->jumlah_volume ?? ($astap?->jumlah_volume ?? 1) }} Item</strong></span>
                                     </span>
                                     @if($merk || $type)
                                         <span class="inline-flex items-center gap-1 bg-slate-800/80 px-1.5 py-0.5 rounded text-emerald-300 truncate max-w-[200px]" title="{{ trim(($merk ?? '') . ' ' . ($type ?? '')) }}">
@@ -1453,7 +1453,7 @@
                                     {{ $t3NamaFisik }}
                                 </div>
                                 <div class="flex items-center gap-2 mt-1 text-[10px] text-slate-400">
-                                    <span>Vol: <strong class="text-slate-200">{{ $row->jumlah_volume }} {{ $row->satuan }}</strong></span>
+                                    <span>Vol: <strong class="text-slate-200">{{ $row->jumlah_volume ?? ($astap?->jumlah_volume ?? 1) }} Item</strong></span>
                                 </div>
                             </td>
 
