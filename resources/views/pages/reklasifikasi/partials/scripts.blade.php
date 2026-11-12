@@ -23,6 +23,7 @@
             panduanFilterKib: 'all',
             deleteTargetId: null,
             deleteTargetName: '',
+            isDeletingReklas: false,
             isSubmitting: false,
             detailItem: null,
             selectedAstap: null,
@@ -1979,24 +1980,42 @@
                 this.showConfirmDelete = true;
             },
 
-            async executeHapusReklas() {
-                if (!this.deleteTargetId) return;
+            async executeHapusReklas(id = null) {
+                const targetId = id || this.deleteTargetId;
+                if (!targetId) {
+                    console.warn('executeHapusReklas: ID tidak ditemukan', { id, deleteTargetId: this.deleteTargetId });
+                    if (typeof window.showSimatToast === 'function') {
+                        window.showSimatToast('ID transaksi tidak ditemukan. Silakan refresh halaman.', 'error');
+                    } else {
+                        alert('ID transaksi tidak ditemukan. Silakan refresh halaman.');
+                    }
+                    this.showConfirmDelete = false;
+                    return;
+                }
+
+                if (this.isDeletingReklas) return;
+                this.isDeletingReklas = true;
 
                 try {
-                    const url = `{{ url('/master-data/reklasifikasi') }}/${this.deleteTargetId}`;
+                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+                    const url = '/master-data/reklasifikasi/' + targetId;
+
                     const response = await fetch(url, {
                         method: 'DELETE',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'X-CSRF-TOKEN': token,
                             'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
                         },
+                        body: JSON.stringify({
+                            alasan: 'Dihapus dari modul Reklasifikasi Aset'
+                        })
                     });
 
-                    const result = await response.json();
+                    const result = await response.json().catch(() => ({}));
 
-                    if (result.success) {
-                        const targetId = this.deleteTargetId;
+                    if (response.ok && result.success !== false) {
                         const row = document.getElementById('row-reklas-' + targetId);
                         if (row) {
                             row.remove();
@@ -2007,24 +2026,34 @@
                             countEl.innerText = 'Total ' + Math.max(0, current - 1) + ' Transaksi';
                         }
                         if (typeof window.showSimatToast === 'function') {
-                            window.showSimatToast(result.message || 'Transaksi reklasifikasi berhasil dibatalkan/dihapus.', 'success');
-                        }
-                        setTimeout(() => window.location.reload(), 700);
-                    } else {
-                        if (typeof window.showSimatToast === 'function') {
-                            window.showSimatToast(result.message || 'Gagal menghapus transaksi.', 'error');
+                            window.showSimatToast(result.message || 'Transaksi reklasifikasi berhasil dipindahkan ke Pusat Data Terhapus.', 'success');
                         } else {
-                            alert(result.message || 'Gagal menghapus transaksi.');
+                            alert(result.message || 'Transaksi reklasifikasi berhasil dipindahkan ke Pusat Data Terhapus.');
                         }
+                        this.showConfirmDelete = false;
+                        setTimeout(() => window.location.reload(), 600);
+                    } else {
+                        const errMsg = result.message || ('Gagal menghapus transaksi (HTTP ' + response.status + ').');
+                        if (typeof window.showSimatToast === 'function') {
+                            window.showSimatToast(errMsg, 'error');
+                        } else {
+                            alert(errMsg);
+                        }
+                        this.showConfirmDelete = false;
                     }
                 } catch (error) {
+                    console.error('Error executeHapusReklas:', error);
+                    const errMsg = 'Terjadi kesalahan saat menghapus transaksi: ' + (error.message || error);
                     if (typeof window.showSimatToast === 'function') {
-                        window.showSimatToast('Terjadi kesalahan saat menghapus transaksi: ' + error.message, 'error');
+                        window.showSimatToast(errMsg, 'error');
                     } else {
-                        alert('Terjadi kesalahan saat menghapus transaksi: ' + error.message);
+                        alert(errMsg);
                     }
-                } finally {
                     this.showConfirmDelete = false;
+                } finally {
+                    this.isDeletingReklas = false;
+                    this.deleteTargetId = null;
+                    this.deleteTargetName = '';
                 }
             },
 

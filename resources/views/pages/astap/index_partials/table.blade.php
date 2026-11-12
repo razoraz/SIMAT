@@ -18,8 +18,13 @@
                     </thead>
                     <tbody class="divide-y divide-slate-800/80">
                         <template x-for="(item, index) in filteredAstaps" :key="item.id">
-                            <tr class="group hover:bg-slate-800/40 transition-colors"
-                                :class="isItemLocked(item) ? 'bg-amber-950/10 hover:bg-amber-950/20' : 'hover:bg-slate-800/40'">
+                            <tr :id="'astap-row-' + item.id"
+                                class="group transition-all duration-300"
+                                :class="[
+                                    highlightedAstapId == item.id 
+                                        ? 'bg-indigo-950/80 ring-2 ring-indigo-400 shadow-2xl shadow-indigo-500/40 relative z-10' 
+                                        : (isItemLocked(item) ? 'bg-amber-950/10 hover:bg-amber-950/20' : 'hover:bg-slate-800/40')
+                                ]">
                                 <!-- 1. Nomor Urut 1, 2, 3... -->
                                 <td class="px-3 py-3 text-center font-bold text-slate-400 whitespace-nowrap" x-text="index + 1"></td>
 

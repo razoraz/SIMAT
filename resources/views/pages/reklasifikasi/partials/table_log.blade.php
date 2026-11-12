@@ -379,7 +379,7 @@
                                     </button>
 
                                     <!-- Tombol Hapus / Batalkan Transaksi -->
-                                    <button type="button" @click="confirmHapusReklas({{ $item->id }}, '{{ addslashes($item->astap->nama_barang ?? 'Aset') }}')"
+                                    <button type="button" @click="confirmHapusReklas({{ $item->id }}, {{ json_encode($item->astap->nama_barang ?? 'Aset') }})"
                                         class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:border-rose-500/50 transition-all duration-200 cursor-pointer text-xs font-semibold shadow-sm group"
                                         title="Hapus / Batalkan Transaksi Reklasifikasi">
                                         <svg class="w-3.5 h-3.5 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">

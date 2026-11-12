@@ -10,6 +10,7 @@ use App\Models\AstapHibah;
 use App\Models\AstapKemitraan;
 use App\Models\AstapBelanjaBarang;
 use App\Models\AstapReklas;
+use App\Models\PeriodeTutupBuku;
 use App\Models\Distribusi;
 use App\Models\Unit;
 use App\Models\User;
@@ -1502,6 +1503,17 @@ class RecycleBinController extends Controller
             case 'reklasifikasi':
                 $reklas = AstapReklas::findOrFail($id);
                 $nomorBa = $reklas->nomor_ba_reklas ?: 'BA-REKLAS-' . $reklas->id;
+
+                // Proteksi Integritas Tutup Buku (Periode Terkunci)
+                if (PeriodeTutupBuku::isLocked($reklas->tahun, $reklas->triwulan)) {
+                    $lockInfo = PeriodeTutupBuku::getLockInfo($reklas->tahun, $reklas->triwulan);
+                    $barNo = $lockInfo?->nomor_bar_bpkad ?: '-';
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Pemulihan reklasifikasi ditolak karena periode T.A. {$reklas->tahun} Triwulan {$reklas->triwulan} telah resmi DITUTUP BUKU (BAR BPKAD: {$barNo}). Buka kunci periode terlebih dahulu jika terdapat koreksi darurat.",
+                    ], 422);
+                }
+
                 DB::transaction(function () use ($reklas) {
                     $reklas->restoreData();
                     if ($reklas->astap) {
@@ -1509,10 +1521,30 @@ class RecycleBinController extends Controller
                         if ($reklas->jenis_reklas) {
                             $reklas->astap->jenis_reklas = $reklas->jenis_reklas;
                         }
-                        if ($reklas->tujuan_kib) {
+
+                        // Pulihkan kategori KIB jika valid (bukan akun penyeimbang KOREKSI)
+                        if ($reklas->tujuan_kib && !in_array($reklas->tujuan_kib, ['KOREKSI', 'KOR_LAIN', 'KOR_EXTRACOM', 'KOR_HIBAH'])) {
                             $reklas->astap->category = $reklas->tujuan_kib;
                         }
+
+                        // Sinkronkan status ekstrakomptabel
+                        if ($reklas->jenis_reklas === 'EKSTRAKOMPTABEL') {
+                            $reklas->astap->is_extracomtable = true;
+                        } elseif ($reklas->jenis_reklas === 'KAPITALISASI_INTRAKOM') {
+                            $reklas->astap->is_extracomtable = false;
+                        }
+
+                        // Pulihkan spesifikasi baru jika ada
+                        if (!empty($reklas->spesifikasi_baru) && is_array($reklas->spesifikasi_baru)) {
+                            $reklas->astap->spesifikasi_json = $reklas->spesifikasi_baru;
+                        }
+
                         $reklas->astap->save();
+
+                        // Sinkronkan kembali ke register fisik jika category valid
+                        if ($reklas->astap->category && $reklas->astap->registers()->exists()) {
+                            $reklas->astap->registers()->update(['kelompok_kib' => $reklas->astap->category]);
+                        }
                     }
                 });
                 $msg = "Transaksi Reklasifikasi {$nomorBa} berhasil dipulihkan ke daftar aktif.";
@@ -2014,6 +2046,19 @@ class RecycleBinController extends Controller
             case 'reklas':
             case 'reklasifikasi':
                 $reklasItems = AstapReklas::whereIn('id', $ids)->get();
+
+                // Cek apakah ada periode yang terkunci tutup buku
+                foreach ($reklasItems as $checkItem) {
+                    if (PeriodeTutupBuku::isLocked($checkItem->tahun, $checkItem->triwulan)) {
+                        $lockInfo = PeriodeTutupBuku::getLockInfo($checkItem->tahun, $checkItem->triwulan);
+                        $barNo = $lockInfo?->nomor_bar_bpkad ?: '-';
+                        return response()->json([
+                            'success' => false,
+                            'message' => "Pemulihan ditolak: Terdapat transaksi pada T.A. {$checkItem->tahun} Triwulan {$checkItem->triwulan} yang telah resmi DITUTUP BUKU (BAR BPKAD: {$barNo}). Buka kunci periode terlebih dahulu.",
+                        ], 422);
+                    }
+                }
+
                 DB::transaction(function () use ($reklasItems, &$restoredCount) {
                     foreach ($reklasItems as $rk) {
                         $rk->restoreData();
@@ -2022,10 +2067,22 @@ class RecycleBinController extends Controller
                             if ($rk->jenis_reklas) {
                                 $rk->astap->jenis_reklas = $rk->jenis_reklas;
                             }
-                            if ($rk->tujuan_kib) {
+                            if ($rk->tujuan_kib && !in_array($rk->tujuan_kib, ['KOREKSI', 'KOR_LAIN', 'KOR_EXTRACOM', 'KOR_HIBAH'])) {
                                 $rk->astap->category = $rk->tujuan_kib;
                             }
+                            if ($rk->jenis_reklas === 'EKSTRAKOMPTABEL') {
+                                $rk->astap->is_extracomtable = true;
+                            } elseif ($rk->jenis_reklas === 'KAPITALISASI_INTRAKOM') {
+                                $rk->astap->is_extracomtable = false;
+                            }
+                            if (!empty($rk->spesifikasi_baru) && is_array($rk->spesifikasi_baru)) {
+                                $rk->astap->spesifikasi_json = $rk->spesifikasi_baru;
+                            }
                             $rk->astap->save();
+
+                            if ($rk->astap->category && $rk->astap->registers()->exists()) {
+                                $rk->astap->registers()->update(['kelompok_kib' => $rk->astap->category]);
+                            }
                         }
                         $restoredCount++;
                     }

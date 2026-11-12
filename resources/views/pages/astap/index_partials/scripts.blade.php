@@ -9613,6 +9613,7 @@
         function astapCatalog() {
             return {
                 astaps: window.__simatAstaps || [],
+                highlightedAstapId: null,
                 
                 // State Modal Export Excel Berita Acara / Laporan
                 showExportModal: false,
@@ -15411,6 +15412,38 @@
                             cleanUrl.searchParams.delete('search');
                             window.history.replaceState({}, document.title, cleanUrl.pathname + (cleanUrl.search ? cleanUrl.search : ''));
                         } catch(e) {}
+                    }
+
+                    // Direct Target Navigation dari Reklasifikasi Detail Modal (astap_id / highlight_id)
+                    const targetAstapId = params.get('astap_id') || params.get('highlight_id');
+                    if (targetAstapId) {
+                        const target = (this.astaps || []).find(a => String(a.id) === String(targetAstapId));
+                        if (target) {
+                            if (target.tahun_perolehan && this.tahunFilter !== 'all' && String(this.tahunFilter) !== String(target.tahun_perolehan)) {
+                                this.tahunFilter = String(target.tahun_perolehan);
+                            }
+                            this.categoryFilter = 'all';
+                            this.kondisiFilter = 'all';
+                            this.asalUsulFilter = 'all';
+                            this.sumberDanaFilter = 'all';
+                            this.triwulanFilter = 'all';
+                            this.tutupBukuFilter = 'all';
+                            this.searchQuery = '';
+                            this.highlightedAstapId = target.id;
+
+                            // Smooth scroll langsung ke posisi baris tabel
+                            setTimeout(() => {
+                                const rowEl = document.getElementById('astap-row-' + target.id);
+                                if (rowEl) {
+                                    rowEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                }
+                            }, 500);
+
+                            // Hilangkan highlight visual setelah 6 detik
+                            setTimeout(() => {
+                                this.highlightedAstapId = null;
+                            }, 6000);
+                        }
                     }
 
                     // Inisialisasi status Tutup Buku BMD (Rekon BPKAD)

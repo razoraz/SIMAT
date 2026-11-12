@@ -57,6 +57,15 @@
                                     <span class="text-xs font-mono text-cyan-400 bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-500/20"
                                           x-text="'Kode 108: ' + (detailItem.astap?.kode_108 || detailItem.astap?.jenis_astap?.sub_sub_rincian_objek || '-')"></span>
                                     <span class="text-xs text-slate-400" x-text="'Tahun Pengadaan: ' + (detailItem.astap?.tahun_perolehan || detailItem.tahun)"></span>
+                                    <template x-if="detailItem.astap_id">
+                                        <a :href="'{{ route('astap.index') }}?astap_id=' + detailItem.astap_id + '&tahun=' + (detailItem.astap?.tahun_perolehan || detailItem.tahun)"
+                                           class="text-[11px] font-bold text-cyan-300 hover:text-white bg-cyan-950/60 hover:bg-cyan-900/60 px-2 py-0.5 rounded-lg border border-cyan-500/30 inline-flex items-center gap-1 transition-all shadow-sm cursor-pointer ml-1"
+                                           title="Langsung menuju data barang ini pada tabel Katalog ASTAP">
+                                            <span>🔍</span>
+                                            <span>Buka Data ASTAP</span>
+                                            <span>➔</span>
+                                        </a>
+                                    </template>
                                 </div>
                             </div>
                             <div class="text-left sm:text-right shrink-0">
@@ -447,10 +456,23 @@
                 <span>Standar Audit BPK RI · PMDN No. 108/2016</span>
             </span>
 
-            <button type="button" @click="showModalDetail = false"
-                class="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-all cursor-pointer">
-                Tutup Rincian
-            </button>
+            <div class="flex items-center gap-2.5">
+                <template x-if="detailItem && detailItem.astap_id">
+                    <a :href="'{{ route('astap.index') }}?astap_id=' + detailItem.astap_id + '&tahun=' + (detailItem.astap?.tahun_perolehan || detailItem.tahun)"
+                       class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white text-xs font-bold transition-all shadow-md shadow-indigo-500/25 cursor-pointer hover:shadow-indigo-500/40 hover:-translate-y-0.5 active:scale-95">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        <span>Lihat Data ASTAP</span>
+                    </a>
+                </template>
+
+                <button type="button" @click="showModalDetail = false"
+                    class="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-all cursor-pointer">
+                    Tutup Rincian
+                </button>
+            </div>
         </div>
     </div>
 </div>
