@@ -392,6 +392,22 @@
                 return val;
             },
 
+            isRegisterPlacedInUnit(reg) {
+                if (!reg) return false;
+                if (reg.unit_id) return true;
+                if (!reg.ruang_pemegang) return false;
+                const clean = String(reg.ruang_pemegang).trim().toLowerCase();
+                const unplacedPlaceholders = [
+                    '', '-', 'belum ditempatkan', 'belum ditempatkan / di gudang',
+                    'belum ditempatkan / di gudang aset', 'gudang aset',
+                    'gudang aset utama / belum ditempatkan', 'gudang perbekalan'
+                ];
+                if (unplacedPlaceholders.includes(clean)) return false;
+                if (clean.startsWith('kemitraan (')) return false;
+                if (clean.startsWith('telah dikembalikan')) return false;
+                return true;
+            },
+
             get filteredRegisters() {
                 const target = this.selectedAstapDetail || this.selectedMutasi;
                 if (!target) return [];
@@ -403,14 +419,14 @@
                         no_register: it.nibar || ('REG-' + (idx + 1)),
                         kondisi: it.kondisi || 'Baik',
                         ruang_pemegang: it.ruangan_asal || (target.opd_tujuan || 'SKPD Penerima'),
-                        status: target.tipe === 'keluar' ? 'Mutasi Keluar OPD' : 'Aktif'
+                        status: target.tipe === 'keluar' ? 'Mutasi Keluar OPD' : 'Tersedia'
                     }));
                 }
                 if (!regs || regs.length === 0) return [];
                 const q = (this.detailSearchQuery || '').toLowerCase().trim();
-                return regs.filter(reg => {
-                    if (this.detailPenempatanFilter === 'sudah' && !reg.ruang_pemegang) return false;
-                    if (this.detailPenempatanFilter === 'belum' && reg.ruang_pemegang) return false;
+                const filtered = regs.filter(reg => {
+                    if (this.detailPenempatanFilter === 'sudah' && !this.isRegisterPlacedInUnit(reg)) return false;
+                    if (this.detailPenempatanFilter === 'belum' && this.isRegisterPlacedInUnit(reg)) return false;
                     if (this.detailKondisiFilter !== 'all') {
                         const k = reg.kondisi || 'Baik';
                         if (this.detailKondisiFilter === 'Baik' && k !== 'Baik' && k !== 'B') return false;
@@ -423,6 +439,14 @@
                         if (!nibar.includes(q) && !ruang.includes(q)) return false;
                     }
                     return true;
+                });
+
+                // Pastikan selalu terurut berdasarkan nomor urut NIBAR ascending (0001 di paling atas)
+                return filtered.sort((a, b) => {
+                    const numA = a.no_register_int || parseInt((a.nibar || a.no_register || '').slice(-7)) || 0;
+                    const numB = b.no_register_int || parseInt((b.nibar || b.no_register || '').slice(-7)) || 0;
+                    if (numA !== numB) return numA - numB;
+                    return (a.nibar || a.no_register || '').localeCompare(b.nibar || b.no_register || '');
                 });
             },
 
