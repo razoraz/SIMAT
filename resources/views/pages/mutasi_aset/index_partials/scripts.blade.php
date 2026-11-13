@@ -113,15 +113,36 @@
                 },
 
                 init() {
-                    // Auto-buka modal detail jika kembali dari halaman Berita Acara (BAMB)
+                    // Auto-buka modal detail jika kembali dari halaman Berita Acara (BAMB) atau navigasi riwayat aset
                     const urlParams = new URLSearchParams(window.location.search);
-                    const openDetailId = urlParams.get('openDetail');
+                    const openDetailId = urlParams.get('openDetail') || urlParams.get('id');
+                    const searchParam = urlParams.get('search');
+
+                    if (searchParam) {
+                        this.searchQuery = searchParam;
+                    }
+
                     if (openDetailId) {
                         this.$nextTick(() => {
                             const target = this.mutasis.find(m => String(m.id) === String(openDetailId));
                             if (target) {
                                 this.openDetail(target);
                             }
+                            // Auto-scroll ke baris dan berikan efek visual glow
+                            setTimeout(() => {
+                                const row = document.getElementById('row-mutasi-' + openDetailId);
+                                if (row) {
+                                    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                    row.classList.add('bg-indigo-500/25', 'transition-all', 'duration-500');
+                                    row.style.outline = '2px solid #6366f1';
+                                    row.style.boxShadow = '0 0 15px rgba(99, 102, 241, 0.4)';
+                                    setTimeout(() => {
+                                        row.classList.remove('bg-indigo-500/25');
+                                        row.style.outline = '';
+                                        row.style.boxShadow = '';
+                                    }, 4000);
+                                }
+                            }, 350);
                         });
                         // Bersihkan parameter dari URL tanpa reload
                         const cleanUrl = window.location.pathname;

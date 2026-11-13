@@ -44,6 +44,29 @@
             isReklasMitraDropdownOpen: false,
 
             init() {
+                // Auto-scroll & Highlight baris transaksi reklasifikasi jika ada parameter 'highlight' di URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const highlightId = urlParams.get('highlight');
+                if (highlightId) {
+                    this.activeTab = 'log';
+                    this.$nextTick(() => {
+                        setTimeout(() => {
+                            const row = document.getElementById('row-reklas-' + highlightId);
+                            if (row) {
+                                row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                row.classList.add('bg-emerald-500/25', 'transition-all', 'duration-500');
+                                row.style.outline = '2px solid #10b981';
+                                row.style.boxShadow = '0 0 15px rgba(16, 185, 129, 0.4)';
+                                setTimeout(() => {
+                                    row.classList.remove('bg-emerald-500/25');
+                                    row.style.outline = '';
+                                    row.style.boxShadow = '';
+                                }, 4000);
+                            }
+                        }, 400);
+                    });
+                }
+
                 if (!this.masterMitraList || this.masterMitraList.length === 0) {
                     fetch('/api/kemitraan/mitras')
                         .then(res => res.json())
@@ -1593,12 +1616,28 @@
             },
 
             formatDateIndo(dateStr) {
-                if (!dateStr) return '-';
-                const parts = dateStr.split('-');
-                if (parts.length === 3) {
-                    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+                if (!dateStr || dateStr === '-') return '-';
+                try {
+                    // Bersihkan jika ada waktu ISO (misal: 2026-08-19T17:00:00.000000Z -> 2026-08-19)
+                    const cleanStr = String(dateStr).split('T')[0].split(' ')[0].trim();
+                    const parts = cleanStr.split('-');
+                    if (parts.length === 3) {
+                        const year = parts[0];
+                        const month = parts[1];
+                        const day = parts[2].padStart(2, '0');
+                        return `${day}/${month}/${year}`;
+                    }
+                    const d = new Date(dateStr);
+                    if (!isNaN(d.getTime())) {
+                        const day = String(d.getDate()).padStart(2, '0');
+                        const month = String(d.getMonth() + 1).padStart(2, '0');
+                        const year = d.getFullYear();
+                        return `${day}/${month}/${year}`;
+                    }
+                    return String(dateStr);
+                } catch (e) {
+                    return String(dateStr);
                 }
-                return dateStr;
             },
 
             getFormattedSpec(spec) {

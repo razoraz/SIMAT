@@ -15,7 +15,7 @@
                     </thead>
                     <tbody class="divide-y divide-slate-800/80">
                         <template x-for="(item, index) in filteredMutasis" :key="item.id">
-                            <tr class="group transition-colors" :class="item.is_deleted ? 'bg-red-950/20 hover:bg-red-950/30' : 'hover:bg-slate-800/40'">
+                            <tr :id="'row-mutasi-' + item.id" class="group transition-colors" :class="item.is_deleted ? 'bg-red-950/20 hover:bg-red-950/30' : 'hover:bg-slate-800/40'">
                                 {{-- No --}}
                                 <td class="px-4 py-4 text-center font-bold text-slate-400 whitespace-nowrap" x-text="index + 1"></td>
 

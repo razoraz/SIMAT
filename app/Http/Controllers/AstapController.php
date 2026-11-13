@@ -921,6 +921,8 @@ class AstapController extends Controller
                 'nomor_ba'          => $rk->nomor_ba_reklas ?: 'BA-REKLAS',
                 'tanggal_reklas'    => $rk->tanggal_reklas ? $rk->tanggal_reklas->format('d M Y') : '-',
                 'tanggal_reklas_raw'=> $rk->tanggal_reklas ? $rk->tanggal_reklas->format('Y-m-d') : '',
+                'tahun'             => $rk->tahun ?: ($rk->tanggal_reklas ? $rk->tanggal_reklas->format('Y') : date('Y')),
+                'triwulan'          => $rk->triwulan ?: '1',
                 'jenis_reklas'      => $rk->jenis_reklas ?: 'REKLAS_KIB',
                 'sub_koreksi_label' => $rk->sub_koreksi_label ?: ($rk->jenis_reklas === 'KOREKSI_LAIN' ? 'Koreksi Nilai' : ($rk->jenis_reklas === 'KEMITRAAN' ? 'Reklas Kemitraan (1.5.2)' : 'Reklasifikasi Aset')),
                 'tipe_koreksi'      => $rk->tipe_koreksi ?: 'tambah',
