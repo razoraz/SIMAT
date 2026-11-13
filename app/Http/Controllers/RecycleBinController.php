@@ -1514,47 +1514,35 @@ class RecycleBinController extends Controller
                     ], 422);
                 }
 
-                DB::transaction(function () use ($reklas) {
+                $restoredPredecessorsCount = 0;
+
+                DB::transaction(function () use ($reklas, &$restoredPredecessorsCount) {
+                    // 1. Pulihkan semua transaksi reklas pendahulu yang masih terhapus untuk aset ini
+                    $deletedPredecessors = AstapReklas::onlyDeleted()
+                        ->where('astap_id', $reklas->astap_id)
+                        ->where('id', '<', $reklas->id)
+                        ->orderBy('id', 'asc')
+                        ->get();
+
+                    foreach ($deletedPredecessors as $predecessor) {
+                        $predecessor->restoreData();
+                        $restoredPredecessorsCount++;
+                    }
+
+                    // 2. Pulihkan transaksi yang dipilih
                     $reklas->restoreData();
+
+                    // 3. Sinkronisasikan status aset dengan rantai reklasifikasi
                     if ($reklas->astap) {
-                        $astap = $reklas->astap;
-
-                        // Cari transaksi reklas aktif yang TERAKHIR (paling mutakhir) untuk aset ini
-                        $latestActiveReklas = AstapReklas::active()
-                            ->where('astap_id', $astap->id)
-                            ->orderBy('id', 'desc')
-                            ->first();
-
-                        if ($latestActiveReklas) {
-                            $astap->is_reklas = 1;
-                            if ($latestActiveReklas->jenis_reklas) {
-                                $astap->jenis_reklas = $latestActiveReklas->jenis_reklas;
-                            }
-
-                            if ($latestActiveReklas->jenis_reklasifikasi_tujuan_id) {
-                                $astap->jenis_astap_id = $latestActiveReklas->jenis_reklasifikasi_tujuan_id;
-                            }
-                            if (!empty($latestActiveReklas->tujuan_nama)) {
-                                $astap->nama_barang = $latestActiveReklas->tujuan_nama;
-                            }
-
-                            // Sinkronkan status ekstrakomptabel
-                            if ($latestActiveReklas->jenis_reklas === 'EKSTRAKOMPTABEL') {
-                                $astap->is_extracomtable = true;
-                            } elseif ($latestActiveReklas->jenis_reklas === 'KAPITALISASI_INTRAKOM') {
-                                $astap->is_extracomtable = false;
-                            }
-
-                            // Pulihkan spesifikasi baru
-                            if (!empty($latestActiveReklas->spesifikasi_baru) && is_array($latestActiveReklas->spesifikasi_baru)) {
-                                $astap->spesifikasi_json = $latestActiveReklas->spesifikasi_baru;
-                            }
-
-                            $astap->save();
-                        }
+                        $reklas->astap->syncToLatestReklas();
                     }
                 });
-                $msg = "Transaksi Reklasifikasi {$nomorBa} berhasil dipulihkan ke daftar aktif.";
+
+                if ($restoredPredecessorsCount > 0) {
+                    $msg = "Transaksi Reklasifikasi {$nomorBa} berhasil dipulihkan. Sebanyak {$restoredPredecessorsCount} transaksi pendahulu otomatis ikut dipulihkan agar rantai riwayat pembukuan tetap runtut.";
+                } else {
+                    $msg = "Transaksi Reklasifikasi {$nomorBa} berhasil dipulihkan ke daftar aktif.";
+                }
                 break;
 
             case 'unit':
@@ -2066,31 +2054,41 @@ class RecycleBinController extends Controller
                     }
                 }
 
-                DB::transaction(function () use ($reklasItems, &$restoredCount) {
+                $autoRestoredPredecessorsCount = 0;
+                $affectedAstaps = [];
+
+                DB::transaction(function () use ($reklasItems, &$restoredCount, &$autoRestoredPredecessorsCount, &$affectedAstaps) {
                     foreach ($reklasItems as $rk) {
-                        $rk->restoreData();
-                        if ($rk->astap) {
-                            $rk->astap->is_reklas = 1;
-                            if ($rk->jenis_reklas) {
-                                $rk->astap->jenis_reklas = $rk->jenis_reklas;
-                            }
-                            if ($rk->tujuan_kib && !in_array($rk->tujuan_kib, ['KOREKSI', 'KOR_LAIN', 'KOR_EXTRACOM', 'KOR_HIBAH'])) {
-                                $rk->astap->category = $rk->tujuan_kib;
-                            }
-                            if ($rk->jenis_reklas === 'EKSTRAKOMPTABEL') {
-                                $rk->astap->is_extracomtable = true;
-                            } elseif ($rk->jenis_reklas === 'KAPITALISASI_INTRAKOM') {
-                                $rk->astap->is_extracomtable = false;
-                            }
-                            if (!empty($rk->spesifikasi_baru) && is_array($rk->spesifikasi_baru)) {
-                                $rk->astap->spesifikasi_json = $rk->spesifikasi_baru;
-                            }
-                            $rk->astap->save();
+                        // Pulihkan pendahulu jika ada yang masih terhapus
+                        $deletedPredecessors = AstapReklas::onlyDeleted()
+                            ->where('astap_id', $rk->astap_id)
+                            ->where('id', '<', $rk->id)
+                            ->orderBy('id', 'asc')
+                            ->get();
+
+                        foreach ($deletedPredecessors as $pred) {
+                            $pred->restoreData();
+                            $autoRestoredPredecessorsCount++;
                         }
+
+                        $rk->restoreData();
                         $restoredCount++;
+                        if ($rk->astap) {
+                            $affectedAstaps[$rk->astap_id] = $rk->astap;
+                        }
+                    }
+
+                    // Sinkronkan setiap astap yang terpengaruh ke status reklas terkininya
+                    foreach ($affectedAstaps as $astap) {
+                        $astap->syncToLatestReklas();
                     }
                 });
-                $msg = "Sebanyak {$restoredCount} transaksi reklasifikasi berhasil dipulihkan ke status aktif.";
+
+                if ($autoRestoredPredecessorsCount > 0) {
+                    $msg = "Sebanyak {$restoredCount} transaksi reklasifikasi berhasil dipulihkan (ditambah {$autoRestoredPredecessorsCount} transaksi pendahulu yang otomatis ikut dipulihkan demi integritas rantai riwayat).";
+                } else {
+                    $msg = "Sebanyak {$restoredCount} transaksi reklasifikasi berhasil dipulihkan ke status aktif.";
+                }
                 break;
 
             case 'unit':

@@ -3088,82 +3088,24 @@ class ReklasifikasiController extends Controller
 
         $astapId  = $reklas->astap_id;
         $jenisReklas = $reklas->jenis_reklas;
+        $nomorBa = $reklas->nomor_ba_reklas ?: 'BA-REKLAS-' . $reklas->id;
 
         DB::beginTransaction();
         try {
+            // 1. Soft-delete transaksi saat ini
             $reklas->softDelete($request->input('alasan', 'Dihapus dari modul Reklasifikasi Aset'));
 
-            // Ambil sisa transaksi reklas untuk astap ini (yang masih aktif setelah dihapus)
-            $remainingReklas = AstapReklas::active()->where('astap_id', $astapId)
+            // 2. Cascade soft-delete semua transaksi turunan/sesudahnya yang masih aktif
+            $activeSuccessors = AstapReklas::active()
+                ->where('astap_id', $astapId)
+                ->where('id', '>', $reklas->id)
                 ->orderBy('id', 'asc')
                 ->get();
 
-            $updateData = [];
-
-            if ($remainingReklas->isEmpty()) {
-                // Tidak ada transaksi tersisa — reset semua flag reklas
-                $updateData = [
-                    'is_reklas'        => false,
-                    'jenis_reklas'     => null,
-                    'is_extracomtable' => false,
-                ];
-
-                // Cari transaksi reklas paling awal dalam riwayat aset ini untuk mendapatkan status original/akar mula (root)
-                $rootReklas = AstapReklas::where('astap_id', $astapId)
-                    ->orderBy('id', 'asc')
-                    ->first();
-
-                if ($rootReklas) {
-                    if ($rootReklas->jenis_reklasifikasi_asal_id) {
-                        $updateData['jenis_astap_id'] = $rootReklas->jenis_reklasifikasi_asal_id;
-                    }
-                    if (!empty($rootReklas->asal_nama)) {
-                        $updateData['nama_barang'] = $rootReklas->asal_nama;
-                    }
-                    if (!empty($rootReklas->spesifikasi_lama) && is_array($rootReklas->spesifikasi_lama)) {
-                        $updateData['spesifikasi_json'] = $rootReklas->spesifikasi_lama;
-                    }
-                } else {
-                    if ($reklas->jenis_reklasifikasi_asal_id) {
-                        $updateData['jenis_astap_id'] = $reklas->jenis_reklasifikasi_asal_id;
-                    }
-                    if (!empty($reklas->asal_nama)) {
-                        $updateData['nama_barang'] = $reklas->asal_nama;
-                    }
-                    if (!empty($reklas->spesifikasi_lama) && is_array($reklas->spesifikasi_lama)) {
-                        $updateData['spesifikasi_json'] = $reklas->spesifikasi_lama;
-                    }
-                }
-            } else {
-                // Masih ada transaksi lain — cek status ekstrakomptabel dari sisa log
-                if ($jenisReklas === 'EKSTRAKOMPTABEL') {
-                    // Dihapus: EKSTRAKOMPTABEL → cek apakah masih ada KAPITALISASI_INTRAKOM di log
-                    // Jika tidak ada, aset kembali ke intrakomptabel (is_extracomtable = false)
-                    $hasIntrakom = $remainingReklas->contains('jenis_reklas', 'KAPITALISASI_INTRAKOM');
-                    if (! $hasIntrakom) {
-                        $updateData['is_extracomtable'] = false;
-                    }
-                } elseif ($jenisReklas === 'KAPITALISASI_INTRAKOM') {
-                    // Dihapus: KAPITALISASI_INTRAKOM → aset kembali ke status ekstrakomptabel
-                    // jika masih ada EKSTRAKOMPTABEL di log
-                    $hasExtracom = $remainingReklas->contains('jenis_reklas', 'EKSTRAKOMPTABEL');
-                    $updateData['is_extracomtable'] = $hasExtracom;
-                }
-
-                $latestRemaining = $remainingReklas->last();
-                if ($latestRemaining) {
-                    $updateData['is_reklas'] = true;
-                    $updateData['jenis_reklas'] = $latestRemaining->jenis_reklas;
-                    if ($latestRemaining->jenis_reklasifikasi_tujuan_id) {
-                        $updateData['jenis_astap_id'] = $latestRemaining->jenis_reklasifikasi_tujuan_id;
-                    }
-                    if (!empty($latestRemaining->tujuan_nama)) {
-                        $updateData['nama_barang'] = $latestRemaining->tujuan_nama;
-                    }
-                    if (!empty($latestRemaining->spesifikasi_baru) && is_array($latestRemaining->spesifikasi_baru)) {
-                        $updateData['spesifikasi_json'] = $latestRemaining->spesifikasi_baru;
-                    }
-                }
+            $cascadedSuccessorsCount = 0;
+            foreach ($activeSuccessors as $successor) {
+                $successor->softDelete("Dihapus otomatis karena transaksi pendahulu ({$nomorBa}) dihapus");
+                $cascadedSuccessorsCount++;
             }
 
             $astap = Astap::find($astapId);
@@ -3194,9 +3136,8 @@ class ReklasifikasiController extends Controller
                     $astap->deleted_at = now();
                     $astap->save();
                 } else {
-                    if (! empty($updateData)) {
-                        $astap->update($updateData);
-                    }
+                    // Sinkronkan status aset ke reklas aktif terakhir atau akar mula (root)
+                    $astap->syncToLatestReklas();
 
                     // Pulihkan status kemitraan jika aset terkait dengan Akun 1.5.2 Kemitraan
                     if ($reklas->tujuan_kib === 'KEMITRAAN') {
@@ -3250,14 +3191,18 @@ class ReklasifikasiController extends Controller
 
             DB::commit();
 
+            $successMsg = $cascadedSuccessorsCount > 0
+                ? "Transaksi Reklasifikasi {$nomorBa} berhasil dipindahkan ke Tong Sampah. Sebanyak {$cascadedSuccessorsCount} transaksi turunan otomatis ikut dihapus agar riwayat pembukuan tetap konsisten."
+                : "Transaksi Reklasifikasi {$nomorBa} berhasil dipindahkan ke Tong Sampah.";
+
             if ($request->wantsJson()) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'Transaksi reklasifikasi berhasil dipindahkan ke Pusat Data Terhapus.',
+                    'message' => $successMsg,
                 ]);
             }
 
-            return redirect()->back()->with('success', 'Transaksi reklasifikasi berhasil dipindahkan ke Pusat Data Terhapus.');
+            return redirect()->back()->with('success', $successMsg);
         } catch (\Throwable $th) {
             DB::rollBack();
             if ($request->wantsJson()) {

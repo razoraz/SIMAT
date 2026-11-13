@@ -593,6 +593,73 @@ class Astap extends Model
         return $this->hasMany(AstapReklas::class)->orderBy('tanggal_reklas', 'desc');
     }
 
+    /**
+     * Sinkronisasikan status aset dengan rantai riwayat reklasifikasinya.
+     * Jika terdapat reklasifikasi aktif, aset mengadopsi status reklasifikasi paling mutakhir.
+     * Jika tidak ada reklasifikasi aktif (semua terhapus), aset kembali ke status akar mula (root).
+     */
+    public function syncToLatestReklas(): void
+    {
+        $activeReklas = $this->hasMany(AstapReklas::class)
+            ->where('is_deleted', 0)
+            ->orderBy('id', 'asc')
+            ->get();
+
+        if ($activeReklas->isNotEmpty()) {
+            $latestActive = $activeReklas->last();
+
+            $this->is_reklas = true;
+            $this->jenis_reklas = $latestActive->jenis_reklas;
+
+            if ($latestActive->jenis_reklasifikasi_tujuan_id) {
+                $this->jenis_astap_id = $latestActive->jenis_reklasifikasi_tujuan_id;
+            }
+            if (!empty($latestActive->tujuan_nama)) {
+                $this->nama_barang = $latestActive->tujuan_nama;
+            }
+
+            // Hitung status is_extracomtable secara kronologis dari sisa reklas aktif
+            $isExtracom = false;
+            foreach ($activeReklas as $ark) {
+                if ($ark->jenis_reklas === 'EKSTRAKOMPTABEL') {
+                    $isExtracom = true;
+                } elseif ($ark->jenis_reklas === 'KAPITALISASI_INTRAKOM') {
+                    $isExtracom = false;
+                }
+            }
+            $this->is_extracomtable = $isExtracom;
+
+            if (!empty($latestActive->spesifikasi_baru) && is_array($latestActive->spesifikasi_baru)) {
+                $this->spesifikasi_json = $latestActive->spesifikasi_baru;
+            }
+
+            $this->save();
+        } else {
+            // Seluruh reklas terhapus / tidak ada aktif: kembalikan ke spesifikasi akar awal (root)
+            $rootReklas = $this->hasMany(AstapReklas::class)
+                ->orderBy('id', 'asc')
+                ->first();
+
+            $this->is_reklas = false;
+            $this->jenis_reklas = null;
+            $this->is_extracomtable = false;
+
+            if ($rootReklas) {
+                if ($rootReklas->jenis_reklasifikasi_asal_id) {
+                    $this->jenis_astap_id = $rootReklas->jenis_reklasifikasi_asal_id;
+                }
+                if (!empty($rootReklas->asal_nama)) {
+                    $this->nama_barang = $rootReklas->asal_nama;
+                }
+                if (!empty($rootReklas->spesifikasi_lama) && is_array($rootReklas->spesifikasi_lama)) {
+                    $this->spesifikasi_json = $rootReklas->spesifikasi_lama;
+                }
+            }
+
+            $this->save();
+        }
+    }
+
     public function hibahs()
     {
         return $this->hasMany(AstapHibah::class, 'astap_id')->orderBy('tanggal_bast', 'desc');
