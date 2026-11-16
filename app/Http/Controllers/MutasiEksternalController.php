@@ -633,6 +633,10 @@ class MutasiEksternalController extends Controller
                 }
             }
 
+            $rawNama = $isKeluar && !empty($items[0]['nama_barang']) ? $items[0]['nama_barang'] : ($astap?->nama_barang ?: '');
+            $isPlaceholder = empty($rawNama) || in_array(strtolower(trim($rawNama)), ['aset pelimpahan skpd', 'pelimpahan skpd', 'pelimpahan', 'mutasi eksternal', 'transfer antar-opd', 'barang mutasi', 'barang mutasi eksternal', 'aset mutasi masuk', 'aset rsud', 'aset bmd'], true) || str_starts_with(strtolower(trim($rawNama)), 'aset pelimpahan');
+            $cleanNamaBarang = ($isPlaceholder && $astap?->jenisAstap?->uraian_sub_sub_rincian) ? $astap->jenisAstap->uraian_sub_sub_rincian : ($rawNama ?: ($astap?->jenisAstap?->uraian_sub_sub_rincian ?: 'Barang Mutasi'));
+
             return [
                 'id'                        => $astap?->id ?: $m->id,
                 'astap_id'                  => $astap?->id ?: $m->astap_id,
@@ -642,9 +646,9 @@ class MutasiEksternalController extends Controller
                 'jenis'                     => $m->jenis_mutasi ?: ($isKeluar ? 'Transfer Keluar ke OPD' : 'Transfer Antar-OPD'),
                 'tipe'                      => $m->tipe ?: 'masuk',
                 'kategori_label'            => $isKeluar ? 'Transfer ke OPD (Mutasi Keluar)' : 'Mutasi Eksternal Masuk (Dari OPD Luar)',
-                'nama'                      => ($isKeluar && !empty($items[0]['nama_barang']) ? $items[0]['nama_barang'] : ($astap?->nama_barang ?: 'Barang Mutasi')) . ($itemCount > 1 ? " (+{$itemCount} unit)" : ''),
-                'nama_murni'                => $isKeluar && !empty($items[0]['nama_barang']) ? $items[0]['nama_barang'] : ($astap?->nama_barang ?: 'Barang Mutasi'),
-                'nama_barang'               => $isKeluar && !empty($items[0]['nama_barang']) ? $items[0]['nama_barang'] : ($astap?->nama_barang ?: 'Barang Mutasi'),
+                'nama'                      => $cleanNamaBarang . ($itemCount > 1 ? " (+{$itemCount} unit)" : ''),
+                'nama_murni'                => $cleanNamaBarang,
+                'nama_barang'               => $cleanNamaBarang,
                 'category'                  => $astap?->category ?: 'KIB B',
                 'is_extracomtable'          => (bool) ($astap?->is_extracomtable ?? false),
                 'is_reklas'                 => (bool) ($astap?->is_reklas ?? false),
@@ -720,12 +724,15 @@ class MutasiEksternalController extends Controller
                 'alamat_barang'             => $astap?->alamat_barang ?: 'RSUD Dr. H. Koesnandi',
                 'created_at'                => $astap?->created_at ? $astap->created_at->format('Y-m-d H:i:s') : (string) $tglRaw,
                 'spesifikasi_json'          => $astap?->spesifikasi_json ?: [],
+                'jenis_astap'               => $astap?->jenisAstap ? $astap->jenisAstap->toArray() : null,
                 'all_astap_registers'       => $allAstapRegisters,
                 'mutasi_register_ids'       => $currentMutasiRegIds,
             ];
         })->values()->toArray();
 
-        return view('pages.mutasi_eksternal.index', compact('mutasiEksternals'));
+        $dbMaster108 = JenisAstap::select('id', 'jenis', 'nama_jenis', 'sub_rincian_objek', 'uraian_sub_rincian', 'sub_sub_rincian_objek', 'uraian_sub_sub_rincian')->get()->toArray();
+
+        return view('pages.mutasi_eksternal.index', compact('mutasiEksternals', 'dbMaster108'));
     }
 
     /**

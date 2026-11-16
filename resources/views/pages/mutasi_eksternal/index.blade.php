@@ -2,6 +2,9 @@
     @section('page-title', 'Mutasi Eksternal (Antar-OPD)')
     @section('breadcrumb', 'Master Aset / Mutasi Eksternal')
 
+    <script>
+        window.dbMasterJenisAstap108 = {{ \Illuminate\Support\Js::from($dbMaster108 ?? []) }};
+    </script>
     @include('pages.mutasi_eksternal.index_partials.scripts')
     @include('pages.mutasi_eksternal.index_partials.scripts_export')
 

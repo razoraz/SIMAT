@@ -159,6 +159,19 @@
         };
     }
 
+    // Helper deteksi nama placeholder / generik (agar kolom Nama Barang 108 selalu baku dan resmi)
+    function isGenericPlaceholderName(name) {
+        if (!name || typeof name !== 'string') return true;
+        const s = name.trim().toLowerCase();
+        if (s === '' || s === '-' || s === 'null' || s === 'undefined') return true;
+        const genericPhrases = [
+            'pelimpahan skpd', 'aset pelimpahan', 'pelimpahan', 'mutasi eksternal', 
+            'transfer antar-opd', 'transfer ke opd', 'barang mutasi', 'barang mutasi eksternal', 
+            'aset mutasi masuk', 'mutasi masuk', 'mutasi keluar', 'aset rsud', 'aset bmd'
+        ];
+        return genericPhrases.some(phrase => s.includes(phrase));
+    }
+
     // Helper resolusi PMDN 108: Jenis, Sub Rincian, dan Nama Barang
     function resolve108Info(item, defaultPrefix, defaultJenisNama) {
         const spec = getSafeSpec(item);
@@ -196,7 +209,33 @@
             subRincianNama = jenisNama;
         }
 
-        const namaBarang = item.nama_murni || item.nama_barang || (item.jenis_astap && item.jenis_astap.uraian_sub_sub_rincian) || defaultJenisNama;
+        // Resolusi Nama Barang PMDN 108 (Sub Sub Rincian Objek)
+        let official108Nama = (item.jenis_astap && item.jenis_astap.uraian_sub_sub_rincian) ? item.jenis_astap.uraian_sub_sub_rincian : null;
+        if (!official108Nama && window.dbMasterJenisAstap108 && Array.isArray(window.dbMasterJenisAstap108)) {
+            const found108 = window.dbMasterJenisAstap108.find(m => m.sub_sub_rincian_objek === kd108);
+            if (found108 && found108.uraian_sub_sub_rincian) {
+                official108Nama = found108.uraian_sub_sub_rincian;
+            }
+        }
+
+        let namaBarang = '';
+        if (official108Nama) {
+            if (item.nama_murni && !isGenericPlaceholderName(item.nama_murni)) {
+                namaBarang = item.nama_murni;
+            } else if (item.nama_barang && !isGenericPlaceholderName(item.nama_barang)) {
+                namaBarang = item.nama_barang;
+            } else {
+                namaBarang = official108Nama;
+            }
+        } else {
+            if (item.nama_murni && !isGenericPlaceholderName(item.nama_murni)) {
+                namaBarang = item.nama_murni;
+            } else if (item.nama_barang && !isGenericPlaceholderName(item.nama_barang)) {
+                namaBarang = item.nama_barang;
+            } else {
+                namaBarang = subRincianNama || defaultJenisNama;
+            }
+        }
 
         return {
             jenisKode,
@@ -768,7 +807,6 @@
                     '', '',
                     '',
                     '',
-                    '',
                     'Jumlah Bidang Tanah', 'Luas Tanah (m²)',
                     '',
                     '',
@@ -831,50 +869,102 @@
                     const jumlahBidang = parseInt(item.jumlah_volume) || 1;
                     const luasM2 = parseFloat(spec.luas_m2 || spec.tanah_luas || 0);
                     const totalNilaiBarang = parseFloat(item.nilai_perolehan || item.total_realisasi_num || 0);
+                    const subTanah = (spec.tanah_items && Array.isArray(spec.tanah_items) && spec.tanah_items.length > 0) ? spec.tanah_items : null;
 
-                    kibATotalUnit += jumlahBidang;
-                    kibATotalLuas += luasM2;
-                    kibATotalNilaiBarang += totalNilaiBarang;
+                    const makeCol1to7 = (isFirst) => {
+                        if (!isFirst) return ['', '', '', '', '', 0, 0];
+                        return [
+                            globalKibANo,
+                            info.jenisKode,
+                            info.jenisNama,
+                            info.subRincianKode,
+                            info.subRincianNama,
+                            0,
+                            groupRealisasiTotal
+                        ];
+                    };
 
-                    const col1to7 = isFirstRowInGroup ? [
-                        globalKibANo,
-                        info.jenisKode,
-                        info.jenisNama,
-                        info.subRincianKode,
-                        info.subRincianNama,
-                        0,
-                        groupRealisasiTotal
-                    ] : ['', '', '', '', '', 0, 0];
+                    if (subTanah) {
+                        subTanah.forEach((tItem) => {
+                            const tJumlahBidang = Math.max(1, parseInt(tItem.tanah_jumlah || tItem.jumlah || 1));
+                            const tLuasM2 = parseFloat(tItem.tanah_luas || tItem.luas_m2 || 0);
+                            const tTotalNilai = parseFloat(tItem.tanah_nilai || tItem.nilai_perolehan || 0) || (subTanah.length > 0 ? totalNilaiBarang / subTanah.length : 0);
 
-                    if (isFirstRowInGroup) { globalKibANo++; isFirstRowInGroup = false; }
+                            kibATotalUnit += tJumlahBidang;
+                            kibATotalLuas += tLuasM2;
+                            kibATotalNilaiBarang += tTotalNilai;
 
-                    const rawKondisi = item.kondisi || 'Baik';
-                    const kondisiLabel = (rawKondisi === 'B' || rawKondisi === 'Baik') ? 'Baik' 
-                                       : (rawKondisi === 'KB' || rawKondisi === 'Kurang Baik' ? 'Kurang Baik' 
-                                       : (rawKondisi === 'RB' || rawKondisi === 'Rusak Berat' ? 'Rusak Berat' : rawKondisi));
+                            const col1to7 = makeCol1to7(isFirstRowInGroup);
+                            if (isFirstRowInGroup) { globalKibANo++; isFirstRowInGroup = false; }
 
-                    kibARows.push([
-                        ...col1to7,
-                        info.namaBarang,
-                        info.kodeBarang,
-                        spec.hak_tanah || spec.tanah_hak || 'Hak Pakai',
-                        formatAstapDate(spec.sertifikat_tgl || spec.tanah_sertifikat_tgl || item.tgl_raw),
-                        spec.sertifikat_no || spec.tanah_sertifikat_no || '-',
-                        details.dokumenNomor,
-                        details.dokumenTanggal,
-                        kondisiLabel,
-                        spec.penggunaan || spec.tanah_penggunaan || 'Fasilitas RSUD',
-                        jumlahBidang,
-                        luasM2,
-                        totalNilaiBarang,
-                        details.ruangPenempatan,
-                        details.opdMitra,
-                        details.pjMitra,
-                        details.alamatMitra,
-                        details.pejabatRsudNama,
-                        details.pejabatRsudNip,
-                        (details.isKeluar ? 'Transfer Keluar ke ' + details.opdMitra : 'Mutasi Masuk dari ' + details.opdMitra)
-                    ]);
+                            const rawKondisi = tItem.tanah_kondisi || item.kondisi || 'Baik';
+                            const kondisiLabel = (rawKondisi === 'B' || rawKondisi === 'Baik') ? 'Baik' 
+                                               : (rawKondisi === 'KB' || rawKondisi === 'Kurang Baik' ? 'Kurang Baik' 
+                                               : (rawKondisi === 'RB' || rawKondisi === 'Rusak Berat' ? 'Rusak Berat' : rawKondisi));
+
+                            const alamatTanah = tItem.tanah_alamat || spec.tanah_alamat || spec.letak_alamat || item.alamat_barang || details.ruangPenempatan;
+
+                            kibARows.push([
+                                ...col1to7,
+                                (!isGenericPlaceholderName(tItem.tanah_nama_barang) ? tItem.tanah_nama_barang : info.namaBarang),
+                                tItem.kode_108 || info.kodeBarang,
+                                tItem.tanah_hak || spec.hak_tanah || spec.tanah_hak || 'Hak Pakai',
+                                formatAstapDate(tItem.tanah_sertifikat_tgl || spec.sertifikat_tgl || spec.tanah_sertifikat_tgl || item.tgl_raw),
+                                tItem.tanah_sertifikat_no || spec.sertifikat_no || spec.tanah_sertifikat_no || '-',
+                                details.dokumenNomor,
+                                details.dokumenTanggal,
+                                kondisiLabel,
+                                tItem.tanah_penggunaan || spec.penggunaan || spec.tanah_penggunaan || 'Fasilitas RSUD',
+                                tJumlahBidang,
+                                tLuasM2,
+                                tTotalNilai,
+                                alamatTanah,
+                                details.opdMitra,
+                                details.pjMitra,
+                                details.alamatMitra,
+                                details.pejabatRsudNama,
+                                details.pejabatRsudNip,
+                                (details.isKeluar ? 'Transfer Keluar ke ' + details.opdMitra : 'Mutasi Masuk dari ' + details.opdMitra)
+                            ]);
+                        });
+                    } else {
+                        kibATotalUnit += jumlahBidang;
+                        kibATotalLuas += luasM2;
+                        kibATotalNilaiBarang += totalNilaiBarang;
+
+                        const col1to7 = makeCol1to7(isFirstRowInGroup);
+                        if (isFirstRowInGroup) { globalKibANo++; isFirstRowInGroup = false; }
+
+                        const rawKondisi = item.kondisi || 'Baik';
+                        const kondisiLabel = (rawKondisi === 'B' || rawKondisi === 'Baik') ? 'Baik' 
+                                           : (rawKondisi === 'KB' || rawKondisi === 'Kurang Baik' ? 'Kurang Baik' 
+                                           : (rawKondisi === 'RB' || rawKondisi === 'Rusak Berat' ? 'Rusak Berat' : rawKondisi));
+
+                        const alamatTanah = spec.tanah_alamat || spec.letak_alamat || item.alamat_barang || details.ruangPenempatan;
+
+                        kibARows.push([
+                            ...col1to7,
+                            info.namaBarang,
+                            info.kodeBarang,
+                            spec.hak_tanah || spec.tanah_hak || 'Hak Pakai',
+                            formatAstapDate(spec.sertifikat_tgl || spec.tanah_sertifikat_tgl || item.tgl_raw),
+                            spec.sertifikat_no || spec.tanah_sertifikat_no || '-',
+                            details.dokumenNomor,
+                            details.dokumenTanggal,
+                            kondisiLabel,
+                            spec.penggunaan || spec.tanah_penggunaan || 'Fasilitas RSUD',
+                            jumlahBidang,
+                            luasM2,
+                            totalNilaiBarang,
+                            alamatTanah,
+                            details.opdMitra,
+                            details.pjMitra,
+                            details.alamatMitra,
+                            details.pejabatRsudNama,
+                            details.pejabatRsudNip,
+                            (details.isKeluar ? 'Transfer Keluar ke ' + details.opdMitra : 'Mutasi Masuk dari ' + details.opdMitra)
+                        ]);
+                    }
                 });
             });
 
@@ -1094,7 +1184,7 @@
 
                             kibBRows.push([
                                 ...col1to7,
-                                mItem.mesin_nama_barang || info.namaBarang,
+                                (!isGenericPlaceholderName(mItem.mesin_nama_barang) ? mItem.mesin_nama_barang : info.namaBarang),
                                 mItem.kode_108 || info.kodeBarang,
                                 mItem.mesin_merk || details.spec.merk || item.merk || '-',
                                 mItem.mesin_type || details.spec.type || item.type || '-',
@@ -1360,54 +1450,110 @@
                     const qty = parseInt(item.jumlah_volume) || 1;
                     const totalItemNilai = parseFloat(item.nilai_perolehan || item.total_realisasi_num || 0);
                     const luasLantai = parseFloat(spec.luas_m2 || spec.gedung_luas_m2 || spec.luas_lantai || 0);
+                    const subGedung = (spec.gedung_items && Array.isArray(spec.gedung_items) && spec.gedung_items.length > 0) ? spec.gedung_items : null;
 
-                    kibCTotalUnit += qty;
-                    kibCTotalNilaiBarang += totalItemNilai;
+                    const makeCol1to7 = (isFirst) => {
+                        if (!isFirst) return ['', '', '', '', '', 0, 0];
+                        return [
+                            globalKibCNo,
+                            info.jenisKode,
+                            info.jenisNama,
+                            info.subRincianKode,
+                            info.subRincianNama,
+                            0,
+                            groupRealisasiTotal
+                        ];
+                    };
 
-                    const col1to7 = isFirstRowInGroup ? [
-                        globalKibCNo,
-                        info.jenisKode,
-                        info.jenisNama,
-                        info.subRincianKode,
-                        info.subRincianNama,
-                        0,
-                        groupRealisasiTotal
-                    ] : ['', '', '', '', '', 0, 0];
+                    if (subGedung) {
+                        subGedung.forEach((gItem) => {
+                            const gQty = Math.max(1, parseInt(gItem.gedung_jumlah || gItem.jumlah || 1));
+                            const gLuasLantai = parseFloat(gItem.gedung_luas_m2 || spec.luas_m2 || spec.gedung_luas_m2 || 0);
+                            const gTotalNilai = parseFloat(gItem.gedung_nilai || gItem.nilai_perolehan || 0) || (subGedung.length > 0 ? totalItemNilai / subGedung.length : 0);
 
-                    if (isFirstRowInGroup) { globalKibCNo++; isFirstRowInGroup = false; }
+                            kibCTotalUnit += gQty;
+                            kibCTotalNilaiBarang += gTotalNilai;
 
-                    const rawKondisi = item.kondisi || 'Baik';
-                    const kondisiLabel = (rawKondisi === 'B' || rawKondisi === 'Baik') ? 'Baik' 
-                                       : (rawKondisi === 'KB' || rawKondisi === 'Kurang Baik' ? 'Kurang Baik' 
-                                       : (rawKondisi === 'RB' || rawKondisi === 'Rusak Berat' ? 'Rusak Berat' : rawKondisi));
+                            const col1to7 = makeCol1to7(isFirstRowInGroup);
+                            if (isFirstRowInGroup) { globalKibCNo++; isFirstRowInGroup = false; }
 
-                    kibCRows.push([
-                        ...col1to7,
-                        info.namaBarang,
-                        info.kodeBarang,
-                        luasLantai,
-                        kondisiLabel,
-                        spec.bertingkat || spec.gedung_bertingkat || 'Bertingkat',
-                        spec.beton || spec.gedung_beton || 'Beton',
-                        spec.status_tanah || spec.gedung_status_tanah || 'Tanah Hak Pakai RSUD',
-                        spec.kode_tanah || spec.gedung_kode_aset_tanah || '-',
-                        spec.is_baru || spec.gedung_is_baru || 'Pengadaan Baru',
-                        spec.nibar_induk || spec.kapitalisasi_nibar || '-',
-                        spec.tahun_induk || spec.kapitalisasi_tahun_induk || '-',
-                        parseFloat(spec.nilai_induk || spec.kapitalisasi_nilai_induk || 0),
-                        details.dokumenNomor,
-                        details.dokumenTanggal,
-                        qty,
-                        item.satuan || 'Bangunan',
-                        totalItemNilai,
-                        details.ruangPenempatan,
-                        details.opdMitra,
-                        details.pjMitra,
-                        details.alamatMitra,
-                        details.pejabatRsudNama,
-                        details.pejabatRsudNip,
-                        (details.isKeluar ? 'Transfer Keluar ke ' + details.opdMitra : 'Mutasi Masuk dari ' + details.opdMitra)
-                    ]);
+                            const rawKondisi = gItem.gedung_kondisi || item.kondisi || 'Baik';
+                            const kondisiLabel = (rawKondisi === 'B' || rawKondisi === 'Baik') ? 'Baik' 
+                                               : (rawKondisi === 'KB' || rawKondisi === 'Kurang Baik' ? 'Kurang Baik' 
+                                               : (rawKondisi === 'RB' || rawKondisi === 'Rusak Berat' ? 'Rusak Berat' : rawKondisi));
+
+                            const alamatGedung = gItem.gedung_alamat || spec.gedung_alamat || spec.letak_lokasi || item.alamat_barang || details.ruangPenempatan;
+
+                            kibCRows.push([
+                                ...col1to7,
+                                (!isGenericPlaceholderName(gItem.gedung_nama_barang) ? gItem.gedung_nama_barang : info.namaBarang),
+                                gItem.kode_108 || info.kodeBarang,
+                                gLuasLantai,
+                                kondisiLabel,
+                                gItem.gedung_bertingkat || spec.bertingkat || spec.gedung_bertingkat || 'Bertingkat',
+                                gItem.gedung_beton || spec.beton || spec.gedung_beton || 'Beton',
+                                gItem.gedung_status_tanah || spec.status_tanah || spec.gedung_status_tanah || 'Tanah Hak Pakai RSUD',
+                                gItem.gedung_kode_aset_tanah || spec.kode_tanah || spec.gedung_kode_aset_tanah || '-',
+                                spec.is_baru || spec.gedung_is_baru || 'Pengadaan Baru',
+                                spec.nibar_induk || spec.kapitalisasi_nibar || '-',
+                                spec.tahun_induk || spec.kapitalisasi_tahun_induk || '-',
+                                parseFloat(spec.nilai_induk || spec.kapitalisasi_nilai_induk || 0),
+                                details.dokumenNomor,
+                                details.dokumenTanggal,
+                                gQty,
+                                gItem.gedung_satuan || item.satuan || 'Bangunan',
+                                gTotalNilai,
+                                alamatGedung,
+                                details.opdMitra,
+                                details.pjMitra,
+                                details.alamatMitra,
+                                details.pejabatRsudNama,
+                                details.pejabatRsudNip,
+                                (details.isKeluar ? 'Transfer Keluar ke ' + details.opdMitra : 'Mutasi Masuk dari ' + details.opdMitra)
+                            ]);
+                        });
+                    } else {
+                        kibCTotalUnit += qty;
+                        kibCTotalNilaiBarang += totalItemNilai;
+
+                        const col1to7 = makeCol1to7(isFirstRowInGroup);
+                        if (isFirstRowInGroup) { globalKibCNo++; isFirstRowInGroup = false; }
+
+                        const rawKondisi = item.kondisi || 'Baik';
+                        const kondisiLabel = (rawKondisi === 'B' || rawKondisi === 'Baik') ? 'Baik' 
+                                           : (rawKondisi === 'KB' || rawKondisi === 'Kurang Baik' ? 'Kurang Baik' 
+                                           : (rawKondisi === 'RB' || rawKondisi === 'Rusak Berat' ? 'Rusak Berat' : rawKondisi));
+
+                        const alamatGedung = spec.gedung_alamat || spec.letak_lokasi || item.alamat_barang || details.ruangPenempatan;
+
+                        kibCRows.push([
+                            ...col1to7,
+                            info.namaBarang,
+                            info.kodeBarang,
+                            luasLantai,
+                            kondisiLabel,
+                            spec.bertingkat || spec.gedung_bertingkat || 'Bertingkat',
+                            spec.beton || spec.gedung_beton || 'Beton',
+                            spec.status_tanah || spec.gedung_status_tanah || 'Tanah Hak Pakai RSUD',
+                            spec.kode_tanah || spec.gedung_kode_aset_tanah || '-',
+                            spec.is_baru || spec.gedung_is_baru || 'Pengadaan Baru',
+                            spec.nibar_induk || spec.kapitalisasi_nibar || '-',
+                            spec.tahun_induk || spec.kapitalisasi_tahun_induk || '-',
+                            parseFloat(spec.nilai_induk || spec.kapitalisasi_nilai_induk || 0),
+                            details.dokumenNomor,
+                            details.dokumenTanggal,
+                            qty,
+                            item.satuan || 'Bangunan',
+                            totalItemNilai,
+                            alamatGedung,
+                            details.opdMitra,
+                            details.pjMitra,
+                            details.alamatMitra,
+                            details.pejabatRsudNama,
+                            details.pejabatRsudNip,
+                            (details.isKeluar ? 'Transfer Keluar ke ' + details.opdMitra : 'Mutasi Masuk dari ' + details.opdMitra)
+                        ]);
+                    }
                 });
             });
 
@@ -1527,7 +1673,7 @@
                     '', '',
                     '', '',
                     '',
-                    '(B,KB,RB)', 'Bertingkat / Tidak', 'Beton / Tidak',
+                    '(B,KB,RB)', 'Konstruksi', 'Bahan / Tipe',
                     'Status Tanah', 'Kode Aset Tanah', 'Baru',
                     'Kapitalisasi', '', '',
                     'Nomor', 'Tanggal',
@@ -1590,54 +1736,110 @@
                     const qty = parseInt(item.jumlah_volume) || 1;
                     const totalItemNilai = parseFloat(item.nilai_perolehan || item.total_realisasi_num || 0);
                     const luasPanjang = parseFloat(spec.luas_m2 || spec.panjang_m || spec.panjang_km || 0);
+                    const subJaringan = (spec.jaringan_items && Array.isArray(spec.jaringan_items) && spec.jaringan_items.length > 0) ? spec.jaringan_items : null;
 
-                    kibDTotalUnit += qty;
-                    kibDTotalNilaiBarang += totalItemNilai;
+                    const makeCol1to7 = (isFirst) => {
+                        if (!isFirst) return ['', '', '', '', '', 0, 0];
+                        return [
+                            globalKibDNo,
+                            info.jenisKode,
+                            info.jenisNama,
+                            info.subRincianKode,
+                            info.subRincianNama,
+                            0,
+                            groupRealisasiTotal
+                        ];
+                    };
 
-                    const col1to7 = isFirstRowInGroup ? [
-                        globalKibDNo,
-                        info.jenisKode,
-                        info.jenisNama,
-                        info.subRincianKode,
-                        info.subRincianNama,
-                        0,
-                        groupRealisasiTotal
-                    ] : ['', '', '', '', '', 0, 0];
+                    if (subJaringan) {
+                        subJaringan.forEach((jItem) => {
+                            const jQty = Math.max(1, parseInt(jItem.jaringan_jumlah || jItem.jumlah || 1));
+                            const jLuasPanjang = parseFloat(jItem.jaringan_luas_m2 || jItem.jaringan_panjang_m || spec.luas_m2 || spec.panjang_m || spec.panjang_km || 0);
+                            const jTotalNilai = parseFloat(jItem.jaringan_nilai || jItem.nilai_perolehan || 0) || (subJaringan.length > 0 ? totalItemNilai / subJaringan.length : 0);
 
-                    if (isFirstRowInGroup) { globalKibDNo++; isFirstRowInGroup = false; }
+                            kibDTotalUnit += jQty;
+                            kibDTotalNilaiBarang += jTotalNilai;
 
-                    const rawKondisi = item.kondisi || 'Baik';
-                    const kondisiLabel = (rawKondisi === 'B' || rawKondisi === 'Baik') ? 'Baik' 
-                                       : (rawKondisi === 'KB' || rawKondisi === 'Kurang Baik' ? 'Kurang Baik' 
-                                       : (rawKondisi === 'RB' || rawKondisi === 'Rusak Berat' ? 'Rusak Berat' : rawKondisi));
+                            const col1to7 = makeCol1to7(isFirstRowInGroup);
+                            if (isFirstRowInGroup) { globalKibDNo++; isFirstRowInGroup = false; }
 
-                    kibDRows.push([
-                        ...col1to7,
-                        info.namaBarang,
-                        info.kodeBarang,
-                        luasPanjang,
-                        kondisiLabel,
-                        spec.konstruksi || spec.jenis_konstruksi || 'Permanen',
-                        spec.beton_aspal || spec.tipe_jaringan || 'Instalasi Jaringan',
-                        spec.status_tanah || 'Tanah Hak Pakai RSUD',
-                        spec.kode_tanah || '-',
-                        spec.is_baru || 'Baru',
-                        spec.nibar_induk || '-',
-                        spec.tahun_induk || '-',
-                        parseFloat(spec.nilai_induk || 0),
-                        details.dokumenNomor,
-                        details.dokumenTanggal,
-                        qty,
-                        item.satuan || 'Jaringan',
-                        totalItemNilai,
-                        details.ruangPenempatan,
-                        details.opdMitra,
-                        details.pjMitra,
-                        details.alamatMitra,
-                        details.pejabatRsudNama,
-                        details.pejabatRsudNip,
-                        (details.isKeluar ? 'Transfer Keluar ke ' + details.opdMitra : 'Mutasi Masuk dari ' + details.opdMitra)
-                    ]);
+                            const rawKondisi = jItem.jaringan_kondisi || item.kondisi || 'Baik';
+                            const kondisiLabel = (rawKondisi === 'B' || rawKondisi === 'Baik') ? 'Baik' 
+                                               : (rawKondisi === 'KB' || rawKondisi === 'Kurang Baik' ? 'Kurang Baik' 
+                                               : (rawKondisi === 'RB' || rawKondisi === 'Rusak Berat' ? 'Rusak Berat' : rawKondisi));
+
+                            const alamatJaringan = jItem.jaringan_alamat || spec.jaringan_alamat || spec.letak_lokasi || item.alamat_barang || details.ruangPenempatan;
+
+                            kibDRows.push([
+                                ...col1to7,
+                                (!isGenericPlaceholderName(jItem.jaringan_nama_barang) ? jItem.jaringan_nama_barang : info.namaBarang),
+                                jItem.kode_108 || info.kodeBarang,
+                                jLuasPanjang,
+                                kondisiLabel,
+                                jItem.jaringan_konstruksi || spec.konstruksi || spec.jenis_konstruksi || 'Permanen',
+                                jItem.jaringan_bahan || spec.beton_aspal || spec.tipe_jaringan || 'Instalasi Jaringan',
+                                spec.status_tanah || 'Tanah Hak Pakai RSUD',
+                                spec.kode_tanah || '-',
+                                spec.is_baru || 'Baru',
+                                spec.nibar_induk || '-',
+                                spec.tahun_induk || '-',
+                                parseFloat(spec.nilai_induk || 0),
+                                details.dokumenNomor,
+                                details.dokumenTanggal,
+                                jQty,
+                                jItem.jaringan_satuan || item.satuan || 'Jaringan',
+                                jTotalNilai,
+                                alamatJaringan,
+                                details.opdMitra,
+                                details.pjMitra,
+                                details.alamatMitra,
+                                details.pejabatRsudNama,
+                                details.pejabatRsudNip,
+                                (details.isKeluar ? 'Transfer Keluar ke ' + details.opdMitra : 'Mutasi Masuk dari ' + details.opdMitra)
+                            ]);
+                        });
+                    } else {
+                        kibDTotalUnit += qty;
+                        kibDTotalNilaiBarang += totalItemNilai;
+
+                        const col1to7 = makeCol1to7(isFirstRowInGroup);
+                        if (isFirstRowInGroup) { globalKibDNo++; isFirstRowInGroup = false; }
+
+                        const rawKondisi = item.kondisi || 'Baik';
+                        const kondisiLabel = (rawKondisi === 'B' || rawKondisi === 'Baik') ? 'Baik' 
+                                           : (rawKondisi === 'KB' || rawKondisi === 'Kurang Baik' ? 'Kurang Baik' 
+                                           : (rawKondisi === 'RB' || rawKondisi === 'Rusak Berat' ? 'Rusak Berat' : rawKondisi));
+
+                        const alamatJaringan = spec.jaringan_alamat || spec.letak_lokasi || item.alamat_barang || details.ruangPenempatan;
+
+                        kibDRows.push([
+                            ...col1to7,
+                            info.namaBarang,
+                            info.kodeBarang,
+                            luasPanjang,
+                            kondisiLabel,
+                            spec.konstruksi || spec.jenis_konstruksi || 'Permanen',
+                            spec.beton_aspal || spec.tipe_jaringan || 'Instalasi Jaringan',
+                            spec.status_tanah || 'Tanah Hak Pakai RSUD',
+                            spec.kode_tanah || '-',
+                            spec.is_baru || 'Baru',
+                            spec.nibar_induk || '-',
+                            spec.tahun_induk || '-',
+                            parseFloat(spec.nilai_induk || 0),
+                            details.dokumenNomor,
+                            details.dokumenTanggal,
+                            qty,
+                            item.satuan || 'Jaringan',
+                            totalItemNilai,
+                            alamatJaringan,
+                            details.opdMitra,
+                            details.pjMitra,
+                            details.alamatMitra,
+                            details.pejabatRsudNama,
+                            details.pejabatRsudNip,
+                            (details.isKeluar ? 'Transfer Keluar ke ' + details.opdMitra : 'Mutasi Masuk dari ' + details.opdMitra)
+                        ]);
+                    }
                 });
             });
 
@@ -1726,7 +1928,7 @@
                     'ASET MUTASI EKSTERNAL (PMDN 108)', '', '', '', '', '',
                     'RINCIAN ASET MUTASI EKSTERNAL SESUAI BAST / SK BUPATI / ' + yearLabel,
                     '', '', '', '', '', '', '', '', '', '', '',
-                    '', '', '', '', '', '', '',
+                    '', '', '', '', '', '',
                     'RUANG /\nPEMEGANG',
                     'SKPD / OPD MITRA MUTASI', '', '',
                     'Pengurus Barang / Pejabat RSUD', '',
@@ -1821,50 +2023,100 @@
                     const qty = parseInt(item.jumlah_volume) || 1;
                     const totalItemNilai = parseFloat(item.nilai_perolehan || item.total_realisasi_num || 0);
                     const valSatuan = qty > 0 ? (totalItemNilai / qty) : totalItemNilai;
+                    const subLainnya = (spec.lainnya_items && Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0) ? spec.lainnya_items : null;
 
-                    kibETotalUnit += qty;
-                    kibETotalNilaiBarang += totalItemNilai;
+                    const makeCol1to7 = (isFirst) => {
+                        if (!isFirst) return ['', '', '', '', '', 0, 0];
+                        return [
+                            globalKibENo,
+                            info.jenisKode,
+                            info.jenisNama,
+                            info.subRincianKode,
+                            info.subRincianNama,
+                            0,
+                            groupRealisasiTotal
+                        ];
+                    };
 
-                    const col1to7 = isFirstRowInGroup ? [
-                        globalKibENo,
-                        info.jenisKode,
-                        info.jenisNama,
-                        info.subRincianKode,
-                        info.subRincianNama,
-                        0,
-                        groupRealisasiTotal
-                    ] : ['', '', '', '', '', 0, 0];
+                    if (subLainnya) {
+                        subLainnya.forEach((lItem) => {
+                            const lQty = Math.max(1, parseInt(lItem.lainnya_jumlah || lItem.jumlah || 1));
+                            const lTotalNilai = parseFloat(lItem.lainnya_nilai || lItem.nilai_perolehan || 0) || (subLainnya.length > 0 ? totalItemNilai / subLainnya.length : 0);
+                            const lValSatuan = lQty > 0 ? (lTotalNilai / lQty) : lTotalNilai;
 
-                    if (isFirstRowInGroup) { globalKibENo++; isFirstRowInGroup = false; }
+                            kibETotalUnit += lQty;
+                            kibETotalNilaiBarang += lTotalNilai;
 
-                    kibERows.push([
-                        ...col1to7,
-                        info.namaBarang,
-                        info.kodeBarang,
-                        spec.buku_judul || spec.judul || '-',
-                        spec.buku_pencipta || spec.pengarang || '-',
-                        spec.buku_spesifikasi || spec.spesifikasi || '-',
-                        spec.kesenian_asal || spec.asal_daerah || '-',
-                        spec.kesenian_pencipta || '-',
-                        spec.kesenian_bahan || spec.bahan || '-',
-                        spec.bahan || '-',
-                        spec.ukuran || '-',
-                        spec.judul_tambahan || '-',
-                        spec.spesifikasi_tumbuhan || '-',
-                        details.dokumenNomor,
-                        details.dokumenTanggal,
-                        qty,
-                        item.satuan || 'Unit',
-                        valSatuan,
-                        totalItemNilai,
-                        details.ruangPenempatan,
-                        details.opdMitra,
-                        details.pjMitra,
-                        details.alamatMitra,
-                        details.pejabatRsudNama,
-                        details.pejabatRsudNip,
-                        (details.isKeluar ? 'Transfer Keluar ke ' + details.opdMitra : 'Mutasi Masuk dari ' + details.opdMitra)
-                    ]);
+                            const col1to7 = makeCol1to7(isFirstRowInGroup);
+                            if (isFirstRowInGroup) { globalKibENo++; isFirstRowInGroup = false; }
+
+                            const ruangUnit = lItem.ruang_pemegang || details.ruangPenempatan;
+
+                            kibERows.push([
+                                ...col1to7,
+                                (!isGenericPlaceholderName(lItem.lainnya_nama_barang) ? lItem.lainnya_nama_barang : info.namaBarang),
+                                lItem.kode_108 || info.kodeBarang,
+                                lItem.lainnya_judul || spec.buku_judul || spec.judul || '-',
+                                lItem.lainnya_pencipta || spec.buku_pencipta || spec.pengarang || '-',
+                                lItem.lainnya_spesifikasi || spec.buku_spesifikasi || spec.spesifikasi || '-',
+                                lItem.lainnya_asal || spec.kesenian_asal || spec.asal_daerah || '-',
+                                lItem.lainnya_pencipta_seni || spec.kesenian_pencipta || '-',
+                                lItem.lainnya_spesifikasi_seni || spec.kesenian_spesifikasi || spec.spesifikasi || '-',
+                                lItem.lainnya_bahan || spec.kesenian_bahan || spec.bahan || '-',
+                                lItem.lainnya_ukuran || spec.ukuran || '-',
+                                lItem.lainnya_judul_tumbuhan || spec.judul_tambahan || spec.tumbuhan_nama || '-',
+                                lItem.lainnya_spesifikasi_tumbuhan || spec.spesifikasi_tumbuhan || '-',
+                                details.dokumenNomor,
+                                details.dokumenTanggal,
+                                lQty,
+                                lItem.lainnya_satuan || item.satuan || 'Unit',
+                                lValSatuan,
+                                lTotalNilai,
+                                ruangUnit,
+                                details.opdMitra,
+                                details.pjMitra,
+                                details.alamatMitra,
+                                details.pejabatRsudNama,
+                                details.pejabatRsudNip,
+                                (details.isKeluar ? 'Transfer Keluar ke ' + details.opdMitra : 'Mutasi Masuk dari ' + details.opdMitra)
+                            ]);
+                        });
+                    } else {
+                        kibETotalUnit += qty;
+                        kibETotalNilaiBarang += totalItemNilai;
+
+                        const col1to7 = makeCol1to7(isFirstRowInGroup);
+                        if (isFirstRowInGroup) { globalKibENo++; isFirstRowInGroup = false; }
+
+                        kibERows.push([
+                            ...col1to7,
+                            info.namaBarang,
+                            info.kodeBarang,
+                            spec.buku_judul || spec.judul || '-',
+                            spec.buku_pencipta || spec.pengarang || '-',
+                            spec.buku_spesifikasi || spec.spesifikasi || '-',
+                            spec.kesenian_asal || spec.asal_daerah || '-',
+                            spec.kesenian_pencipta || '-',
+                            spec.kesenian_spesifikasi || spec.spesifikasi || '-',
+                            spec.kesenian_bahan || spec.bahan || '-',
+                            spec.ukuran || '-',
+                            spec.judul_tambahan || spec.tumbuhan_nama || '-',
+                            spec.spesifikasi_tumbuhan || '-',
+                            details.dokumenNomor,
+                            details.dokumenTanggal,
+                            qty,
+                            item.satuan || 'Unit',
+                            valSatuan,
+                            totalItemNilai,
+                            details.ruangPenempatan,
+                            details.opdMitra,
+                            details.pjMitra,
+                            details.alamatMitra,
+                            details.pejabatRsudNama,
+                            details.pejabatRsudNip,
+                            (details.isKeluar ? 'Transfer Keluar ke ' + details.opdMitra : 'Mutasi Masuk dari ' + details.opdMitra)
+                        ]);
+                    }
                 });
             });
 
@@ -1959,7 +2211,7 @@
                     'ASET MUTASI EKSTERNAL (PMDN 108)', '', '', '', '', '',
                     'RINCIAN ASET EKSTRAKOMTABEL MUTASI SESUAI BAST / ' + yearLabel,
                     '', '', '', '', '', '', '', '',
-                    '', '', '', '',
+                    '', '', '', '', '', '',
                     'RUANG /\nPEMEGANG',
                     'SKPD / OPD MITRA MUTASI', '', '',
                     'Pengurus Barang / Pejabat RSUD', '',
@@ -2052,52 +2304,104 @@
                     const totalItemNilai = parseFloat(item.nilai_perolehan || item.total_realisasi_num || 0);
                     const valSatuan = qty > 0 ? (totalItemNilai / qty) : totalItemNilai;
                     const thnPerolehan = item.tahun_perolehan || spec.tahun_pembuatan || new Date().getFullYear();
+                    const subMesin = (spec.mesin_items && Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0) ? spec.mesin_items : null;
 
-                    extTotalUnit += qty;
-                    extTotalNilaiBarang += totalItemNilai;
+                    const makeCol1to7 = (isFirst) => {
+                        if (!isFirst) return ['', '', '', '', '', 0, 0];
+                        return [
+                            globalExtracomNo,
+                            info.jenisKode,
+                            info.jenisNama,
+                            info.subRincianKode,
+                            info.subRincianNama,
+                            0,
+                            groupRealisasiTotal
+                        ];
+                    };
 
-                    const col1to7 = isFirstRowInGroup ? [
-                        globalExtracomNo,
-                        info.jenisKode,
-                        info.jenisNama,
-                        info.subRincianKode,
-                        info.subRincianNama,
-                        0,
-                        groupRealisasiTotal
-                    ] : ['', '', '', '', '', 0, 0];
+                    if (subMesin) {
+                        subMesin.forEach((mItem) => {
+                            const subQty = Math.max(1, parseInt(mItem.mesin_jumlah_barang || mItem.mesin_jumlah || 1));
+                            const subValSatuan = parseFloat(mItem.mesin_nilai_satuan || 0) || (subQty > 0 ? totalItemNilai / subMesin.length / subQty : 0);
+                            const subTotal = (subQty * subValSatuan);
 
-                    if (isFirstRowInGroup) { globalExtracomNo++; isFirstRowInGroup = false; }
+                            extTotalUnit += subQty;
+                            extTotalNilaiBarang += subTotal;
 
-                    const rawKondisi = item.kondisi || 'Baik';
-                    const kondisiLabel = (rawKondisi === 'B' || rawKondisi === 'Baik') ? 'Baik' 
-                                       : (rawKondisi === 'KB' || rawKondisi === 'Kurang Baik' ? 'Kurang Baik' 
-                                       : (rawKondisi === 'RB' || rawKondisi === 'Rusak Berat' ? 'Rusak Berat' : rawKondisi));
+                            const col1to7 = makeCol1to7(isFirstRowInGroup);
+                            if (isFirstRowInGroup) { globalExtracomNo++; isFirstRowInGroup = false; }
 
-                    extracomRows.push([
-                        ...col1to7,
-                        info.namaBarang,
-                        info.kodeBarang,
-                        spec.merk || item.merk || '-',
-                        spec.type || item.type || '-',
-                        spec.ukuran || item.ukuran || '-',
-                        spec.no_pabrik || item.no_pabrik || '-',
-                        spec.bahan || item.bahan || '-',
-                        thnPerolehan,
-                        details.dokumenNomor,
-                        details.dokumenTanggal,
-                        kondisiLabel,
-                        qty,
-                        item.satuan || 'Unit',
-                        valSatuan,
-                        totalItemNilai,
-                        details.ruangPenempatan,
-                        details.opdMitra,
-                        details.pjMitra,
-                        details.alamatMitra,
-                        details.pejabatRsudNama,
-                        details.pejabatRsudNip,
-                        (details.isKeluar ? 'Transfer Keluar ke ' + details.opdMitra : 'Mutasi Masuk dari ' + details.opdMitra)
-                    ]);
+                            const rawKondisi = mItem.mesin_kondisi || item.kondisi || 'Baik';
+                            const kondisiLabel = (rawKondisi === 'B' || rawKondisi === 'Baik') ? 'Baik' 
+                                               : (rawKondisi === 'KB' || rawKondisi === 'Kurang Baik' ? 'Kurang Baik' 
+                                               : (rawKondisi === 'RB' || rawKondisi === 'Rusak Berat' ? 'Rusak Berat' : rawKondisi));
+
+                            const ruangUnit = mItem.ruang_pemegang || details.ruangPenempatan;
+
+                            extracomRows.push([
+                                ...col1to7,
+                                (!isGenericPlaceholderName(mItem.mesin_nama_barang) ? mItem.mesin_nama_barang : info.namaBarang),
+                                mItem.kode_108 || info.kodeBarang,
+                                mItem.mesin_merk || spec.merk || item.merk || '-',
+                                mItem.mesin_type || spec.type || item.type || '-',
+                                mItem.mesin_ukuran || mItem.mesin_ukuran_cc || spec.ukuran || item.ukuran || '-',
+                                mItem.mesin_no_pabrik || spec.no_pabrik || item.no_pabrik || '-',
+                                mItem.mesin_bahan || spec.bahan || item.bahan || '-',
+                                thnPerolehan,
+                                details.dokumenNomor,
+                                details.dokumenTanggal,
+                                kondisiLabel,
+                                subQty,
+                                mItem.mesin_satuan || item.satuan || 'Unit',
+                                subValSatuan,
+                                subTotal,
+                                ruangUnit,
+                                details.opdMitra,
+                                details.pjMitra,
+                                details.alamatMitra,
+                                details.pejabatRsudNama,
+                                details.pejabatRsudNip,
+                                (details.isKeluar ? 'Transfer Keluar ke ' + details.opdMitra : 'Mutasi Masuk dari ' + details.opdMitra)
+                            ]);
+                        });
+                    } else {
+                        extTotalUnit += qty;
+                        extTotalNilaiBarang += totalItemNilai;
+
+                        const col1to7 = makeCol1to7(isFirstRowInGroup);
+                        if (isFirstRowInGroup) { globalExtracomNo++; isFirstRowInGroup = false; }
+
+                        const rawKondisi = item.kondisi || 'Baik';
+                        const kondisiLabel = (rawKondisi === 'B' || rawKondisi === 'Baik') ? 'Baik' 
+                                           : (rawKondisi === 'KB' || rawKondisi === 'Kurang Baik' ? 'Kurang Baik' 
+                                           : (rawKondisi === 'RB' || rawKondisi === 'Rusak Berat' ? 'Rusak Berat' : rawKondisi));
+
+                        extracomRows.push([
+                            ...col1to7,
+                            info.namaBarang,
+                            info.kodeBarang,
+                            spec.merk || item.merk || '-',
+                            spec.type || item.type || '-',
+                            spec.ukuran || item.ukuran || '-',
+                            spec.no_pabrik || item.no_pabrik || '-',
+                            spec.bahan || item.bahan || '-',
+                            thnPerolehan,
+                            details.dokumenNomor,
+                            details.dokumenTanggal,
+                            kondisiLabel,
+                            qty,
+                            item.satuan || 'Unit',
+                            valSatuan,
+                            totalItemNilai,
+                            details.ruangPenempatan,
+                            details.opdMitra,
+                            details.pjMitra,
+                            details.alamatMitra,
+                            details.pejabatRsudNama,
+                            details.pejabatRsudNip,
+                            (details.isKeluar ? 'Transfer Keluar ke ' + details.opdMitra : 'Mutasi Masuk dari ' + details.opdMitra)
+                        ]);
+                    }
                 });
             });
 
