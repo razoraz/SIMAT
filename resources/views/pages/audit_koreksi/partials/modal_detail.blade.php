@@ -67,12 +67,16 @@
         <div class="p-6 space-y-5 max-h-[75vh] overflow-y-auto custom-scrollbar">
             {{-- 1. Identitas Aset BMD --}}
             <div class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-3.5">
-                <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5">
+                <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5 flex-wrap border-b border-slate-800/80 pb-2.5">
                     <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                     </svg>
                     <span>Identitas Aset Milik Daerah</span>
+                    <template x-if="detailData.astap_id">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-cyan-950/80 text-cyan-300 border border-cyan-800/60" x-text="'#ASTAP-' + detailData.astap_id"></span>
+                    </template>
                 </div>
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                     {{-- Nama Barang --}}
                     <div>
@@ -119,6 +123,22 @@
                         <template x-if="!detailData.kode_108 || detailData.kode_108 === '-'">
                             <span class="inline-block mt-1 text-[11px] text-slate-500 italic">Belum Ditentukan (Non-108)</span>
                         </template>
+                    </div>
+
+                    {{-- Sumber Dana & Tahun Perolehan --}}
+                    <div>
+                        <span class="text-slate-400 text-[11px] block uppercase tracking-wider font-semibold">Tahun &amp; Sumber Dana:</span>
+                        <div class="text-slate-200 font-medium mt-0.5 flex items-center gap-1.5 flex-wrap">
+                            <span class="text-amber-300 font-bold" x-text="detailData.astap_tahun ? 'T.A. ' + detailData.astap_tahun : '-'"></span>
+                            <span class="text-slate-500">·</span>
+                            <span class="text-slate-300 text-xs" x-text="detailData.astap_sumber_dana || 'Belanja Modal'"></span>
+                        </div>
+                    </div>
+
+                    {{-- Ruang / Unit Pemegang --}}
+                    <div>
+                        <span class="text-slate-400 text-[11px] block uppercase tracking-wider font-semibold">Unit / Ruangan Pemegang:</span>
+                        <div class="text-slate-200 font-medium mt-0.5 truncate" x-text="detailData.astap_unit || '-'"></div>
                     </div>
 
                     {{-- Rekening Belanja --}}
@@ -172,21 +192,7 @@
                 </div>
             </div>
 
-            {{-- 4. Pemetaan Kolom Neraca BPKAD --}}
-            <div class="p-4 rounded-2xl bg-gradient-to-r from-slate-950 to-slate-900 border border-slate-800 flex items-center justify-between gap-4">
-                <div>
-                    <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Dampak Pada Kolom Neraca BPKAD</div>
-                    <div class="text-xs font-bold text-white mt-1" x-text="detailData.dampak_rmb?.label || '-'"></div>
-                    <div class="text-[11px] text-slate-400 mt-0.5">Otomatis terhubung pada baris penyeimbang neraca Kertas Kerja Rekon Kasda.</div>
-                </div>
-                <div class="px-3 py-2 rounded-xl text-xs font-mono font-black shrink-0 border shadow-sm"
-                     :class="detailData.tipe_koreksi === 'tambah' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-rose-500/20 text-rose-300 border-rose-500/40'">
-                    <span x-text="detailData.dampak_rmb?.kolom_text || '-'"></span> 
-                    (<span x-text="detailData.dampak_rmb?.arah || '+'"></span>)
-                </div>
-            </div>
-
-            {{-- 5. Info Audit Entry --}}
+            {{-- 4. Info Audit Entry --}}
             <div class="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-800">
                 <div>Dicatat oleh: <span class="text-slate-300 font-semibold" x-text="detailData.user_nama || 'Administrator'"></span></div>
                 <div>Waktu Input: <span class="text-slate-400 font-mono" x-text="detailData.created_at || '-'"></span></div>
@@ -195,16 +201,18 @@
 
         {{-- Footer Modal --}}
         <div class="p-4 border-t border-slate-800 bg-slate-950/80 flex items-center justify-between">
-            <template x-if="detailData.nibar && detailData.nibar !== '-'">
-                <a :href="'{{ route('astap.index') }}?search=' + encodeURIComponent(detailData.nibar)"
-                   class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-slate-900 border border-slate-700 text-slate-200 hover:text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm">
-                    <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <template x-if="detailData.astap_id">
+                <a :href="detailData.astap_url || ('{{ route('astap.index') }}?open_detail=' + detailData.astap_id)"
+                   target="_blank"
+                   class="px-4 py-2 rounded-xl bg-cyan-950/40 hover:bg-cyan-900/60 active:bg-cyan-950 border border-cyan-500/30 hover:border-cyan-400/60 text-cyan-200 hover:text-white text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-sm group">
+                    <svg class="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                     </svg>
-                    <span>Lihat di Data ASTAP</span>
+                    <span>Buka Data ASTAP</span>
+                    <span class="text-[10px] text-cyan-400/80 font-mono" x-text="'(#ASTAP-' + detailData.astap_id + ')'"></span>
                 </a>
             </template>
-            <div x-show="!detailData.nibar || detailData.nibar === '-'"></div>
+            <div x-show="!detailData.astap_id"></div>
 
             <button type="button" @click="closeDetailModal()"
                     class="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-slate-900 border border-slate-700 text-white text-xs font-bold transition-all cursor-pointer">

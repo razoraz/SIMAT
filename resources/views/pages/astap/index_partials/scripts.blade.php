@@ -13311,7 +13311,7 @@
                             keterangan: this.getReklasNarasiPreview(),
                             progres_persen: (this.reklasJenis === 'kdp') ? 100 : undefined,
                             jumlah_anggaran: (this.reklasJenis === 'koreksi_nilai') ? (this.isReklasBelanjaModal() ? this.reklasNilaiAnggaran : null) : (parseFloat(it.jumlah_anggaran) || null),
-                            reklas_items: (this.reklasJenis === 'extracom' || this.reklasJenis === 'intracom' || this.reklasJenis === 'koreksi_nilai') ? this.reklasExtracomItems : null,
+                            reklas_items: (this.reklasJenis === 'extracom' || this.reklasJenis === 'intracom' || this.reklasJenis === 'koreksi_nilai') ? (Array.isArray(this.reklasExtracomItems) ? this.reklasExtracomItems : []) : null,
                             spesifikasi_baru: (this.reklasJenis === 'pindah_kib' || this.reklasJenis === 'kdp') 
                                 ? Object.assign({}, this.reklasSpekBaru, {
                                     progres_persen: (this.reklasJenis === 'kdp') ? 100 : (this.reklasSpekBaru.progres_persen || undefined),
@@ -15461,8 +15461,8 @@
                         } catch(e) {}
                     }
 
-                    // Direct Target Navigation dari Reklasifikasi Detail Modal (astap_id / highlight_id)
-                    const targetAstapId = params.get('astap_id') || params.get('highlight_id');
+                    // Direct Target Navigation dari Reklasifikasi Detail Modal (astap_id / highlight_id / open_detail)
+                    const targetAstapId = params.get('astap_id') || params.get('highlight_id') || params.get('open_detail');
                     if (targetAstapId) {
                         const target = (this.astaps || []).find(a => String(a.id) === String(targetAstapId));
                         if (target) {
@@ -15477,6 +15477,13 @@
                             this.tutupBukuFilter = 'all';
                             this.searchQuery = '';
                             this.highlightedAstapId = target.id;
+
+                            // Jika parameter open_detail dikirim, otomatis buka modal detail aset
+                            if (params.get('open_detail')) {
+                                setTimeout(() => {
+                                    this.openDetail(target);
+                                }, 350);
+                            }
 
                             // Smooth scroll langsung ke posisi baris tabel
                             setTimeout(() => {

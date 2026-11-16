@@ -96,10 +96,6 @@
                                     {{ $item->astap?->nama_barang ?: ($item->asal_nama ?: 'Aset') }}
                                 </div>
                                 <div class="flex items-center gap-1.5 mt-1 text-[10px] font-mono flex-wrap">
-                                    @if (!empty($item->astap?->nibar))
-                                        <span class="text-amber-400 font-bold" title="Nomor Induk Barang (NIBAR)">{{ $item->astap->nibar }}</span>
-                                        <span class="text-slate-600">·</span>
-                                    @endif
                                     <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-extrabold whitespace-nowrap leading-none
                                         {{ $cat === 'KIB A' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : '' }}
                                         {{ $cat === 'KIB B' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40' : '' }}
@@ -110,6 +106,9 @@
                                         {{ in_array($cat, ['ATB', 'EXTRACOM', 'ASET LAIN']) ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40' : '' }}">
                                         {{ $cat }}
                                     </span>
+                                    @if (!empty($item->astap?->nibar))
+                                        <span class="text-amber-400 font-bold select-all break-all tracking-tight" title="Nomor Induk Barang (NIBAR)">{{ $item->astap->nibar }}</span>
+                                    @endif
                                 </div>
                             </td>
 

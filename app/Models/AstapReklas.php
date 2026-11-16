@@ -200,10 +200,11 @@ class AstapReklas extends Model
     }
 
     /**
-     * Scope query untuk transaksi koreksi nilai (KOREKSI_LAIN)
+     * Scope query untuk transaksi koreksi nilai (KOREKSI_LAIN) aktif
      */
     public function scopeKoreksiLain($query)
     {
-        return $query->where('jenis_reklas', 'KOREKSI_LAIN');
+        return $query->where($this->getTable() . '.is_deleted', 0)
+            ->where('jenis_reklas', 'KOREKSI_LAIN');
     }
 }

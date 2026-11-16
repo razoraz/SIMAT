@@ -408,6 +408,52 @@ class ReklasifikasiController extends Controller
      */
     public function store(Request $request)
     {
+        // Normalisasi payload multipart/form-data jika array/object dikirim sebagai JSON string (misal saat unggah berkas)
+        $jsonArrayFields = [
+            'reklas_items',
+            'spesifikasi_baru',
+            'selected_indices',
+            'selected_items',
+            'unselected_items',
+            'selected_register_ids',
+            'register_kondisi_map',
+        ];
+
+        foreach ($jsonArrayFields as $field) {
+            if ($request->has($field)) {
+                $val = $request->input($field);
+                if (is_string($val)) {
+                    $trimmed = trim($val);
+                    if ($trimmed === '' || $trimmed === 'null' || $trimmed === 'undefined') {
+                        $request->merge([$field => null]);
+                    } else {
+                        $decoded = json_decode($trimmed, true);
+                        if (json_last_error() === JSON_ERROR_NONE) {
+                            $request->merge([$field => $decoded]);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Normalisasi field boolean yang dikirim sebagai string via FormData
+        // FormData mengubah boolean false → "false", true → "true" (tidak diakui Laravel sebagai boolean)
+        $booleanFields = ['is_partial_reklas'];
+        foreach ($booleanFields as $field) {
+            if ($request->has($field)) {
+                $val = $request->input($field);
+                if (is_string($val)) {
+                    if ($val === 'true' || $val === '1') {
+                        $request->merge([$field => true]);
+                    } elseif ($val === 'false' || $val === '0' || $val === '') {
+                        $request->merge([$field => false]);
+                    }
+                } elseif ($val === null) {
+                    $request->merge([$field => false]);
+                }
+            }
+        }
+
         $validated = $request->validate([
             'astap_id' => 'required|exists:astaps,id',
             'jenis_reklas' => 'required|string|max:50',
@@ -3158,6 +3204,17 @@ class ReklasifikasiController extends Controller
                         $astap->kemitraan->update([
                             'status_konsesi' => $statusPulih
                         ]);
+                    }
+
+                    // Pulihkan nilai realisasi aset jika transaksi yang dibatalkan adalah transaksi Koreksi Nilai (KOREKSI_LAIN)
+                    if ($reklas->jenis_reklas === 'KOREKSI_LAIN' || $jenisReklas === 'KOREKSI_LAIN') {
+                        if ($reklas->nilai_semula !== null && (float) $reklas->nilai_semula > 0) {
+                            $astap->total_realisasi = (float) $reklas->nilai_semula;
+                            if ($astap->jumlah_volume > 0) {
+                                $astap->harga_satuan = $astap->total_realisasi / $astap->jumlah_volume;
+                            }
+                            $astap->save();
+                        }
                     }
                 }
 

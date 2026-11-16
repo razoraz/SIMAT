@@ -192,9 +192,25 @@ class AuditKoreksiController extends Controller
         $nibarVal = $koreksi->astap?->nibar;
         $kode108Val = $koreksi->astap?->kode_108 ?: ($koreksi->astap?->jenisAstap?->sub_sub_rincian_objek ?: null);
 
+        $astap = $koreksi->astap;
+        $specAstap = is_array($astap?->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap?->spesifikasi_json ?? '[]', true) ?: []);
+        $astapUnit = $astap?->unit?->nama_unit ?: ($specAstap['ruang_unit'] ?? '-');
+        $astapSumberDana = $astap?->sumber_dana_label ?: ($astap?->sumber_dana ?: 'Belanja Modal');
+        $astapTahun = $astap?->tahun_perolehan ?: '-';
+
+        $searchQueryParam = $nibarVal ?: ($astap?->nama_barang ?: '');
+        $astapUrl = $koreksi->astap_id ? route('astap.index', [
+            'open_detail' => $koreksi->astap_id,
+            'search'      => $searchQueryParam,
+        ]) : null;
+
         $payload = [
             'id'                     => $koreksi->id,
             'astap_id'               => $koreksi->astap_id,
+            'astap_tahun'            => $astapTahun,
+            'astap_sumber_dana'      => $astapSumberDana,
+            'astap_unit'             => $astapUnit,
+            'astap_url'              => $astapUrl,
             'nibar'                  => $nibarVal ?: '-',
             'nama_barang'            => $koreksi->astap?->nama_barang ?: 'Aset Tidak Ditemukan',
             'kelompok_kib'           => $koreksi->astap?->category ?: ($koreksi->asal_kib ?: 'KIB B'),

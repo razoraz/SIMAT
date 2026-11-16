@@ -3507,7 +3507,7 @@
                         tanggal_bast: this.reklasJenis === 'hibah' ? this.reklasTanggalBastHibah : (this.reklasJenis === 'mutasi_eksternal' ? this.reklasTanggalBastMutasi : null),
                         tanggal_dokumen_koreksi: this.reklasJenis === 'koreksi_nilai' ? this.reklasDokumenTglKoreksi : null,
                         selected_register_ids: (this.reklasJenis === 'mutasi_eksternal' && this.selectedAstapReklas?.registers?.length > 0) ? this.reklasSelectedNibarIds : null,
-                        reklas_items: (this.reklasJenis === 'extracom' || this.reklasJenis === 'intracom' || this.reklasJenis === 'koreksi_nilai') ? this.reklasExtracomItems : null,
+                        reklas_items: (this.reklasJenis === 'extracom' || this.reklasJenis === 'intracom' || this.reklasJenis === 'koreksi_nilai') ? (Array.isArray(this.reklasExtracomItems) ? this.reklasExtracomItems : []) : null,
                         keterangan: this.getReklasNarasiPreview(),
                         spesifikasi_baru: (this.reklasJenis === 'pindah_kib' || this.reklasJenis === 'kdp') 
                             ? Object.assign({}, this.reklasSpekBaru, {
