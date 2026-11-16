@@ -12,20 +12,33 @@
          @click.outside="closeDetailModal()">
         
         {{-- Header Modal --}}
-        <div class="p-6 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+        <div class="p-6 border-b border-slate-800 flex items-center justify-between bg-slate-950/80">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-lg border"
+                <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-lg border shadow-inner shrink-0"
                      :class="{
                          'bg-indigo-950/80 border-indigo-500/40 text-indigo-300': detailData.sub_koreksi === 'biasa',
                          'bg-cyan-950/80 border-cyan-500/40 text-cyan-300': detailData.sub_koreksi === 'lkd',
                          'bg-emerald-950/80 border-emerald-500/40 text-emerald-300': detailData.sub_koreksi === 'manset'
                      }">
-                    <span x-show="detailData.sub_koreksi === 'biasa'">🏢</span>
-                    <span x-show="detailData.sub_koreksi === 'lkd'">⚖️</span>
-                    <span x-show="detailData.sub_koreksi === 'manset'">🔄</span>
+                    {{-- SVGs based on sub_koreksi --}}
+                    <template x-if="detailData.sub_koreksi === 'biasa'">
+                        <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                    </template>
+                    <template x-if="detailData.sub_koreksi === 'lkd'">
+                        <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                        </svg>
+                    </template>
+                    <template x-if="detailData.sub_koreksi === 'manset'">
+                        <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                    </template>
                 </div>
                 <div>
-                    <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <h3 class="text-base font-bold text-white flex items-center gap-2 flex-wrap">
                         <span>Rincian Audit Koreksi Nilai</span>
                         <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase"
                               :class="{
@@ -35,7 +48,7 @@
                               }"
                               x-text="detailData.sub_koreksi_label || 'KOREKSI NILAI'"></span>
                     </h3>
-                    <p class="text-xs text-slate-400">
+                    <p class="text-xs text-slate-400 mt-0.5">
                         Tanggal Transaksi: <strong class="text-white" x-text="detailData.tanggal_reklas"></strong> 
                         (TW <span x-text="detailData.triwulan"></span> · T.A. <span x-text="detailData.tahun"></span>)
                     </p>
@@ -43,16 +56,23 @@
             </div>
 
             <button type="button" @click="closeDetailModal()"
-                    class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-all">
-                ✕
+                    class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
             </button>
         </div>
 
         {{-- Isi Modal --}}
-        <div class="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
+        <div class="p-6 space-y-5 max-h-[75vh] overflow-y-auto custom-scrollbar">
             {{-- 1. Identitas Aset BMD --}}
             <div class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-3">
-                <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Identitas Aset Milik Daerah</div>
+                <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                    <span>Identitas Aset Milik Daerah</span>
+                </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                     <div>
                         <span class="text-slate-400 text-[11px] block">Nama Barang:</span>
@@ -65,18 +85,23 @@
                     </div>
                     <div>
                         <span class="text-slate-400 text-[11px] block">Kode Akun 108:</span>
-                        <div class="font-mono text-slate-300" x-text="detailData.kode_108"></div>
+                        <div class="font-mono text-slate-300" x-text="detailData.kode_108 || '-'"></div>
                     </div>
                     <div>
                         <span class="text-slate-400 text-[11px] block">Rekening Belanja Asal:</span>
-                        <div class="text-slate-300 truncate" x-text="detailData.rekening_belanja"></div>
+                        <div class="text-slate-300 truncate" x-text="detailData.rekening_belanja || '-'"></div>
                     </div>
                 </div>
             </div>
 
             {{-- 2. Komparasi Finansial & Deviasi --}}
             <div class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-3">
-                <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Komparasi Perubahan Nilai Buku</div>
+                <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    <span>Komparasi Perubahan Nilai Buku</span>
+                </div>
                 <div class="grid grid-cols-3 gap-3 text-center">
                     <div class="p-3 rounded-xl bg-slate-900 border border-slate-800">
                         <span class="text-[10px] uppercase font-bold text-slate-400 block mb-1">Nilai Semula</span>
@@ -85,7 +110,7 @@
                     <div class="p-3 rounded-xl border"
                          :class="detailData.tipe_koreksi === 'tambah' ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300' : 'bg-rose-950/40 border-rose-500/40 text-rose-300'">
                         <span class="text-[10px] uppercase font-bold block mb-1" x-text="detailData.tipe_koreksi === 'tambah' ? 'Penambahan (+)' : 'Pengurangan (-)'"></span>
-                        <div class="text-xs sm:text-sm font-mono font-black" x-text="formatRupiah(detailData.nilai_reklas)"></div>
+                        <div class="text-xs sm:text-sm font-mono font-black" x-text="(detailData.tipe_koreksi === 'tambah' ? '+' : '-') + formatRupiah(detailData.nilai_reklas)"></div>
                     </div>
                     <div class="p-3 rounded-xl bg-slate-900 border border-slate-800">
                         <span class="text-[10px] uppercase font-bold text-emerald-400 block mb-1">Nilai Baru</span>
@@ -96,14 +121,19 @@
 
             {{-- 3. Dokumen Dasar & Uraian Temuan --}}
             <div class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-2">
-                <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Dasar Hukum &amp; Uraian Dokumen</div>
+                <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span>Dasar Hukum &amp; Uraian Dokumen</span>
+                </div>
                 <div class="text-xs">
                     <span class="text-slate-400 text-[11px] block">Nomor Bukti / Berita Acara / LHP:</span>
-                    <strong class="text-white font-mono text-sm" x-text="detailData.nomor_ba_reklas"></strong>
+                    <strong class="text-white font-mono text-sm" x-text="detailData.nomor_ba_reklas || '-'"></strong>
                 </div>
                 <div class="text-xs pt-1">
                     <span class="text-slate-400 text-[11px] block">Alasan / Catatan Temuan:</span>
-                    <p class="text-slate-300 leading-relaxed bg-slate-900 p-3 rounded-xl border border-slate-800 text-xs mt-1" x-text="detailData.alasan_reklas"></p>
+                    <p class="text-slate-300 leading-relaxed bg-slate-900/90 p-3 rounded-xl border border-slate-800 text-xs mt-1" x-text="detailData.alasan_reklas || detailData.keterangan || '-'"></p>
                 </div>
             </div>
 
@@ -114,7 +144,7 @@
                     <div class="text-xs font-bold text-white mt-1" x-text="detailData.dampak_rmb?.label || '-'"></div>
                     <div class="text-[11px] text-slate-400 mt-0.5">Otomatis terhubung pada baris penyeimbang neraca Kertas Kerja Rekon Kasda.</div>
                 </div>
-                <div class="px-3 py-2 rounded-xl text-xs font-mono font-black shrink-0 border"
+                <div class="px-3 py-2 rounded-xl text-xs font-mono font-black shrink-0 border shadow-sm"
                      :class="detailData.tipe_koreksi === 'tambah' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-rose-500/20 text-rose-300 border-rose-500/40'">
                     <span x-text="detailData.dampak_rmb?.kolom_text || '-'"></span> 
                     (<span x-text="detailData.dampak_rmb?.arah || '+'"></span>)
@@ -123,24 +153,26 @@
 
             {{-- 5. Info Audit Entry --}}
             <div class="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-800">
-                <div>Dicatat oleh: <span class="text-slate-300 font-semibold" x-text="detailData.user_nama"></span></div>
-                <div>Waktu Input: <span class="text-slate-400 font-mono" x-text="detailData.created_at"></span></div>
+                <div>Dicatat oleh: <span class="text-slate-300 font-semibold" x-text="detailData.user_nama || 'Administrator'"></span></div>
+                <div>Waktu Input: <span class="text-slate-400 font-mono" x-text="detailData.created_at || '-'"></span></div>
             </div>
         </div>
 
         {{-- Footer Modal --}}
-        <div class="p-4 border-t border-slate-800 bg-slate-950/60 flex items-center justify-between">
+        <div class="p-4 border-t border-slate-800 bg-slate-950/80 flex items-center justify-between">
             <template x-if="detailData.nibar && detailData.nibar !== '-'">
                 <a :href="'{{ route('astap.index') }}?search=' + encodeURIComponent(detailData.nibar)"
-                   class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-bold transition-all flex items-center gap-1.5">
-                    <span>🔗</span>
+                   class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-slate-900 border border-slate-700 text-slate-200 hover:text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm">
+                    <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
                     <span>Lihat di Data ASTAP</span>
                 </a>
             </template>
             <div x-show="!detailData.nibar || detailData.nibar === '-'"></div>
 
             <button type="button" @click="closeDetailModal()"
-                    class="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-all">
+                    class="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-slate-900 border border-slate-700 text-white text-xs font-bold transition-all cursor-pointer">
                 Tutup
             </button>
         </div>

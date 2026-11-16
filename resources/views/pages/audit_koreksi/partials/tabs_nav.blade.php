@@ -1,62 +1,74 @@
 {{-- TAB NAVIGASI KHUSUS 3 SUB-KOREKSI NILAI BMD --}}
 <div class="flex items-center justify-between border-b border-slate-800/80 pb-3 gap-4 flex-wrap">
-    <div class="flex items-center p-1 rounded-2xl bg-slate-950/80 border border-slate-800/80 backdrop-blur-sm overflow-x-auto max-w-full">
+    <div class="flex items-center p-1.5 rounded-2xl bg-slate-950/90 border border-slate-800/90 backdrop-blur-sm overflow-x-auto max-w-full shadow-inner gap-1">
         {{-- Tab 1: Semua Koreksi --}}
         <button type="button" @click="activeTab = 'semua'"
-                class="flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap"
+                class="flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer active:scale-95"
                 :class="activeTab === 'semua' 
                     ? 'bg-slate-800 text-white border border-slate-700 shadow-md' 
-                    : 'text-slate-400 hover:text-white'">
-            <span>📑</span>
+                    : 'text-slate-400 hover:text-white hover:bg-slate-900/60'">
+            <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
             <span>Semua Koreksi</span>
-            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-slate-900 border border-slate-700 text-slate-300">
+            <span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold transition-colors"
+                  :class="activeTab === 'semua' ? 'bg-slate-950 text-emerald-400 border border-emerald-500/30' : 'bg-slate-900 border border-slate-800 text-slate-400'">
                 {{ $semuaKoreksi->count() }}
             </span>
         </button>
 
         {{-- Tab 2: Koreksi Biasa --}}
         <button type="button" @click="activeTab = 'biasa'"
-                class="flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ml-1 whitespace-nowrap"
+                class="flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer active:scale-95"
                 :class="activeTab === 'biasa' 
-                    ? 'bg-indigo-600/25 text-indigo-300 border border-indigo-500/40 shadow-md shadow-indigo-950/30' 
-                    : 'text-slate-400 hover:text-indigo-300'">
-            <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
+                    ? 'bg-indigo-600/30 text-indigo-200 border border-indigo-500/50 shadow-md shadow-indigo-950/40' 
+                    : 'text-slate-400 hover:text-indigo-300 hover:bg-slate-900/60'">
+            <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
             <span>Koreksi Biasa (Internal)</span>
-            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-indigo-950/80 border border-indigo-800/80 text-indigo-300">
+            <span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold transition-colors"
+                  :class="activeTab === 'biasa' ? 'bg-indigo-950 text-indigo-300 border border-indigo-500/40' : 'bg-slate-900 border border-slate-800 text-slate-400'">
                 {{ $biasaKoreksi->count() }}
             </span>
         </button>
 
         {{-- Tab 3: Koreksi LKD --}}
         <button type="button" @click="activeTab = 'lkd'"
-                class="flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ml-1 whitespace-nowrap"
+                class="flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer active:scale-95"
                 :class="activeTab === 'lkd' 
-                    ? 'bg-cyan-600/25 text-cyan-300 border border-cyan-500/40 shadow-md shadow-cyan-950/30' 
-                    : 'text-slate-400 hover:text-cyan-300'">
-            <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+                    ? 'bg-cyan-600/30 text-cyan-200 border border-cyan-500/50 shadow-md shadow-cyan-950/40' 
+                    : 'text-slate-400 hover:text-cyan-300 hover:bg-slate-900/60'">
+            <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+            </svg>
             <span>Koreksi LKD (BPK RI)</span>
-            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-cyan-950/80 border border-cyan-800/80 text-cyan-300">
+            <span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold transition-colors"
+                  :class="activeTab === 'lkd' ? 'bg-cyan-950 text-cyan-300 border border-cyan-500/40' : 'bg-slate-900 border border-slate-800 text-slate-400'">
                 {{ $lkdKoreksi->count() }}
             </span>
         </button>
 
         {{-- Tab 4: Koreksi Manset --}}
         <button type="button" @click="activeTab = 'manset'"
-                class="flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ml-1 whitespace-nowrap"
+                class="flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer active:scale-95"
                 :class="activeTab === 'manset' 
-                    ? 'bg-emerald-600/25 text-emerald-300 border border-emerald-500/40 shadow-md shadow-emerald-950/30' 
-                    : 'text-slate-400 hover:text-emerald-300'">
-            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    ? 'bg-emerald-600/30 text-emerald-200 border border-emerald-500/50 shadow-md shadow-emerald-950/40' 
+                    : 'text-slate-400 hover:text-emerald-300 hover:bg-slate-900/60'">
+            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
             <span>Koreksi Manset (BPKAD)</span>
-            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-950/80 border border-emerald-800/80 text-emerald-300">
+            <span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold transition-colors"
+                  :class="activeTab === 'manset' ? 'bg-emerald-950 text-emerald-300 border border-emerald-500/40' : 'bg-slate-900 border border-slate-800 text-slate-400'">
                 {{ $mansetKoreksi->count() }}
             </span>
         </button>
     </div>
 
     {{-- Keterangan Aktif --}}
-    <div class="hidden sm:flex items-center gap-2 text-xs text-slate-400">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+    <div class="hidden sm:flex items-center gap-2 text-xs text-slate-400 px-3 py-1.5 rounded-xl bg-slate-950/60 border border-slate-800/80">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
         <span x-show="activeTab === 'semua'">Menampilkan seluruh riwayat audit penyesuaian nilai buku</span>
         <span x-show="activeTab === 'biasa'">Fokus selisih rekonsiliasi kas internal &amp; pembukuan (Kolom 5 &amp; 15)</span>
         <span x-show="activeTab === 'lkd'">Fokus temuan audit LHP BPK RI &amp; neraca LKPD (Kolom 6 &amp; 16)</span>

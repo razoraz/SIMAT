@@ -81,11 +81,12 @@
             },
 
             formatRupiah(amount) {
-                const val = parseFloat(amount) || 0;
-                return 'Rp ' + val.toLocaleString('id-ID', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
+                const num = parseFloat(amount) || 0;
+                const absFormatted = Math.abs(num).toLocaleString('id-ID', {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
                 });
+                return num < 0 ? '-Rp ' + absFormatted : 'Rp ' + absFormatted;
             }
         };
     }
