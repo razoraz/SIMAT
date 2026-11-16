@@ -12,7 +12,7 @@
                 <h3 class="text-sm font-bold text-white flex items-center gap-2">
                     <span>Audit Koreksi Nilai LKD (Temuan Auditor BPK RI)</span>
                     <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                        Kolom 6 &amp; 16 RMB
+                        Kolom 6 &amp; 16
                     </span>
                 </h3>
                 <p class="text-[11px] text-cyan-200/70">
@@ -51,7 +51,6 @@
                         <th class="py-3 px-4 text-right whitespace-nowrap bg-slate-950">Koreksi Nilai BPK</th>
                         <th class="py-3 px-4 text-right whitespace-nowrap bg-slate-950">Nilai Audited Akhir</th>
                         <th class="py-3 px-4 min-w-[200px] bg-slate-950">Rekomendasi LHP BPK RI</th>
-                        <th class="py-3 px-3.5 text-center whitespace-nowrap bg-slate-950">Dampak RMB</th>
                         <th class="py-3 px-3.5 text-center whitespace-nowrap w-28 min-w-[110px] border-l border-slate-800 shrink-0 sticky-aksi-koreksi">Aksi</th>
                     </tr>
                 </thead>
@@ -97,8 +96,10 @@
                                     {{ $item->astap?->nama_barang ?: ($item->asal_nama ?: 'Aset Terperiksa') }}
                                 </div>
                                 <div class="flex items-center gap-1.5 mt-1 text-[10px] font-mono flex-wrap">
-                                    <span class="text-amber-400 font-bold">{{ $item->astap?->nibar ?: '-' }}</span>
-                                    <span class="text-slate-600">·</span>
+                                    @if (!empty($item->astap?->nibar))
+                                        <span class="text-amber-400 font-bold" title="Nomor Induk Barang (NIBAR)">{{ $item->astap->nibar }}</span>
+                                        <span class="text-slate-600">·</span>
+                                    @endif
                                     <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-extrabold whitespace-nowrap leading-none
                                         {{ $cat === 'KIB A' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : '' }}
                                         {{ $cat === 'KIB B' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40' : '' }}
@@ -139,22 +140,7 @@
                                 </div>
                             </td>
 
-                            {{-- 9. Dampak Kolom RMB --}}
-                            <td class="py-3.5 px-3.5 text-center whitespace-nowrap">
-                                @if ($tipe === 'tambah')
-                                    <span class="inline-block px-2.5 py-1 rounded-xl text-[10px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm"
-                                          title="Masuk ke Kolom 6 Kertas Kerja RMB BPKAD (Koreksi LKD Bertambah)">
-                                        Kolom 6 (+)
-                                    </span>
-                                @else
-                                    <span class="inline-block px-2.5 py-1 rounded-xl text-[10px] font-mono font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-sm"
-                                          title="Masuk ke Kolom 16 Kertas Kerja RMB BPKAD (Koreksi LKD Berkurang)">
-                                        Kolom 16 (-)
-                                    </span>
-                                @endif
-                            </td>
-
-                            {{-- 10. Aksi (Sticky Freeze Column) --}}
+                            {{-- 9. Aksi (Sticky Freeze Column) --}}
                             <td class="py-3.5 px-3.5 text-center whitespace-nowrap sticky-aksi-koreksi">
                                 <button type="button" @click="openDetailModal({{ $item->id }})"
                                         class="px-3 py-1.5 rounded-xl bg-cyan-900/40 hover:bg-cyan-800/60 active:bg-cyan-950 border border-cyan-700/50 text-cyan-200 hover:text-white font-bold text-[11px] transition-all flex items-center gap-1.5 mx-auto hover:-translate-y-0.5 active:scale-95 cursor-pointer shadow-sm">

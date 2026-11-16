@@ -66,30 +66,65 @@
         {{-- Isi Modal --}}
         <div class="p-6 space-y-5 max-h-[75vh] overflow-y-auto custom-scrollbar">
             {{-- 1. Identitas Aset BMD --}}
-            <div class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-3">
+            <div class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-3.5">
                 <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5">
                     <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                     </svg>
                     <span>Identitas Aset Milik Daerah</span>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                    {{-- Nama Barang --}}
                     <div>
-                        <span class="text-slate-400 text-[11px] block">Nama Barang:</span>
-                        <strong class="text-white text-sm" x-text="detailData.nama_barang"></strong>
+                        <span class="text-slate-400 text-[11px] block uppercase tracking-wider font-semibold">Nama Barang:</span>
+                        <strong class="text-white text-sm block mt-0.5" x-text="detailData.nama_barang"></strong>
                     </div>
+
+                    {{-- Kelompok KIB Resmi --}}
                     <div>
-                        <span class="text-slate-400 text-[11px] block">NIBAR &amp; KIB:</span>
-                        <div class="font-mono text-amber-300 font-bold" x-text="detailData.nibar"></div>
-                        <div class="text-[10px] text-slate-400 mt-0.5">Kelompok: <span class="text-slate-200" x-text="detailData.kelompok_kib"></span></div>
+                        <span class="text-slate-400 text-[11px] block uppercase tracking-wider font-semibold">Kelompok KIB:</span>
+                        <div class="mt-1">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-extrabold tracking-wide uppercase leading-none shadow-sm"
+                                  :class="{
+                                      'bg-amber-500/20 text-amber-300 border border-amber-500/40': detailData.kelompok_kib === 'KIB A',
+                                      'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40': detailData.kelompok_kib === 'KIB B',
+                                      'bg-purple-500/20 text-purple-300 border border-purple-500/40': detailData.kelompok_kib === 'KIB C',
+                                      'bg-teal-500/20 text-teal-300 border border-teal-500/40': detailData.kelompok_kib === 'KIB D',
+                                      'bg-orange-500/20 text-orange-300 border border-orange-500/40': detailData.kelompok_kib === 'KIB E',
+                                      'bg-rose-500/20 text-rose-300 border border-rose-500/40': detailData.kelompok_kib === 'KIB F',
+                                      'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40': !['KIB A','KIB B','KIB C','KIB D','KIB E','KIB F'].includes(detailData.kelompok_kib)
+                                  }"
+                                  x-text="detailData.kelompok_kib || 'KIB B'">
+                            </span>
+                        </div>
                     </div>
+
+                    {{-- NIBAR 45-Digit --}}
                     <div>
-                        <span class="text-slate-400 text-[11px] block">Kode Akun 108:</span>
-                        <div class="font-mono text-slate-300" x-text="detailData.kode_108 || '-'"></div>
+                        <span class="text-slate-400 text-[11px] block uppercase tracking-wider font-semibold">Nomor Induk Barang (NIBAR):</span>
+                        <template x-if="detailData.nibar && detailData.nibar !== '-'">
+                            <div class="font-mono text-amber-300 font-bold text-xs mt-1 break-all select-all tracking-wide" x-text="detailData.nibar"></div>
+                        </template>
+                        <template x-if="!detailData.nibar || detailData.nibar === '-'">
+                            <span class="inline-block mt-1 text-[11px] text-slate-500 italic">Belum Teregistrasi NIBAR</span>
+                        </template>
                     </div>
+
+                    {{-- Kodefikasi Akun 108 --}}
                     <div>
-                        <span class="text-slate-400 text-[11px] block">Rekening Belanja Asal:</span>
-                        <div class="text-slate-300 truncate" x-text="detailData.rekening_belanja || '-'"></div>
+                        <span class="text-slate-400 text-[11px] block uppercase tracking-wider font-semibold">Kode Akun 108:</span>
+                        <template x-if="detailData.kode_108 && detailData.kode_108 !== '-'">
+                            <div class="font-mono text-slate-200 font-bold text-xs mt-1 tracking-wider" x-text="detailData.kode_108"></div>
+                        </template>
+                        <template x-if="!detailData.kode_108 || detailData.kode_108 === '-'">
+                            <span class="inline-block mt-1 text-[11px] text-slate-500 italic">Belum Ditentukan (Non-108)</span>
+                        </template>
+                    </div>
+
+                    {{-- Rekening Belanja --}}
+                    <div class="sm:col-span-2">
+                        <span class="text-slate-400 text-[11px] block uppercase tracking-wider font-semibold">Rekening Belanja Asal:</span>
+                        <div class="text-slate-300 font-medium mt-0.5 truncate" x-text="detailData.rekening_belanja || '-'"></div>
                     </div>
                 </div>
             </div>
@@ -137,10 +172,10 @@
                 </div>
             </div>
 
-            {{-- 4. Pemetaan Kertas Kerja RMB 21 Kolom BPKAD --}}
+            {{-- 4. Pemetaan Kolom Neraca BPKAD --}}
             <div class="p-4 rounded-2xl bg-gradient-to-r from-slate-950 to-slate-900 border border-slate-800 flex items-center justify-between gap-4">
                 <div>
-                    <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Dampak Pada Formulir Resmi RMB BPKAD</div>
+                    <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Dampak Pada Kolom Neraca BPKAD</div>
                     <div class="text-xs font-bold text-white mt-1" x-text="detailData.dampak_rmb?.label || '-'"></div>
                     <div class="text-[11px] text-slate-400 mt-0.5">Otomatis terhubung pada baris penyeimbang neraca Kertas Kerja Rekon Kasda.</div>
                 </div>

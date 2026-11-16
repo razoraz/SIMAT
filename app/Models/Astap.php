@@ -685,6 +685,12 @@ class Astap extends Model
         return $this->jenisAstap ? ($this->jenisAstap->sub_sub_rincian_objek ?? '') : '';
     }
 
+    public function getNibarAttribute(): ?string
+    {
+        return $this->registers?->first()?->nibar 
+            ?: ($this->allRegisters?->first()?->nibar ?? null);
+    }
+
     public function getCategoryAttribute(): string
     {
         $jenisKode = $this->jenisAstap ? (string) ($this->jenisAstap->jenis ?? '') : '';

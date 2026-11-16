@@ -40,7 +40,7 @@ class AuditKoreksiController extends Controller
 
         // Query Dasar untuk Statistik Global Periode Terpilih
         $baseQuery = AstapReklas::koreksiLain()
-            ->with(['astap.jenisAstap', 'astap.rekeningBelanja', 'astap.unit', 'user']);
+            ->with(['astap.jenisAstap', 'astap.rekeningBelanja', 'astap.registers', 'astap.allRegisters', 'astap.unit', 'user']);
 
         if ($selectedYear !== 'all' && $selectedYear > 0) {
             $baseQuery->where('tahun', $selectedYear);
@@ -183,19 +183,22 @@ class AuditKoreksiController extends Controller
     public function show($id)
     {
         $koreksi = AstapReklas::koreksiLain()
-            ->with(['astap.jenisAstap', 'astap.rekeningBelanja', 'astap.unit', 'user'])
+            ->with(['astap.jenisAstap', 'astap.rekeningBelanja', 'astap.registers', 'astap.allRegisters', 'astap.unit', 'user'])
             ->findOrFail($id);
 
         $specBaru = $koreksi->spesifikasi_baru ?? [];
         $koreksiInfo = $specBaru['koreksi_info'] ?? null;
 
+        $nibarVal = $koreksi->astap?->nibar;
+        $kode108Val = $koreksi->astap?->kode_108 ?: ($koreksi->astap?->jenisAstap?->sub_sub_rincian_objek ?: null);
+
         $payload = [
             'id'                     => $koreksi->id,
             'astap_id'               => $koreksi->astap_id,
-            'nibar'                  => $koreksi->astap?->nibar ?: '-',
+            'nibar'                  => $nibarVal ?: '-',
             'nama_barang'            => $koreksi->astap?->nama_barang ?: 'Aset Tidak Ditemukan',
             'kelompok_kib'           => $koreksi->astap?->category ?: ($koreksi->asal_kib ?: 'KIB B'),
-            'kode_108'               => $koreksi->astap?->kode_108 ?: ($koreksi->astap?->jenisAstap?->sub_sub_rincian_objek ?: '-'),
+            'kode_108'               => $kode108Val ?: '-',
             'rekening_belanja'       => $koreksi->astap?->rekeningBelanja?->nama_rekening ?: ($koreksi->asal_nama ?: '-'),
             'sub_koreksi'            => $koreksi->sub_koreksi,
             'sub_koreksi_label'      => $koreksi->sub_koreksi_label,

@@ -65,8 +65,6 @@
                         <th class="py-3 px-4 min-w-[240px] bg-slate-950">Identitas Aset Tetap</th>
                         <th class="py-3 px-4 text-right whitespace-nowrap bg-slate-950">Nilai Koreksi</th>
                         <th class="py-3 px-4 whitespace-nowrap bg-slate-950">Komparasi Nilai Buku</th>
-                        <th class="py-3 px-4 min-w-[200px] bg-slate-950">Dokumen Dasar / Uraian</th>
-                        <th class="py-3 px-3.5 text-center whitespace-nowrap bg-slate-950">Dampak RMB</th>
                         <th class="py-3 px-3.5 text-center whitespace-nowrap w-28 min-w-[110px] border-l border-slate-800 shrink-0 sticky-aksi-koreksi">Aksi</th>
                     </tr>
                 </thead>
@@ -123,10 +121,12 @@
                                     {{ $item->astap?->nama_barang ?: ($item->asal_nama ?: 'Aset Tidak Ditemukan') }}
                                 </div>
                                 <div class="flex items-center gap-1.5 mt-1 text-[10px] font-mono flex-wrap">
-                                    <span class="text-amber-400 font-bold" title="Nomor Induk Barang (NIBAR)">
-                                        {{ $item->astap?->nibar ?: '-' }}
-                                    </span>
-                                    <span class="text-slate-600">·</span>
+                                    @if (!empty($item->astap?->nibar))
+                                        <span class="text-amber-400 font-bold" title="Nomor Induk Barang (NIBAR)">
+                                            {{ $item->astap->nibar }}
+                                        </span>
+                                        <span class="text-slate-600">·</span>
+                                    @endif
                                     {{-- KIB Color Canonical Badge --}}
                                     <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-extrabold whitespace-nowrap leading-none
                                         {{ $cat === 'KIB A' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : '' }}
@@ -163,28 +163,7 @@
                                 </div>
                             </td>
 
-                            {{-- 7. Dokumen Dasar & Uraian --}}
-                            <td class="py-3.5 px-4 min-w-[200px]">
-                                <div class="font-semibold text-slate-200 line-clamp-1 flex items-center gap-1.5" title="{{ $item->nomor_ba_reklas ?: '-' }}">
-                                    <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                    <span>{{ $item->nomor_ba_reklas ?: '-' }}</span>
-                                </div>
-                                <div class="text-[10px] text-slate-400 line-clamp-1 mt-0.5" title="{{ $item->alasan_reklas ?: ($item->keterangan ?: '-') }}">
-                                    {{ $item->alasan_reklas ?: ($item->keterangan ?: '-') }}
-                                </div>
-                            </td>
-
-                            {{-- 8. Dampak Kolom RMB --}}
-                            <td class="py-3.5 px-3.5 text-center whitespace-nowrap">
-                                <span class="inline-block px-2.5 py-1 rounded-xl text-[10px] font-mono font-bold bg-slate-950 border border-slate-800 text-slate-300 shadow-inner"
-                                      title="{{ $dampak['label'] }}">
-                                    {{ $dampak['kolom_text'] }} ({{ $dampak['arah'] }})
-                                </span>
-                            </td>
-
-                            {{-- 9. Aksi (Sticky Freeze Column) --}}
+                            {{-- 7. Aksi (Sticky Freeze Column) --}}
                             <td class="py-3.5 px-3.5 text-center whitespace-nowrap sticky-aksi-koreksi">
                                 <button type="button" @click="openDetailModal({{ $item->id }})"
                                         class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-slate-900 border border-slate-700 text-slate-200 hover:text-white font-bold text-[11px] transition-all flex items-center gap-1.5 mx-auto hover:-translate-y-0.5 active:scale-95 cursor-pointer shadow-sm">
