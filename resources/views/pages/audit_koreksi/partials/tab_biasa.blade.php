@@ -45,12 +45,12 @@
                     <tr>
                         <th class="py-3 px-3 text-center w-12 whitespace-nowrap bg-slate-950">No</th>
                         <th class="py-3 px-3.5 whitespace-nowrap bg-slate-950">Tanggal &amp; TW</th>
-                        <th class="py-3 px-4 min-w-[220px] bg-slate-950">Aset Tetap &amp; NIBAR</th>
-                        <th class="py-3 px-4 min-w-[180px] bg-slate-950">Rekening Belanja / SP2D</th>
+                        <th class="py-3 px-4 min-w-[190px] bg-slate-950">Nomor BA Rekon Internal</th>
+                        <th class="py-3 px-4 min-w-[220px] bg-slate-950">Aset &amp; Kodefikasi 108</th>
                         <th class="py-3 px-4 text-right whitespace-nowrap bg-slate-950">Nilai Semula</th>
                         <th class="py-3 px-4 text-right whitespace-nowrap bg-slate-950">Koreksi Internal</th>
                         <th class="py-3 px-4 text-right whitespace-nowrap bg-slate-950">Nilai Pasca Koreksi</th>
-                        <th class="py-3 px-4 min-w-[190px] bg-slate-950">BA Rekon Internal</th>
+                        <th class="py-3 px-4 min-w-[200px] bg-slate-950">Uraian Rekonsiliasi</th>
                         <th class="py-3 px-3.5 text-center whitespace-nowrap w-28 min-w-[110px] border-l border-slate-800 shrink-0 sticky-aksi-koreksi">Aksi</th>
                     </tr>
                 </thead>
@@ -77,7 +77,20 @@
                                 </div>
                             </td>
 
-                            {{-- 3. Aset Tetap & NIBAR --}}
+                            {{-- 3. Nomor BA Rekon Internal --}}
+                            <td class="py-3.5 px-4 min-w-[190px]">
+                                <div class="font-bold text-indigo-300 flex items-center gap-1.5 line-clamp-1" title="{{ $item->nomor_ba_reklas ?: '-' }}">
+                                    <svg class="w-3.5 h-3.5 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    <span>{{ $item->nomor_ba_reklas ?: 'BA Rekon Internal' }}</span>
+                                </div>
+                                <div class="text-[10px] text-slate-400 mt-0.5">
+                                    Rekonsiliasi Kasda / Internal
+                                </div>
+                            </td>
+
+                            {{-- 4. Aset & Kodefikasi 108 --}}
                             <td class="py-3.5 px-4 min-w-[220px]">
                                 <div class="font-bold text-white text-xs group-hover:text-indigo-300 transition-colors line-clamp-1">
                                     {{ $item->astap?->nama_barang ?: ($item->asal_nama ?: 'Aset') }}
@@ -96,16 +109,6 @@
                                     @if (!empty($item->astap?->nibar))
                                         <span class="text-amber-400 font-bold select-all break-all tracking-tight" title="Nomor Induk Barang (NIBAR)">{{ $item->astap->nibar }}</span>
                                     @endif
-                                </div>
-                            </td>
-
-                            {{-- 4. Rekening Belanja / SP2D --}}
-                            <td class="py-3.5 px-4 min-w-[180px]">
-                                <div class="text-[11px] font-mono text-slate-300 line-clamp-1" title="{{ $item->astap?->rekeningBelanja?->nama_rekening ?: ($item->asal_nama ?: '-') }}">
-                                    {{ $item->astap?->rekeningBelanja?->kode_rekening ?: '-' }}
-                                </div>
-                                <div class="text-[10px] text-slate-400 line-clamp-1 mt-0.5">
-                                    {{ $item->astap?->rekeningBelanja?->nama_rekening ?: ($item->asal_nama ?: '-') }}
                                 </div>
                             </td>
 
@@ -129,16 +132,10 @@
                                 Rp {{ number_format($item->nilai_setelah_koreksi, 0, ',', '.') }}
                             </td>
 
-                            {{-- 8. Berita Acara Rekon Internal --}}
-                            <td class="py-3.5 px-4 min-w-[190px]">
-                                <div class="font-semibold text-slate-200 line-clamp-1 flex items-center gap-1.5" title="{{ $item->nomor_ba_reklas ?: '-' }}">
-                                    <svg class="w-3.5 h-3.5 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                    <span>{{ $item->nomor_ba_reklas ?: '-' }}</span>
-                                </div>
-                                <div class="text-[10px] text-slate-400 line-clamp-1 mt-0.5" title="{{ $item->alasan_reklas ?: ($item->keterangan ?: '-') }}">
-                                    {{ $item->alasan_reklas ?: ($item->keterangan ?: '-') }}
+                            {{-- 8. Uraian Rekonsiliasi Internal --}}
+                            <td class="py-3.5 px-4 min-w-[200px]">
+                                <div class="text-slate-300 line-clamp-2 leading-snug text-xs" title="{{ $item->alasan_reklas ?: ($item->keterangan ?: '-') }}">
+                                    {{ $item->alasan_reklas ?: ($item->keterangan ?: 'Rekonsiliasi pembukuan internal kasda RSUD.') }}
                                 </div>
                             </td>
 

@@ -139,7 +139,7 @@
 
                                 <!-- 5. Nilai Realisasi -->
                                 <td class="px-3 py-3 text-center font-mono font-extrabold text-emerald-400 text-sm whitespace-nowrap w-36"
-                                    x-text="item.total_realisasi || item.jumlah_realisasi || formatRupiah(item.total_realisasi_num || item.nilai_perolehan || 0)"></td>
+                                    x-text="formatRupiah(item.total_realisasi_num || item.total_realisasi || item.jumlah_realisasi || 0)"></td>
 
                                 <!-- 6. Kondisi Aset Terkini -->
                                 <td class="px-3 py-3 text-center whitespace-nowrap w-28">

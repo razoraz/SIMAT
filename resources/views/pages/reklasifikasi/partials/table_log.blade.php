@@ -311,9 +311,9 @@
                             </td>
 
                             <!-- 6. Nilai Reklasifikasi & Dampak Neraca -->
-                            <td class="py-3 px-3.5 text-right font-mono">
-                                <div class="font-extrabold text-white text-xs sm:text-sm">
-                                    Rp {{ number_format($item->nilai_reklas, 0, ',', '.') }}
+                            <td class="py-3 px-3.5 text-right font-mono whitespace-nowrap">
+                                <div class="font-extrabold text-white text-xs sm:text-sm whitespace-nowrap">
+                                    Rp&nbsp;{{ number_format($item->nilai_reklas, 0, ',', '.') }}
                                 </div>
 
                                 <!-- Indikator Dampak Neraca per Jenis Reklas -->
