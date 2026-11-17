@@ -51,6 +51,9 @@
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-800/60">
+                @php
+                    $belanjaBarangDataMap = [];
+                @endphp
                 @forelse($belanjaBarangRecords ?? [] as $idx => $row)
                     @php
                         $astaps = $row->astaps;
@@ -110,6 +113,7 @@
                                 ];
                             })->values()
                         ];
+                        $belanjaBarangDataMap[$row->id] = $itemData;
                     @endphp
                     <tr class="hover:bg-slate-800/40 transition-colors group">
                         <!-- 1. Nomor -->
@@ -241,7 +245,7 @@
                             <div class="flex items-center justify-center gap-1.5">
                                 <!-- 1. Tombol Detail -->
                                 <button type="button"
-                                    @click="openDetailModal({{ json_encode($itemData) }})"
+                                    @click="openDetailModal({{ $row->id }})"
                                     title="Lihat Rincian Faktur Belanja Barang"
                                     class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 hover:border-emerald-400 font-bold text-xs transition-all duration-200 shadow-sm active:scale-95 cursor-pointer leading-none">
                                     <svg class="w-3.5 h-3.5 text-emerald-400 group-hover/btn:text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -341,3 +345,7 @@
         </table>
     </div>
 </div>
+
+<script>
+    window.__belanjaBarangMap = @json($belanjaBarangDataMap ?? []);
+</script>

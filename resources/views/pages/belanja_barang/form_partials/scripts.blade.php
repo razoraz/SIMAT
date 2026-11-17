@@ -1275,91 +1275,54 @@
             // Validasi Data Langkah 2 (Rincian Item Barang KIB)
             validateStep2() {
                 this.clearStepError(2);
-                let items = [];
-                let sheetName = '';
 
-                if (this.isMesin) {
-                    items = this.formData.mesin_items || [];
-                    sheetName = 'KIB B (Peralatan & Mesin)';
-                } else if (this.isLainnya) {
-                    items = this.formData.lainnya_items || [];
-                    sheetName = 'KIB E (Aset Tetap Lainnya)';
-                } else if (this.isTanah) {
-                    items = this.formData.tanah_items || [];
-                    sheetName = 'KIB A (Tanah)';
-                } else if (this.isGedung) {
-                    items = this.formData.gedung_items || [];
-                    sheetName = 'KIB C (Gedung & Bangunan)';
-                } else if (this.isJaringan) {
-                    items = this.formData.jaringan_items || [];
-                    sheetName = 'KIB D (Jalan, Irigasi & Jaringan)';
+                const kibConfigs = [
+                    { key: 'mesin_items', name: 'KIB B (Peralatan & Mesin)', kodeKey: 'mesin_kode_barang', namaKey: 'mesin_nama_barang', volKey: 'mesin_jumlah_barang', hrgKey: 'mesin_nilai_satuan' },
+                    { key: 'lainnya_items', name: 'KIB E (Aset Tetap Lainnya)', kodeKey: 'lainnya_kode_barang', namaKey: 'lainnya_nama_barang', volKey: 'lainnya_jumlah', hrgKey: 'lainnya_nilai_satuan' },
+                    { key: 'tanah_items', name: 'KIB A (Tanah)', kodeKey: 'tanah_kode_barang', namaKey: 'tanah_nama_barang', volKey: 'tanah_jumlah_barang', hrgKey: 'tanah_nilai_satuan' },
+                    { key: 'gedung_items', name: 'KIB C (Gedung & Bangunan)', kodeKey: 'gedung_kode_barang', namaKey: 'gedung_nama_barang', volKey: 'gedung_jumlah_bangunan', hrgKey: 'gedung_nilai_satuan' },
+                    { key: 'jaringan_items', name: 'KIB D (Jalan, Irigasi & Jaringan)', kodeKey: 'jaringan_kode_barang', namaKey: 'jaringan_nama_barang', volKey: 'jaringan_jumlah', hrgKey: 'jaringan_nilai_satuan' },
+                ];
+
+                let totalFoundItems = 0;
+
+                for (const cfg of kibConfigs) {
+                    const list = this.formData[cfg.key] || [];
+                    for (let i = 0; i < list.length; i++) {
+                        const it = list[i];
+                        const nama = ((it[cfg.namaKey] || (cfg.key === 'lainnya_items' ? it.lainnya_judul : '')) || '').trim();
+                        const kode = (it[cfg.kodeKey] || '').trim();
+                        const vol = parseInt(it[cfg.volKey]) || 0;
+                        const hrg = parseFloat(it[cfg.hrgKey]) || 0;
+
+                        if (!nama && !kode && vol <= 1 && hrg <= 0 && list.length > 1) {
+                            continue;
+                        }
+
+                        totalFoundItems++;
+
+                        if (!nama) {
+                            this.setStepError(2, `Nama barang pada baris ke-${i + 1} (${cfg.name}) wajib diisi.`);
+                            this.showToast('Validasi Gagal', `Nama barang baris ke-${i + 1} wajib diisi.`, 'error');
+                            return false;
+                        }
+                        if (vol < 1) {
+                            this.setStepError(2, `Jumlah volume pada baris ke-${i + 1} (${cfg.name}) minimal 1.`);
+                            this.showToast('Data Belum Lengkap', `Volume baris ke-${i + 1} minimal 1.`, 'error');
+                            return false;
+                        }
+                        if (hrg <= 0) {
+                            this.setStepError(2, `Harga satuan pada baris ke-${i + 1} (${cfg.name}) wajib diisi lebih dari Rp 0.`);
+                            this.showToast('Data Belum Lengkap', `Harga satuan baris ke-${i + 1} harus lebih dari Rp 0.`, 'error');
+                            return false;
+                        }
+                    }
                 }
 
-                if (items.length === 0) {
-                    this.setStepError(2, `Belum ada barang yang ditambahkan pada ${sheetName}. Silakan tambahkan minimal 1 item barang.`);
+                if (totalFoundItems === 0) {
+                    this.setStepError(2, 'Belum ada barang yang ditambahkan pada formulir KIB. Silakan tambahkan minimal 1 item barang.');
                     this.showToast('Data Belum Lengkap', 'Tambahkan minimal 1 item barang belanja.', 'error');
                     return false;
-                }
-
-                if (!this.formData.jenis_astap_id) {
-                    this.ensureJenisAstapId();
-                }
-                if (!this.formData.jenis_astap_id) {
-                    const msg = 'Mohon pilih klasifikasi PMDN 108 resmi pemerintah dari daftar rekomendasi.';
-                    this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
-                    this.setStepError(2, msg);
-                    return false;
-                }
-
-                for (let i = 0; i < items.length; i++) {
-                    const it = items[i];
-                    let nama = '';
-                    let kode = '';
-                    let vol = 1;
-                    let hrg = 0;
-
-                    if (this.isMesin) {
-                        kode = (it.mesin_kode_barang || '').trim();
-                        nama = (it.mesin_nama_barang || '').trim();
-                        vol = parseInt(it.mesin_jumlah_barang) || 0;
-                        hrg = parseFloat(it.mesin_nilai_satuan) || 0;
-                    } else if (this.isLainnya) {
-                        kode = (it.lainnya_kode_barang || '').trim();
-                        nama = (it.lainnya_nama_barang || it.lainnya_judul || '').trim();
-                        vol = parseInt(it.lainnya_jumlah) || 0;
-                        hrg = parseFloat(it.lainnya_nilai_satuan) || 0;
-                    } else if (this.isTanah) {
-                        kode = (it.tanah_kode_barang || '').trim();
-                        nama = (it.tanah_nama_barang || '').trim();
-                        vol = parseInt(it.tanah_jumlah_barang) || 0;
-                        hrg = parseFloat(it.tanah_nilai_satuan) || 0;
-                    } else if (this.isGedung) {
-                        kode = (it.gedung_kode_barang || '').trim();
-                        nama = (it.gedung_nama_barang || '').trim();
-                        vol = parseInt(it.gedung_jumlah_bangunan) || 0;
-                        hrg = parseFloat(it.gedung_nilai_satuan) || 0;
-                    } else if (this.isJaringan) {
-                        kode = (it.jaringan_kode_barang || '').trim();
-                        nama = (it.jaringan_nama_barang || '').trim();
-                        vol = parseInt(it.jaringan_jumlah) || 0;
-                        hrg = parseFloat(it.jaringan_nilai_satuan) || 0;
-                    }
-
-                    if (!kode || !nama) {
-                        this.setStepError(2, `Klasifikasi PMDN 108 pada baris ke-${i + 1} (${sheetName}) wajib dipilih dari daftar rekomendasi resmi PMDN 108.`);
-                        this.showToast('Validasi Langkah 2 Gagal', `Klasifikasi PMDN 108 pada baris ke-${i + 1} wajib dipilih dari daftar resmi.`, 'error');
-                        return false;
-                    }
-                    if (vol < 1) {
-                        this.setStepError(2, `Jumlah volume pada baris ke-${i + 1} (${sheetName}) minimal 1.`);
-                        this.showToast('Data Belum Lengkap', `Volume baris ke-${i + 1} minimal 1.`, 'error');
-                        return false;
-                    }
-                    if (hrg <= 0) {
-                        this.setStepError(2, `Harga satuan pada baris ke-${i + 1} (${sheetName}) wajib diisi lebih dari Rp 0.`);
-                        this.showToast('Data Belum Lengkap', `Harga satuan baris ke-${i + 1} harus lebih dari Rp 0.`, 'error');
-                        return false;
-                    }
                 }
 
                 // 1. VALIDASI EXTRACOM: Nilai satuan tidak boleh melebihi Rp 300.000 jika mode Ekstrakomtabel
@@ -1472,15 +1435,18 @@
                         payload.append('dokumen_kuitansi', this.fileKuitansi);
                     }
 
-                    // Petakan Items dari Sheet KIB Aktif (Semua penempatan disamaratakan ke 'Belum Ditempatkan')
+                    // Petakan Seluruh Items dari Semua Sheet KIB yang Terisi
                     const mappedItems = [];
                     const defaultJenisId = this.formData.jenis_astap_id || (this.allFlat108[0]?.id || 1);
 
-                    if (this.isMesin && this.formData.mesin_items) {
+                    // 1. KIB B - Mesin & Peralatan
+                    if (Array.isArray(this.formData.mesin_items)) {
                         this.formData.mesin_items.forEach(m => {
+                            const nama = (m.mesin_nama_barang || '').trim();
+                            if (!nama) return;
                             const found108 = this.allFlat108.find(x => x.kode === m.mesin_kode_barang);
                             mappedItems.push({
-                                nama_barang: (m.mesin_nama_barang || '').trim(),
+                                nama_barang: nama,
                                 jenis_astap_id: found108 ? found108.id : defaultJenisId,
                                 jumlah_volume: maxVal(m.mesin_jumlah_barang, 1),
                                 satuan: m.mesin_satuan || 'Unit',
@@ -1501,11 +1467,16 @@
                                 }
                             });
                         });
-                    } else if (this.isLainnya && this.formData.lainnya_items) {
+                    }
+
+                    // 2. KIB E - Aset Tetap Lainnya
+                    if (Array.isArray(this.formData.lainnya_items)) {
                         this.formData.lainnya_items.forEach(l => {
+                            const nama = (l.lainnya_nama_barang || l.lainnya_judul || '').trim();
+                            if (!nama) return;
                             const found108 = this.allFlat108.find(x => x.kode === l.lainnya_kode_barang);
                             mappedItems.push({
-                                nama_barang: (l.lainnya_nama_barang || l.lainnya_judul || '').trim(),
+                                nama_barang: nama,
                                 jenis_astap_id: found108 ? found108.id : defaultJenisId,
                                 jumlah_volume: maxVal(l.lainnya_jumlah, 1),
                                 satuan: l.lainnya_satuan || 'Buah',
@@ -1523,11 +1494,17 @@
                                 }
                             });
                         });
-                    } else if (this.isTanah && this.formData.tanah_items) {
+                    }
+
+                    // 3. KIB A - Tanah
+                    if (Array.isArray(this.formData.tanah_items)) {
                         this.formData.tanah_items.forEach(t => {
+                            const nama = (t.tanah_nama_barang || '').trim();
+                            if (!nama) return;
+                            const found108 = this.allFlat108.find(x => x.kode === t.tanah_kode_barang);
                             mappedItems.push({
-                                nama_barang: (t.tanah_nama_barang || '').trim(),
-                                jenis_astap_id: defaultJenisId,
+                                nama_barang: nama,
+                                jenis_astap_id: found108 ? found108.id : defaultJenisId,
                                 jumlah_volume: maxVal(t.tanah_jumlah_barang, 1),
                                 satuan: t.tanah_satuan || 'Bidang',
                                 harga_satuan: parseFloat(t.tanah_nilai_satuan) || 0,
@@ -1538,11 +1515,17 @@
                                 spesifikasi_json: { luas_m2: t.tanah_luas_m2, hak_tanah: t.tanah_hak, ruang_pemegang: 'Belum Ditempatkan' }
                             });
                         });
-                    } else if (this.isGedung && this.formData.gedung_items) {
+                    }
+
+                    // 4. KIB C - Gedung & Bangunan
+                    if (Array.isArray(this.formData.gedung_items)) {
                         this.formData.gedung_items.forEach(g => {
+                            const nama = (g.gedung_nama_barang || '').trim();
+                            if (!nama) return;
+                            const found108 = this.allFlat108.find(x => x.kode === g.gedung_kode_barang);
                             mappedItems.push({
-                                nama_barang: (g.gedung_nama_barang || '').trim(),
-                                jenis_astap_id: defaultJenisId,
+                                nama_barang: nama,
+                                jenis_astap_id: found108 ? found108.id : defaultJenisId,
                                 jumlah_volume: maxVal(g.gedung_jumlah_bangunan, 1),
                                 satuan: g.gedung_satuan || 'Gedung',
                                 harga_satuan: parseFloat(g.gedung_nilai_satuan) || 0,
@@ -1553,11 +1536,17 @@
                                 spesifikasi_json: { gedung_luas_m2: g.gedung_luas_m2, beton: g.gedung_beton, ruang_pemegang: 'Belum Ditempatkan' }
                             });
                         });
-                    } else if (this.isJaringan && this.formData.jaringan_items) {
+                    }
+
+                    // 5. KIB D - Jaringan, Jalan & Irigasi
+                    if (Array.isArray(this.formData.jaringan_items)) {
                         this.formData.jaringan_items.forEach(j => {
+                            const nama = (j.jaringan_nama_barang || '').trim();
+                            if (!nama) return;
+                            const found108 = this.allFlat108.find(x => x.kode === j.jaringan_kode_barang);
                             mappedItems.push({
-                                nama_barang: (j.jaringan_nama_barang || '').trim(),
-                                jenis_astap_id: defaultJenisId,
+                                nama_barang: nama,
+                                jenis_astap_id: found108 ? found108.id : defaultJenisId,
                                 jumlah_volume: maxVal(j.jaringan_jumlah, 1),
                                 satuan: j.jaringan_satuan || 'Ruas',
                                 harga_satuan: parseFloat(j.jaringan_nilai_satuan) || 0,

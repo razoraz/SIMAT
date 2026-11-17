@@ -45,43 +45,6 @@ class BelanjaBarangController extends Controller
             $astap->update(['belanja_barang_id' => $header->id]);
         }
 
-        // Penyeragaman (sama ratakan) status alokasi belanja barang menjadi "Belum Ditempatkan" (Tersedia)
-        // Kecuali register yang telah memiliki catatan resmi BAST Distribusi ke ruangan
-        $belanjaAstapIds = Astap::where(function($q) {
-                $q->whereIn('sumber_dana', ['belanja_barang', 'belanja_rekening'])
-                  ->orWhereNotNull('belanja_barang_id');
-            })
-            ->pluck('id');
-
-        if ($belanjaAstapIds->isNotEmpty()) {
-            $distributedRegIds = \App\Models\DistribusiItemRegister::pluck('astap_register_id')->filter()->unique()->toArray();
-
-            AstapRegister::whereIn('astap_id', $belanjaAstapIds)
-                ->whereNotIn('id', $distributedRegIds)
-                ->where(function($q) {
-                    $q->where('ruang_pemegang', '!=', 'Belum Ditempatkan')
-                      ->orWhereNotNull('unit_id')
-                      ->orWhere('status', '!=', 'Tersedia');
-                })
-                ->update([
-                    'unit_id'        => null,
-                    'ruang_pemegang' => 'Belum Ditempatkan',
-                    'status'         => 'Tersedia',
-                ]);
-
-            Astap::whereIn('id', $belanjaAstapIds)
-                ->where(function($q) {
-                    $q->whereNull('alamat_barang')
-                      ->orWhere('alamat_barang', '!=', 'Belum Ditempatkan');
-                })
-                ->update([
-                    'alamat_barang' => 'Belum Ditempatkan',
-                ]);
-
-            AstapBelanjaBarang::where('status_alokasi', '!=', 'belum_ditempatkan')
-                ->update(['status_alokasi' => 'belum_ditempatkan']);
-        }
-
         $filterTahun = $request->query('tahun', 'all');
         $filterTw    = $request->query('triwulan', 'all');
         $search      = trim($request->query('search', ''));
@@ -90,6 +53,7 @@ class BelanjaBarangController extends Controller
         $query = AstapBelanjaBarang::with([
                 'astaps.jenisAstap',
                 'astaps.registers.unit',
+                'astaps.unit',
                 'user'
             ])
             ->where('is_deleted', 0)
@@ -329,6 +293,13 @@ class BelanjaBarangController extends Controller
         // 4. Siapkan item barang yang valid untuk disimpan ke DB & validasi aturan Extracom (<= 300.000)
         $isExtracomGlobal = $request->boolean('is_extracomtable');
         $itemsList = $validated['items'];
+
+        $jenisIds = collect($itemsList)->pluck('jenis_astap_id')->filter()->unique()->toArray();
+        if ($defaultJenisId) {
+            $jenisIds[] = $defaultJenisId;
+        }
+        $jenisAstapMap = JenisAstap::whereIn('id', $jenisIds)->get()->keyBy('id');
+
         foreach ($itemsList as $idx => &$it) {
             if (empty($it['jenis_astap_id'])) {
                 $it['jenis_astap_id'] = $defaultJenisId;
@@ -353,7 +324,7 @@ class BelanjaBarangController extends Controller
 
             // Validasi: Barang Aset Tetap Reguler bernilai <= Rp 300.000 wajib masuk Ekstrakomtabel (KIB B & KIB E)
             if (!$isItemExtra && $hrg > 0 && $hrg <= 300000) {
-                $ja = JenisAstap::find($it['jenis_astap_id']);
+                $ja = $jenisAstapMap->get($it['jenis_astap_id']);
                 $kd = $ja ? ($ja->sub_sub_rincian_objek ?: $ja->jenis) : '';
                 $isTanahGedungJaringan = str_starts_with($kd, '1.3.1') || str_starts_with($kd, '1.3.3') || str_starts_with($kd, '1.3.4');
                 if (!$isTanahGedungJaringan) {
@@ -400,6 +371,7 @@ class BelanjaBarangController extends Controller
             $triwulan,
             $ppkNama,
             $ppkNip,
+            $jenisAstapMap,
             $request
         ) {
             // A. Simpan Dokumen Faktur Header
@@ -481,12 +453,13 @@ class BelanjaBarangController extends Controller
                 }
 
                 // C. Buat Register NIBAR untuk setiap unit fisik barang
-                $ja = JenisAstap::find($jenisAstapId);
+                $ja = $jenisAstapMap->get($jenisAstapId) ?? JenisAstap::find($jenisAstapId);
                 $kode108Raw = $ja ? ($ja->sub_sub_rincian_objek ?: $ja->jenis) : '1.3.2.00.00.00';
                 $kode108Clean = str_replace('.', '', $kode108Raw);
 
                 $maxRegInt = AstapRegister::where('tahun_perolehan', $tahun)
                     ->whereHas('astap', fn($sq) => $sq->where('jenis_astap_id', $jenisAstapId))
+                    ->lockForUpdate()
                     ->max('no_register_int') ?? 0;
 
                 $runningRegNum = (int) $maxRegInt;
@@ -564,6 +537,16 @@ class BelanjaBarangController extends Controller
      */
     public function destroy(Request $request, $id)
     {
+        // Validasi Otorisasi: Hanya master_admin / admin atau user dengan izin delete yang boleh menghapus
+        $user = Auth::user();
+        if (!in_array($user?->role, ['master_admin', 'admin'], true) && !$user?->canDo('astap', 'delete')) {
+            $msg = 'Anda tidak memiliki hak otorisasi untuk menghapus data Belanja Barang.';
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $msg], 403);
+            }
+            return redirect()->route('master.belanja_barang')->with('error', $msg);
+        }
+
         $belanja = AstapBelanjaBarang::with('astaps.registers')->findOrFail($id);
 
         // Validasi Proteksi Audit: Tolak hapus jika aset sudah ada di BAST Distribusi atau Mutasi
