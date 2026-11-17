@@ -26,13 +26,49 @@
     function formatAstapDate(dateVal) {
         if (!dateVal) return '-';
         try {
+            const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+            const str = String(dateVal).trim();
+            
+            // Deteksi format dd/mm/yyyy atau dd-mm-yyyy
+            const dmyMatch = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+            if (dmyMatch) {
+                const day = parseInt(dmyMatch[1], 10);
+                const monthIdx = parseInt(dmyMatch[2], 10) - 1;
+                const year = parseInt(dmyMatch[3], 10);
+                if (monthIdx >= 0 && monthIdx <= 11) {
+                    return `${day} ${months[monthIdx]} ${year}`;
+                }
+            }
+
             const d = new Date(dateVal);
             if (isNaN(d.getTime())) return String(dateVal);
-            const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
             return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
         } catch(e) {
             return String(dateVal);
         }
+    }
+
+    // Cache dan flattener aman untuk master referensi PMDN 108
+    let _cachedFlat108 = null;
+    function getFlatMaster108() {
+        if (_cachedFlat108) return _cachedFlat108;
+        const raw = window.dbMasterJenisAstap108;
+        if (!raw || !Array.isArray(raw)) return [];
+        if (raw.length > 0 && (raw[0].sub_rincian_objek || raw[0].sub_sub_rincian_objek || raw[0].kode_108)) {
+            _cachedFlat108 = raw;
+            return _cachedFlat108;
+        }
+        const flat = [];
+        function flatten(nodes) {
+            if (!Array.isArray(nodes)) return;
+            nodes.forEach(n => {
+                flat.push(n);
+                if (n.children && Array.isArray(n.children)) flatten(n.children);
+            });
+        }
+        flatten(raw);
+        _cachedFlat108 = flat;
+        return _cachedFlat108;
     }
 
     // Helper tanggal tanda tangan dinamis
@@ -197,10 +233,12 @@
             subRincianKode = (parts.length >= 6) ? parts.slice(0, 6).join('.') : (jenisKode + '.01.01.01');
         }
 
+        const master108List = getFlatMaster108();
+
         let subRincianNama = item.sub_rincian_nama || (item.jenis_astap && item.jenis_astap.uraian_sub_rincian);
         if (!subRincianNama || subRincianNama === '-' || subRincianNama === item.nama_barang) {
-            if (window.dbMasterJenisAstap108 && Array.isArray(window.dbMasterJenisAstap108)) {
-                const found = window.dbMasterJenisAstap108.find(m => m.sub_rincian_objek === subRincianKode || m.sub_sub_rincian_objek === kd108);
+            if (master108List && master108List.length > 0) {
+                const found = master108List.find(m => m.sub_rincian_objek === subRincianKode || m.sub_sub_rincian_objek === kd108);
                 if (found && found.uraian_sub_rincian) {
                     subRincianNama = found.uraian_sub_rincian;
                 }
@@ -212,8 +250,8 @@
 
         // Resolusi Nama Barang PMDN 108 (Sub Sub Rincian Objek)
         let official108Nama = (item.jenis_astap && item.jenis_astap.uraian_sub_sub_rincian) ? item.jenis_astap.uraian_sub_sub_rincian : null;
-        if (!official108Nama && window.dbMasterJenisAstap108 && Array.isArray(window.dbMasterJenisAstap108)) {
-            const found108 = window.dbMasterJenisAstap108.find(m => m.sub_sub_rincian_objek === kd108);
+        if (!official108Nama && master108List && master108List.length > 0) {
+            const found108 = master108List.find(m => m.sub_sub_rincian_objek === kd108);
             if (found108 && found108.uraian_sub_sub_rincian) {
                 official108Nama = found108.uraian_sub_sub_rincian;
             }
@@ -439,6 +477,7 @@
         let currencyCols = [5, 6];
         let intQtyCols = [];
         let decQtyCols = [];
+        let yearCols = [];
         let centerCols = [1, 3, 8];
 
         if (colCount === 26) {
@@ -450,11 +489,13 @@
         } else if (colCount === 33) {
             // KIB B - PERALATAN DAN MESIN (33 Kolom)
             currencyCols = [5, 6, 24, 25]; // Nilai Satuan & Total Nilai Barang
-            intQtyCols = [18, 22]; // c=18: Tahun Perolehan (angka bulat tahun, NO Rp!), c=22: Jumlah Barang
+            yearCols = [18]; // c=18: Tahun Perolehan (angka bulat murni tahun, TANPA pemisah ribuan)
+            intQtyCols = [22]; // c=22: Jumlah Barang
             centerCols = [1, 3, 8, 18, 20, 21, 22, 23, 31]; // Kode, Tahun, Tgl BAST, Kondisi, Jumlah, Satuan, NIP
         } else if (colCount === 31) {
             // KIB C & D - GEDUNG / JARINGAN (31 Kolom)
             currencyCols = [5, 6, 18, 23]; // c=18: Nilai Induk Kapitalisasi, c=23: Total Nilai Barang
+            yearCols = [16]; // c=16: Tahun Induk
             intQtyCols = [21]; // Jumlah Bangunan / Unit
             decQtyCols = [9];  // Luas Lantai / Luas Panjang m²
             centerCols = [1, 3, 8, 10, 11, 12, 14, 15, 16, 17, 20, 21, 22, 29];
@@ -466,7 +507,8 @@
         } else if (colCount === 29) {
             // EXTRACOM - EKSTRAKOMTABEL (29 Kolom)
             currencyCols = [5, 6, 20, 21]; // c=20: Nilai Satuan, c=21: Total Nilai Barang
-            intQtyCols = [14, 18]; // c=14: Tahun Perolehan, c=18: Jumlah Barang
+            yearCols = [14]; // c=14: Tahun Perolehan murni
+            intQtyCols = [18]; // c=18: Jumlah Barang
             centerCols = [1, 3, 8, 14, 16, 17, 18, 19, 27]; // Kode, Tahun, Tgl BAST, Kondisi, Jumlah, Satuan, NIP
         }
 
@@ -509,13 +551,19 @@
                         align = 'left';
                     } else if (currencyCols.includes(c)) {
                         align = 'right';
-                        numFmt = 'Rp #,##0.00';
+                        if (typeof cell.v === 'number') {
+                            numFmt = 'Rp #,##0.00';
+                        }
                     } else if (decQtyCols.includes(c)) {
                         align = 'right';
-                        numFmt = '#,##0.00';
+                        if (typeof cell.v === 'number') {
+                            numFmt = '#,##0.00';
+                        }
                     } else if (intQtyCols.includes(c)) {
                         align = 'center';
-                        numFmt = '#,##0';
+                        if (typeof cell.v === 'number') {
+                            numFmt = '#,##0';
+                        }
                     } else {
                         align = 'center';
                     }
@@ -526,14 +574,23 @@
                         bold = true;
                     } else if (currencyCols.includes(c)) {
                         align = 'right';
-                        numFmt = 'Rp #,##0.00';
+                        if (typeof cell.v === 'number') {
+                            numFmt = 'Rp #,##0.00';
+                        }
                         fill = 'E0F2FE'; // Soft Sky Blue accent untuk kolom nilai (Sesuai Data ASTAP)
                     } else if (decQtyCols.includes(c)) {
                         align = 'right';
-                        numFmt = '#,##0.00';
+                        if (typeof cell.v === 'number') {
+                            numFmt = '#,##0.00';
+                        }
+                    } else if (yearCols.includes(c)) {
+                        align = 'center';
+                        numFmt = '0'; // Tahun murni: 2024, bukan 2,024
                     } else if (intQtyCols.includes(c)) {
                         align = 'center';
-                        numFmt = '#,##0';
+                        if (typeof cell.v === 'number') {
+                            numFmt = '#,##0';
+                        }
                     } else if (centerCols.includes(c)) {
                         align = 'center';
                     } else {
@@ -618,11 +675,11 @@
         if (isExportingMutasi) return;
         isExportingMutasi = true;
 
-        if (typeof XLSX === 'undefined') {
-            alert('⚠️ Pustaka Excel sedang dimuat, silakan coba 1 detik lagi...');
-            isExportingMutasi = false;
-            return;
-        }
+        try {
+            if (typeof XLSX === 'undefined') {
+                alert('⚠️ Pustaka Excel sedang dimuat, silakan coba 1 detik lagi...');
+                return;
+            }
 
         const rawMutasis = (window.simatMutasiEksternals && window.simatMutasiEksternals.length > 0)
             ? window.simatMutasiEksternals
@@ -641,14 +698,24 @@
             if (targetTw === 'all') return true;
             let tw = itemTw;
             if (!tw && itemDate) {
-                const m = new Date(itemDate).getMonth() + 1;
-                if (m <= 3) tw = 'TW I';
-                else if (m <= 6) tw = 'TW II';
-                else if (m <= 9) tw = 'TW III';
-                else tw = 'TW IV';
+                let m = 0;
+                const dmyMatch = String(itemDate).match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+                if (dmyMatch) {
+                    m = parseInt(dmyMatch[2], 10);
+                } else {
+                    const parsedD = new Date(itemDate);
+                    if (!isNaN(parsedD.getTime())) {
+                        m = parsedD.getMonth() + 1;
+                    }
+                }
+                if (m >= 1 && m <= 3) tw = 'TW I';
+                else if (m >= 4 && m <= 6) tw = 'TW II';
+                else if (m >= 7 && m <= 9) tw = 'TW III';
+                else if (m >= 10 && m <= 12) tw = 'TW IV';
             }
             const targetKey = String(targetTw).replace(/[\s_]/g, '').toUpperCase();
-            const curTw = String(tw || 'TWI').replace(/[\s_]/g, '').toUpperCase();
+            const curTw = String(tw || '').replace(/[\s_]/g, '').toUpperCase();
+            if (!curTw) return false;
             return (curTw === targetKey) ||
                    (targetKey === 'TWI' && curTw === 'TW1') || (targetKey === 'TW1' && curTw === 'TWI') ||
                    (targetKey === 'TWII' && curTw === 'TW2') || (targetKey === 'TW2' && curTw === 'TWII') ||
@@ -929,7 +996,7 @@
                     const subTanah = (spec.tanah_items && Array.isArray(spec.tanah_items) && spec.tanah_items.length > 0) ? spec.tanah_items : null;
 
                     const makeCol1to7 = (isFirst) => {
-                        if (!isFirst) return ['', '', '', '', '', 0, 0];
+                        if (!isFirst) return ['', '', '', '', '', '', ''];
                         return [
                             globalKibANo,
                             info.jenisKode,
@@ -942,10 +1009,22 @@
                     };
 
                     if (subTanah) {
-                        subTanah.forEach((tItem) => {
+                        let allocatedSubTotal = 0;
+                        const totalSubCount = subTanah.length;
+                        subTanah.forEach((tItem, tIdx) => {
                             const tJumlahBidang = Math.max(1, parseInt(tItem.tanah_jumlah || tItem.jumlah || 1));
                             const tLuasM2 = parseFloat(tItem.tanah_luas || tItem.luas_m2 || 0);
-                            const tTotalNilai = parseFloat(tItem.tanah_nilai || tItem.nilai_perolehan || 0) || (subTanah.length > 0 ? totalNilaiBarang / subTanah.length : 0);
+                            let tTotalNilai = 0;
+                            if (tItem.tanah_nilai && parseFloat(tItem.tanah_nilai) > 0) {
+                                tTotalNilai = parseFloat(tItem.tanah_nilai);
+                            } else {
+                                if (tIdx === totalSubCount - 1) {
+                                    tTotalNilai = Math.max(0, totalNilaiBarang - allocatedSubTotal);
+                                } else {
+                                    tTotalNilai = Math.round((totalNilaiBarang / totalSubCount) * 100) / 100;
+                                    allocatedSubTotal += tTotalNilai;
+                                }
+                            }
 
                             kibATotalUnit += tJumlahBidang;
                             kibATotalLuas += tLuasM2;
@@ -1208,7 +1287,7 @@
                     const thnPerolehan = item.tahun_perolehan || details.spec.tahun_pembuatan || new Date().getFullYear();
 
                     const makeCol1to7 = (isFirst) => {
-                        if (!isFirst) return ['', '', '', '', '', 0, 0];
+                        if (!isFirst) return ['', '', '', '', '', '', ''];
                         return [
                             globalKibBNo,
                             info.jenisKode,
@@ -1221,10 +1300,22 @@
                     };
 
                     if (subMesin) {
-                        subMesin.forEach((mItem) => {
+                        let allocatedSubTotal = 0;
+                        const totalSubCount = subMesin.length;
+                        subMesin.forEach((mItem, sIdx) => {
                             const qty = Math.max(1, parseInt(mItem.mesin_jumlah_barang || mItem.mesin_jumlah || 1));
-                            const valSatuan = parseFloat(mItem.mesin_nilai_satuan || 0) || (qty > 0 ? totalItemNilai / subMesin.length / qty : 0);
-                            const subTotal = (qty * valSatuan);
+                            let subTotal = 0;
+                            if (mItem.mesin_nilai_satuan && parseFloat(mItem.mesin_nilai_satuan) > 0) {
+                                subTotal = qty * parseFloat(mItem.mesin_nilai_satuan);
+                            } else {
+                                if (sIdx === totalSubCount - 1) {
+                                    subTotal = Math.max(0, totalItemNilai - allocatedSubTotal);
+                                } else {
+                                    subTotal = Math.round((totalItemNilai / totalSubCount) * 100) / 100;
+                                    allocatedSubTotal += subTotal;
+                                }
+                            }
+                            const valSatuan = qty > 0 ? (subTotal / qty) : 0;
 
                             kibBTotalUnit += qty;
                             kibBTotalNilaiBarang += subTotal;
@@ -1459,7 +1550,7 @@
                     '', '', '', '', '', '', '',
                     '', '', '', '', '', '',
                     '', '', '',
-                    'Nibar', 'Tahun Induk', 'Nilai Induk s/d ' + (parseInt(yearLabel) - 1 || '2025'),
+                    'Nibar', 'Tahun Induk', 'Nilai Induk s/d ' + ((!isNaN(parseInt(yearLabel))) ? (parseInt(yearLabel) - 1).toString() : (new Date().getFullYear() - 1).toString()),
                     '', '',
                     '', '',
                     '',
@@ -1510,7 +1601,7 @@
                     const subGedung = (spec.gedung_items && Array.isArray(spec.gedung_items) && spec.gedung_items.length > 0) ? spec.gedung_items : null;
 
                     const makeCol1to7 = (isFirst) => {
-                        if (!isFirst) return ['', '', '', '', '', 0, 0];
+                        if (!isFirst) return ['', '', '', '', '', '', ''];
                         return [
                             globalKibCNo,
                             info.jenisKode,
@@ -1523,10 +1614,22 @@
                     };
 
                     if (subGedung) {
-                        subGedung.forEach((gItem) => {
+                        let allocatedSubTotal = 0;
+                        const totalSubCount = subGedung.length;
+                        subGedung.forEach((gItem, gIdx) => {
                             const gQty = Math.max(1, parseInt(gItem.gedung_jumlah || gItem.jumlah || 1));
                             const gLuasLantai = parseFloat(gItem.gedung_luas_m2 || spec.luas_m2 || spec.gedung_luas_m2 || 0);
-                            const gTotalNilai = parseFloat(gItem.gedung_nilai || gItem.nilai_perolehan || 0) || (subGedung.length > 0 ? totalItemNilai / subGedung.length : 0);
+                            let gTotalNilai = 0;
+                            if (gItem.gedung_nilai && parseFloat(gItem.gedung_nilai) > 0) {
+                                gTotalNilai = parseFloat(gItem.gedung_nilai);
+                            } else {
+                                if (gIdx === totalSubCount - 1) {
+                                    gTotalNilai = Math.max(0, totalItemNilai - allocatedSubTotal);
+                                } else {
+                                    gTotalNilai = Math.round((totalItemNilai / totalSubCount) * 100) / 100;
+                                    allocatedSubTotal += gTotalNilai;
+                                }
+                            }
 
                             kibCTotalUnit += gQty;
                             kibCTotalNilaiBarang += gTotalNilai;
@@ -1745,7 +1848,7 @@
                     '', '', '', '', '', '', '',
                     '', '', '', '', '', '',
                     '', '', '',
-                    'Nibar', 'Tahun Induk', 'Nilai Induk s/d ' + (parseInt(yearLabel) - 1 || '2025'),
+                    'Nibar', 'Tahun Induk', 'Nilai Induk s/d ' + ((!isNaN(parseInt(yearLabel))) ? (parseInt(yearLabel) - 1).toString() : (new Date().getFullYear() - 1).toString()),
                     '', '',
                     '', '',
                     '',
@@ -1796,7 +1899,7 @@
                     const subJaringan = (spec.jaringan_items && Array.isArray(spec.jaringan_items) && spec.jaringan_items.length > 0) ? spec.jaringan_items : null;
 
                     const makeCol1to7 = (isFirst) => {
-                        if (!isFirst) return ['', '', '', '', '', 0, 0];
+                        if (!isFirst) return ['', '', '', '', '', '', ''];
                         return [
                             globalKibDNo,
                             info.jenisKode,
@@ -1809,10 +1912,22 @@
                     };
 
                     if (subJaringan) {
-                        subJaringan.forEach((jItem) => {
+                        let allocatedSubTotal = 0;
+                        const totalSubCount = subJaringan.length;
+                        subJaringan.forEach((jItem, jIdx) => {
                             const jQty = Math.max(1, parseInt(jItem.jaringan_jumlah || jItem.jumlah || 1));
                             const jLuasPanjang = parseFloat(jItem.jaringan_luas_m2 || jItem.jaringan_panjang_m || spec.luas_m2 || spec.panjang_m || spec.panjang_km || 0);
-                            const jTotalNilai = parseFloat(jItem.jaringan_nilai || jItem.nilai_perolehan || 0) || (subJaringan.length > 0 ? totalItemNilai / subJaringan.length : 0);
+                            let jTotalNilai = 0;
+                            if (jItem.jaringan_nilai && parseFloat(jItem.jaringan_nilai) > 0) {
+                                jTotalNilai = parseFloat(jItem.jaringan_nilai);
+                            } else {
+                                if (jIdx === totalSubCount - 1) {
+                                    jTotalNilai = Math.max(0, totalItemNilai - allocatedSubTotal);
+                                } else {
+                                    jTotalNilai = Math.round((totalItemNilai / totalSubCount) * 100) / 100;
+                                    allocatedSubTotal += jTotalNilai;
+                                }
+                            }
 
                             kibDTotalUnit += jQty;
                             kibDTotalNilaiBarang += jTotalNilai;
@@ -2083,7 +2198,7 @@
                     const subLainnya = (spec.lainnya_items && Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0) ? spec.lainnya_items : null;
 
                     const makeCol1to7 = (isFirst) => {
-                        if (!isFirst) return ['', '', '', '', '', 0, 0];
+                        if (!isFirst) return ['', '', '', '', '', '', ''];
                         return [
                             globalKibENo,
                             info.jenisKode,
@@ -2096,9 +2211,21 @@
                     };
 
                     if (subLainnya) {
-                        subLainnya.forEach((lItem) => {
+                        let allocatedSubTotal = 0;
+                        const totalSubCount = subLainnya.length;
+                        subLainnya.forEach((lItem, lIdx) => {
                             const lQty = Math.max(1, parseInt(lItem.lainnya_jumlah || lItem.jumlah || 1));
-                            const lTotalNilai = parseFloat(lItem.lainnya_nilai || lItem.nilai_perolehan || 0) || (subLainnya.length > 0 ? totalItemNilai / subLainnya.length : 0);
+                            let lTotalNilai = 0;
+                            if (lItem.lainnya_nilai && parseFloat(lItem.lainnya_nilai) > 0) {
+                                lTotalNilai = parseFloat(lItem.lainnya_nilai);
+                            } else {
+                                if (lIdx === totalSubCount - 1) {
+                                    lTotalNilai = Math.max(0, totalItemNilai - allocatedSubTotal);
+                                } else {
+                                    lTotalNilai = Math.round((totalItemNilai / totalSubCount) * 100) / 100;
+                                    allocatedSubTotal += lTotalNilai;
+                                }
+                            }
                             const lValSatuan = lQty > 0 ? (lTotalNilai / lQty) : lTotalNilai;
 
                             kibETotalUnit += lQty;
@@ -2364,7 +2491,7 @@
                     const subMesin = (spec.mesin_items && Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0) ? spec.mesin_items : null;
 
                     const makeCol1to7 = (isFirst) => {
-                        if (!isFirst) return ['', '', '', '', '', 0, 0];
+                        if (!isFirst) return ['', '', '', '', '', '', ''];
                         return [
                             globalExtracomNo,
                             info.jenisKode,
@@ -2377,10 +2504,22 @@
                     };
 
                     if (subMesin) {
-                        subMesin.forEach((mItem) => {
+                        let allocatedSubTotal = 0;
+                        const totalSubCount = subMesin.length;
+                        subMesin.forEach((mItem, sIdx) => {
                             const subQty = Math.max(1, parseInt(mItem.mesin_jumlah_barang || mItem.mesin_jumlah || 1));
-                            const subValSatuan = parseFloat(mItem.mesin_nilai_satuan || 0) || (subQty > 0 ? totalItemNilai / subMesin.length / subQty : 0);
-                            const subTotal = (subQty * subValSatuan);
+                            let subTotal = 0;
+                            if (mItem.mesin_nilai_satuan && parseFloat(mItem.mesin_nilai_satuan) > 0) {
+                                subTotal = subQty * parseFloat(mItem.mesin_nilai_satuan);
+                            } else {
+                                if (sIdx === totalSubCount - 1) {
+                                    subTotal = Math.max(0, totalItemNilai - allocatedSubTotal);
+                                } else {
+                                    subTotal = Math.round((totalItemNilai / totalSubCount) * 100) / 100;
+                                    allocatedSubTotal += subTotal;
+                                }
+                            }
+                            const subValSatuan = subQty > 0 ? (subTotal / subQty) : 0;
 
                             extTotalUnit += subQty;
                             extTotalNilaiBarang += subTotal;
@@ -2539,8 +2678,13 @@
         // Simpan File Excel
         const fileName = `BUKU_ASET_MUTASI_EKSTERNAL_RSDK_${arahSlug}_${catSlug}_${yearLabel}_${twSlug}.xlsx`;
         XLSX.writeFile(wb, fileName);
-        setTimeout(() => { isExportingMutasi = false; }, 1500);
+    } catch (err) {
+        console.error('❌ Terjadi kesalahan saat memproses ekspor Excel Mutasi Eksternal:', err);
+        alert('Gagal mengekspor file Excel: ' + (err.message || 'Terjadi kesalahan sistem.'));
+    } finally {
+        setTimeout(() => { isExportingMutasi = false; }, 1200);
     }
+}
 
     // Ekspor ke window global untuk modul Mutasi Eksternal & ASTAP
     window.exportMutasiEksternalToExcel = exportMutasiEksternalToExcel;

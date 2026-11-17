@@ -209,14 +209,24 @@
                     if (targetTw === 'all') return true;
                     let tw = itemTw;
                     if (!tw && itemDate) {
-                        const m = new Date(itemDate).getMonth() + 1;
-                        if (m <= 3) tw = 'TW I';
-                        else if (m <= 6) tw = 'TW II';
-                        else if (m <= 9) tw = 'TW III';
-                        else tw = 'TW IV';
+                        let m = 0;
+                        const dmyMatch = String(itemDate).match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+                        if (dmyMatch) {
+                            m = parseInt(dmyMatch[2], 10);
+                        } else {
+                            const parsedD = new Date(itemDate);
+                            if (!isNaN(parsedD.getTime())) {
+                                m = parsedD.getMonth() + 1;
+                            }
+                        }
+                        if (m >= 1 && m <= 3) tw = 'TW I';
+                        else if (m >= 4 && m <= 6) tw = 'TW II';
+                        else if (m >= 7 && m <= 9) tw = 'TW III';
+                        else if (m >= 10 && m <= 12) tw = 'TW IV';
                     }
                     const targetKey = String(targetTw).replace(/[\s_]/g, '').toUpperCase();
-                    const curTw = String(tw || 'TWI').replace(/[\s_]/g, '').toUpperCase();
+                    const curTw = String(tw || '').replace(/[\s_]/g, '').toUpperCase();
+                    if (!curTw) return false;
                     return (curTw === targetKey) ||
                            (targetKey === 'TWI' && curTw === 'TW1') || (targetKey === 'TW1' && curTw === 'TWI') ||
                            (targetKey === 'TWII' && curTw === 'TW2') || (targetKey === 'TW2' && curTw === 'TWII') ||
@@ -226,8 +236,11 @@
 
                 return raw.filter(item => {
                     if (item.is_deleted === 1) return false;
-                    if (fDir === 'masuk' && item.tipe === 'keluar') return false;
-                    if (fDir === 'keluar' && item.tipe !== 'keluar') return false;
+                    const itemIsKeluar = (item.tipe === 'keluar') || 
+                                         (String(item.jenis || '').toLowerCase().includes('keluar')) || 
+                                         (String(item.kategori_label || '').toLowerCase().includes('keluar'));
+                    if (fDir === 'masuk' && itemIsKeluar) return false;
+                    if (fDir === 'keluar' && !itemIsKeluar) return false;
 
                     const itemYear = String(item.tahun_perolehan || (item.tgl_raw ? new Date(item.tgl_raw).getFullYear() : ''));
                     if (fYear !== 'all' && itemYear !== String(fYear)) return false;
