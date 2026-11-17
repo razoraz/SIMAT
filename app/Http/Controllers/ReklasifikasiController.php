@@ -180,25 +180,99 @@ class ReklasifikasiController extends Controller
 
         $reklasKurangByRow = [];
         $reklasTambahByRow = [];
+        $reklasBaruDetailsByRow = []; // Khusus transaksi baru saja (dalam 24 jam / hari ini)
+        $reklasItemsByRow = []; // Rincian lengkap aset per akun untuk modal drill-down neraca
+
         foreach ($reklasMutasis as $reklas) {
             $asalRowId = $this->resolveAsalRowId($reklas, $templateRows);
             $tujuanRowId = $this->resolveTujuanRowId($reklas, $templateRows);
             $val = (float) $reklas->nilai_reklas;
+            $namaBarang = $reklas->astap?->nama_barang ?: 'Aset #' . $reklas->astap_id;
+
+            // Cek apakah transaksi dibuat baru saja (kurang dari 24 jam / hari ini)
+            $isBaruSaja = false;
+            if ($reklas->created_at) {
+                $isBaruSaja = $reklas->created_at->diffInHours(now()) <= 24 || $reklas->created_at->isToday();
+            }
+
+            $baseItem = [
+                'id'              => $reklas->id,
+                'astap_id'        => $reklas->astap_id,
+                'nama_barang'     => $namaBarang,
+                'kode_108'        => $reklas->astap?->kode_108 ?: ($reklas->astap?->jenisAstap?->sub_sub_rincian_objek ?: '-'),
+                'nibar'           => $reklas->astap?->nibar ?: '-',
+                'tahun_perolehan' => $reklas->astap?->tahun_perolehan ?: $reklas->tahun,
+                'nilai'           => $val,
+                'nilai_formatted' => 'Rp ' . number_format($val, 0, ',', '.'),
+                'jenis_reklas'    => $reklas->jenis_reklas,
+                'jenis_label'     => $reklas->sub_koreksi_label ?: str_replace('_', ' ', $reklas->jenis_reklas),
+                'nomor_ba'        => $reklas->nomor_ba_reklas ?: '-',
+                'tanggal'         => $reklas->tanggal_reklas ? $reklas->tanggal_reklas->format('d/m/Y') : '-',
+                'keterangan'      => $reklas->alasan_reklas ?: ($reklas->keterangan ?: '-'),
+                'is_baru'         => $isBaruSaja,
+                'triwulan'        => $reklas->triwulan,
+                'tahun'           => $reklas->tahun,
+                'raw_item'        => $reklas,
+            ];
 
             if ($reklas->jenis_reklas === 'HIBAH_MASUK') {
                 $korHibahRow = $templateRows->firstWhere('kode_prefix', 'KOR_HIBAH');
                 if ($korHibahRow) {
                     $reklasTambahByRow[$korHibahRow->id] = ($reklasTambahByRow[$korHibahRow->id] ?? 0) + $val;
+                    $reklasItemsByRow[$korHibahRow->id][] = array_merge($baseItem, [
+                        'arah'       => 'tambah',
+                        'arah_label' => 'Hibah Masuk (+)',
+                    ]);
+                    if ($isBaruSaja) {
+                        $reklasBaruDetailsByRow[$korHibahRow->id][] = [
+                            'nama'  => $namaBarang,
+                            'arah'  => 'tambah',
+                            'nilai' => $val,
+                        ];
+                    }
                 }
                 if ($tujuanRowId && (!$korHibahRow || $tujuanRowId != $korHibahRow->id)) {
                     $reklasTambahByRow[$tujuanRowId] = ($reklasTambahByRow[$tujuanRowId] ?? 0) + $val;
+                    $reklasItemsByRow[$tujuanRowId][] = array_merge($baseItem, [
+                        'arah'       => 'tambah',
+                        'arah_label' => 'Mutasi Bertambah (+)',
+                    ]);
+                    if ($isBaruSaja) {
+                        $reklasBaruDetailsByRow[$tujuanRowId][] = [
+                            'nama'  => $namaBarang,
+                            'arah'  => 'tambah',
+                            'nilai' => $val,
+                        ];
+                    }
                 }
             } else {
                 if ($asalRowId) {
                     $reklasKurangByRow[$asalRowId] = ($reklasKurangByRow[$asalRowId] ?? 0) + $val;
+                    $reklasItemsByRow[$asalRowId][] = array_merge($baseItem, [
+                        'arah'       => 'kurang',
+                        'arah_label' => 'Mutasi Berkurang (-)',
+                    ]);
+                    if ($isBaruSaja) {
+                        $reklasBaruDetailsByRow[$asalRowId][] = [
+                            'nama'  => $namaBarang,
+                            'arah'  => 'kurang',
+                            'nilai' => $val,
+                        ];
+                    }
                 }
                 if ($tujuanRowId) {
                     $reklasTambahByRow[$tujuanRowId] = ($reklasTambahByRow[$tujuanRowId] ?? 0) + $val;
+                    $reklasItemsByRow[$tujuanRowId][] = array_merge($baseItem, [
+                        'arah'       => 'tambah',
+                        'arah_label' => 'Mutasi Bertambah (+)',
+                    ]);
+                    if ($isBaruSaja) {
+                        $reklasBaruDetailsByRow[$tujuanRowId][] = [
+                            'nama'  => $namaBarang,
+                            'arah'  => 'tambah',
+                            'nilai' => $val,
+                        ];
+                    }
                 }
             }
         }
@@ -272,6 +346,20 @@ class ReklasifikasiController extends Controller
                 $grandTotal['akhir']  += $saldoAkhir;
             }
 
+            // Cek apakah ada transaksi reklasifikasi yang BARU SAJA diinput (dalam 24 jam terakhir)
+            $baruDetails = $reklasBaruDetailsByRow[$row->id] ?? [];
+            $isBaru = count($baruDetails) > 0;
+
+            $tooltipLines = [];
+            foreach (array_slice($baruDetails, 0, 3) as $d) {
+                $sign = ($d['arah'] === 'tambah') ? '+' : '-';
+                $tooltipLines[] = "{$d['nama']} ({$sign}Rp " . number_format($d['nilai'], 0, ',', '.') . ")";
+            }
+            if (count($baruDetails) > 3) {
+                $tooltipLines[] = '+' . (count($baruDetails) - 3) . ' aset lainnya';
+            }
+            $reklasTooltipBaru = implode(' • ', $tooltipLines);
+
             $matriks[] = [
                 'id' => $row->id,
                 'urutan' => $row->urutan,
@@ -282,6 +370,10 @@ class ReklasifikasiController extends Controller
                 'mutasi_tambah' => $mutasiTambah,
                 'mutasi_kurang' => $mutasiKurang,
                 'saldo_akhir' => $saldoAkhir,
+                'is_baru' => $isBaru,
+                'reklas_tooltip_baru' => $reklasTooltipBaru,
+                'items_count' => count($reklasItemsByRow[$row->id] ?? []),
+                'has_reklas'  => (($reklasTambahByRow[$row->id] ?? 0) > 0 || ($reklasKurangByRow[$row->id] ?? 0) > 0 || !empty($reklasItemsByRow[$row->id])),
             ];
         }
 
@@ -368,6 +460,7 @@ class ReklasifikasiController extends Controller
             'dbSkpdDirectory'   => $dbSkpdDirectory,
             'dbSkpdAsals'       => $dbSkpdAsals,
             'dbPejabats'        => $dbPejabats,
+            'reklasItemsByRow'  => $reklasItemsByRow,
         ]);
     }
 
@@ -415,6 +508,8 @@ class ReklasifikasiController extends Controller
         }
 
         $templateRows = JenisReklasifikasi::active()->get();
+        $selectedTw = $request->get('triwulan', 'all');
+        $selectedJenis = $request->get('jenis', 'all');
         $dbSkpdDirectory = \App\Http\Controllers\MutasiEksternalController::getSkpdDirectory();
         $dbSkpdAsals = array_values(array_unique(array_keys($dbSkpdDirectory)));
         $dbPejabats = \App\Http\Controllers\MutasiEksternalController::getDistinctPejabats();
@@ -422,6 +517,8 @@ class ReklasifikasiController extends Controller
         return view('pages.reklasifikasi.create', [
             'tahunList'         => $tahunList,
             'selectedTahun'     => $selectedTahun,
+            'selectedTw'        => $selectedTw,
+            'selectedJenis'     => $selectedJenis,
             'kandidatAstaps'    => $kandidatAstaps,
             'targetAstap'       => $targetAstap,
             'targetAstapId'     => $targetAstapId,

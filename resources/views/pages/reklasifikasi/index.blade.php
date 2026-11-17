@@ -4,6 +4,7 @@
 
     <script>
         window.dbMitraKemitraans = @json($dbMitraKemitraans ?? []);
+        window.neracaReklasItems = @json($reklasItemsByRow ?? []);
     </script>
 
     @include('pages.reklasifikasi.partials.scripts')
@@ -30,5 +31,6 @@
         @include('pages.reklasifikasi.partials.modal_detail')
         @include('pages.reklasifikasi.partials.modal_confirm')
         @include('pages.reklasifikasi.partials.modal_panduan')
+        @include('pages.reklasifikasi.partials.modal_rincian_akun')
     </div>
 </x-layout>

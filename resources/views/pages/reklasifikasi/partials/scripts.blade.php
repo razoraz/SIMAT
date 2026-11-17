@@ -19,6 +19,11 @@
             showModalDetail: false,
             showConfirmDelete: false,
             showPanduanModal: false,
+            showModalRincianAkun: false,
+            rincianAkunData: {},
+            rincianAkunItems: [],
+            rincianFilterArah: 'all',
+            rincianSearch: '',
             panduanSearch: '',
             panduanFilterKib: 'all',
             deleteTargetId: null,
@@ -125,6 +130,46 @@
                     if (mitra.alamat) this.formData.spekBaru.kemitraan_alamat = mitra.alamat;
                 }
                 this.isReklasMitraDropdownOpen = false;
+            },
+
+            openRincianAkun(row, filterArah = 'all') {
+                const rowId = (typeof row === 'object') ? row.id : row;
+                const allItems = (window.neracaReklasItems && window.neracaReklasItems[rowId]) ? window.neracaReklasItems[rowId] : [];
+                
+                this.rincianAkunData = {
+                    id: rowId,
+                    nama: (typeof row === 'object') ? row.nama_sub_rincian : ('Rekening #' + rowId),
+                    kodePrefix: (typeof row === 'object') ? row.kode_prefix : '',
+                    kelompokKib: (typeof row === 'object') ? row.kelompok_kib : '',
+                    saldoAwal: (typeof row === 'object') ? (row.saldo_awal || 0) : 0,
+                    mutasiTambah: (typeof row === 'object') ? (row.mutasi_tambah || 0) : 0,
+                    mutasiKurang: (typeof row === 'object') ? (row.mutasi_kurang || 0) : 0,
+                    saldoAkhir: (typeof row === 'object') ? (row.saldo_akhir || 0) : 0,
+                };
+                this.rincianAkunItems = allItems;
+                this.rincianFilterArah = filterArah;
+                this.rincianSearch = '';
+                this.showModalRincianAkun = true;
+            },
+
+            get filteredRincianItems() {
+                let list = this.rincianAkunItems || [];
+                if (this.rincianFilterArah !== 'all') {
+                    list = list.filter(item => item.arah === this.rincianFilterArah);
+                }
+                if (this.rincianSearch && this.rincianSearch.trim() !== '') {
+                    const q = this.rincianSearch.trim().toLowerCase();
+                    list = list.filter(item => {
+                        const nama = (item.nama_barang || '').toLowerCase();
+                        const nibar = (item.nibar || '').toLowerCase();
+                        const kode = (item.kode_108 || '').toLowerCase();
+                        const ba = (item.nomor_ba || '').toLowerCase();
+                        const ket = (item.keterangan || '').toLowerCase();
+                        const jenis = (item.jenis_label || '').toLowerCase();
+                        return nama.includes(q) || nibar.includes(q) || kode.includes(q) || ba.includes(q) || ket.includes(q) || jenis.includes(q);
+                    });
+                }
+                return list;
             },
 
             openPanduan(prefix = '') {
@@ -317,8 +362,8 @@
                 tujuan_nama: '',
                 nilai_reklas: 0,
                 tanggal_reklas: new Date().toISOString().split('T')[0],
-                triwulan: {{ $selectedTw === 'all' ? 1 : (int)$selectedTw }},
-                tahun: {{ $selectedTahun }},
+                triwulan: {{ (!empty($selectedTw) && $selectedTw !== 'all') ? (int)$selectedTw : 1 }},
+                tahun: {{ $selectedTahun ?? date('Y') }},
                 nomor_ba_reklas: '',
                 keterangan: '',
                 spekBaru: {
@@ -762,8 +807,8 @@
                     tujuan_nama: '',
                     nilai_reklas: 0,
                     tanggal_reklas: new Date().toISOString().split('T')[0],
-                    triwulan: {{ $selectedTw === 'all' ? 1 : (int)$selectedTw }},
-                    tahun: {{ $selectedTahun }},
+                    triwulan: {{ (!empty($selectedTw) && $selectedTw !== 'all') ? (int)$selectedTw : 1 }},
+                    tahun: {{ $selectedTahun ?? date('Y') }},
                     nomor_ba_reklas: '',
                     alasan_reklas: '',
                     keterangan: '',
@@ -2160,7 +2205,7 @@
                 XLSX.utils.book_append_sheet(wb, ws, sheetName);
 
                 const suffix = this.activeTab === 'log' ? 'LOG' : 'MATRIKS';
-                const filename = `REKLAS_${suffix}_RSUD_KOESNANDI_{{ $selectedTahun }}_TW{{ $selectedTw }}.xlsx`;
+                const filename = `REKLAS_${suffix}_RSUD_KOESNANDI_{{ $selectedTahun ?? date('Y') }}_TW{{ $selectedTw ?? 'all' }}.xlsx`;
                 XLSX.writeFile(wb, filename);
             }
         };

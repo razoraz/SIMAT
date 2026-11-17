@@ -26,7 +26,7 @@
             </button>
         </div>
 
-        <!-- Tombol Aksi Kanan: Reklasifikasi Baru & Ekspor Excel -->
+        <!-- Tombol Aksi Kanan: Reklasifikasi Baru -->
         <div class="flex items-center gap-2.5 w-full sm:w-auto justify-end">
             <a href="{{ route('master.reklasifikasi.create', ['tahun' => $selectedTahun]) }}"
                 class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 hover:shadow-indigo-500/50 hover:-translate-y-0.5 active:scale-95 transition-all duration-200 cursor-pointer shrink-0">
@@ -35,14 +35,6 @@
                 </svg>
                 <span>Reklasifikasi Baru</span>
             </a>
-
-            <button type="button" @click="exportToExcel()"
-                class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-800 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-500/50 text-xs font-bold shadow-sm hover:shadow-emerald-500/10 active:scale-95 transition-all duration-200 cursor-pointer shrink-0">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                <span>Ekspor Excel</span>
-            </button>
         </div>
     </div>
 

@@ -81,18 +81,34 @@
                     @endif
 
                     {{-- Baris Detail Sub-Rincian --}}
-                    <tr class="hover:bg-slate-800/40 transition-colors {{ $row['saldo_akhir'] > 0 || $row['saldo_awal'] > 0 ? 'bg-slate-900/30' : '' }}">
+                    @php
+                        $isBaru = !empty($row['is_baru']);
+                    @endphp
+                    <tr class="hover:bg-slate-800/40 transition-colors {{ $isBaru ? 'bg-emerald-950/20 border-l-4 border-emerald-400' : ($row['saldo_akhir'] > 0 || $row['saldo_awal'] > 0 ? 'bg-slate-900/30' : '') }}">
                         <td class="py-2.5 px-4 text-center text-slate-400 font-mono text-[11px]">
                             {{ $row['urutan'] }}
                         </td>
                         <td class="py-2.5 px-4 text-slate-200">
                             <div class="flex items-center justify-between gap-2">
-                                <span class="{{ $row['saldo_akhir'] > 0 ? 'text-white font-bold' : 'text-slate-300' }}">
-                                    {{ $row['nama_sub_rincian'] }}
-                                </span>
-                                <button type="button" @click="openPanduan('{{ $row['kode_prefix'] }}')"
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="{{ $row['saldo_akhir'] > 0 ? 'text-white font-bold' : 'text-slate-300' }}">
+                                        {{ $row['nama_sub_rincian'] }}
+                                    </span>
+
+                                    {{-- Penanda Khusus Transaksi Reklasifikasi yang Baru Saja diinput (< 24 Jam) --}}
+                                    @if ($isBaru)
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/35 cursor-help"
+                                            title="{{ $row['reklas_tooltip_baru'] ?: 'Baru direklasifikasi dalam 24 jam terakhir' }}">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                            <span>⚡ Baru Saja</span>
+                                        </span>
+                                    @endif
+                                </div>
+
+                                {{-- Satu-satunya tombol: Ikon (i) dengan fungsi membuka Rincian Mutasi Aset Akun --}}
+                                <button type="button" @click="openRincianAkun({{ json_encode($row) }})"
                                     class="p-1 rounded-md text-slate-500 hover:text-indigo-300 hover:bg-indigo-500/20 transition-all cursor-pointer shrink-0"
-                                    title="Lihat contoh & panduan barang {{ $row['nama_sub_rincian'] }}">
+                                    title="Lihat rincian barang yang direklasifikasi pada {{ $row['nama_sub_rincian'] }}">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
