@@ -395,7 +395,7 @@
                 cell.s = {
                     fill: fill ? { fgColor: { rgb: fill } } : undefined,
                     font: {
-                        name: 'Arial',
+                        name: 'Calibri',
                         sz: fontSize,
                         bold: bold,
                         color: { rgb: fontColor }
@@ -493,14 +493,13 @@
                     align = 'center';
                     border = null;
                 } else if (r >= headerStartRow && r <= headerEndRow) {
-                    fill = '312E81'; // Deep Indigo
+                    fill = (r === headerEndRow) ? '172554' : '1E3A8A'; // Deep Navy (Sesuai Standar Data ASTAP)
                     fontColor = 'FFFFFF';
                     bold = true;
                     align = 'center';
                     fontSize = (r === headerEndRow) ? 8 : 9;
-                    if (r === headerEndRow) fill = '1E1B4B';
                 } else if (r === footerRowIdx) {
-                    fill = 'E0E7FF';
+                    fill = '93C5FD'; // Soft Blue (Sesuai Standar Data ASTAP)
                     fontColor = '0F172A';
                     bold = true;
                     border = doubleBottomBorder;
@@ -520,13 +519,14 @@
                         align = 'center';
                     }
                 } else {
-                    fill = (r % 2 === 0) ? 'FFFFFF' : 'F5F3FF';
+                    fill = (r % 2 === 0) ? 'FFFFFF' : 'F8FAFC'; // Soft Slate (Sesuai Standar Data ASTAP)
                     if (c === 0) {
                         align = 'center';
                         bold = true;
                     } else if (currencyCols.includes(c)) {
                         align = 'right';
                         numFmt = 'Rp #,##0.00';
+                        fill = 'E0F2FE'; // Soft Sky Blue accent untuk kolom nilai (Sesuai Data ASTAP)
                     } else if (decQtyCols.includes(c)) {
                         align = 'right';
                         numFmt = '#,##0.00';

@@ -66,8 +66,12 @@
                 }, 200);
             },
 
-            openDetailModal(item) {
-                this.selectedItem = item;
+            openDetailModal(itemOrId) {
+                if (typeof itemOrId === 'number' || typeof itemOrId === 'string') {
+                    this.selectedItem = (window.__belanjaBarangMap && window.__belanjaBarangMap[itemOrId]) ? window.__belanjaBarangMap[itemOrId] : null;
+                } else {
+                    this.selectedItem = itemOrId;
+                }
                 this.detailPenempatanFilter = 'all';
                 this.detailKondisiFilter = 'all';
                 this.detailSearchQuery = '';

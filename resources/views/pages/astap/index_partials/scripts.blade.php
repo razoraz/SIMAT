@@ -23,6 +23,19 @@
         return letter;
     }
 
+    function cleanDash(v) {
+        if (!v) return '-';
+        const s = String(v).trim();
+        if (s === '' || s === '-' || s === '- -' || s === '- / - / -' || s === '- / -') return '-';
+        return s;
+    }
+
+    function cleanNip(nip) {
+        if (!nip) return '-';
+        const cleaned = String(nip).replace(/^NIP\.?\s*/i, '').trim();
+        return cleaned || '-';
+    }
+
     // STYLING ENGINE KHUSUS SHEET 1: REKAPITULASI
     function applyRekapSheetStyling(ws, rowCount, colCount, titleRowCount = 5, totalRowIdx = 14, signStartRow = 16) {
         const thinBorder = {
@@ -658,8 +671,8 @@
         const yearLabel = filterYear === 'all' ? (new Date().getFullYear()) : filterYear;
         const bannerHeader = `REKAPITULASI REALISASI BELANJA MODAL ASET TETAP (${twLabel}) TAHUN ANGGARAN ${yearLabel}`;
 
-        const ppkNama = (filteredAstaps.find(a => a.ppk_nama && a.ppk_nama !== '-') || {}).ppk_nama || "dr. YUS PRIYATNA ADRYANTO,Sp.P,FISR";
-        const ppkNip  = (filteredAstaps.find(a => a.ppk_nip && a.ppk_nip !== '-') || {}).ppk_nip || "19771002 200604 1 007";
+        const ppkNama = (filteredAstaps.find(a => cleanDash(a.ppk_nama) !== '-') || {}).ppk_nama || "dr. YUS PRIYATNA ADRYANTO,Sp.P,FISR";
+        const ppkNip  = (filteredAstaps.find(a => cleanNip(a.ppk_nip) !== '-') || {}).ppk_nip || "19771002 200604 1 007";
         const signDate = getReportSignDate(filterTw, filterYear);
 
         // ------------------------------------------------------------------------
@@ -897,7 +910,24 @@
             if (typeof spec === 'string') {
                 try { spec = JSON.parse(spec); } catch (e) { spec = {}; }
             }
-            const noHpWa = item.penyedia_telepon || (spec ? spec.penyedia_telepon : '') || item.penyedia_kontak || (spec ? spec.penyedia_kontak : '') || item.telepon || item.no_hp || '-';
+            const noHpWa = cleanDash(item.penyedia_telepon) !== '-' ? item.penyedia_telepon 
+                         : ((spec && cleanDash(spec.penyedia_telepon) !== '-') ? spec.penyedia_telepon 
+                         : (cleanDash(item.penyedia_kontak) !== '-' ? item.penyedia_kontak 
+                         : ((spec && cleanDash(spec.penyedia_kontak) !== '-') ? spec.penyedia_kontak 
+                         : (cleanDash(item.telepon) !== '-' ? item.telepon 
+                         : (cleanDash(item.no_hp) !== '-' ? item.no_hp : '-')))));
+
+            const isBelanjaBarangItem = item.sumber_dana === 'belanja_barang' || item.sumber_dana_raw === 'belanja_barang';
+            const defaultItemPpkNama = isBelanjaBarangItem ? 'BUDI HARTONO, S.Sos' : ppkNama;
+            const defaultItemPpkNip  = isBelanjaBarangItem ? '19760229 200801 1 010' : ppkNip;
+
+            const rawPpkNama = (item.ppk_nama && cleanDash(item.ppk_nama) !== '-') ? item.ppk_nama 
+                             : ((spec && cleanDash(spec.ppk_nama) !== '-') ? spec.ppk_nama : defaultItemPpkNama);
+            const rawPpkNip  = (item.ppk_nip && cleanDash(item.ppk_nip) !== '-') ? item.ppk_nip 
+                             : ((spec && cleanDash(spec.ppk_nip) !== '-') ? spec.ppk_nip : defaultItemPpkNip);
+
+            const rowPpkNama = cleanDash(rawPpkNama || defaultItemPpkNama || '-');
+            const rowPpkNip  = cleanNip(rawPpkNip || defaultItemPpkNip || '-');
 
             if (isSpecial) {
                 return [
@@ -907,8 +937,8 @@
                     item.penyedia_rekening_nama || (item.penyedia_nama || '-'),
                     item.penyedia_rekening_nomor || '-',
                     item.penyedia_alamat || '-',
-                    item.ppk_nama || '-',
-                    item.ppk_nip || '-',
+                    rowPpkNama,
+                    rowPpkNip,
                     item.keterangan_tambahan || item.keterangan || '-'
                 ];
             }
@@ -919,8 +949,8 @@
                 item.penyedia_rekening_nama || (item.penyedia_nama || '-'),
                 item.penyedia_rekening_nomor || '-',
                 item.penyedia_alamat || '-',
-                item.ppk_nama || '-',
-                item.ppk_nip || '-',
+                rowPpkNama,
+                rowPpkNip,
                 item.keterangan_tambahan || item.keterangan || '-'
             ];
         }
@@ -2435,6 +2465,10 @@
             let isFirstRowInGroup = true;
 
             groupItems.forEach((item) => {
+                let spec = item.spesifikasi_json;
+                if (typeof spec === 'string') {
+                    try { spec = JSON.parse(spec); } catch (e) { spec = {}; }
+                }
                 const totalVal = typeof item.total_realisasi_num === 'number' ? item.total_realisasi_num : (parseFloat(item.total_realisasi) || 0);
                 const nilaiPerencanaan = parseFloat(item.jaringan_nilai_perencanaan) || parseFloat(item.nilai_perencanaan) || 0;
                 const nilaiFisik = parseFloat(item.jaringan_nilai_fisik) || parseFloat(item.nilai_fisik) || totalVal;
@@ -3261,6 +3295,10 @@
             let isFirstRowInGroup = true;
 
             groupItems.forEach((item) => {
+                let spec = item.spesifikasi_json;
+                if (typeof spec === 'string') {
+                    try { spec = JSON.parse(spec); } catch (e) { spec = {}; }
+                }
                 const totalVal = typeof item.total_realisasi_num === 'number' ? item.total_realisasi_num : (parseFloat(item.total_realisasi) || 0);
                 const nilaiPerencanaan = parseFloat(item.gedung_nilai_perencanaan) || parseFloat(item.nilai_perencanaan) || 0;
                 const nilaiFisik = parseFloat(item.gedung_nilai_fisik) || parseFloat(item.nilai_fisik) || totalVal;
@@ -3631,6 +3669,10 @@
             let isFirstRowInGroup = true;
 
             groupItems.forEach((item) => {
+                let spec = item.spesifikasi_json;
+                if (typeof spec === 'string') {
+                    try { spec = JSON.parse(spec); } catch (e) { spec = {}; }
+                }
                 const totalVal = typeof item.total_realisasi_num === 'number' ? item.total_realisasi_num : (parseFloat(item.total_realisasi) || 0);
                 const jumlahUnit = parseInt(item.jumlah_volume) || parseInt(item.jumlah_unit) || 1;
                 const hargaSatuan = parseFloat(item.harga_satuan) || (jumlahUnit > 0 ? (totalVal / jumlahUnit) : totalVal);
@@ -3698,8 +3740,8 @@
                     item.penyedia_rekening_nama || (item.penyedia_nama || '-'),  // c41: col 42 (Nama Rek)
                     item.penyedia_rekening_nomor || '-',                         // c42: col 43 (Nomor Rek)
                     item.penyedia_alamat || '-',                                 // c43: col 44 (Alamat Penyedia)
-                    item.ppk_nama || '-',                                        // c44: col 45 (Nama PPK)
-                    item.ppk_nip || '-',                                         // c45: col 46 (NIP PPK)
+                    cleanDash((item.ppk_nama && cleanDash(item.ppk_nama) !== '-') ? item.ppk_nama : ((spec && cleanDash(spec.ppk_nama) !== '-') ? spec.ppk_nama : ((item.sumber_dana === 'belanja_barang' || item.sumber_dana_raw === 'belanja_barang') ? 'BUDI HARTONO, S.Sos' : ppkNama))), // c44: col 45 (Nama PPK)
+                    cleanNip((item.ppk_nip && cleanDash(item.ppk_nip) !== '-') ? item.ppk_nip : ((spec && cleanDash(spec.ppk_nip) !== '-') ? spec.ppk_nip : ((item.sumber_dana === 'belanja_barang' || item.sumber_dana_raw === 'belanja_barang') ? '19760229 200801 1 010' : ppkNip))),      // c45: col 46 (NIP PPK)
                     item.keterangan_tambahan || item.keterangan || '-'           // c46: col 47 (KET.)
                 ]);
             });
@@ -5270,8 +5312,8 @@
         else if (filterTw === 'TW III' || filterTw === 'TW3') { judulPeriode = "TRIWULAN III TAHUN ANGGARAN " + yearLabel; }
         else if (filterTw === 'TW IV' || filterTw === 'TW4') { judulPeriode = "TRIWULAN IV TAHUN ANGGARAN " + yearLabel; }
 
-        const ppkNama = (filteredAstaps.find(a => a.ppk_nama && a.ppk_nama !== '-') || {}).ppk_nama || "dr. YUS PRIYATNA ADRYANTO,Sp.P,FISR";
-        const ppkNip  = (filteredAstaps.find(a => a.ppk_nip && a.ppk_nip !== '-') || {}).ppk_nip || "19771002 200604 1 007";
+        const ppkNama = (filteredAstaps.find(a => cleanDash(a.ppk_nama) !== '-') || {}).ppk_nama || "dr. YUS PRIYATNA ADRYANTO,Sp.P,FISR";
+        const ppkNip  = (filteredAstaps.find(a => cleanNip(a.ppk_nip) !== '-') || {}).ppk_nip || "19771002 200604 1 007";
         const signDate = getReportSignDate(filterTw, filterYear);
 
         // =========================================================================
@@ -9603,6 +9645,514 @@
         XLSX.writeFile(wb, fileName);
         setTimeout(() => { isExportingKemitraan = false; }, 1500);
     }
+
+    // ============================================================================
+    // MODUL EKSPOR EXCEL KHUSUS: BELANJA BARANG (AKUN 5.1.02 / OPERASIONAL RUANGAN)
+    // STANDAR DATA ASTAP: DEEP NAVY (#1E3A8A), SOFT BLUE (#93C5FD), CALIBRI FONT
+    // ============================================================================
+    let isExportingBelanjaBarang = false;
+
+    function applyBelanjaBarangTableStyling(ws, rowCount, colCount, titleRowCount = 4, totalRowIdx = -1, signStartRow = -1, currencyCols = [], dateCols = [], centerCols = []) {
+        const thinBorder = {
+            top: { style: "thin", color: { rgb: "64748B" } },
+            bottom: { style: "thin", color: { rgb: "64748B" } },
+            left: { style: "thin", color: { rgb: "64748B" } },
+            right: { style: "thin", color: { rgb: "64748B" } }
+        };
+
+        const doubleBottomBorder = {
+            top: { style: "thin", color: { rgb: "0F172A" } },
+            bottom: { style: "double", color: { rgb: "0F172A" } },
+            left: { style: "thin", color: { rgb: "64748B" } },
+            right: { style: "thin", color: { rgb: "64748B" } }
+        };
+
+        for (let r = 0; r < rowCount; r++) {
+            if (signStartRow > 0 && r >= signStartRow) continue;
+
+            for (let c = 0; c < colCount; c++) {
+                const cellRef = getColName(c) + (r + 1);
+                if (!ws[cellRef]) ws[cellRef] = { v: "", t: "s" };
+                const cell = ws[cellRef];
+
+                let fill = "FFFFFF";
+                let fontColor = "0F172A";
+                let bold = false;
+                let align = "left";
+                let border = thinBorder;
+                let fontSize = 9.5;
+                let numFmt = null;
+
+                // 1. Baris Judul
+                if (r < titleRowCount) {
+                    fill = "FFFFFF";
+                    fontColor = "0F172A";
+                    bold = true;
+                    align = "center";
+                    fontSize = (r === 0 || r === 1) ? 12 : 11;
+                    border = null;
+                }
+                // 2. Baris Header Tabel (Standar Deep Navy ASTAP)
+                else if (r === titleRowCount || r === titleRowCount + 1) {
+                    fill = (r === titleRowCount + 1) ? "172554" : "1E3A8A";
+                    fontColor = "FFFFFF";
+                    bold = true;
+                    align = "center";
+                    fontSize = (r === titleRowCount + 1) ? 8.5 : 10;
+                    border = thinBorder;
+                }
+                // 3. Baris Total / Footer (Standar Soft Blue ASTAP)
+                else if (r === totalRowIdx) {
+                    fill = "93C5FD";
+                    fontColor = "0F172A";
+                    bold = true;
+                    fontSize = 10;
+                    border = doubleBottomBorder;
+                    if (c === 0) align = "center";
+                    else if (currencyCols.includes(c)) {
+                        align = "right";
+                        numFmt = "Rp #,##0.00";
+                    } else if (centerCols.includes(c)) {
+                        align = "center";
+                    } else {
+                        align = "left";
+                    }
+                }
+                // 4. Baris Data Biasa (Zebra Soft Slate)
+                else {
+                    fill = (r % 2 === 0) ? "FFFFFF" : "F8FAFC";
+                    if (c === 0 || centerCols.includes(c)) {
+                        align = "center";
+                    } else if (dateCols.includes(c)) {
+                        align = "center";
+                    } else if (currencyCols.includes(c)) {
+                        align = "right";
+                        bold = true;
+                        fill = "E0F2FE"; // Aksen Biru Muda ASTAP
+                        numFmt = "Rp #,##0.00";
+                    } else {
+                        align = "left";
+                    }
+                }
+
+                cell.s = {
+                    fill: fill ? { fgColor: { rgb: fill } } : undefined,
+                    font: {
+                        name: "Calibri",
+                        sz: fontSize,
+                        bold: bold,
+                        color: { rgb: fontColor }
+                    },
+                    alignment: {
+                        horizontal: align,
+                        vertical: "center",
+                        wrapText: true
+                    },
+                    border: border || undefined
+                };
+                if (numFmt) cell.z = numFmt;
+            }
+        }
+    }
+
+    function exportBelanjaBarangToExcel(params = {}) {
+        if (isExportingBelanjaBarang) return;
+        isExportingBelanjaBarang = true;
+
+        if (typeof XLSX === 'undefined') {
+            alert('⚠️ Pustaka Excel sedang dimuat, silakan coba 1 detik lagi...');
+            isExportingBelanjaBarang = false;
+            return;
+        }
+
+        const rawAstaps = window.__simatAstaps || [];
+        const wb = XLSX.utils.book_new();
+
+        const filterYear = params.year || 'all';
+        const filterTw   = params.triwulan || 'all';
+        const filterCat  = params.category || 'all';
+
+        // Filter data belanja barang (Akun 5.1.02)
+        const filteredItems = rawAstaps.filter(item => {
+            const isBB = item.sumber_dana === 'belanja_barang' || item.sumber_dana === 'belanja_rekening' || item.sumber_dana_raw === 'belanja_barang';
+            if (!isBB) return false;
+
+            const matchYear = filterYear === 'all' || String(item.tahun_perolehan) === String(filterYear);
+            let matchTw = true;
+            if (filterTw !== 'all') {
+                const targetKey = filterTw.replace(/[\s_]/g, '').toUpperCase();
+                const itemTw = (item.triwulan || 'TWI').replace(/[\s_]/g, '').toUpperCase();
+                matchTw = (itemTw === targetKey) ||
+                          (targetKey === 'TWI' && itemTw === 'TW1') || (targetKey === 'TW1' && itemTw === 'TWI') ||
+                          (targetKey === 'TWII' && itemTw === 'TW2') || (targetKey === 'TW2' && itemTw === 'TWII') ||
+                          (targetKey === 'TWIII' && itemTw === 'TW3') || (targetKey === 'TW3' && itemTw === 'TWIII') ||
+                          (targetKey === 'TWIV' && itemTw === 'TW4') || (targetKey === 'TW4' && itemTw === 'TWIV');
+            }
+            return matchYear && matchTw;
+        });
+
+        // Tentukan Label Triwulan & Tahun
+        let twLabel = "TAHUN ANGGARAN";
+        if (filterTw === 'TW I' || filterTw === 'TW1') twLabel = "TRIWULAN I (JANUARI - MARET)";
+        else if (filterTw === 'TW II' || filterTw === 'TW2') twLabel = "TRIWULAN II (APRIL - JUNI)";
+        else if (filterTw === 'TW III' || filterTw === 'TW3') twLabel = "TRIWULAN III (JULI - SEPTEMBER)";
+        else if (filterTw === 'TW IV' || filterTw === 'TW4') twLabel = "TRIWULAN IV (OKTOBER - DESEMBER)";
+
+        const yearLabel = filterYear === 'all' ? (new Date().getFullYear()) : filterYear;
+        const signDate  = getReportSignDate(filterTw, filterYear);
+
+        // Cari fallback PPK Belanja Barang (Defensive check)
+        let ppkNama = 'BUDI HARTONO, S.Sos';
+        let ppkNip  = '19760229 200801 1 010';
+        const foundPpk = filteredItems.find(a => {
+            const sp = typeof a.spesifikasi_json === 'string' ? (JSON.parse(a.spesifikasi_json || '{}') || {}) : (a.spesifikasi_json || {});
+            return (a.ppk_nama && a.ppk_nama !== '-') || (sp.ppk_nama && sp.ppk_nama !== '-');
+        });
+        if (foundPpk) {
+            const sp = typeof foundPpk.spesifikasi_json === 'string' ? (JSON.parse(foundPpk.spesifikasi_json || '{}') || {}) : (foundPpk.spesifikasi_json || {});
+            ppkNama = cleanDash(foundPpk.ppk_nama || sp.ppk_nama) || ppkNama;
+            ppkNip  = cleanNip(foundPpk.ppk_nip  || sp.ppk_nip)  || ppkNip;
+        }
+
+        // Helper Klasifikasi KIB
+        function classifyItem(item) {
+            let spec = item.spesifikasi_json;
+            if (typeof spec === 'string') {
+                try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
+            }
+            const harga = parseFloat(item.harga_satuan) || 0;
+            const isItemExtracom = item.is_extracom || spec.is_extracom || (harga > 0 && harga <= 300000);
+            if (isItemExtracom) return 'EXTRACOM';
+
+            const kode108 = String(item.kode_barang || (item.jenisAstap ? item.jenisAstap.sub_sub_rincian_objek : '') || '');
+            if (kode108.startsWith('1.3.5')) return 'KIB E';
+            return 'KIB B';
+        }
+
+        // ------------------------------------------------------------------------
+        // LEMBAR 1: REKAPITULASI FAKTUR PEMBELIAN (PER TOKO REKANAN - 12 KOLOM)
+        // ------------------------------------------------------------------------
+        const fakturMap = {};
+        filteredItems.forEach(item => {
+            const spec = typeof item.spesifikasi_json === 'string' ? (JSON.parse(item.spesifikasi_json || '{}') || {}) : (item.spesifikasi_json || {});
+            const toko = cleanDash(item.penyedia_nama || spec.toko_penyedia || spec.rekening_penyedia || 'Pusat Perbekalan RSUD');
+            const noFaktur = cleanDash(spec.nomor_faktur || spec.rekening_nomor_faktur || item.bast_dokumen_nomor);
+            const tglFaktur = cleanDash(formatAstapDate(spec.tanggal_faktur || spec.rekening_tanggal_faktur || item.bast_dokumen_tanggal || item.created_at));
+            const key = item.belanja_barang_id ? `BB_${item.belanja_barang_id}` : (noFaktur !== '-' ? `${toko}_${noFaktur}` : `ASTAP_${item.id}`);
+
+            if (!fakturMap[key]) {
+                fakturMap[key] = {
+                    toko: toko,
+                    nomorFaktur: noFaktur,
+                    tanggalFaktur: tglFaktur,
+                    bankToko: cleanDash(spec.rekening_bank || spec.bank_toko || item.penyedia_bank),
+                    rekeningToko: cleanDash(spec.nomor_rekening || spec.rekening_nomor || item.penyedia_rekening_nomor),
+                    ppkNama: cleanDash(item.ppk_nama || spec.ppk_nama) !== '-' ? cleanDash(item.ppk_nama || spec.ppk_nama) : ppkNama,
+                    ppkNip: cleanDash(item.ppk_nip || spec.ppk_nip) !== '-' ? cleanDash(item.ppk_nip || spec.ppk_nip) : ppkNip,
+                    keterangan: cleanDash(item.keterangan_tambahan || spec.keterangan || spec.rekening_keterangan),
+                    itemCount: 0,
+                    totalVol: 0,
+                    totalNilai: 0,
+                    items: []
+                };
+            }
+            const vol = parseInt(item.jumlah_volume || item.volume_satuan) || 1;
+            const nilai = typeof item.total_realisasi_num === 'number' ? item.total_realisasi_num : (parseFloat(item.total_realisasi) || (vol * (parseFloat(item.harga_satuan) || 0)));
+            fakturMap[key].itemCount += 1;
+            fakturMap[key].totalVol += vol;
+            fakturMap[key].totalNilai += nilai;
+            fakturMap[key].items.push(item);
+        });
+
+        const rekapRows = [
+            ["PEMERINTAH KABUPATEN BONDOWOSO"],
+            ["RUMAH SAKIT UMUM DAERAH DR. H. KOESNANDI"],
+            [`REKAPITULASI PEMBELIAN BELANJA BARANG OPERASIONAL (${twLabel})`],
+            [`TAHUN ANGGARAN ${yearLabel}`],
+            [
+                "NO", "NAMA TOKO / REKANAN PENYEDIA", "NOMOR FAKTUR / NOTA", "TANGGAL FAKTUR",
+                "BANK TOKO", "NOMOR REKENING TOKO", "JUMLAH ITEM", "TOTAL VOLUME",
+                "TOTAL PEMBELIAN (RP)", "PEJABAT PEMBUAT KOMITMEN", "NIP PPK", "KETERANGAN"
+            ],
+            ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"]
+        ];
+
+        let grandFakturItems = 0;
+        let grandFakturVol   = 0;
+        let grandFakturNilai = 0;
+        let fakturIdx = 1;
+
+        Object.values(fakturMap).forEach(f => {
+            grandFakturItems += f.itemCount;
+            grandFakturVol   += f.totalVol;
+            grandFakturNilai += f.totalNilai;
+
+            rekapRows.push([
+                fakturIdx++,
+                f.toko,
+                f.nomorFaktur,
+                f.tanggalFaktur,
+                f.bankToko,
+                f.rekeningToko,
+                f.itemCount,
+                f.totalVol,
+                f.totalNilai,
+                f.ppkNama,
+                f.ppkNip,
+                f.keterangan
+            ]);
+        });
+
+        const rekapTotalRowIdx = rekapRows.length;
+        rekapRows.push([
+            "TOTAL KESELURUHAN PEMBELIAN FAKTUR", "", "", "", "", "",
+            grandFakturItems,
+            grandFakturVol,
+            grandFakturNilai,
+            "", "", ""
+        ]);
+
+        const rekapSignStartRow = rekapRows.length;
+        const rekapSignRows = buildKibSignatureRows(12, 8, ppkNama, ppkNip, signDate, 1);
+        rekapSignRows.forEach(r => rekapRows.push(r));
+
+        const wsRekap = XLSX.utils.aoa_to_sheet(rekapRows);
+        wsRekap['!cols'] = [
+            {wch: 6},   // NO
+            {wch: 32},  // Toko
+            {wch: 24},  // No Faktur
+            {wch: 16},  // Tgl Faktur
+            {wch: 18},  // Bank
+            {wch: 22},  // No Rekening
+            {wch: 14},  // Jml Item
+            {wch: 16},  // Total Vol
+            {wch: 24},  // Total Nilai
+            {wch: 26},  // PPK
+            {wch: 24},  // NIP
+            {wch: 30}   // Ket
+        ];
+        wsRekap['!merges'] = [
+            {s:{r:0,c:0}, e:{r:0,c:11}},
+            {s:{r:1,c:0}, e:{r:1,c:11}},
+            {s:{r:2,c:0}, e:{r:2,c:11}},
+            {s:{r:3,c:0}, e:{r:3,c:11}},
+            {s:{r:rekapTotalRowIdx,c:0}, e:{r:rekapTotalRowIdx,c:5}},
+            ...getKibSignatureMerges(rekapSignStartRow, 12, 8, 1, 3, 11)
+        ];
+
+        applyBelanjaBarangTableStyling(
+            wsRekap,
+            rekapRows.length,
+            12,
+            4,
+            rekapTotalRowIdx,
+            rekapSignStartRow,
+            [8],       // Currency
+            [3],       // Date
+            [0, 6, 7]  // Center
+        );
+        applySignatureBlockStyling(wsRekap, rekapSignStartRow, 12);
+
+        if (filterCat === 'all' || filterCat === 'REKAP') {
+            XLSX.utils.book_append_sheet(wb, wsRekap, filterCat === 'all' ? "1. Rekap Faktur Toko" : "Rekapitulasi Faktur");
+        }
+
+        // ------------------------------------------------------------------------
+        // HELPER BUILDER UNTUK LEMBAR RINCIAN BARANG (21 KOLOM STANDAR ASTAP)
+        // ------------------------------------------------------------------------
+        function buildRincianSheet(itemsList, sheetTitle, subTitle = "") {
+            const rows = [
+                ["PEMERINTAH KABUPATEN BONDOWOSO"],
+                ["RUMAH SAKIT UMUM DAERAH DR. H. KOESNANDI"],
+                [sheetTitle.toUpperCase()],
+                [`${subTitle ? subTitle + ' - ' : ''}${twLabel} TAHUN ANGGARAN ${yearLabel}`],
+                [
+                    "NO", "TANGGAL FAKTUR", "NAMA TOKO / PENYEDIA", "NOMOR FAKTUR",
+                    "NAMA BARANG BELANJA", "KODE BARANG (108)", "REKENING BELANJA (5.1.02)", "KLASIFIKASI KIB",
+                    "VOLUME", "SATUAN", "HARGA SATUAN (RP)", "TOTAL REALISASI (RP)",
+                    "KONDISI", "LOKASI / RUANGAN", "MODE ALOKASI", "BANK TOKO",
+                    "NO. REKENING TOKO", "PPK NAMA", "PPK NIP", "NO. BAST / SP2D", "KETERANGAN"
+                ],
+                [
+                    "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
+                    "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"
+                ]
+            ];
+
+            let sumVol = 0;
+            let sumNilai = 0;
+
+            itemsList.forEach((it, idx) => {
+                const spec = typeof it.spesifikasi_json === 'string' ? (JSON.parse(it.spesifikasi_json || '{}') || {}) : (it.spesifikasi_json || {});
+                const vol = parseInt(it.jumlah_volume || it.volume_satuan) || 1;
+                const harga = parseFloat(it.harga_satuan) || 0;
+                const subtotal = typeof it.total_realisasi_num === 'number' ? it.total_realisasi_num : (parseFloat(it.total_realisasi) || (vol * harga));
+
+                sumVol += vol;
+                sumNilai += subtotal;
+
+                const toko = cleanDash(it.penyedia_nama || spec.toko_penyedia || spec.rekening_penyedia || 'Pusat Perbekalan RSUD');
+                const noFaktur = cleanDash(spec.nomor_faktur || spec.rekening_nomor_faktur || it.bast_dokumen_nomor);
+                const tglFaktur = cleanDash(formatAstapDate(spec.tanggal_faktur || spec.rekening_tanggal_faktur || it.bast_dokumen_tanggal || it.created_at));
+                const kode108 = cleanDash(it.kode_barang || (it.jenisAstap ? it.jenisAstap.sub_sub_rincian_objek : ''));
+                const rekBelanja = cleanDash(it.rekening_kode || spec.rekening_belanja || '5.1.02 (Belanja Barang & Jasa)');
+                const kibKlas = classifyItem(it);
+                const ruangan = cleanDash(it.unit ? it.unit.nama : (it.alamat_barang || spec.ruangan || spec.unit_nama || 'Gudang Farmasi / Logistik'));
+                const modeAlokasi = cleanDash(spec.mode_penempatan || (it.unit_id ? 'Ruangan' : 'Gudang'));
+                const bank = cleanDash(spec.rekening_bank || spec.bank_toko || it.penyedia_bank);
+                const noRek = cleanDash(spec.nomor_rekening || spec.rekening_nomor || it.penyedia_rekening_nomor);
+                const rowPpk = cleanDash(it.ppk_nama || spec.ppk_nama) !== '-' ? cleanDash(it.ppk_nama || spec.ppk_nama) : ppkNama;
+                const rowNip = cleanDash(it.ppk_nip || spec.ppk_nip) !== '-' ? cleanDash(it.ppk_nip || spec.ppk_nip) : ppkNip;
+                const bast = cleanDash(it.bast_dokumen_nomor || spec.nomor_bast || it.sp2d_nomor);
+                const ket = cleanDash(it.keterangan_tambahan || spec.keterangan || spec.rekening_keterangan);
+
+                rows.push([
+                    idx + 1,
+                    tglFaktur,
+                    toko,
+                    noFaktur,
+                    it.nama_barang,
+                    kode108,
+                    rekBelanja,
+                    kibKlas,
+                    vol,
+                    it.satuan || 'Unit',
+                    harga,
+                    subtotal,
+                    it.kondisi || 'Baik',
+                    ruangan,
+                    modeAlokasi,
+                    bank,
+                    noRek,
+                    rowPpk,
+                    rowNip,
+                    bast,
+                    ket
+                ]);
+            });
+
+            const totalIdx = rows.length;
+            rows.push([
+                "TOTAL KESELURUHAN REALISASI", "", "", "", "", "", "", "",
+                sumVol,
+                "",
+                "",
+                sumNilai,
+                "", "", "", "", "", "", "", "", ""
+            ]);
+
+            const signStartRow = rows.length;
+            const signRows = buildKibSignatureRows(21, 15, ppkNama, ppkNip, signDate, 1);
+            signRows.forEach(r => rows.push(r));
+
+            const ws = XLSX.utils.aoa_to_sheet(rows);
+            ws['!cols'] = [
+                {wch: 6},   // NO
+                {wch: 15},  // Tanggal
+                {wch: 28},  // Toko
+                {wch: 22},  // No Faktur
+                {wch: 34},  // Nama Barang
+                {wch: 22},  // Kode 108
+                {wch: 26},  // Rek Belanja
+                {wch: 16},  // Klas KIB
+                {wch: 12},  // Volume
+                {wch: 14},  // Satuan
+                {wch: 20},  // Harga Satuan
+                {wch: 22},  // Total Nilai
+                {wch: 14},  // Kondisi
+                {wch: 28},  // Ruangan
+                {wch: 16},  // Mode Alokasi
+                {wch: 16},  // Bank
+                {wch: 22},  // No Rek
+                {wch: 26},  // PPK Nama
+                {wch: 24},  // PPK NIP
+                {wch: 24},  // BAST/SP2D
+                {wch: 30}   // Ket
+            ];
+            ws['!merges'] = [
+                {s:{r:0,c:0}, e:{r:0,c:20}},
+                {s:{r:1,c:0}, e:{r:1,c:20}},
+                {s:{r:2,c:0}, e:{r:2,c:20}},
+                {s:{r:3,c:0}, e:{r:3,c:20}},
+                {s:{r:totalIdx,c:0}, e:{r:totalIdx,c:7}},
+                ...getKibSignatureMerges(signStartRow, 21, 15, 1, 5, 20)
+            ];
+
+            applyBelanjaBarangTableStyling(
+                ws,
+                rows.length,
+                21,
+                4,
+                totalIdx,
+                signStartRow,
+                [10, 11],       // Currency
+                [1],            // Date
+                [0, 5, 7, 8, 9, 12, 14] // Center
+            );
+            applySignatureBlockStyling(ws, signStartRow, 21);
+
+            return ws;
+        }
+
+        // ------------------------------------------------------------------------
+        // LEMBAR 2: RINCIAN SELURUH BARANG BELANJA (LENGKAP SEMUA KIB)
+        // ------------------------------------------------------------------------
+        const wsRincian = buildRincianSheet(
+            filteredItems,
+            "RINCIAN LENGKAP PENGADAAN BELANJA BARANG OPERASIONAL",
+            "DAFTAR RINCIAN INVENTARIS BARANG"
+        );
+        if (filterCat === 'all' || filterCat === 'RINCIAN') {
+            XLSX.utils.book_append_sheet(wb, wsRincian, filterCat === 'all' ? "2. Rincian Seluruh Barang" : "Rincian Barang");
+        }
+
+        // ------------------------------------------------------------------------
+        // LEMBAR 3: KHUSUS KIB B (PERALATAN & MESIN / OPERASIONAL MEDIS & NON-MEDIS)
+        // ------------------------------------------------------------------------
+        const kibBItems = filteredItems.filter(it => classifyItem(it) === 'KIB B');
+        const wsKibB = buildRincianSheet(
+            kibBItems,
+            "RINCIAN BELANJA BARANG - KIB B (PERALATAN & MESIN)",
+            "KIB B PERBEKALAN & PERALATAN RUANGAN"
+        );
+        if (filterCat === 'all' || filterCat === 'KIB B') {
+            XLSX.utils.book_append_sheet(wb, wsKibB, filterCat === 'all' ? "3. KIB B - Peralatan & Mesin" : "KIB B - Peralatan & Mesin");
+        }
+
+        // ------------------------------------------------------------------------
+        // LEMBAR 4: KHUSUS EXTRACOM (BARANG EKSTRAKOMTABEL <= RP 300.000)
+        // ------------------------------------------------------------------------
+        const extracomItems = filteredItems.filter(it => classifyItem(it) === 'EXTRACOM');
+        const wsExtracom = buildRincianSheet(
+            extracomItems,
+            "RINCIAN BELANJA BARANG - BARANG EKSTRAKOMTABEL (EXTRACOM)",
+            "NILAI PEROLEHAN <= RP 300.000"
+        );
+        if (filterCat === 'all' || filterCat === 'EXTRACOM') {
+            XLSX.utils.book_append_sheet(wb, wsExtracom, filterCat === 'all' ? "4. Extracom" : "Extracom - Barang Ekstrakomtabel");
+        }
+
+        // ------------------------------------------------------------------------
+        // LEMBAR 5: KHUSUS KIB E (ASET TETAP LAINNYA)
+        // ------------------------------------------------------------------------
+        const kibEItems = filteredItems.filter(it => classifyItem(it) === 'KIB E');
+        const wsKibE = buildRincianSheet(
+            kibEItems,
+            "RINCIAN BELANJA BARANG - KIB E (ASET TETAP LAINNYA)",
+            "KIB E ASET TETAP LAINNYA"
+        );
+        if (filterCat === 'all' || filterCat === 'KIB E') {
+            XLSX.utils.book_append_sheet(wb, wsKibE, filterCat === 'all' ? "5. KIB E - Aset Tetap Lain" : "KIB E - Aset Tetap Lainnya");
+        }
+
+        // Unduh File Excel Belanja Barang
+        const twSlug = filterTw === 'all' ? 'TAHUNAN' : filterTw.replace(/[\s_]/g, '');
+        const catSlug = filterCat === 'all' ? 'LENGKAP_5SHEET' : filterCat.replace(/[\s_]/g, '');
+        const fileName = `RSUD_Koesnandi_Belanja_Barang_5.1.02_${catSlug}_${yearLabel}_${twSlug}.xlsx`;
+
+        XLSX.writeFile(wb, fileName);
+        setTimeout(() => { isExportingBelanjaBarang = false; }, 1500);
+    }
     </script>
 
     <script>
@@ -9626,6 +10176,7 @@
                 exportKemitraanSkema: 'all', // 'all' | 'sewa' | 'ksp' | 'bgs_bsg' | 'kso'
                 exportKemitraanCategory: 'all', // 'all' | 'REKAP' | 'KIB A' | 'KIB B' | 'KIB C' | 'KIB D' | 'KIB E' | 'EXTRACOM'
                 exportMutasiCategory: 'all', // 'all' | 'REKAP' | 'KIB A' | 'KIB B' | 'KIB C' | 'KIB D' | 'KIB E' | 'EXTRACOM'
+                exportBarangCategory: 'all', // 'all' | 'REKAP' | 'RINCIAN' | 'KIB B' | 'EXTRACOM' | 'KIB E'
                 isSubmittingExport: false,
 
                 // State Modal Rapikan / Urutkan Ulang NIBAR (Auto-Resequence)
@@ -13718,6 +14269,37 @@
                         }).length;
                     }
 
+                    // KHUSUS BELANJA BARANG (OPERASIONAL / AKUN 5.1.02)
+                    if (sDana === 'belanja_barang') {
+                        const fCat = this.exportBarangCategory || 'all';
+                        return (this.astaps || []).filter(item => {
+                            const isBB = item.sumber_dana === 'belanja_barang' || item.sumber_dana === 'belanja_rekening' || item.sumber_dana_raw === 'belanja_barang';
+                            if (!isBB) return false;
+                            const matchYear = fYear === 'all' || String(item.tahun_perolehan) === String(fYear);
+                            const matchTw = isTwMatch(item.triwulan, fTw);
+                            if (!matchYear || !matchTw) return false;
+                            if (fCat === 'all' || fCat === 'REKAP' || fCat === 'RINCIAN') return true;
+
+                            let spec = item.spesifikasi_json;
+                            if (typeof spec === 'string') {
+                                try { spec = JSON.parse(spec); } catch (e) { spec = {}; }
+                            }
+                            const harga = parseFloat(item.harga_satuan) || 0;
+                            const isItemExtracom = item.is_extracom || spec.is_extracom || (harga > 0 && harga <= 300000);
+                            if (fCat === 'EXTRACOM') return isItemExtracom;
+                            if (isItemExtracom) return false;
+
+                            const kode108 = String(item.kode_barang || (item.jenisAstap ? item.jenisAstap.sub_sub_rincian_objek : '') || '');
+                            if (fCat === 'KIB B') {
+                                return kode108.startsWith('1.3.2') || (!kode108.startsWith('1.3.5') && !kode108.startsWith('1.5.3'));
+                            }
+                            if (fCat === 'KIB E') {
+                                return kode108.startsWith('1.3.5');
+                            }
+                            return true;
+                        }).length;
+                    }
+
                     // KHUSUS BELANJA MODAL (Default)
                     const fCat = this.exportCategory;
                     const isRekap = this.exportFormatType === 'rekap_triwulan';
@@ -13808,6 +14390,29 @@
                             this.isSubmittingExport = false;
                             this.showExportModal = false;
                             window.location.href = "{{ route('mutasi.eksternal') }}";
+                            return;
+                        }
+
+                        if (this.exportSumberDana === 'belanja_barang') {
+                            if (typeof exportBelanjaBarangToExcel === 'function') {
+                                exportBelanjaBarangToExcel({
+                                    year: this.exportYear,
+                                    triwulan: this.exportTriwulan,
+                                    category: this.exportBarangCategory || 'all'
+                                });
+                                setTimeout(() => {
+                                    this.isSubmittingExport = false;
+                                    this.showExportModal = false;
+                                    const catLabel = (this.exportBarangCategory || 'all') === 'all'
+                                        ? 'Lengkap (5 Sheet: Rekap, Rincian, KIB B, Extracom & KIB E)'
+                                        : (this.exportBarangCategory === 'REKAP' ? 'Rekapitulasi Faktur' : (this.exportBarangCategory === 'RINCIAN' ? 'Rincian Barang' : this.exportBarangCategory));
+                                    this.showToast('Berhasil mengekspor Laporan Belanja Barang ' + catLabel + ' (' + (this.exportTriwulan === 'all' ? 'Tahunan' : this.exportTriwulan) + ') ' + this.exportYear + '!', 'success');
+                                }, 800);
+                                return;
+                            }
+                            this.isSubmittingExport = false;
+                            this.showExportModal = false;
+                            window.location.href = "{{ route('master.belanja_barang') }}";
                             return;
                         }
 

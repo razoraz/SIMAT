@@ -363,8 +363,13 @@
                         <div class="h-16 flex items-center justify-center">
                             <span class="text-gray-400 text-[8pt] italic">(Tanda Tangan &amp; Stempel Basah)</span>
                         </div>
-                        <p class="font-bold underline uppercase m-0">dr. YUS PRIYATNA ADRYANTO, Sp.P, FISR.</p>
-                        <p class="text-[8.5pt] text-gray-700 font-mono m-0">NIP. 19771002 200604 1 006</p>
+                        @php
+                            $firstAstap = $belanja->astaps->first() ?: $belanja->astap;
+                            $ppkNamaDoc = $firstAstap?->ppk_nama ?: ($firstAstap?->spesifikasi_json['ppk_nama'] ?? 'dr. YUS PRIYATNA ADRYANTO, Sp.P, FISR.');
+                            $ppkNipDoc  = $firstAstap?->ppk_nip ?: ($firstAstap?->spesifikasi_json['ppk_nip'] ?? '19771002 200604 1 006');
+                        @endphp
+                        <p class="font-bold underline uppercase m-0">{{ $ppkNamaDoc }}</p>
+                        <p class="text-[8.5pt] text-gray-700 font-mono m-0">NIP. {{ $ppkNipDoc }}</p>
                     </td>
                 </tr>
             </table>
