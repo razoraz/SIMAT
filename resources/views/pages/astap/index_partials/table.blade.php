@@ -54,7 +54,7 @@
                                                 <svg class="w-2.5 h-2.5 shrink-0 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
                                                 </svg>
-                                                <span>REKLASIFIKASI</span>
+                                                <span x-text="item.jenis_reklas === 'KOREKSI_LAIN' ? 'KOREKSI NILAI' : 'REKLASIFIKASI'"></span>
                                             </span>
                                         </template>
 

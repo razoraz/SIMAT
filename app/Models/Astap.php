@@ -611,11 +611,39 @@ class Astap extends Model
             $this->is_reklas = true;
             $this->jenis_reklas = $latestActive->jenis_reklas;
 
-            if ($latestActive->jenis_reklasifikasi_tujuan_id) {
-                $this->jenis_astap_id = $latestActive->jenis_reklasifikasi_tujuan_id;
-            }
-            if (!empty($latestActive->tujuan_nama)) {
-                $this->nama_barang = $latestActive->tujuan_nama;
+            // Khusus KOREKSI_LAIN (Koreksi Nilai Manset/LKD/Biasa), tujuan_id dan tujuan_nama
+            // adalah akun penyeimbang neraca RMB, BUKAN nama fisik maupun kodefikasi 108 baru aset.
+            // Jangan pernah menimpa nama_barang dan jenis_astap_id jika transaksi adalah KOREKSI_LAIN.
+            if ($latestActive->jenis_reklas !== 'KOREKSI_LAIN') {
+                if ($latestActive->jenis_reklasifikasi_tujuan_id) {
+                    $this->jenis_astap_id = $latestActive->jenis_reklasifikasi_tujuan_id;
+                }
+                if (!empty($latestActive->tujuan_nama)) {
+                    $this->nama_barang = $latestActive->tujuan_nama;
+                }
+            } else {
+                // Jika transaksi aktif terakhir adalah koreksi nilai, cari reklas non-koreksi terakhir
+                // atau pertahankan nama asli aset dari register / spesifikasi akar
+                $lastNonKoreksi = $activeReklas->where('jenis_reklas', '!=', 'KOREKSI_LAIN')->last();
+                if ($lastNonKoreksi) {
+                    if ($lastNonKoreksi->jenis_reklasifikasi_tujuan_id) {
+                        $this->jenis_astap_id = $lastNonKoreksi->jenis_reklasifikasi_tujuan_id;
+                    }
+                    if (!empty($lastNonKoreksi->tujuan_nama)) {
+                        $this->nama_barang = $lastNonKoreksi->tujuan_nama;
+                    }
+                } else {
+                    // Gunakan data asal mula dari transaksi reklas pertama (root)
+                    $rootReklas = $activeReklas->first();
+                    if ($rootReklas && $rootReklas->jenis_reklasifikasi_asal_id) {
+                        $this->jenis_astap_id = $rootReklas->jenis_reklasifikasi_asal_id;
+                    }
+                    // Pertahankan nama_barang jika sudah terisi dengan nama fisik asli (misal dari register)
+                    $regFirst = $this->registers()->first();
+                    if ($regFirst && !empty($regFirst->nama_barang)) {
+                        $this->nama_barang = $regFirst->nama_barang;
+                    }
+                }
             }
 
             // Hitung status is_extracomtable secara kronologis dari sisa reklas aktif
@@ -648,8 +676,13 @@ class Astap extends Model
                 if ($rootReklas->jenis_reklasifikasi_asal_id) {
                     $this->jenis_astap_id = $rootReklas->jenis_reklasifikasi_asal_id;
                 }
-                if (!empty($rootReklas->asal_nama)) {
+                if (!empty($rootReklas->asal_nama) && $rootReklas->jenis_reklas !== 'KOREKSI_LAIN') {
                     $this->nama_barang = $rootReklas->asal_nama;
+                } else {
+                    $regFirst = $this->registers()->first();
+                    if ($regFirst && !empty($regFirst->nama_barang)) {
+                        $this->nama_barang = $regFirst->nama_barang;
+                    }
                 }
                 if (!empty($rootReklas->spesifikasi_lama) && is_array($rootReklas->spesifikasi_lama)) {
                     $this->spesifikasi_json = $rootReklas->spesifikasi_lama;
