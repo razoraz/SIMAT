@@ -8,6 +8,7 @@ use App\Models\AstapRegister;
 use App\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class MutasiController extends Controller
 {
@@ -41,18 +42,7 @@ class MutasiController extends Controller
                 ->toArray();
         }
 
-        // Kunci secara permanen seluruh register yang telah dialihkan keluar ke OPD lain (Mutasi Eksternal) atau terhapus
-        $mutasiEksternalIds = AstapRegister::where(function($q) {
-                $q->where('status', 'Mutasi Keluar OPD')
-                  ->orWhere('is_deleted', 1)
-                  ->orWhereHas('astap', function($sub) {
-                      $sub->where('jenis_reklas', 'MUTASI_EKSTERNAL');
-                  });
-            })
-            ->pluck('id')
-            ->toArray();
-
-        return array_values(array_unique(array_merge($regIds, $legacyIds, $mutasiEksternalIds)));
+        return array_values(array_unique(array_merge($regIds, $legacyIds)));
     }
 
     /**
@@ -60,7 +50,12 @@ class MutasiController extends Controller
      */
     public function index()
     {
-        $rawMutasis = AstapMutasi::with(['items.register.astap', 'items.register.unit'])
+        $rawMutasis = AstapMutasi::with([
+                'items.register.astap',
+                'items.register.unit',
+                'register.astap',
+                'register.unit'
+            ])
             ->latest('tanggal_mutasi')
             ->latest('id')
             ->get();
@@ -316,29 +311,17 @@ class MutasiController extends Controller
 
         $kondisiBaru = $request->input('kondisi_baru', []);
 
-        // 1. Generate 1 nomor Berita Acara BAMB unik (format 3 digit: MTS-2026-001)
-        $year  = date('Y', strtotime($request->tanggal_mutasi));
-        $count = AstapMutasi::whereYear('tanggal_mutasi', $year)->count();
-        $seq   = $count + 1;
-        do {
-            $nomor = 'MTS-' . $year . '-' . str_pad($seq, 3, '0', STR_PAD_LEFT);
-            $exists = AstapMutasi::where('nomor_bamb', $nomor)->exists();
-            if ($exists) {
-                $seq++;
-            }
-        } while ($exists);
-
         $firstRegId = $registerIds[0] ?? null;
 
         $user = Auth::user();
         $userRole = $user->role ?? 'admin';
         $isAdminRole = in_array($userRole, ['admin', 'master_admin']);
 
-        $isReturnToGudang = ($request->jenis_mutasi === 'Pengembalian') && (
-            str_contains(strtolower($request->ruangan_tujuan), 'perbekalan') ||
-            str_contains(strtolower($request->ruangan_tujuan), 'rumah tangga') ||
-            str_contains(strtolower($request->ruangan_tujuan), 'gudang')
-        );
+        $dummyMutasi = new AstapMutasi([
+            'jenis_mutasi'   => $request->jenis_mutasi,
+            'ruangan_tujuan' => $request->ruangan_tujuan,
+        ]);
+        $isReturnToGudang = $dummyMutasi->isReturnToGudang();
 
         if ($isAdminRole) {
             // Master Admin & Admin: Otomatis persetujuan Admin disetujui.
@@ -379,49 +362,83 @@ class MutasiController extends Controller
             }
         }
 
-        // 2. Buat 1 baris Dokumen Berita Acara (Header)
-        $mutasi = AstapMutasi::create([
-            'astap_register_id'        => $firstRegId,
-            'nomor_bamb'               => $nomor,
-            'tanggal_mutasi'           => $request->tanggal_mutasi,
-            'jenis_mutasi'             => $request->jenis_mutasi,
-            'ruangan_asal'             => $request->ruangan_asal,
-            'ruangan_tujuan'           => $request->ruangan_tujuan,
-            'penanggung_jawab_asal'    => $request->penanggung_jawab_asal,
-            'penanggung_jawab_tujuan'  => $request->penanggung_jawab_tujuan,
-            'alasan_mutasi'            => $request->alasan_mutasi,
-            'catatan_penerima'         => $request->catatan_penerima,
-            'persetujuan_pengirim'     => $pPengirim,
-            'tgl_persetujuan_pengirim' => $tglPeng,
-            'persetujuan_penerima'     => $pPenerima,
-            'tgl_persetujuan_penerima' => $tglPen,
-            'persetujuan_admin'        => $pAdmin,
-            'tgl_persetujuan_admin'    => $tglAdmin,
-            'status'                   => $initialStatus,
-            'is_deleted'               => 0,
-            'deleted_by'               => null,
-            'deleted_by_id'            => null,
-            'deleted_at'               => null,
-        ]);
-
-        // 3. Masukkan seluruh item register yang dimutasi ke tabel rincian astap_mutasi_registers
+        // Simpan Berita Acara & Rincian Item di dalam Database Transaction
         $createdCount = 0;
-        foreach ($registerIds as $regId) {
-            $regObj = AstapRegister::find($regId);
-            if (isset($kondisiBaru[$regId]) && in_array($kondisiBaru[$regId], ['Baik', 'Kurang Baik', 'Rusak Berat'])) {
-                if ($regObj && $regObj->kondisi !== $kondisiBaru[$regId]) {
-                    $regObj->update(['kondisi' => $kondisiBaru[$regId]]);
-                }
-            }
-            $kondisiSaatMutasi = $regObj ? $regObj->kondisi : 'Baik';
+        $nomor = '';
 
-            AstapMutasiRegister::create([
-                'astap_mutasi_id'   => $mutasi->id,
-                'astap_register_id' => $regId,
-                'kondisi'           => $kondisiSaatMutasi,
+        $mutasi = DB::transaction(function () use (
+            $request, $registerIds, $firstRegId, $kondisiBaru,
+            $pPengirim, $tglPeng, $pPenerima, $tglPen, $pAdmin, $tglAdmin, $initialStatus,
+            &$createdCount, &$nomor
+        ) {
+            // 1. Generate 1 nomor Berita Acara BAMB unik secara aman dengan pessimistic lock
+            $year = date('Y', strtotime($request->tanggal_mutasi));
+            $lastMutasi = AstapMutasi::whereYear('tanggal_mutasi', $year)
+                ->lockForUpdate()
+                ->orderByDesc('id')
+                ->first();
+
+            $seq = 1;
+            if ($lastMutasi && preg_match('/(\d+)$/', $lastMutasi->nomor_bamb, $matches)) {
+                $seq = (int) $matches[1] + 1;
+            } else {
+                $seq = AstapMutasi::whereYear('tanggal_mutasi', $year)->count() + 1;
+            }
+
+            do {
+                $nomor = 'MTS-' . $year . '-' . str_pad($seq, 3, '0', STR_PAD_LEFT);
+                $exists = AstapMutasi::where('nomor_bamb', $nomor)->exists();
+                if ($exists) {
+                    $seq++;
+                }
+            } while ($exists);
+
+            // 2. Buat 1 baris Dokumen Berita Acara (Header)
+            $mutasiRecord = AstapMutasi::create([
+                'astap_register_id'        => $firstRegId,
+                'nomor_bamb'               => $nomor,
+                'tanggal_mutasi'           => $request->tanggal_mutasi,
+                'jenis_mutasi'             => $request->jenis_mutasi,
+                'ruangan_asal'             => $request->ruangan_asal,
+                'ruangan_tujuan'           => $request->ruangan_tujuan,
+                'penanggung_jawab_asal'    => $request->penanggung_jawab_asal,
+                'penanggung_jawab_tujuan'  => $request->penanggung_jawab_tujuan,
+                'alasan_mutasi'            => $request->alasan_mutasi,
+                'catatan_penerima'         => $request->catatan_penerima,
+                'persetujuan_pengirim'     => $pPengirim,
+                'tgl_persetujuan_pengirim' => $tglPeng,
+                'persetujuan_penerima'     => $pPenerima,
+                'tgl_persetujuan_penerima' => $tglPen,
+                'persetujuan_admin'        => $pAdmin,
+                'tgl_persetujuan_admin'    => $tglAdmin,
+                'status'                   => $initialStatus,
+                'is_deleted'               => 0,
+                'deleted_by'               => null,
+                'deleted_by_id'            => null,
+                'deleted_at'               => null,
             ]);
-            $createdCount++;
-        }
+
+            // 3. Masukkan seluruh item register yang dimutasi ke tabel rincian astap_mutasi_registers
+            $registers = AstapRegister::whereIn('id', $registerIds)->lockForUpdate()->get()->keyBy('id');
+            foreach ($registerIds as $regId) {
+                $regObj = $registers->get($regId);
+                if (isset($kondisiBaru[$regId]) && in_array($kondisiBaru[$regId], ['Baik', 'Kurang Baik', 'Rusak Berat'])) {
+                    if ($regObj && $regObj->kondisi !== $kondisiBaru[$regId]) {
+                        $regObj->update(['kondisi' => $kondisiBaru[$regId]]);
+                    }
+                }
+                $kondisiSaatMutasi = $regObj ? $regObj->kondisi : 'Baik';
+
+                AstapMutasiRegister::create([
+                    'astap_mutasi_id'   => $mutasiRecord->id,
+                    'astap_register_id' => $regId,
+                    'kondisi'           => $kondisiSaatMutasi,
+                ]);
+                $createdCount++;
+            }
+
+            return $mutasiRecord;
+        });
 
         // Kirim Notifikasi Sistem (Format Singkat & Rapi)
         try {
@@ -612,45 +629,50 @@ class MutasiController extends Controller
             $mutasi->nomor_bamb = $newNomorBamb;
         }
 
-        // 1. Update Dokumen Header Mutasi
+        // Simpan perubahan Header & Sinkronisasi Item di dalam Database Transaction
         $firstRegId = $registerIds[0] ?? $mutasi->astap_register_id;
-        $mutasi->update([
-            'astap_register_id'        => $firstRegId,
-            'nomor_bamb'               => $mutasi->nomor_bamb,
-            'tanggal_mutasi'           => $newTgl,
-            'jenis_mutasi'             => $request->jenis_mutasi,
-            'ruangan_asal'             => $request->ruangan_asal,
-            'ruangan_tujuan'           => $request->ruangan_tujuan,
-            'penanggung_jawab_asal'    => $request->penanggung_jawab_asal,
-            'penanggung_jawab_tujuan'  => $request->penanggung_jawab_tujuan,
-            'alasan_mutasi'            => $request->alasan_mutasi,
-            'catatan_penerima'         => $request->catatan_penerima,
-        ]);
 
-        // 2. Sinkronkan Rincian Item Register
-        AstapMutasiRegister::where('astap_mutasi_id', $mutasi->id)
-            ->whereNotIn('astap_register_id', $registerIds)
-            ->delete();
+        DB::transaction(function () use ($mutasi, $firstRegId, $newTgl, $request, $registerIds, $kondisiBaru) {
+            // 1. Update Dokumen Header Mutasi
+            $mutasi->update([
+                'astap_register_id'        => $firstRegId,
+                'nomor_bamb'               => $mutasi->nomor_bamb,
+                'tanggal_mutasi'           => $newTgl,
+                'jenis_mutasi'             => $request->jenis_mutasi,
+                'ruangan_asal'             => $request->ruangan_asal,
+                'ruangan_tujuan'           => $request->ruangan_tujuan,
+                'penanggung_jawab_asal'    => $request->penanggung_jawab_asal,
+                'penanggung_jawab_tujuan'  => $request->penanggung_jawab_tujuan,
+                'alasan_mutasi'            => $request->alasan_mutasi,
+                'catatan_penerima'         => $request->catatan_penerima,
+            ]);
 
-        foreach ($registerIds as $regId) {
-            $regObj = AstapRegister::find($regId);
-            if (isset($kondisiBaru[$regId]) && in_array($kondisiBaru[$regId], ['Baik', 'Kurang Baik', 'Rusak Berat'])) {
-                if ($regObj && $regObj->kondisi !== $kondisiBaru[$regId]) {
-                    $regObj->update(['kondisi' => $kondisiBaru[$regId]]);
+            // 2. Sinkronkan Rincian Item Register
+            AstapMutasiRegister::where('astap_mutasi_id', $mutasi->id)
+                ->whereNotIn('astap_register_id', $registerIds)
+                ->delete();
+
+            $registers = AstapRegister::whereIn('id', $registerIds)->lockForUpdate()->get()->keyBy('id');
+            foreach ($registerIds as $regId) {
+                $regObj = $registers->get($regId);
+                if (isset($kondisiBaru[$regId]) && in_array($kondisiBaru[$regId], ['Baik', 'Kurang Baik', 'Rusak Berat'])) {
+                    if ($regObj && $regObj->kondisi !== $kondisiBaru[$regId]) {
+                        $regObj->update(['kondisi' => $kondisiBaru[$regId]]);
+                    }
                 }
-            }
-            $kondisiSaatMutasi = $regObj ? $regObj->kondisi : 'Baik';
+                $kondisiSaatMutasi = $regObj ? $regObj->kondisi : 'Baik';
 
-            AstapMutasiRegister::updateOrCreate(
-                [
-                    'astap_mutasi_id'   => $mutasi->id,
-                    'astap_register_id' => $regId,
-                ],
-                [
-                    'kondisi'           => $kondisiSaatMutasi,
-                ]
-            );
-        }
+                AstapMutasiRegister::updateOrCreate(
+                    [
+                        'astap_mutasi_id'   => $mutasi->id,
+                        'astap_register_id' => $regId,
+                    ],
+                    [
+                        'kondisi'           => $kondisiSaatMutasi,
+                    ]
+                );
+            }
+        });
 
         return redirect()->route('mutasi.index')
             ->with('success', 'Pengajuan Berita Acara Mutasi (' . $mutasi->nomor_bamb . ') berhasil diperbarui.');
@@ -662,6 +684,15 @@ class MutasiController extends Controller
     public function destroy(Request $request, $id)
     {
         $mutasi = AstapMutasi::findOrFail($id);
+
+        if ($mutasi->status === 'Disetujui Admin (Selesai)') {
+            $msg = 'Mutasi yang telah disahkan secara final (selesai) tidak dapat dihapus.';
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $msg], 422);
+            }
+            return back()->with('error', $msg);
+        }
+
         $bamb   = $mutasi->nomor_bamb;
         $user   = Auth::user();
         $deleterName = $user ? ($user->name . ' (' . ucfirst($user->role ?? 'user') . ')') : 'Administrator';
@@ -719,13 +750,11 @@ class MutasiController extends Controller
     {
         $targetUnit = Unit::where('nama', $mutasi->ruangan_tujuan)
             ->orWhereRaw('LOWER(TRIM(nama)) = ?', [strtolower(trim($mutasi->ruangan_tujuan))])
+            ->orWhereRaw('? LIKE CONCAT("%", nama, "%")', [$mutasi->ruangan_tujuan])
             ->first();
 
-        $isReturnToGudang = ($mutasi->jenis_mutasi === 'Pengembalian') && (
-            !$targetUnit ||
-            str_contains(strtolower($mutasi->ruangan_tujuan), 'perbekalan') ||
-            str_contains(strtolower($mutasi->ruangan_tujuan), 'rumah tangga') ||
-            str_contains(strtolower($mutasi->ruangan_tujuan), 'gudang')
+        $isReturnToGudang = $mutasi->isReturnToGudang() || (
+            ($mutasi->jenis_mutasi === 'Pengembalian') && !$targetUnit
         );
 
         $registersToUpdate = [];
@@ -781,26 +810,37 @@ class MutasiController extends Controller
             return back()->with('error', 'Pengajuan mutasi ini telah dihapus.');
         }
 
-        $isReturnToGudang = ($mutasi->jenis_mutasi === 'Pengembalian') && (
-            str_contains(strtolower($mutasi->ruangan_tujuan), 'perbekalan') ||
-            str_contains(strtolower($mutasi->ruangan_tujuan), 'rumah tangga') ||
-            str_contains(strtolower($mutasi->ruangan_tujuan), 'gudang')
-        );
+        $user = Auth::user();
+        if ($user?->role === 'sub_admin') {
+            $userUnit = strtolower(trim($user->unitModel?->nama ?? ($user->unit ?? '')));
+            $asal = strtolower(trim($mutasi->ruangan_asal));
+            if (!$userUnit || (!str_contains($asal, $userUnit) && !str_contains($userUnit, $asal))) {
+                $msg = 'Anda tidak memiliki hak akses untuk menyetujui mutasi ini sebagai pihak pengirim.';
+                if ($request->wantsJson()) {
+                    return response()->json(['success' => false, 'message' => $msg], 403);
+                }
+                return back()->with('error', $msg);
+            }
+        }
+
+        $isReturnToGudang = $mutasi->isReturnToGudang();
 
         $isCompleted = ($isReturnToGudang && $mutasi->persetujuan_admin) ||
             ($mutasi->persetujuan_admin && $mutasi->persetujuan_penerima);
 
         $newStatus = $isCompleted ? 'Disetujui Admin (Selesai)' : 'Disetujui Pengirim (Menunggu Pihak Lain)';
 
-        $mutasi->update([
-            'persetujuan_pengirim'     => true,
-            'tgl_persetujuan_pengirim' => now(),
-            'status'                   => $newStatus,
-        ]);
+        DB::transaction(function () use ($mutasi, $newStatus, $isCompleted) {
+            $mutasi->update([
+                'persetujuan_pengirim'     => true,
+                'tgl_persetujuan_pengirim' => now(),
+                'status'                   => $newStatus,
+            ]);
 
-        if ($isCompleted) {
-            $this->transferRegisterLocations($mutasi);
-        }
+            if ($isCompleted) {
+                $this->transferRegisterLocations($mutasi);
+            }
+        });
 
         $msg = 'Berita Acara Mutasi (' . $mutasi->nomor_bamb . ') berhasil disetujui oleh pengirim.';
         session()->flash('success', $msg);
@@ -820,18 +860,33 @@ class MutasiController extends Controller
             return back()->with('error', 'Pengajuan mutasi ini telah dihapus.');
         }
 
+        $user = Auth::user();
+        if ($user?->role === 'sub_admin') {
+            $userUnit = strtolower(trim($user->unitModel?->nama ?? ($user->unit ?? '')));
+            $tujuan = strtolower(trim($mutasi->ruangan_tujuan));
+            if (!$userUnit || (!str_contains($tujuan, $userUnit) && !str_contains($userUnit, $tujuan))) {
+                $msg = 'Anda tidak memiliki hak akses untuk menyetujui mutasi ini sebagai pihak penerima.';
+                if ($request->wantsJson()) {
+                    return response()->json(['success' => false, 'message' => $msg], 403);
+                }
+                return back()->with('error', $msg);
+            }
+        }
+
         $isCompleted = (bool) $mutasi->persetujuan_admin && (bool) $mutasi->persetujuan_pengirim;
         $newStatus   = $isCompleted ? 'Disetujui Admin (Selesai)' : 'Disetujui Penerima (Menunggu Pihak Lain)';
 
-        $mutasi->update([
-            'persetujuan_penerima'     => true,
-            'tgl_persetujuan_penerima' => now(),
-            'status'                   => $newStatus,
-        ]);
+        DB::transaction(function () use ($mutasi, $newStatus, $isCompleted) {
+            $mutasi->update([
+                'persetujuan_penerima'     => true,
+                'tgl_persetujuan_penerima' => now(),
+                'status'                   => $newStatus,
+            ]);
 
-        if ($isCompleted) {
-            $this->transferRegisterLocations($mutasi);
-        }
+            if ($isCompleted) {
+                $this->transferRegisterLocations($mutasi);
+            }
+        });
 
         // Kirim Notifikasi Sistem (Format Singkat & Rapi)
         try {
@@ -872,11 +927,16 @@ class MutasiController extends Controller
             return back()->with('error', 'Pengajuan mutasi ini telah dihapus.');
         }
 
-        $isReturnToGudang = ($mutasi->jenis_mutasi === 'Pengembalian') && (
-            str_contains(strtolower($mutasi->ruangan_tujuan), 'perbekalan') ||
-            str_contains(strtolower($mutasi->ruangan_tujuan), 'rumah tangga') ||
-            str_contains(strtolower($mutasi->ruangan_tujuan), 'gudang')
-        );
+        $user = Auth::user();
+        if (!in_array($user?->role, ['admin', 'master_admin']) && !$user?->canDo('mutasi', 'approve')) {
+            $msg = 'Hanya Administrator Pengelola Aset yang berwenang memberikan pengesahan final.';
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $msg], 403);
+            }
+            return back()->with('error', $msg);
+        }
+
+        $isReturnToGudang = $mutasi->isReturnToGudang();
 
         $isCompleted = ($isReturnToGudang && $mutasi->persetujuan_pengirim) ||
             ($mutasi->persetujuan_pengirim && $mutasi->persetujuan_penerima);
@@ -893,11 +953,13 @@ class MutasiController extends Controller
             $updateData['tgl_persetujuan_penerima'] = now();
         }
 
-        $mutasi->update($updateData);
+        DB::transaction(function () use ($mutasi, $updateData, $isCompleted) {
+            $mutasi->update($updateData);
 
-        if ($isCompleted) {
-            $this->transferRegisterLocations($mutasi);
-        }
+            if ($isCompleted) {
+                $this->transferRegisterLocations($mutasi);
+            }
+        });
 
         // Kirim Notifikasi Sistem ke Sub Admin Ruangan Asal dan Ruangan Tujuan
         try {
@@ -1010,11 +1072,7 @@ class MutasiController extends Controller
         }
 
         // Tentukan status kembalian yang tepat
-        $isReturnToGudang = ($mutasi->jenis_mutasi === 'Pengembalian') && (
-            str_contains(strtolower($mutasi->ruangan_tujuan), 'perbekalan') ||
-            str_contains(strtolower($mutasi->ruangan_tujuan), 'rumah tangga') ||
-            str_contains(strtolower($mutasi->ruangan_tujuan), 'gudang')
-        );
+        $isReturnToGudang = $mutasi->isReturnToGudang();
 
         if ($mutasi->persetujuan_admin && !$mutasi->persetujuan_penerima) {
             $newStatus = $isReturnToGudang

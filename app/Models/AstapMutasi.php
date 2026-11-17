@@ -50,4 +50,21 @@ class AstapMutasi extends Model
     {
         return $this->belongsTo(AstapRegister::class, 'astap_register_id');
     }
+
+    /**
+     * Helper bisnis untuk memeriksa apakah transaksi mutasi ini merupakan
+     * pengembalian barang ke Pengurus Barang / Gudang / Depo.
+     */
+    public function isReturnToGudang(): bool
+    {
+        if ($this->jenis_mutasi !== 'Pengembalian') {
+            return false;
+        }
+
+        $tujuan = strtolower(trim($this->ruangan_tujuan ?? ''));
+        return str_contains($tujuan, 'perbekalan') ||
+               str_contains($tujuan, 'rumah tangga') ||
+               str_contains($tujuan, 'gudang') ||
+               str_contains($tujuan, 'depo');
+    }
 }

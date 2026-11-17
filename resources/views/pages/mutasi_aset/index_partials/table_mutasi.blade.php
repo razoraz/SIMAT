@@ -163,14 +163,21 @@
                                                 <span>Detail</span>
                                             </button>
 
-                                            {{-- 2. Tombol Ubah (Terkunci jika status Ditolak) --}}
+                                            {{-- 2. Tombol Ubah (Terkunci jika status Ditolak atau Selesai) --}}
                                             @if(Auth::user()?->role === 'master_admin' || Auth::user()?->canDo('mutasi', 'edit'))
-                                            <template x-if="item.status !== 'Ditolak'">
+                                            <template x-if="item.status !== 'Ditolak' && item.status !== 'Disetujui Admin (Selesai)'">
                                                 <a :href="'/mutasi-aset/' + item.id + '/edit'" title="Ubah Data Pengajuan Mutasi"
                                                     class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
                                                     <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                                     <span>Ubah</span>
                                                 </a>
+                                            </template>
+                                            <template x-if="item.status === 'Disetujui Admin (Selesai)'">
+                                                <button type="button" disabled title="Terkunci: Mutasi telah disahkan secara final dan selesai. Data tidak dapat diubah lagi."
+                                                    class="px-2.5 py-1.5 rounded-xl bg-slate-800/80 text-slate-500 border border-slate-700/60 font-bold text-xs inline-flex items-center space-x-1 cursor-not-allowed opacity-60 select-none">
+                                                    <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                                    <span>Ubah</span>
+                                                </button>
                                             </template>
                                             <template x-if="item.status === 'Ditolak'">
                                                 <button type="button" disabled title="Terkunci: Pengajuan berstatus Ditolak. Batalkan penolakan terlebih dahulu di menu Detail."
@@ -181,13 +188,22 @@
                                             </template>
                                             @endif
 
-                                            {{-- 3. Tombol Hapus --}}
+                                            {{-- 3. Tombol Hapus (Terkunci jika sudah disahkan final) --}}
                                             @if(Auth::user()?->role === 'master_admin' || Auth::user()?->canDo('mutasi', 'delete'))
-                                            <button type="button" @click="deleteMutasi(item)" title="Hapus Data Mutasi"
-                                                class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
-                                                <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                                <span>Hapus</span>
-                                            </button>
+                                            <template x-if="item.status !== 'Disetujui Admin (Selesai)'">
+                                                <button type="button" @click="deleteMutasi(item)" title="Hapus Data Mutasi"
+                                                    class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
+                                                    <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                    <span>Hapus</span>
+                                                </button>
+                                            </template>
+                                            <template x-if="item.status === 'Disetujui Admin (Selesai)'">
+                                                <button type="button" disabled title="Terkunci: Mutasi telah disahkan secara final dan tidak dapat dihapus."
+                                                    class="px-2.5 py-1.5 rounded-xl bg-slate-800/80 text-slate-500 border border-slate-700/60 font-bold text-xs inline-flex items-center space-x-1 cursor-not-allowed opacity-60 select-none">
+                                                    <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                                    <span>Hapus</span>
+                                                </button>
+                                            </template>
                                             @endif
 
                                         </div>

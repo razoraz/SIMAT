@@ -8,6 +8,7 @@
                 searchQuery: '',
                 statusFilter: 'all',
                 showDetailModal: false,
+                isSubmitting: false,
 
                 selectedMutasi: null,
 
@@ -217,7 +218,8 @@
                 },
 
                 approvePengirim(item) {
-                    if (!item) return;
+                    if (!item || this.isSubmitting) return;
+                    this.isSubmitting = true;
                     const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                     fetch('/mutasi-aset/' + item.id + '/approve-pengirim', {
                         method: 'POST',
@@ -245,11 +247,15 @@
                     .catch(err => {
                         console.error('approvePengirim error:', err);
                         this.showSimatToast('Gagal menyetujui mutasi.', 'error');
+                    })
+                    .finally(() => {
+                        this.isSubmitting = false;
                     });
                 },
 
                 approvePenerima(item) {
-                    if (!item) return;
+                    if (!item || this.isSubmitting) return;
+                    this.isSubmitting = true;
                     const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                     fetch('/mutasi-aset/' + item.id + '/approve-penerima', {
                         method: 'POST',
@@ -277,11 +283,15 @@
                     .catch(err => {
                         console.error('approvePenerima error:', err);
                         this.showSimatToast('Gagal menyetujui mutasi.', 'error');
+                    })
+                    .finally(() => {
+                        this.isSubmitting = false;
                     });
                 },
 
                 approveAdmin(item) {
-                    if (!item) return;
+                    if (!item || this.isSubmitting) return;
+                    this.isSubmitting = true;
                     const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                     fetch('/mutasi-aset/' + item.id + '/approve-admin', {
                         method: 'POST',
@@ -309,6 +319,9 @@
                     .catch(err => {
                         console.error('approveAdmin error:', err);
                         this.showSimatToast('Gagal menyetujui mutasi.', 'error');
+                    })
+                    .finally(() => {
+                        this.isSubmitting = false;
                     });
                 },
 
@@ -324,11 +337,12 @@
                 },
 
                 confirmRejectMutasi() {
-                    if (!this.rejectTargetItem) return;
+                    if (!this.rejectTargetItem || this.isSubmitting) return;
                     if (!this.rejectAlasan || !this.rejectAlasan.trim()) {
                         this.showSimatToast('Silakan isi alasan penolakan terlebih dahulu.', 'warning');
                         return;
                     }
+                    this.isSubmitting = true;
                     const item = this.rejectTargetItem;
                     const alasan = this.rejectAlasan.trim();
                     this.showRejectModal = false;
@@ -357,6 +371,8 @@
                     }).catch(err => {
                         console.error('rejectMutasi error:', err);
                         this.showSimatToast('Gagal menolak pengajuan mutasi.', 'error');
+                    }).finally(() => {
+                        this.isSubmitting = false;
                     });
                 },
 
@@ -374,7 +390,7 @@
                 },
 
                 cancelRejectMutasi(item) {
-                    if (!item) return;
+                    if (!item || this.isSubmitting) return;
                     this.askConfirmation({
                         title: 'Batalkan Penolakan Mutasi?',
                         message: 'Status penolakan akan dibatalkan dan pengajuan mutasi akan aktif kembali.',
@@ -382,6 +398,8 @@
                         type: 'warning',
                         btnText: 'Ya, Batalkan Penolakan',
                         onConfirm: () => {
+                            if (this.isSubmitting) return;
+                            this.isSubmitting = true;
                             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                             fetch('/mutasi-aset/' + item.id + '/cancel-reject', {
                                 method: 'POST',
@@ -409,13 +427,16 @@
                             .catch(err => {
                                 console.error('cancelReject error:', err);
                                 this.showSimatToast('Gagal membatalkan penolakan mutasi.', 'error');
+                            })
+                            .finally(() => {
+                                this.isSubmitting = false;
                             });
                         }
                     });
                 },
 
                 deleteMutasi(item) {
-                    if (!item) return;
+                    if (!item || this.isSubmitting) return;
                     const bNomor = item.kode || 'BAMB';
                     const targetName = (item.nama || 'Pengajuan Mutasi') + ' (' + (item.kode_barang && item.kode_barang !== '-' ? item.kode_barang : bNomor) + ')';
                     this.askConfirmation({
@@ -425,6 +446,8 @@
                         type: 'danger',
                         btnText: 'Pindahkan ke Tong Sampah',
                         onConfirm: () => {
+                            if (this.isSubmitting) return;
+                            this.isSubmitting = true;
                             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                             fetch('/mutasi-aset/' + item.id, {
                                 method: 'DELETE',
@@ -450,13 +473,16 @@
                             .catch(err => {
                                 console.error('deleteMutasi error:', err);
                                 this.showSimatToast('Gagal memindahkan data mutasi ke Tong Sampah.', 'error');
+                            })
+                            .finally(() => {
+                                this.isSubmitting = false;
                             });
                         }
                     });
                 },
 
                 restoreMutasi(item) {
-                    if (!item) return;
+                    if (!item || this.isSubmitting) return;
                     const bNomor = item.kode || 'BAMB';
                     const targetName = (item.nama || 'Pengajuan Mutasi') + ' (' + (item.kode_barang && item.kode_barang !== '-' ? item.kode_barang : bNomor) + ')';
                     this.askConfirmation({
@@ -466,6 +492,8 @@
                         type: 'info',
                         btnText: '♻️ Ya, Pulihkan Data Ini',
                         onConfirm: () => {
+                            if (this.isSubmitting) return;
+                            this.isSubmitting = true;
                             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                             fetch('/mutasi-aset/' + item.id + '/restore', {
                                 method: 'POST',
@@ -492,6 +520,9 @@
                             .catch(err => {
                                 console.error('restoreMutasi error:', err);
                                 this.showSimatToast('Gagal memulihkan data mutasi.', 'error');
+                            })
+                            .finally(() => {
+                                this.isSubmitting = false;
                             });
                         }
                     });
