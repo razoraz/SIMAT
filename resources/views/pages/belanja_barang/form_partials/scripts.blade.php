@@ -1458,6 +1458,8 @@
                     payload.append('rekening_nomor_faktur', this.formData.rekening_nomor_faktur);
                     payload.append('rekening_tanggal_faktur', this.formData.rekening_tanggal_faktur);
                     payload.append('rekening_keterangan', this.formData.rekening_keterangan || '');
+                    payload.append('ppk_nama', this.formData.ppk_nama || 'BUDI HARTONO, S.Sos');
+                    payload.append('ppk_nip', this.formData.ppk_nip || '19760229 200801 1 010');
                     payload.append('status_alokasi_global', 'belum_ditempatkan');
                     payload.append('is_extracomtable', this.formData.is_extracomtable ? 1 : 0);
                     payload.append('is_data_verified', this.isDataVerified ? 1 : 0);

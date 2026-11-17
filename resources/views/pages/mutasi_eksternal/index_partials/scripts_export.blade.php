@@ -434,6 +434,41 @@
         const headerEndRow = titleRowCount + 4;
         const footerRowIdx = hasSignature ? (rowCount - 1 - 9) : (rowCount - 1);
 
+        // Profil kolom spesifik per KIB (0-indexed col)
+        let currencyCols = [5, 6];
+        let intQtyCols = [];
+        let decQtyCols = [];
+        let centerCols = [1, 3, 8];
+
+        if (colCount === 26) {
+            // KIB A - TANAH (26 Kolom)
+            currencyCols = [5, 6, 18];
+            intQtyCols = [16]; // Jumlah Bidang Tanah
+            decQtyCols = [17]; // Luas Tanah (m²)
+            centerCols = [1, 3, 8, 10, 13, 14, 16, 24]; // Kode, Tgl Sertifikat, Tgl BAST, Kondisi, Jumlah, NIP
+        } else if (colCount === 33) {
+            // KIB B - PERALATAN DAN MESIN (33 Kolom)
+            currencyCols = [5, 6, 24, 25]; // Nilai Satuan & Total Nilai Barang
+            intQtyCols = [18, 22]; // c=18: Tahun Perolehan (angka bulat tahun, NO Rp!), c=22: Jumlah Barang
+            centerCols = [1, 3, 8, 18, 20, 21, 22, 23, 31]; // Kode, Tahun, Tgl BAST, Kondisi, Jumlah, Satuan, NIP
+        } else if (colCount === 31) {
+            // KIB C & D - GEDUNG / JARINGAN (31 Kolom)
+            currencyCols = [5, 6, 18, 23]; // c=18: Nilai Induk Kapitalisasi, c=23: Total Nilai Barang
+            intQtyCols = [21]; // Jumlah Bangunan / Unit
+            decQtyCols = [9];  // Luas Lantai / Luas Panjang m²
+            centerCols = [1, 3, 8, 10, 11, 12, 14, 15, 16, 17, 20, 21, 22, 29];
+        } else if (colCount === 32) {
+            // KIB E - ASET TETAP LAINNYA (32 Kolom)
+            currencyCols = [5, 6, 23, 24]; // Nilai Satuan & Total Nilai Barang
+            intQtyCols = [21]; // Jumlah Barang
+            centerCols = [1, 3, 8, 16, 19, 20, 21, 22, 30]; // Kode, Tgl BAST, Kondisi, Jumlah, Satuan, NIP
+        } else if (colCount === 29) {
+            // EXTRACOM - EKSTRAKOMTABEL (29 Kolom)
+            currencyCols = [5, 6, 20, 21]; // c=20: Nilai Satuan, c=21: Total Nilai Barang
+            intQtyCols = [14, 18]; // c=14: Tahun Perolehan, c=18: Jumlah Barang
+            centerCols = [1, 3, 8, 14, 16, 17, 18, 19, 27]; // Kode, Tahun, Tgl BAST, Kondisi, Jumlah, Satuan, NIP
+        }
+
         for (let r = 0; r < rowCount; r++) {
             if (hasSignature && r > footerRowIdx) continue;
 
@@ -470,22 +505,38 @@
                     bold = true;
                     border = doubleBottomBorder;
                     fontSize = 10;
-                    if (c === 0) align = 'left';
-                    else if (c === 5 || c === 6 || c === 18 || c === 24 || c === 25 || c === 23) {
+                    if (c === 0) {
+                        align = 'left';
+                    } else if (currencyCols.includes(c)) {
                         align = 'right';
                         numFmt = 'Rp #,##0.00';
-                    } else if (c === 16 || c === 17 || c === 21 || c === 22) {
+                    } else if (decQtyCols.includes(c)) {
+                        align = 'right';
+                        numFmt = '#,##0.00';
+                    } else if (intQtyCols.includes(c)) {
+                        align = 'center';
+                        numFmt = '#,##0';
+                    } else {
                         align = 'center';
                     }
                 } else {
                     fill = (r % 2 === 0) ? 'FFFFFF' : 'F5F3FF';
-                    if (c === 0) { align = 'center'; bold = true; }
-                    else if (c === 1 || c === 3 || c === 8) align = 'center';
-                    else if (c === 5 || c === 6 || c === 18 || c === 24 || c === 25 || c === 23) {
+                    if (c === 0) {
+                        align = 'center';
+                        bold = true;
+                    } else if (currencyCols.includes(c)) {
                         align = 'right';
                         numFmt = 'Rp #,##0.00';
-                    } else if (c === 16 || c === 17 || c === 21 || c === 22) {
+                    } else if (decQtyCols.includes(c)) {
+                        align = 'right';
+                        numFmt = '#,##0.00';
+                    } else if (intQtyCols.includes(c)) {
                         align = 'center';
+                        numFmt = '#,##0';
+                    } else if (centerCols.includes(c)) {
+                        align = 'center';
+                    } else {
+                        align = 'left';
                     }
                 }
 
@@ -678,8 +729,13 @@
                 const det = getMutasiItemDetails(it);
                 const spec = det.spec;
                 let uCount = parseInt(it.jumlah_volume) || 1;
-                if (spec.mesin_items && Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0) {
-                    uCount = spec.mesin_items.reduce((acc, m) => acc + (parseInt(m.mesin_jumlah_barang || m.mesin_jumlah) || 1), 0);
+                const subItems = (spec.mesin_items && Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0) ? spec.mesin_items
+                    : ((spec.tanah_items && Array.isArray(spec.tanah_items) && spec.tanah_items.length > 0) ? spec.tanah_items
+                    : ((spec.gedung_items && Array.isArray(spec.gedung_items) && spec.gedung_items.length > 0) ? spec.gedung_items
+                    : ((spec.jaringan_items && Array.isArray(spec.jaringan_items) && spec.jaringan_items.length > 0) ? spec.jaringan_items
+                    : ((spec.lainnya_items && Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0) ? spec.lainnya_items : null))));
+                if (subItems) {
+                    uCount = subItems.reduce((acc, s) => acc + Math.max(1, parseInt(s.mesin_jumlah_barang || s.mesin_jumlah || s.tanah_jumlah || s.gedung_jumlah || s.jaringan_jumlah || s.lainnya_jumlah || s.jumlah || 1)), 0);
                 }
                 unitTotal += uCount;
                 nilaiTotal += parseFloat(it.nilai_perolehan || it.total_realisasi_num || 0);

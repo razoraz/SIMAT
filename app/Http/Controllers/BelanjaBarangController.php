@@ -381,6 +381,10 @@ class BelanjaBarangController extends Controller
         // Seluruh pengadaan belanja barang berstatus awal 'belum_ditempatkan' (Tersedia / siap BAST Distribusi)
         $statusAlokasiFaktur = 'belum_ditempatkan';
 
+        // Pejabat Pembuat Komitmen (PPK) / Penanggung Jawab RSUD
+        $ppkNama = trim($request->input('ppk_nama') ?: 'BUDI HARTONO, S.Sos');
+        $ppkNip  = trim($request->input('ppk_nip') ?: '19760229 200801 1 010');
+
         // 5. Eksekusi Atomic Database Transaction
         $fakturHeader = DB::transaction(function () use (
             $itemsList,
@@ -394,6 +398,8 @@ class BelanjaBarangController extends Controller
             $statusAlokasiFaktur,
             $tahun,
             $triwulan,
+            $ppkNama,
+            $ppkNip,
             $request
         ) {
             // A. Simpan Dokumen Faktur Header
@@ -437,6 +443,8 @@ class BelanjaBarangController extends Controller
                     'kondisi'            => $kondisi,
                     'dokumen_faktur'     => $dokumenFakturPath,
                     'dokumen_kuitansi'   => $dokumenKuitansiPath,
+                    'ppk_nama'           => $ppkNama,
+                    'ppk_nip'            => $ppkNip,
                 ];
 
                 if (!empty($it['spesifikasi_json']) && is_array($it['spesifikasi_json'])) {
@@ -457,6 +465,8 @@ class BelanjaBarangController extends Controller
                     'biaya_administrasi_proyek' => 0,
                     'triwulan'                  => $triwulan,
                     'sumber_dana'               => 'belanja_barang',
+                    'ppk_nama'                  => $ppkNama,
+                    'ppk_nip'                   => $ppkNip,
                     'keterangan_tambahan'       => $keteranganFaktur,
                     'alamat_barang'             => $alamatBarang,
                     'user_id'                   => Auth::id(),

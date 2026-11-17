@@ -118,14 +118,16 @@
                             <span class="text-[9.5px] text-indigo-300/80 mt-1 leading-tight">Antar-OPD</span>
                         </button>
 
-                        <!-- Tab 5: Belanja Barang (Disabled) -->
-                        <div class="p-2 rounded-xl border border-slate-800/40 bg-slate-950/30 text-slate-600 opacity-60 flex flex-col justify-between cursor-not-allowed select-none">
+                        <!-- Tab 5: Belanja Barang (Operasional) -->
+                        <button type="button" @click="exportSumberDana = 'belanja_barang'"
+                            class="p-2 rounded-xl border text-left transition-all flex flex-col justify-between cursor-pointer"
+                            :class="exportSumberDana === 'belanja_barang' ? 'bg-teal-500/20 text-teal-300 border-teal-500/60 shadow-md ring-1 ring-teal-500/30' : 'bg-slate-950/60 text-slate-400 border-slate-800 hover:bg-slate-950 hover:text-slate-200'">
                             <div class="flex items-center justify-between w-full">
-                                <span class="text-xs font-semibold">📦 Barang</span>
-                                <span class="text-[8px] uppercase tracking-wider bg-slate-800 text-slate-400 px-1 py-0.5 rounded font-mono">Nanti</span>
+                                <span class="text-xs font-bold flex items-center gap-1">📦 Barang</span>
+                                <span x-show="exportSumberDana === 'belanja_barang'" class="text-teal-400 font-black text-xs">✓</span>
                             </div>
-                            <span class="text-[9.5px] text-slate-600 mt-1 leading-tight">Operasional</span>
-                        </div>
+                            <span class="text-[9.5px] text-teal-300/80 mt-1 leading-tight">Operasional</span>
+                        </button>
                     </div>
                 </div>
 
@@ -177,6 +179,20 @@
                     </a>
                 </div>
 
+                <!-- 4C. KHUSUS BELANJA BARANG: INFO BELANJA BARANG & JASA (OPERASIONAL) -->
+                <div x-show="exportFormatType === 'sipenerbang' && exportSumberDana === 'belanja_barang'" class="p-3.5 rounded-2xl bg-teal-950/20 border border-teal-500/30 space-y-2">
+                    <div class="flex items-center gap-2 text-teal-300 font-bold text-xs">
+                        <span>📦 Laporan Aset Belanja Barang &amp; Jasa (Operasional / Akun 5.1.02)</span>
+                    </div>
+                    <p class="text-[11px] text-slate-300 leading-relaxed">
+                        Dokumen ekspor Excel perolehan belanja barang operasional / perbekalan ruangan berstandar Permendagri 108 (9 Sheet SIPENERBANG: Rekap, KIB A–F, ATB &amp; Extracom).
+                    </p>
+                    <a href="{{ route('master.belanja_barang') }}" target="_blank"
+                       class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/40 text-[11px] font-bold transition-all">
+                        <span>Buka Modul Kelola Belanja Barang ↗</span>
+                    </a>
+                </div>
+
                 <!-- 3. PILIHAN TAHUN ANGGARAN (Berlaku untuk Modal & Kemitraan) -->
                 <div>
                     <label class="block text-slate-300 font-bold text-xs mb-1 flex items-center justify-between">
@@ -195,7 +211,7 @@
                 <!-- 4. PILIHAN TRIWULAN (TW I - IV / SEMUA) -->
                 <div>
                     <label class="block text-cyan-300 font-bold text-xs mb-1 flex items-center justify-between">
-                        <span x-text="exportSumberDana === 'kemitraan' ? '📊 TRIWULAN PKS / KONSESI' : ((exportSumberDana === 'mutasi_eksternal' || exportSumberDana === 'pelimpahan') ? '📊 TRIWULAN MUTASI MASUK (BAMB)' : '📊 TRIWULAN PENGADAAN (BAST)')"></span>
+                        <span x-text="exportSumberDana === 'kemitraan' ? '📊 TRIWULAN PKS / KONSESI' : ((exportSumberDana === 'mutasi_eksternal' || exportSumberDana === 'pelimpahan') ? '📊 TRIWULAN MUTASI MASUK (BAMB)' : (exportSumberDana === 'belanja_barang' ? '📊 TRIWULAN FAKTUR BELANJA' : '📊 TRIWULAN PENGADAAN (BAST)'))"></span>
                         <span class="text-[10px] text-cyan-400/80 font-mono">TW I - IV</span>
                     </label>
                     <div class="grid grid-cols-2 gap-1.5">
@@ -309,15 +325,32 @@
                     </select>
                 </div>
 
+                <!-- 5E. PILIHAN KLASIFIKASI SHEET KHUSUS BELANJA BARANG (AKUN 5.1.02) -->
+                <div x-show="exportFormatType === 'sipenerbang' && exportSumberDana === 'belanja_barang'">
+                    <label class="block text-teal-300 font-bold text-xs mb-1 flex items-center justify-between">
+                        <span>📦 FORMAT LEMBAR SHEET BELANJA BARANG (AKUN 5.1.02)</span>
+                        <span class="text-[10px] text-teal-400 font-mono">Sheet Excel</span>
+                    </label>
+                    <select x-model="exportBarangCategory"
+                            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-slate-200 focus:outline-none focus:border-teal-400">
+                        <option value="all">Semua Lembar (Paket Lengkap: Rekap Faktur &amp; Rincian Barang)</option>
+                        <option value="REKAP">Lembar 1 - Rekapitulasi Pembelian Faktur (Per Toko Rekanan)</option>
+                        <option value="RINCIAN">Lembar 2 - Rincian Lengkap Seluruh Barang Belanja</option>
+                        <option value="KIB B">Lembar 3 - KIB B (Peralatan &amp; Mesin / Perbekalan Operasional)</option>
+                        <option value="EXTRACOM">Lembar 4 - Extracom (Barang Ekstrakomtabel &le; Rp 300.000)</option>
+                        <option value="KIB E">Lembar 5 - KIB E (Aset Tetap Lainnya)</option>
+                    </select>
+                </div>
+
                 <!-- Info Ringkasan Data Siap Ekspor -->
                 <div class="p-2.5 rounded-xl border flex items-center justify-between"
-                     :class="exportSumberDana === 'kemitraan' ? 'bg-slate-950/80 border-cyan-500/30' : (exportSumberDana === 'hibah' ? 'bg-slate-950/80 border-amber-500/30' : ((exportSumberDana === 'mutasi_eksternal' || exportSumberDana === 'pelimpahan') ? 'bg-slate-950/80 border-indigo-500/30' : 'bg-slate-950/80 border-emerald-500/30'))">
+                     :class="exportSumberDana === 'kemitraan' ? 'bg-slate-950/80 border-cyan-500/30' : (exportSumberDana === 'hibah' ? 'bg-slate-950/80 border-amber-500/30' : ((exportSumberDana === 'mutasi_eksternal' || exportSumberDana === 'pelimpahan') ? 'bg-slate-950/80 border-indigo-500/30' : (exportSumberDana === 'belanja_barang' ? 'bg-slate-950/80 border-teal-500/30' : 'bg-slate-950/80 border-emerald-500/30')))">
                     <div class="flex items-center space-x-2 text-xs">
-                        <span class="text-base" x-text="exportSumberDana === 'kemitraan' ? '🤝' : (exportSumberDana === 'hibah' ? '🎁' : ((exportSumberDana === 'mutasi_eksternal' || exportSumberDana === 'pelimpahan') ? '🔄' : '📋'))"></span>
+                        <span class="text-base" x-text="exportSumberDana === 'kemitraan' ? '🤝' : (exportSumberDana === 'hibah' ? '🎁' : ((exportSumberDana === 'mutasi_eksternal' || exportSumberDana === 'pelimpahan') ? '🔄' : (exportSumberDana === 'belanja_barang' ? '📦' : '📋')))"></span>
                         <span class="text-slate-300 font-medium">Aset siap diekspor:</span>
                     </div>
                     <span class="px-2.5 py-0.5 rounded-lg font-mono font-bold text-xs border"
-                          :class="exportSumberDana === 'kemitraan' ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' : (exportSumberDana === 'hibah' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : ((exportSumberDana === 'mutasi_eksternal' || exportSumberDana === 'pelimpahan') ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'))"
+                          :class="exportSumberDana === 'kemitraan' ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' : (exportSumberDana === 'hibah' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : ((exportSumberDana === 'mutasi_eksternal' || exportSumberDana === 'pelimpahan') ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' : (exportSumberDana === 'belanja_barang' ? 'bg-teal-500/20 text-teal-300 border-teal-500/40' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40')))"
                           x-text="exportFilteredCount + ' Item Data'"></span>
                 </div>
             </div>
@@ -331,7 +364,7 @@
                 <button type="button" @click="submitExport()"
                     :disabled="isSubmittingExport"
                     class="px-5 py-2 rounded-xl font-black text-xs shadow-lg transition-all flex items-center space-x-2 cursor-pointer active:scale-95 disabled:opacity-50"
-                    :class="exportSumberDana === 'kemitraan' ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-cyan-500/20' : (exportSumberDana === 'hibah' ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/20' : ((exportSumberDana === 'mutasi_eksternal' || exportSumberDana === 'pelimpahan') ? 'bg-indigo-500 hover:bg-indigo-400 text-slate-950 shadow-indigo-500/20' : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-emerald-500/20'))">
+                    :class="exportSumberDana === 'kemitraan' ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-cyan-500/20' : (exportSumberDana === 'hibah' ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/20' : ((exportSumberDana === 'mutasi_eksternal' || exportSumberDana === 'pelimpahan') ? 'bg-indigo-500 hover:bg-indigo-400 text-slate-950 shadow-indigo-500/20' : (exportSumberDana === 'belanja_barang' ? 'bg-teal-500 hover:bg-teal-400 text-slate-950 shadow-teal-500/20' : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-emerald-500/20')))">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                     <span x-text="isSubmittingExport ? 'Mengekspor...' : (exportSumberDana === 'hibah' ? 'Buka Modul Hibah' : 'Unduh File Excel')"></span>
                 </button>
