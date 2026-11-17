@@ -30,10 +30,14 @@ class MutasiEksternal extends Model
 
     public function getIsTutupBukuAttribute(): bool
     {
-        if ($this->astap) {
+        if ($this->relationLoaded('astap') && $this->astap) {
             return $this->astap->isTutupBuku();
         }
-        return ($this->tahun && $this->tahun < (int) date('Y'));
+        if ($this->astap_id && $this->astap) {
+            return $this->astap->isTutupBuku();
+        }
+        $mutasiYear = $this->tanggal_mutasi ? (int) $this->tanggal_mutasi->format('Y') : null;
+        return $mutasiYear ? ($mutasiYear < (int) date('Y')) : false;
     }
 
     /**

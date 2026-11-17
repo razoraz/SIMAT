@@ -14485,8 +14485,7 @@
                 detailSearchQuery: '',
 
                 formatRupiah(val) {
-                    if (typeof val === 'string' && val.trim().startsWith('Rp')) return val;
-                    const num = parseFloat(String(val || 0).replace(/[^0-9.-]/g, '')) || 0;
+                    const num = parseFloat(val) || 0;
                     return 'Rp ' + Math.round(num).toLocaleString('id-ID');
                 },
 

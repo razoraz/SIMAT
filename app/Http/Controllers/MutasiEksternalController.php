@@ -41,6 +41,7 @@ class MutasiEksternalController extends Controller
                 ->where('pj_asal_nama', '!=', '')
                 ->where('pj_asal_nama', 'not like', '%Pejabat Penyerah%')
                 ->orderBy('id', 'desc')
+                ->limit(50)
                 ->get(['pj_asal_nama', 'pj_asal_nip', 'pj_asal_jabatan'])
                 ->map(fn($m) => [
                     'nama'    => trim($m->pj_asal_nama),
@@ -53,6 +54,7 @@ class MutasiEksternalController extends Controller
                 ->where('pj_tujuan_nama', '!=', '')
                 ->where('pj_tujuan_nama', 'not like', '%Pejabat Penerima%')
                 ->orderBy('id', 'desc')
+                ->limit(50)
                 ->get(['pj_tujuan_nama', 'pj_tujuan_nip', 'pj_tujuan_jabatan'])
                 ->map(fn($m) => [
                     'nama'    => trim($m->pj_tujuan_nama),
@@ -64,6 +66,7 @@ class MutasiEksternalController extends Controller
             $fromAstap = Astap::whereNotNull('ppk_nama')
                 ->where('ppk_nama', '!=', '')
                 ->orderBy('id', 'desc')
+                ->limit(50)
                 ->get(['ppk_nama', 'ppk_nip'])
                 ->map(fn($a) => [
                     'nama'    => trim($a->ppk_nama),
@@ -292,6 +295,7 @@ class MutasiEksternalController extends Controller
             $records = MutasiEksternal::whereNotNull('opd_asal')
                 ->where('opd_asal', '!=', '')
                 ->orderBy('id', 'desc')
+                ->limit(100)
                 ->get(['opd_asal', 'alamat_instansi', 'pj_asal_nama', 'pj_asal_nip', 'pj_asal_jabatan']);
 
             foreach ($records as $r) {
@@ -342,6 +346,7 @@ class MutasiEksternalController extends Controller
                 ->whereNotNull('mutasi_asal')
                 ->where('mutasi_asal', '!=', '')
                 ->orderBy('id', 'desc')
+                ->limit(100)
                 ->get(['mutasi_asal', 'spesifikasi_json']);
 
             foreach ($astaps as $a) {
@@ -484,7 +489,8 @@ class MutasiEksternalController extends Controller
                 'astap.jenisAstap', 
                 'unit', 
                 'user',
-                'mutasiRegisters.register.unit'
+                'mutasiRegisters.register.unit',
+                'mutasiRegisters.register.astap.jenisAstap'
             ])
             ->where('is_deleted', 0)
             ->latest('tanggal_mutasi')
@@ -652,7 +658,7 @@ class MutasiEksternalController extends Controller
                 'category'                  => $astap?->category ?: 'KIB B',
                 'is_extracomtable'          => (bool) ($astap?->is_extracomtable ?? false),
                 'is_reklas'                 => (bool) ($astap?->is_reklas ?? false),
-                'is_tutup_buku'             => $astap ? $astap->isTutupBuku() : ($m->tahun && $m->tahun < (int) date('Y')),
+                'is_tutup_buku'             => $astap ? $astap->isTutupBuku() : ($m->tanggal_mutasi ? ($m->tanggal_mutasi->year < (int) date('Y')) : false),
                 'jenis_reklas'              => $astap?->jenis_reklas,
                 'sumber_dana'               => $astap?->sumber_dana ?: 'mutasi_eksternal',
                 'sumber_dana_raw'           => $astap?->sumber_dana ?: 'mutasi_eksternal',
@@ -1088,6 +1094,7 @@ class MutasiEksternalController extends Controller
 
             $maxRegInt = AstapRegister::where('tahun_perolehan', $tahun)
                 ->whereHas('astap', fn($sq) => $sq->where('jenis_astap_id', $data['jenis_astap_id']))
+                ->lockForUpdate()
                 ->max('no_register_int') ?? 0;
 
             $runningRegNum = (int) $maxRegInt;
@@ -1584,6 +1591,7 @@ class MutasiEksternalController extends Controller
 
                 $maxRegInt = AstapRegister::where('tahun_perolehan', $tahun)
                     ->whereHas('astap', fn($sq) => $sq->where('jenis_astap_id', $data['jenis_astap_id']))
+                    ->lockForUpdate()
                     ->max('no_register_int') ?? 0;
 
                 $runningRegNum = (int) $maxRegInt;
@@ -1643,9 +1651,16 @@ class MutasiEksternalController extends Controller
         $deleterName = $user ? ($user->name . ' (' . ucfirst($user->role ?? 'user') . ')') : 'Administrator';
         $reason = $request->input('alasan', 'Dihapus dari modul Mutasi Eksternal');
 
-        // Coba cari di MutasiEksternal terlebih dahulu (bisa ID mutasi atau astap_id)
-        $mutasi = MutasiEksternal::find($id) ?: MutasiEksternal::where('astap_id', $id)->first();
-        $astap  = $mutasi ? $mutasi->astap : Astap::find($id);
+        // Cari record MutasiEksternal secara presisi
+        $mutasi = MutasiEksternal::with('astap')->find($id);
+        $astap = null;
+
+        if ($mutasi) {
+            $astap = $mutasi->astap;
+        } elseif (is_numeric($id)) {
+            $mutasi = MutasiEksternal::with('astap')->where('astap_id', $id)->first();
+            $astap  = $mutasi ? $mutasi->astap : Astap::find($id);
+        }
 
         if (!$mutasi && !$astap) {
             return response()->json(['success' => false, 'message' => 'Data Mutasi Eksternal tidak ditemukan.'], 404);
@@ -1776,12 +1791,14 @@ class MutasiEksternalController extends Controller
             ->where('is_deleted', 0)
             ->find($id);
 
-        if (!$mutasi) {
+        if (!$mutasi && is_numeric($id)) {
             $mutasi = MutasiEksternal::with($relations)
                 ->where('is_deleted', 0)
                 ->where('astap_id', $id)
                 ->latest('id')
                 ->firstOrFail();
+        } elseif (!$mutasi) {
+            abort(404, 'Data Mutasi Eksternal tidak ditemukan.');
         }
 
         return response()->json([
@@ -1809,10 +1826,11 @@ class MutasiEksternalController extends Controller
         ]);
 
         $mutasi = MutasiEksternal::with(['astap.registers', 'mutasiRegisters.register'])->find($id);
-        if (!$mutasi) {
+        if (!$mutasi && is_numeric($id)) {
             $mutasi = MutasiEksternal::with(['astap.registers', 'mutasiRegisters.register'])
                 ->where('astap_id', $id)
                 ->where('is_deleted', 0)
+                ->latest('id')
                 ->first();
         }
 
@@ -1938,9 +1956,10 @@ class MutasiEksternalController extends Controller
         }
 
         $mutasi = MutasiEksternal::with(['astap.registers', 'mutasiRegisters.register'])->find($id);
-        if (!$mutasi) {
+        if (!$mutasi && is_numeric($id)) {
             $mutasi = MutasiEksternal::with(['astap.registers', 'mutasiRegisters.register'])
                 ->where('astap_id', $id)
+                ->latest('id')
                 ->first();
         }
 
@@ -2054,11 +2073,12 @@ class MutasiEksternalController extends Controller
         }
 
         $mutasi = MutasiEksternal::with(['astap.registers.unit', 'mutasiRegisters'])->find($id);
-        if (!$mutasi) {
+        if (!$mutasi && is_numeric($id)) {
             $mutasi = MutasiEksternal::with(['astap.registers.unit', 'mutasiRegisters'])
                 ->where('astap_id', $id)
                 ->where('tipe', 'keluar')
                 ->where('is_deleted', 0)
+                ->latest('id')
                 ->first();
         }
 
@@ -2181,10 +2201,9 @@ class MutasiEksternalController extends Controller
 
                 // 4. Hitung ulang volume & nilai perolehan mutasi berdasarkan register terpilih
                 $newCount = count($newRegisterIds);
-                $selectedRegModels = AstapRegister::whereIn('id', $newRegisterIds)->get();
-                $sumNilai = (float) $selectedRegModels->sum('harga_satuan');
+                $sumNilai = 0;
 
-                if ($sumNilai <= 0 && $astap) {
+                if ($astap) {
                     if ($astap->jumlah_volume > 0) {
                         $sumNilai = ((float) $astap->total_realisasi / (float) $astap->jumlah_volume) * $newCount;
                     } else {
@@ -2264,12 +2283,14 @@ class MutasiEksternalController extends Controller
             ->where('is_deleted', 0)
             ->find($id);
 
-        if (!$mutasi) {
+        if (!$mutasi && is_numeric($id)) {
             $mutasi = MutasiEksternal::with($relations)
                 ->where('is_deleted', 0)
                 ->where('astap_id', $id)
                 ->latest('id')
                 ->firstOrFail();
+        } elseif (!$mutasi) {
+            abort(404, 'Data Mutasi Eksternal tidak ditemukan.');
         }
 
         return view('pages.mutasi_eksternal.cetak_bast', compact('mutasi'));
@@ -2296,45 +2317,47 @@ class MutasiEksternalController extends Controller
             ->with(['unit'])
             ->get();
 
-        foreach ($legacyAstaps as $a) {
-            $nomorBamb = $a->mutasi_nomor_bamb 
-                ?: ($a->bast_dokumen_nomor ?: 'BAMB-SKPD-' . str_pad($a->id, 4, '0', STR_PAD_LEFT));
-            
-            $tgl = $a->mutasi_tanggal 
-                ?: ($a->bast_dokumen_tanggal ?: ($a->created_at ? $a->created_at->format('Y-m-d') : date('Y-m-d')));
+        DB::transaction(function () use ($legacyAstaps) {
+            foreach ($legacyAstaps as $a) {
+                $nomorBamb = $a->mutasi_nomor_bamb 
+                    ?: ($a->bast_dokumen_nomor ?: 'BAMB-SKPD-' . str_pad($a->id, 4, '0', STR_PAD_LEFT));
+                
+                $tgl = $a->mutasi_tanggal 
+                    ?: ($a->bast_dokumen_tanggal ?: ($a->created_at ? $a->created_at->format('Y-m-d') : date('Y-m-d')));
 
-            $opdAsal = $a->mutasi_asal ?: 'SKPD / Instansi Luar';
-            $ruangNama = $a->unit?->nama ?: ($a->alamat_barang ?: 'Gudang/Ruangan RSUD');
-            $nilaiReal = (float) ($a->total_realisasi ?: 0);
+                $opdAsal = $a->mutasi_asal ?: 'SKPD / Instansi Luar';
+                $ruangNama = $a->unit?->nama ?: ($a->alamat_barang ?: 'Gudang/Ruangan RSUD');
+                $nilaiReal = (float) ($a->total_realisasi ?: 0);
 
-            MutasiEksternal::create([
-                'astap_id'            => $a->id,
-                'nomor_bamb'          => $nomorBamb,
-                'tanggal_mutasi'      => $tgl,
-                'jenis_mutasi'        => 'Transfer Antar-OPD',
-                'tipe'                => 'masuk',
-                'opd_asal'            => $opdAsal,
-                'alamat_instansi'     => $a->spesifikasi_json['alamat_instansi'] ?? null,
-                'opd_tujuan'          => 'RSUD dr. H. Koesnadi (' . $ruangNama . ')',
-                'unit_id'             => $a->unit_id,
-                'ruangan_tujuan'      => $ruangNama,
-                'pj_asal_nama'        => 'Pejabat Penyerah OPD Pengirim',
-                'pj_asal_nip'         => '-',
-                'pj_asal_jabatan'     => 'Pengurus Barang / PPK Asal',
-                'pj_tujuan_nama'      => 'BUDI HARTONO, S.Sos',
-                'pj_tujuan_nip'       => '197602292008011010',
-                'pj_tujuan_jabatan'   => 'Pengurus Barang Pengguna RSUD Dr. H. Koesnadi',
-                'nomor_sk_dasar'      => $a->spesifikasi_json['nomor_sk_dasar'] ?? null,
-                'status'              => 'Disahkan (Selesai)',
-                'jumlah_volume'       => (int) ($a->jumlah_volume ?: 1),
-                'satuan'              => $a->satuan ?: 'Unit',
-                'nilai_perolehan'     => $nilaiReal,
-                'kondisi'             => 'Baik',
-                'alasan_mutasi'       => $a->mutasi_keterangan ?: 'Mutasi masuk aset barang milik daerah.',
-                'user_id'             => $a->user_id,
-                'is_deleted'          => 0,
-            ]);
-        }
+                MutasiEksternal::create([
+                    'astap_id'            => $a->id,
+                    'nomor_bamb'          => $nomorBamb,
+                    'tanggal_mutasi'      => $tgl,
+                    'jenis_mutasi'        => 'Transfer Antar-OPD',
+                    'tipe'                => 'masuk',
+                    'opd_asal'            => $opdAsal,
+                    'alamat_instansi'     => $a->spesifikasi_json['alamat_instansi'] ?? null,
+                    'opd_tujuan'          => 'RSUD dr. H. Koesnadi (' . $ruangNama . ')',
+                    'unit_id'             => $a->unit_id,
+                    'ruangan_tujuan'      => $ruangNama,
+                    'pj_asal_nama'        => 'Pejabat Penyerah OPD Pengirim',
+                    'pj_asal_nip'         => '-',
+                    'pj_asal_jabatan'     => 'Pengurus Barang / PPK Asal',
+                    'pj_tujuan_nama'      => 'BUDI HARTONO, S.Sos',
+                    'pj_tujuan_nip'       => '19760229 200801 1 010',
+                    'pj_tujuan_jabatan'   => 'Pengurus Barang Pengguna RSUD Dr. H. Koesnadi',
+                    'nomor_sk_dasar'      => $a->spesifikasi_json['nomor_sk_dasar'] ?? null,
+                    'status'              => 'Disahkan (Selesai)',
+                    'jumlah_volume'       => (int) ($a->jumlah_volume ?: 1),
+                    'satuan'              => $a->satuan ?: 'Unit',
+                    'nilai_perolehan'     => $nilaiReal,
+                    'kondisi'             => 'Baik',
+                    'alasan_mutasi'       => $a->mutasi_keterangan ?: 'Mutasi masuk aset barang milik daerah.',
+                    'user_id'             => $a->user_id,
+                    'is_deleted'          => 0,
+                ]);
+            }
+        });
     }
 
     /**
@@ -2364,9 +2387,10 @@ class MutasiEksternalController extends Controller
 
         $reklasKeluars = $unsyncedQuery->with(['astap.registers', 'astap.unit'])->get();
 
-        foreach ($reklasKeluars as $rk) {
-            $astap = $rk->astap;
-            if (!$astap) continue;
+        DB::transaction(function () use ($reklasKeluars) {
+            foreach ($reklasKeluars as $rk) {
+                $astap = $rk->astap;
+                if (!$astap) continue;
                 $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?? []);
                 $mutInfo = $spec['mutasi_info'] ?? [];
 
@@ -2441,5 +2465,6 @@ class MutasiEksternalController extends Controller
                     }
                 }
             }
-        }
+        });
     }
+}

@@ -126,14 +126,15 @@
         const docTgl = formatAstapDate(docTglRaw);
 
         // 5. Pejabat RSUD dr. H. Koesnadi
+        const cleanVal = (val) => (val && String(val).trim() !== '-' && String(val).trim() !== '') ? String(val).trim() : null;
         let pejabatRsudNama = 'BUDI HARTONO, S.Sos';
         let pejabatRsudNip = '19760229 200801 1 010';
         if (isKeluar) {
-            pejabatRsudNama = item.pj_asal_nama || 'BUDI HARTONO, S.Sos';
-            pejabatRsudNip = item.pj_asal_nip || '19760229 200801 1 010';
+            pejabatRsudNama = cleanVal(item.pj_asal_nama) || 'BUDI HARTONO, S.Sos';
+            pejabatRsudNip = cleanVal(item.pj_asal_nip) || '19760229 200801 1 010';
         } else {
-            pejabatRsudNama = item.pejabat_opd_tujuan || item.pj_tujuan_nama || item.ppk_nama || spec.ppk_nama || 'BUDI HARTONO, S.Sos';
-            pejabatRsudNip = item.nip_pejabat_opd_tujuan || item.pj_tujuan_nip || item.ppk_nip || spec.ppk_nip || '19760229 200801 1 010';
+            pejabatRsudNama = cleanVal(item.pejabat_opd_tujuan) || cleanVal(item.pj_tujuan_nama) || cleanVal(item.ppk_nama) || cleanVal(spec.ppk_nama) || 'BUDI HARTONO, S.Sos';
+            pejabatRsudNip = cleanVal(item.nip_pejabat_opd_tujuan) || cleanVal(item.pj_tujuan_nip) || cleanVal(item.ppk_nip) || cleanVal(spec.ppk_nip) || '19760229 200801 1 010';
         }
 
         // 6. Ruangan Penempatan / Asal RSUD
