@@ -2121,19 +2121,37 @@
                 const wb = XLSX.utils.book_new();
                 const ws = XLSX.utils.table_to_sheet(table);
 
+                // Atur lebar kolom proporsional pada lembar kerja
+                if (this.activeTab === 'matriks') {
+                    ws['!cols'] = [
+                        { wch: 6 },  // No
+                        { wch: 48 }, // Uraian Kelompok & Sub-Rincian PMDN 108
+                        { wch: 16 }, // Kode Prefix
+                        { wch: 22 }, // Saldo Awal (Belanja Modal)
+                        { wch: 22 }, // Mutasi Tambah (+)
+                        { wch: 22 }, // Mutasi Kurang (-)
+                        { wch: 24 }  // Saldo Akhir
+                    ];
+                }
+
                 // Format ulang angka numerik agar tidak menjadi string teks pada Excel
                 for (const cellKey in ws) {
                     if (cellKey[0] === '!') continue;
                     const cell = ws[cellKey];
                     if (cell && cell.t === 's' && typeof cell.v === 'string') {
                         const str = cell.v.trim();
-                        if (str.startsWith('Rp') || str.includes('Rp ')) {
-                            const cleanNum = str.replace(/Rp\s*/g, '').replace(/\./g, '').replace(/,/g, '.').trim();
-                            if (!isNaN(cleanNum) && cleanNum !== '') {
-                                cell.t = 'n';
-                                cell.v = parseFloat(cleanNum);
-                                cell.z = '#,##0';
-                            }
+                        // Bersihkan spasi, non-breaking space (&nbsp; / \u00a0), dan prefiks Rp
+                        const cleanStr = str.replace(/Rp\s*/gi, '').replace(/\u00a0/g, ' ').trim();
+                        const isNegative = cleanStr.startsWith('-');
+                        const numRaw = cleanStr.replace(/^[+-]/, '').replace(/\./g, '').replace(/,/g, '.').trim();
+
+                        // Validasi apakah nilai sel merupakan nominal angka yang sah (bukan kode akun 1.3.x / 1.5.x atau tanggal)
+                        if (!isNaN(numRaw) && numRaw !== '' && !cleanStr.includes('/') && !cleanStr.startsWith('1.3.') && !cleanStr.startsWith('1.5.') && !cleanStr.includes('BALANCE')) {
+                            let val = parseFloat(numRaw);
+                            if (isNegative) val = -val;
+                            cell.t = 'n';
+                            cell.v = val;
+                            cell.z = '#,##0';
                         }
                     }
                 }

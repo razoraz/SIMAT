@@ -319,12 +319,43 @@ class ReklasifikasiController extends Controller
         $dbSkpdAsals = array_values(array_unique(array_keys($dbSkpdDirectory)));
         $dbPejabats = \App\Http\Controllers\MutasiEksternalController::getDistinctPejabats();
 
+        // 6. Data Agregat Penyeimbang & Uji Petik Keseimbangan (Sheet 3 Reklas / Rekon Kasda)
+        $jumlahPenyeimbang = $subtotals['KOREKSI'] ?? ['awal' => 0, 'tambah' => 0, 'kurang' => 0, 'akhir' => 0];
+
+        // Mutasi Reklas Internal (Antar KIB/Rekening Fisik)
+        $mutasiInternalKib = 0;
+        foreach ($reklasMutasis as $reklas) {
+            $asalRow = $templateRows->firstWhere('id', $this->resolveAsalRowId($reklas, $templateRows));
+            $tujuanRow = $templateRows->firstWhere('id', $this->resolveTujuanRowId($reklas, $templateRows));
+            if ($asalRow && $tujuanRow && $asalRow->kelompok_kib !== 'KOREKSI' && $tujuanRow->kelompok_kib !== 'KOREKSI') {
+                $mutasiInternalKib += (float) $reklas->nilai_reklas;
+            }
+        }
+
+        // Netto Pengurangan Fisik Aset Tetap ke Luar Neraca
+        $penguranganFisikKePenyeimbang = max(0, $grandTotal['kurang'] - $mutasiInternalKib);
+        // Total Akun Penyeimbang Pengurang (Ekstrakom + Koreksi LKD + Koreksi Manset)
+        $penyeimbangPengurang = max(0, $jumlahPenyeimbang['tambah'] - ($hibahTambahByRow ? array_sum($hibahTambahByRow) : 0));
+        // Jika ada hibah di baris Koreksi, ambil selisihnya
+        $korHibahVal = $matriks[39]['mutasi_tambah'] ?? 0; // Baris 40 Koreksi Hibah
+        $totalPenyeimbangPengurangMurni = max(0, $jumlahPenyeimbang['tambah'] - $korHibahVal);
+
+        $selisihKeseimbangan = abs($penguranganFisikKePenyeimbang - $totalPenyeimbangPengurangMurni);
+        $isBalance = ($selisihKeseimbangan < 1);
+
         return view('pages.reklasifikasi.index', [
             'matriks'           => $matriks,
             'subtotals'         => $subtotals,
             'grandTotal'        => $grandTotal,
             'jumlahAsetTetap'   => $jumlahAsetTetap,
             'jumlahAsetLainnya' => $jumlahAsetLainnya,
+            'jumlahPenyeimbang' => $jumlahPenyeimbang,
+            'mutasiInternalKib' => $mutasiInternalKib,
+            'penguranganFisikKePenyeimbang'  => $penguranganFisikKePenyeimbang,
+            'totalPenyeimbangPengurangMurni' => $totalPenyeimbangPengurangMurni,
+            'korHibahVal'       => $korHibahVal,
+            'isBalance'         => $isBalance,
+            'selisihKeseimbangan' => $selisihKeseimbangan,
             'logReklas'         => $logReklas,
             'tahunList'         => $tahunList,
             'selectedTahun'     => $selectedTahun,

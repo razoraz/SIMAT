@@ -26,16 +26,16 @@
     </div>
 
     <div class="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-700">
-        <table class="w-full text-left border-collapse text-xs">
+        <table class="w-full min-w-[1150px] text-left border-collapse text-xs">
             <thead>
                 <tr class="bg-slate-800/90 text-slate-300 font-bold uppercase tracking-wider border-b border-slate-700 text-[11px]">
                     <th class="py-3.5 px-4 w-12 text-center whitespace-nowrap">No</th>
                     <th class="py-3.5 px-4 min-w-[280px]">Uraian Kelompok &amp; Sub-Rincian PMDN 108</th>
                     <th class="py-3.5 px-4 w-28 text-center font-mono whitespace-nowrap">Kode Prefix</th>
-                    <th class="py-3.5 px-4 min-w-[175px] text-right whitespace-nowrap">Saldo Awal (Belanja Modal)</th>
-                    <th class="py-3.5 px-4 min-w-[175px] text-right text-emerald-400 whitespace-nowrap">Mutasi Tambah (+)</th>
-                    <th class="py-3.5 px-4 min-w-[175px] text-right text-rose-400 whitespace-nowrap">Mutasi Kurang (-)</th>
-                    <th class="py-3.5 px-4 min-w-[175px] text-right text-indigo-300 whitespace-nowrap">Saldo Akhir</th>
+                    <th class="py-3.5 px-4 min-w-[185px] text-right whitespace-nowrap">Saldo Awal (Belanja Modal)</th>
+                    <th class="py-3.5 px-4 min-w-[185px] text-right text-emerald-400 whitespace-nowrap">Mutasi Tambah (+)</th>
+                    <th class="py-3.5 px-4 min-w-[185px] text-right text-rose-400 whitespace-nowrap">Mutasi Kurang (-)</th>
+                    <th class="py-3.5 pl-4 pr-6 min-w-[200px] text-right text-indigo-300 whitespace-nowrap">Saldo Akhir</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-800/60 font-medium">
@@ -74,7 +74,7 @@
                             <td class="py-3 px-4 text-right font-black text-rose-400 font-mono whitespace-nowrap">
                                 Rp&nbsp;{{ number_format($kibSubtotal['kurang'], 0, ',', '.') }}
                             </td>
-                            <td class="py-3 px-4 text-right font-black text-indigo-300 font-mono whitespace-nowrap">
+                            <td class="py-3 pl-4 pr-6 text-right font-black text-indigo-300 font-mono whitespace-nowrap">
                                 Rp&nbsp;{{ number_format($kibSubtotal['akhir'], 0, ',', '.') }}
                             </td>
                         </tr>
@@ -111,7 +111,7 @@
                         <td class="py-2.5 px-4 text-right font-mono whitespace-nowrap {{ $row['mutasi_kurang'] > 0 ? 'text-rose-400 font-bold' : 'text-slate-400' }}">
                             {{ $row['mutasi_kurang'] > 0 ? '-' . number_format($row['mutasi_kurang'], 0, ',', '.') : '0' }}
                         </td>
-                        <td class="py-2.5 px-4 text-right font-mono font-bold whitespace-nowrap {{ $row['saldo_akhir'] > 0 ? 'text-indigo-300' : 'text-slate-400' }}">
+                        <td class="py-2.5 pl-4 pr-6 text-right font-mono font-bold whitespace-nowrap {{ $row['saldo_akhir'] > 0 ? 'text-indigo-300' : 'text-slate-400' }}">
                             {{ number_format($row['saldo_akhir'], 0, ',', '.') }}
                         </td>
                     </tr>
@@ -133,7 +133,7 @@
                             <td class="py-3 px-4 text-right font-black font-mono text-rose-300 whitespace-nowrap">
                                 Rp&nbsp;{{ number_format($jumlahAsetTetap['kurang'], 0, ',', '.') }}
                             </td>
-                            <td class="py-3 px-4 text-right font-black font-mono text-blue-200 whitespace-nowrap">
+                            <td class="py-3 pl-4 pr-6 text-right font-black font-mono text-blue-200 whitespace-nowrap">
                                 Rp&nbsp;{{ number_format($jumlahAsetTetap['akhir'], 0, ',', '.') }}
                             </td>
                         </tr>
@@ -154,7 +154,7 @@
                             <td class="py-3 px-4 text-right font-black font-mono text-rose-300 whitespace-nowrap">
                                 Rp&nbsp;{{ number_format($jumlahAsetLainnya['kurang'], 0, ',', '.') }}
                             </td>
-                            <td class="py-3 px-4 text-right font-black font-mono text-cyan-200 whitespace-nowrap">
+                            <td class="py-3 pl-4 pr-6 text-right font-black font-mono text-cyan-200 whitespace-nowrap">
                                 Rp&nbsp;{{ number_format($jumlahAsetLainnya['akhir'], 0, ',', '.') }}
                             </td>
                         </tr>
@@ -176,7 +176,7 @@
                     <td class="py-4 px-4 text-right font-mono text-rose-400 text-xs sm:text-sm whitespace-nowrap">
                         Rp&nbsp;{{ number_format($grandTotal['kurang'], 0, ',', '.') }}
                     </td>
-                    <td class="py-4 px-4 text-right font-mono text-indigo-300 text-xs sm:text-sm whitespace-nowrap">
+                    <td class="py-4 pl-4 pr-6 text-right font-mono text-indigo-300 text-xs sm:text-sm whitespace-nowrap">
                         Rp&nbsp;{{ number_format($grandTotal['akhir'], 0, ',', '.') }}
                     </td>
                 </tr>
