@@ -1105,9 +1105,18 @@ class RecycleBinController extends Controller
      */
     public function restore(Request $request, string $module, int $id)
     {
+        $userRole = Auth::user()?->role ?? 'user';
+        if (in_array($module, ['users', 'user', 'unit', 'reklas', 'reklasifikasi']) && !in_array($userRole, ['admin', 'master_admin'])) {
+            $msg = 'Hanya Administrator yang memiliki wewenang untuk memulihkan data master ini.';
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $msg], 403);
+            }
+            return back()->with('error', $msg);
+        }
+
         switch ($module) {
             case 'belanja_modal':
-                $astap = Astap::with('mutasiEksternals')->findOrFail($id);
+                $astap = Astap::onlyDeleted()->with('mutasiEksternals')->findOrFail($id);
                 if ($this->isCancelledAstap($astap)) {
                     return response()->json([
                         'success' => false,
@@ -1122,14 +1131,14 @@ class RecycleBinController extends Controller
                 break;
             case 'mutasi':
             case 'mutasi_internal':
-                $mutasi = AstapMutasi::findOrFail($id);
+                $mutasi = AstapMutasi::onlyDeleted()->findOrFail($id);
                 $bamb = $mutasi->nomor_bamb;
                 $mutasi->restoreData();
                 $msg = "Data Berita Acara Mutasi {$bamb} berhasil dipulihkan ke status aktif.";
                 break;
 
             case 'mutasi_eksternal':
-                $mEksternal = \App\Models\MutasiEksternal::with(['astap.registers', 'mutasiRegisters.register'])->findOrFail($id);
+                $mEksternal = \App\Models\MutasiEksternal::onlyDeleted()->with(['astap.registers', 'mutasiRegisters.register'])->findOrFail($id);
                 if ($mEksternal->status === 'Dibatalkan') {
                     return response()->json([
                         'success' => false,
@@ -1183,7 +1192,7 @@ class RecycleBinController extends Controller
                 break;
 
             case 'astap':
-                $astap = Astap::with('mutasiEksternals')->findOrFail($id);
+                $astap = Astap::onlyDeleted()->with('mutasiEksternals')->findOrFail($id);
                 if ($this->isCancelledAstap($astap)) {
                     return response()->json([
                         'success' => false,
@@ -1225,7 +1234,7 @@ class RecycleBinController extends Controller
                 break;
 
             case 'distribusi':
-                $distribusi = Distribusi::with('unit')->findOrFail($id);
+                $distribusi = Distribusi::onlyDeleted()->with('unit')->findOrFail($id);
                 $kode = $distribusi->kode;
                 $unitId = $distribusi->unit_id;
                 $unitNama = $distribusi->unit?->nama ?? 'Ruangan RSUD';
@@ -1275,7 +1284,7 @@ class RecycleBinController extends Controller
                 break;
 
             case 'hibah':
-                $hibah = AstapHibah::findOrFail($id);
+                $hibah = AstapHibah::onlyDeleted()->findOrFail($id);
                 $nomorBast = $hibah->nomor_bast;
                 DB::transaction(function () use ($hibah) {
                     $hibah->restoreData();
@@ -1341,7 +1350,7 @@ class RecycleBinController extends Controller
                 break;
 
             case 'kemitraan':
-                $kemitraan = AstapKemitraan::findOrFail($id);
+                $kemitraan = AstapKemitraan::onlyDeleted()->findOrFail($id);
                 $nomorPks = $kemitraan->nomor_pks;
                 $affectedKemitraanIds = [$kemitraan->id];
 
@@ -1501,7 +1510,7 @@ class RecycleBinController extends Controller
 
             case 'reklas':
             case 'reklasifikasi':
-                $reklas = AstapReklas::findOrFail($id);
+                $reklas = AstapReklas::onlyDeleted()->findOrFail($id);
                 $nomorBa = $reklas->nomor_ba_reklas ?: 'BA-REKLAS-' . $reklas->id;
 
                 // Proteksi Integritas Tutup Buku (Periode Terkunci)
@@ -1546,7 +1555,7 @@ class RecycleBinController extends Controller
                 break;
 
             case 'unit':
-                $unit = Unit::findOrFail($id);
+                $unit = Unit::onlyDeleted()->findOrFail($id);
                 $nama = $unit->nama;
                 $unit->restoreData();
                 $msg = "Data Unit / Paviliun \"{$nama}\" dan seluruh akun pengguna terkait berhasil dipulihkan ke katalog aktif.";
@@ -1558,7 +1567,7 @@ class RecycleBinController extends Controller
             case 'mutasi_eksternal_nibar':
             case 'hibah_nibar':
             case 'belanja_barang_nibar':
-                $reg = AstapRegister::findOrFail($id);
+                $reg = AstapRegister::onlyDeleted()->findOrFail($id);
                 $astap = $reg->astap;
                 $astapRestored = false;
                 $restoredNibar = null;
@@ -1616,7 +1625,7 @@ class RecycleBinController extends Controller
 
             case 'users':
             case 'user':
-                $targetUser = User::findOrFail($id);
+                $targetUser = User::onlyDeleted()->findOrFail($id);
                 $nama = $targetUser->name;
                 $email = $targetUser->email;
                 if (User::active()->where('email', $email)->where('id', '!=', $targetUser->id)->exists()) {
@@ -1631,7 +1640,11 @@ class RecycleBinController extends Controller
                 break;
 
             default:
-                return back()->with('error', "Modul {$module} tidak dikenal untuk pemulihan data.");
+                $msg = "Modul {$module} tidak dikenal untuk pemulihan data.";
+                if ($request->wantsJson()) {
+                    return response()->json(['success' => false, 'message' => $msg], 422);
+                }
+                return back()->with('error', $msg);
         }
 
         session()->flash('success', $msg);
@@ -1653,6 +1666,15 @@ class RecycleBinController extends Controller
      */
     public function bulkRestore(Request $request, string $module)
     {
+        $userRole = Auth::user()?->role ?? 'user';
+        if (in_array($module, ['users', 'user', 'unit', 'reklas', 'reklasifikasi']) && !in_array($userRole, ['admin', 'master_admin'])) {
+            $msg = 'Hanya Administrator yang memiliki wewenang untuk memulihkan data master ini.';
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $msg], 403);
+            }
+            return back()->with('error', $msg);
+        }
+
         $ids = $request->input('ids', []);
         if (empty($ids)) {
             $msg = 'Pilih minimal satu data yang ingin dipulihkan.';
@@ -1666,18 +1688,21 @@ class RecycleBinController extends Controller
         switch ($module) {
             case 'mutasi':
             case 'mutasi_internal':
-                $items = AstapMutasi::whereIn('id', $ids)->get();
-                foreach ($items as $item) {
-                    $item->restoreData();
-                    $restoredCount++;
-                }
+                $items = AstapMutasi::onlyDeleted()->whereIn('id', $ids)->get();
+                DB::transaction(function () use ($items, &$restoredCount) {
+                    foreach ($items as $item) {
+                        $item->restoreData();
+                        $restoredCount++;
+                    }
+                });
                 $msg = "Sebanyak {$restoredCount} transaksi mutasi internal berhasil dipulihkan ke status aktif.";
                 break;
 
             case 'mutasi_eksternal':
-                $items = \App\Models\MutasiEksternal::with(['astap.registers', 'mutasiRegisters.register'])->whereIn('id', $ids)->get();
+                $items = \App\Models\MutasiEksternal::onlyDeleted()->with(['astap.registers', 'mutasiRegisters.register'])->whereIn('id', $ids)->get();
                 $blockedBatalCount = 0;
-                DB::transaction(function () use ($items, &$restoredCount, &$blockedBatalCount) {
+                $allocatedNibars = [];
+                DB::transaction(function () use ($items, &$restoredCount, &$blockedBatalCount, &$allocatedNibars) {
                     foreach ($items as $mEksternal) {
                         if ($mEksternal->status === 'Dibatalkan') {
                             $blockedBatalCount++;
@@ -1717,7 +1742,7 @@ class RecycleBinController extends Controller
                             }
                         } else {
                             if ($mEksternal->astap) {
-                                $this->restoreAstapWithRegisters($mEksternal->astap);
+                                $this->restoreAstapWithRegisters($mEksternal->astap, $allocatedNibars);
                             }
                         }
                         $restoredCount++;
@@ -1733,16 +1758,17 @@ class RecycleBinController extends Controller
                 break;
 
             case 'astap':
-                $astaps = Astap::with('mutasiEksternals')->whereIn('id', $ids)->get();
+                $astaps = Astap::onlyDeleted()->with('mutasiEksternals')->whereIn('id', $ids)->get();
                 $blockedBatalCount = 0;
-                DB::transaction(function () use ($astaps, &$restoredCount, &$blockedBatalCount) {
+                $allocatedNibars = [];
+                DB::transaction(function () use ($astaps, &$restoredCount, &$blockedBatalCount, &$allocatedNibars) {
                     foreach ($astaps as $a) {
                         if ($this->isCancelledAstap($a)) {
                             $blockedBatalCount++;
                             continue;
                         }
 
-                        $this->restoreAstapWithRegisters($a);
+                        $this->restoreAstapWithRegisters($a, $allocatedNibars);
                         if ($a->mutasiEksternals()->exists()) {
                             $a->mutasiEksternals()->where('is_deleted', 1)->get()->each->restoreData();
                         }
@@ -1759,16 +1785,17 @@ class RecycleBinController extends Controller
                 break;
 
             case 'belanja_modal':
-                $astaps = Astap::with('mutasiEksternals')->whereIn('id', $ids)->get();
+                $astaps = Astap::onlyDeleted()->with('mutasiEksternals')->whereIn('id', $ids)->get();
                 $blockedBatalCount = 0;
-                DB::transaction(function () use ($astaps, &$restoredCount, &$blockedBatalCount) {
+                $allocatedNibars = [];
+                DB::transaction(function () use ($astaps, &$restoredCount, &$blockedBatalCount, &$allocatedNibars) {
                     foreach ($astaps as $a) {
                         if ($this->isCancelledAstap($a)) {
                             $blockedBatalCount++;
                             continue;
                         }
 
-                        $this->restoreAstapWithRegisters($a);
+                        $this->restoreAstapWithRegisters($a, $allocatedNibars);
                         $restoredCount++;
                     }
                 });
@@ -1787,13 +1814,14 @@ class RecycleBinController extends Controller
             case 'mutasi_eksternal_nibar':
             case 'hibah_nibar':
             case 'belanja_barang_nibar':
-                $regs = AstapRegister::whereIn('id', $ids)->get();
+                $regs = AstapRegister::onlyDeleted()->whereIn('id', $ids)->get();
                 $astapParents = [];
                 $parentRestoredCount = 0;
+                $allocatedNibars = [];
 
-                DB::transaction(function () use ($regs, &$astapParents, &$restoredCount, &$parentRestoredCount) {
+                DB::transaction(function () use ($regs, &$astapParents, &$restoredCount, &$parentRestoredCount, &$allocatedNibars) {
                     foreach ($regs as $r) {
-                        $cleanNibar = $this->resolveCleanNibarForRestore($r, $r->astap);
+                        $cleanNibar = $this->resolveCleanNibarForRestore($r, $r->astap, $allocatedNibars);
                         $r->nibar = $cleanNibar;
                         $r->no_register = $cleanNibar;
                         $r->qr_code_path = "/scan/{$cleanNibar}";
@@ -1839,7 +1867,7 @@ class RecycleBinController extends Controller
                 break;
 
             case 'distribusi':
-                $distribusis = Distribusi::whereIn('id', $ids)->get();
+                $distribusis = Distribusi::onlyDeleted()->whereIn('id', $ids)->get();
                 DB::transaction(function () use ($distribusis, &$restoredCount) {
                     foreach ($distribusis as $d) {
                         $d->restoreData();
@@ -1850,7 +1878,7 @@ class RecycleBinController extends Controller
                 break;
 
             case 'hibah':
-                $hibahs = AstapHibah::whereIn('id', $ids)->get();
+                $hibahs = AstapHibah::onlyDeleted()->whereIn('id', $ids)->get();
                 DB::transaction(function () use ($hibahs, &$restoredCount) {
                     $user = Auth::user();
                     foreach ($hibahs as $hibah) {
@@ -1913,7 +1941,7 @@ class RecycleBinController extends Controller
                 break;
 
             case 'kemitraan':
-                $kemitraans = AstapKemitraan::whereIn('id', $ids)->get();
+                $kemitraans = AstapKemitraan::onlyDeleted()->whereIn('id', $ids)->get();
                 $affectedKemitraanIds = [];
                 DB::transaction(function () use ($kemitraans, &$restoredCount, &$affectedKemitraanIds) {
                     foreach ($kemitraans as $k) {
@@ -2021,8 +2049,9 @@ class RecycleBinController extends Controller
                 break;
 
             case 'belanja_barang':
-                $belanjas = AstapBelanjaBarang::whereIn('id', $ids)->get();
-                DB::transaction(function () use ($belanjas, &$restoredCount) {
+                $belanjas = AstapBelanjaBarang::onlyDeleted()->whereIn('id', $ids)->get();
+                $allocatedNibars = [];
+                DB::transaction(function () use ($belanjas, &$restoredCount, &$allocatedNibars) {
                     foreach ($belanjas as $b) {
                         $b->restoreData();
                         $astaps = $b->astaps;
@@ -2030,7 +2059,7 @@ class RecycleBinController extends Controller
                             $astaps = collect([$b->astap]);
                         }
                         foreach ($astaps as $astap) {
-                            $this->restoreAstapWithRegisters($astap);
+                            $this->restoreAstapWithRegisters($astap, $allocatedNibars);
                         }
                         $restoredCount++;
                     }
@@ -2040,7 +2069,7 @@ class RecycleBinController extends Controller
 
             case 'reklas':
             case 'reklasifikasi':
-                $reklasItems = AstapReklas::whereIn('id', $ids)->get();
+                $reklasItems = AstapReklas::onlyDeleted()->whereIn('id', $ids)->get();
 
                 // Cek apakah ada periode yang terkunci tutup buku
                 foreach ($reklasItems as $checkItem) {
@@ -2092,28 +2121,36 @@ class RecycleBinController extends Controller
                 break;
 
             case 'unit':
-                $units = Unit::whereIn('id', $ids)->get();
-                foreach ($units as $u) {
-                    $u->restoreData();
-                    $restoredCount++;
-                }
+                $units = Unit::onlyDeleted()->whereIn('id', $ids)->get();
+                DB::transaction(function () use ($units, &$restoredCount) {
+                    foreach ($units as $u) {
+                        $u->restoreData();
+                        $restoredCount++;
+                    }
+                });
                 $msg = "Sebanyak {$restoredCount} Unit & Paviliun beserta akun pengguna terkait berhasil dipulihkan ke katalog aktif.";
                 break;
 
             case 'users':
             case 'user':
-                $users = User::whereIn('id', $ids)->get();
-                foreach ($users as $u) {
-                    if (!User::active()->where('email', $u->email)->where('id', '!=', $u->id)->exists()) {
-                        $u->restoreData();
-                        $restoredCount++;
+                $users = User::onlyDeleted()->whereIn('id', $ids)->get();
+                DB::transaction(function () use ($users, &$restoredCount) {
+                    foreach ($users as $u) {
+                        if (!User::active()->where('email', $u->email)->where('id', '!=', $u->id)->exists()) {
+                            $u->restoreData();
+                            $restoredCount++;
+                        }
                     }
-                }
+                });
                 $msg = "Sebanyak {$restoredCount} akun pengguna berhasil dipulihkan ke status aktif.";
                 break;
 
             default:
-                return back()->with('error', "Modul {$module} tidak dikenal untuk pemulihan massal.");
+                $msg = "Modul {$module} tidak dikenal untuk pemulihan massal.";
+                if ($request->wantsJson()) {
+                    return response()->json(['success' => false, 'message' => $msg], 422);
+                }
+                return back()->with('error', $msg);
         }
 
         session()->flash('success', $msg);
@@ -2146,24 +2183,30 @@ class RecycleBinController extends Controller
 
         $ids = $request->input('ids', []);
         if (empty($ids) || !is_array($ids)) {
-            return back()->with('error', 'Pilih minimal satu data untuk dihapus permanen.');
+            $msg = 'Pilih minimal satu data untuk dihapus permanen.';
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $msg], 422);
+            }
+            return back()->with('error', $msg);
         }
 
         $deletedCount = 0;
         switch ($module) {
             case 'mutasi':
             case 'mutasi_internal':
-                $mutasis = AstapMutasi::whereIn('id', $ids)->get();
-                foreach ($mutasis as $m) {
-                    AstapMutasiRegister::where('astap_mutasi_id', $m->id)->delete();
-                    $m->delete();
-                    $deletedCount++;
-                }
+                $mutasis = AstapMutasi::onlyDeleted()->whereIn('id', $ids)->get();
+                DB::transaction(function () use ($mutasis, &$deletedCount) {
+                    foreach ($mutasis as $m) {
+                        AstapMutasiRegister::where('astap_mutasi_id', $m->id)->delete();
+                        $m->delete();
+                        $deletedCount++;
+                    }
+                });
                 $msg = "Sebanyak {$deletedCount} data mutasi internal telah dihapus permanen dari database.";
                 break;
 
             case 'mutasi_eksternal':
-                $items = \App\Models\MutasiEksternal::with('astap.allRegisters')->whereIn('id', $ids)->get();
+                $items = \App\Models\MutasiEksternal::onlyDeleted()->with('astap.allRegisters')->whereIn('id', $ids)->get();
 
                 // Cek proteksi audit BPK untuk aset mutasi masuk yang dipilih
                 $blockedMutasis = [];
@@ -2225,19 +2268,21 @@ class RecycleBinController extends Controller
 
             case 'reklas':
             case 'reklasifikasi':
-                $reklasItems = AstapReklas::whereIn('id', $ids)->get();
-                foreach ($reklasItems as $rk) {
-                    $rk->delete();
-                    $deletedCount++;
-                }
+                $reklasItems = AstapReklas::onlyDeleted()->whereIn('id', $ids)->get();
+                DB::transaction(function () use ($reklasItems, &$deletedCount) {
+                    foreach ($reklasItems as $rk) {
+                        $rk->delete();
+                        $deletedCount++;
+                    }
+                });
                 $msg = "Sebanyak {$deletedCount} data transaksi reklasifikasi telah dihapus secara permanen dari database.";
                 break;
 
             case 'astap':
-                $astaps = Astap::whereIn('id', $ids)->get();
+                $astaps = Astap::onlyDeleted()->whereIn('id', $ids)->get();
                 $blockedAstaps = [];
                 foreach ($astaps as $a) {
-                    $regIds = $a->registers()->pluck('id')->toArray();
+                    $regIds = $a->allRegisters()->pluck('id')->toArray();
                     if (!empty($regIds) && $this->hasAuditProtection($regIds)) {
                         $blockedAstaps[] = $a->nama_barang ?: "ASTAP-{$a->id}";
                     }
@@ -2256,7 +2301,7 @@ class RecycleBinController extends Controller
 
                 DB::transaction(function () use ($astaps, &$deletedCount) {
                     foreach ($astaps as $a) {
-                        $a->registers()->delete();
+                        $a->allRegisters()->delete();
                         $a->delete();
                         $deletedCount++;
                     }
@@ -2265,10 +2310,10 @@ class RecycleBinController extends Controller
                 break;
 
             case 'belanja_modal':
-                $astaps = Astap::whereIn('id', $ids)->get();
+                $astaps = Astap::onlyDeleted()->whereIn('id', $ids)->get();
                 $blockedAstaps = [];
                 foreach ($astaps as $a) {
-                    $regIds = $a->registers()->pluck('id')->toArray();
+                    $regIds = $a->allRegisters()->pluck('id')->toArray();
                     if (!empty($regIds) && $this->hasAuditProtection($regIds)) {
                         $blockedAstaps[] = $a->nama_barang ?: "ASTAP-{$a->id}";
                     }
@@ -2287,7 +2332,7 @@ class RecycleBinController extends Controller
 
                 DB::transaction(function () use ($astaps, &$deletedCount) {
                     foreach ($astaps as $a) {
-                        $a->registers()->delete();
+                        $a->allRegisters()->delete();
                         \App\Models\AstapBelanjaModal::where('astap_id', $a->id)->delete();
                         $a->delete();
                         $deletedCount++;
@@ -2302,7 +2347,7 @@ class RecycleBinController extends Controller
             case 'mutasi_eksternal_nibar':
             case 'hibah_nibar':
             case 'belanja_barang_nibar':
-                $regs = AstapRegister::whereIn('id', $ids)->get();
+                $regs = AstapRegister::onlyDeleted()->whereIn('id', $ids)->get();
                 $blockedNibars = [];
                 foreach ($regs as $r) {
                     if ($this->hasAuditProtection($r->id)) {
@@ -2336,7 +2381,7 @@ class RecycleBinController extends Controller
                     }
                     foreach ($astapParents as $parent) {
                         $this->syncAstapAfterRegisterChange($parent);
-                        if ($parent->is_deleted && $parent->registers()->count() === 0) {
+                        if ($parent->is_deleted && $parent->allRegisters()->count() === 0) {
                             $parent->delete();
                         }
                     }
@@ -2345,7 +2390,7 @@ class RecycleBinController extends Controller
                 break;
 
             case 'distribusi':
-                $distribusis = Distribusi::whereIn('id', $ids)->get();
+                $distribusis = Distribusi::onlyDeleted()->whereIn('id', $ids)->get();
                 DB::transaction(function () use ($distribusis, &$deletedCount) {
                     foreach ($distribusis as $d) {
                         $kode = $d->kode;
@@ -2360,13 +2405,13 @@ class RecycleBinController extends Controller
                 break;
 
             case 'hibah':
-                $hibahs = AstapHibah::whereIn('id', $ids)->get();
+                $hibahs = AstapHibah::onlyDeleted()->whereIn('id', $ids)->get();
                 DB::transaction(function () use ($hibahs, &$deletedCount) {
                     foreach ($hibahs as $h) {
                         if ($h->tipe_hibah === 'masuk' && $h->astap_id) {
                             $astap = Astap::find($h->astap_id);
                             if ($astap) {
-                                $astap->registers()->delete();
+                                $astap->allRegisters()->delete();
                                 $h->delete();
                                 $astap->delete();
                             } else {
@@ -2382,7 +2427,7 @@ class RecycleBinController extends Controller
                 break;
 
             case 'kemitraan':
-                $kemitraans = AstapKemitraan::whereIn('id', $ids)->get();
+                $kemitraans = AstapKemitraan::onlyDeleted()->whereIn('id', $ids)->get();
 
                 // Sortir: Aset ditambahkan mitra diproses lebih dulu daripada objek pemanfaatan
                 $sortedKemitraans = $kemitraans->sortByDesc(function ($k) {
@@ -2412,7 +2457,7 @@ class RecycleBinController extends Controller
                     foreach ($sortedKemitraans as $k) {
                         $astap = $k->astap;
                         if ($astap) {
-                            $astap->registers()->delete();
+                            $astap->allRegisters()->delete();
                             AstapReklas::where('astap_id', $astap->id)->delete();
                             $k->delete();
                             $astap->delete();
@@ -2426,7 +2471,7 @@ class RecycleBinController extends Controller
                 break;
 
             case 'belanja_barang':
-                $belanjas = AstapBelanjaBarang::whereIn('id', $ids)->get();
+                $belanjas = AstapBelanjaBarang::onlyDeleted()->whereIn('id', $ids)->get();
                 DB::transaction(function () use ($belanjas, &$deletedCount) {
                     foreach ($belanjas as $b) {
                         $astaps = $b->astaps;
@@ -2434,7 +2479,7 @@ class RecycleBinController extends Controller
                             $astaps = collect([$b->astap]);
                         }
                         foreach ($astaps as $astap) {
-                            $astap->registers()->delete();
+                            $astap->allRegisters()->delete();
                             $astap->delete();
                         }
                         $b->delete();
@@ -2445,11 +2490,11 @@ class RecycleBinController extends Controller
                 break;
 
             case 'unit':
-                $units = Unit::whereIn('id', $ids)->get();
+                $units = Unit::onlyDeleted()->whereIn('id', $ids)->get();
                 $unitsWithAssets = [];
                 $unitsWithBasts = [];
                 foreach ($units as $u) {
-                    $count = (int) ($u->total_aset ?: \App\Models\AstapRegister::where('unit_id', $u->id)->count());
+                    $count = (int) ($u->total_aset ?: \App\Models\AstapRegister::where('unit_id', $u->id)->where('is_deleted', 0)->count());
                     if ($count > 0) {
                         $unitsWithAssets[] = "{$u->nama} ({$count} aset)";
                     }
@@ -2503,16 +2548,30 @@ class RecycleBinController extends Controller
 
             case 'users':
             case 'user':
-                $users = User::whereIn('id', $ids)->get();
-                foreach ($users as $u) {
-                    $u->delete();
-                    $deletedCount++;
+                if (in_array(Auth::id(), $ids)) {
+                    $msg = 'Penghapusan permanen ditolak: Anda tidak dapat menghapus akun Anda sendiri saat sedang login.';
+                    if ($request->wantsJson()) {
+                        return response()->json(['success' => false, 'message' => $msg], 422);
+                    }
+                    return back()->with('error', $msg);
                 }
+
+                $users = User::onlyDeleted()->whereIn('id', $ids)->get();
+                DB::transaction(function () use ($users, &$deletedCount) {
+                    foreach ($users as $u) {
+                        $u->delete();
+                        $deletedCount++;
+                    }
+                });
                 $msg = "Sebanyak {$deletedCount} akun pengguna telah dihapus permanen dari database.";
                 break;
 
             default:
-                return back()->with('error', "Modul {$module} tidak dikenal.");
+                $msg = "Modul {$module} tidak dikenal.";
+                if ($request->wantsJson()) {
+                    return response()->json(['success' => false, 'message' => $msg], 422);
+                }
+                return back()->with('error', $msg);
         }
 
         session()->flash('success', $msg);
@@ -2540,15 +2599,17 @@ class RecycleBinController extends Controller
         switch ($module) {
             case 'mutasi':
             case 'mutasi_internal':
-                $mutasi = AstapMutasi::findOrFail($id);
+                $mutasi = AstapMutasi::onlyDeleted()->findOrFail($id);
                 $bamb = $mutasi->nomor_bamb;
-                AstapMutasiRegister::where('astap_mutasi_id', $mutasi->id)->delete();
-                $mutasi->delete();
+                DB::transaction(function () use ($mutasi) {
+                    AstapMutasiRegister::where('astap_mutasi_id', $mutasi->id)->delete();
+                    $mutasi->delete();
+                });
                 $msg = "Data Berita Acara Mutasi {$bamb} telah dihapus secara permanen dari database.";
                 break;
 
             case 'mutasi_eksternal':
-                $mEksternal = \App\Models\MutasiEksternal::findOrFail($id);
+                $mEksternal = \App\Models\MutasiEksternal::onlyDeleted()->findOrFail($id);
                 $bamb = $mEksternal->nomor_bamb ?: ('ID #' . $mEksternal->id);
                 $isKeluar = ($mEksternal->tipe === 'keluar');
 
@@ -2597,10 +2658,10 @@ class RecycleBinController extends Controller
                 break;
 
             case 'astap':
-                $astap = Astap::findOrFail($id);
+                $astap = Astap::onlyDeleted()->findOrFail($id);
                 $nama = $astap->nama_barang ?: 'Aset ASTAP';
                 // Proteksi BAST Distribusi & Mutasi Aset untuk seluruh register di bawah paket ini
-                $regIds = $astap->registers()->pluck('id')->toArray();
+                $regIds = $astap->allRegisters()->pluck('id')->toArray();
                 if (!empty($regIds) && $this->hasAuditProtection($regIds)) {
                     $msg = "Penghapusan permanen ditolak: Paket ASTAP \"{$nama}\" memiliki unit dengan riwayat transaksi aktif. Data dilindungi undang-undang untuk audit BPK & Inspektorat.";
                     if ($request->wantsJson()) {
@@ -2610,16 +2671,16 @@ class RecycleBinController extends Controller
                 }
 
                 DB::transaction(function () use ($astap) {
-                    $astap->registers()->delete();
+                    $astap->allRegisters()->delete();
                     $astap->delete();
                 });
                 $msg = "Data Master ASTAP \"{$nama}\" telah dihapus secara permanen dari database.";
                 break;
 
             case 'belanja_modal':
-                $astap = Astap::findOrFail($id);
+                $astap = Astap::onlyDeleted()->findOrFail($id);
                 $nama = $astap->nama_barang ?: 'Aset Belanja Modal';
-                $regIds = $astap->registers()->pluck('id')->toArray();
+                $regIds = $astap->allRegisters()->pluck('id')->toArray();
                 if (!empty($regIds) && $this->hasAuditProtection($regIds)) {
                     $msg = "Penghapusan permanen ditolak: Paket Belanja Modal \"{$nama}\" memiliki unit dengan riwayat transaksi aktif. Data dilindungi undang-undang untuk audit BPK & Inspektorat.";
                     if ($request->wantsJson()) {
@@ -2629,7 +2690,7 @@ class RecycleBinController extends Controller
                 }
 
                 DB::transaction(function () use ($astap) {
-                    $astap->registers()->delete();
+                    $astap->allRegisters()->delete();
                     \App\Models\AstapBelanjaModal::where('astap_id', $astap->id)->delete();
                     $astap->delete();
                 });
@@ -2637,7 +2698,7 @@ class RecycleBinController extends Controller
                 break;
 
             case 'distribusi':
-                $distribusi = Distribusi::findOrFail($id);
+                $distribusi = Distribusi::onlyDeleted()->findOrFail($id);
                 $kode = $distribusi->kode;
                 DB::transaction(function () use ($distribusi) {
                     $distribusi->delete();
@@ -2651,13 +2712,13 @@ class RecycleBinController extends Controller
                 break;
 
             case 'hibah':
-                $hibah = AstapHibah::findOrFail($id);
+                $hibah = AstapHibah::onlyDeleted()->findOrFail($id);
                 $bast = $hibah->nomor_bast;
                 DB::transaction(function () use ($hibah) {
                     if ($hibah->tipe_hibah === 'masuk' && $hibah->astap_id) {
                         $astap = Astap::find($hibah->astap_id);
                         if ($astap) {
-                            $astap->registers()->delete();
+                            $astap->allRegisters()->delete();
                             $hibah->delete();
                             $astap->delete();
                             return;
@@ -2669,7 +2730,7 @@ class RecycleBinController extends Controller
                 break;
 
             case 'kemitraan':
-                $kemitraan = AstapKemitraan::findOrFail($id);
+                $kemitraan = AstapKemitraan::onlyDeleted()->findOrFail($id);
                 $isDitambahkan = ($kemitraan->tipe_kemitraan === 'ditambahkan') || !empty($kemitraan->objek_astap_id);
 
                 // Jika yang ingin dihapus permanen adalah Objek Pemanfaatan (Tabel 1):
@@ -2689,7 +2750,7 @@ class RecycleBinController extends Controller
                 DB::transaction(function () use ($kemitraan) {
                     $astap = $kemitraan->astap;
                     if ($astap) {
-                        $astap->registers()->delete();
+                        $astap->allRegisters()->delete();
                         AstapReklas::where('astap_id', $astap->id)->delete();
                         $kemitraan->delete();
                         $astap->delete();
@@ -2701,7 +2762,7 @@ class RecycleBinController extends Controller
                 break;
 
             case 'belanja_barang':
-                $belanja = AstapBelanjaBarang::findOrFail($id);
+                $belanja = AstapBelanjaBarang::onlyDeleted()->findOrFail($id);
                 $faktur = $belanja->nomor_faktur ?: 'Belanja Barang';
                 DB::transaction(function () use ($belanja) {
                     $astaps = $belanja->allAstaps;
@@ -2709,7 +2770,7 @@ class RecycleBinController extends Controller
                         $astaps = collect([$belanja->allAstap]);
                     }
                     foreach ($astaps as $astap) {
-                        $astap->registers()->delete();
+                        $astap->allRegisters()->delete();
                         $astap->delete();
                     }
                     $belanja->delete();
@@ -2719,16 +2780,18 @@ class RecycleBinController extends Controller
 
             case 'reklas':
             case 'reklasifikasi':
-                $reklas = AstapReklas::findOrFail($id);
+                $reklas = AstapReklas::onlyDeleted()->findOrFail($id);
                 $nomorBa = $reklas->nomor_ba_reklas ?: 'BA-REKLAS-' . $reklas->id;
-                $reklas->delete();
+                DB::transaction(function () use ($reklas) {
+                    $reklas->delete();
+                });
                 $msg = "Data transaksi Reklasifikasi {$nomorBa} telah dihapus secara permanen dari database.";
                 break;
 
             case 'unit':
-                $unit = Unit::findOrFail($id);
+                $unit = Unit::onlyDeleted()->findOrFail($id);
                 $nama = $unit->nama;
-                $assetCount = (int) ($unit->total_aset ?: \App\Models\AstapRegister::where('unit_id', $unit->id)->count());
+                $assetCount = (int) ($unit->total_aset ?: \App\Models\AstapRegister::where('unit_id', $unit->id)->where('is_deleted', 0)->count());
                 if ($assetCount > 0) {
                     $msg = "Penghapusan permanen ditolak: Unit \"{$nama}\" masih memiliki {$assetCount} aset aktif. Silakan pulihkan unit ini lalu lakukan mutasi aset ke unit lain terlebih dahulu.";
                     if ($request->wantsJson()) {
@@ -2768,7 +2831,7 @@ class RecycleBinController extends Controller
             case 'mutasi_eksternal_nibar':
             case 'hibah_nibar':
             case 'belanja_barang_nibar':
-                $reg = AstapRegister::findOrFail($id);
+                $reg = AstapRegister::onlyDeleted()->findOrFail($id);
                 $nibar = $reg->nibar ?: $reg->no_register;
                 if ($this->hasAuditProtection($reg->id)) {
                     $msg = "Penghapusan permanen ditolak: Register NIBAR \"{$nibar}\" memiliki riwayat transaksi BAST/mutasi aktif yang dilindungi audit.";
@@ -2783,7 +2846,7 @@ class RecycleBinController extends Controller
                     $reg->delete();
                     if ($parentAstap) {
                         $this->syncAstapAfterRegisterChange($parentAstap);
-                        if ($parentAstap->is_deleted && $parentAstap->registers()->count() === 0) {
+                        if ($parentAstap->is_deleted && $parentAstap->allRegisters()->count() === 0) {
                             $parentAstap->delete();
                         }
                     }
@@ -2793,14 +2856,28 @@ class RecycleBinController extends Controller
 
             case 'users':
             case 'user':
-                $targetUser = User::findOrFail($id);
+                if ((int)$id === (int)Auth::id()) {
+                    $msg = 'Penghapusan permanen ditolak: Anda tidak dapat menghapus akun Anda sendiri saat sedang login.';
+                    if ($request->wantsJson()) {
+                        return response()->json(['success' => false, 'message' => $msg], 422);
+                    }
+                    return back()->with('error', $msg);
+                }
+
+                $targetUser = User::onlyDeleted()->findOrFail($id);
                 $nama = $targetUser->name;
-                $targetUser->delete();
+                DB::transaction(function () use ($targetUser) {
+                    $targetUser->delete();
+                });
                 $msg = "Akun Pengguna \"{$nama}\" telah dihapus secara permanen dari sistem.";
                 break;
 
             default:
-                return back()->with('error', "Modul {$module} tidak dikenal untuk penghapusan permanen.");
+                $msg = "Modul {$module} tidak dikenal untuk penghapusan permanen.";
+                if ($request->wantsJson()) {
+                    return response()->json(['success' => false, 'message' => $msg], 422);
+                }
+                return back()->with('error', $msg);
         }
 
         session()->flash('success', $msg);
@@ -2969,13 +3046,13 @@ class RecycleBinController extends Controller
     /**
      * Cari NIBAR bersih yang aman untuk dipulihkan (regenerasi nomor jika nomor lama telah terpakai oleh resequence)
      */
-    private function resolveCleanNibarForRestore(AstapRegister $reg, ?Astap $astap = null): string
+    private function resolveCleanNibarForRestore(AstapRegister $reg, ?Astap $astap = null, array &$allocatedNibars = []): string
     {
         $cleanNibar = preg_replace('/^DEL_\d+_/', '', $reg->nibar ?: $reg->no_register);
         $astap = $astap ?: $reg->astap;
 
-        // Jika nomor aslinya sedang dipakai oleh register aktif lain di database
-        if (\App\Models\AstapRegister::where('is_deleted', 0)->where('nibar', $cleanNibar)->where('id', '!=', $reg->id)->exists()) {
+        // Jika nomor aslinya sedang dipakai oleh register aktif lain di database ATAU sudah dialokasikan dalam batch pemulihan ini
+        if (in_array($cleanNibar, $allocatedNibars) || \App\Models\AstapRegister::where('is_deleted', 0)->where('nibar', $cleanNibar)->where('id', '!=', $reg->id)->exists()) {
             $tahun = $reg->tahun_perolehan ?? ($astap?->tahun_perolehan ?? date('Y'));
             $ja = $astap?->jenisAstap;
             $kode108Raw = $ja ? ($ja->sub_sub_rincian_objek ?: $ja->jenis) : '1.3.2.00.00.00';
@@ -2989,7 +3066,7 @@ class RecycleBinController extends Controller
             $noRegStr = str_pad($newSlot, 7, '0', STR_PAD_LEFT);
             $cleanNibar = "{$prefix}{$noRegStr}";
 
-            while (\App\Models\AstapRegister::where('is_deleted', 0)->where('nibar', $cleanNibar)->exists()) {
+            while (in_array($cleanNibar, $allocatedNibars) || \App\Models\AstapRegister::where('is_deleted', 0)->where('nibar', $cleanNibar)->exists()) {
                 $newSlot++;
                 $noRegStr = str_pad($newSlot, 7, '0', STR_PAD_LEFT);
                 $cleanNibar = "{$prefix}{$noRegStr}";
@@ -2997,13 +3074,14 @@ class RecycleBinController extends Controller
             $reg->no_register_int = $newSlot;
         }
 
+        $allocatedNibars[] = $cleanNibar;
         return $cleanNibar;
     }
 
     /**
      * Pulihkan data aset induk ASTAP beserta seluruh register NIBAR dan update volume
      */
-    private function restoreAstapWithRegisters(?Astap $astap): int
+    private function restoreAstapWithRegisters(?Astap $astap, array &$allocatedNibars = []): int
     {
         if (!$astap) {
             return 0;
@@ -3011,7 +3089,7 @@ class RecycleBinController extends Controller
 
         $astap->restoreData();
         foreach ($astap->allRegisters as $r) {
-            $cleanNibar = $this->resolveCleanNibarForRestore($r, $astap);
+            $cleanNibar = $this->resolveCleanNibarForRestore($r, $astap, $allocatedNibars);
             $r->nibar = $cleanNibar;
             $r->no_register = $cleanNibar;
             $r->qr_code_path = "/scan/{$cleanNibar}";
@@ -3060,8 +3138,12 @@ class RecycleBinController extends Controller
             return false;
         }
 
-        return \App\Models\DistribusiItemRegister::whereIn('astap_register_id', $ids)->exists()
-            || \App\Models\AstapMutasiRegister::whereIn('astap_register_id', $ids)->exists();
+        return \App\Models\DistribusiItemRegister::whereIn('astap_register_id', $ids)
+            ->whereHas('distribusiItem.distribusi', fn($q) => $q->where('is_deleted', 0))
+            ->exists()
+            || \App\Models\AstapMutasiRegister::whereIn('astap_register_id', $ids)
+            ->whereHas('mutasi', fn($q) => $q->where('is_deleted', 0))
+            ->exists();
     }
 
     /**

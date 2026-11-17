@@ -37,6 +37,7 @@
             astapSubTab: 'packet',
             astapSumberDanaFilter: 'all', // 'all', 'belanja_modal', 'kemitraan', 'hibah', 'mutasi'
 
+            isSubmitting: false,
             selectedIds: [],
             searchQuery: '',
             timeFilter: 'all',
@@ -570,7 +571,7 @@
             },
 
             restoreSingle(module, item) {
-                if (!item) return;
+                if (!item || this.isSubmitting) return;
                 const targetMod = module || this.currentTargetModule;
                 const bNomor = item.nibar || item.nomor_bast || item.kode || item.nama || 'Data';
                 let confirmMsg = `Apakah Anda yakin ingin mengembalikan ${bNomor} ke status aktif? Data akan kembali muncul di katalog operasional.`;
@@ -596,6 +597,8 @@
                     type: 'info',
                     btnText: 'Pulihkan Data',
                     onConfirm: () => {
+                        if (this.isSubmitting) return;
+                        this.isSubmitting = true;
                         const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                         fetch(`/recycle-bin/${targetMod}/${item.id}/restore`, {
                             method: 'POST',
@@ -619,13 +622,16 @@
                         .catch(err => {
                             console.error('restore error:', err);
                             this.showSimatToast(err.message || 'Gagal memulihkan data.', 'error');
+                        })
+                        .finally(() => {
+                            this.isSubmitting = false;
                         });
                     }
                 });
             },
 
             bulkRestore(module) {
-                if (this.selectedIds.length === 0) return;
+                if (this.selectedIds.length === 0 || this.isSubmitting) return;
                 const count = this.selectedIds.length;
                 const targetMod = module || this.currentTargetModule;
                 const entityName = (targetMod === 'nibar' || targetMod === 'belanja_modal_nibar') ? 'register NIBAR' : 'data';
@@ -638,6 +644,8 @@
                     type: 'info',
                     btnText: 'Pulihkan Semua Terpilih',
                     onConfirm: () => {
+                        if (this.isSubmitting) return;
+                        this.isSubmitting = true;
                         const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                         fetch(`/recycle-bin/${targetMod}/bulk-restore`, {
                             method: 'POST',
@@ -662,13 +670,16 @@
                         .catch(err => {
                             console.error('bulk restore error:', err);
                             this.showSimatToast(err.message || 'Gagal memulihkan massal.', 'error');
+                        })
+                        .finally(() => {
+                            this.isSubmitting = false;
                         });
                     }
                 });
             },
 
             bulkForceDelete(module) {
-                if (this.selectedIds.length === 0) return;
+                if (this.selectedIds.length === 0 || this.isSubmitting) return;
                 const count = this.selectedIds.length;
                 const targetMod = module || this.currentTargetModule;
                 const targetIds = [...this.selectedIds];
@@ -749,6 +760,8 @@
                     isBlocked: false,
                     btnText: 'Hapus Permanen Sekarang',
                     onConfirm: () => {
+                        if (this.isSubmitting) return;
+                        this.isSubmitting = true;
                         const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                         fetch(`/recycle-bin/${targetMod}/bulk-force-delete`, {
                             method: 'POST',
@@ -773,13 +786,16 @@
                         .catch(err => {
                             console.error('bulk force delete error:', err);
                             this.showSimatToast(err.message || 'Gagal menghapus data permanen.', 'error');
+                        })
+                        .finally(() => {
+                            this.isSubmitting = false;
                         });
                     }
                 });
             },
 
             forceDeleteSingle(module, item) {
-                if (!item) return;
+                if (!item || this.isSubmitting) return;
                 const targetMod = module || this.currentTargetModule;
 
                 // JIKA OBJEK PEMANFAATAN KEMITRAAN MEMILIKI ASET MITRA TERKAIT: BLOKIR HAPUS PERMANEN
@@ -850,6 +866,8 @@
                     isBlocked: false,
                     btnText: btnText,
                     onConfirm: () => {
+                        if (this.isSubmitting) return;
+                        this.isSubmitting = true;
                         const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                         fetch(`/recycle-bin/${targetMod}/${item.id}/force-delete`, {
                             method: 'DELETE',
@@ -873,6 +891,9 @@
                         .catch(err => {
                             console.error('force delete error:', err);
                             this.showSimatToast(err.message || 'Gagal menghapus permanen.', 'error');
+                        })
+                        .finally(() => {
+                            this.isSubmitting = false;
                         });
                     }
                 });
