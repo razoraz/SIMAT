@@ -111,23 +111,34 @@
                         </div>
                     </label>
 
-                    <label class="flex items-center gap-3 p-3 rounded-2xl border border-slate-700/80 bg-slate-800/60 hover:bg-slate-800 cursor-pointer transition-all select-none"
-                        :class="formData.jenis_reklas === 'EKSTRAKOMPTABEL' ? 'border-rose-500 bg-rose-500/10 shadow-sm shadow-rose-500/10' : ''">
-                        <input type="radio" x-model="formData.jenis_reklas" value="EKSTRAKOMPTABEL" @change="onJenisReklasChange()" class="text-rose-600 focus:ring-0">
-                        <div>
-                            <p class="text-xs font-bold text-white">Ekstrakomptabel (≤ Rp 300rb)</p>
-                            <p class="text-[10px] text-slate-400">Nilai satuan ≤ Rp 300.000 (di bawah batas kapitalisasi)</p>
-                        </div>
-                    </label>
+                    <!-- 3. Dinamis Otomatis Sesuai Status Aset -->
+                    <template x-if="selectedAstap && (selectedAstap.is_extracomtable || selectedAstap.category === 'EXTRACOM')">
+                        <label class="flex items-center gap-3 p-3 rounded-2xl border border-slate-700/80 bg-slate-800/60 hover:bg-slate-800 cursor-pointer transition-all select-none"
+                            :class="formData.jenis_reklas === 'KAPITALISASI_INTRAKOM' ? 'border-teal-500 bg-teal-500/10 shadow-sm shadow-teal-500/10' : ''">
+                            <input type="radio" x-model="formData.jenis_reklas" value="KAPITALISASI_INTRAKOM" @change="onJenisReklasChange()" class="text-teal-600 focus:ring-0">
+                            <div>
+                                <div class="flex items-center gap-1.5">
+                                    <p class="text-xs font-bold text-white">Kapitalisasi Intrakomptabel</p>
+                                    <span class="text-[9px] font-bold text-teal-400 bg-teal-500/15 border border-teal-500/30 px-1 rounded">Ekstrakom</span>
+                                </div>
+                                <p class="text-[10px] text-slate-400">Naikkan aset ekstrakomptabel → Aset Tetap (> Rp 300.000)</p>
+                            </div>
+                        </label>
+                    </template>
 
-                    <label class="flex items-center gap-3 p-3 rounded-2xl border border-slate-700/80 bg-slate-800/60 hover:bg-slate-800 cursor-pointer transition-all select-none"
-                        :class="formData.jenis_reklas === 'KAPITALISASI_INTRAKOM' ? 'border-teal-500 bg-teal-500/10 shadow-sm shadow-teal-500/10' : ''">
-                        <input type="radio" x-model="formData.jenis_reklas" value="KAPITALISASI_INTRAKOM" @change="onJenisReklasChange()" class="text-teal-600 focus:ring-0">
-                        <div>
-                            <p class="text-xs font-bold text-white">Kapitalisasi Intrakomptabel</p>
-                            <p class="text-[10px] text-slate-400">Naikkan aset ekstrakomptabel → Aset Tetap (> Rp 300.000)</p>
-                        </div>
-                    </label>
+                    <template x-if="!selectedAstap || (!selectedAstap.is_extracomtable && selectedAstap.category !== 'EXTRACOM')">
+                        <label class="flex items-center gap-3 p-3 rounded-2xl border border-slate-700/80 bg-slate-800/60 hover:bg-slate-800 cursor-pointer transition-all select-none"
+                            :class="formData.jenis_reklas === 'EKSTRAKOMPTABEL' ? 'border-rose-500 bg-rose-500/10 shadow-sm shadow-rose-500/10' : ''">
+                            <input type="radio" x-model="formData.jenis_reklas" value="EKSTRAKOMPTABEL" @change="onJenisReklasChange()" class="text-rose-600 focus:ring-0">
+                            <div>
+                                <div class="flex items-center gap-1.5">
+                                    <p class="text-xs font-bold text-white">Ekstrakomptabel (≤ Rp 300rb)</p>
+                                    <span class="text-[9px] font-bold text-rose-400 bg-rose-500/15 border border-rose-500/30 px-1 rounded">Intrakom</span>
+                                </div>
+                                <p class="text-[10px] text-slate-400">Nilai satuan ≤ Rp 300.000 (di bawah batas kapitalisasi)</p>
+                            </div>
+                        </label>
+                    </template>
 
                     <label class="flex items-center gap-3 p-3 rounded-2xl border border-slate-700/80 bg-slate-800/60 hover:bg-slate-800 cursor-pointer transition-all select-none"
                         :class="formData.jenis_reklas === 'HIBAH_KELUAR' ? 'border-purple-500 bg-purple-500/10 shadow-sm shadow-purple-500/10' : ''">
@@ -147,17 +158,17 @@
                         </div>
                     </label>
 
-                    <label class="flex items-center gap-3 p-3 rounded-2xl border border-slate-700/80 bg-slate-800/60 hover:bg-slate-800 cursor-pointer transition-all select-none sm:col-span-2 lg:col-span-2"
+                    <label class="flex items-center gap-3 p-3 rounded-2xl border border-slate-700/80 bg-slate-800/60 hover:bg-slate-800 cursor-pointer transition-all select-none"
                         :class="formData.jenis_reklas === 'KOREKSI_LAIN' ? 'border-cyan-500 bg-cyan-500/10 shadow-sm shadow-cyan-500/10' : ''">
                         <input type="radio" x-model="formData.jenis_reklas" value="KOREKSI_LAIN" @change="onJenisReklasChange()" class="text-cyan-500 focus:ring-0">
                         <div class="flex-1">
-                            <div class="flex items-center gap-2">
-                                <p class="text-xs font-bold text-white">Koreksi Nilai / Perubahan Total Dana</p>
-                                <span class="text-[9.5px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                                    Audit BPK / Kapitalisasi Susulan
+                            <div class="flex items-center gap-1.5">
+                                <p class="text-xs font-bold text-white">Koreksi Nilai Realisasi</p>
+                                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                                    Audit BPK / Manset
                                 </span>
                             </div>
-                            <p class="text-[10px] text-slate-400 mt-0.5">Penyesuaian nominal buku aset bertambah (+) atau berkurang (-) dan sinkronisasi ke neraca</p>
+                            <p class="text-[10px] text-slate-400 mt-0.5">Penyesuaian nominal buku aset bertambah (+) atau berkurang (-)</p>
                         </div>
                     </label>
                 </div>

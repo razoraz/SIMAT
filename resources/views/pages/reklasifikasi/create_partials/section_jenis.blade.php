@@ -1,4 +1,4 @@
-<!-- SEKSI 2: JENIS & KATEGORI REKLASIFIKASI -->
+<!-- SEKSI 2: JENIS & KATEGORI REKLASIFIKASI (6 PILIHAN SIMETRIS 3x2) -->
 <div class="p-6 sm:p-7 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-5">
     <div class="flex items-center gap-3 border-b border-slate-800/80 pb-4">
         <span class="w-8 h-8 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-400 flex items-center justify-center font-black text-xs font-mono">
@@ -14,7 +14,7 @@
         </div>
     </div>
 
-    <!-- Pilihan Kartu Radio Interaktif -->
+    <!-- Pilihan 6 Kartu Radio Interaktif (Grid 3 Kolom x 2 Baris Simetris) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
         <!-- 1. Koreksi Rekening / Pindah KIB -->
         <label class="group relative flex flex-col justify-between p-4 rounded-2xl border transition-all duration-200 cursor-pointer select-none"
@@ -54,45 +54,60 @@
             </p>
         </label>
 
-        <!-- 3. Ekstrakomptabel (≤ Rp 300rb) -->
-        <label class="group relative flex flex-col justify-between p-4 rounded-2xl border transition-all duration-200 cursor-pointer select-none"
-               :class="formData.jenis_reklas === 'EKSTRAKOMPTABEL' ? 'bg-rose-950/30 border-rose-500 ring-1 ring-rose-500/40 shadow-lg shadow-rose-950/50' : 'bg-slate-950/70 border-slate-800 hover:border-slate-700 hover:bg-slate-950'">
-            <div class="flex items-start justify-between gap-3 mb-2">
-                <div class="flex items-center gap-2.5">
-                    <span class="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center text-sm">
-                        🔻
-                    </span>
-                    <span class="text-xs font-bold text-white group-hover:text-rose-300 transition-colors">
-                        Ekstrakomptabel (≤ Rp 300rb)
-                    </span>
+        <!-- 3. DINAMIS: OTOMATIS SESUAI STATUS ASET (Ekstrakomptabel VS Kapitalisasi Intrakomptabel) -->
+        <!-- Opsi 3A: Jika Aset Ekstrakomptabel -> Muncul Kapitalisasi Intrakomptabel -->
+        <template x-if="selectedAstap && (selectedAstap.is_extracomtable || selectedAstap.category === 'EXTRACOM')">
+            <label class="group relative flex flex-col justify-between p-4 rounded-2xl border transition-all duration-200 cursor-pointer select-none"
+                   :class="formData.jenis_reklas === 'KAPITALISASI_INTRAKOM' ? 'bg-teal-950/30 border-teal-500 ring-1 ring-teal-500/40 shadow-lg shadow-teal-950/50' : 'bg-slate-950/70 border-slate-800 hover:border-slate-700 hover:bg-slate-950'">
+                <div class="flex items-start justify-between gap-3 mb-2">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-8 h-8 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400 flex items-center justify-center text-sm">
+                            🔺
+                        </span>
+                        <div>
+                            <span class="text-xs font-bold text-white group-hover:text-teal-300 transition-colors block">
+                                Kapitalisasi Intrakomptabel
+                            </span>
+                            <span class="text-[9.5px] font-bold text-teal-400 bg-teal-500/15 border border-teal-500/30 px-1.5 py-0.5 rounded mt-0.5 inline-block">
+                                Status: Ekstrakomptabel
+                            </span>
+                        </div>
+                    </div>
+                    <input type="radio" x-model="formData.jenis_reklas" value="KAPITALISASI_INTRAKOM" @change="onJenisReklasChange()" class="text-teal-600 focus:ring-0 cursor-pointer mt-1">
                 </div>
-                <input type="radio" x-model="formData.jenis_reklas" value="EKSTRAKOMPTABEL" @change="onJenisReklasChange()" class="text-rose-600 focus:ring-0 cursor-pointer mt-1">
-            </div>
-            <p class="text-[11px] text-slate-400 leading-relaxed">
-                Nilai perolehan satuan barang di bawah batas kapitalisasi (≤ Rp 300.000). Dikeluarkan dari neraca aset tetap ke ekstrakomptabel.
-            </p>
-        </label>
+                <p class="text-[11px] text-slate-400 leading-relaxed">
+                    Menaikkan aset dari daftar ekstrakomptabel ke neraca Aset Tetap Intrakomptabel karena nilai perolehan di atas batas kapitalisasi (> Rp 300.000).
+                </p>
+            </label>
+        </template>
 
-        <!-- 4. Kapitalisasi Intrakomptabel -->
-        <label class="group relative flex flex-col justify-between p-4 rounded-2xl border transition-all duration-200 cursor-pointer select-none"
-               :class="formData.jenis_reklas === 'KAPITALISASI_INTRAKOM' ? 'bg-teal-950/30 border-teal-500 ring-1 ring-teal-500/40 shadow-lg shadow-teal-950/50' : 'bg-slate-950/70 border-slate-800 hover:border-slate-700 hover:bg-slate-950'">
-            <div class="flex items-start justify-between gap-3 mb-2">
-                <div class="flex items-center gap-2.5">
-                    <span class="w-8 h-8 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400 flex items-center justify-center text-sm">
-                        🔺
-                    </span>
-                    <span class="text-xs font-bold text-white group-hover:text-teal-300 transition-colors">
-                        Kapitalisasi Intrakomptabel
-                    </span>
+        <!-- Opsi 3B: Jika Aset Intrakomptabel / Belum Dipilih -> Muncul Ekstrakomptabel (≤ Rp 300rb) -->
+        <template x-if="!selectedAstap || (!selectedAstap.is_extracomtable && selectedAstap.category !== 'EXTRACOM')">
+            <label class="group relative flex flex-col justify-between p-4 rounded-2xl border transition-all duration-200 cursor-pointer select-none"
+                   :class="formData.jenis_reklas === 'EKSTRAKOMPTABEL' ? 'bg-rose-950/30 border-rose-500 ring-1 ring-rose-500/40 shadow-lg shadow-rose-950/50' : 'bg-slate-950/70 border-slate-800 hover:border-slate-700 hover:bg-slate-950'">
+                <div class="flex items-start justify-between gap-3 mb-2">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center text-sm">
+                            🔻
+                        </span>
+                        <div>
+                            <span class="text-xs font-bold text-white group-hover:text-rose-300 transition-colors block">
+                                Ekstrakomptabel (≤ Rp 300rb)
+                            </span>
+                            <span class="text-[9.5px] font-bold text-rose-400 bg-rose-500/15 border border-rose-500/30 px-1.5 py-0.5 rounded mt-0.5 inline-block">
+                                Status: Intrakomptabel
+                            </span>
+                        </div>
+                    </div>
+                    <input type="radio" x-model="formData.jenis_reklas" value="EKSTRAKOMPTABEL" @change="onJenisReklasChange()" class="text-rose-600 focus:ring-0 cursor-pointer mt-1">
                 </div>
-                <input type="radio" x-model="formData.jenis_reklas" value="KAPITALISASI_INTRAKOM" @change="onJenisReklasChange()" class="text-teal-600 focus:ring-0 cursor-pointer mt-1">
-            </div>
-            <p class="text-[11px] text-slate-400 leading-relaxed">
-                Menaikkan aset dari daftar ekstrakomptabel ke neraca Aset Tetap Intrakomptabel karena nilai perolehan di atas batas kapitalisasi (> Rp 300.000).
-            </p>
-        </label>
+                <p class="text-[11px] text-slate-400 leading-relaxed">
+                    Nilai perolehan satuan barang di bawah batas kapitalisasi (≤ Rp 300.000). Dikeluarkan dari neraca aset tetap ke ekstrakomptabel.
+                </p>
+            </label>
+        </template>
 
-        <!-- 5. Bantuan Hibah Keluar -->
+        <!-- 4. Bantuan Hibah Keluar -->
         <label class="group relative flex flex-col justify-between p-4 rounded-2xl border transition-all duration-200 cursor-pointer select-none"
                :class="formData.jenis_reklas === 'HIBAH_KELUAR' ? 'bg-purple-950/30 border-purple-500 ring-1 ring-purple-500/40 shadow-lg shadow-purple-950/50' : 'bg-slate-950/70 border-slate-800 hover:border-slate-700 hover:bg-slate-950'">
             <div class="flex items-start justify-between gap-3 mb-2">
@@ -111,7 +126,7 @@
             </p>
         </label>
 
-        <!-- 6. Mutasi Eksternal (Antar-OPD) -->
+        <!-- 5. Mutasi Eksternal (Antar-OPD) -->
         <label class="group relative flex flex-col justify-between p-4 rounded-2xl border transition-all duration-200 cursor-pointer select-none"
                :class="formData.jenis_reklas === 'MUTASI_EKSTERNAL' ? 'bg-cyan-950/30 border-cyan-500 ring-1 ring-cyan-500/40 shadow-lg shadow-cyan-950/50' : 'bg-slate-950/70 border-slate-800 hover:border-slate-700 hover:bg-slate-950'">
             <div class="flex items-start justify-between gap-3 mb-2">
@@ -130,20 +145,20 @@
             </p>
         </label>
 
-        <!-- 7. Koreksi Nilai Realisasi / BPK / Manset (Full Span) -->
-        <label class="group relative flex flex-col justify-between p-4 rounded-2xl border transition-all duration-200 cursor-pointer select-none sm:col-span-2 lg:col-span-3"
+        <!-- 6. Koreksi Nilai Realisasi / BPK / Manset -->
+        <label class="group relative flex flex-col justify-between p-4 rounded-2xl border transition-all duration-200 cursor-pointer select-none"
                :class="formData.jenis_reklas === 'KOREKSI_LAIN' ? 'bg-amber-950/30 border-amber-500 ring-1 ring-amber-500/40 shadow-lg shadow-amber-950/50' : 'bg-slate-950/70 border-slate-800 hover:border-slate-700 hover:bg-slate-950'">
-            <div class="flex items-start justify-between gap-3 mb-1">
+            <div class="flex items-start justify-between gap-3 mb-2">
                 <div class="flex items-center gap-2.5">
                     <span class="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center text-sm">
                         ⚖️
                     </span>
                     <div>
-                        <span class="text-xs font-bold text-white group-hover:text-amber-300 transition-colors">
-                            Koreksi Nilai Realisasi / Audit BPK / Kapitalisasi Susulan
+                        <span class="text-xs font-bold text-white group-hover:text-amber-300 transition-colors block">
+                            Koreksi Nilai Realisasi
                         </span>
-                        <span class="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                            Penyesuaian Saldo Buku
+                        <span class="text-[9.5px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 mt-0.5 inline-block">
+                            Audit BPK / Manset
                         </span>
                     </div>
                 </div>
@@ -155,4 +170,3 @@
         </label>
     </div>
 </div>
-

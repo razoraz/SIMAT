@@ -936,6 +936,16 @@
                 this.formData.nama_barang = found.nama_barang || '';
                 this.formData.nilai_realisasi_baru = parseFloat(found.total_realisasi || 0);
 
+                // Otomatis sinkronkan opsi Ekstrakomptabel vs Kapitalisasi Intrakomptabel sesuai status aset
+                const isExtracom = Boolean(found.is_extracomtable || found.category === 'EXTRACOM');
+                if (isExtracom && this.formData.jenis_reklas === 'EKSTRAKOMPTABEL') {
+                    this.formData.jenis_reklas = 'KAPITALISASI_INTRAKOM';
+                    this.onJenisReklasChange();
+                } else if (!isExtracom && this.formData.jenis_reklas === 'KAPITALISASI_INTRAKOM') {
+                    this.formData.jenis_reklas = 'EKSTRAKOMPTABEL';
+                    this.onJenisReklasChange();
+                }
+
                 if (found.registers && found.registers.length > 0) {
                     this.formData.selected_register_ids = found.registers
                         .filter(r => r.status !== 'Mutasi Keluar OPD' && r.status !== 'Dihibahkan')
@@ -1853,6 +1863,14 @@
 
             async submitFormTambah() {
                 if (this.isSubmitting) return;
+
+                // Validasi Mandatori: Aset wajib dipilih dari Buku Inventaris ASTAP
+                if (!this.formData.astap_id || !this.selectedAstap) {
+                    const errMsg = '⚠️ Anda wajib memilih salah satu barang dari Buku Inventaris ASTAP terlebih dahulu!';
+                    if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'error');
+                    else alert(errMsg);
+                    return;
+                }
 
                 // Validasi khusus Koreksi Nilai Realisasi (KOREKSI_LAIN)
                 if (this.formData.jenis_reklas === 'KOREKSI_LAIN') {

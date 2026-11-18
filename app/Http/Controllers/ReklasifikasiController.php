@@ -399,9 +399,18 @@ class ReklasifikasiController extends Controller
             ->orderBy('id', 'desc')
             ->get();
 
-        // 5. Ambil kandidat aset untuk modal tambah reklasifikasi
+        // 5. Ambil kandidat aset untuk modal tambah reklasifikasi (hanya aset yang valid & memenuhi syarat reklas)
         $kandidatAstaps = Astap::where('is_deleted', 0)
             ->where('tahun_perolehan', $selectedTahun)
+            ->where('total_realisasi', '>', 0)
+            ->where(function($q) {
+                $q->whereNull('jenis_reklas')
+                  ->orWhereNotIn('jenis_reklas', ['HIBAH_KELUAR']);
+            })
+            ->whereHas('registers', function($q) {
+                $q->where('is_deleted', 0)
+                  ->whereNotIn('status', ['Dibatalkan', 'Mutasi Keluar OPD', 'Dihibahkan']);
+            })
             ->select('id', 'nama_barang', 'total_realisasi', 'jumlah_anggaran', 'tahun_perolehan', 'category', 'asal_kib', 'jenis_astap_id', 'is_reklas', 'jenis_reklas', 'satuan', 'merk_type', 'alamat_barang', 'spesifikasi_json', 'jumlah_volume', 'harga_satuan', 'is_extracomtable')
             ->with(['jenisAstap:id,jenis,sub_sub_rincian_objek', 'registers:id,astap_id,nibar,no_register,kondisi,status'])
             ->orderBy('nama_barang', 'asc')
@@ -483,8 +492,17 @@ class ReklasifikasiController extends Controller
             array_unshift($tahunList, $selectedTahun);
         }
 
-        // Ambil data kandidat aset ASTAP
+        // Ambil data kandidat aset ASTAP (hanya aset yang valid & memenuhi syarat reklas)
         $kandidatQuery = Astap::where('is_deleted', 0)
+            ->where('total_realisasi', '>', 0)
+            ->where(function($q) {
+                $q->whereNull('jenis_reklas')
+                  ->orWhereNotIn('jenis_reklas', ['HIBAH_KELUAR']);
+            })
+            ->whereHas('registers', function($q) {
+                $q->where('is_deleted', 0)
+                  ->whereNotIn('status', ['Dibatalkan', 'Mutasi Keluar OPD', 'Dihibahkan']);
+            })
             ->select('id', 'nama_barang', 'total_realisasi', 'jumlah_anggaran', 'tahun_perolehan', 'category', 'asal_kib', 'jenis_astap_id', 'is_reklas', 'jenis_reklas', 'satuan', 'merk_type', 'alamat_barang', 'spesifikasi_json', 'jumlah_volume', 'harga_satuan', 'is_extracomtable')
             ->with(['jenisAstap:id,jenis,sub_sub_rincian_objek,uraian_sub_rincian,uraian_sub_sub_rincian', 'registers:id,astap_id,nibar,no_register,kondisi,status']);
 
