@@ -12,6 +12,7 @@ use App\Http\Controllers\DistribusiController;
 use App\Http\Controllers\MutasiController;
 use App\Http\Controllers\RecycleBinController;
 use App\Http\Controllers\AstapController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Middleware\RoleMiddleware;
 
 // Auth Routes (Guest)
@@ -345,19 +346,9 @@ Route::middleware('auth')->group(function () {
     // })->name('pemeliharaan.index');
 
     // 7. API Notifikasi Sistem
-    Route::post('/api/notifications/mark-all-read', function () {
-        \App\Services\NotificationService::markAllAsReadForUser(auth()->user());
-        return response()->json(['success' => true, 'message' => 'Semua notifikasi telah ditandai sebagai dibaca.']);
-    })->name('notifications.mark_all_read');
-
-    Route::get('/api/notifications/list', function () {
-        $res = \App\Services\NotificationService::getForUser(auth()->user());
-        return response()->json([
-            'success'       => true,
-            'unread_count'  => $res['unread_count'],
-            'notifications' => $res['notifications'],
-        ]);
-    })->name('notifications.list');
+    Route::post('/api/notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('notifications.mark_all_read');
+    Route::post('/api/notifications/{id}/read', [NotificationController::class, 'markRead'])->name('notifications.mark_read');
+    Route::get('/api/notifications/list', [NotificationController::class, 'list'])->name('notifications.list')->middleware('throttle:60,1');
 
     // 8. API Rekanan / Mitra Kemitraan (Autofill & Filter)
     Route::get('/api/kemitraan/mitras', function () {

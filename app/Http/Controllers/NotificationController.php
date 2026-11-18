@@ -17,6 +17,18 @@ class NotificationController extends Controller
     }
 
     /**
+     * Tandai satu notifikasi tertentu telah dibaca
+     */
+    public function markRead(Request $request, $id)
+    {
+        $success = NotificationService::markAsReadForUser((int)$id, auth()->user());
+        return response()->json([
+            'success' => $success,
+            'message' => $success ? 'Notifikasi telah ditandai sebagai dibaca.' : 'Notifikasi tidak ditemukan.',
+        ]);
+    }
+
+    /**
      * Ambil daftar notifikasi untuk user yang login
      */
     public function list()

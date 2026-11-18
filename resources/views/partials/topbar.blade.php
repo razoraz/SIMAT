@@ -201,87 +201,126 @@
                 </template>
 
                 <!-- Filter Cards / Chips 1 Baris Horisontal -->
-                <div class="px-3 py-2 bg-slate-950/40 border-b border-slate-800/60 flex items-center gap-1.5">
+                <div class="px-3 py-2 bg-slate-950/40 border-b border-slate-800/60 flex items-center gap-1.5 overflow-x-auto notif-scroll">
+                    <!-- Chip: Semua -->
                     <button type="button" @click="filterType = 'all'"
-                        class="flex-1 py-1.5 rounded-lg text-[10.5px] font-semibold transition-all border text-center flex items-center justify-center space-x-1 whitespace-nowrap"
+                        class="flex-1 py-1.5 px-2 rounded-lg text-[10px] font-semibold transition-all border text-center flex items-center justify-center gap-1 whitespace-nowrap"
                         :class="filterType === 'all' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-sm' : 'bg-slate-800/40 text-slate-400 border-slate-800 hover:text-slate-200'">
                         <span>Semua</span>
                     </button>
+
+                    <!-- Chip: Belum Dibaca -->
+                    <button type="button" @click="filterType = 'unread'"
+                        class="flex-1 py-1.5 px-2 rounded-lg text-[10px] font-semibold transition-all border text-center flex items-center justify-center gap-1 whitespace-nowrap"
+                        :class="filterType === 'unread' ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 shadow-sm' : 'bg-slate-800/40 text-slate-400 border-slate-800 hover:text-slate-200'">
+                        <span class="inline-block w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+                        <span>Belum Dibaca</span>
+                        <span x-show="countUnreadAll > 0" x-cloak
+                              class="px-1.5 py-0.2 rounded-full bg-rose-500/30 text-rose-300 text-[9px] font-bold"
+                              x-text="countUnreadAll"></span>
+                    </button>
+
+                    <!-- Chip: ASTAP & Belanja Barang -->
                     <button type="button" @click="filterType = 'astap'"
-                        class="flex-1 py-1.5 rounded-lg text-[10.5px] font-semibold transition-all border text-center flex items-center justify-center space-x-1 whitespace-nowrap"
+                        class="flex-1 py-1.5 px-2 rounded-lg text-[10px] font-semibold transition-all border text-center flex items-center justify-center gap-1 whitespace-nowrap"
                         :class="filterType === 'astap' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-sm' : 'bg-slate-800/40 text-slate-400 border-slate-800 hover:text-slate-200'">
                         <span>📦</span> <span>ASTAP</span>
+                        <span x-show="countUnreadAstap > 0" x-cloak
+                              class="px-1.5 py-0.2 rounded-full bg-emerald-500/30 text-emerald-300 text-[9px] font-bold"
+                              x-text="countUnreadAstap"></span>
                     </button>
+
+                    <!-- Chip: Distribusi -->
                     <button type="button" @click="filterType = 'distribusi'"
-                        class="flex-1 py-1.5 rounded-lg text-[10.5px] font-semibold transition-all border text-center flex items-center justify-center space-x-1 whitespace-nowrap"
+                        class="flex-1 py-1.5 px-2 rounded-lg text-[10px] font-semibold transition-all border text-center flex items-center justify-center gap-1 whitespace-nowrap"
                         :class="filterType === 'distribusi' ? 'bg-teal-500/20 text-teal-300 border-teal-500/40 shadow-sm' : 'bg-slate-800/40 text-slate-400 border-slate-800 hover:text-slate-200'">
                         <span>🚚</span> <span>Distribusi</span>
+                        <span x-show="countUnreadDistribusi > 0" x-cloak
+                              class="px-1.5 py-0.2 rounded-full bg-teal-500/30 text-teal-300 text-[9px] font-bold"
+                              x-text="countUnreadDistribusi"></span>
                     </button>
+
+                    <!-- Chip: Mutasi -->
                     <button type="button" @click="filterType = 'mutasi'"
-                        class="flex-1 py-1.5 rounded-lg text-[10.5px] font-semibold transition-all border text-center flex items-center justify-center space-x-1 whitespace-nowrap"
+                        class="flex-1 py-1.5 px-2 rounded-lg text-[10px] font-semibold transition-all border text-center flex items-center justify-center gap-1 whitespace-nowrap"
                         :class="filterType === 'mutasi' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm' : 'bg-slate-800/40 text-slate-400 border-slate-800 hover:text-slate-200'">
                         <span>🔄</span> <span>Mutasi</span>
+                        <span x-show="countUnreadMutasi > 0" x-cloak
+                              class="px-1.5 py-0.2 rounded-full bg-amber-500/30 text-amber-300 text-[9px] font-bold"
+                              x-text="countUnreadMutasi"></span>
                     </button>
                 </div>
 
-                <!-- Daftar Notifikasi dengan Scrolling Rapi -->
+                <!-- Daftar Notifikasi dengan Scrolling Rapi (Reaktif Alpine) -->
                 <div class="divide-y divide-slate-800/60 max-h-64 overflow-y-auto notif-scroll" style="max-height: 260px; overflow-y: auto;">
-                    @forelse($systemNotifications ?? [] as $notif)
-                        <a href="{{ $notif['link'] }}" 
-                           x-show="filterType === 'all' || filterType === '{{ $notif['type'] }}'"
-                           class="block px-3.5 py-2.5 hover:bg-slate-800/60 transition-colors relative {{ $notif['is_unread'] ? 'bg-emerald-500/5 notif-item-unread' : '' }}">
+                    <template x-for="notif in filteredNotifications" :key="notif.id">
+                        <a :href="notif.link" 
+                           @click="markSingleAsRead(notif.id)"
+                           class="block px-3.5 py-2.5 hover:bg-slate-800/60 transition-colors relative"
+                           :class="notif.is_unread ? 'bg-emerald-500/5 notif-item-unread' : ''">
                             <div class="flex items-center space-x-3">
                                 <!-- Ikon Notifikasi Berdasarkan Kategori -->
                                 <div class="shrink-0">
-                                    @if($notif['type'] === 'astap')
+                                    <template x-if="notif.type === 'astap'">
                                         <div class="rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-xs shadow-sm"
                                              style="width: 28px; height: 28px; min-width: 28px; min-height: 28px;">
                                             📦
                                         </div>
-                                    @elseif($notif['type'] === 'distribusi')
+                                    </template>
+                                    <template x-if="notif.type === 'belanja_barang'">
+                                        <div class="rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 flex items-center justify-center text-xs shadow-sm"
+                                             style="width: 28px; height: 28px; min-width: 28px; min-height: 28px;">
+                                            🛒
+                                        </div>
+                                    </template>
+                                    <template x-if="notif.type === 'distribusi'">
                                         <div class="rounded-lg bg-teal-500/10 text-teal-400 border border-teal-500/30 flex items-center justify-center text-xs shadow-sm"
                                              style="width: 28px; height: 28px; min-width: 28px; min-height: 28px;">
                                             🚚
                                         </div>
-                                    @elseif($notif['type'] === 'mutasi')
+                                    </template>
+                                    <template x-if="notif.type === 'mutasi'">
                                         <div class="rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center justify-center text-xs shadow-sm"
                                              style="width: 28px; height: 28px; min-width: 28px; min-height: 28px;">
                                             🔄
                                         </div>
-                                    @else
+                                    </template>
+                                    <template x-if="notif.type !== 'astap' && notif.type !== 'belanja_barang' && notif.type !== 'distribusi' && notif.type !== 'mutasi'">
                                         <div class="rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/30 flex items-center justify-center text-xs shadow-sm"
                                              style="width: 28px; height: 28px; min-width: 28px; min-height: 28px;">
                                             🔔
                                         </div>
-                                    @endif
+                                    </template>
                                 </div>
 
                                 <!-- Konten Notifikasi Ringkas -->
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-center justify-between gap-1">
-                                        <p class="text-xs font-bold text-white truncate">{{ $notif['title'] }}</p>
-                                        <span class="text-[10px] text-slate-400 font-mono shrink-0">{{ $notif['time_ago'] }}</span>
+                                        <p class="text-xs font-bold text-white truncate" x-text="notif.title"></p>
+                                        <span class="text-[10px] text-slate-400 font-mono shrink-0" x-text="notif.time_ago"></span>
                                     </div>
                                     <div class="flex items-center justify-between gap-2 mt-0.5">
-                                        <p class="text-[11px] text-slate-400 truncate">{{ $notif['message'] }}</p>
-                                        @if($notif['is_unread'])
+                                        <p class="text-[11px] text-slate-400 truncate" x-text="notif.message"></p>
+                                        <template x-if="notif.is_unread">
                                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 notif-unread-dot shrink-0"></span>
-                                        @endif
+                                        </template>
                                     </div>
                                 </div>
                             </div>
                         </a>
-                    @empty
+                    </template>
+
+                    <template x-if="filteredNotifications.length === 0">
                         <div class="p-6 text-center text-slate-500">
                             <div class="text-2xl mb-1">📭</div>
-                            <p class="text-xs font-medium">Belum ada notifikasi baru untuk Anda</p>
+                            <p class="text-xs font-medium" x-text="filterType === 'unread' ? 'Tidak ada notifikasi yang belum dibaca' : 'Belum ada notifikasi pada kategori ini'"></p>
                         </div>
-                    @endforelse
+                    </template>
                 </div>
 
                 <!-- Footer Dropdown -->
                 <div class="px-4 py-2 border-t border-slate-800/80 bg-slate-950/40 text-center text-[10px] text-slate-500 font-medium">
-                    A-SIMAT • Notifikasi otomatis dihapus setelah 24 jam
+                    A-SIMAT • Notifikasi aktif dalam 14 hari terakhir
                 </div>
             </div>
         </div>
@@ -293,19 +332,47 @@
                     notifOpen: false,
                     filterType: 'all',
                     unreadCount: {{ (int)($unreadNotifCount ?? 0) }},
+                    notifications: @json($systemNotifications ?? []),
                     timer: null,
                     soundEnabled: localStorage.getItem('simat_sound_enabled') !== 'false',
                     desktopPermission: (typeof window !== 'undefined' && 'Notification' in window) ? Notification.permission : 'default',
+
+                    get filteredNotifications() {
+                        if (!Array.isArray(this.notifications)) return [];
+                        if (this.filterType === 'all') return this.notifications;
+                        if (this.filterType === 'unread') return this.notifications.filter(n => n.is_unread);
+                        if (this.filterType === 'astap') return this.notifications.filter(n => n.type === 'astap' || n.type === 'belanja_barang');
+                        return this.notifications.filter(n => n.type === this.filterType);
+                    },
+
+                    get countUnreadAll() {
+                        if (!Array.isArray(this.notifications)) return 0;
+                        return this.notifications.filter(n => n.is_unread).length;
+                    },
+
+                    get countUnreadAstap() {
+                        if (!Array.isArray(this.notifications)) return 0;
+                        return this.notifications.filter(n => n.is_unread && (n.type === 'astap' || n.type === 'belanja_barang')).length;
+                    },
+
+                    get countUnreadDistribusi() {
+                        if (!Array.isArray(this.notifications)) return 0;
+                        return this.notifications.filter(n => n.is_unread && n.type === 'distribusi').length;
+                    },
+
+                    get countUnreadMutasi() {
+                        if (!Array.isArray(this.notifications)) return 0;
+                        return this.notifications.filter(n => n.is_unread && n.type === 'mutasi').length;
+                    },
 
                     init() {
                         if (typeof window !== 'undefined' && 'Notification' in window) {
                             this.desktopPermission = Notification.permission;
                         }
 
-                        const initialNotifs = @json($systemNotifications ?? []);
                         // Sinkronisasi baseline ID secara senyap agar tidak memicu lonceng/pop-up saat buka halaman awal / dari cache
-                        if (Array.isArray(initialNotifs) && initialNotifs.length > 0) {
-                            const maxInitialId = Math.max(...initialNotifs.map(n => parseInt(n.id) || 0));
+                        if (Array.isArray(this.notifications) && this.notifications.length > 0) {
+                            const maxInitialId = Math.max(...this.notifications.map(n => parseInt(n.id) || 0));
                             const storedAlertedId = parseInt(localStorage.getItem('simat_last_alerted_id') || '0', 10);
                             if (maxInitialId > storedAlertedId) {
                                 localStorage.setItem('simat_last_alerted_id', String(maxInitialId));
@@ -314,10 +381,19 @@
                             localStorage.setItem('simat_last_alerted_id', '0');
                         }
 
-                        // Polling berkala: hanya saat server aktif dan fetch sukses menghasilkan notifikasi baru, barulah suara & notifikasi desktop dipicu
+                        // Polling berkala: hanya saat tab aktif (Page Visibility API)
                         this.timer = setInterval(() => {
-                            this.refreshNotif();
+                            if (document.visibilityState === 'visible') {
+                                this.refreshNotif();
+                            }
                         }, 15000);
+
+                        // Trigger refresh langsung saat user kembali ke tab ini
+                        document.addEventListener('visibilitychange', () => {
+                            if (document.visibilityState === 'visible') {
+                                this.refreshNotif();
+                            }
+                        });
                     },
 
                     playChimeSound() {
@@ -450,14 +526,37 @@
                             if (data.success) {
                                 this.unreadCount = data.unread_count;
                                 if (Array.isArray(data.notifications)) {
+                                    this.notifications = data.notifications;
                                     this.checkAndAlertNew(data.notifications);
                                 }
                             }
                         } catch (e) {}
                     },
 
+                    async markSingleAsRead(id) {
+                        const notif = this.notifications.find(n => Number(n.id) === Number(id));
+                        if (notif && notif.is_unread) {
+                            notif.is_unread = false;
+                            this.unreadCount = Math.max(0, this.unreadCount - 1);
+                        }
+                        try {
+                            await fetch(`/api/notifications/${id}/read`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                    'Accept': 'application/json'
+                                }
+                            });
+                        } catch (e) {}
+                    },
+
                     async markAllAsRead() {
                         if (this.unreadCount === 0) return;
+                        this.unreadCount = 0;
+                        if (Array.isArray(this.notifications)) {
+                            this.notifications.forEach(n => { n.is_unread = false; });
+                        }
                         try {
                             const res = await fetch('{{ route('notifications.mark_all_read') }}', {
                                 method: 'POST',
@@ -469,7 +568,6 @@
                             });
                             const json = await res.json();
                             if (json.success) {
-                                this.unreadCount = 0;
                                 document.querySelectorAll('.notif-unread-dot').forEach(el => el.remove());
                                 document.querySelectorAll('.notif-item-unread').forEach(el => el.classList.remove('bg-emerald-500/5', 'border-emerald-500/20'));
                             }

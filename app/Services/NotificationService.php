@@ -9,6 +9,8 @@ use App\Models\Astap;
 use App\Models\Distribusi;
 use App\Models\AstapMutasi;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class NotificationService
 {
@@ -38,9 +40,6 @@ class NotificationService
      */
     public static function sendToUnitSubAdmin(?int $unitId, ?string $ruanganName, string $title, string $message, string $type = 'info', ?string $link = null): SystemNotification
     {
-        $currentUserId = auth()->id();
-        $initialReaders = $currentUserId ? [$currentUserId] : [];
-
         return SystemNotification::create([
             'role_target'   => 'sub_admin',
             'unit_id'       => $unitId,
@@ -50,7 +49,7 @@ class NotificationService
             'message'       => $message,
             'type'          => $type,
             'link'          => $link,
-            'read_by_users' => $initialReaders,
+            'read_by_users' => [],
         ]);
     }
 
@@ -87,16 +86,19 @@ class NotificationService
         $userId = $user->id;
         $role = $user->role;
         $userUnitId = $user->unit_id;
-        $userUnitNama = $user->unit;
+        $userUnitNama = $user->unit?->nama;
 
-        // Hapus otomatis notifikasi yang usianya sudah lebih dari 24 jam
-        try {
-            SystemNotification::where('created_at', '<', now()->subHours(24))->delete();
-        } catch (\Throwable $e) {
-            // Ignore cleanup error if table transient
+        // Bersihkan notifikasi lawas (> 14 hari) secara berkala (maksimal 1x per 6 jam)
+        if (!Cache::has('sys_notif_cleanup_lock')) {
+            Cache::put('sys_notif_cleanup_lock', true, now()->addHours(6));
+            try {
+                SystemNotification::where('created_at', '<', now()->subDays(14))->delete();
+            } catch (\Throwable $e) {
+                // Abaikan kesalahan transien
+            }
         }
 
-        $query = SystemNotification::query()->where('created_at', '>=', now()->subHours(24));
+        $query = SystemNotification::query()->where('created_at', '>=', now()->subDays(14));
 
         if (in_array($role, ['admin', 'master_admin'])) {
             $query->where(function ($q) use ($userId) {
@@ -164,28 +166,51 @@ class NotificationService
     }
 
     /**
-     * Tandai semua notifikasi pengguna sebagai telah dibaca
+     * Tandai satu notifikasi tertentu sebagai telah dibaca
      */
-    public static function markAllAsReadForUser(?User $user): bool
+    public static function markAsReadForUser(int $notifId, ?User $user): bool
     {
         if (!$user) return false;
 
-        $res = self::getForUser($user, 100);
-        $ids = $res['notifications']->pluck('id')->toArray();
+        return DB::transaction(function () use ($notifId, $user) {
+            $notif = SystemNotification::find($notifId);
+            if (!$notif) return false;
 
-        if (empty($ids)) return true;
-
-        $notifs = SystemNotification::whereIn('id', $ids)->get();
-        foreach ($notifs as $notif) {
             $readers = $notif->read_by_users ?? [];
             if (!in_array($user->id, $readers)) {
                 $readers[] = $user->id;
                 $notif->read_by_users = array_values(array_unique($readers));
                 $notif->save();
             }
-        }
+            return true;
+        });
+    }
 
-        return true;
+    /**
+     * Tandai semua notifikasi pengguna sebagai telah dibaca
+     */
+    public static function markAllAsReadForUser(?User $user): bool
+    {
+        if (!$user) return false;
+
+        return DB::transaction(function () use ($user) {
+            $res = self::getForUser($user, 100);
+            $ids = collect($res['notifications'])->pluck('id')->toArray();
+
+            if (empty($ids)) return true;
+
+            $notifs = SystemNotification::whereIn('id', $ids)->get();
+            foreach ($notifs as $notif) {
+                $readers = $notif->read_by_users ?? [];
+                if (!in_array($user->id, $readers)) {
+                    $readers[] = $user->id;
+                    $notif->read_by_users = array_values(array_unique($readers));
+                    $notif->save();
+                }
+            }
+
+            return true;
+        });
     }
 
     /**
