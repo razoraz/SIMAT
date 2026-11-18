@@ -54,98 +54,79 @@
     <!-- WRAPPER FORM PARAMETER & DOKUMEN (LOCKED JIKA BELUM PILIH ASET) -->
     <div class="space-y-6 transition-all duration-300"
          :class="{ 'opacity-30 pointer-events-none select-none filter blur-[0.3px]': !selectedAstap }">
-        <!-- Parameter Pokok: Nilai Reklas, Tanggal, Triwulan, Upload File -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- 1. Nilai Reklasifikasi -->
-        <div>
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center justify-between">
-                <span>Nilai Reklasifikasi (Rp) <span class="text-rose-400">*</span></span>
-                <span class="text-[9.5px] text-slate-500">Nominal Buku</span>
-            </label>
-            <div class="relative">
-                <input type="number" step="0.01" min="0" x-model="formData.nilai_reklas" required
-                       placeholder="0"
-                       class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-white focus:outline-none transition-all shadow-sm">
-            </div>
-        </div>
 
-        <!-- 2. Tanggal Reklasifikasi -->
-        <div>
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-                Tanggal Reklasifikasi <span class="text-rose-400">*</span>
-            </label>
-            <input type="date" x-model="formData.tanggal_reklas" required
-                   class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-3.5 py-2.5 text-xs font-bold text-white focus:outline-none transition-all shadow-sm">
-        </div>
-
-        <!-- 3. Triwulan Periode -->
-        <div>
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-                Triwulan Periode <span class="text-rose-400">*</span>
-            </label>
-            <div class="relative">
-                <select x-model="formData.triwulan" required
-                        style="background-image: none !important; -webkit-appearance: none; -moz-appearance: none; appearance: none;"
-                        class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-3.5 py-2.5 pr-8 text-xs font-bold text-white focus:outline-none transition-all cursor-pointer shadow-sm">
-                    <option value="1">Triwulan I (Jan - Mar)</option>
-                    <option value="2">Triwulan II (Apr - Jun)</option>
-                    <option value="3">Triwulan III (Jul - Sep)</option>
-                    <option value="4">Triwulan IV (Okt - Des)</option>
-                </select>
-                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-cyan-400">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        <!-- 1. Info Tanggal Pembukuan (Read-Only Baris Atas) -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl bg-slate-950/80 border border-slate-800 shadow-inner">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+                <div>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Tanggal Pembukuan Reklasifikasi:</span>
+                    <span class="text-xs sm:text-sm font-bold text-white font-mono"
+                          x-text="new Date(formData.tanggal_reklas).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })"></span>
                 </div>
             </div>
+            <div class="flex items-center gap-2 self-start sm:self-auto">
+                <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 flex items-center gap-1.5 shadow-sm">
+                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
+                    <span>Terkunci Otomatis (Hari Ini)</span>
+                </span>
+            </div>
         </div>
 
-        <!-- 4. Upload Dokumen / Scan Berita Acara -->
-        <div>
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-                Upload Scan BAST / SK (PDF/JPG)
-            </label>
-            <input type="file" @change="handleFileUpload($event)" accept=".pdf,.jpg,.jpeg,.png"
-                   class="w-full bg-slate-950 border border-slate-800 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-slate-800 file:text-slate-300 hover:file:bg-slate-700 rounded-xl p-1.5 text-xs text-slate-400 focus:outline-none transition-all">
+        <!-- 2. Nomor Berita Acara / Dokumen Reklasifikasi (Otomatis BAST/Pengadaan) -->
+        <div class="space-y-1.5">
+            <div class="flex items-center justify-between">
+                <label class="block text-indigo-300 font-bold text-[10.5px] uppercase tracking-wider flex items-center gap-1.5">
+                    <span>📄</span>
+                    <span>Nomor Berita Acara / Dokumen Reklasifikasi:</span>
+                </label>
+                <span class="text-[9.5px] text-slate-400 font-medium">
+                    (Otomatis BAST/Pengadaan atau Sesuaikan BA Fisik)
+                </span>
+            </div>
+            <input type="text" x-model="formData.nomor_ba_reklas"
+                   placeholder="Contoh: BAST: 000.2.3.2/088/2020 | SPK: SPK-0KS/2020/08"
+                   class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none transition-all shadow-inner">
         </div>
-    </div>
 
-    <!-- Nomor Berita Acara & Dokumen Pendukung -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div>
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-                Nomor BA / SK Reklasifikasi
-            </label>
-            <input type="text" x-model="formData.nomor_ba_reklas" placeholder="000.2.3.2/.../430.10.7/{{ $selectedTahun }}"
-                   class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none font-mono transition-all shadow-sm">
+        <!-- SUB-PANEL KONDISIONAL BERDASARKAN JENIS REKLASIFIKASI -->
+        
+        <!-- 1. Panel Khusus Koreksi Nilai Realisasi / BPK / Manset -->
+        @include('pages.reklasifikasi.create_partials.param_koreksi_lain')
+
+        <!-- 2. Panel Khusus Bantuan Hibah Keluar -->
+        @include('pages.reklasifikasi.create_partials.param_hibah')
+
+        <!-- 3. Panel Khusus Mutasi Eksternal Antar-OPD -->
+        @include('pages.reklasifikasi.create_partials.param_mutasi_eksternal')
+
+        <!-- 4. Panel Tujuan KIB & Rekening PMDN 108 & Spesifikasi Fisik Baru -->
+        @include('pages.reklasifikasi.create_partials.param_pindah_kib_108')
+
+        <!-- 3. Alasan Reklasifikasi (Wajib Diisi untuk Semua Jenis Reklas - Taruh Paling Bawah) -->
+        <div class="p-4 sm:p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2 shadow-inner">
+            <div class="flex items-center justify-between">
+                <label class="block text-indigo-300 font-bold text-xs uppercase tracking-wider flex items-center gap-2">
+                    <span>📝</span>
+                    <span>Alasan Kenapa Melakukan Reklasifikasi:</span>
+                    <span class="text-rose-400 font-black text-sm">*</span>
+                </label>
+                <span class="px-2 py-0.5 rounded text-[9.5px] font-extrabold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                    Wajib Diisi
+                </span>
+            </div>
+            <textarea x-model="formData.alasan_reklas" rows="2" required
+                      placeholder="Tuliskan alasan kenapa melakukan reklasifikasi (contoh: Pekerjaan fisik KDP telah selesai 100% dan terbit BAST / Koreksi salah rekening Simda BMD / Hasil temuan audit BPK)..."
+                      class="w-full bg-slate-900/90 border border-slate-700/80 focus:border-indigo-400 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none transition-all resize-none placeholder-slate-500 shadow-inner"></textarea>
+            <p class="text-[10.5px] text-slate-400 flex items-center gap-1.5">
+                <span class="text-amber-400">⚠️</span>
+                <span>Alasan reklasifikasi wajib diisi untuk semua jenis reklasifikasi sebagai dasar pencatatan berita acara &amp; audit.</span>
+            </p>
         </div>
-        <div>
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-                📝 Alasan Reklasifikasi
-            </label>
-            <input type="text" x-model="formData.alasan_reklas" placeholder="Contoh: Koreksi rekening belanja modal..."
-                   class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none transition-all shadow-sm">
-        </div>
-        <div>
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-                Keterangan Tambahan
-            </label>
-            <input type="text" x-model="formData.keterangan" placeholder="Catatan audit atau disposisi..."
-                   class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none transition-all shadow-sm">
-        </div>
-    </div>
-
-    <!-- SUB-PANEL KONDISIONAL BERDASARKAN JENIS REKLASIFIKASI -->
-    
-    <!-- 1. Panel Khusus Koreksi Nilai Realisasi / BPK / Manset -->
-    @include('pages.reklasifikasi.create_partials.param_koreksi_lain')
-
-    <!-- 2. Panel Khusus Bantuan Hibah Keluar -->
-    @include('pages.reklasifikasi.create_partials.param_hibah')
-
-    <!-- 3. Panel Khusus Mutasi Eksternal Antar-OPD -->
-    @include('pages.reklasifikasi.create_partials.param_mutasi_eksternal')
-
-    <!-- 4. Panel Tujuan KIB & Rekening PMDN 108 & Spesifikasi Fisik Baru -->
-    @include('pages.reklasifikasi.create_partials.param_pindah_kib_108')
     </div>
 </div>
 

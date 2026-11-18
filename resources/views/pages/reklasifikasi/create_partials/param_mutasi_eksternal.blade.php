@@ -13,7 +13,7 @@
                         </span>
                     </div>
                     <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-md bg-teal-500/20 text-teal-300 border border-teal-500/40">
-                        Penyeimbang: Baris 42 (Koreksi Lain / Kolom 13)
+                        Penyeimbang: Mutasi Berkurang (SKPD Lain)
                     </span>
                 </div>
 
@@ -23,7 +23,7 @@
                     </div>
                     <div>
                         <strong class="text-white block mb-0.5">Pengalihan Aset Keluar RSUD Antar-Perangkat Daerah:</strong>
-                        <span>Aset tetap RSUD dialihkan ke Dinas/Badan/Kecamatan lain di lingkungan Pemkab Bondowoso. Aset RSUD berkurang (Mutasi Kurang -), disinkronkan ke Baris 42 Koreksi Lain-Lain (Kolom 13 Mutasi -), serta otomatis tercatat di modul <strong>Mutasi Eksternal Keluar</strong>.</span>
+                        <span>Aset tetap RSUD dialihkan ke Dinas/Badan/Kecamatan lain di lingkungan Pemkab Bondowoso berdasarkan BAST resmi, serta otomatis tercatat di modul <strong>Mutasi Eksternal Keluar</strong>.</span>
                     </div>
                 </div>
 

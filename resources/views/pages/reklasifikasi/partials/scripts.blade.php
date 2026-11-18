@@ -362,7 +362,7 @@
                 tujuan_nama: '',
                 nilai_reklas: 0,
                 tanggal_reklas: new Date().toISOString().split('T')[0],
-                triwulan: {{ (!empty($selectedTw) && $selectedTw !== 'all') ? (int)$selectedTw : 1 }},
+                triwulan: String({{ (!empty($selectedTw) && $selectedTw !== 'all') ? (int)$selectedTw : 'Math.ceil((new Date().getMonth() + 1) / 3)' }}),
                 tahun: {{ $selectedTahun ?? date('Y') }},
                 nomor_ba_reklas: '',
                 keterangan: '',
@@ -815,7 +815,7 @@
                     tujuan_nama: '',
                     nilai_reklas: 0,
                     tanggal_reklas: new Date().toISOString().split('T')[0],
-                    triwulan: {{ (!empty($selectedTw) && $selectedTw !== 'all') ? (int)$selectedTw : 1 }},
+                    triwulan: String({{ (!empty($selectedTw) && $selectedTw !== 'all') ? (int)$selectedTw : 'Math.ceil((new Date().getMonth() + 1) / 3)' }}),
                     tahun: {{ $selectedTahun ?? date('Y') }},
                     nomor_ba_reklas: '',
                     alasan_reklas: '',
@@ -935,6 +935,7 @@
                 if (!astapId) {
                     this.selectedAstap = null;
                     this.formData.selected_register_ids = [];
+                    this.formData.nomor_ba_reklas = '';
                     return;
                 }
                 const found = (window.kandidatAstaps || []).find(it => String(it.id) === String(astapId));
@@ -943,6 +944,20 @@
                 this.selectedAstap = found;
                 this.formData.nama_barang = found.nama_barang || '';
                 this.formData.nilai_realisasi_baru = parseFloat(found.total_realisasi || 0);
+
+                // Otomatisasi Nomor Berita Acara / Dokumen Reklasifikasi dari BAST / SPK aset
+                const isValidDoc = (val) => val && typeof val === 'string' && val.trim() !== '' && val.trim() !== '-' && val.trim().toLowerCase() !== 'null';
+                const docs = [];
+                const bastNo = found.bast_dokumen_nomor || found.bast_nomor || found.hibah_nomor_bast;
+                if (isValidDoc(bastNo)) docs.push(`BAST: ${bastNo.trim()}`);
+                if (isValidDoc(found.spk_nomor)) docs.push(`SPK: ${found.spk_nomor.trim()}`);
+                if (docs.length === 0) {
+                    if (isValidDoc(found.surat_pesanan_nomor)) docs.push(`SP: ${found.surat_pesanan_nomor.trim()}`);
+                    else if (isValidDoc(found.faktur_nomor)) docs.push(`Faktur: ${found.faktur_nomor.trim()}`);
+                    else if (isValidDoc(found.kwitansi_nomor)) docs.push(`Kwitansi: ${found.kwitansi_nomor.trim()}`);
+                    else if (isValidDoc(found.sp2d_nomor)) docs.push(`SP2D: ${found.sp2d_nomor.trim()}`);
+                }
+                this.formData.nomor_ba_reklas = docs.length > 0 ? docs.join(' | ') : `BAST/SPK: ${found.nama_barang || 'Aset'}`;
 
                 // Otomatis sinkronkan opsi Ekstrakomptabel vs Kapitalisasi Intrakomptabel sesuai status aset
                 const isExtracom = Boolean(found.is_extracomtable || found.category === 'EXTRACOM');
@@ -1109,6 +1124,19 @@
                     this.formData.nilai_realisasi_baru = Math.max(0, lama - selisih);
                 }
                 this.syncKorLainRows();
+            },
+
+            getQuarterFromDate(dateStr) {
+                if (!dateStr) return 1;
+                const d = new Date(dateStr);
+                if (isNaN(d.getTime())) return 1;
+                return Math.ceil((d.getMonth() + 1) / 3);
+            },
+
+            onTanggalReklasChange() {
+                if (this.formData && this.formData.tanggal_reklas) {
+                    this.formData.triwulan = String(this.getQuarterFromDate(this.formData.tanggal_reklas));
+                }
             },
 
             syncKorLainRows() {
@@ -1890,6 +1918,15 @@
                 if (!this.formData.astap_id || !this.selectedAstap) {
                     const errMsg = '⚠️ Anda wajib memilih salah satu barang dari Buku Inventaris ASTAP terlebih dahulu!';
                     if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'error');
+                    else alert(errMsg);
+                    return;
+                }
+
+                // Validasi Mandatori: Alasan Reklasifikasi
+                const alasanClean = (this.formData.alasan_reklas || '').trim();
+                if (!alasanClean) {
+                    const errMsg = '⚠️ Alasan kenapa melakukan reklasifikasi wajib diisi sebagai dasar audit BPK!';
+                    if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'warning');
                     else alert(errMsg);
                     return;
                 }

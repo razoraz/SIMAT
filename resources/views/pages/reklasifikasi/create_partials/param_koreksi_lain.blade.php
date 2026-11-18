@@ -1,4 +1,4 @@
-﻿            <!-- 2B. Panel Khusus Penyesuaian Nilai Realisasi / Perubahan Total Dana -->
+            <!-- 2B. Panel Khusus Penyesuaian Nilai Realisasi / Perubahan Total Dana -->
             <div x-show="formData.jenis_reklas === 'KOREKSI_LAIN'"
                  x-transition.duration.200ms
                  class="p-4 sm:p-5 rounded-2xl bg-slate-950/80 border border-cyan-500/30 space-y-4 shadow-xl">
@@ -11,11 +11,11 @@
                         </span>
                     </div>
                     <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
-                        Penyeimbang: Baris 42 (Koreksi Lain)
+                        Penyeimbang: Koreksi Nilai Realisasi
                     </span>
                 </div>
 
-                <!-- Sub-Kategori Koreksi Nilai (RMB 21 Kolom) -->
+                <!-- Sub-Kategori Koreksi Nilai -->
                 <div class="space-y-1.5">
                     <div class="flex items-center justify-between">
                         <label class="block text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
@@ -23,7 +23,7 @@
                             <span>Sub-Kategori Koreksi Nilai:</span>
                             <span class="text-rose-400">*</span>
                         </label>
-                        <span class="text-[9.5px] font-mono text-cyan-300">Format Lembar Kerja BPKAD</span>
+                        <span class="text-[9.5px] font-mono text-cyan-300">Standar BPKAD Bondowoso</span>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -37,7 +37,7 @@
                                 </span>
                                 <span class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded"
                                       :class="formData.sub_koreksi === 'biasa' ? 'bg-indigo-500/30 text-indigo-200' : 'bg-slate-800 text-slate-400'">
-                                    Kolom 15 / 5
+                                    SP2D / Kas RSUD
                                 </span>
                             </div>
                             <p class="text-[9.5px] text-slate-400 leading-tight">
@@ -55,7 +55,7 @@
                                 </span>
                                 <span class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded"
                                       :class="formData.sub_koreksi === 'lkd' ? 'bg-cyan-500/30 text-cyan-200' : 'bg-slate-800 text-slate-400'">
-                                    Kolom 16 / 6
+                                    Audit BPK / LHP
                                 </span>
                             </div>
                             <p class="text-[9.5px] text-slate-400 leading-tight">
@@ -73,7 +73,7 @@
                                 </span>
                                 <span class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded"
                                       :class="formData.sub_koreksi === 'manset' ? 'bg-emerald-500/30 text-emerald-200' : 'bg-slate-800 text-slate-400'">
-                                    Kolom 17 / 7
+                                    Sinkron E-Manset
                                 </span>
                             </div>
                             <p class="text-[9.5px] text-slate-400 leading-tight">
