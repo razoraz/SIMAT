@@ -12,4 +12,9 @@ class RekeningBelanja extends Model
         'kode_rek',
         'nama_belanja',
     ];
+
+    public function astapBelanjaModals()
+    {
+        return $this->hasMany(AstapBelanjaModal::class, 'rekening_belanja_id');
+    }
 }

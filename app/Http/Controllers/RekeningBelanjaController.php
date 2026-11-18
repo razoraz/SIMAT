@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\RekeningBelanja;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class RekeningBelanjaController extends Controller
 {
@@ -18,15 +20,10 @@ class RekeningBelanjaController extends Controller
 
     public function index(Request $request)
     {
-        // Seed default data if table is empty
-        if (RekeningBelanja::count() === 0) {
-            (new \Database\Seeders\RekeningBelanjaSeeder())->run();
-        }
-
-        $query = RekeningBelanja::query();
+        $query = RekeningBelanja::withCount('astapBelanjaModals');
 
         if ($request->filled('search')) {
-            $search = $request->search;
+            $search = trim($request->search);
             $query->where(function ($q) use ($search) {
                 $q->where('kode_rek', 'like', "%{$search}%")
                   ->orWhere('nama_belanja', 'like', "%{$search}%")
@@ -35,7 +32,15 @@ class RekeningBelanjaController extends Controller
             });
         }
 
-        $rekeningList = $query->orderBy('kelompok')->orderBy('kode_rek')->get();
+        if ($request->filled('kelompok') && $request->kelompok !== 'all') {
+            $query->where('kelompok', $request->kelompok);
+        }
+
+        $perPage = in_array((int)$request->input('per_page'), [10, 15, 25, 50, 100])
+            ? (int)$request->input('per_page')
+            : 15;
+
+        $rekeningList = $query->orderBy('kelompok')->orderBy('kode_rek')->paginate($perPage)->withQueryString();
         
         $defaultKelompok = [
             ['kelompok' => '5.2.01', 'nama_kelompok' => 'Belanja Modal Tanah'],
@@ -67,13 +72,28 @@ class RekeningBelanjaController extends Controller
     {
         $validated = $request->validate([
             'kelompok' => 'required|string|max:50',
-            'kode_rek' => 'required|string|max:100',
+            'kode_rek' => [
+                'required',
+                'string',
+                'max:100',
+                Rule::unique('rekening_belanjas', 'kode_rek'),
+            ],
             'nama_belanja' => 'required|string|max:255',
+            'nama_kelompok' => 'nullable|string|max:255',
+        ], [
+            'kode_rek.unique' => 'Kode rekening belanja sudah terdaftar.',
+            'kode_rek.required' => 'Kode rekening belanja wajib diisi.',
+            'nama_belanja.required' => 'Nama belanja pengadaan wajib diisi.',
+            'kelompok.required' => 'Kelompok akun belanja wajib diisi.',
         ]);
 
-        $validated['nama_kelompok'] = $this->kelompokLookup[$validated['kelompok']] ?? 'Belanja Modal';
+        $validated['nama_kelompok'] = !empty($request->nama_kelompok)
+            ? trim($request->nama_kelompok)
+            : ($this->kelompokLookup[$validated['kelompok']] ?? 'Belanja Modal');
 
-        RekeningBelanja::create($validated);
+        DB::transaction(function () use ($validated) {
+            RekeningBelanja::create($validated);
+        });
 
         return redirect()->back()->with('success', 'Data Rekening Belanja SIPD berhasil ditambahkan.');
     }
@@ -84,21 +104,43 @@ class RekeningBelanjaController extends Controller
 
         $validated = $request->validate([
             'kelompok' => 'required|string|max:50',
-            'kode_rek' => 'required|string|max:100',
+            'kode_rek' => [
+                'required',
+                'string',
+                'max:100',
+                Rule::unique('rekening_belanjas', 'kode_rek')->ignore($rekening->id),
+            ],
             'nama_belanja' => 'required|string|max:255',
+            'nama_kelompok' => 'nullable|string|max:255',
+        ], [
+            'kode_rek.unique' => 'Kode rekening belanja sudah digunakan pada akun lain.',
+            'kode_rek.required' => 'Kode rekening belanja wajib diisi.',
+            'nama_belanja.required' => 'Nama belanja pengadaan wajib diisi.',
+            'kelompok.required' => 'Kelompok akun belanja wajib diisi.',
         ]);
 
-        $validated['nama_kelompok'] = $this->kelompokLookup[$validated['kelompok']] ?? $rekening->nama_kelompok;
+        $validated['nama_kelompok'] = !empty($request->nama_kelompok)
+            ? trim($request->nama_kelompok)
+            : ($this->kelompokLookup[$validated['kelompok']] ?? $rekening->nama_kelompok);
 
-        $rekening->update($validated);
+        DB::transaction(function () use ($rekening, $validated) {
+            $rekening->update($validated);
+        });
 
         return redirect()->back()->with('success', 'Data Rekening Belanja SIPD berhasil diperbarui.');
     }
 
     public function destroy($id)
     {
-        $rekening = RekeningBelanja::findOrFail($id);
-        $rekening->delete();
+        $rekening = RekeningBelanja::withCount('astapBelanjaModals')->findOrFail($id);
+
+        if ($rekening->astap_belanja_modals_count > 0) {
+            return redirect()->back()->with('error', "Gagal menghapus! Rekening belanja [{$rekening->kode_rek}] {$rekening->nama_belanja} sedang digunakan oleh {$rekening->astap_belanja_modals_count} data aset ASTAP.");
+        }
+
+        DB::transaction(function () use ($rekening) {
+            $rekening->delete();
+        });
 
         return redirect()->back()->with('success', 'Data Rekening Belanja SIPD berhasil dihapus.');
     }

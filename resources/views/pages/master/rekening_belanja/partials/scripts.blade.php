@@ -2,8 +2,10 @@
     function masterRekeningBelanja() {
         return {
             searchQuery: '{{ request('search', '') }}',
+            kelompokFilter: '{{ request('kelompok', 'all') }}',
             showAddModal: false,
             showEditModal: false,
+            isSubmitting: false,
             editActionUrl: '',
 
             newFormData: {
@@ -22,7 +24,7 @@
             },
 
             masterKelompokList: @json($uniqueKelompok ?? []),
-            masterRekeningList: @json($rekeningList ?? []),
+            masterRekeningList: @json($rekeningList->items()),
 
             // --- Kelompok (New) ---
             showKelompokDropdownNew: false,
@@ -172,13 +174,25 @@
                 if (typeof this.confirmData.onConfirm === 'function') {
                     this.confirmData.onConfirm();
                 }
-                this.showConfirmModal = false;
             },
 
             showSimatToast(message, type = 'success') {
                 const cleanMsg = String(message || '').replace(/^[\s✅✔️☑️✓✔⚠️❌🚫⛔ℹ️🗑️✏️🔑💾]+/, '').trim();
                 this.toast = { show: true, message: cleanMsg, type: type };
                 setTimeout(() => { this.toast.show = false; }, 4000);
+            },
+
+            askInUseWarning(itemName, count) {
+                this.askConfirmation({
+                    title: '🔒 Rekening Belanja Terkunci',
+                    message: `Data Rekening Belanja ini tidak dapat dihapus karena masih digunakan oleh ${count} data belanja modal aset aktif. Alihkan atau sesuaikan data aset terkait terlebih dahulu jika ingin menghapus rekening belanja ini.`,
+                    itemName: itemName || '',
+                    type: 'warning',
+                    btnText: 'Mengerti',
+                    onConfirm: () => {
+                        this.showConfirmModal = false;
+                    }
+                });
             },
 
             confirmDeleteForm(event, itemName) {
@@ -191,6 +205,8 @@
                     type: 'danger',
                     btnText: '🗑️ Ya, Hapus Rekening',
                     onConfirm: () => {
+                        this.isSubmitting = true;
+                        this.showConfirmModal = false;
                         formElement.submit();
                     }
                 });
@@ -199,7 +215,7 @@
             confirmAddForm(event) {
                 event.preventDefault();
                 const formElement = event.target;
-                const itemPreview = (formElement.querySelector('[name="nama_belanja"]')?.value || 'Rekening Baru') + ' (' + (formElement.querySelector('[name="kode_rek"]')?.value || 'Kode Rek') + ')';
+                const itemPreview = (this.newFormData.nama_belanja || formElement.querySelector('[name="nama_belanja"]')?.value || 'Rekening Baru') + ' (' + (this.newFormData.kode_rek || formElement.querySelector('[name="kode_rek"]')?.value || 'Kode Rek') + ')';
                 this.askConfirmation({
                     title: '➕ Konfirmasi Tambah Rekening Belanja',
                     message: 'Apakah Anda yakin ingin mendaftarkan data rekening belanja SIPD baru ini ke master data?',
@@ -207,6 +223,8 @@
                     type: 'success',
                     btnText: '➕ Ya, Simpan Rekening',
                     onConfirm: () => {
+                        this.isSubmitting = true;
+                        this.showConfirmModal = false;
                         formElement.submit();
                     }
                 });
@@ -223,6 +241,8 @@
                     type: 'warning',
                     btnText: '✏️ Ya, Simpan Perubahan',
                     onConfirm: () => {
+                        this.isSubmitting = true;
+                        this.showConfirmModal = false;
                         formElement.submit();
                     }
                 });
