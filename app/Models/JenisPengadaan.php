@@ -14,4 +14,12 @@ class JenisPengadaan extends Model
         'sub_kegiatan_kode',
         'sub_kegiatan_nama',
     ];
+
+    /**
+     * Relasi ke data transaksi Belanja Modal Aset (AstapBelanjaModal)
+     */
+    public function astapBelanjaModals()
+    {
+        return $this->hasMany(\App\Models\AstapBelanjaModal::class, 'jenis_pengadaan_id');
+    }
 }

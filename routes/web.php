@@ -2441,17 +2441,18 @@ Route::middleware('auth')->group(function () {
     });
 
     // Master Data SIPD (Jenis Pengadaan & Rekening Belanja)
-    Route::middleware('module:master_data')->group(function () {
+    Route::middleware('module:master_data.jenis_pengadaan,master_data')->group(function () {
         Route::get('/master-data/jenis-pengadaan', [JenisPengadaanController::class, 'index'])->name('master.jenis_pengadaan');
         Route::post('/master-data/jenis-pengadaan', [JenisPengadaanController::class, 'store'])->name('master.jenis_pengadaan.store');
         Route::put('/master-data/jenis-pengadaan/{id}', [JenisPengadaanController::class, 'update'])->name('master.jenis_pengadaan.update');
         Route::delete('/master-data/jenis-pengadaan/{id}', [JenisPengadaanController::class, 'destroy'])->name('master.jenis_pengadaan.destroy');
+    });
 
+    Route::middleware('module:master_data.rekening_belanja,master_data')->group(function () {
         Route::get('/master-data/rekening-belanja', [RekeningBelanjaController::class, 'index'])->name('master.rekening_belanja');
         Route::post('/master-data/rekening-belanja', [RekeningBelanjaController::class, 'store'])->name('master.rekening_belanja.store');
         Route::put('/master-data/rekening-belanja/{id}', [RekeningBelanjaController::class, 'update'])->name('master.rekening_belanja.update');
         Route::delete('/master-data/rekening-belanja/{id}', [RekeningBelanjaController::class, 'destroy'])->name('master.rekening_belanja.destroy');
-
     });
 
     // Master Reklasifikasi Aset (PMDN 108)

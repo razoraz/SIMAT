@@ -5,6 +5,7 @@
             programFilter: '{{ request('program', 'all') }}',
             showAddModal: false,
             showEditModal: false,
+            isSubmitting: false,
             editActionUrl: '',
 
             newFormData: {
@@ -290,14 +291,28 @@
             executeConfirmedAction() {
                 if (typeof this.confirmData.onConfirm === 'function') {
                     this.confirmData.onConfirm();
+                } else {
+                    this.showConfirmModal = false;
                 }
-                this.showConfirmModal = false;
             },
 
             showSimatToast(message, type = 'success') {
                 const cleanMsg = String(message || '').replace(/^[\s✅✔️☑️✓✔⚠️❌🚫⛔ℹ️🗑️✏️🔑💾]+/, '').trim();
                 this.toast = { show: true, message: cleanMsg, type: type };
                 setTimeout(() => { this.toast.show = false; }, 4000);
+            },
+
+            askInUseWarning(itemName, count) {
+                this.askConfirmation({
+                    title: '🔒 Pengadaan Terkunci',
+                    message: `Data Jenis Pengadaan ini tidak dapat dihapus karena masih digunakan oleh ${count} data belanja modal aset aktif. Alihkan atau sesuaikan data aset terkait terlebih dahulu jika ingin menghapus pengadaan ini.`,
+                    itemName: itemName || '',
+                    type: 'warning',
+                    btnText: 'Mengerti',
+                    onConfirm: () => {
+                        this.showConfirmModal = false;
+                    }
+                });
             },
 
             confirmDeleteForm(event, itemName) {
@@ -310,6 +325,8 @@
                     type: 'danger',
                     btnText: '🗑️ Ya, Hapus Pengadaan',
                     onConfirm: () => {
+                        this.isSubmitting = true;
+                        this.showConfirmModal = false;
                         formElement.submit();
                     }
                 });
@@ -318,7 +335,7 @@
             confirmAddForm(event) {
                 event.preventDefault();
                 const formElement = event.target;
-                const itemPreview = (formElement.querySelector('[name="sub_kegiatan_nama"]')?.value || 'Sub Kegiatan Baru') + ' (' + (formElement.querySelector('[name="sub_kegiatan_kode"]')?.value || 'SIPD') + ')';
+                const itemPreview = (this.newFormData.sub_kegiatan_nama || 'Sub Kegiatan Baru') + ' (' + (this.newFormData.sub_kegiatan_kode || 'SIPD') + ')';
                 this.askConfirmation({
                     title: '➕ Konfirmasi Tambah Pengadaan SIPD',
                     message: 'Apakah Anda yakin ingin mendaftarkan jenis pengadaan SIPD baru ini ke master data?',
@@ -326,6 +343,8 @@
                     type: 'success',
                     btnText: '➕ Ya, Simpan Pengadaan',
                     onConfirm: () => {
+                        this.isSubmitting = true;
+                        this.showConfirmModal = false;
                         formElement.submit();
                     }
                 });
@@ -342,6 +361,8 @@
                     type: 'warning',
                     btnText: '✏️ Ya, Simpan Perubahan',
                     onConfirm: () => {
+                        this.isSubmitting = true;
+                        this.showConfirmModal = false;
                         formElement.submit();
                     }
                 });
