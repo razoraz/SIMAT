@@ -186,14 +186,14 @@
                             Hibah Keluar (Dihibahkan)
                         </span>
                         <span class="text-[9.5px] font-bold px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 mt-0.5 inline-block">
-                            BAST Hibah / Kolom 12
+                            BAST Hibah
                         </span>
                     </div>
                 </div>
                 <input type="radio" x-model="formData.jenis_reklas" value="HIBAH_KELUAR" :disabled="!selectedAstap" @change="onJenisReklasChange()" class="text-purple-600 focus:ring-0 cursor-pointer mt-1">
             </div>
             <p class="text-[11px] text-slate-400 leading-relaxed">
-                Penyerahan aset milik RSUD secara cuma-cuma kepada yayasan, pemerintah desa, atau pihak ketiga (Koreksi Baris 40 / Kolom 12).
+                Penyerahan aset milik RSUD secara cuma-cuma kepada yayasan, pemerintah desa, atau pihak ketiga berdasarkan naskah hibah resmi.
             </p>
         </label>
 
@@ -210,14 +210,14 @@
                             Mutasi Antar-OPD
                         </span>
                         <span class="text-[9.5px] font-bold px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 mt-0.5 inline-block">
-                            BAST Antar-SKPD / Kolom 13
+                            BAST Antar-SKPD
                         </span>
                     </div>
                 </div>
                 <input type="radio" x-model="formData.jenis_reklas" value="MUTASI_EKSTERNAL" :disabled="!selectedAstap" @change="onJenisReklasChange()" class="text-cyan-600 focus:ring-0 cursor-pointer mt-1">
             </div>
             <p class="text-[11px] text-slate-400 leading-relaxed">
-                Pemindahan penguasaan aset ke SKPD/OPD lain di lingkungan Pemkab Bondowoso berdasarkan BAST resmi (Koreksi Baris 42 / Kolom 13).
+                Pemindahan penguasaan aset ke SKPD/OPD lain di lingkungan Pemkab Bondowoso berdasarkan BAST resmi.
             </p>
         </label>
 

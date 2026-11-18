@@ -19,7 +19,7 @@
                     </div>
                     <span class="inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/30 font-bold tracking-wide">
                         <span class="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse"></span>
-                        Baris 40 / Kolom 12 (DIHIBAHKAN)
+                        Penyeimbang: Hibah Keluar
                     </span>
                 </div>
 
@@ -31,7 +31,7 @@
                     </div>
                     <div class="text-[11px] text-purple-200/90 leading-relaxed">
                         <strong class="text-white block mb-0.5">Dampak Pencatatan Neraca BMD (Hibah Keluar):</strong>
-                        <span>Aset tetap RSUD berkurang (Mutasi Kurang −). Baris 40 (Koreksi Hibah) bertambah (+) pada Kolom 12 (Dihibahkan) sebagai penyeimbang seimbang (TRUE).</span>
+                        <span>Aset tetap RSUD berkurang (Mutasi Kurang −) dan dialihkan sebagai Hibah Keluar kepada pihak penerima berdasarkan naskah BAST resmi.</span>
                     </div>
                 </div>
 

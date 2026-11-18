@@ -7,10 +7,10 @@
             </span>
             <div>
                 <h2 class="text-sm sm:text-base font-bold text-white tracking-wide">
-                    Simulasi Dampak Neraca &amp; Konfirmasi Penerbitan
+                    Pratinjau Narasi &amp; Konfirmasi Penerbitan
                 </h2>
                 <p class="text-xs text-slate-400 mt-0.5">
-                    Verifikasi dampak mutasi jurnal pembukuan dan narasi berita acara sebelum transaksi disimpan secara permanen.
+                    Periksa pratinjau narasi resmi berita acara sebelum transaksi reklasifikasi disimpan secara permanen.
                 </p>
             </div>
         </div>
@@ -45,41 +45,6 @@
         <p class="text-xs text-slate-300 italic leading-relaxed bg-slate-900/70 p-3.5 rounded-xl border border-slate-800/80 font-mono"
            x-text="getNarasiPreview()"></p>
     </div>
-
-    <!-- Live Simulasi Jurnal Neraca (Debit / Kredit KIB) -->
-    <template x-if="selectedAstap && Number(formData.nilai_reklas || 0) > 0">
-        <div class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border border-slate-800 space-y-3 shadow-inner">
-            <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block">
-                ⚖️ Simulasi Dampak Neraca Matriks 5 Kolom:
-            </span>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                <!-- Mutasi Kurang Asal -->
-                <div class="p-3.5 rounded-xl bg-rose-950/20 border border-rose-500/30 flex items-center justify-between">
-                    <div>
-                        <span class="text-[10px] font-bold uppercase text-rose-400 block">Kredit (-) Mutasi Kurang</span>
-                        <span class="font-bold text-white text-xs" x-text="selectedAstap.category || 'KIB Asal'"></span>
-                        <span class="text-[10px] text-slate-400 block mt-0.5" x-text="selectedAstap.nama_barang"></span>
-                    </div>
-                    <span class="text-sm font-black font-mono text-rose-400"
-                          x-text="'- Rp ' + Number(formData.nilai_reklas || 0).toLocaleString('id-ID')"></span>
-                </div>
-
-                <!-- Mutasi Tambah Tujuan -->
-                <div class="p-3.5 rounded-xl bg-emerald-950/20 border border-emerald-500/30 flex items-center justify-between">
-                    <div>
-                        <span class="text-[10px] font-bold uppercase text-emerald-400 block">Debit (+) Mutasi Tambah</span>
-                        <span class="font-bold text-white text-xs"
-                              x-text="formData.jenis_reklas === 'MUTASI_EKSTERNAL' ? (formData.skpd_tujuan || 'OPD Luar') : (formData.jenis_reklas === 'HIBAH_KELUAR' ? (formData.pihak_hibah || 'Pihak Luar') : (formData.tujuan_kib || 'KIB Tujuan'))"></span>
-                        <span class="text-[10px] text-slate-400 block mt-0.5"
-                              x-text="formData.tujuan_nama || (formData.jenis_reklas.replace(/_/g, ' '))"></span>
-                    </div>
-                    <span class="text-sm font-black font-mono text-emerald-400"
-                          x-text="'+ Rp ' + Number(formData.nilai_reklas || 0).toLocaleString('id-ID')"></span>
-                </div>
-            </div>
-        </div>
-    </template>
 
     <!-- Tombol Aksi Batal & Simpan -->
     <div class="pt-4 border-t border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">

@@ -45,7 +45,7 @@
             <div>
                 <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tahun Anggaran</p>
                 <p class="text-sm font-bold text-white font-mono">
-                    T.A. {{ $selectedTahun }}
+                    {{ $selectedTahun }}
                 </p>
             </div>
         </div>
