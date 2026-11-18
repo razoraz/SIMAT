@@ -76,18 +76,20 @@
                             class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold text-xs sm:text-sm border border-slate-700 transition-all active:scale-95 cursor-pointer">
                             Batal
                         </button>
-                        <button type="button" @click="executeConfirmedAction()"
+                        <button type="button" @click="executeConfirmedAction()" :disabled="isSaving"
                             class="px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow-lg transition-all active:scale-95 cursor-pointer flex items-center space-x-2"
                             :class="{
+                                'opacity-50 cursor-not-allowed pointer-events-none': isSaving,
                                 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-600/30 border border-rose-500/30': confirmData.type === 'danger',
                                 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/30 border border-amber-400/30': confirmData.type === 'warning',
                                 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/30 border border-emerald-500/30': confirmData.type === 'success',
                                 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-cyan-600/30 border border-cyan-500/30': confirmData.type === 'info'
                             }">
-                            <template x-if="confirmData.type === 'danger'">
+                            <svg x-show="isSaving" class="animate-spin w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                            <template x-if="!isSaving && confirmData.type === 'danger'">
                                 <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                             </template>
-                            <span x-text="confirmData.btnText"></span>
+                            <span x-text="isSaving ? 'Memproses...' : confirmData.btnText"></span>
                         </button>
                     </div>
                 </div>

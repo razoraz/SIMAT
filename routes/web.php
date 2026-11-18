@@ -17,7 +17,7 @@ use App\Http\Middleware\RoleMiddleware;
 // Auth Routes (Guest)
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:6,1');
 });
 
 // Halaman Publik Scan QR Code Aset (Tanpa Perlu Login)
@@ -202,7 +202,7 @@ Route::middleware(['auth', RoleMiddleware::class . ':sub_admin'])->group(functio
             'email.email' => 'Format email tidak valid.',
             'email.unique' => 'Email ini sudah digunakan oleh akun lain.',
             'password.required' => 'Password baru wajib diisi.',
-            'password.min' => 'Password minimal terdiri dari 4 karakter.',
+            'password.min' => 'Password minimal terdiri dari 6 karakter.',
             'password.confirmed' => 'Konfirmasi password baru tidak cocok.',
         ];
 
@@ -216,9 +216,9 @@ Route::middleware(['auth', RoleMiddleware::class . ':sub_admin'])->group(functio
         }
 
         if ($changeType === 'password') {
-            $rules['password'] = 'required|string|min:4|confirmed';
+            $rules['password'] = 'required|string|min:6|confirmed';
         } elseif ($changeType === 'both') {
-            $rules['password'] = 'nullable|string|min:4|confirmed';
+            $rules['password'] = 'nullable|string|min:6|confirmed';
         }
 
         $validated = $request->validate($rules, $customMessages);

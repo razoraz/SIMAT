@@ -78,14 +78,29 @@ class AuthController extends Controller
             abort(403, 'Akses Ditolak: Hanya Master Admin yang dapat menggunakan fitur Impersonasi.');
         }
 
-        $targetUser = \App\Models\User::findOrFail($id);
+        $targetUser = \App\Models\User::active()->findOrFail($id);
         if ($targetUser->role === 'master_admin') {
             return back()->with('error', 'Tidak dapat melakukan impersonasi ke sesama Master Admin.');
         }
 
-        // Simpan identitas Master Admin asli ke session
+        // Catat Audit Trail Impersonasi
+        \App\Models\AccessAuditLog::create([
+            'user_id' => $targetUser->id,
+            'actor_id' => $currentUser->id,
+            'action_type' => 'IMPERSONATE_START',
+            'summary' => "Master Admin {$currentUser->name} memulai sesi impersonasi sebagai {$targetUser->name} ({$targetUser->role})",
+            'old_permissions' => null,
+            'new_permissions' => null,
+            'old_role' => $currentUser->role,
+            'new_role' => $targetUser->role,
+            'ip_address' => $request->ip(),
+            'user_agent' => substr((string) $request->userAgent(), 0, 500),
+        ]);
+
+        // Simpan identitas Master Admin asli ke session & regenerasi ID session
         session()->put('impersonator_id', $currentUser->id);
         session()->put('impersonator_name', $currentUser->name);
+        $request->session()->regenerate();
 
         // Login sebagai target
         Auth::login($targetUser);
@@ -111,7 +126,8 @@ class AuthController extends Controller
         $impersonatorId = session()->pull('impersonator_id');
         session()->forget('impersonator_name');
 
-        $masterUser = \App\Models\User::findOrFail($impersonatorId);
+        $masterUser = \App\Models\User::active()->findOrFail($impersonatorId);
+        $request->session()->regenerate();
         Auth::login($masterUser);
 
         return redirect()->route('master.users')->with('success', "Kembali ke sesi Master Admin ({$masterUser->name}).");

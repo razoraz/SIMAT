@@ -771,6 +771,7 @@
                         type: 'danger',
                         btnText: 'Pindahkan ke Tong Sampah',
                         onConfirm: async () => {
+                            this.isSaving = true;
                             try {
                                 const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || this.csrfToken;
                                 const response = await fetch('/master-data/users/' + item.id, {
@@ -799,6 +800,8 @@
                             } catch (err) {
                                 console.error(err);
                                 this.showToast('Terjadi kesalahan server saat menghapus akun.', 'error');
+                            } finally {
+                                this.isSaving = false;
                             }
                         }
                     });
@@ -855,6 +858,7 @@
                         type: 'warning',
                         btnText: '🔑 Ya, Reset Password',
                         onConfirm: async () => {
+                            this.isSaving = true;
                             try {
                                 const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || this.csrfToken;
                                 const response = await fetch('/master-data/users/' + item.id + '/reset-password', {
@@ -888,6 +892,8 @@
                             } catch (err) {
                                 console.error(err);
                                 this.showToast('Terjadi kesalahan server saat mereset password.', 'error');
+                            } finally {
+                                this.isSaving = false;
                             }
                         }
                     });
@@ -930,6 +936,8 @@
                             return { label: '✨ BUAT AKUN', class: 'bg-teal-500/20 text-teal-300 border border-teal-500/40' };
                         case 'DELETE_USER':
                             return { label: '🗑️ HAPUS AKUN', class: 'bg-red-500/20 text-red-300 border border-red-500/40' };
+                        case 'IMPERSONATE_START':
+                            return { label: '👁️ IMPERSONASI', class: 'bg-purple-500/20 text-purple-300 border border-purple-500/40' };
                         default:
                             return { label: '📝 PROFIL', class: 'bg-slate-700/60 text-slate-300 border border-slate-600' };
                     }

@@ -126,17 +126,19 @@
                             </template>
                         </div>
 
-                        <!-- Tombol Reset Password Cepat -->
-                        <div class="pt-2 flex items-center justify-between p-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl">
-                            <div class="text-[11px] text-amber-200">
-                                <span class="font-bold block">🔑 Reset Password Default:</span>
-                                <span class="text-slate-400">Kembalikan password akun ini ke <code class="text-amber-300 font-bold">rsud123</code></span>
+                        <!-- Tombol Reset Password Cepat (Hanya jika memiliki wewenang mengedit akun ini) -->
+                        <template x-if="canEditUser(selectedUser)">
+                            <div class="pt-2 flex items-center justify-between p-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl">
+                                <div class="text-[11px] text-amber-200">
+                                    <span class="font-bold block">🔑 Reset Password Default:</span>
+                                    <span class="text-slate-400">Kembalikan password akun ini ke <code class="text-amber-300 font-bold">rsud123</code></span>
+                                </div>
+                                <button type="button" @click="resetPasswordAction(selectedUser)"
+                                    class="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md transition-all active:scale-95 shrink-0 cursor-pointer">
+                                    Reset ke rsud123
+                                </button>
                             </div>
-                            <button type="button" @click="resetPasswordAction(selectedUser)"
-                                class="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md transition-all active:scale-95 shrink-0">
-                                Reset ke rsud123
-                            </button>
-                        </div>
+                        </template>
 
                         <!-- ========================================================= -->
                         <!-- RIWAYAT LOG AUDIT WEWENANG & ESKALASI AKSES              -->

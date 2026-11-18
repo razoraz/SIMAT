@@ -30,6 +30,27 @@ class User extends Authenticatable
     ];
 
     /**
+     * Atribut yang disembunyikan saat model diserialisasi ke JSON / Array
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    /**
+     * Casting tipe data kolom model
+     */
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'permissions'       => 'array',
+            'is_deleted'        => 'integer',
+            'deleted_at'        => 'datetime',
+        ];
+    }
+
+    /**
      * Accessor yang otomatis disertakan saat model diserialisasi ke JSON / Array
      */
     protected $appends = [
@@ -766,6 +787,6 @@ class User extends Authenticatable
      */
     public function accessLogs(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(AccessAuditLog::class, 'user_id')->latest()->limit(5);
+        return $this->hasMany(AccessAuditLog::class, 'user_id')->latest();
     }
 }

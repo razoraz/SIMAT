@@ -54,7 +54,7 @@
                     </div>
                     <div>
                         <label class="block text-slate-300 font-semibold mb-1">Password (Default: rsud123)</label>
-                        <input type="text" x-model="newFormData.password" placeholder="Kosongkan untuk pakai 'rsud123'" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-mono focus:border-amber-500 focus:outline-none">
+                        <input type="text" x-model="newFormData.password" minlength="6" placeholder="Kosongkan untuk pakai 'rsud123' (min. 6 karakter)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-mono focus:border-amber-500 focus:outline-none">
                     </div>
                 </div>
 
