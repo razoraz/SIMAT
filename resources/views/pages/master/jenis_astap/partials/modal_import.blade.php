@@ -16,7 +16,7 @@
             </button>
         </div>
 
-        <form action="{{ route('master.jenis_astap.import') }}" method="POST" enctype="multipart/form-data" class="mt-6 space-y-5">
+        <form action="{{ route('master.jenis_astap.import') }}" method="POST" enctype="multipart/form-data" class="mt-6 space-y-5" @submit="confirmImportForm($event)">
             @csrf
             <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
                 <label class="block text-xs font-semibold text-slate-300">Pilih File Excel / CSV (*.xlsx, *.xls, *.csv):</label>
@@ -26,10 +26,10 @@
                     💡 Format file yang didukung: <b>.xlsx</b>, <b>.xls</b>, atau <b>.csv</b>.
                 </p>
                 <div class="flex items-center space-x-2 pt-2 border-t border-slate-800/80">
-                    <input type="checkbox" id="reset_existing" name="reset_existing" value="1" checked
+                    <input type="checkbox" id="reset_existing" name="reset_existing" value="1"
                         class="w-4 h-4 rounded border-slate-700 bg-slate-950 text-emerald-500 focus:ring-0 cursor-pointer">
                     <label for="reset_existing" class="text-xs text-slate-300 cursor-pointer select-none font-medium">
-                        Kosongkan data lama sebelum impor (Mencegah duplikasi data)
+                        Kosongkan data lama sebelum impor (Hanya jika belum ada aset yang terhubung)
                     </label>
                 </div>
             </div>
@@ -41,11 +41,17 @@
                 </a>
 
                 <div class="flex items-center space-x-2">
-                    <button type="button" @click="showImportModal = false" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs">
+                    <button type="button" @click="showImportModal = false" :disabled="isSubmitting" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs disabled:opacity-50">
                         Batal
                     </button>
-                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-emerald-500/20 transition-all">
-                        Upload &amp; Import
+                    <button type="submit" :disabled="isSubmitting" class="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-emerald-500/20 transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <template x-if="isSubmitting">
+                            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-slate-950" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </template>
+                        <span x-text="isSubmitting ? 'Mengunggah...' : 'Upload & Import'"></span>
                     </button>
                 </div>
             </div>

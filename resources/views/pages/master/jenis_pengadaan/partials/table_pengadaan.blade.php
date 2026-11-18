@@ -71,7 +71,9 @@
                 @forelse ($sipdList as $index => $item)
                     <tr class="hover:bg-slate-800/40 transition-colors">
                         <!-- Kolom 1: No -->
-                        <td class="px-4 py-4 text-center font-bold text-slate-400 border-r border-slate-800/80">{{ $index + 1 }}</td>
+                        <td class="px-4 py-4 text-center font-bold text-slate-400 border-r border-slate-800/80">
+                            {{ $sipdList->firstItem() + $index }}
+                        </td>
 
                         <!-- Kolom 2: Kode Program -->
                         <td class="px-3 py-4 text-center font-mono font-bold text-emerald-400 bg-emerald-950/10 border-r border-slate-800/80">{{ $item->program_kode }}</td>
@@ -89,7 +91,16 @@
                         <td class="px-3 py-4 text-center font-mono font-bold text-purple-400 bg-purple-950/10 border-r border-slate-800/80">{{ $item->sub_kegiatan_kode }}</td>
 
                         <!-- Kolom 7: Nama Sub Kegiatan -->
-                        <td class="px-4 py-4 font-semibold text-white bg-purple-950/10 border-r border-slate-800/80">{{ $item->sub_kegiatan_nama }}</td>
+                        <td class="px-4 py-4 font-semibold text-white bg-purple-950/10 border-r border-slate-800/80">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="font-bold text-white">{{ $item->sub_kegiatan_nama }}</span>
+                                @if (($item->astap_belanja_modals_count ?? 0) > 0)
+                                    <span class="px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 text-[10px] font-bold font-mono shrink-0 shadow-sm" title="{{ $item->astap_belanja_modals_count }} data belanja modal aset terhubung ke pengadaan ini">
+                                        🔗 {{ $item->astap_belanja_modals_count }} Aset
+                                    </span>
+                                @endif
+                            </div>
+                        </td>
 
                         <!-- Kolom 8: Aksi — FREEZE STICKY RIGHT -->
                         <td class="px-3 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[190px] w-[190px]" style="position: sticky; right: 0; z-index: 2; background-color: #0c172e !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
@@ -100,15 +111,24 @@
                                     <span>Ubah</span>
                                 </button>
 
-                                <form method="POST" action="{{ route('master.jenis_pengadaan.destroy', $item->id) }}" class="inline-block" @submit="confirmDeleteForm($event, '{{ $item->sub_kegiatan_nama }} ({{ $item->sub_kegiatan_kode }})')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit"
-                                        class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                        <span>Hapus</span>
+                                @if (($item->astap_belanja_modals_count ?? 0) > 0)
+                                    <button type="button" @click="askInUseWarning({{ json_encode($item->sub_kegiatan_nama . ' (' . $item->sub_kegiatan_kode . ')') }}, {{ (int)$item->astap_belanja_modals_count }})"
+                                        class="px-2.5 py-1.5 rounded-xl bg-slate-800/80 text-slate-400 hover:text-amber-300 border border-slate-700/80 hover:border-amber-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer"
+                                        title="Terkunci: Masih digunakan oleh {{ $item->astap_belanja_modals_count }} data belanja modal aset">
+                                        <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                        <span>Terkunci</span>
                                     </button>
-                                </form>
+                                @else
+                                    <form method="POST" action="{{ route('master.jenis_pengadaan.destroy', $item->id) }}" class="inline-block" @submit="confirmDeleteForm($event, {{ json_encode($item->sub_kegiatan_nama . ' (' . $item->sub_kegiatan_kode . ')') }})">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                            class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                            <span>Hapus</span>
+                                        </button>
+                                    </form>
+                                @endif
                             </div>
                         </td>
                     </tr>
@@ -124,4 +144,11 @@
             </tbody>
         </table>
     </div>
+
+    <!-- Laravel Pagination Links -->
+    @if ($sipdList->hasPages())
+        <div class="px-6 py-4 bg-slate-900 border-t border-slate-800">
+            {{ $sipdList->links() }}
+        </div>
+    @endif
 </div>

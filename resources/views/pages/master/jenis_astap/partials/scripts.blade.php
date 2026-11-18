@@ -4,6 +4,7 @@
             showAddModal: false,
             showEditModal: false,
             showImportModal: false,
+            isSubmitting: false,
             selectedKode: null,
 
             newFormData: {
@@ -287,14 +288,28 @@
             executeConfirmedAction() {
                 if (typeof this.confirmData.onConfirm === 'function') {
                     this.confirmData.onConfirm();
+                } else {
+                    this.showConfirmModal = false;
                 }
-                this.showConfirmModal = false;
             },
 
             showSimatToast(message, type = 'success') {
                 const cleanMsg = String(message || '').replace(/^[\s✅✔️☑️✓✔⚠️❌🚫⛔ℹ️🗑️✏️🔑💾]+/, '').trim();
                 this.toast = { show: true, message: cleanMsg, type: type };
                 setTimeout(() => { this.toast.show = false; }, 4000);
+            },
+
+            askInUseWarning(itemName, count) {
+                this.askConfirmation({
+                    title: '🔒 Klasifikasi Terkunci',
+                    message: `Klasifikasi ini tidak dapat dihapus karena masih digunakan oleh ${count} data aset fisik aktif. Alihkan atau hapus data aset terkait terlebih dahulu jika ingin menghapus klasifikasi ini.`,
+                    itemName: itemName || '',
+                    type: 'warning',
+                    btnText: 'Mengerti',
+                    onConfirm: () => {
+                        this.showConfirmModal = false;
+                    }
+                });
             },
 
             confirmDeleteForm(event, itemName) {
@@ -307,6 +322,8 @@
                     type: 'danger',
                     btnText: '🗑️ Ya, Hapus Kode 108',
                     onConfirm: () => {
+                        this.isSubmitting = true;
+                        this.showConfirmModal = false;
                         formElement.submit();
                     }
                 });
@@ -323,6 +340,8 @@
                     type: 'success',
                     btnText: '➕ Ya, Simpan Kode 108',
                     onConfirm: () => {
+                        this.isSubmitting = true;
+                        this.showConfirmModal = false;
                         formElement.submit();
                     }
                 });
@@ -339,6 +358,30 @@
                     type: 'warning',
                     btnText: '✏️ Ya, Simpan Perubahan',
                     onConfirm: () => {
+                        this.isSubmitting = true;
+                        this.showConfirmModal = false;
+                        formElement.submit();
+                    }
+                });
+            },
+
+            confirmImportForm(event) {
+                event.preventDefault();
+                const formElement = event.target;
+                const resetCheckbox = document.getElementById('reset_existing');
+                const willReset = resetCheckbox && resetCheckbox.checked;
+
+                this.askConfirmation({
+                    title: willReset ? '⚠️ Perhatian: Reset & Impor Data' : '📥 Konfirmasi Impor Kode 108',
+                    message: willReset 
+                        ? 'Anda memilih opsi untuk mengosongkan seluruh data lama. Pastikan tidak ada data aset aktif yang sedang terhubung ke klasifikasi ini!'
+                        : 'Sistem akan memproses dan mengimpor baris data dari file yang Anda unggah ke master Kode 108.',
+                    itemName: willReset ? 'STATUS: KOSONGKAN DATA LAMA DIAKTIFKAN' : 'STATUS: PENAMBAHAN DATA BARU',
+                    type: willReset ? 'warning' : 'success',
+                    btnText: willReset ? '⚠️ Ya, Lanjutkan Impor' : '📥 Ya, Impor Sekarang',
+                    onConfirm: () => {
+                        this.isSubmitting = true;
+                        this.showConfirmModal = false;
                         formElement.submit();
                     }
                 });

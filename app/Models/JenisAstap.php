@@ -15,6 +15,14 @@ class JenisAstap extends Model
         'uraian_sub_sub_rincian',
     ];
 
+    /**
+     * Relasi ke data aset fisik (Astap) yang mengacu pada klasifikasi Kode 108 ini.
+     */
+    public function astaps()
+    {
+        return $this->hasMany(\App\Models\Astap::class, 'jenis_astap_id');
+    }
+
     protected static ?array $nested108Cache = null;
 
     /**
