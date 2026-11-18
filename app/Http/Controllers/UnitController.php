@@ -6,6 +6,7 @@ use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
@@ -16,65 +17,8 @@ class UnitController extends Controller
      */
     public function index()
     {
-        $units = Unit::where('is_deleted', 0)->with('user')->orderBy('id', 'asc')->get()->map(function ($u, $index) {
-            // 1. Cari register ASTAP yang terhubung via unit_id atau ruang_pemegang
-            $registers = \App\Models\AstapRegister::with(['astap.jenisAstap'])
-                ->where('is_deleted', 0)
-                ->where(function($q) {
-                    $q->whereNull('status')
-                      ->orWhere(function($sub) {
-                          $sub->whereNotIn('status', ['Mutasi Keluar OPD', 'Kemitraan', 'Dihibahkan']);
-                      });
-                })
-                ->where(function($q) use ($u) {
-                    $q->where('unit_id', $u->id)
-                      ->orWhere(function($q2) use ($u) {
-                          $q2->whereNotNull('ruang_pemegang')
-                             ->where('ruang_pemegang', '!=', '')
-                             ->where(function($q3) use ($u) {
-                                 $q3->where('ruang_pemegang', $u->nama)
-                                    ->orWhere('ruang_pemegang', 'LIKE', '%' . $u->nama . '%');
-                             });
-                      });
-                })
-                ->get();
-
-            // 2. Ambil ASTAP yang terhubung langsung via unit_id (jika ada register yang belum masuk)
-            $astapDirectIds = \App\Models\Astap::where('unit_id', $u->id)
-                ->where('is_deleted', 0)
-                ->where(function($q) {
-                    $q->whereNull('kondisi')
-                      ->orWhere('kondisi', '!=', 'Mutasi Keluar OPD');
-                })
-                ->where(function($q) {
-                    $q->whereNull('sumber_dana')
-                      ->orWhere('sumber_dana', '!=', 'kemitraan');
-                })
-                ->where(function($q) {
-                    $q->whereNull('category')
-                      ->orWhere('category', '!=', 'KEMITRAAN');
-                })
-                ->whereDoesntHave('kemitraan', function($kq) {
-                    $kq->where('is_deleted', 0)->whereIn('status_konsesi', ['Aktif', 'Perpanjangan']);
-                })
-                ->whereNotIn('id', $registers->pluck('astap_id')->filter()->unique())
-                ->pluck('id');
-
-            $directRegisters = collect();
-            if ($astapDirectIds->isNotEmpty()) {
-                $directRegisters = \App\Models\AstapRegister::with(['astap.jenisAstap'])
-                    ->where('is_deleted', 0)
-                    ->where(function($q) {
-                        $q->whereNull('status')
-                          ->orWhere(function($sub) {
-                              $sub->whereNotIn('status', ['Mutasi Keluar OPD', 'Kemitraan', 'Dihibahkan']);
-                          });
-                    })
-                    ->whereIn('astap_id', $astapDirectIds)
-                    ->get();
-            }
-
-            $allRegisters = $registers->concat($directRegisters)->unique('id');
+        $units = Unit::active()->with('user')->orderBy('id', 'asc')->get()->map(function ($u, $index) {
+            $allRegisters = $u->getActiveRegisters();
 
             $assets = [];
             $totalNilaiSum = 0;
@@ -107,13 +51,6 @@ class UnitController extends Controller
 
             $totalAsetCount = count($assets);
             $totalNilaiFmt = 'Rp ' . number_format($totalNilaiSum, 0, ',', '.');
-
-            // Simpan sinkronisasi ke tabel database units
-            $u->update([
-                'total_aset'  => $totalAsetCount,
-                'total_nilai' => $totalNilaiFmt,
-                'id_aset'     => array_column($assets, 'id'),
-            ]);
 
             return [
                 'id'          => $u->id,
@@ -148,12 +85,16 @@ class UnitController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'kode_unit' => 'nullable|string|max:50',
-            'nama' => 'required|string|max:150|unique:units,nama',
-            'tipe' => 'nullable|string|max:100',
-            'kepala' => 'required|string|max:150',
-            'nip' => 'nullable|string|max:50',
-            'email' => 'nullable|email|max:100',
+            'kode_unit' => 'nullable|string|max:50|unique:units,kode_unit',
+            'nama'      => 'required|string|max:150|unique:units,nama',
+            'tipe'      => 'nullable|string|max:100',
+            'kepala'    => 'required|string|max:150',
+            'nip'       => 'nullable|string|max:50',
+            'email'     => 'nullable|email|max:100|unique:users,email',
+        ], [
+            'kode_unit.unique' => 'Kode unit sudah digunakan oleh unit lain.',
+            'nama.unique'      => 'Nama unit / ruangan sudah terdaftar di sistem.',
+            'email.unique'     => 'Alamat email sudah digunakan oleh akun pengguna lain.',
         ]);
 
         if (empty($validated['kode_unit'])) {
@@ -165,14 +106,16 @@ class UnitController extends Controller
         $validated['total_nilai'] = 'Rp 0';
 
         // Simpan Unit -> Model Hook otomatis membuat Akun Sub Admin di tabel users
-        $unit = Unit::create($validated);
+        $unit = DB::transaction(function () use ($validated) {
+            return Unit::create($validated);
+        });
 
         session()->flash('success', "Unit {$unit->nama} berhasil ditambahkan.");
         if ($request->wantsJson()) {
             return response()->json([
                 'success' => true,
                 'message' => "Unit {$unit->nama} berhasil didaftarkan dan Akun Sub Admin ({$unit->kepala}) telah otomatis dibuat!",
-                'unit' => $unit
+                'unit'    => $unit
             ]);
         }
 
@@ -194,23 +137,29 @@ class UnitController extends Controller
     public function update(Request $request, $id)
     {
         $unit = Unit::findOrFail($id);
+        $subAdminUserId = $unit->user?->id;
 
         $validated = $request->validate([
-            'nama' => 'required|string|max:150|unique:units,nama,' . $unit->id,
-            'tipe' => 'nullable|string|max:100',
+            'nama'   => 'required|string|max:150|unique:units,nama,' . $unit->id,
+            'tipe'   => 'nullable|string|max:100',
             'kepala' => 'required|string|max:150',
-            'nip' => 'nullable|string|max:50',
-            'email' => 'nullable|email|max:100',
+            'nip'    => 'nullable|string|max:50',
+            'email'  => 'nullable|email|max:100|unique:users,email,' . ($subAdminUserId ?: 'NULL'),
+        ], [
+            'nama.unique'  => 'Nama unit / ruangan sudah terdaftar di sistem.',
+            'email.unique' => 'Alamat email sudah digunakan oleh akun pengguna lain.',
         ]);
 
-        $unit->update($validated);
+        DB::transaction(function () use ($unit, $validated) {
+            $unit->update($validated);
+        });
 
         session()->flash('success', "Unit {$unit->nama} berhasil diperbarui.");
         if ($request->wantsJson()) {
             return response()->json([
                 'success' => true,
                 'message' => "Data Unit {$unit->nama} dan Akun Sub Admin terkait berhasil diperbarui!",
-                'unit' => $unit
+                'unit'    => $unit
             ]);
         }
 
@@ -224,7 +173,7 @@ class UnitController extends Controller
     {
         $unit = Unit::findOrFail($id);
         $nama = $unit->nama;
-        $assetCount = (int) ($unit->total_aset ?: \App\Models\AstapRegister::where('unit_id', $unit->id)->count());
+        $assetCount = $unit->getActiveRegisters()->count();
 
         // UNIT YANG MEMILIKI ASET TIDAK DAPAT DIHAPUS
         if ($assetCount > 0) {
@@ -241,15 +190,17 @@ class UnitController extends Controller
         }
 
         $relatedUsersCount = \App\Models\User::where('unit_id', $unit->id)->count();
-        $unit->softDelete();
+        DB::transaction(function () use ($unit) {
+            $unit->softDelete();
+        });
 
         $message = "Unit {$nama}" . ($relatedUsersCount > 0 ? " beserta {$relatedUsersCount} akun pengguna terkait" : "") . " berhasil dipindahkan ke Pusat Data Terhapus.";
 
         session()->flash('success', $message);
         if ($request->wantsJson()) {
             return response()->json([
-                'success' => true,
-                'message' => $message,
+                'success'    => true,
+                'message'    => $message,
                 'has_assets' => false,
                 'total_aset' => 0,
             ]);
@@ -265,7 +216,9 @@ class UnitController extends Controller
     {
         $unit = Unit::findOrFail($id);
         $nama = $unit->nama;
-        $unit->restoreData();
+        DB::transaction(function () use ($unit) {
+            $unit->restoreData();
+        });
 
         $message = "Unit {$nama} beserta seluruh akun pengguna terkait berhasil dipulihkan ke katalog aktif.";
         session()->flash('success', $message);
@@ -286,12 +239,7 @@ class UnitController extends Controller
     {
         $user = Auth::user();
 
-        // Lembar KIR Ruangan khusus untuk akun Sub Admin (unit ruangan)
-        if (in_array($user->role, ['master_admin', 'admin'])) {
-            return redirect()->route('unit.index')->with('info', 'Lembar KIR Ruangan khusus diperuntukkan bagi akun Sub Admin Ruangan.');
-        }
-
-        $units = Unit::orderBy('nama', 'asc')->get();
+        $units = Unit::active()->orderBy('nama', 'asc')->get();
 
         // Tentukan unit yang ditampilkan:
         // Jika sub_admin, utamakan unit yang ditugaskan kepada sub_admin tersebut
@@ -302,7 +250,7 @@ class UnitController extends Controller
             $selectedUnitId = $user->unit_id ?: ($units->first()?->id ?? null);
         }
 
-        $currentUnit = $selectedUnitId ? Unit::with('user')->find($selectedUnitId) : null;
+        $currentUnit = $selectedUnitId ? Unit::active()->with('user')->find($selectedUnitId) : null;
 
         $assets = [];
         $totalNilaiSum = 0;
@@ -312,62 +260,7 @@ class UnitController extends Controller
         $kondisiRusakBerat = 0;
 
         if ($currentUnit) {
-            $registers = \App\Models\AstapRegister::with(['astap.jenisAstap'])
-                ->where('is_deleted', 0)
-                ->where(function($q) {
-                    $q->whereNull('status')
-                      ->orWhere(function($sub) {
-                          $sub->whereNotIn('status', ['Mutasi Keluar OPD', 'Kemitraan', 'Dihibahkan']);
-                      });
-                })
-                ->where(function($q) use ($currentUnit) {
-                    $q->where('unit_id', $currentUnit->id)
-                      ->orWhere(function($q2) use ($currentUnit) {
-                          $q2->whereNotNull('ruang_pemegang')
-                             ->where('ruang_pemegang', '!=', '')
-                             ->where(function($q3) use ($currentUnit) {
-                                 $q3->where('ruang_pemegang', $currentUnit->nama)
-                                    ->orWhere('ruang_pemegang', 'LIKE', '%' . $currentUnit->nama . '%');
-                             });
-                      });
-                })
-                ->get();
-
-            $astapDirectIds = \App\Models\Astap::where('unit_id', $currentUnit->id)
-                ->where('is_deleted', 0)
-                ->where(function($q) {
-                    $q->whereNull('kondisi')
-                      ->orWhere('kondisi', '!=', 'Mutasi Keluar OPD');
-                })
-                ->where(function($q) {
-                    $q->whereNull('sumber_dana')
-                      ->orWhere('sumber_dana', '!=', 'kemitraan');
-                })
-                ->where(function($q) {
-                    $q->whereNull('category')
-                      ->orWhere('category', '!=', 'KEMITRAAN');
-                })
-                ->whereDoesntHave('kemitraan', function($kq) {
-                    $kq->where('is_deleted', 0)->whereIn('status_konsesi', ['Aktif', 'Perpanjangan']);
-                })
-                ->whereNotIn('id', $registers->pluck('astap_id')->filter()->unique())
-                ->pluck('id');
-
-            $directRegisters = collect();
-            if ($astapDirectIds->isNotEmpty()) {
-                $directRegisters = \App\Models\AstapRegister::with(['astap.jenisAstap'])
-                    ->where('is_deleted', 0)
-                    ->where(function($q) {
-                        $q->whereNull('status')
-                          ->orWhere(function($sub) {
-                              $sub->whereNotIn('status', ['Mutasi Keluar OPD', 'Kemitraan', 'Dihibahkan']);
-                          });
-                    })
-                    ->whereIn('astap_id', $astapDirectIds)
-                    ->get();
-            }
-
-            $allRegisters = $registers->concat($directRegisters)->unique('id');
+            $allRegisters = $currentUnit->getActiveRegisters();
 
             foreach ($allRegisters as $reg) {
                 $astap = $reg->astap;
@@ -463,12 +356,31 @@ class UnitController extends Controller
      */
     public function updateKondisi(Request $request, $id)
     {
-        $reg = \App\Models\AstapRegister::find($id);
+        $currentUser = Auth::user();
+        $reg = \App\Models\AstapRegister::where('is_deleted', 0)->find($id);
         if (!$reg) {
             return response()->json([
                 'success' => false,
-                'message' => 'Register aset tidak ditemukan.'
+                'message' => 'Register aset tidak ditemukan atau sudah dinonaktifkan.'
             ], 404);
+        }
+
+        // Proteksi Otorisasi Ruangan (Mitigasi IDOR)
+        if ($currentUser->role === 'sub_admin') {
+            $userUnit = $currentUser->unit;
+            $isOwned = ($reg->unit_id && $reg->unit_id == $currentUser->unit_id) ||
+                       ($userUnit && $reg->ruang_pemegang && stripos($reg->ruang_pemegang, $userUnit->nama) !== false);
+            if (!$isOwned) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Akses ditolak: Anda tidak memiliki wewenang untuk mengubah kondisi fisik aset di luar ruangan Anda.'
+                ], 403);
+            }
+        } elseif (!in_array($currentUser->role, ['master_admin', 'admin']) && !$currentUser->canDo('unit', 'edit')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses ditolak: Anda tidak memiliki wewenang untuk mengubah kondisi fisik aset.'
+            ], 403);
         }
 
         $validated = $request->validate([

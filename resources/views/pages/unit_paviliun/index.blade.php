@@ -12,8 +12,6 @@
         {{-- Modals & Dialogs --}}
         @include('pages.unit_paviliun.index_partials.modal_detail')
         @include('pages.unit_paviliun.index_partials.modal_kir')
-        @include('pages.unit_paviliun.index_partials.modal_add_unit')
-        @include('pages.unit_paviliun.index_partials.modal_edit_unit')
         @include('pages.unit_paviliun.index_partials.modal_confirm')
         @include('pages.unit_paviliun.index_partials.toast_notification')
     </div>

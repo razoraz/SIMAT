@@ -8,6 +8,7 @@
                 showDetailModal: false,
                 showPrintKIRModal: false,
                 showEditKIRForm: false,
+                isSaving: false,
                 selectedUnit: null,
 
                 // Data Dokumen Cetak KIR
@@ -104,8 +105,9 @@
                 },
 
                 openEdit(item) {
-                    this.selectedUnit = { ...item };
-                    this.showEditModal = true;
+                    if (item && item.id) {
+                        window.location.href = '/unit-paviliun/' + item.id + '/edit';
+                    }
                 },
 
                 showConfirmModal: false,
@@ -146,11 +148,18 @@
                     this.showConfirmModal = true;
                 },
 
-                executeConfirmedAction() {
+                async executeConfirmedAction() {
                     if (typeof this.confirmData.onConfirm === 'function') {
-                        this.confirmData.onConfirm();
+                        this.isSaving = true;
+                        try {
+                            await this.confirmData.onConfirm();
+                        } finally {
+                            this.isSaving = false;
+                            this.showConfirmModal = false;
+                        }
+                    } else {
+                        this.showConfirmModal = false;
                     }
-                    this.showConfirmModal = false;
                 },
 
                 showSimatToast(message, type = 'success') {

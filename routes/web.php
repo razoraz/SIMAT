@@ -2426,7 +2426,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/unit-paviliun/{id}/edit', [UnitController::class, 'edit'])->name('unit.edit')->middleware('module:unit.edit');
         Route::put('/unit-paviliun/{id}', [UnitController::class, 'update'])->name('unit.update')->middleware('module:unit.edit');
         Route::delete('/unit-paviliun/{id}', [UnitController::class, 'destroy'])->name('unit.destroy')->middleware('module:unit.delete');
-        Route::post('/unit-paviliun/{id}/restore', [UnitController::class, 'restore'])->name('unit.restore');
+        Route::post('/unit-paviliun/{id}/restore', [UnitController::class, 'restore'])->name('unit.restore')->middleware('module:unit.delete');
     });
 
     // Master Data Users CRUD Routes (Hanya Master Admin & Admin yang memiliki izin users)

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
@@ -82,31 +83,101 @@ class Unit extends Model
     }
 
     /**
+     * Ambil seluruh aset register NIBAR aktif yang terhubung ke unit ini.
+     */
+    public function getActiveRegisters()
+    {
+        // 1. Cari register ASTAP yang terhubung via unit_id atau ruang_pemegang
+        $registers = \App\Models\AstapRegister::with(['astap.jenisAstap'])
+            ->where('is_deleted', 0)
+            ->where(function($q) {
+                $q->whereNull('status')
+                  ->orWhere(function($sub) {
+                      $sub->whereNotIn('status', ['Mutasi Keluar OPD', 'Kemitraan', 'Dihibahkan']);
+                  });
+            })
+            ->where(function($q) {
+                $q->where('unit_id', $this->id)
+                  ->orWhere(function($q2) {
+                      $q2->whereNotNull('ruang_pemegang')
+                         ->where('ruang_pemegang', '!=', '')
+                         ->where(function($q3) {
+                             $q3->where('ruang_pemegang', $this->nama)
+                                ->orWhere('ruang_pemegang', 'LIKE', '%' . $this->nama . '%');
+                         });
+                  });
+            })
+            ->get();
+
+        // 2. Ambil ASTAP yang terhubung langsung via unit_id
+        $existingAstapIds = $registers->pluck('astap_id')->filter()->unique();
+        $astapDirectIds = \App\Models\Astap::where('unit_id', $this->id)
+            ->where('is_deleted', 0)
+            ->where(function($q) {
+                $q->whereNull('kondisi')
+                  ->orWhere('kondisi', '!=', 'Mutasi Keluar OPD');
+            })
+            ->where(function($q) {
+                $q->whereNull('sumber_dana')
+                  ->orWhere('sumber_dana', '!=', 'kemitraan');
+            })
+            ->where(function($q) {
+                $q->whereNull('category')
+                  ->orWhere('category', '!=', 'KEMITRAAN');
+            })
+            ->whereDoesntHave('kemitraan', function($kq) {
+                $kq->where('is_deleted', 0)->whereIn('status_konsesi', ['Aktif', 'Perpanjangan']);
+            })
+            ->when($existingAstapIds->isNotEmpty(), function($q) use ($existingAstapIds) {
+                $q->whereNotIn('id', $existingAstapIds);
+            })
+            ->pluck('id');
+
+        $directRegisters = collect();
+        if ($astapDirectIds->isNotEmpty()) {
+            $directRegisters = \App\Models\AstapRegister::with(['astap.jenisAstap'])
+                ->where('is_deleted', 0)
+                ->where(function($q) {
+                    $q->whereNull('status')
+                      ->orWhere(function($sub) {
+                          $sub->whereNotIn('status', ['Mutasi Keluar OPD', 'Kemitraan', 'Dihibahkan']);
+                      });
+                })
+                ->whereIn('astap_id', $astapDirectIds)
+                ->get();
+        }
+
+        return $registers->concat($directRegisters)->unique('id');
+    }
+
+    /**
      * Override softDelete: Otomatis soft delete seluruh akun pengguna yang terdaftar pada unit ini.
      */
     public function softDelete(?string $reason = null): bool
     {
-        $user = auth()->user();
-        $deleterName = $user 
-            ? ($user->name . ' (' . ucfirst($user->role ?? 'user') . ')') 
-            : 'Administrator';
+        return DB::transaction(function () use ($reason) {
+            $user = auth()->user();
+            $deleterName = $user 
+                ? ($user->name . ' (' . ucfirst($user->role ?? 'user') . ')') 
+                : 'Administrator';
 
-        $success = $this->update([
-            'is_deleted'    => 1,
-            'deleted_by'    => $deleterName,
-            'deleted_by_id' => $user?->id,
-            'deleted_at'    => now(),
-        ]);
+            $success = $this->update([
+                'is_deleted'    => 1,
+                'deleted_by'    => $deleterName,
+                'deleted_by_id' => $user?->id,
+                'deleted_at'    => now(),
+            ]);
 
-        if ($success) {
-            $relatedUsers = User::where('unit_id', $this->id)->get();
-            $deleterReason = $reason ?: "Otomatis dipindahkan ke Recycle Bin karena Unit / Ruangan \"{$this->nama}\" dihapus.";
-            foreach ($relatedUsers as $u) {
-                $u->softDelete($deleterReason);
+            if ($success) {
+                $relatedUsers = User::where('unit_id', $this->id)->get();
+                $deleterReason = $reason ?: "Otomatis dipindahkan ke Recycle Bin karena Unit / Ruangan \"{$this->nama}\" dihapus.";
+                foreach ($relatedUsers as $u) {
+                    $u->softDelete($deleterReason);
+                }
             }
-        }
 
-        return $success;
+            return $success;
+        });
     }
 
     /**
@@ -114,21 +185,23 @@ class Unit extends Model
      */
     public function restoreData(): bool
     {
-        $success = $this->update([
-            'is_deleted'    => 0,
-            'deleted_by'    => null,
-            'deleted_by_id' => null,
-            'deleted_at'    => null,
-        ]);
+        return DB::transaction(function () {
+            $success = $this->update([
+                'is_deleted'    => 0,
+                'deleted_by'    => null,
+                'deleted_by_id' => null,
+                'deleted_at'    => null,
+            ]);
 
-        if ($success) {
-            $relatedUsers = User::where('unit_id', $this->id)->get();
-            foreach ($relatedUsers as $u) {
-                $u->restoreData();
+            if ($success) {
+                $relatedUsers = User::where('unit_id', $this->id)->get();
+                foreach ($relatedUsers as $u) {
+                    $u->restoreData();
+                }
             }
-        }
 
-        return $success;
+            return $success;
+        });
     }
 
     /**
@@ -148,10 +221,18 @@ class Unit extends Model
             if (!$unit->kepala) return;
             $email = $unit->email ?: (Str::slug($unit->nama, '.') . '@rsudkoesnandi.id');
             
+            // Proteksi: Cek apakah email bentrok dengan akun user lain
+            $existingUser = User::where('email', $email)->first();
+            if ($existingUser && $existingUser->unit_id !== $unit->id) {
+                $cleanKode = strtolower(str_replace(['-', ' '], '', $unit->kode_unit ?: 'unit' . $unit->id));
+                $email = Str::slug($unit->nama, '.') . '.' . $cleanKode . '@rsudkoesnandi.id';
+            }
+
             User::withoutEvents(function () use ($unit, $email) {
                 User::updateOrCreate(
-                    ['email' => $email],
+                    ['unit_id' => $unit->id],
                     [
+                        'email' => $email,
                         'name' => $unit->kepala,
                         'role' => 'sub_admin',
                         'unit_id' => $unit->id,
@@ -172,11 +253,19 @@ class Unit extends Model
         static::updated(function (Unit $unit) {
             $user = User::where('unit_id', $unit->id)->first();
             if ($user) {
-                if ($user->name !== $unit->kepala || ($unit->email && $user->email !== $unit->email)) {
-                    $user->withoutEvents(function () use ($user, $unit) {
+                $targetEmail = $unit->email ?: $user->email;
+                if ($unit->email && $user->email !== $unit->email) {
+                    $emailConflict = User::where('email', $unit->email)->where('id', '!=', $user->id)->exists();
+                    if ($emailConflict) {
+                        $targetEmail = $user->email; // Jangan overwrite jika email bentrok dengan user lain
+                    }
+                }
+
+                if ($user->name !== $unit->kepala || $user->email !== $targetEmail) {
+                    $user->withoutEvents(function () use ($user, $unit, $targetEmail) {
                         $user->update([
                             'name' => $unit->kepala,
-                            'email' => $unit->email ?: $user->email,
+                            'email' => $targetEmail,
                             'penugasan' => 'Sub Admin Ruangan ' . $unit->nama,
                         ]);
                     });
