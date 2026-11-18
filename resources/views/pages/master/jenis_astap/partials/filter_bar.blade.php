@@ -56,6 +56,17 @@
             </div>
 
             <div class="flex items-center space-x-2 shrink-0">
+                <div class="flex items-center space-x-1.5 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-2 text-xs text-slate-400">
+                    <span class="text-[10px] uppercase font-bold text-slate-500">Baris:</span>
+                    <select name="per_page" onchange="this.form.submit()" class="bg-transparent text-emerald-400 font-bold focus:outline-none cursor-pointer text-xs">
+                        <option value="10" {{ request('per_page', '15') == '10' ? 'selected' : '' }} class="bg-slate-900 text-white">10</option>
+                        <option value="15" {{ request('per_page', '15') == '15' ? 'selected' : '' }} class="bg-slate-900 text-white">15</option>
+                        <option value="25" {{ request('per_page', '15') == '25' ? 'selected' : '' }} class="bg-slate-900 text-white">25</option>
+                        <option value="50" {{ request('per_page', '15') == '50' ? 'selected' : '' }} class="bg-slate-900 text-white">50</option>
+                        <option value="100" {{ request('per_page', '15') == '100' ? 'selected' : '' }} class="bg-slate-900 text-white">100</option>
+                    </select>
+                </div>
+
                 <button type="submit"
                     class="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition-all flex items-center space-x-1.5">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>

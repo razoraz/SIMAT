@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\JenisAstap;
+use App\Models\Astap;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class JenisAstapController extends Controller
 {
@@ -13,7 +15,7 @@ class JenisAstapController extends Controller
         $query = JenisAstap::query();
 
         if ($request->filled('search')) {
-            $search = $request->search;
+            $search = trim($request->search);
             $query->where(function ($q) use ($search) {
                 $q->where('uraian_sub_sub_rincian', 'like', "%{$search}%")
                   ->orWhere('sub_sub_rincian_objek', 'like', "%{$search}%")
@@ -25,7 +27,7 @@ class JenisAstapController extends Controller
         }
 
         if ($request->filled('jenis') && $request->jenis !== 'all') {
-            $jenisVal = $request->jenis;
+            $jenisVal = trim($request->jenis);
             if ($jenisVal === '1.3.6') {
                 $query->where(function ($q) {
                     $q->where('jenis', 'like', '1.3.6%')
@@ -42,15 +44,31 @@ class JenisAstapController extends Controller
             }
         }
 
-        $kode108List = $query->paginate(10)->withQueryString();
-        $uniqueJenis = JenisAstap::select('jenis', 'nama_jenis')->distinct()->get();
+        $perPage = in_array((int)$request->input('per_page'), [10, 15, 25, 50, 100]) ? (int)$request->input('per_page') : 15;
+
+        $kode108List = $query->withCount('astaps')
+            ->orderBy('jenis')
+            ->orderBy('sub_rincian_objek')
+            ->orderBy('sub_sub_rincian_objek')
+            ->paginate($perPage)
+            ->withQueryString();
+
+        $uniqueJenis = JenisAstap::select('jenis', 'nama_jenis')
+            ->whereNotNull('jenis')
+            ->where('jenis', '!=', '')
+            ->distinct()
+            ->orderBy('jenis')
+            ->get();
+
         $uniqueSubRincian = JenisAstap::select('jenis', 'sub_rincian_objek', 'uraian_sub_rincian')
             ->whereNotNull('sub_rincian_objek')
             ->where('sub_rincian_objek', '!=', '')
             ->whereNotNull('uraian_sub_rincian')
             ->where('uraian_sub_rincian', '!=', '')
             ->distinct()
+            ->orderBy('sub_rincian_objek')
             ->get();
+
         $totalCount = JenisAstap::count();
 
         return view('pages.master.jenis_astap.index', compact('kode108List', 'uniqueJenis', 'uniqueSubRincian', 'totalCount'));
@@ -58,12 +76,12 @@ class JenisAstapController extends Controller
 
     public function searchSubSub(Request $request)
     {
-        $q = $request->query('q', '');
-        $subRincian = $request->query('sub_rincian', '');
-        $jenis = $request->query('jenis', '');
+        $q = trim($request->query('q', ''));
+        $subRincian = trim($request->query('sub_rincian', ''));
+        $jenis = trim($request->query('jenis', ''));
 
         $query = JenisAstap::query()
-            ->select('sub_sub_rincian_objek', 'uraian_sub_sub_rincian')
+            ->select('id', 'sub_sub_rincian_objek', 'uraian_sub_sub_rincian', 'sub_rincian_objek', 'jenis')
             ->whereNotNull('sub_sub_rincian_objek')
             ->where('sub_sub_rincian_objek', '!=', '')
             ->whereNotNull('uraian_sub_sub_rincian')
@@ -83,10 +101,7 @@ class JenisAstapController extends Controller
         }
 
         $totalCount = (clone $query)->distinct()->count('sub_sub_rincian_objek');
-        $results = $query->select('sub_sub_rincian_objek', 'uraian_sub_sub_rincian')
-            ->distinct()
-            ->limit(5)
-            ->get();
+        $results = $query->distinct()->limit(10)->get();
 
         return response()->json([
             'total' => $totalCount,
@@ -97,17 +112,27 @@ class JenisAstapController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'jenis' => 'required|string',
-            'nama_jenis' => 'required|string',
-            'sub_rincian_objek' => 'required|string',
-            'uraian_sub_rincian' => 'required|string',
-            'sub_sub_rincian_objek' => 'required|string',
-            'uraian_sub_sub_rincian' => 'required|string',
+            'jenis' => 'required|string|max:50',
+            'nama_jenis' => 'required|string|max:255',
+            'sub_rincian_objek' => 'required|string|max:50',
+            'uraian_sub_rincian' => 'required|string|max:255',
+            'sub_sub_rincian_objek' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('jenis_astaps', 'sub_sub_rincian_objek')
+            ],
+            'uraian_sub_sub_rincian' => 'required|string|max:255',
+        ], [
+            'sub_sub_rincian_objek.unique' => 'Kode Sub-Sub Rincian Objek [:input] sudah terdaftar dalam sistem.',
+            'required' => 'Kolom :attribute wajib diisi.',
         ]);
 
-        JenisAstap::create($validated);
+        DB::transaction(function () use ($validated) {
+            JenisAstap::create($validated);
+        });
 
-        return redirect()->back()->with('success', 'Data Jenis ASTAP berhasil ditambahkan.');
+        return redirect()->back()->with('success', 'Data Klasifikasi Kode 108 BMD berhasil ditambahkan.');
     }
 
     public function update(Request $request, $id)
@@ -115,25 +140,42 @@ class JenisAstapController extends Controller
         $jenisAstap = JenisAstap::findOrFail($id);
 
         $validated = $request->validate([
-            'jenis' => 'required|string',
-            'nama_jenis' => 'required|string',
-            'sub_rincian_objek' => 'required|string',
-            'uraian_sub_rincian' => 'required|string',
-            'sub_sub_rincian_objek' => 'required|string',
-            'uraian_sub_sub_rincian' => 'required|string',
+            'jenis' => 'required|string|max:50',
+            'nama_jenis' => 'required|string|max:255',
+            'sub_rincian_objek' => 'required|string|max:50',
+            'uraian_sub_rincian' => 'required|string|max:255',
+            'sub_sub_rincian_objek' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('jenis_astaps', 'sub_sub_rincian_objek')->ignore($jenisAstap->id)
+            ],
+            'uraian_sub_sub_rincian' => 'required|string|max:255',
+        ], [
+            'sub_sub_rincian_objek.unique' => 'Kode Sub-Sub Rincian Objek [:input] sudah terdaftar pada klasifikasi lain.',
+            'required' => 'Kolom :attribute wajib diisi.',
         ]);
 
-        $jenisAstap->update($validated);
+        DB::transaction(function () use ($jenisAstap, $validated) {
+            $jenisAstap->update($validated);
+        });
 
-        return redirect()->back()->with('success', 'Data Jenis ASTAP berhasil diperbarui.');
+        return redirect()->back()->with('success', 'Data Klasifikasi Kode 108 BMD berhasil diperbarui.');
     }
 
     public function destroy($id)
     {
-        $jenisAstap = JenisAstap::findOrFail($id);
-        $jenisAstap->delete();
+        $jenisAstap = JenisAstap::withCount('astaps')->findOrFail($id);
 
-        return redirect()->back()->with('success', 'Data Jenis ASTAP berhasil dihapus.');
+        if ($jenisAstap->astaps_count > 0) {
+            return redirect()->back()->with('error', "Gagal menghapus: Klasifikasi [{$jenisAstap->sub_sub_rincian_objek} - {$jenisAstap->uraian_sub_sub_rincian}] masih digunakan oleh {$jenisAstap->astaps_count} data aset fisik aktif. Hapus atau alihkan relasi aset tersebut terlebih dahulu.");
+        }
+
+        DB::transaction(function () use ($jenisAstap) {
+            $jenisAstap->delete();
+        });
+
+        return redirect()->back()->with('success', "Data Klasifikasi [{$jenisAstap->sub_sub_rincian_objek}] berhasil dihapus.");
     }
 
     public function import(Request $request)
@@ -157,7 +199,14 @@ class JenisAstapController extends Controller
 
         $resetExisting = $request->boolean('reset_existing');
         if ($resetExisting) {
-            JenisAstap::truncate();
+            $inUseCount = Astap::whereNotNull('jenis_astap_id')->count();
+            if ($inUseCount > 0) {
+                return redirect()->back()->with('error', "Operasi reset dibatalkan demi keamanan: Terdapat {$inUseCount} data aset fisik aktif yang sedang terhubung ke Master Kode 108. Harap lakukan impor tanpa mencentang opsi 'Kosongkan data lama'.");
+            }
+
+            DB::transaction(function () {
+                JenisAstap::query()->delete();
+            });
             $existingKeys = [];
         } else {
             $existingKeys = JenisAstap::select('jenis', 'sub_sub_rincian_objek', 'uraian_sub_sub_rincian')
@@ -195,7 +244,7 @@ class JenisAstapController extends Controller
         }
 
         if (empty($rows)) {
-            return redirect()->back()->with('error', 'File Excel/CSV kosong atau tidak dapat dibaca.');
+            return redirect()->back()->with('error', 'File Excel/CSV kosong atau format tidak dapat dibaca. Pastikan format file adalah .xlsx (Excel modern) atau .csv berstandar UTF-8.');
         }
 
         $importedCount = 0;
