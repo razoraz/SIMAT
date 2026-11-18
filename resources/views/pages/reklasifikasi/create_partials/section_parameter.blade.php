@@ -1,21 +1,61 @@
 <!-- SEKSI 3: PARAMETER REKLASIFIKASI & DATA BARU -->
 <div class="p-6 sm:p-7 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-6">
-    <div class="flex items-center gap-3 border-b border-slate-800/80 pb-4">
-        <span class="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center font-black text-xs font-mono">
-            03
-        </span>
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-4">
+        <div class="flex items-center gap-3">
+            <span class="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center font-black text-xs font-mono">
+                03
+            </span>
+            <div>
+                <h2 class="text-sm sm:text-base font-bold text-white tracking-wide">
+                    Parameter Transaksi &amp; Dokumen Dasar Hukum
+                </h2>
+                <p class="text-xs text-slate-400 mt-0.5">
+                    Isi nominal mutasi buku, tanggal eksekusi, triwulan pengakuan, dan dokumen pendukung resmi.
+                </p>
+            </div>
+        </div>
         <div>
-            <h2 class="text-sm sm:text-base font-bold text-white tracking-wide">
-                Parameter Transaksi &amp; Dokumen Dasar Hukum
-            </h2>
-            <p class="text-xs text-slate-400 mt-0.5">
-                Isi nominal mutasi buku, tanggal eksekusi, triwulan pengakuan, dan dokumen pendukung resmi.
-            </p>
+            <template x-if="!selectedAstap">
+                <span class="text-[11px] font-semibold text-amber-400/90 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20 flex items-center gap-1.5 self-start sm:self-auto">
+                    <svg class="w-3.5 h-3.5 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                    </svg>
+                    <span>Terkunci &bull; Pilih Aset di Tahap 01</span>
+                </span>
+            </template>
+            <template x-if="selectedAstap">
+                <span class="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 flex items-center gap-1.5 self-start sm:self-auto">
+                    <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    <span>Siap Dikonfigurasi</span>
+                </span>
+            </template>
         </div>
     </div>
 
-    <!-- Parameter Pokok: Nilai Reklas, Tanggal, Triwulan, Upload File -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <!-- Banner Callout saat Belum Memilih Aset -->
+    <template x-if="!selectedAstap">
+        <div class="p-4 rounded-2xl bg-amber-950/20 border border-dashed border-amber-500/30 flex items-center gap-3.5 transition-all">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                </svg>
+            </div>
+            <div>
+                <h4 class="text-xs font-bold text-amber-300">Tahap 03 Terkunci Sementara</h4>
+                <p class="text-[11px] text-slate-400 mt-0.5">
+                    Parameter transaksi, pemilihan rekening PMDN 108, dan spesifikasi fisik baru akan otomatis aktif setelah Anda memilih barang pada <strong class="text-cyan-400">Tahap 01</strong>.
+                </p>
+            </div>
+        </div>
+    </template>
+
+    <!-- WRAPPER FORM PARAMETER & DOKUMEN (LOCKED JIKA BELUM PILIH ASET) -->
+    <div class="space-y-6 transition-all duration-300"
+         :class="{ 'opacity-30 pointer-events-none select-none filter blur-[0.3px]': !selectedAstap }">
+        <!-- Parameter Pokok: Nilai Reklas, Tanggal, Triwulan, Upload File -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <!-- 1. Nilai Reklasifikasi -->
         <div>
             <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center justify-between">
@@ -106,5 +146,6 @@
 
     <!-- 4. Panel Tujuan KIB & Rekening PMDN 108 & Spesifikasi Fisik Baru -->
     @include('pages.reklasifikasi.create_partials.param_pindah_kib_108')
+    </div>
 </div>
 
