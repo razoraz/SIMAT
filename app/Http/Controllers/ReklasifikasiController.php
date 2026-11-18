@@ -881,6 +881,15 @@ class ReklasifikasiController extends Controller
                     'message' => "Aset '{$astap->nama_barang}' saat ini sudah berstatus Konstruksi Dalam Pengerjaan (KDP). Transaksi ke KDP tidak dapat dilakukan kembali.",
                 ], 422);
             }
+        } elseif ($validated['jenis_reklas'] === 'KDP_TO_DEFINITIF') {
+            $kodeJenis = (string) ($astap->jenisAstap?->jenis ?? $astap->jenisAstap?->sub_sub_rincian_objek ?? '');
+            $isKdp = $astap->category === 'KDP' || $astap->category === 'KIB F' || str_starts_with($kodeJenis, '1.3.6') || $astap->jenis_reklas === 'DEFINITIF_TO_KDP';
+            if (!$isKdp) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Aset '{$astap->nama_barang}' bukan merupakan aset Konstruksi Dalam Pengerjaan (KIB F / Akun 1.3.6). Reklasifikasi KDP Selesai ke Definitif hanya berlaku untuk pekerjaan fisik KDP.",
+                ], 422);
+            }
         }
 
         if (!empty($validated['nomor_ba_reklas'])) {

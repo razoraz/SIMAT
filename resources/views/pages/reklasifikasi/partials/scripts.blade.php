@@ -785,6 +785,14 @@
                 return this.formData.tanggal_bast > today;
             },
 
+            isAssetKdp() {
+                if (!this.selectedAstap) return true; // Belum ada aset dipilih, biarkan netral
+                const astap = this.selectedAstap;
+                const kib = (astap.category || astap.asal_kib || '').toUpperCase();
+                const kode = (astap.jenis_astap?.sub_sub_rincian_objek || astap.jenis_astap?.sub_rincian_objek || '');
+                return kib === 'KIB F' || kib === 'KDP' || kode.startsWith('1.3.6');
+            },
+
             openModalTambah() {
                 this.selectedAstap = null;
                 this.reklasSubRincianKode = '';
@@ -918,7 +926,7 @@
                 if (this.formData.selected_register_ids && Array.isArray(this.formData.selected_register_ids)) {
                     this.formData.selected_register_ids = this.formData.selected_register_ids.map(id => Number(id));
                 }
-                if (this.formData.jenis_reklas === 'MUTASI_EKSTERNAL' || this.formData.jenis_reklas === 'HIBAH_KELUAR') {
+                if (this.formData.jenis_reklas !== 'KOREKSI_LAIN') {
                     this.formData.nilai_reklas = this.calculateSelectedNibarsValue();
                 }
             },
@@ -946,6 +954,17 @@
                     this.onJenisReklasChange();
                 }
 
+                // Otomatis alihkan jika aset BUKAN KDP tapi jenis yang aktif adalah KDP_TO_DEFINITIF
+                const isKdp = Boolean(
+                    (found.category || found.asal_kib || '').toUpperCase() === 'KIB F' ||
+                    (found.category || found.asal_kib || '').toUpperCase() === 'KDP' ||
+                    (found.jenis_astap?.sub_sub_rincian_objek || '').startsWith('1.3.6')
+                );
+                if (!isKdp && this.formData.jenis_reklas === 'KDP_TO_DEFINITIF') {
+                    this.formData.jenis_reklas = 'KOREKSI_REKENING';
+                    this.onJenisReklasChange();
+                }
+
                 if (found.registers && found.registers.length > 0) {
                     this.formData.selected_register_ids = found.registers
                         .filter(r => r.status !== 'Mutasi Keluar OPD' && r.status !== 'Dihibahkan')
@@ -964,7 +983,7 @@
 
                 if (this.formData.jenis_reklas === 'KOREKSI_LAIN') {
                     this.formData.nilai_reklas = 0;
-                } else if (this.formData.jenis_reklas === 'MUTASI_EKSTERNAL') {
+                } else if (found.registers && found.registers.length > 0) {
                     this.formData.nilai_reklas = this.calculateSelectedNibarsValue();
                 } else {
                     this.formData.nilai_reklas = parseFloat(found.total_realisasi || 0);
@@ -1828,6 +1847,9 @@
             },
 
             getNarasiPreview() {
+                if (!this.selectedAstap) {
+                    return '🔒 Silakan pilih barang dari Buku Inventaris ASTAP pada Tahap 01 terlebih dahulu untuk menghasilkan preview narasi berita acara resmi.';
+                }
                 const nama = this.formData.nama_barang || (this.selectedAstap?.nama_barang) || 'Aset Terpilih';
                 const nilai = new Intl.NumberFormat('id-ID').format(this.formData.nilai_reklas || 0);
                 const noBa = this.formData.nomor_ba_reklas ? ` dengan Nomor BA: ${this.formData.nomor_ba_reklas}` : '';

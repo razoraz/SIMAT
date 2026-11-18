@@ -102,12 +102,25 @@
                         </div>
                     </label>
 
-                    <label class="flex items-center gap-3 p-3 rounded-2xl border border-slate-700/80 bg-slate-800/60 hover:bg-slate-800 cursor-pointer transition-all select-none"
-                        :class="formData.jenis_reklas === 'KDP_TO_DEFINITIF' ? 'border-emerald-500 bg-emerald-500/10 shadow-sm shadow-emerald-500/10' : ''">
-                        <input type="radio" x-model="formData.jenis_reklas" value="KDP_TO_DEFINITIF" @change="onJenisReklasChange()" class="text-emerald-600 focus:ring-0">
+                    <label class="flex items-center gap-3 p-3 rounded-2xl border transition-all select-none"
+                        @click="if (!isAssetKdp()) { $event.preventDefault(); window.showSimatToast ? window.showSimatToast('⚠️ Opsi KDP Selesai ➔ Definitif hanya dapat digunakan untuk aset KDP (KIB F / Akun 1.3.6)!', 'warning') : alert('Khusus aset KDP (KIB F)!'); }"
+                        :class="{
+                            'opacity-40 cursor-not-allowed bg-slate-900/40 border-slate-800/60': !isAssetKdp(),
+                            'cursor-pointer border-slate-700/80 bg-slate-800/60 hover:bg-slate-800': isAssetKdp(),
+                            'border-emerald-500 bg-emerald-500/10 shadow-sm shadow-emerald-500/10': isAssetKdp() && formData.jenis_reklas === 'KDP_TO_DEFINITIF'
+                        }">
+                        <input type="radio" x-model="formData.jenis_reklas" value="KDP_TO_DEFINITIF"
+                            :disabled="!isAssetKdp()"
+                            @change="onJenisReklasChange()" class="text-emerald-600 focus:ring-0"
+                            :class="{ 'cursor-not-allowed': !isAssetKdp(), 'cursor-pointer': isAssetKdp() }">
                         <div>
-                            <p class="text-xs font-bold text-white">KDP Selesai ➔ Definitif</p>
-                            <p class="text-[10px] text-slate-400">Pekerjaan fisik KIB F selesai 100% jadi Gedung/Jaringan</p>
+                            <div class="flex items-center gap-1.5">
+                                <p class="text-xs font-bold" :class="!isAssetKdp() ? 'text-slate-500' : 'text-white'">KDP Selesai ➔ Definitif</p>
+                                <template x-if="!isAssetKdp()">
+                                    <span class="text-[9px] font-bold text-slate-500 bg-slate-900 border border-slate-800 px-1 rounded">Khusus KIB F</span>
+                                </template>
+                            </div>
+                            <p class="text-[10px]" :class="!isAssetKdp() ? 'text-slate-600' : 'text-slate-400'">Pekerjaan fisik KIB F selesai 100% jadi Gedung/Jaringan</p>
                         </div>
                     </label>
 

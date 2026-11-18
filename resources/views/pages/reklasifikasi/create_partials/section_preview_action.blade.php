@@ -1,16 +1,36 @@
 <!-- SEKSI 4: LIVE PREVIEW & AKSI SUBMIT -->
 <div class="p-6 sm:p-7 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-6">
-    <div class="flex items-center gap-3 border-b border-slate-800/80 pb-4">
-        <span class="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-black text-xs font-mono">
-            04
-        </span>
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-4">
+        <div class="flex items-center gap-3">
+            <span class="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-black text-xs font-mono">
+                04
+            </span>
+            <div>
+                <h2 class="text-sm sm:text-base font-bold text-white tracking-wide">
+                    Simulasi Dampak Neraca &amp; Konfirmasi Penerbitan
+                </h2>
+                <p class="text-xs text-slate-400 mt-0.5">
+                    Verifikasi dampak mutasi jurnal pembukuan dan narasi berita acara sebelum transaksi disimpan secara permanen.
+                </p>
+            </div>
+        </div>
         <div>
-            <h2 class="text-sm sm:text-base font-bold text-white tracking-wide">
-                Simulasi Dampak Neraca &amp; Konfirmasi Penerbitan
-            </h2>
-            <p class="text-xs text-slate-400 mt-0.5">
-                Verifikasi dampak mutasi jurnal pembukuan dan narasi berita acara sebelum transaksi disimpan secara permanen.
-            </p>
+            <template x-if="!selectedAstap">
+                <span class="text-[11px] font-semibold text-amber-400/90 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20 flex items-center gap-1.5 self-start sm:self-auto">
+                    <svg class="w-3.5 h-3.5 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                    </svg>
+                    <span>Terkunci &bull; Pilih Aset di Tahap 01</span>
+                </span>
+            </template>
+            <template x-if="selectedAstap">
+                <span class="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 flex items-center gap-1.5 self-start sm:self-auto">
+                    <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    <span>Siap Diterbitkan</span>
+                </span>
+            </template>
         </div>
     </div>
 
@@ -71,9 +91,18 @@
             <span>Batalkan &amp; Kembali</span>
         </a>
 
-        <button type="submit" :disabled="isSubmitting"
-                class="inline-flex items-center justify-center gap-2 px-7 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-black shadow-xl shadow-indigo-600/30 hover:shadow-indigo-500/50 hover:-translate-y-0.5 active:scale-95 transition-all disabled:opacity-50 cursor-pointer">
-            <template x-if="!isSubmitting">
+        <button type="submit" :disabled="!selectedAstap || isSubmitting"
+                class="inline-flex items-center justify-center gap-2 px-7 py-3 rounded-2xl text-xs font-black shadow-xl transition-all"
+                :class="!selectedAstap ? 'bg-slate-800 border border-slate-700 text-slate-500 cursor-not-allowed opacity-60 shadow-none' : 'bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-indigo-600/30 hover:shadow-indigo-500/50 hover:-translate-y-0.5 active:scale-95 cursor-pointer'">
+            <template x-if="!selectedAstap">
+                <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                    </svg>
+                    <span>Wajib Pilih Aset Terlebih Dahulu</span>
+                </div>
+            </template>
+            <template x-if="selectedAstap && !isSubmitting">
                 <div class="flex items-center gap-2">
                     <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
@@ -81,7 +110,7 @@
                     <span>Simpan &amp; Terbitkan Reklasifikasi Aset</span>
                 </div>
             </template>
-            <template x-if="isSubmitting">
+            <template x-if="selectedAstap && isSubmitting">
                 <div class="flex items-center gap-2">
                     <svg class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
