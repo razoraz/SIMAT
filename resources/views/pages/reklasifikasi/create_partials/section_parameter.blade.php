@@ -89,7 +89,7 @@
                 </span>
             </div>
             <input type="text" x-model="formData.nomor_ba_reklas"
-                   placeholder="Contoh: BAST: 000.2.3.2/088/2020 | SPK: SPK-0KS/2020/08"
+                   placeholder="Nomor dokumen BAST / SPK / BA Reklas..."
                    class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none transition-all shadow-inner">
         </div>
 
@@ -104,7 +104,10 @@
         <!-- 3. Panel Khusus Mutasi Eksternal Antar-OPD -->
         @include('pages.reklasifikasi.create_partials.param_mutasi_eksternal')
 
-        <!-- 4. Panel Tujuan KIB & Rekening PMDN 108 & Spesifikasi Fisik Baru -->
+        <!-- 4. Panel Khusus Batas Kapitalisasi Ekstrakomptabel / Intrakomptabel -->
+        @include('pages.reklasifikasi.create_partials.param_ekstrakom')
+
+        <!-- 5. Panel Tujuan KIB & Rekening PMDN 108 & Spesifikasi Fisik Baru -->
         @include('pages.reklasifikasi.create_partials.param_pindah_kib_108')
 
         <!-- 3. Alasan Reklasifikasi (Wajib Diisi untuk Semua Jenis Reklas - Taruh Paling Bawah) -->
@@ -120,7 +123,7 @@
                 </span>
             </div>
             <textarea x-model="formData.alasan_reklas" rows="2" required
-                      placeholder="Tuliskan alasan kenapa melakukan reklasifikasi (contoh: Pekerjaan fisik KDP telah selesai 100% dan terbit BAST / Koreksi salah rekening Simda BMD / Hasil temuan audit BPK)..."
+                      placeholder="Tuliskan alasan reklasifikasi (misal: Pekerjaan fisik KDP selesai 100%, koreksi rekening, dsb)..."
                       class="w-full bg-slate-900/90 border border-slate-700/80 focus:border-indigo-400 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none transition-all resize-none placeholder-slate-500 shadow-inner"></textarea>
             <p class="text-[10.5px] text-slate-400 flex items-center gap-1.5">
                 <span class="text-amber-400">⚠️</span>

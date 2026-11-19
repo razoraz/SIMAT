@@ -62,10 +62,10 @@
                                 <input type="text" x-model="formData.pj_asal_nama"
                                        @focus="isPejabatAsalDropdownOpen = true"
                                        @input="isPejabatAsalDropdownOpen = true"
-                                       placeholder="Ketik atau pilih pejabat penyerah RSUD (BUDI HARTONO, S.Sos / dr. Yus...)"
+                                       placeholder="Ketik atau pilih pejabat penyerah..."
                                        class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-teal-400 focus:ring-1 focus:ring-teal-400/30 rounded-xl px-3.5 pr-9 text-xs text-white placeholder-slate-500 focus:outline-none font-bold transition-all shadow-inner">
                                 <button type="button" @click="isPejabatAsalDropdownOpen = !isPejabatAsalDropdownOpen"
-                                        class="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-teal-300 rounded-lg hover:bg-slate-800 transition-colors"
+                                        class="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-teal-300 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
                                         title="Buka pilihan pejabat">
                                     <svg class="w-4 h-4 transition-transform duration-200" :class="isPejabatAsalDropdownOpen ? 'rotate-180 text-teal-400' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                                 </button>
@@ -157,7 +157,7 @@
                             <input type="text" x-model="formData.skpd_tujuan"
                                    @focus="isSkpdDropdownOpen = true"
                                    @input="isSkpdDropdownOpen = true"
-                                   placeholder="Ketik atau pilih nama dinas/instansi penerima (contoh: Dinas Kesehatan, BPKAD Bondowoso...)"
+                                   placeholder="Ketik atau pilih SKPD penerima..."
                                    autocomplete="off"
                                    class="w-full bg-slate-950 border border-slate-700/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 rounded-xl px-3.5 py-2.5 pl-9 pr-9 text-xs text-white placeholder-slate-500 focus:outline-none font-bold shadow-inner transition-all">
                             <div class="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-400 pointer-events-none">
@@ -212,7 +212,7 @@
                                 <input type="text" x-model="formData.pejabat_opd_tujuan"
                                        @focus="isPejabatTujuanDropdownOpen = true"
                                        @input="isPejabatTujuanDropdownOpen = true"
-                                       placeholder="Nama Pejabat / Pengurus Barang"
+                                       placeholder="Nama pejabat penerima..."
                                        class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 rounded-xl px-3.5 pr-9 text-xs text-white placeholder-slate-500 focus:outline-none font-bold transition-all shadow-inner">
                                 <button type="button" x-show="availablePejabatTujuanList.length > 0"
                                         @click="isPejabatTujuanDropdownOpen = !isPejabatTujuanDropdownOpen"
@@ -264,7 +264,7 @@
                                     <span>Jabatan Pejabat Penerima</span>
                                 </label>
                                 <input type="text" x-model="formData.jabatan_opd_tujuan"
-                                       placeholder="Pengurus Barang / Kepala Bidang"
+                                       placeholder="Jabatan pejabat penerima..."
                                        class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none font-semibold transition-all shadow-inner">
                             </div>
                         </div>
@@ -278,7 +278,7 @@
                         </label>
                         <div class="relative">
                             <input type="text" x-model="formData.alamat_instansi"
-                                   placeholder="Jl. Letnan Karsono No. 2, Bondowoso"
+                                   placeholder="Alamat kantor / SKPD..."
                                    class="w-full bg-slate-950 border border-slate-700/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 rounded-xl px-3.5 py-2.5 pl-9 text-xs text-white placeholder-slate-500 focus:outline-none transition-all shadow-inner">
                             <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
@@ -344,7 +344,7 @@
                                 <span class="truncate" title="Nomor SK Dasar / Mutasi">Nomor SK Dasar / Mutasi</span>
                             </label>
                             <input type="text" x-model="formData.nomor_sk_dasar"
-                                   placeholder="SK Bupati / Nomor BAST Transfer BMD"
+                                   placeholder="Nomor SK Bupati / Dasar hukum..."
                                    class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none font-mono tracking-wider transition-all shadow-inner">
                         </div>
                     </div>

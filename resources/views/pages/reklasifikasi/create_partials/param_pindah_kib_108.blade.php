@@ -1,4 +1,4 @@
-﻿            <!-- 3. Klasifikasi KIB Tujuan & Rekening PMDN 108 -->
+            <!-- 3. Klasifikasi KIB Tujuan & Rekening PMDN 108 -->
             <div x-show="formData.jenis_reklas === 'KOREKSI_REKENING' || formData.jenis_reklas === 'KDP_TO_DEFINITIF' || formData.jenis_reklas === 'KAPITALISASI_INTRAKOM'"
                  x-transition.duration.200ms
                  class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-4">
@@ -108,39 +108,6 @@
                         <template x-if="isReklasSubSubRincianOpen && filteredSubSubRincian108.length === 0">
                             <div class="p-2.5 text-center text-xs text-slate-400 italic">Tidak ada rincian barang cocok.</div>
                         </template>
-                    </div>
-                </div>
-
-                <!-- Pemetaan Baris Matriks 42 Baris Neraca (Otomatis / Sinkron) -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-800">
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                            Baris Matriks Asal (Mutasi Kurang -) <span class="text-rose-400">*</span>
-                        </label>
-                        <select x-model="formData.jenis_reklasifikasi_asal_id" required
-                            class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-indigo-500">
-                            <option value="">-- Pilih Baris Matriks Asal --</option>
-                            @foreach ($templateRows as $tRow)
-                                <option value="{{ $tRow->id }}">
-                                    [{{ $tRow->kelompok_kib }}] {{ $tRow->nama_sub_rincian }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                            Baris Matriks Tujuan (Mutasi Tambah +) <span class="text-emerald-400">*</span>
-                        </label>
-                        <select x-model="formData.jenis_reklasifikasi_tujuan_id"
-                            class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-indigo-500">
-                            <option value="">-- Pilih Baris Matriks Tujuan --</option>
-                            @foreach ($templateRows as $tRow)
-                                <option value="{{ $tRow->id }}">
-                                    [{{ $tRow->kelompok_kib }}] {{ $tRow->nama_sub_rincian }}
-                                </option>
-                            @endforeach
-                        </select>
                     </div>
                 </div>
             </div>
@@ -366,9 +333,12 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Konstruksi Fisik Jaringan:</label>
-                                <input type="text" x-model="formData.spekBaru.jaringan_konstruksi" placeholder="Contoh: Aspal Hotmix / Paving Blok / Pipa HDPE"
-                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Konstruksi Beton:</label>
+                                <select x-model="formData.spekBaru.jaringan_konstruksi"
+                                        class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                    <option value="Beton">Beton</option>
+                                    <option value="Tidak">Tidak</option>
+                                </select>
                             </div>
                             <div>
                                 <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Luas Jaringan (m²):</label>

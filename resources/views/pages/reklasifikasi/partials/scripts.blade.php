@@ -350,6 +350,7 @@
             isPejabatAsalDropdownOpen: false,
             selectedDokumenFile: null,
             kemitraanSubGroupOverride: null,
+            rawExtracomUnits: [],
 
             formData: {
                 astap_id: '',
@@ -397,7 +398,7 @@
                     gedung_is_baru: 'Lama',
                     gedung_kapitalisasi_tahun_induk: '',
                     gedung_kapitalisasi_nilai_induk: '',
-                    jaringan_konstruksi: 'Aspal / Beton',
+                    jaringan_konstruksi: 'Beton',
                     jaringan_panjang_km: '',
                     jaringan_lebar_m: '',
                     jaringan_luas_m2: '',
@@ -454,6 +455,7 @@
                 nomor_sk_dasar: '',
                 selected_register_ids: [],
                 register_kondisi_map: {},
+                reklas_items: [],
             },
 
             // 108 Hierarchy Getters
@@ -803,6 +805,7 @@
                 this.isSkpdDropdownOpen = false;
                 this.isPejabatTujuanDropdownOpen = false;
                 this.isPejabatAsalDropdownOpen = false;
+                this.rawExtracomUnits = [];
                 this.formData = {
                     astap_id: '',
                     nama_barang: '',
@@ -838,6 +841,7 @@
                     nomor_sk_dasar: '',
                     selected_register_ids: [],
                     register_kondisi_map: {},
+                    reklas_items: [],
                     spekBaru: {
                         tanah_luas_m2: '',
                         tanah_hak: 'Hak Pakai',
@@ -859,7 +863,7 @@
                         gedung_dokumen_tgl: '',
                         gedung_status_tanah: 'Tanah Pemda',
                         gedung_alamat: 'Kompleks RSUD Dr. H. Koesnandi',
-                        jaringan_konstruksi: 'Aspal / Beton',
+                        jaringan_konstruksi: 'Beton',
                         jaringan_panjang_km: '',
                         jaringan_lebar_m: '',
                         jaringan_luas_m2: '',
@@ -926,7 +930,8 @@
                 if (this.formData.selected_register_ids && Array.isArray(this.formData.selected_register_ids)) {
                     this.formData.selected_register_ids = this.formData.selected_register_ids.map(id => Number(id));
                 }
-                if (this.formData.jenis_reklas !== 'KOREKSI_LAIN') {
+                this.syncExtracomItems();
+                if (this.formData.jenis_reklas !== 'KOREKSI_LAIN' && this.formData.jenis_reklas !== 'EKSTRAKOMPTABEL' && this.formData.jenis_reklas !== 'KAPITALISASI_INTRAKOM') {
                     this.formData.nilai_reklas = this.calculateSelectedNibarsValue();
                 }
             },
@@ -1024,6 +1029,14 @@
                     this.syncKorLainRows();
                 }
 
+                // Inisialisasi master rincian unit dan sinkronkan dengan register terpilih
+                this.rawExtracomUnits = this.buildAllExtracomUnits(found);
+                this.syncExtracomItems();
+
+                if (this.formData.jenis_reklas === 'EKSTRAKOMPTABEL' || this.formData.jenis_reklas === 'KAPITALISASI_INTRAKOM') {
+                    this.formData.nilai_reklas = this.getReklasExtracomTotal();
+                }
+
                 // Inisialisasi spek baru
                 this.initSpekBaru();
             },
@@ -1042,6 +1055,10 @@
                     if (extraRow) {
                         this.formData.jenis_reklasifikasi_tujuan_id = extraRow.id;
                     }
+                    if (!this.rawExtracomUnits || this.rawExtracomUnits.length === 0) {
+                        this.rawExtracomUnits = this.buildAllExtracomUnits(this.selectedAstap);
+                    }
+                    this.syncExtracomItems();
                 } else if (this.formData.jenis_reklas === 'KAPITALISASI_INTRAKOM') {
                     const extraRow = (window.templateRows || []).find(r => r.kode_prefix === 'KOR_EXTRACOM');
                     if (extraRow) {
@@ -1053,10 +1070,10 @@
                         this.formData.tujuan_kib = 'KIB B';
                     }
                     this.onTujuanKibChange();
-                    // Pre-fill nilai reklas dari aset terpilih
-                    if (this.selectedAstap) {
-                        this.formData.nilai_reklas = parseFloat(this.selectedAstap.total_realisasi || 0);
+                    if (!this.rawExtracomUnits || this.rawExtracomUnits.length === 0) {
+                        this.rawExtracomUnits = this.buildAllExtracomUnits(this.selectedAstap);
                     }
+                    this.syncExtracomItems();
                 } else if (this.formData.jenis_reklas === 'HIBAH_KELUAR') {
                     const hibahRow = (window.templateRows || []).find(r => r.kode_prefix === 'KOR_HIBAH');
                     if (hibahRow) {
@@ -1250,7 +1267,13 @@
                 this.formData.spekBaru.gedung_kapitalisasi_nilai_induk = (this.formData.spekBaru.gedung_is_baru === 'Baru') ? '' : (gItem.gedung_kapitalisasi_nilai_induk || spec.gedung_kapitalisasi_nilai_induk || spec.nilai_induk || '');
 
                 // KIB D - Jalan, Jaringan & Irigasi
-                this.formData.spekBaru.jaringan_konstruksi = spec.konstruksi || 'Aspal / Beton';
+                let jKonstruksi = spec.konstruksi || spec.jaringan_konstruksi || '';
+                if (jKonstruksi === 'Tidak' || (typeof jKonstruksi === 'string' && (jKonstruksi.toLowerCase().includes('tidak') || jKonstruksi.toLowerCase().includes('bukan')))) {
+                    jKonstruksi = 'Tidak';
+                } else {
+                    jKonstruksi = 'Beton';
+                }
+                this.formData.spekBaru.jaringan_konstruksi = jKonstruksi;
                 this.formData.spekBaru.jaringan_panjang_km = spec.panjang_km || '';
                 this.formData.spekBaru.jaringan_lebar_m = spec.lebar_m || '';
                 this.formData.spekBaru.jaringan_luas_m2 = spec.luas_m2 || '';
@@ -1339,6 +1362,221 @@
                     return Boolean(this.formData.spekBaru.is_extracom);
                 }
                 return this.detectIsExtracom(this.selectedAstap);
+            },
+
+            buildAllExtracomUnits(found) {
+                if (!found) return [];
+                let spec = found.spesifikasi_json || {};
+                if (typeof spec === 'string') {
+                    try { spec = JSON.parse(spec); } catch (e) { spec = {}; }
+                }
+
+                const resolveItemName = (val1, val2, val3, fallback) => {
+                    const clean = (s) => (s && typeof s === 'string' && s.trim() !== '' && s.trim() !== '-') ? s.trim() : null;
+                    const v1 = clean(val1);
+                    const v2 = clean(val2);
+                    const v3 = clean(val3);
+                    if (v1 && v2 && v3) return `${v1} (${v2} / ${v3})`;
+                    if (v1 && v2) return `${v1} (${v2})`;
+                    if (v1) return v1;
+                    if (v2) return v2;
+                    return fallback;
+                };
+
+                let rawUnits = [];
+                if (Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0) {
+                    spec.mesin_items.forEach((m, idx) => {
+                        const qty = Math.max(1, parseInt(m.mesin_jumlah_barang) || 1);
+                        const displayName = resolveItemName(m.mesin_nama_barang, m.mesin_merk, m.mesin_type, 'Barang #' + (idx + 1));
+                        const price = parseFloat(m.mesin_nilai_satuan || m.mesin_harga_satuan || found.harga_satuan || 0);
+                        const satuan = m.mesin_satuan || found.satuan || 'Unit';
+                        for (let q = 0; q < qty; q++) {
+                            rawUnits.push({
+                                nama_barang: qty > 1 ? `${displayName} (Unit ${q + 1})` : displayName,
+                                jumlah_volume: 1,
+                                satuan: satuan,
+                                harga_satuan: price,
+                            });
+                        }
+                    });
+                } else if (Array.isArray(spec.gedung_items) && spec.gedung_items.length > 0) {
+                    spec.gedung_items.forEach((m, idx) => {
+                        const qty = Math.max(1, parseInt(m.gedung_jumlah_bangunan) || 1);
+                        const displayName = resolveItemName(m.gedung_nama_bangunan || m.gedung_nama, '', '', 'Bangunan #' + (idx + 1));
+                        const price = parseFloat(m.gedung_nilai_fisik || m.gedung_harga_satuan || found.harga_satuan || 0);
+                        const satuan = m.gedung_satuan || found.satuan || 'Gedung';
+                        for (let q = 0; q < qty; q++) {
+                            rawUnits.push({
+                                nama_barang: qty > 1 ? `${displayName} (Unit ${q + 1})` : displayName,
+                                jumlah_volume: 1,
+                                satuan: satuan,
+                                harga_satuan: price,
+                            });
+                        }
+                    });
+                } else if (Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0) {
+                    spec.lainnya_items.forEach((m, idx) => {
+                        const qty = Math.max(1, parseInt(m.lainnya_jumlah_barang) || 1);
+                        const itemTitle = m.lainnya_buku_judul || m.lainnya_kesenian_judul || m.lainnya_hewan_judul || m.lainnya_hewan_jenis || m.lainnya_judul || m.lainnya_nama_barang;
+                        const itemAuthor = m.lainnya_buku_pencipta || m.lainnya_kesenian_pencipta || m.lainnya_pencipta || m.lainnya_buku_spesifikasi || m.lainnya_spesifikasi;
+                        const displayName = resolveItemName(itemTitle, itemAuthor, '', 'Barang #' + (idx + 1));
+                        const price = parseFloat(m.lainnya_nilai_satuan || m.lainnya_harga_satuan || found.harga_satuan || 0);
+                        const satuan = m.lainnya_satuan || found.satuan || 'Unit';
+                        for (let q = 0; q < qty; q++) {
+                            rawUnits.push({
+                                nama_barang: qty > 1 ? `${displayName} (Unit ${q + 1})` : displayName,
+                                jumlah_volume: 1,
+                                satuan: satuan,
+                                harga_satuan: price,
+                            });
+                        }
+                    });
+                } else if (Array.isArray(spec.jaringan_items) && spec.jaringan_items.length > 0) {
+                    spec.jaringan_items.forEach((m, idx) => {
+                        const qty = Math.max(1, parseInt(m.jaringan_jumlah_barang) || 1);
+                        const displayName = resolveItemName(m.jaringan_nama_barang || m.jaringan_nama, '', '', 'Jaringan #' + (idx + 1));
+                        const price = parseFloat(m.jaringan_nilai_fisik || m.jaringan_harga_satuan || found.harga_satuan || 0);
+                        const satuan = m.jaringan_satuan || found.satuan || 'Unit';
+                        for (let q = 0; q < qty; q++) {
+                            rawUnits.push({
+                                nama_barang: qty > 1 ? `${displayName} (Unit ${q + 1})` : displayName,
+                                jumlah_volume: 1,
+                                satuan: satuan,
+                                harga_satuan: price,
+                            });
+                        }
+                    });
+                }
+
+                if (found.registers && found.registers.length > 0) {
+                    const activeRegisters = found.registers.filter(r => r.status !== 'Mutasi Keluar OPD' && r.status !== 'Dihibahkan');
+                    return activeRegisters.map((reg, idx) => {
+                        const unitMeta = rawUnits[idx] || {};
+                        const fallbackName = found.nama_barang ? `${found.nama_barang} (#${idx + 1})` : `Unit #${idx + 1}`;
+                        const unitPrice = parseFloat(reg.harga_satuan || unitMeta.harga_satuan || (found.total_realisasi ? parseFloat(found.total_realisasi) / Math.max(1, activeRegisters.length) : 0));
+                        return {
+                            register_id: Number(reg.id),
+                            nibar: reg.nibar || reg.no_register || '',
+                            nama_barang: unitMeta.nama_barang || fallbackName,
+                            jumlah_volume: 1,
+                            satuan: unitMeta.satuan || found.satuan || 'Unit',
+                            harga_satuan: unitPrice,
+                        };
+                    });
+                }
+
+                if (rawUnits.length > 0) {
+                    return rawUnits.map((u) => ({ ...u, register_id: null, nibar: '' }));
+                }
+
+                const fallbackVol = parseInt(found.jumlah_volume) || 1;
+                const fallbackHarga = parseFloat(found.harga_satuan) || (fallbackVol > 0 && found.total_realisasi ? (parseFloat(found.total_realisasi) / fallbackVol) : 0);
+                const displayName = resolveItemName(found.nama_barang, found.merk, found.type, 'Barang Aset');
+                return [{
+                    register_id: null,
+                    nibar: '',
+                    nama_barang: displayName,
+                    jumlah_volume: fallbackVol,
+                    satuan: found.satuan || 'Unit',
+                    harga_satuan: fallbackHarga,
+                }];
+            },
+
+            syncExtracomItems() {
+                if (!this.rawExtracomUnits || this.rawExtracomUnits.length === 0) {
+                    this.formData.reklas_items = [];
+                    return;
+                }
+
+                const hasRegisters = Boolean(this.selectedAstap && this.selectedAstap.registers && this.selectedAstap.registers.length > 0);
+                if (hasRegisters) {
+                    const selectedIds = (this.formData.selected_register_ids || []).map(id => Number(id));
+                    this.formData.reklas_items = this.rawExtracomUnits.filter(u => selectedIds.includes(Number(u.register_id)));
+                } else {
+                    this.formData.reklas_items = [...this.rawExtracomUnits];
+                }
+
+                if (this.formData.jenis_reklas === 'EKSTRAKOMPTABEL' || this.formData.jenis_reklas === 'KAPITALISASI_INTRAKOM') {
+                    this.formData.nilai_reklas = this.getReklasExtracomTotal();
+                }
+            },
+
+            getReklasExtracomTotal() {
+                if (!this.formData.reklas_items || this.formData.reklas_items.length === 0) {
+                    return 0;
+                }
+                return this.formData.reklas_items.reduce((acc, item) => {
+                    const qty = parseInt(item.jumlah_volume) || 1;
+                    const price = parseFloat(item.harga_satuan) || 0;
+                    return acc + (qty * price);
+                }, 0);
+            },
+
+            getReklasExtracomTotalVolume() {
+                if (!this.formData.reklas_items || this.formData.reklas_items.length === 0) {
+                    return 0;
+                }
+                return this.formData.reklas_items.reduce((acc, item) => {
+                    return acc + (parseInt(item.jumlah_volume) || 1);
+                }, 0);
+            },
+
+            formatRupiahInput(val) {
+                if (val === undefined || val === null || val === '') return '';
+                const num = Math.round(Number(val));
+                if (isNaN(num)) return '';
+                return num.toLocaleString('id-ID');
+            },
+
+            updateItemHargaSatuan(item, eventOrText) {
+                let rawText = '';
+                let targetEl = null;
+                if (eventOrText && typeof eventOrText === 'object') {
+                    if (eventOrText.target) {
+                        targetEl = eventOrText.target;
+                        rawText = targetEl.value || '';
+                    }
+                } else {
+                    rawText = String(eventOrText || '');
+                }
+
+                const cleaned = rawText.replace(/[^0-9]/g, '');
+                const numericVal = cleaned === '' ? 0 : parseInt(cleaned, 10);
+                item.harga_satuan = numericVal;
+
+                // Sync back to rawExtracomUnits so custom edits are remembered if checkbox toggles
+                if (this.rawExtracomUnits && this.rawExtracomUnits.length > 0) {
+                    const rawTarget = this.rawExtracomUnits.find(u => (item.register_id && u.register_id === item.register_id) || u.nama_barang === item.nama_barang);
+                    if (rawTarget) {
+                        rawTarget.harga_satuan = numericVal;
+                        rawTarget.nama_barang = item.nama_barang;
+                        rawTarget.jumlah_volume = item.jumlah_volume;
+                        rawTarget.satuan = item.satuan;
+                    }
+                }
+
+                if (targetEl) {
+                    targetEl.value = this.formatRupiahInput(numericVal);
+                }
+
+                this.onExtracomItemChange();
+            },
+
+            onExtracomItemChange() {
+                if (this.rawExtracomUnits && this.formData.reklas_items) {
+                    this.formData.reklas_items.forEach(item => {
+                        const rawTarget = this.rawExtracomUnits.find(u => (item.register_id && u.register_id === item.register_id) || u.nama_barang === item.nama_barang);
+                        if (rawTarget) {
+                            rawTarget.nama_barang = item.nama_barang;
+                            rawTarget.jumlah_volume = item.jumlah_volume;
+                            rawTarget.satuan = item.satuan;
+                            rawTarget.harga_satuan = item.harga_satuan;
+                        }
+                    });
+                }
+                if (this.formData.jenis_reklas === 'EKSTRAKOMPTABEL' || this.formData.jenis_reklas === 'KAPITALISASI_INTRAKOM') {
+                    this.formData.nilai_reklas = this.getReklasExtracomTotal();
+                }
             },
 
             getKemitraanTargetSubGroup() {
@@ -2046,19 +2284,74 @@
                     }
                 }
 
+                // Validasi khusus Ekstrakomptabel (<= 300.000)
+                if (this.formData.jenis_reklas === 'EKSTRAKOMPTABEL') {
+                    if (this.selectedAstap && this.selectedAstap.registers && this.selectedAstap.registers.length > 0) {
+                        if (!this.formData.selected_register_ids || this.formData.selected_register_ids.length === 0) {
+                            const errMsg = '⚠️ Pilih minimal 1 unit register/NIBAR pada Tahap 01 yang akan diproses ke Ekstrakomptabel.';
+                            if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'error');
+                            else alert(errMsg);
+                            return;
+                        }
+                    }
+                    if (this.formData.reklas_items && this.formData.reklas_items.length > 0) {
+                        for (let i = 0; i < this.formData.reklas_items.length; i++) {
+                            const rItem = this.formData.reklas_items[i];
+                            const hrg = parseFloat(rItem.harga_satuan) || 0;
+                            if (hrg <= 0) {
+                                const errMsg = `⚠️ Harga satuan untuk "${rItem.nama_barang || 'Barang #' + (i+1)}" harus lebih dari Rp 0!`;
+                                if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'warning');
+                                else alert(errMsg);
+                                return;
+                            }
+                            if (hrg > 300000) {
+                                const errMsg = `⚠️ Harga satuan untuk "${rItem.nama_barang || 'Barang #' + (i+1)}" melebihi batas Ekstrakomtable (maksimal Rp 300.000 per unit)!`;
+                                if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'error');
+                                else alert(errMsg);
+                                return;
+                            }
+                        }
+                    }
+                }
+
+                // Validasi khusus Kapitalisasi Intrakomptabel (> 300.000)
+                if (this.formData.jenis_reklas === 'KAPITALISASI_INTRAKOM') {
+                    if (this.selectedAstap && this.selectedAstap.registers && this.selectedAstap.registers.length > 0) {
+                        if (!this.formData.selected_register_ids || this.formData.selected_register_ids.length === 0) {
+                            const errMsg = '⚠️ Pilih minimal 1 unit register/NIBAR pada Tahap 01 yang akan dikapitalisasi ke Intrakomptabel.';
+                            if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'error');
+                            else alert(errMsg);
+                            return;
+                        }
+                    }
+                    if (this.formData.reklas_items && this.formData.reklas_items.length > 0) {
+                        for (let i = 0; i < this.formData.reklas_items.length; i++) {
+                            const rItem = this.formData.reklas_items[i];
+                            const hrg = parseFloat(rItem.harga_satuan) || 0;
+                            if (hrg <= 300000) {
+                                const errMsg = `⚠️ Harga satuan untuk "${rItem.nama_barang || 'Barang #' + (i+1)}" belum memenuhi syarat kapitalisasi ke Intrakomtable (wajib di atas Rp 300.000 per unit)!`;
+                                if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'warning');
+                                else alert(errMsg);
+                                return;
+                            }
+                        }
+                    }
+                }
+
                 this.isSubmitting = true;
 
                 try {
                     const payload = {
                         ...this.formData,
-                        selected_register_ids: (this.formData.jenis_reklas === 'MUTASI_EKSTERNAL' || this.formData.jenis_reklas === 'HIBAH_KELUAR') ? (this.formData.selected_register_ids || []) : null,
+                        reklas_items: (['EKSTRAKOMPTABEL', 'KAPITALISASI_INTRAKOM'].includes(this.formData.jenis_reklas)) ? (this.formData.reklas_items || []) : null,
+                        selected_register_ids: (['MUTASI_EKSTERNAL', 'HIBAH_KELUAR', 'EKSTRAKOMPTABEL', 'KAPITALISASI_INTRAKOM'].includes(this.formData.jenis_reklas)) ? (this.formData.selected_register_ids || []) : null,
                         register_kondisi_map: (this.formData.jenis_reklas === 'MUTASI_EKSTERNAL' || this.formData.jenis_reklas === 'HIBAH_KELUAR') ? (this.formData.register_kondisi_map || {}) : null,
                         tipe_koreksi: this.formData.tipe_koreksi || 'kurang',
                         sub_koreksi: (this.formData.jenis_reklas === 'KOREKSI_LAIN') ? (this.formData.sub_koreksi || 'biasa') : null,
                         nilai_realisasi_baru: parseFloat(this.formData.nilai_realisasi_baru || 0),
                         alasan_reklas: (this.formData.alasan_reklas || '').trim() || (this.formData.keterangan || '').trim() || null,
                         keterangan: (this.formData.keterangan || '').trim() || this.getNarasiPreview(),
-                        spesifikasi_baru: (['KOREKSI_REKENING', 'KDP_TO_DEFINITIF'].includes(this.formData.jenis_reklas) && this.formData.tujuan_kib) ? this.formData.spekBaru : null,
+                        spesifikasi_baru: (['KOREKSI_REKENING', 'KDP_TO_DEFINITIF', 'KAPITALISASI_INTRAKOM'].includes(this.formData.jenis_reklas) && this.formData.tujuan_kib) ? this.formData.spekBaru : null,
                         pihak_hibah: this.formData.pihak_hibah || null,
                         penerima_nama: this.formData.penerima_nama || null,
                         penerima_jabatan: this.formData.penerima_jabatan || null,

@@ -50,5 +50,63 @@
             </div>
         </div>
     </div>
+
+    <!-- Stepper Navigation Bar (2 Tahap Bersih & Modern) -->
+    <div class="mt-6 pt-5 border-t border-slate-800/80 grid grid-cols-1 sm:grid-cols-2 gap-3 relative z-10">
+        <!-- Step 1 Tab -->
+        <button type="button" @click="goToStep(1)"
+                class="text-left p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 shadow-md"
+                :class="currentStep === 1
+                    ? 'bg-indigo-950/40 border-indigo-500/50 shadow-indigo-500/10'
+                    : 'bg-slate-950/60 border-slate-800/80 hover:border-slate-700 text-slate-400'">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="w-8 h-8 rounded-xl font-mono font-black text-xs flex items-center justify-center shrink-0 transition-all"
+                     :class="currentStep === 1
+                         ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                         : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'">
+                    <span x-show="currentStep === 1">1</span>
+                    <span x-show="currentStep > 1">✓</span>
+                </div>
+                <div class="min-w-0">
+                    <span class="text-[9.5px] font-bold uppercase tracking-wider block"
+                          :class="currentStep === 1 ? 'text-indigo-400' : 'text-slate-500'">Langkah 1</span>
+                    <span class="text-xs font-extrabold text-white block truncate">Formulir &amp; Parameter Reklasifikasi</span>
+                </div>
+            </div>
+            <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full border shrink-0"
+                  :class="currentStep === 1
+                      ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
+                      : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'">
+                <span x-text="currentStep === 1 ? 'Aktif Diisi' : 'Selesai ✓'"></span>
+            </span>
+        </button>
+
+        <!-- Step 2 Tab -->
+        <button type="button" @click="goToStep(2)"
+                class="text-left p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 shadow-md"
+                :class="currentStep === 2
+                    ? 'bg-purple-950/40 border-purple-500/50 shadow-purple-500/10'
+                    : 'bg-slate-950/60 border-slate-800/80 hover:border-slate-700 text-slate-400'">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="w-8 h-8 rounded-xl font-mono font-black text-xs flex items-center justify-center shrink-0 transition-all"
+                     :class="currentStep === 2
+                         ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30'
+                         : 'bg-slate-900 text-slate-500 border border-slate-800'">
+                    <span>2</span>
+                </div>
+                <div class="min-w-0">
+                    <span class="text-[9.5px] font-bold uppercase tracking-wider block"
+                          :class="currentStep === 2 ? 'text-purple-400' : 'text-slate-500'">Langkah 2</span>
+                    <span class="text-xs font-extrabold text-white block truncate">Lembar Verifikasi Reklasifikasi</span>
+                </div>
+            </div>
+            <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full border shrink-0"
+                  :class="currentStep === 2
+                      ? 'bg-purple-500/20 text-purple-300 border-purple-500/30'
+                      : 'bg-slate-900 text-slate-500 border-slate-800'">
+                <span x-text="currentStep === 2 ? 'Verifikasi 🎯' : 'Tahap Akhir'"></span>
+            </span>
+        </button>
+    </div>
 </div>
 
