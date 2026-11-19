@@ -265,7 +265,7 @@
                 },
                 removeItem(index) {
                     if (this.formData.status === 'Ditolak') return;
-                    if (this.formData.items.length <= 1) { alert('⚠️ Minimal harus ada 1 barang!'); return; }
+                    if (this.formData.items.length <= 1) { this.showSimatToast('Minimal harus ada 1 barang dalam transaksi!', 'warning'); return; }
                     this.formData.items.splice(index, 1);
                 },
                 getTotalItemVolume() {
@@ -344,7 +344,7 @@
                     // Validasi: Jumlah NIBAR tidak boleh melebihi Volume Pengajuan (item.qty)
                     const maxQty = parseInt(item.qty) || 1;
                     if (item.nibar_selected.length >= maxQty) {
-                        alert('⚠️ Jumlah NIBAR yang dipilih (' + (item.nibar_selected.length + 1) + ') tidak boleh melebihi Volume Pengajuan (' + maxQty + ' ' + (item.satuan || 'Unit') + ').\n\nVolume Pengajuan tidak boleh berubah otomatis. Jika ingin menambah NIBAR, silakan ubah Volume Pengajuan terlebih dahulu.');
+                        this.showSimatToast('Jumlah NIBAR terpilih (' + (item.nibar_selected.length + 1) + ') tidak boleh melebihi Volume Pengajuan (' + maxQty + ' ' + (item.satuan || 'Unit') + ').', 'warning');
                         return;
                     }
 
@@ -414,7 +414,7 @@
                 selectAstapItem(item, ast) {
                     if (this.formData.status === 'Ditolak') return;
                     if (this.isItemAlreadySelected(ast, item)) {
-                        alert('⚠️ Barang "' + ast.nama + '" sudah dipilih pada baris lain!\n\nDalam satu transaksi distribusi tidak diperbolehkan memilih 2 nama barang yang sama. Silakan tambahkan Volume (Qty) pada baris yang sudah ada.');
+                        this.showSimatToast('Barang "' + ast.nama + '" sudah dipilih pada baris lain!', 'warning');
                         return;
                     }
                     item.astap_id = ast.id; item.nama_barang = ast.nama; item.kode_barang = ast.kode; item.merk_type = ast.merk || ''; item.satuan = ast.satuan || 'Unit'; if (!item.jenis_astap_nama && ast.jenis_nama) item.jenis_astap_nama = ast.jenis_nama; this.activeDropdownIndex = null;
@@ -430,7 +430,7 @@
                     const match = (this.katalogAstap || []).find(a => a.nama && a.nama.toLowerCase().trim() === item.nama_barang.toLowerCase().trim());
                     if (match) {
                         if (this.isItemAlreadySelected(match, item)) {
-                            alert('⚠️ Barang "' + match.nama + '" sudah dipilih pada baris lain!\n\nDalam satu transaksi distribusi tidak diperbolehkan menginput 2 nama barang yang sama.');
+                            this.showSimatToast('Barang "' + match.nama + '" sudah dipilih pada baris lain!', 'warning');
                             item.astap_id = null;
                             item.nama_barang = '';
                             item.kode_barang = '';
@@ -506,7 +506,7 @@
                     // ── 1. Validasi Header Distribusi ──────────────────────────────────
                     console.log('[submitForm] step 1: tujuan =', this.formData.tujuan, 'unit_id =', this.formData.unit_id);
                     if (!this.formData.tujuan || this.formData.tujuan.trim() === '' || !this.formData.unit_id) {
-                        alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nTujuan Unit / Ruangan / Paviliun belum dipilih.');
+                        this.showSimatToast('Tujuan Unit / Ruangan / Paviliun belum dipilih.', 'warning');
                         return;
                     }
 
@@ -517,32 +517,32 @@
                         await this.fetchNextBast();
                     }
                     if (!this.isSubAdmin && isShippingOrReceived && (!this.formData.bast_nomor || this.formData.bast_nomor.trim() === '' || this.formData.bast_nomor === '(tidak diterbitkan)' || this.formData.bast_nomor.includes('Menunggu'))) {
-                        alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nNo. BAST Distribusi belum diisi / belum terbit.');
+                        this.showSimatToast('No. BAST Distribusi belum diisi / belum terbit.', 'warning');
                         return;
                     }
 
                     console.log('[submitForm] step 3: tgl =', this.formData.tgl);
                     if (!this.formData.tgl || this.formData.tgl.trim() === '') {
-                        alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nTanggal ' + (this.isSubAdmin ? 'Pengajuan' : 'Penyerahan') + ' belum diisi.');
+                        this.showSimatToast('Tanggal ' + (this.isSubAdmin ? 'Pengajuan' : 'Penyerahan') + ' belum diisi.', 'warning');
                         return;
                     }
 
                     console.log('[submitForm] step 4: penerima =', this.formData.penerima);
                     if (!this.formData.penerima || this.formData.penerima.trim() === '') {
-                        alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nNama Penerima / Penanggung Jawab belum diisi (pilih unit tujuan).');
+                        this.showSimatToast('Nama Penerima / Penanggung Jawab belum diisi (pilih unit tujuan).', 'warning');
                         return;
                     }
 
                     console.log('[submitForm] step 5: penerima_jabatan =', this.formData.penerima_jabatan);
                     if (!this.formData.penerima_jabatan || this.formData.penerima_jabatan.trim() === '') {
-                        alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nJabatan Penerima belum diisi.');
+                        this.showSimatToast('Jabatan Penerima belum diisi.', 'warning');
                         return;
                     }
 
                     // ── 2. Validasi Daftar Barang (Multi-Barang) ───────────────────────
                     console.log('[submitForm] step 6: items.length =', this.formData.items.length);
                     if (!this.formData.items || this.formData.items.length === 0) {
-                        alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nMinimal harus ada 1 barang dalam transaksi distribusi.');
+                        this.showSimatToast('Minimal harus ada 1 barang dalam transaksi distribusi.', 'warning');
                         return;
                     }
 
@@ -554,7 +554,7 @@
                         const key = (it.nama_barang || '').trim().toLowerCase();
                         if (key) {
                             if (seenNames[key] !== undefined) {
-                                alert('⚠️ Terdapat nama barang yang sama:\n\nBarang #' + urut + ' ("' + it.nama_barang + '") sama dengan Barang #' + (seenNames[key] + 1) + '.\n\nDalam 1 transaksi distribusi tidak diperbolehkan menginput 2 nama barang yang sama. Silakan gabungkan volumenya pada satu baris atau hapus baris yang duplikat.');
+                                this.showSimatToast('Barang #' + urut + ' ("' + it.nama_barang + '") duplikat dengan Barang #' + (seenNames[key] + 1) + '. Dalam 1 transaksi tidak diperbolehkan menginput 2 barang yang sama.', 'warning');
                                 return;
                             }
                             seenNames[key] = i;
@@ -568,13 +568,19 @@
 
                         // a. Validasi Kategori Jenis ASTAP
                         if (!it.jenis_astap_nama || it.jenis_astap_nama.trim() === '') {
-                            alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nKategori Jenis ASTAP pada Barang #' + urut + ' belum dipilih.');
+                            this.showSimatToast('Kategori Jenis ASTAP pada Barang #' + urut + ' belum dipilih.', 'warning');
                             return;
                         }
 
-                        // b. Validasi Nama Barang
+                        // b. Validasi Nama Barang & Ketersediaan di Master ASTAP
                         if (!it.nama_barang || it.nama_barang.trim() === '') {
-                            alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nNama Barang pada Barang #' + urut + ' belum dipilih.');
+                            this.showSimatToast('Nama Barang pada Barang #' + urut + ' belum dipilih.', 'warning');
+                            return;
+                        }
+                        const resolvedKode = it.kode_barang || this.getItemKode(it) || '';
+                        const astapObj = (this.dbAstapList || []).find(a => a.kode === resolvedKode || a.nama === it.nama_barang);
+                        if (!astapObj && !it.astap_id) {
+                            this.showSimatToast('Barang #' + urut + ' ("' + (it.nama_barang || 'Aset') + '") belum terdaftar dalam Master ASTAP.', 'warning');
                             return;
                         }
 
@@ -585,12 +591,12 @@
                         // d. Validasi Volume Pengajuan (Qty)
                         const qtyPengajuan = parseInt(it.qty);
                         if (!it.qty || isNaN(qtyPengajuan) || qtyPengajuan <= 0) {
-                            alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nVolume Pengajuan pada Barang #' + urut + ' ("' + (it.nama_barang || 'Aset') + '") belum diisi atau bernilai 0.');
+                            this.showSimatToast('Volume Pengajuan pada Barang #' + urut + ' ("' + (it.nama_barang || 'Aset') + '") belum diisi atau bernilai 0.', 'warning');
                             return;
                         }
 
                         if ((it.nibar_selected || []).length > qtyPengajuan) {
-                            alert('⚠️ Volume Di-ACC / NIBAR terpilih (' + it.nibar_selected.length + ') pada Barang #' + urut + ' ("' + (it.nama_barang || 'Aset') + '") melebihi Volume Pengajuan (' + qtyPengajuan + ').\n\nSilakan kurangi pilihan NIBAR atau sesuaikan Volume Pengajuan.');
+                            this.showSimatToast('Volume Di-ACC / NIBAR terpilih (' + it.nibar_selected.length + ') pada Barang #' + urut + ' melebihi Volume Pengajuan (' + qtyPengajuan + ').', 'warning');
                             return;
                         }
                     }
@@ -600,7 +606,7 @@
                     if (!this.isSubAdmin && ['Dalam Pengiriman', 'Telah Diterima'].includes(this.formData.status)) {
                         const totalAcc = this.getTotalItemVolumeAcc();
                         if (totalAcc <= 0) {
-                            alert('⚠️ Validasi Persetujuan Distribusi:\n\nBelum ada barang yang disetujui (di-ACC). Minimal harus ada 1 barang yang dipilihkan NIBAR-nya.\n\nJika seluruh permohonan barang tidak disetujui, silakan ubah Status Transaksi menjadi "Ditolak".');
+                            this.showSimatToast('Minimal harus ada 1 barang yang disetujui (di-ACC) dengan memilih NIBAR, atau ubah Status menjadi "Ditolak".', 'warning');
                             return;
                         }
                     }
@@ -608,14 +614,14 @@
                     // ── 3. Validasi Catatan Umum Distribusi ─────────────────────────────
                     console.log('[submitForm] step 8: keterangan umum =', this.formData.keterangan);
                     if (this.formData.status !== 'Ditolak' && (!this.formData.keterangan || this.formData.keterangan.trim() === '' || this.formData.keterangan.trim() === '-')) {
-                        alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nCatatan Umum / Keterangan Penempatan belum diisi.');
+                        this.showSimatToast('Catatan Umum / Keterangan Penempatan belum diisi.', 'warning');
                         return;
                     }
 
                     // ── 4. Validasi Alasan Penolakan (Khusus Status Ditolak) ───────────
                     if (this.formData.status === 'Ditolak') {
                         if (!this.formData.alasan_penolakan || this.formData.alasan_penolakan.trim() === '' || this.formData.alasan_penolakan.trim() === '-') {
-                            alert('⚠️ Mohon isi Alasan Penolakan terlebih dahulu!\n\nTransaksi dengan status Ditolak wajib mencantumkan alasan penolakan.');
+                            this.showSimatToast('Alasan Penolakan wajib diisi untuk status Ditolak.', 'warning');
                             return;
                         }
                     }
@@ -655,7 +661,7 @@
                                         const astapObj = (this.dbAstapList || []).find(a => a.kode === resolvedKode || a.nama === it.nama_barang);
                                         const registerIds = (it.nibar_selected || []).map(n => n.id ? parseInt(n.id) : null).filter(Boolean);
                                         return {
-                                            astap_id: astapObj ? astapObj.id : (it.astap_id || 1),
+                                            astap_id: astapObj ? astapObj.id : (it.astap_id || null),
                                             nama_barang: it.nama_barang,
                                             kode_barang: resolvedKode,
                                             qty: parseInt(it.qty) || 1,
@@ -719,8 +725,7 @@
                                         });
                                     }
 
-                                    alert(errorMsg);
-                                    this.showSimatToast('Gagal: ' + (result.message ? 'Terdapat konflik data alokasi.' : errorMsg), 'error');
+                                    this.showSimatToast('Gagal: ' + (result.message ? result.message : errorMsg), 'error');
                                 }
                             } catch(e) {
                                 console.error(e);

@@ -283,19 +283,19 @@ Route::middleware('auth')->group(function () {
         Route::put('/distribusi/{id}', [DistribusiController::class, 'saveDistribusi'])->name('distribusi.update');
         Route::delete('/distribusi/{id}', [DistribusiController::class, 'destroy'])->name('distribusi.destroy')->middleware('module:distribusi.delete');
         Route::post('/distribusi/{id}/restore', [DistribusiController::class, 'restore'])->name('distribusi.restore');
+
+        // API: Update Status Distribusi (misal: Sub Admin menandai Barang Diterima / Admin menolak)
+        Route::patch('/distribusi/{id}/status', [DistribusiController::class, 'updateStatus'])->name('distribusi.status.update');
+
+        // API: Toggle Status TTD BSrE Distribusi (simpan ke database agar persist setelah reload)
+        Route::patch('/distribusi/{id}/sign', [DistribusiController::class, 'sign'])->name('distribusi.sign');
+
+        // API: Update kondisi per Register NIBAR (dari halaman distribusi)
+        Route::patch('/distribusi/register-kondisi/{id}', [DistribusiController::class, 'updateRegisterKondisi'])->name('distribusi.register_kondisi.update');
+
+        // API: Ambil kondisi terkini satu astap_register dari DB (untuk refresh realtime)
+        Route::get('/distribusi/register-kondisi/{id}', [DistribusiController::class, 'showRegisterKondisi'])->name('distribusi.register_kondisi.show');
     });
-
-    // API: Update Status Distribusi (misal: Sub Admin menandai Barang Diterima / Admin menolak)
-    Route::patch('/distribusi/{id}/status', [DistribusiController::class, 'updateStatus'])->name('distribusi.status.update');
-
-    // API: Toggle Status TTD BSrE Distribusi (simpan ke database agar persist setelah reload)
-    Route::patch('/distribusi/{id}/sign', [DistribusiController::class, 'sign'])->name('distribusi.sign');
-
-    // API: Update kondisi per Register NIBAR (dari halaman distribusi — semua role terautentikasi)
-    Route::patch('/distribusi/register-kondisi/{id}', [DistribusiController::class, 'updateRegisterKondisi'])->name('distribusi.register_kondisi.update');
-
-    // API: Ambil kondisi terkini satu astap_register dari DB (untuk refresh realtime)
-    Route::get('/distribusi/register-kondisi/{id}', [DistribusiController::class, 'showRegisterKondisi'])->name('distribusi.register_kondisi.show');
 
     // API: Ambil riwayat komprehensif satu unit register NIBAR (Mutasi Internal, Mutasi Eksternal, Reklasifikasi)
     Route::get('/astap/register-mutasi/{id}', [AstapController::class, 'getRegisterMutasi'])->name('astap.register_mutasi');

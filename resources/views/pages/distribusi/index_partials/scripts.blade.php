@@ -291,11 +291,12 @@
                         }
                         this.saveToStorage();
 
-                        alert(data.signed
-                            ? '✍️ BAST (' + (target.nomor_bast || target.kode) + ') berhasil ditandatangani secara digital BSrE! Status tersimpan.'
-                            : '↩️ Tanda tangan BSrE BAST (' + (target.nomor_bast || target.kode) + ') berhasil dibatalkan.');
+                        this.showSimatToast(data.signed
+                            ? 'BAST (' + (target.nomor_bast || target.kode) + ') berhasil ditandatangani secara digital (BSrE).'
+                            : 'Tanda tangan BSrE BAST (' + (target.nomor_bast || target.kode) + ') berhasil dibatalkan.',
+                            'success');
                     } catch (err) {
-                        alert('❌ Gagal menyimpan status TTD: ' + err.message);
+                        this.showSimatToast('Gagal menyimpan status TTD: ' + err.message, 'error');
                     }
                 },
 
@@ -408,7 +409,7 @@
 
                 updateKondisiRegister(regId, newKondisi, item) {
                     if (!regId) {
-                        alert('⚠️ Register ID tidak ditemukan untuk NIBAR ini. Kondisi tidak dapat disimpan ke database.');
+                        this.showSimatToast('Register ID tidak ditemukan untuk NIBAR ini.', 'warning');
                         return;
                     }
                     this.kondisiSaving[regId] = true;
@@ -437,14 +438,15 @@
                             if (item && item.nibar_registers && item.nibar_registers.length > 0) {
                                 item.kondisi = item.nibar_registers[0].kondisi;
                             }
+                            this.showSimatToast('Kondisi NIBAR berhasil diperbarui.', 'success');
                             setTimeout(() => { delete this.kondisiSaved[regId]; }, 2000);
                         } else {
-                            alert('⚠️ Gagal menyimpan kondisi: ' + (data.message || 'Terjadi kesalahan.'));
+                            this.showSimatToast('Gagal menyimpan kondisi: ' + (data.message || 'Terjadi kesalahan.'), 'error');
                         }
                     })
                     .catch(() => {
                         this.kondisiSaving[regId] = false;
-                        alert('⚠️ Koneksi gagal. Pastikan server berjalan dan coba kembali.');
+                        this.showSimatToast('Koneksi gagal saat memperbarui kondisi register.', 'error');
                     });
                 },
 
