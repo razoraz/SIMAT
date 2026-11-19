@@ -87,14 +87,14 @@
             title="Kembali ke Dashboard">
             <div class="relative shrink-0">
                 <img src="{{ asset('img/Logo-rsud/logo-rsud.png') }}" alt="Logo RSUD"
-                    class="w-9 h-9 object-contain drop-shadow-[0_0_10px_rgba(16,185,129,0.3)] transition-transform duration-200 group-hover:scale-105">
+                    class="w-9 h-9 object-contain drop-shadow-[0_0_10px_rgba(6,182,212,0.3)] transition-transform duration-200 group-hover:scale-105">
             </div>
             <div class="truncate">
                 <div class="flex items-center space-x-1.5">
-                    <h2 class="font-extrabold text-white text-base tracking-tight transition-colors duration-200 group-hover:text-emerald-400">
+                    <h2 class="font-extrabold text-white text-base tracking-tight transition-colors duration-200 group-hover:text-cyan-400">
                         SIMAT-RK
                     </h2>
-                    <span class="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/30 uppercase tracking-widest">
+                    <span class="text-[9px] font-bold text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 rounded border border-cyan-500/30 uppercase tracking-widest">
                         v2.0
                     </span>
                 </div>
@@ -114,22 +114,22 @@
     <!-- Sidebar Nav with High Scannability Hierarchy (Single Open Accordion Mode) -->
     <nav x-data="{ activeSection: '{{ $defaultSection }}' }" class="flex-1 overflow-y-auto px-3 py-3.5 space-y-2 scrollbar-thin scrollbar-thumb-slate-800 notif-scroll">
 
-        <!-- SECTION 1: MASTER UTAMA (Emerald / Teal Theme) -->
+        <!-- SECTION 1: MASTER UTAMA (Unified Cyan Theme) -->
         <div class="space-y-1">
             <button type="button" @click="activeSection = (activeSection === 'master_utama' ? null : 'master_utama')"
-                class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 group {{ $isMasterUtamaActive ? 'bg-gradient-to-r from-emerald-500/20 via-teal-500/10 to-transparent text-emerald-300 border border-emerald-500/40 shadow-lg shadow-emerald-500/10 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent' }}">
+                class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 group {{ $isMasterUtamaActive ? 'bg-gradient-to-r from-cyan-500/20 via-sky-500/10 to-transparent text-cyan-300 border border-cyan-500/40 shadow-lg shadow-cyan-500/10 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent' }}">
                 <div class="flex items-center space-x-3 min-w-0">
                     @if($isMasterUtamaActive)
-                        <span class="w-1 h-4 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/80 shrink-0"></span>
+                        <span class="w-1 h-4 rounded-full bg-cyan-400 shadow-sm shadow-cyan-400/80 shrink-0"></span>
                     @endif
-                    <svg class="w-4 h-4 shrink-0 transition-colors {{ $isMasterUtamaActive ? 'text-emerald-400' : 'text-slate-500 group-hover:text-emerald-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-4 h-4 shrink-0 transition-colors {{ $isMasterUtamaActive ? 'text-cyan-400' : 'text-slate-500 group-hover:text-cyan-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                     </svg>
                     <span class="truncate">Master Utama</span>
                 </div>
                 <svg class="w-3.5 h-3.5 shrink-0 transition-transform duration-200"
-                    :class="activeSection === 'master_utama' ? 'rotate-90 text-emerald-400' : 'text-slate-500'"
+                    :class="activeSection === 'master_utama' ? 'rotate-90 text-cyan-400' : 'text-slate-500'"
                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                 </svg>
@@ -141,8 +141,8 @@
                 
                 <!-- 1. Dashboard -->
                 <a href="{{ $dashboardUrl }}" @click="if (isMobile) sidebarOpen = false"
-                    class="group flex items-center space-x-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:translate-x-1 duration-150 {{ $isDashboardActive ? 'bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                    <svg class="w-3.5 h-3.5 shrink-0 transition-colors {{ $isDashboardActive ? 'text-emerald-400' : 'text-slate-500 group-hover:text-emerald-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    class="group flex items-center space-x-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:translate-x-1 duration-150 {{ $isDashboardActive ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
+                    <svg class="w-3.5 h-3.5 shrink-0 transition-colors {{ $isDashboardActive ? 'text-cyan-400' : 'text-slate-500 group-hover:text-cyan-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 00-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                     </svg>
@@ -152,8 +152,8 @@
                 <!-- 2. Data ASTAP / Katalog ASTAP -->
                 @if ($role === 'sub_admin' || $user?->canAccess('astap'))
                     <a href="{{ route('astap.index') }}" @click="if (isMobile) sidebarOpen = false"
-                        class="group flex items-center space-x-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:translate-x-1 duration-150 {{ $isAstapActive ? 'bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                        <svg class="w-3.5 h-3.5 shrink-0 transition-colors {{ $isAstapActive ? 'text-emerald-400' : 'text-slate-500 group-hover:text-emerald-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        class="group flex items-center space-x-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:translate-x-1 duration-150 {{ $isAstapActive ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
+                        <svg class="w-3.5 h-3.5 shrink-0 transition-colors {{ $isAstapActive ? 'text-cyan-400' : 'text-slate-500 group-hover:text-cyan-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
                         </svg>
@@ -164,8 +164,8 @@
                 <!-- 3. Lembar KIR Ruangan (Khusus Sub Admin Ruangan) -->
                 @if ($role === 'sub_admin')
                     <a href="{{ route('kir.index') }}" @click="if (isMobile) sidebarOpen = false"
-                        class="group flex items-center space-x-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:translate-x-1 duration-150 {{ $isKirActive ? 'bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                        <svg class="w-3.5 h-3.5 shrink-0 transition-colors {{ $isKirActive ? 'text-emerald-400' : 'text-slate-500 group-hover:text-emerald-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        class="group flex items-center space-x-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:translate-x-1 duration-150 {{ $isKirActive ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
+                        <svg class="w-3.5 h-3.5 shrink-0 transition-colors {{ $isKirActive ? 'text-cyan-400' : 'text-slate-500 group-hover:text-cyan-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
@@ -176,8 +176,8 @@
                 <!-- 4. Distribusi ASTAP -->
                 @if ($role === 'sub_admin' || $user?->canAccess('distribusi'))
                     <a href="{{ route('distribusi.index') }}" @click="if (isMobile) sidebarOpen = false"
-                        class="group flex items-center space-x-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:translate-x-1 duration-150 {{ $isDistribusiActive ? 'bg-teal-500/20 text-teal-300 font-bold border border-teal-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                        <svg class="w-3.5 h-3.5 shrink-0 transition-colors {{ $isDistribusiActive ? 'text-teal-400' : 'text-slate-500 group-hover:text-teal-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        class="group flex items-center space-x-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:translate-x-1 duration-150 {{ $isDistribusiActive ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
+                        <svg class="w-3.5 h-3.5 shrink-0 transition-colors {{ $isDistribusiActive ? 'text-cyan-400' : 'text-slate-500 group-hover:text-cyan-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M13 10V3L4 14h7v7l9-11h-7z" />
                         </svg>
@@ -188,8 +188,8 @@
                 <!-- 5. Berita Acara (BAST) -->
                 @if ($user?->canAccess('bast'))
                     <a href="{{ route('bast.index') }}" @click="if (isMobile) sidebarOpen = false"
-                        class="group flex items-center space-x-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:translate-x-1 duration-150 {{ $isBastActive ? 'bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                        <svg class="w-3.5 h-3.5 shrink-0 transition-colors {{ $isBastActive ? 'text-emerald-400' : 'text-slate-500 group-hover:text-emerald-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        class="group flex items-center space-x-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:translate-x-1 duration-150 {{ $isBastActive ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
+                        <svg class="w-3.5 h-3.5 shrink-0 transition-colors {{ $isBastActive ? 'text-cyan-400' : 'text-slate-500 group-hover:text-cyan-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
@@ -199,23 +199,23 @@
             </div>
         </div>
 
-        <!-- SECTION 2: MASTER ASET (Indigo / Cyan Theme) -->
+        <!-- SECTION 2: MASTER ASET (Unified Cyan Theme) -->
         @if ($role === 'sub_admin' || $role === 'master_admin' || $user?->canAccess('mutasi') || $user?->canAccess('astap'))
             <div class="space-y-1">
                 <button type="button" @click="activeSection = (activeSection === 'master_aset' ? null : 'master_aset')"
-                    class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 group {{ $isMasterAsetActive ? 'bg-gradient-to-r from-indigo-500/20 via-cyan-500/10 to-transparent text-indigo-300 border border-indigo-500/40 shadow-lg shadow-indigo-500/10 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent' }}">
+                    class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 group {{ $isMasterAsetActive ? 'bg-gradient-to-r from-cyan-500/20 via-sky-500/10 to-transparent text-cyan-300 border border-cyan-500/40 shadow-lg shadow-cyan-500/10 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent' }}">
                     <div class="flex items-center space-x-3 min-w-0">
                         @if($isMasterAsetActive)
-                            <span class="w-1 h-4 rounded-full bg-indigo-400 shadow-sm shadow-indigo-400/80 shrink-0"></span>
+                            <span class="w-1 h-4 rounded-full bg-cyan-400 shadow-sm shadow-cyan-400/80 shrink-0"></span>
                         @endif
-                        <svg class="w-4 h-4 shrink-0 transition-colors {{ $isMasterAsetActive ? 'text-indigo-400' : 'text-slate-500 group-hover:text-indigo-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-4 h-4 shrink-0 transition-colors {{ $isMasterAsetActive ? 'text-cyan-400' : 'text-slate-500 group-hover:text-cyan-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                         </svg>
                         <span class="truncate">Master Aset</span>
                     </div>
                     <svg class="w-3.5 h-3.5 shrink-0 transition-transform duration-200"
-                        :class="activeSection === 'master_aset' ? 'rotate-90 text-indigo-400' : 'text-slate-500'"
+                        :class="activeSection === 'master_aset' ? 'rotate-90 text-cyan-400' : 'text-slate-500'"
                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                     </svg>
@@ -229,8 +229,8 @@
                     @if ($role === 'sub_admin' || $user?->canAccess('mutasi'))
                         @if ($role === 'sub_admin')
                             <a href="{{ route('mutasi.index') }}" @click="if (isMobile) sidebarOpen = false"
-                                class="group flex items-center space-x-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:translate-x-1 duration-150 {{ $isMutasiInternalActive ? 'bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                                <svg class="w-3.5 h-3.5 shrink-0 transition-colors {{ $isMutasiInternalActive ? 'text-indigo-400' : 'text-slate-500 group-hover:text-indigo-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                class="group flex items-center space-x-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:translate-x-1 duration-150 {{ $isMutasiInternalActive ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
+                                <svg class="w-3.5 h-3.5 shrink-0 transition-colors {{ $isMutasiInternalActive ? 'text-cyan-400' : 'text-slate-500 group-hover:text-cyan-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                                 </svg>
@@ -239,16 +239,16 @@
                         @else
                             <div x-data="{ mutasiOpen: {{ $isMutasiActive ? 'true' : 'false' }} }" class="space-y-1">
                                 <button type="button" @click="mutasiOpen = !mutasiOpen"
-                                    class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all duration-200 group {{ $isMutasiActive ? 'bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50 border border-transparent' }}">
+                                    class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all duration-200 group {{ $isMutasiActive ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50 border border-transparent' }}">
                                     <div class="flex items-center space-x-2 min-w-0">
-                                        <svg class="w-3.5 h-3.5 shrink-0 transition-colors {{ $isMutasiActive ? 'text-indigo-400' : 'text-slate-500 group-hover:text-indigo-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg class="w-3.5 h-3.5 shrink-0 transition-colors {{ $isMutasiActive ? 'text-cyan-400' : 'text-slate-500 group-hover:text-cyan-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                                         </svg>
                                         <span class="truncate">Mutasi Aset</span>
                                     </div>
                                     <svg class="w-3 h-3 shrink-0 transition-transform duration-200"
-                                        :class="mutasiOpen ? 'rotate-90 text-indigo-400' : 'text-slate-500'"
+                                        :class="mutasiOpen ? 'rotate-90 text-cyan-400' : 'text-slate-500'"
                                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                                     </svg>
@@ -256,21 +256,21 @@
 
                                 <!-- Submenu Dropdown Mutasi -->
                                 <div x-show="mutasiOpen" @if(!$isMutasiActive) x-cloak style="display: none;" @endif
-                                    class="pl-3 pr-1 py-1 space-y-1 border-l-2 border-indigo-500/30 ml-2.5 my-1">
+                                    class="pl-3 pr-1 py-1 space-y-1 border-l-2 border-cyan-500/30 ml-2.5 my-1">
                                     <!-- Mutasi Internal -->
                                     <a href="{{ route('mutasi.index') }}" @click="if (isMobile) sidebarOpen = false"
-                                        class="group flex items-center space-x-2 px-2 py-1 rounded text-[10.5px] font-semibold transition-all hover:translate-x-1 duration-150 {{ $isMutasiInternalActive ? 'bg-indigo-500/25 text-indigo-300 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/40' }}">
-                                        <span class="w-1.5 h-1.5 rounded-full {{ $isMutasiInternalActive ? 'bg-indigo-400 shadow-sm shadow-indigo-400' : 'bg-slate-600' }}"></span>
+                                        class="group flex items-center space-x-2 px-2 py-1 rounded text-[10.5px] font-semibold transition-all hover:translate-x-1 duration-150 {{ $isMutasiInternalActive ? 'bg-cyan-500/25 text-cyan-300 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/40' }}">
+                                        <span class="w-1.5 h-1.5 rounded-full {{ $isMutasiInternalActive ? 'bg-cyan-400 shadow-sm shadow-cyan-400' : 'bg-slate-600' }}"></span>
                                         <span>Mutasi Internal</span>
                                     </a>
 
                                     <!-- Mutasi Eksternal (Antar-OPD) -->
                                     @if ($role === 'master_admin' || $user?->canDo('mutasi', 'eksternal'))
                                         <a href="{{ route('mutasi.eksternal') }}" @click="if (isMobile) sidebarOpen = false"
-                                            class="group flex items-center space-x-2 px-2 py-1 rounded text-[10.5px] font-semibold transition-all hover:translate-x-1 duration-150 {{ $isMutasiEksternalActive ? 'bg-indigo-500/25 text-indigo-300 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/40' }}">
-                                            <span class="w-1.5 h-1.5 rounded-full {{ $isMutasiEksternalActive ? 'bg-indigo-400 shadow-sm shadow-indigo-400' : 'bg-slate-600' }}"></span>
-                                            <span>Mutasi Eksternal</span>
-                                        </a>
+                                            class="group flex items-center space-x-2 px-2 py-1 rounded text-[10.5px] font-semibold transition-all hover:translate-x-1 duration-150 {{ $isMutasiEksternalActive ? 'bg-cyan-500/25 text-cyan-300 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/40' }}">
+                                        <span class="w-1.5 h-1.5 rounded-full {{ $isMutasiEksternalActive ? 'bg-cyan-400 shadow-sm shadow-cyan-400' : 'bg-slate-600' }}"></span>
+                                        <span>Mutasi Eksternal</span>
+                                    </a>
                                     @endif
                                 </div>
                             </div>
@@ -280,8 +280,8 @@
                     <!-- 2. Reklasifikasi Aset -->
                     @if ($role === 'master_admin' || $user?->canDo('astap', 'reklas'))
                         <a href="{{ route('master.reklasifikasi') }}" @click="if (isMobile) sidebarOpen = false"
-                            class="group flex items-center space-x-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:translate-x-1 duration-150 {{ $isReklasActive ? 'bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                            <svg class="w-3.5 h-3.5 shrink-0 transition-colors {{ $isReklasActive ? 'text-emerald-400' : 'text-slate-500 group-hover:text-emerald-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            class="group flex items-center space-x-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:translate-x-1 duration-150 {{ $isReklasActive ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
+                            <svg class="w-3.5 h-3.5 shrink-0 transition-colors {{ $isReklasActive ? 'text-cyan-400' : 'text-slate-500 group-hover:text-cyan-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                             </svg>
@@ -292,8 +292,8 @@
                     <!-- 3. Kelola Hibah Aset -->
                     @if ($role === 'master_admin' || $user?->canDo('astap', 'hibah'))
                         <a href="{{ route('master.hibah') }}" @click="if (isMobile) sidebarOpen = false"
-                            class="group flex items-center space-x-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:translate-x-1 duration-150 {{ $isHibahActive ? 'bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                            <svg class="w-3.5 h-3.5 shrink-0 transition-colors {{ $isHibahActive ? 'text-indigo-400' : 'text-slate-500 group-hover:text-indigo-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            class="group flex items-center space-x-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:translate-x-1 duration-150 {{ $isHibahActive ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
+                            <svg class="w-3.5 h-3.5 shrink-0 transition-colors {{ $isHibahActive ? 'text-cyan-400' : 'text-slate-500 group-hover:text-cyan-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
                             </svg>
@@ -316,8 +316,8 @@
                     <!-- 5. Kelola Belanja Barang (Instalasi Perbekalan / Gudang) -->
                     @if ($role === 'master_admin' || $user?->canAccess('astap') || $user?->canAccess('master_data'))
                         <a href="{{ route('master.belanja_barang') }}" @click="if (isMobile) sidebarOpen = false"
-                            class="group flex items-center space-x-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:translate-x-1 duration-150 {{ $isBelanjaBarangActive ? 'bg-teal-500/20 text-teal-300 font-bold border border-teal-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                            <svg class="w-3.5 h-3.5 shrink-0 transition-colors {{ $isBelanjaBarangActive ? 'text-teal-400' : 'text-slate-500 group-hover:text-teal-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            class="group flex items-center space-x-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:translate-x-1 duration-150 {{ $isBelanjaBarangActive ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
+                            <svg class="w-3.5 h-3.5 shrink-0 transition-colors {{ $isBelanjaBarangActive ? 'text-cyan-400' : 'text-slate-500 group-hover:text-cyan-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                             </svg>
@@ -420,23 +420,23 @@
             </div>
         @endif
 
-        <!-- SECTION 4: AUDIT & PEMULIHAN (Amber / Rose Theme) -->
+        <!-- SECTION 4: AUDIT & PEMULIHAN (Unified Cyan Theme) -->
         @if ($role === 'master_admin' || ($role === 'admin' && ($user?->canAccess('astap') || $user?->canAccess('recycle_bin'))))
             <div class="space-y-1">
                 <button type="button" @click="activeSection = (activeSection === 'pemulihan' ? null : 'pemulihan')"
-                    class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 group {{ $isPemulihanActive ? 'bg-gradient-to-r from-amber-500/20 via-rose-500/10 to-transparent text-amber-300 border border-amber-500/40 shadow-lg shadow-amber-500/10 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent' }}">
+                    class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 group {{ $isPemulihanActive ? 'bg-gradient-to-r from-cyan-500/20 via-sky-500/10 to-transparent text-cyan-300 border border-cyan-500/40 shadow-lg shadow-cyan-500/10 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent' }}">
                     <div class="flex items-center space-x-3 min-w-0">
                         @if($isPemulihanActive)
-                            <span class="w-1 h-4 rounded-full bg-amber-400 shadow-sm shadow-amber-400/80 shrink-0"></span>
+                            <span class="w-1 h-4 rounded-full bg-cyan-400 shadow-sm shadow-cyan-400/80 shrink-0"></span>
                         @endif
-                        <svg class="w-4 h-4 shrink-0 transition-colors {{ $isPemulihanActive ? 'text-amber-400' : 'text-slate-500 group-hover:text-amber-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-4 h-4 shrink-0 transition-colors {{ $isPemulihanActive ? 'text-cyan-400' : 'text-slate-500 group-hover:text-cyan-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                         <span class="truncate">Audit & Pemulihan</span>
                     </div>
                     <svg class="w-3.5 h-3.5 shrink-0 transition-transform duration-200"
-                        :class="activeSection === 'pemulihan' ? 'rotate-90 text-amber-400' : 'text-slate-500'"
+                        :class="activeSection === 'pemulihan' ? 'rotate-90 text-cyan-400' : 'text-slate-500'"
                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                     </svg>
@@ -449,8 +449,8 @@
                     <!-- 1. Rekon Belanja Modal (RMB) -->
                     @if ($role === 'master_admin' || $user?->canAccess('astap'))
                         <a href="{{ route('rmb.index') }}" @click="if (isMobile) sidebarOpen = false"
-                            class="group flex items-center space-x-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:translate-x-1 duration-150 {{ $isRmbActive ? 'bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                            <svg class="w-3.5 h-3.5 shrink-0 transition-colors {{ $isRmbActive ? 'text-amber-400' : 'text-slate-500 group-hover:text-amber-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            class="group flex items-center space-x-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:translate-x-1 duration-150 {{ $isRmbActive ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
+                            <svg class="w-3.5 h-3.5 shrink-0 transition-colors {{ $isRmbActive ? 'text-cyan-400' : 'text-slate-500 group-hover:text-cyan-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
@@ -461,8 +461,8 @@
                     <!-- 2. Audit Koreksi Nilai BMD -->
                     @if ($role === 'master_admin' || $user?->canAccess('astap'))
                         <a href="{{ route('audit_koreksi.index') }}" @click="if (isMobile) sidebarOpen = false"
-                            class="group flex items-center space-x-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:translate-x-1 duration-150 {{ $isAuditKoreksiActive ? 'bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                            <svg class="w-3.5 h-3.5 shrink-0 transition-colors {{ $isAuditKoreksiActive ? 'text-amber-400' : 'text-slate-500 group-hover:text-amber-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            class="group flex items-center space-x-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:translate-x-1 duration-150 {{ $isAuditKoreksiActive ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
+                            <svg class="w-3.5 h-3.5 shrink-0 transition-colors {{ $isAuditKoreksiActive ? 'text-cyan-400' : 'text-slate-500 group-hover:text-cyan-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                             </svg>
@@ -473,8 +473,8 @@
                     <!-- 3. Pusat Data Terhapus (Recycle Bin) -->
                     @if ($role === 'master_admin' || $user?->canAccess('recycle_bin'))
                         <a href="{{ route('recycle_bin.index') }}" @click="if (isMobile) sidebarOpen = false"
-                            class="group flex items-center space-x-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:translate-x-1 duration-150 {{ $isRecycleBinActive ? 'bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                            <svg class="w-3.5 h-3.5 shrink-0 transition-colors {{ $isRecycleBinActive ? 'text-rose-400' : 'text-slate-500 group-hover:text-rose-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            class="group flex items-center space-x-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:translate-x-1 duration-150 {{ $isRecycleBinActive ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
+                            <svg class="w-3.5 h-3.5 shrink-0 transition-colors {{ $isRecycleBinActive ? 'text-cyan-400' : 'text-slate-500 group-hover:text-cyan-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
@@ -491,26 +491,26 @@
     <div class="p-3 border-t border-slate-800/80 bg-slate-950/60 backdrop-blur-md shrink-0">
         @if (($role ?? '') === 'sub_admin')
             <a href="{{ route('subadmin.profile') }}"
-                class="flex items-center space-x-2.5 overflow-hidden w-full text-left p-2 rounded-xl bg-slate-900/60 hover:bg-slate-800/70 border border-slate-800/80 hover:border-emerald-500/30 transition-all cursor-pointer group focus:outline-none shadow-sm {{ request()->routeIs('subadmin.profile') ? 'border-emerald-500/40 bg-emerald-500/10' : '' }}"
+                class="flex items-center space-x-2.5 overflow-hidden w-full text-left p-2 rounded-xl bg-slate-900/60 hover:bg-slate-800/70 border border-slate-800/80 hover:border-cyan-500/30 transition-all cursor-pointer group focus:outline-none shadow-sm {{ request()->routeIs('subadmin.profile') ? 'border-cyan-500/40 bg-cyan-500/10' : '' }}"
                 title="Buka halaman ubah email dan password akun ruangan Anda">
                 <div class="relative shrink-0">
-                    <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500/30 to-teal-600/30 border border-emerald-500/40 flex items-center justify-center text-emerald-300 font-bold text-xs shadow-sm">
+                    <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500/30 to-blue-600/30 border border-cyan-500/40 flex items-center justify-center text-cyan-300 font-bold text-xs shadow-sm">
                         {{ strtoupper(substr($user->name ?? 'U', 0, 1)) }}
                     </div>
-                    <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-slate-950"></span>
+                    <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-cyan-400 ring-2 ring-slate-950"></span>
                 </div>
                 <div class="truncate flex-1 min-w-0">
                     <div class="flex items-center justify-between">
-                        <p class="text-xs font-bold text-white truncate group-hover:text-emerald-300 transition-colors">
+                        <p class="text-xs font-bold text-white truncate group-hover:text-cyan-300 transition-colors">
                             {{ $user->name ?? 'Pengguna' }}
                         </p>
-                        <svg class="w-3.5 h-3.5 text-slate-500 group-hover:text-emerald-400 shrink-0 opacity-70 group-hover:opacity-100 transition-opacity"
+                        <svg class="w-3.5 h-3.5 text-slate-500 group-hover:text-cyan-400 shrink-0 opacity-70 group-hover:opacity-100 transition-opacity"
                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                         </svg>
                     </div>
-                    <p class="text-[10px] text-emerald-400 font-medium capitalize flex items-center space-x-1 mt-0.5">
+                    <p class="text-[10px] text-cyan-400 font-medium capitalize flex items-center space-x-1 mt-0.5">
                         <span class="truncate">{{ str_replace('_', ' ', $role) }}</span>
                         <span class="text-[9px] text-slate-400 font-normal shrink-0">• Ubah Akun &rarr;</span>
                     </p>
@@ -519,15 +519,15 @@
         @else
             <div class="flex items-center space-x-2.5 overflow-hidden w-full p-2 rounded-xl bg-slate-900/60 border border-slate-800/80 shadow-sm">
                 <div class="relative shrink-0">
-                    <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500/30 to-cyan-600/30 border border-emerald-500/40 flex items-center justify-center text-emerald-300 font-bold text-xs shadow-sm">
+                    <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500/30 to-blue-600/30 border border-cyan-500/40 flex items-center justify-center text-cyan-300 font-bold text-xs shadow-sm">
                         {{ strtoupper(substr($user->name ?? 'U', 0, 1)) }}
                     </div>
-                    <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-slate-950 animate-pulse"></span>
+                    <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-cyan-400 ring-2 ring-slate-950 animate-pulse"></span>
                 </div>
                 <div class="truncate flex-1 min-w-0">
                     <p class="text-xs font-bold text-white truncate">{{ $user->name ?? 'Pengguna' }}</p>
                     <div class="flex items-center justify-between gap-1 mt-0.5">
-                        <span class="text-[10px] text-emerald-400 font-medium capitalize truncate">{{ str_replace('_', ' ', $role) }}</span>
+                        <span class="text-[10px] text-cyan-400 font-medium capitalize truncate">{{ str_replace('_', ' ', $role) }}</span>
                         <span class="inline-flex items-center text-[9px] text-slate-400 font-mono shrink-0">
                             SIMAT-RK
                         </span>

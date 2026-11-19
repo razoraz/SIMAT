@@ -19,16 +19,21 @@ class DistribusiController extends Controller
      * Generate Nomor Urut BAST Resmi Sekuensial per Tahun
      * Hanya dihitung dari transaksi yang berstatus 'Dalam Pengiriman' atau 'Telah Diterima'
      */
-    public static function generateNextBastNomor(int $tahun, ?int $excludeId = null): string
+    public static function generateNextBastNomor(int $tahun, ?int $excludeId = null, bool $lock = false): string
     {
-        $existingBastNumbers = Distribusi::where(function($q) use ($tahun) {
+        $query = Distribusi::where(function($q) use ($tahun) {
                 $q->whereYear('tanggal_distribusi', $tahun)
                   ->orWhere('bast_nomor', 'LIKE', '% / ' . $tahun);
             })
             ->whereIn('status', ['Dalam Pengiriman', 'Telah Diterima', 'Dikirim', 'Diterima'])
             ->whereNotNull('bast_nomor')
-            ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId))
-            ->pluck('bast_nomor');
+            ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId));
+
+        if ($lock) {
+            $query->lockForUpdate();
+        }
+
+        $existingBastNumbers = $query->pluck('bast_nomor');
 
         $maxSeq = 0;
         foreach ($existingBastNumbers as $no) {
@@ -192,9 +197,6 @@ class DistribusiController extends Controller
         $distribusis = $distribusiQuery->orderBy('id', 'desc')
             ->get()
             ->map(function($d) use ($unitPerbekalan) {
-                // Otomatis sinkronkan status: jika minimal 1 NIBAR di-ACC, status otomatis 'Dalam Pengiriman'
-                $d->syncStatusWithNibar();
-
                 $itemsMapped = $d->items->map(function($it) {
                     $spec = is_array($it->astap?->spesifikasi_json)
                         ? $it->astap->spesifikasi_json
@@ -818,10 +820,10 @@ class DistribusiController extends Controller
                         $finalBastNomor = trim($existingBast);
                     } else {
                         // Tahun tanggal distribusi berubah, generate nomor BAST baru sesuai tahun dan urutan berikutnya
-                        $finalBastNomor = self::generateNextBastNomor((int)$tahunDistribusi, $distribusi?->id);
+                        $finalBastNomor = self::generateNextBastNomor((int)$tahunDistribusi, $distribusi?->id, true);
                     }
                 } else {
-                    $finalBastNomor = self::generateNextBastNomor((int)$tahunDistribusi, $distribusi?->id);
+                    $finalBastNomor = self::generateNextBastNomor((int)$tahunDistribusi, $distribusi?->id, true);
                 }
             } else {
                 // Status Ditolak, Menunggu Konfirmasi, atau Draft: otomatis TIDAK memiliki nomor BAST
@@ -900,8 +902,10 @@ class DistribusiController extends Controller
                     if ($astapMatch) {
                         $astapId = $astapMatch->id;
                     } else {
-                        $fallbackAstap = Astap::first();
-                        $astapId = $fallbackAstap ? $fallbackAstap->id : 1;
+                        return response()->json([
+                            'success' => false,
+                            'message' => "Barang aset '{$namaBarang}' tidak ditemukan dalam database Master ASTAP. Mohon pilih barang dari daftar aset yang valid."
+                        ], 422);
                     }
                 }
 
@@ -1075,7 +1079,7 @@ class DistribusiController extends Controller
                         AstapRegister::whereIn('id', $regIds)->update([
                             'unit_id'        => $distribusi->unit_id,
                             'ruang_pemegang' => $distribusi->unit?->nama ?? 'Ruangan Unit',
-                            'status'         => 'Terdistribusi',
+                            'status'         => 'Tidak Tersedia',
                         ]);
                     }
                 }
@@ -1119,68 +1123,107 @@ class DistribusiController extends Controller
      */
     public function updateStatus(Request $request, $id)
     {
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
         $dst = \App\Models\Distribusi::with('items.registers')->find($id);
         if (!$dst) {
             return response()->json(['success' => false, 'message' => 'Data distribusi tidak ditemukan.'], 404);
         }
+
         $newStatus   = $request->input('status', 'Telah Diterima');
         $alasanTolak = $request->input('alasan_penolakan') ?? $request->input('alasan_tolak', null);
 
-        $dst->status = $newStatus;
-
-        if (in_array($newStatus, ['Dalam Pengiriman', 'Telah Diterima', 'Dikirim', 'Diterima'])) {
-            if ($newStatus === 'Telah Diterima') {
-                $dst->signed = true;
-                if (!$dst->tgl_signed) {
-                    $dst->tgl_signed = now()->format('d/m/Y H:i') . ' WIB';
-                }
+        // Otorisasi Akses Unit & Role
+        if ($user->role === 'sub_admin') {
+            $userUnitName = $user->unitModel?->nama ?? $user->unit;
+            $isOwnUnit = ($dst->unit_id && $dst->unit_id == $user->unit_id)
+                || ($dst->tujuan && $userUnitName && strcasecmp(trim($dst->tujuan), trim($userUnitName)) === 0);
+            if (!$isOwnUnit) {
+                return response()->json(['success' => false, 'message' => 'Anda tidak memiliki hak akses atas transaksi distribusi milik unit lain.'], 403);
             }
-
-            // Terbitkan nomor BAST resmi jika belum ada
-            $tahun = date('Y', strtotime($dst->tanggal_distribusi ?: now()));
-            $isValidExistingBast = !empty($dst->bast_nomor) 
-                && preg_match('/^032\s*\/\s*\d+\s*\/\s*430\.10\.7\s*\/\s*\d{4}$/', trim($dst->bast_nomor));
-
-            if (!$isValidExistingBast) {
-                $dst->bast_nomor = \App\Http\Controllers\DistribusiController::generateNextBastNomor((int)$tahun, $dst->id);
+            if (!in_array($newStatus, ['Telah Diterima', 'Diterima'])) {
+                return response()->json(['success' => false, 'message' => 'Sub Admin ruangan hanya diperbolehkan mengonfirmasi penerimaan barang.'], 403);
+            }
+        } elseif ($user->role !== 'master_admin') {
+            if (method_exists($user, 'canDo') && !$user->canDo('distribusi', 'edit')) {
+                return response()->json(['success' => false, 'message' => 'Anda tidak memiliki wewenang untuk mengubah status distribusi.'], 403);
             }
         }
 
-        if ($newStatus === 'Ditolak') {
-            // Otomatis tidak memiliki nomor BAST
-            $dst->bast_nomor = null;
-            $dst->signed     = false;
-            $dst->tgl_signed = null;
+        return DB::transaction(function () use ($dst, $newStatus, $alasanTolak) {
+            $dst->status = $newStatus;
 
-            if ($alasanTolak) {
-                $dst->alasan_penolakan = $alasanTolak;
-            }
-
-            // Kembalikan semua register NIBAR ke status Tersedia & reset Vol ACC ke 0
-            foreach ($dst->items as $item) {
-                $regIds = $item->registers->pluck('astap_register_id')->filter()->toArray();
-                if (!empty($regIds)) {
-                    \App\Models\AstapRegister::whereIn('id', $regIds)->update([
-                        'unit_id'        => null,
-                        'ruang_pemegang' => null,
-                        'status'         => 'Tersedia',
-                    ]);
+            if (in_array($newStatus, ['Dalam Pengiriman', 'Telah Diterima', 'Dikirim', 'Diterima'])) {
+                if ($newStatus === 'Telah Diterima') {
+                    $dst->signed = true;
+                    if (!$dst->tgl_signed) {
+                        $dst->tgl_signed = now()->format('d/m/Y H:i') . ' WIB';
+                    }
                 }
-                // Lepaskan relasi register NIBAR dari transaksi yang ditolak
-                $item->registers()->delete();
-                // Reset Vol ACC menjadi 0
-                $item->update(['qty_acc' => 0]);
+
+                // Terbitkan nomor BAST resmi jika belum ada (dengan locking)
+                $tahun = date('Y', strtotime($dst->tanggal_distribusi ?: now()));
+                $isValidExistingBast = !empty($dst->bast_nomor) 
+                    && preg_match('/^032\s*\/\s*\d+\s*\/\s*430\.10\.7\s*\/\s*\d{4}$/', trim($dst->bast_nomor));
+
+                if (!$isValidExistingBast) {
+                    $dst->bast_nomor = \App\Http\Controllers\DistribusiController::generateNextBastNomor((int)$tahun, $dst->id, true);
+                }
+
+                // Sinkronkan status dan lokasi unit pemegang pada register NIBAR
+                if ($dst->unit_id) {
+                    foreach ($dst->items as $item) {
+                        $regIds = $item->registers->pluck('astap_register_id')->filter()->toArray();
+                        if (!empty($regIds)) {
+                            \App\Models\AstapRegister::whereIn('id', $regIds)->update([
+                                'unit_id'        => $dst->unit_id,
+                                'ruang_pemegang' => $dst->tujuan ?: ($dst->unit?->nama ?? 'Ruangan Unit'),
+                                'status'         => 'Tidak Tersedia',
+                            ]);
+                        }
+                    }
+                }
             }
-        }
 
-        $dst->save();
+            if ($newStatus === 'Ditolak') {
+                // Otomatis tidak memiliki nomor BAST
+                $dst->bast_nomor = null;
+                $dst->signed     = false;
+                $dst->tgl_signed = null;
 
-        return response()->json([
-            'success'    => true,
-            'status'     => $dst->status,
-            'bast_nomor' => $dst->bast_nomor,
-            'message'    => "Status distribusi {$dst->kode} berhasil diperbarui menjadi '{$dst->status}'."
-        ]);
+                if ($alasanTolak) {
+                    $dst->alasan_penolakan = $alasanTolak;
+                }
+
+                // Kembalikan semua register NIBAR ke status Tersedia & reset Vol ACC ke 0
+                foreach ($dst->items as $item) {
+                    $regIds = $item->registers->pluck('astap_register_id')->filter()->toArray();
+                    if (!empty($regIds)) {
+                        \App\Models\AstapRegister::whereIn('id', $regIds)->update([
+                            'unit_id'        => null,
+                            'ruang_pemegang' => null,
+                            'status'         => 'Tersedia',
+                        ]);
+                    }
+                    // Lepaskan relasi register NIBAR dari transaksi yang ditolak
+                    $item->registers()->delete();
+                    // Reset Vol ACC menjadi 0
+                    $item->update(['qty_acc' => 0]);
+                }
+            }
+
+            $dst->save();
+
+            return response()->json([
+                'success'    => true,
+                'status'     => $dst->status,
+                'bast_nomor' => $dst->bast_nomor,
+                'message'    => "Status distribusi {$dst->kode} berhasil diperbarui menjadi '{$dst->status}'."
+            ]);
+        });
     }
 
     /**
@@ -1188,10 +1231,29 @@ class DistribusiController extends Controller
      */
     public function sign(Request $request, $id)
     {
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
         $dst = \App\Models\Distribusi::find($id);
         if (!$dst) {
             return response()->json(['success' => false, 'message' => 'Data distribusi tidak ditemukan.'], 404);
         }
+
+        if ($user->role === 'sub_admin') {
+            $userUnitName = $user->unitModel?->nama ?? $user->unit;
+            $isOwnUnit = ($dst->unit_id && $dst->unit_id == $user->unit_id)
+                || ($dst->tujuan && $userUnitName && strcasecmp(trim($dst->tujuan), trim($userUnitName)) === 0);
+            if (!$isOwnUnit) {
+                return response()->json(['success' => false, 'message' => 'Anda tidak memiliki wewenang menandatangani dokumen distribusi unit lain.'], 403);
+            }
+        } elseif ($user->role !== 'master_admin') {
+            if (method_exists($user, 'canDo') && !$user->canDo('distribusi', 'edit')) {
+                return response()->json(['success' => false, 'message' => 'Anda tidak memiliki hak akses menandatangani dokumen ini.'], 403);
+            }
+        }
+
         $newSigned = !$dst->signed;
         $dst->signed = $newSigned;
         if ($newSigned) {
