@@ -342,12 +342,15 @@
                 }
             ],
 
+            currentStep: 1,
             skpdDirectory: @json($dbSkpdDirectory ?? []),
             skpdList: @json($dbSkpdAsals ?? []),
             dbPejabats: @json($dbPejabats ?? []),
             isSkpdDropdownOpen: false,
             isPejabatTujuanDropdownOpen: false,
             isPejabatAsalDropdownOpen: false,
+            isInstansiHibahDropdownOpen: false,
+            isPejabatHibahDropdownOpen: false,
             selectedDokumenFile: null,
             kemitraanSubGroupOverride: null,
             rawExtracomUnits: [],
@@ -759,6 +762,72 @@
                 this.rememberCustomPejabat(p.nama, p.nip, p.jabatan);
             },
 
+            // ===== AUTOCOMPLETE DIREKTORI INSTANSI & PEJABAT PENERIMA HIBAH =====
+            get filteredInstansiHibahList() {
+                const q = (this.formData.pihak_hibah || '').toLowerCase().trim();
+                const list = this.skpdList || [];
+                if (!q) return list.slice(0, 25);
+                return list.filter(s => s && s.toLowerCase().includes(q)).slice(0, 25);
+            },
+
+            get availablePejabatPenerimaHibahList() {
+                const instansi = this.formData.pihak_hibah;
+                if (instansi && this.skpdDirectory && this.skpdDirectory[instansi]) {
+                    const data = this.skpdDirectory[instansi];
+                    if (data.pejabats && data.pejabats.length > 0) {
+                        return data.pejabats;
+                    }
+                    if (data.pj_nama) {
+                        return [{
+                            nama: data.pj_nama,
+                            nip: data.pj_nip || '',
+                            jabatan: data.pj_jabatan || 'Pimpinan / Kepala Instansi'
+                        }];
+                    }
+                }
+                return this.dbPejabats || [];
+            },
+
+            get filteredPejabatPenerimaHibahList() {
+                const list = this.availablePejabatPenerimaHibahList;
+                const q = (this.formData.penerima_nama || '').toLowerCase().trim();
+                if (!q) return list;
+                return list.filter(p => 
+                    (p.nama && p.nama.toLowerCase().includes(q)) ||
+                    (p.nip && p.nip.toLowerCase().includes(q)) ||
+                    (p.jabatan && p.jabatan.toLowerCase().includes(q))
+                );
+            },
+
+            selectInstansiHibah(instansi) {
+                this.formData.pihak_hibah = instansi;
+                this.isInstansiHibahDropdownOpen = false;
+                if (this.skpdDirectory && this.skpdDirectory[instansi]) {
+                    const data = this.skpdDirectory[instansi];
+                    if (data.alamat) {
+                        this.formData.alamat_instansi = data.alamat;
+                    }
+                    if (data.pejabats && data.pejabats.length > 0) {
+                        this.selectPejabatPenerimaHibah(data.pejabats[0]);
+                    } else if (data.pj_nama) {
+                        this.selectPejabatPenerimaHibah({
+                            nama: data.pj_nama,
+                            nip: data.pj_nip || '',
+                            jabatan: data.pj_jabatan || 'Pimpinan / Kepala Instansi'
+                        });
+                    }
+                }
+            },
+
+            selectPejabatPenerimaHibah(p) {
+                if (!p) return;
+                this.formData.penerima_nama = p.nama || '';
+                this.formData.penerima_nip = p.nip || '';
+                if (p.jabatan) this.formData.penerima_jabatan = p.jabatan;
+                this.isPejabatHibahDropdownOpen = false;
+                this.rememberCustomPejabat(p.nama, p.nip, p.jabatan);
+            },
+
             handleDokumenFile(event) {
                 const file = event.target.files ? event.target.files[0] : null;
                 if (!file) {
@@ -796,6 +865,7 @@
             },
 
             openModalTambah() {
+                this.currentStep = 1;
                 this.selectedAstap = null;
                 this.reklasSubRincianKode = '';
                 this.reklasSubRincianNama = '';
@@ -805,6 +875,8 @@
                 this.isSkpdDropdownOpen = false;
                 this.isPejabatTujuanDropdownOpen = false;
                 this.isPejabatAsalDropdownOpen = false;
+                this.isInstansiHibahDropdownOpen = false;
+                this.isPejabatHibahDropdownOpen = false;
                 this.rawExtracomUnits = [];
                 this.formData = {
                     astap_id: '',
@@ -2149,15 +2221,26 @@
                 }
             },
 
-            async submitFormTambah() {
-                if (this.isSubmitting) return;
+            goToStep(step) {
+                if (step === 2) {
+                    if (!this.validateStep1()) {
+                        return;
+                    }
+                    this.currentStep = 2;
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else if (step === 1) {
+                    this.currentStep = 1;
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            },
 
+            validateStep1() {
                 // Validasi Mandatori: Aset wajib dipilih dari Buku Inventaris ASTAP
                 if (!this.formData.astap_id || !this.selectedAstap) {
                     const errMsg = '⚠️ Anda wajib memilih salah satu barang dari Buku Inventaris ASTAP terlebih dahulu!';
                     if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'error');
                     else alert(errMsg);
-                    return;
+                    return false;
                 }
 
                 // Validasi Mandatori: Alasan Reklasifikasi
@@ -2166,7 +2249,7 @@
                     const errMsg = '⚠️ Alasan kenapa melakukan reklasifikasi wajib diisi sebagai dasar audit BPK!';
                     if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'warning');
                     else alert(errMsg);
-                    return;
+                    return false;
                 }
 
                 // Validasi khusus Koreksi Nilai Realisasi (KOREKSI_LAIN)
@@ -2176,7 +2259,7 @@
                         const errMsg = '⚠️ Nilai realisasi baru sama dengan nilai semula (selisih Rp 0). Tidak ada nominal perubahan untuk disimpan!';
                         if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'error');
                         else alert(errMsg);
-                        return;
+                        return false;
                     }
                     if (this.formData.sub_koreksi === 'lkd' || this.formData.sub_koreksi === 'manset') {
                         const noDok = (this.formData.nomor_ba_reklas || '').trim();
@@ -2185,13 +2268,13 @@
                             const errMsg = `⚠️ ${docLabel} wajib diisi sebagai dasar penyesuaian nilai!`;
                             if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'warning');
                             else alert(errMsg);
-                            return;
+                            return false;
                         }
                         if (!this.formData.tanggal_reklas) {
                             const errMsg = '⚠️ Tanggal Dokumen Dasar Koreksi wajib dipilih!';
                             if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'warning');
                             else alert(errMsg);
-                            return;
+                            return false;
                         }
                     }
                 }
@@ -2203,42 +2286,42 @@
                     if (!mitraNama) {
                         if (typeof window.showSimatToast === 'function') window.showSimatToast('Nama Perusahaan Mitra / Rekanan wajib diisi!', 'warning');
                         else alert('Nama Perusahaan Mitra / Rekanan wajib diisi!');
-                        return;
+                        return false;
                     }
                     const pimpinan = (spek.kemitraan_pimpinan || '').trim();
                     if (!pimpinan) {
                         if (typeof window.showSimatToast === 'function') window.showSimatToast('Pejabat Mitra / Direktur Rekanan wajib diisi!', 'warning');
                         else alert('Pejabat Mitra / Direktur Rekanan wajib diisi!');
-                        return;
+                        return false;
                     }
                     const pksNo = (spek.kemitraan_perjanjian_no || '').trim();
                     if (!pksNo) {
                         if (typeof window.showSimatToast === 'function') window.showSimatToast('Nomor Dokumen Perjanjian (PKS / MoU) wajib diisi!', 'warning');
                         else alert('Nomor Dokumen Perjanjian (PKS / MoU) wajib diisi!');
-                        return;
+                        return false;
                     }
                     const pksTgl = (spek.kemitraan_tanggal_pks || '').trim();
                     if (!pksTgl) {
                         if (typeof window.showSimatToast === 'function') window.showSimatToast('Tanggal Penandatanganan PKS wajib dipilih!', 'warning');
                         else alert('Tanggal Penandatanganan PKS wajib dipilih!');
-                        return;
+                        return false;
                     }
                     const tglMulai = (spek.kemitraan_tanggal_mulai || '').trim();
                     if (!tglMulai) {
                         if (typeof window.showSimatToast === 'function') window.showSimatToast('Tanggal Mulai Berlaku Konsesi wajib dipilih!', 'warning');
                         else alert('Tanggal Mulai Berlaku Konsesi wajib dipilih!');
-                        return;
+                        return false;
                     }
                     const tglSelesai = (spek.kemitraan_tanggal_selesai || '').trim();
                     if (!tglSelesai) {
                         if (typeof window.showSimatToast === 'function') window.showSimatToast('Tanggal Berakhir Konsesi wajib dipilih!', 'warning');
                         else alert('Tanggal Berakhir Konsesi wajib dipilih!');
-                        return;
+                        return false;
                     }
                     if (new Date(tglSelesai) < new Date(tglMulai)) {
                         if (typeof window.showSimatToast === 'function') window.showSimatToast('Tanggal Berakhir Konsesi tidak boleh mendahului Tanggal Mulai!', 'warning');
                         else alert('Tanggal Berakhir Konsesi tidak boleh mendahului Tanggal Mulai!');
-                        return;
+                        return false;
                     }
                 }
 
@@ -2248,26 +2331,26 @@
                         const errMsg = '⚠️ SKPD / OPD Penerima wajib dipilih atau diisi!';
                         if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'warning');
                         else alert(errMsg);
-                        return;
+                        return false;
                     }
                     if (!this.formData.tanggal_bast) {
                         const errMsg = '⚠️ Tanggal Dokumen BAST Mutasi Eksternal wajib diisi!';
                         if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'warning');
                         else alert(errMsg);
-                        return;
+                        return false;
                     }
                     if (this.isTanggalBastInvalid()) {
                         const errMsg = '⚠️ Tanggal BAST Mutasi tidak boleh melebihi tanggal hari ini!';
                         if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'error');
                         else alert(errMsg);
-                        return;
+                        return false;
                     }
                     if (this.selectedAstap && this.selectedAstap.registers && this.selectedAstap.registers.length > 0) {
                         if (!this.formData.selected_register_ids || this.formData.selected_register_ids.length === 0) {
                             const errMsg = '⚠️ Pilih minimal 1 unit register/NIBAR yang akan dimutasikan keluar OPD.';
                             if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'error');
                             else alert(errMsg);
-                            return;
+                            return false;
                         }
                     }
                 }
@@ -2279,7 +2362,7 @@
                             const errMsg = '⚠️ Pilih minimal 1 unit register/NIBAR yang akan dihibahkan.';
                             if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'error');
                             else alert(errMsg);
-                            return;
+                            return false;
                         }
                     }
                 }
@@ -2291,7 +2374,7 @@
                             const errMsg = '⚠️ Pilih minimal 1 unit register/NIBAR pada Tahap 01 yang akan diproses ke Ekstrakomptabel.';
                             if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'error');
                             else alert(errMsg);
-                            return;
+                            return false;
                         }
                     }
                     if (this.formData.reklas_items && this.formData.reklas_items.length > 0) {
@@ -2302,13 +2385,13 @@
                                 const errMsg = `⚠️ Harga satuan untuk "${rItem.nama_barang || 'Barang #' + (i+1)}" harus lebih dari Rp 0!`;
                                 if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'warning');
                                 else alert(errMsg);
-                                return;
+                                return false;
                             }
                             if (hrg > 300000) {
                                 const errMsg = `⚠️ Harga satuan untuk "${rItem.nama_barang || 'Barang #' + (i+1)}" melebihi batas Ekstrakomtable (maksimal Rp 300.000 per unit)!`;
                                 if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'error');
                                 else alert(errMsg);
-                                return;
+                                return false;
                             }
                         }
                     }
@@ -2321,7 +2404,7 @@
                             const errMsg = '⚠️ Pilih minimal 1 unit register/NIBAR pada Tahap 01 yang akan dikapitalisasi ke Intrakomptabel.';
                             if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'error');
                             else alert(errMsg);
-                            return;
+                            return false;
                         }
                     }
                     if (this.formData.reklas_items && this.formData.reklas_items.length > 0) {
@@ -2330,12 +2413,22 @@
                             const hrg = parseFloat(rItem.harga_satuan) || 0;
                             if (hrg <= 300000) {
                                 const errMsg = `⚠️ Harga satuan untuk "${rItem.nama_barang || 'Barang #' + (i+1)}" belum memenuhi syarat kapitalisasi ke Intrakomtable (wajib di atas Rp 300.000 per unit)!`;
-                                if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'warning');
+                                if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'error');
                                 else alert(errMsg);
-                                return;
+                                return false;
                             }
                         }
                     }
+                }
+
+                return true;
+            },
+
+            async submitFormTambah() {
+                if (this.isSubmitting) return;
+
+                if (!this.validateStep1()) {
+                    return;
                 }
 
                 this.isSubmitting = true;

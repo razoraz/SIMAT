@@ -415,7 +415,7 @@
                                 Nama Pejabat Penyerah RSUD <span class="text-rose-400">*</span>
                             </label>
                             <input type="text" x-model="formData.pj_asal_nama"
-                                   placeholder="BUDI HARTONO, S.Sos / dr. Yus..."
+                                   placeholder="Ketik atau pilih pejabat penyerah..."
                                    class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none font-bold transition-all shadow-inner">
                         </div>
 
@@ -435,7 +435,7 @@
                                     Jabatan Penyerah RSUD
                                 </label>
                                 <input type="text" x-model="formData.pj_asal_jabatan"
-                                       placeholder="Pengurus Barang Pengguna"
+                                       placeholder="Jabatan penyerah RSUD..."
                                        class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none transition-all shadow-inner">
                             </div>
                         </div>
@@ -462,7 +462,7 @@
                                 <span class="text-rose-400 font-bold">*</span>
                             </label>
                             <input type="text" x-model="formData.pihak_hibah"
-                                   placeholder="Contoh: Puskesmas Tamanan / Yayasan Sosial..."
+                                   placeholder="Ketik atau pilih instansi..."
                                    class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none transition-all shadow-inner">
                         </div>
 
@@ -490,7 +490,7 @@
                                 <span class="text-rose-400 font-bold shrink-0">*</span>
                             </label>
                             <input type="text" x-model="formData.penerima_nama"
-                                   placeholder="Contoh: dr. H. Ahmad Fauzi / Nama Pimpinan..."
+                                   placeholder="Nama pejabat penerima..."
                                    class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none transition-all shadow-inner font-bold">
                         </div>
 
@@ -502,7 +502,7 @@
                                 <span class="truncate">NIP Pejabat Penerima (Opsional)</span>
                             </label>
                             <input type="text" x-model="formData.penerima_nip"
-                                   placeholder="19xxxxxxxxxxxxxx atau -"
+                                   placeholder="NIP penerima (opsional)..."
                                    class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3.5 text-xs font-mono text-purple-200 placeholder-slate-500 focus:outline-none transition-all shadow-inner">
                         </div>
                     </div>
@@ -518,7 +518,7 @@
                                 <span class="text-rose-400 font-bold shrink-0">*</span>
                             </label>
                             <input type="text" x-model="formData.penerima_jabatan"
-                                   placeholder="Contoh: Kepala Puskesmas / Ketua Yayasan..."
+                                   placeholder="Jabatan pejabat penerima..."
                                    class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none transition-all shadow-inner font-medium">
                         </div>
 
@@ -532,7 +532,7 @@
                                 <span class="text-rose-400 font-bold shrink-0">*</span>
                             </label>
                             <input type="text" x-model="formData.alamat_instansi"
-                                   placeholder="Contoh: Jl. Raya Situbondo No. 45, Kecamatan Tenggarang, Bondowoso..."
+                                   placeholder="Alamat kantor / instansi..."
                                    class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-purple-400 focus:ring-1 focus:ring-purple-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none transition-all shadow-inner">
                         </div>
                     </div>
@@ -717,7 +717,7 @@
                                 <input type="text" x-model="formData.pj_asal_nama"
                                        @focus="isPejabatAsalDropdownOpen = true"
                                        @input="isPejabatAsalDropdownOpen = true"
-                                       placeholder="Ketik atau pilih pejabat penyerah RSUD (BUDI HARTONO, S.Sos / dr. Yus...)"
+                                       placeholder="Ketik atau pilih pejabat penyerah..."
                                        class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-teal-400 focus:ring-1 focus:ring-teal-400/30 rounded-xl px-3.5 pr-9 text-xs text-white placeholder-slate-500 focus:outline-none font-bold transition-all shadow-inner">
                                 <button type="button" @click="isPejabatAsalDropdownOpen = !isPejabatAsalDropdownOpen"
                                         class="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-teal-300 rounded-lg hover:bg-slate-800 transition-colors"
@@ -768,7 +768,7 @@
                                     <span>Jabatan Penyerah RSUD</span>
                                 </label>
                                 <input type="text" x-model="formData.pj_asal_jabatan"
-                                       placeholder="Pengurus Barang Pengguna"
+                                       placeholder="Jabatan penyerah RSUD..."
                                        class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-teal-400 focus:ring-1 focus:ring-teal-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none font-semibold transition-all shadow-inner">
                             </div>
                         </div>
@@ -812,7 +812,7 @@
                             <input type="text" x-model="formData.skpd_tujuan"
                                    @focus="isSkpdDropdownOpen = true"
                                    @input="isSkpdDropdownOpen = true"
-                                   placeholder="Ketik atau pilih nama dinas/instansi penerima (contoh: Dinas Kesehatan, BPKAD Bondowoso...)"
+                                   placeholder="Ketik atau pilih SKPD penerima..."
                                    autocomplete="off"
                                    class="w-full bg-slate-950 border border-slate-700/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 rounded-xl px-3.5 py-2.5 pl-9 pr-9 text-xs text-white placeholder-slate-500 focus:outline-none font-bold shadow-inner transition-all">
                             <div class="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-400 pointer-events-none">
@@ -867,7 +867,7 @@
                                 <input type="text" x-model="formData.pejabat_opd_tujuan"
                                        @focus="isPejabatTujuanDropdownOpen = true"
                                        @input="isPejabatTujuanDropdownOpen = true"
-                                       placeholder="Nama Pejabat / Pengurus Barang"
+                                       placeholder="Nama pejabat penerima..."
                                        class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 rounded-xl px-3.5 pr-9 text-xs text-white placeholder-slate-500 focus:outline-none font-bold transition-all shadow-inner">
                                 <button type="button" x-show="availablePejabatTujuanList.length > 0"
                                         @click="isPejabatTujuanDropdownOpen = !isPejabatTujuanDropdownOpen"
@@ -908,7 +908,7 @@
                                     <span>NIP Pejabat Penerima OPD</span>
                                 </label>
                                 <input type="text" x-model="formData.nip_pejabat_opd_tujuan"
-                                       placeholder="19xxxxxxxxxxxxxx atau -"
+                                       placeholder="NIP penerima (opsional)..."
                                        class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none font-mono tracking-wider transition-all shadow-inner">
                             </div>
 
@@ -919,7 +919,7 @@
                                     <span>Jabatan Pejabat Penerima</span>
                                 </label>
                                 <input type="text" x-model="formData.jabatan_opd_tujuan"
-                                       placeholder="Pengurus Barang / Kepala Bidang"
+                                       placeholder="Jabatan pejabat penerima..."
                                        class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none font-semibold transition-all shadow-inner">
                             </div>
                         </div>
@@ -933,7 +933,7 @@
                         </label>
                         <div class="relative">
                             <input type="text" x-model="formData.alamat_instansi"
-                                   placeholder="Jl. Letnan Karsono No. 2, Bondowoso"
+                                   placeholder="Alamat kantor / SKPD..."
                                    class="w-full bg-slate-950 border border-slate-700/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 rounded-xl px-3.5 py-2.5 pl-9 text-xs text-white placeholder-slate-500 focus:outline-none transition-all shadow-inner">
                             <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
@@ -969,7 +969,7 @@
                                 <span class="text-rose-400 font-bold shrink-0">*</span>
                             </label>
                             <input type="text" x-model="formData.nomor_ba_reklas"
-                                   placeholder="000.2.3.2/.../430.10.7/2026"
+                                   placeholder="Nomor dokumen BAST..."
                                    class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none font-mono tracking-wider transition-all shadow-inner">
                         </div>
 
@@ -999,7 +999,7 @@
                                 <span class="truncate" title="Nomor SK Dasar / Mutasi">Nomor SK Dasar / Mutasi</span>
                             </label>
                             <input type="text" x-model="formData.nomor_sk_dasar"
-                                   placeholder="SK Bupati / Nomor BAST Transfer BMD"
+                                   placeholder="Nomor SK Bupati / Dasar hukum..."
                                    class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none font-mono tracking-wider transition-all shadow-inner">
                         </div>
                     </div>
@@ -2758,14 +2758,14 @@
                     <label class="block text-xs font-semibold text-slate-300 mb-1.5">
                         Nomor BA Reklasifikasi
                     </label>
-                    <input type="text" x-model="formData.nomor_ba_reklas" placeholder="000.2.3.2/.../430.10.7/2026"
+                    <input type="text" x-model="formData.nomor_ba_reklas" placeholder="Nomor dokumen BAST..."
                         class="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:outline-none focus:border-indigo-500">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-300 mb-1.5">
                         📝 Alasan Reklasifikasi
                     </label>
-                    <input type="text" x-model="formData.alasan_reklas" placeholder="Contoh: Salah kode rekening pengadaan..."
+                    <input type="text" x-model="formData.alasan_reklas" placeholder="Alasan reklasifikasi..."
                         class="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:outline-none focus:border-indigo-500">
                 </div>
                 <div>
