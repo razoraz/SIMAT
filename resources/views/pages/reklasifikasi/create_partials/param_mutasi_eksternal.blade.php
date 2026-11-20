@@ -308,24 +308,22 @@
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 text-xs items-start">
                         <div class="space-y-1.5">
-                            <label class="flex items-center gap-1.5 text-[10px] font-bold text-slate-300 uppercase tracking-wider h-5 min-w-0">
+                            <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider h-5 whitespace-nowrap">
                                 <svg class="w-3.5 h-3.5 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
-                                <span class="truncate" title="Nomor BAST Mutasi Eksternal">Nomor BAST Mutasi Eksternal</span>
+                                <span>Nomor BAST Mutasi</span>
                                 <span class="text-rose-400 font-bold shrink-0">*</span>
                             </label>
                             <input type="text" x-model="formData.nomor_ba_reklas"
-                                   placeholder="000.2.3.2/.../430.10.7/2026"
+                                   placeholder="Nomor dokumen BAST..."
                                    class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none font-mono tracking-wider transition-all shadow-inner">
                         </div>
 
                         <div class="space-y-1.5">
-                            <div class="flex items-center justify-between h-5 min-w-0">
-                                <label class="flex items-center gap-1.5 text-[10px] font-bold text-slate-300 uppercase tracking-wider min-w-0">
-                                    <svg class="w-3.5 h-3.5 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                                    <span class="truncate" title="Tanggal BAST Mutasi">Tanggal BAST Mutasi</span>
-                                    <span class="text-rose-400 font-bold shrink-0">*</span>
-                                </label>
-                            </div>
+                            <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider h-5 whitespace-nowrap">
+                                <svg class="w-3.5 h-3.5 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                <span>Tanggal BAST Mutasi</span>
+                                <span class="text-rose-400 font-bold shrink-0">*</span>
+                            </label>
                             <input type="date" x-model="formData.tanggal_bast"
                                    :max="new Date().toISOString().split('T')[0]"
                                    :class="isTanggalBastInvalid() ? 'border-rose-500 bg-rose-950/20 text-rose-200' : 'border-slate-700/80 bg-slate-950 text-white'"
@@ -339,12 +337,12 @@
                         </div>
 
                         <div class="space-y-1.5">
-                            <label class="flex items-center gap-1.5 text-[10px] font-bold text-slate-300 uppercase tracking-wider h-5 min-w-0">
+                            <label class="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-300 uppercase tracking-wider h-5 whitespace-nowrap">
                                 <svg class="w-3.5 h-3.5 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-                                <span class="truncate" title="Nomor SK Dasar / Mutasi">Nomor SK Dasar / Mutasi</span>
+                                <span>Nomor SK Dasar</span>
                             </label>
                             <input type="text" x-model="formData.nomor_sk_dasar"
-                                   placeholder="Nomor SK Bupati / Dasar hukum..."
+                                   placeholder="Nomor SK Bupati..."
                                    class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 rounded-xl px-3.5 text-xs text-white placeholder-slate-500 focus:outline-none font-mono tracking-wider transition-all shadow-inner">
                         </div>
                     </div>
