@@ -12440,10 +12440,20 @@
                             gedung_alamat: gItem.gedung_alamat || spec.gedung_alamat || spec.alamat || it.alamat_barang || defaultAlamat,
 
                             // KIB D - Jaringan
+                            jaringan_nama_barang: jItem.jaringan_nama_barang || spec.jaringan_nama_barang || spec.nama_barang || it.nama_barang || '',
                             jaringan_konstruksi: jItem.jaringan_konstruksi || spec.konstruksi || (it.jaringan_konstruksi && it.jaringan_konstruksi !== '-' ? it.jaringan_konstruksi : 'Aspal / Beton'),
+                            jaringan_panjang_m: jItem.jaringan_panjang_m || spec.panjang_m || (it.jaringan_panjang_m && it.jaringan_panjang_m > 0 ? it.jaringan_panjang_m : '') || '',
                             jaringan_panjang_km: jItem.jaringan_panjang_m || spec.panjang_km || spec.panjang_m || (it.jaringan_panjang_m && it.jaringan_panjang_m > 0 ? it.jaringan_panjang_m : '') || '',
                             jaringan_lebar_m: jItem.jaringan_lebar_m || spec.lebar_m || (it.jaringan_lebar_m && it.jaringan_lebar_m > 0 ? it.jaringan_lebar_m : '') || '',
                             jaringan_luas_m2: jItem.jaringan_luas_m2 || spec.luas_m2 || (it.jaringan_luas_m2 && it.jaringan_luas_m2 > 0 ? it.jaringan_luas_m2 : '') || '',
+                            jaringan_kondisi: jItem.jaringan_kondisi || spec.jaringan_kondisi || (it.kondisi === 'Kurang Baik' || it.kondisi === 'KB' ? 'KB' : (it.kondisi === 'Rusak Berat' || it.kondisi === 'RB' ? 'RB' : 'B')),
+                            jaringan_bertingkat: (jItem.jaringan_bertingkat === 'Tidak' || spec.jaringan_bertingkat === 'Tidak' || spec.bertingkat === 'Tidak') ? 'Tidak' : 'Bertingkat',
+                            jaringan_beton: (jItem.jaringan_beton === 'Tidak' || spec.jaringan_beton === 'Tidak' || spec.beton === 'Tidak') ? 'Tidak' : 'Beton',
+                            jaringan_status_tanah: jItem.jaringan_status_tanah || spec.jaringan_status_tanah || spec.status_tanah || 'Tanah Hak Pakai RSUD',
+                            jaringan_kode_aset_tanah: jItem.jaringan_kode_aset_tanah || spec.jaringan_kode_aset_tanah || '',
+                            jaringan_is_baru: jItem.jaringan_is_baru || spec.jaringan_is_baru || spec.is_baru || 'Lama',
+                            jaringan_kapitalisasi_tahun_induk: jItem.jaringan_kapitalisasi_tahun_induk || spec.jaringan_kapitalisasi_tahun_induk || spec.tahun_induk || '',
+                            jaringan_kapitalisasi_nilai_induk: jItem.jaringan_kapitalisasi_nilai_induk || spec.jaringan_kapitalisasi_nilai_induk || spec.nilai_induk || '',
                             jaringan_alamat: jItem.jaringan_alamat || spec.jaringan_alamat || spec.alamat || it.alamat_barang || defaultAlamat,
 
                             // KIB E - Lainnya

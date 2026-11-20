@@ -347,8 +347,8 @@
                                 </label>
                                 <select x-model="formData.spekBaru.mesin_kondisi"
                                         class="w-full h-10 bg-slate-950 border border-slate-700/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 rounded-xl px-3.5 text-xs text-white font-bold focus:outline-none transition-all shadow-inner cursor-pointer">
-                                    <option value="Baik">🟢 Baik (B) — Siap Operasional</option>
-                                    <option value="Kurang Baik">🟡 Kurang Baik (KB) — Perlu Kalibrasi / Setting</option>
+                                    <option value="Baik">🟢 Baik (B)</option>
+                                    <option value="Kurang Baik">🟡 Kurang Baik (KB)</option>
                                     <option value="Rusak Berat">🔴 Rusak Berat (RB)</option>
                                 </select>
                             </div>
@@ -493,44 +493,167 @@
                     </div>
                 </template>
 
-                <!-- Form Spesifik: KIB D - Jalan, Jaringan & Irigasi -->
+                <!-- Form Spesifik: KIB D - Jalan, Jaringan & Irigasi Sesuai Gambar 2 -->
                 <template x-if="formData.tujuan_kib === 'KIB D'">
-                    <div class="space-y-3">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1 flex items-center justify-between">
-                                    <span>Status Jaringan:</span>
-                                    <span class="text-teal-400 font-mono text-[9.5px]" x-text="formData.spekBaru.jaringan_is_baru === 'Lama' ? '🌐 Jaringan Lama' : '✨ Jaringan Baru'"></span>
-                                </label>
-                                <select x-model="formData.spekBaru.jaringan_is_baru"
-                                        class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                    <option value="Lama">🌐 Jaringan / Ruas Lama (Eksisting / Pasca-Kemitraan)</option>
-                                    <option value="Baru">✨ Jaringan Baru (Pemasangan / Pembangunan Perdana)</option>
-                                </select>
+                    <div class="space-y-4">
+                        <!-- Grid 2 Card (Card 1: Kondisi & Spesifikasi, Card 2: Status Tanah & Kapitalisasi) -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+                            <!-- 1. Kondisi & Spesifikasi Jaringan -->
+                            <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3 shadow-inner">
+                                <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                                    <span class="text-xs font-bold text-amber-400 block uppercase tracking-wider flex items-center space-x-1.5">
+                                        <span>🏗️</span>
+                                        <span>KONDISI &amp; SPESIFIKASI:</span>
+                                    </span>
+                                </div>
+
+                                <div>
+                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Nama Jaringan / Ruas (Spesifik / Custom)</label>
+                                    <input type="text" x-model="formData.spekBaru.jaringan_nama_barang"
+                                           placeholder="Contoh: Jaringan Pipa Gas Oksigen Sentral Medis / Ruas Jalan Paviliun"
+                                           class="w-full bg-slate-950 border border-slate-700/80 focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none transition-all shadow-inner">
+                                </div>
+
+                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                    <div>
+                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Panjang (M)</label>
+                                        <input type="number" min="0" step="any" x-model.number="formData.spekBaru.jaringan_panjang_m"
+                                               @input="
+                                                   if (formData.spekBaru.jaringan_panjang_m < 0) formData.spekBaru.jaringan_panjang_m = 0;
+                                                   if (formData.spekBaru.jaringan_panjang_m !== null && formData.spekBaru.jaringan_panjang_m !== undefined && formData.spekBaru.jaringan_lebar_m !== null && formData.spekBaru.jaringan_lebar_m !== undefined) {
+                                                       formData.spekBaru.jaringan_luas_m2 = parseFloat(((parseFloat(formData.spekBaru.jaringan_panjang_m) || 0) * (parseFloat(formData.spekBaru.jaringan_lebar_m) || 0)).toFixed(2));
+                                                   }
+                                               "
+                                               placeholder="0"
+                                               class="w-full bg-slate-950 border border-slate-700/80 focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 rounded-xl px-2 py-2 text-xs text-white font-mono font-bold focus:outline-none transition-all shadow-inner">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Lebar (M)</label>
+                                        <input type="number" min="0" step="any" x-model.number="formData.spekBaru.jaringan_lebar_m"
+                                               @input="
+                                                   if (formData.spekBaru.jaringan_lebar_m < 0) formData.spekBaru.jaringan_lebar_m = 0;
+                                                   if (formData.spekBaru.jaringan_panjang_m !== null && formData.spekBaru.jaringan_panjang_m !== undefined && formData.spekBaru.jaringan_lebar_m !== null && formData.spekBaru.jaringan_lebar_m !== undefined) {
+                                                       formData.spekBaru.jaringan_luas_m2 = parseFloat(((parseFloat(formData.spekBaru.jaringan_panjang_m) || 0) * (parseFloat(formData.spekBaru.jaringan_lebar_m) || 0)).toFixed(2));
+                                                   }
+                                               "
+                                               placeholder="0"
+                                               class="w-full bg-slate-950 border border-slate-700/80 focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 rounded-xl px-2 py-2 text-xs text-white font-mono focus:outline-none transition-all shadow-inner">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold flex items-center justify-between">
+                                            <span>Luas (M2/Lt)</span>
+                                            <span class="text-[9px] text-amber-400 font-mono">(P × L)</span>
+                                        </label>
+                                        <input type="number" min="0" step="any" x-model.number="formData.spekBaru.jaringan_luas_m2"
+                                               @input="if (formData.spekBaru.jaringan_luas_m2 < 0) formData.spekBaru.jaringan_luas_m2 = 0;"
+                                               placeholder="0"
+                                               class="w-full bg-slate-950 border border-slate-700/80 focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 rounded-xl px-2 py-2 text-xs text-cyan-300 font-mono font-bold focus:outline-none transition-all shadow-inner">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Kondisi (B/KB/RB)</label>
+                                        <select x-model="formData.spekBaru.jaringan_kondisi"
+                                                class="w-full bg-slate-950 border border-slate-700/80 focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 rounded-xl px-2 py-2 text-xs text-white font-bold focus:outline-none transition-all shadow-inner cursor-pointer">
+                                            <option value="B">B (Baik)</option>
+                                            <option value="KB">KB (Kurang Baik)</option>
+                                            <option value="RB">RB (Rusak Berat)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Bertingkat / Tidak</label>
+                                        <select x-model="formData.spekBaru.jaringan_bertingkat"
+                                                class="w-full bg-slate-950 border border-slate-700/80 focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 rounded-xl px-2.5 py-2 text-xs text-white font-semibold focus:outline-none transition-all shadow-inner cursor-pointer">
+                                            <option value="Bertingkat">Bertingkat</option>
+                                            <option value="Tidak">Tidak Bertingkat</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Beton / Tidak</label>
+                                        <select x-model="formData.spekBaru.jaringan_beton"
+                                                class="w-full bg-slate-950 border border-slate-700/80 focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 rounded-xl px-2.5 py-2 text-xs text-white font-semibold focus:outline-none transition-all shadow-inner cursor-pointer">
+                                            <option value="Beton">Beton</option>
+                                            <option value="Tidak">Bukan Beton</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Konstruksi Beton:</label>
-                                <select x-model="formData.spekBaru.jaringan_konstruksi"
-                                        class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                    <option value="Beton">Beton</option>
-                                    <option value="Tidak">Tidak</option>
-                                </select>
+
+                            <!-- 2. Status Tanah & Kapitalisasi Jaringan -->
+                            <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3 shadow-inner">
+                                <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                                    <span class="text-xs font-bold text-cyan-400 block uppercase tracking-wider flex items-center space-x-1.5">
+                                        <span>📜</span>
+                                        <span>STATUS TANAH &amp; KAPITALISASI:</span>
+                                    </span>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Status Tanah</label>
+                                        <input type="text" x-model="formData.spekBaru.jaringan_status_tanah" placeholder="Tanah Hak Pakai RSUD"
+                                               class="w-full bg-slate-950 border border-slate-700/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none transition-all shadow-inner">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Kode Aset Tanah</label>
+                                        <input type="text" x-model="formData.spekBaru.jaringan_kode_aset_tanah" placeholder="1.3.1.01.01.02.013"
+                                               class="w-full bg-slate-950 border border-slate-700/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 rounded-xl px-2.5 py-2 text-xs text-emerald-400 font-mono font-semibold focus:outline-none transition-all shadow-inner">
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-3 gap-1.5">
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-1 font-semibold">Jaringan Baru</label>
+                                        <select x-model="formData.spekBaru.jaringan_is_baru"
+                                                @change="if (formData.spekBaru.jaringan_is_baru === 'Baru') { formData.spekBaru.jaringan_kapitalisasi_tahun_induk = ''; formData.spekBaru.jaringan_kapitalisasi_nilai_induk = 0; }"
+                                                class="w-full bg-slate-950 border border-slate-700/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 rounded-xl px-2 py-2 text-xs text-white focus:outline-none transition-all shadow-inner cursor-pointer font-medium">
+                                            <option value="Baru">Baru</option>
+                                            <option value="Lama">Lama</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-1 font-semibold">Tahun Induk</label>
+                                        <input type="text" x-model="formData.spekBaru.jaringan_kapitalisasi_tahun_induk"
+                                               :disabled="formData.spekBaru.jaringan_is_baru === 'Baru'"
+                                               :class="formData.spekBaru.jaringan_is_baru === 'Baru' ? 'opacity-40 cursor-not-allowed bg-slate-900/60 border-slate-800 text-slate-500' : 'bg-slate-950 border-slate-700/80 focus:border-cyan-400 text-white'"
+                                               placeholder="2021"
+                                               class="w-full border rounded-xl px-2 py-2 text-xs font-mono transition-all shadow-inner">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-1 font-semibold">Nilai Induk</label>
+                                        <input type="text"
+                                               :disabled="formData.spekBaru.jaringan_is_baru === 'Baru'"
+                                               :class="formData.spekBaru.jaringan_is_baru === 'Baru' ? 'opacity-40 cursor-not-allowed bg-slate-900/60 border-slate-800 text-slate-500' : 'bg-slate-950 border-slate-700/80 focus:border-cyan-400 text-amber-300 font-bold'"
+                                               :value="formData.spekBaru.jaringan_is_baru === 'Baru' ? '' : (formData.spekBaru.jaringan_kapitalisasi_nilai_induk ? Number(formData.spekBaru.jaringan_kapitalisasi_nilai_induk).toLocaleString('id-ID') : '')"
+                                               @input="
+                                                   let raw = $event.target.value.replace(/\D/g, '');
+                                                   formData.spekBaru.jaringan_kapitalisasi_nilai_induk = raw ? parseInt(raw, 10) : 0;
+                                                   $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                                               "
+                                               placeholder="850.000.000"
+                                               class="w-full border rounded-xl px-1.5 py-2 text-[10px] font-mono transition-all shadow-inner">
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Luas Jaringan (m²):</label>
-                                <input type="number" step="0.01" min="0" x-model="formData.spekBaru.jaringan_luas_m2" placeholder="Contoh: 1200"
-                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Panjang (m/km):</label>
-                                <input type="text" x-model="formData.spekBaru.jaringan_panjang_km" placeholder="Contoh: 350 Meter"
-                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Lebar (Meter):</label>
-                                <input type="text" x-model="formData.spekBaru.jaringan_lebar_m" placeholder="Contoh: 6 Meter"
-                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                            </div>
+
+                        </div>
+
+                        <!-- Baris 3: Alamat / Letak Jaringan di RSUD -->
+                        <div class="space-y-1">
+                            <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider">
+                                Alamat / Letak Ruas Jaringan di Kompleks RSUD:
+                            </label>
+                            <input type="text" x-model="formData.spekBaru.jaringan_alamat" placeholder="Contoh: Sayap Timur Kompleks RSUD Dr. H. Koesnandi"
+                                   class="w-full bg-slate-950 border border-slate-700/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none transition-all shadow-inner">
                         </div>
                     </div>
                 </template>
