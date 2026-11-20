@@ -1073,9 +1073,7 @@
                     this.formData.register_kondisi_map = {};
                 }
 
-                if (this.formData.jenis_reklas === 'KOREKSI_LAIN') {
-                    this.formData.nilai_reklas = 0;
-                } else if (found.registers && found.registers.length > 0) {
+                if (found.registers && found.registers.length > 0) {
                     this.formData.nilai_reklas = this.calculateSelectedNibarsValue();
                 } else {
                     this.formData.nilai_reklas = parseFloat(found.total_realisasi || 0);
@@ -1175,11 +1173,13 @@
                         this.formData.nilai_reklas = parseFloat(this.selectedAstap.total_realisasi || 0);
                     }
                 } else if (this.formData.jenis_reklas === 'KOREKSI_LAIN') {
-                    const currentTot = parseFloat(this.selectedAstap?.total_realisasi || 0);
-                    if (!this.formData.nilai_realisasi_baru || this.formData.nilai_realisasi_baru === 0) {
-                        this.formData.nilai_realisasi_baru = currentTot;
+                    if (this.selectedAstap && this.selectedAstap.registers && this.selectedAstap.registers.length > 0) {
+                        this.formData.nilai_reklas = this.calculateSelectedNibarsValue();
+                    } else if (this.selectedAstap) {
+                        this.formData.nilai_reklas = parseFloat(this.selectedAstap.total_realisasi || 0);
                     }
-                    this.formData.nilai_reklas = Math.abs(parseFloat(this.formData.nilai_realisasi_baru) - currentTot);
+                    this.formData.tipe_koreksi = 'kurang';
+                    this.formData.nilai_realisasi_baru = 0;
                     this.syncKorLainRows();
                 }
             },
@@ -1697,6 +1697,14 @@
                 return Boolean(src && tgt && src === tgt);
             },
 
+            isReklasRekeningLengkap() {
+                if (!this.formData.tujuan_kib) return false;
+                if (['KOREKSI_REKENING', 'KDP_TO_DEFINITIF', 'KAPITALISASI_INTRAKOM'].includes(this.formData.jenis_reklas)) {
+                    return Boolean(this.formData.tujuan_kib && this.reklasSubRincianKode && (this.reklasSubSubRincianKode || this.formData.tujuan_kode));
+                }
+                return Boolean(this.formData.tujuan_kib);
+            },
+
             getPhysicalTypeLabel(type) {
                 if (!type) return '';
                 const map = {
@@ -2212,10 +2220,8 @@
                         const skpd = this.formData.skpd_tujuan ? ` ke ${this.formData.skpd_tujuan}` : '';
                         return `Telah dilakukan mutasi keluar antar-OPD atas aset "${nama}" senilai Rp ${nilai}${skpd}${noBa} berdasarkan BAST Mutasi Antar-SKPD.`;
                     case 'KOREKSI_LAIN':
-                        const tipeText = this.formData.tipe_koreksi === 'tambah' ? 'penambahan nilai buku (kapitalisasi susulan)' : 'pengurangan nilai buku (temuan audit BPK / penyesuaian dana)';
-                        const lamaFmt = new Intl.NumberFormat('id-ID').format(this.selectedAstap?.total_realisasi || 0);
-                        const baruFmt = new Intl.NumberFormat('id-ID').format(this.formData.nilai_realisasi_baru || 0);
-                        return `Telah dilakukan koreksi nilai / ${tipeText} atas aset "${nama}" sebesar penyesuaian Rp ${nilai}${noBa}, sehingga nilai buku aset disesuaikan dari semula Rp ${lamaFmt} menjadi Rp ${baruFmt}.`;
+                        const subName = this.formData.sub_koreksi === 'lkd' ? 'temuan audit BPK RI / LKD' : (this.formData.sub_koreksi === 'manset' ? 'penyelarasan E-Manset BPKAD' : 'koreksi nilai realisasi');
+                        return `Telah dilakukan reklasifikasi koreksi nilai penyesuaian (${subName}) atas aset "${nama}" senilai Rp ${nilai}${noBa}.`;
                     default:
                         return `Telah dilakukan reklasifikasi aset tetap atas barang "${nama}" senilai Rp ${nilai}${noBa}.`;
                 }
