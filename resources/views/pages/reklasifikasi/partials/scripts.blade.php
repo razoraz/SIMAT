@@ -426,6 +426,7 @@
                     lainnya_no_pabrik: '',
                     lainnya_bahan: 'Kertas / Kanvas / Lainnya',
                     lainnya_kondisi: 'Baik',
+                    kondisi: 'Baik',
                     lainnya_keterangan: '',
                     kib_e_type: 'buku',
                     is_extracom: null,
@@ -959,6 +960,8 @@
                         jaringan_kapitalisasi_nilai_induk: '',
                         lainnya_judul_pencipta: '',
                         lainnya_bahan: 'Kertas / Kanvas / Lainnya',
+                        lainnya_kondisi: 'Baik',
+                        kondisi: 'Baik',
                         atb_judul_nama: '',
                         atb_nama_software: '',
                         atb_pencipta: '',
@@ -1384,6 +1387,7 @@
                 this.formData.spekBaru.lainnya_no_pabrik = lItem.lainnya_no_pabrik || spec.no_pabrik || '';
                 this.formData.spekBaru.lainnya_bahan = lItem.lainnya_bahan || spec.bahan || 'Kertas / Kanvas / Lainnya';
                 this.formData.spekBaru.lainnya_kondisi = lItem.lainnya_kondisi || spec.kondisi || it.kondisi || 'Baik';
+                this.formData.spekBaru.kondisi = this.formData.spekBaru.lainnya_kondisi;
                 this.formData.spekBaru.lainnya_keterangan = lItem.lainnya_keterangan || spec.keterangan || '';
                 this.formData.spekBaru.kib_e_type = lItem.kib_e_type || spec.kib_e_type || 'buku';
 

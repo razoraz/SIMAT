@@ -1354,8 +1354,8 @@
                                             <span class="text-[11px] font-extrabold text-cyan-300 uppercase tracking-wider">Spesifikasi Fisik Jalan &amp; Jaringan Kemitraan:</span>
                                         </div>
 
-                                        <!-- Grid 2 Card (Card 1: Kondisi & Spesifikasi, Card 2: Status Tanah & Kapitalisasi) -->
-                                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                        <!-- Stack 2 Card Vertikal (Full Width Tanpa Kanan-Kiri Agar Tidak Tergencet) -->
+                                        <div class="space-y-4">
 
                                             <!-- 1. Kondisi & Spesifikasi Jaringan -->
                                             <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3 shadow-inner">
@@ -1373,7 +1373,7 @@
                                                            class="w-full bg-slate-950 border border-slate-700/80 focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none transition-all shadow-inner">
                                                 </div>
 
-                                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                                     <div>
                                                         <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Panjang (M)</label>
                                                         <input type="number" min="0" step="any" x-model.number="reklasSpekBaru.jaringan_panjang_m"
@@ -1414,10 +1414,10 @@
                                                     <div>
                                                         <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Kondisi (B/KB/RB)</label>
                                                         <select x-model="reklasSpekBaru.jaringan_kondisi"
-                                                                class="w-full bg-slate-950 border border-slate-700/80 focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 rounded-xl px-2 py-2 text-xs text-white font-bold focus:outline-none transition-all shadow-inner cursor-pointer">
-                                                            <option value="B">B (Baik)</option>
-                                                            <option value="KB">KB (Kurang Baik)</option>
-                                                            <option value="RB">RB (Rusak Berat)</option>
+                                                                class="w-full bg-slate-950 border border-slate-700/80 focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 rounded-xl px-2.5 py-2 text-xs text-white font-bold focus:outline-none transition-all shadow-inner cursor-pointer">
+                                                            <option value="B">🟢 B (Baik)</option>
+                                                            <option value="KB">🟡 KB (Kurang Baik)</option>
+                                                            <option value="RB">🔴 RB (Rusak Berat)</option>
                                                         </select>
                                                     </div>
                                                 </div>
@@ -1452,42 +1452,42 @@
                                                     </span>
                                                 </div>
 
-                                                <div class="grid grid-cols-2 gap-2">
+                                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                                     <div>
                                                         <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Status Tanah</label>
                                                         <input type="text" x-model="reklasSpekBaru.jaringan_status_tanah" placeholder="Tanah Hak Pakai RSUD"
-                                                               class="w-full bg-slate-950 border border-slate-700/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none transition-all shadow-inner">
+                                                               class="w-full bg-slate-950 border border-slate-700/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all shadow-inner">
                                                     </div>
 
                                                     <div>
                                                         <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Kode Aset Tanah</label>
                                                         <input type="text" x-model="reklasSpekBaru.jaringan_kode_aset_tanah" placeholder="1.3.1.01.01.02.013"
-                                                               class="w-full bg-slate-950 border border-slate-700/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 rounded-xl px-2.5 py-2 text-xs text-emerald-400 font-mono font-semibold focus:outline-none transition-all shadow-inner">
+                                                               class="w-full bg-slate-950 border border-slate-700/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 rounded-xl px-3 py-2 text-xs text-emerald-400 font-mono font-semibold focus:outline-none transition-all shadow-inner">
                                                     </div>
                                                 </div>
 
-                                                <div class="grid grid-cols-3 gap-1.5">
+                                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                                     <div>
-                                                        <label class="block text-slate-400 text-[9px] mb-1 font-semibold">Jaringan Baru</label>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Jaringan Baru</label>
                                                         <select x-model="reklasSpekBaru.jaringan_is_baru"
                                                                 @change="if (reklasSpekBaru.jaringan_is_baru === 'Baru') { reklasSpekBaru.jaringan_kapitalisasi_tahun_induk = ''; reklasSpekBaru.jaringan_kapitalisasi_nilai_induk = 0; }"
-                                                                class="w-full bg-slate-950 border border-slate-700/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 rounded-xl px-2 py-2 text-xs text-white focus:outline-none transition-all shadow-inner cursor-pointer font-medium">
+                                                                class="w-full bg-slate-950 border border-slate-700/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all shadow-inner cursor-pointer font-medium">
                                                             <option value="Baru">Baru</option>
                                                             <option value="Lama">Lama</option>
                                                         </select>
                                                     </div>
 
                                                     <div>
-                                                        <label class="block text-slate-400 text-[9px] mb-1 font-semibold">Tahun Induk</label>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Tahun Induk</label>
                                                         <input type="text" x-model="reklasSpekBaru.jaringan_kapitalisasi_tahun_induk"
                                                                :disabled="reklasSpekBaru.jaringan_is_baru === 'Baru'"
                                                                :class="reklasSpekBaru.jaringan_is_baru === 'Baru' ? 'opacity-40 cursor-not-allowed bg-slate-900/60 border-slate-800 text-slate-500' : 'bg-slate-950 border-slate-700/80 focus:border-cyan-400 text-white'"
                                                                placeholder="2021"
-                                                               class="w-full border rounded-xl px-2 py-2 text-xs font-mono transition-all shadow-inner">
+                                                               class="w-full border rounded-xl px-3 py-2 text-xs font-mono transition-all shadow-inner">
                                                     </div>
 
                                                     <div>
-                                                        <label class="block text-slate-400 text-[9px] mb-1 font-semibold">Nilai Induk</label>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Nilai Induk</label>
                                                         <input type="text"
                                                                :disabled="reklasSpekBaru.jaringan_is_baru === 'Baru'"
                                                                :class="reklasSpekBaru.jaringan_is_baru === 'Baru' ? 'opacity-40 cursor-not-allowed bg-slate-900/60 border-slate-800 text-slate-500' : 'bg-slate-950 border-slate-700/80 focus:border-cyan-400 text-amber-300 font-bold'"
@@ -1498,7 +1498,7 @@
                                                                    $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
                                                                "
                                                                placeholder="850.000.000"
-                                                               class="w-full border rounded-xl px-1.5 py-2 text-[10px] font-mono transition-all shadow-inner">
+                                                               class="w-full border rounded-xl px-3 py-2 text-xs font-mono transition-all shadow-inner">
                                                     </div>
                                                 </div>
                                             </div>
@@ -1739,9 +1739,9 @@
                                                         <select x-model="reklasSpekBaru.kondisi"
                                                                 @change="if (reklasSpekBaru) { reklasSpekBaru.lainnya_kondisi = reklasSpekBaru.kondisi; } syncCurrentSpekToActiveItem();"
                                                                 class="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white font-bold focus:outline-none transition-all cursor-pointer">
-                                                            <option value="Baik">🟢 Baik (B) — Lengkap & Layak Baca</option>
-                                                            <option value="Kurang Baik">🟡 Kurang Baik (KB) — Sebagian Rusak/Sobek</option>
-                                                            <option value="Rusak Berat">🔴 Rusak Berat (RB) — Rusak Total/Lapuk</option>
+                                                            <option value="Baik">🟢 Baik (B)</option>
+                                                            <option value="Kurang Baik">🟡 Kurang Baik (KB)</option>
+                                                            <option value="Rusak Berat">🔴 Rusak Berat (RB)</option>
                                                         </select>
                                                     </div>
                                                 </div>
@@ -1794,6 +1794,16 @@
                                                                placeholder="Contoh: 150 x 200 cm / Tinggi 1.8 Meter"
                                                                class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
                                                     </div>
+                                                    <div>
+                                                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Kondisi Fisik Barang:</label>
+                                                        <select x-model="reklasSpekBaru.kondisi"
+                                                                @change="if (reklasSpekBaru) { reklasSpekBaru.lainnya_kondisi = reklasSpekBaru.kondisi; } syncCurrentSpekToActiveItem();"
+                                                                class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-3 py-2 text-xs text-white font-bold focus:outline-none transition-all cursor-pointer">
+                                                            <option value="Baik">🟢 Baik (B)</option>
+                                                            <option value="Kurang Baik">🟡 Kurang Baik (KB)</option>
+                                                            <option value="Rusak Berat">🔴 Rusak Berat (RB)</option>
+                                                        </select>
+                                                    </div>
                                                     <div class="sm:col-span-2">
                                                         <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Spesifikasi / Deskripsi Karya:</label>
                                                         <input type="text" x-model="reklasSpekBaru.lainnya_spesifikasi"
@@ -1836,6 +1846,16 @@
                                                                @input="syncCurrentSpekToActiveItem();"
                                                                placeholder="Contoh: Balai Pembibitan Pertanian Jawa Timur"
                                                                class="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
+                                                    </div>
+                                                    <div class="sm:col-span-2">
+                                                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Kondisi Fisik Hewan / Tanaman:</label>
+                                                        <select x-model="reklasSpekBaru.kondisi"
+                                                                @change="if (reklasSpekBaru) { reklasSpekBaru.lainnya_kondisi = reklasSpekBaru.kondisi; } syncCurrentSpekToActiveItem();"
+                                                                class="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white font-bold focus:outline-none transition-all cursor-pointer">
+                                                            <option value="Baik">🟢 Baik (B)</option>
+                                                            <option value="Kurang Baik">🟡 Kurang Baik (KB)</option>
+                                                            <option value="Rusak Berat">🔴 Rusak Berat (RB)</option>
+                                                        </select>
                                                     </div>
                                                     <div class="sm:col-span-2">
                                                         <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Keterangan / Lokasi Penghijauan:</label>
