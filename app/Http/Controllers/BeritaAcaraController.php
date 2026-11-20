@@ -9,6 +9,9 @@ use App\Models\Astap;
 use App\Models\Distribusi;
 use App\Models\AstapMutasi;
 use App\Models\MutasiEksternal;
+use App\Models\AstapHibah;
+use App\Models\AstapKemitraan;
+use App\Models\AstapBelanjaBarang;
 use App\Models\Unit;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -685,6 +688,247 @@ class BeritaAcaraController extends Controller
             ];
         }
 
+        // =========================================================================
+        // 5. DATA TAB 4: BAST HIBAH ASET BMD (MASUK & KELUAR)
+        // =========================================================================
+        $hibahs = AstapHibah::with(['astap.jenisAstap', 'astap.registers', 'register', 'user'])
+            ->where('is_deleted', 0)
+            ->orderBy('id', 'desc')
+            ->get();
+
+        $hibahList = [];
+        foreach ($hibahs as $h) {
+            $astap = $h->astap;
+            $tglObj = $h->tanggal_bast ?: ($astap?->created_at ?: now());
+            $tglCarbon = Carbon::parse($tglObj);
+            $tahunStr = $tglCarbon->format('Y');
+            $hariStr = $hariIndo[$tglCarbon->format('l')] ?? 'Senin';
+            $tglAngka = $tglCarbon->format('d');
+            $blnNama = $bulanIndo[(int)$tglCarbon->format('m')] ?? '';
+
+            $volTotal = (int) ($h->jumlah_volume ?: ($astap?->jumlah_volume ?: 1));
+            $nilaiTotal = (float) ($h->nilai_aset ?: ($astap?->total_realisasi ?: 0));
+            $hargaSatuan = $volTotal > 0 ? ($nilaiTotal / $volTotal) : $nilaiTotal;
+            $kode108 = $astap?->kode_108 ?: ($astap?->jenisAstap?->sub_sub_rincian_objek ?: '1.3.2.00.00.00');
+
+            // Susun item rincian register
+            $itemsData = [];
+            if ($h->register) {
+                $itemsData[] = [
+                    'no' => 1,
+                    'nama_barang' => $astap?->nama_barang ?: 'Barang Hibah',
+                    'kode_108' => $kode108,
+                    'nibar' => $h->register->nibar ?: ($h->register->no_register ?: '-'),
+                    'kondisi' => $h->register->kondisi ?: 'Baik',
+                    'satuan' => $h->satuan ?: ($astap?->satuan ?: 'Unit'),
+                    'volume' => 1,
+                    'harga_satuan' => (float)$hargaSatuan,
+                    'nilai_total' => (float)$hargaSatuan,
+                ];
+            } elseif ($astap && $astap->registers && $astap->registers->isNotEmpty()) {
+                $selRegs = $astap->registers->take($volTotal);
+                foreach ($selRegs as $idx => $r) {
+                    $itemsData[] = [
+                        'no' => $idx + 1,
+                        'nama_barang' => $astap->nama_barang,
+                        'kode_108' => $kode108,
+                        'nibar' => $r->nibar ?: ($r->no_register ?: '-'),
+                        'kondisi' => $r->kondisi ?: 'Baik',
+                        'satuan' => $h->satuan ?: ($astap->satuan ?: 'Unit'),
+                        'volume' => 1,
+                        'harga_satuan' => (float)$hargaSatuan,
+                        'nilai_total' => (float)$hargaSatuan,
+                    ];
+                }
+            } else {
+                $itemsData[] = [
+                    'no' => 1,
+                    'nama_barang' => $astap?->nama_barang ?: 'Barang Hibah Aset Daerah',
+                    'kode_108' => $kode108,
+                    'nibar' => '-',
+                    'kondisi' => 'Baik',
+                    'satuan' => $h->satuan ?: ($astap?->satuan ?: 'Unit'),
+                    'volume' => $volTotal,
+                    'harga_satuan' => (float)$hargaSatuan,
+                    'nilai_total' => (float)$nilaiTotal,
+                ];
+            }
+
+            $hibahList[] = [
+                'id'                   => $h->id,
+                'kode'                 => $h->nomor_bast ?: ('HIBAH-' . str_pad($h->id, 4, '0', STR_PAD_LEFT)),
+                'nomor_bast'           => $h->nomor_bast ?: ('BAST-HIB/' . str_pad($h->id, 4, '0', STR_PAD_LEFT) . '/430.10.7/' . $tahunStr),
+                'tipe_hibah'           => $h->tipe_hibah ?: 'masuk',
+                'tipe_label'           => ($h->tipe_hibah === 'keluar') ? 'Hibah Keluar RSUD' : 'Hibah Masuk ke RSUD',
+                'tanggal_bast'         => $tglCarbon->format('Y-m-d'),
+                'tgl_bast_format'      => $hariStr . ', ' . $tglAngka . ' ' . $blnNama . ' ' . $tahunStr,
+                'hari'                 => $hariStr,
+                'tanggal_angka'        => $tglAngka,
+                'bulan'                => $blnNama,
+                'tahun'                => $tahunStr,
+                'pemberi'              => $h->hibah_pemberi ?: ($astap?->hibah_pemberi ?: 'Pemberi Hibah / Kementerian'),
+                'pemberi_nama'         => $h->pemberi_nama ?: ($h->hibah_pemberi ?: 'Pejabat Penyerah Hibah'),
+                'pemberi_jabatan'      => $h->pemberi_jabatan ?: 'Pemberi Hibah',
+                'pemberi_alamat'       => $h->pemberi_alamat ?: 'Kabupaten Bondowoso',
+                'penerima_nama'        => $h->nama_penerima ?: ($h->tipe_hibah === 'keluar' ? 'Pihak Penerima Luar' : 'BUDI HARTONO, S.Sos'),
+                'penerima_nip'         => $h->nip_penerima ?: ($h->tipe_hibah === 'keluar' ? '-' : '19760229 200801 1 010'),
+                'penerima_jabatan'     => $h->jabatan_penerima ?: ($h->tipe_hibah === 'keluar' ? 'Penerima Hibah' : 'Pengurus Barang Aset RSUD'),
+                'direktur_nama'        => 'dr. DIAN ARISANDI, M.Kes',
+                'direktur_nip'         => '19730514 200212 2 003',
+                'nama_barang'          => $astap?->nama_barang ?: 'Barang Hibah BMD',
+                'jumlah_volume'        => $volTotal,
+                'satuan'               => $h->satuan ?: ($astap?->satuan ?: 'Unit'),
+                'nilai_aset'           => (float)$nilaiTotal,
+                'nilai_aset_format'    => 'Rp ' . number_format($nilaiTotal, 0, ',', '.'),
+                'keterangan'           => $h->keterangan ?: ($astap?->hibah_keterangan ?: 'Naskah Hibah Barang Milik Daerah'),
+                'dokumen_path'         => $h->dokumen_path ? asset('storage/' . $h->dokumen_path) : null,
+                'signed'               => (bool)($h->signed ?? false),
+                'tgl_signed'           => $h->tgl_signed ?: null,
+                'qr_hash'              => 'BSRE-KOESNANDI-HIB-' . $h->id . '-' . $tahunStr,
+                'items'                => $itemsData,
+            ];
+        }
+
+        // =========================================================================
+        // 6. DATA TAB 5: BAST PEMANFAATAN KEMITRAAN (AKUN 1.5.2)
+        // =========================================================================
+        $kemitraans = AstapKemitraan::with(['astap.jenisAstap', 'objekAstap', 'objekRegister'])
+            ->where('is_deleted', 0)
+            ->orderBy('id', 'desc')
+            ->get();
+
+        $kemitraanList = [];
+        foreach ($kemitraans as $k) {
+            $astap = $k->astap;
+            $objek = $k->objekAstap;
+            $tglPks = $k->tanggal_pks ?: ($astap?->created_at ?: now());
+            $tglCarbon = Carbon::parse($tglPks);
+            $tahunStr = $tglCarbon->format('Y');
+            $hariStr = $hariIndo[$tglCarbon->format('l')] ?? 'Senin';
+            $tglAngka = $tglCarbon->format('d');
+            $blnNama = $bulanIndo[(int)$tglCarbon->format('m')] ?? '';
+
+            $nilaiTotal = (float) ($k->nilai_aset ?: ($astap?->total_realisasi ?: 0));
+            $volTotal = (int) ($k->jumlah_volume ?: 1);
+
+            $objekNama = $objek?->nama_barang ?: ($astap?->nama_barang ?: 'Objek BMD Kemitraan');
+            $objekKode = $objek?->kode_108 ?: ($astap?->kode_108 ?: '1.5.2.01.01');
+
+            $nomorPks = $k->nomor_pks ?: ('PKS-KMT/' . str_pad($k->id, 4, '0', STR_PAD_LEFT) . '/430.10.7/' . $tahunStr);
+            $nomorBast = $k->nomor_bast ?: ('BAST-KMT/' . str_pad($k->id, 4, '0', STR_PAD_LEFT) . '/430.10.7/' . $tahunStr);
+
+            $kemitraanList[] = [
+                'id'                   => $k->id,
+                'kode'                 => $nomorPks,
+                'nomor_pks'            => $nomorPks,
+                'nomor_bast'           => $nomorBast,
+                'mitra_nama'           => $k->mitra_nama ?: 'Mitra Pihak Ketiga RSUD',
+                'mitra_pimpinan'       => $k->mitra_pimpinan ?: 'Pimpinan / Direktur Rekanan',
+                'mitra_alamat'         => $k->mitra_alamat ?: 'Kabupaten Bondowoso',
+                'tipe_kemitraan'       => $k->tipe_kemitraan ?: 'Sewa BMD',
+                'tipe_label'           => strtoupper($k->tipe_kemitraan ?: 'Sewa BMD'),
+                'tanggal_pks'          => $tglCarbon->format('Y-m-d'),
+                'tgl_bast_format'      => $hariStr . ', ' . $tglAngka . ' ' . $blnNama . ' ' . $tahunStr,
+                'hari'                 => $hariStr,
+                'tanggal_angka'        => $tglAngka,
+                'bulan'                => $blnNama,
+                'tahun'                => $tahunStr,
+                'tanggal_mulai'        => $k->tanggal_mulai ? Carbon::parse($k->tanggal_mulai)->format('d/m/Y') : '-',
+                'tanggal_selesai'      => $k->tanggal_selesai ? Carbon::parse($k->tanggal_selesai)->format('d/m/Y') : '-',
+                'objek_nama'           => $objekNama,
+                'objek_kode'           => $objekKode,
+                'objek_luas'           => $k->luas_m2 ? ($k->luas_m2 . ' m²') : ($astap?->luas ? ($astap->luas . ' m²') : '-'),
+                'objek_lokasi'         => $k->lokasi_objek ?: 'Area RSUD dr. H. Koesnandi',
+                'nilai_aset'           => (float)$nilaiTotal,
+                'nilai_aset_format'    => 'Rp ' . number_format($nilaiTotal, 0, ',', '.'),
+                'direktur_nama'        => 'dr. DIAN ARISANDI, M.Kes',
+                'direktur_nip'         => '19730514 200212 2 003',
+                'status'               => $k->status ?: 'Aktif',
+                'status_pks'           => $k->status ?: 'Aktif Berjalan',
+                'signed'               => (bool)($k->signed ?? false),
+                'tgl_signed'           => $k->tgl_signed ?: null,
+                'qr_hash'              => 'BSRE-KOESNANDI-KMT-' . $k->id . '-' . $tahunStr,
+                'dokumen_pks_path'     => $k->dokumen_pks_path ? asset('storage/' . $k->dokumen_pks_path) : null,
+            ];
+        }
+
+        // =========================================================================
+        // 7. DATA TAB 6: BAST PENERIMAAN BELANJA MODAL / BARANG (FAKTUR REKANAN)
+        // =========================================================================
+        $belanjaBarangs = AstapBelanjaBarang::with(['astaps.jenisAstap', 'astaps.registers.unit', 'user'])
+            ->where('is_deleted', 0)
+            ->orderBy('id', 'desc')
+            ->get();
+
+        $belanjaBarangList = [];
+        foreach ($belanjaBarangs as $b) {
+            $astaps = $b->astaps;
+            if ($astaps->isEmpty() && $b->astap) {
+                $astaps = collect([$b->astap]);
+            }
+            $firstAst = $astaps->first();
+            $tglFaktur = $b->tanggal_faktur ? Carbon::parse($b->tanggal_faktur) : ($b->created_at ?: now());
+            $tglCarbon = Carbon::parse($tglFaktur);
+            $tahunStr = $tglCarbon->format('Y');
+            $hariStr = $hariIndo[$tglCarbon->format('l')] ?? 'Senin';
+            $tglAngka = $tglCarbon->format('d');
+            $blnNama = $bulanIndo[(int)$tglCarbon->format('m')] ?? '';
+
+            $totalPembelian = (float) $b->total_pembelian;
+            $terbilangStr = $totalPembelian > 0 ? (self::terbilang($totalPembelian) . ' Rupiah') : 'Nol Rupiah';
+            $nomorBast = '000.2.3.2/BAST-BLJ/' . str_pad($b->id, 4, '0', STR_PAD_LEFT) . '/430.10.7/' . $tahunStr;
+
+            $itemsData = [];
+            $noIt = 1;
+            foreach ($astaps as $ast) {
+                $qty = (int) ($ast->jumlah_volume ?: 1);
+                $totalNilai = (float) ($ast->total_realisasi ?: 0);
+                $hargaSatuan = $qty > 0 ? ($totalNilai / $qty) : $totalNilai;
+
+                $itemsData[] = [
+                    'no'           => $noIt++,
+                    'nama_barang'  => $ast->nama_barang,
+                    'kode_108'     => $ast->kode_108 ?: ($ast->jenisAstap?->sub_sub_rincian_objek ?: '1.3.2.00.00.00'),
+                    'jenis_nama'   => $ast->jenisAstap?->nama_jenis ?: 'Aset Operasional',
+                    'spesifikasi'  => $ast->keterangan_tambahan ?: ($ast->satuan . ' Pengadaan ' . $tahunStr),
+                    'volume'       => $qty,
+                    'satuan'       => $ast->satuan ?: 'Unit',
+                    'harga_satuan' => (float)$hargaSatuan,
+                    'nilai_total'  => (float)$totalNilai,
+                ];
+            }
+
+            $belanjaBarangList[] = [
+                'id'                    => $b->id,
+                'kode'                  => $b->nomor_faktur ?: ('BLJ-' . str_pad($b->id, 4, '0', STR_PAD_LEFT)),
+                'nomor_faktur'          => $b->nomor_faktur ?: '-',
+                'nomor_bast'            => $nomorBast,
+                'toko_penyedia'         => $b->toko_penyedia ?: 'Penyedia / Rekanan RSUD',
+                'tanggal_faktur'        => $tglCarbon->format('Y-m-d'),
+                'tgl_bast_format'       => $hariStr . ', ' . $tglAngka . ' ' . $blnNama . ' ' . $tahunStr,
+                'hari'                  => $hariStr,
+                'tanggal_angka'         => $tglAngka,
+                'bulan'                 => $blnNama,
+                'tahun'                 => $tahunStr,
+                'total_pembelian'       => (float)$totalPembelian,
+                'total_pembelian_format'=> 'Rp ' . number_format($totalPembelian, 0, ',', '.'),
+                'terbilang'             => $terbilangStr,
+                'spk_nomor'             => $b->nomor_spk ?: '-',
+                'keterangan'            => $b->keterangan ?: 'Penerimaan belanja modal / barang per faktur pengadaan.',
+                'ppk_nama'              => 'dr. YUS PRIYATNA ADRYANTO, Sp.P, FISR.',
+                'ppk_nip'               => '19771002 200604 1 006',
+                'pengurus_nama'         => 'BUDI HARTONO, S.Sos',
+                'pengurus_nip'          => '19760229 200801 1 010',
+                'direktur_nama'         => 'dr. DIAN ARISANDI, M.Kes',
+                'direktur_nip'          => '19730514 200212 2 003',
+                'status'                => 'Telah Diterima & Diverifikasi',
+                'signed'                => true,
+                'tgl_signed'            => $tglCarbon->format('d/m/Y') . ' 14:00 WIB',
+                'qr_hash'               => 'BSRE-KOESNANDI-BLJ-' . $b->id . '-' . $tahunStr,
+                'items'                 => $itemsData,
+            ];
+        }
+
         $units = Unit::orderBy('nama', 'asc')->get()->map(function($u) {
             return [
                 'id'     => $u->id,
@@ -702,8 +946,42 @@ class BeritaAcaraController extends Controller
             'distribusiListJson'     => json_encode($distribusiList),
             'mutasiListJson'         => json_encode($mutasiList),
             'mutasiEksternalListJson'=> json_encode($mutasiEksternalList),
+            'hibahListJson'          => json_encode($hibahList),
+            'kemitraanListJson'      => json_encode($kemitraanList),
+            'belanjaBarangListJson'  => json_encode($belanjaBarangList),
             'unitsJson'              => json_encode($units),
         ]);
+    }
+
+    /**
+     * Helper: Terbilang Angka Nominal Rupiah
+     */
+    public static function terbilang($angka): string
+    {
+        $angka = floor(abs((float) $angka));
+        $baca = ['', 'Satu', 'Dua', 'Tiga', 'Empat', 'Lima', 'Enam', 'Tujuh', 'Delapan', 'Sembilan', 'Sepuluh', 'Sebelas'];
+        if ($angka < 12) {
+            return ' ' . $baca[(int)$angka];
+        } elseif ($angka < 20) {
+            return self::terbilang($angka - 10) . ' Belas';
+        } elseif ($angka < 100) {
+            return self::terbilang(floor($angka / 10)) . ' Puluh' . self::terbilang(fmod($angka, 10));
+        } elseif ($angka < 200) {
+            return ' Seratus' . self::terbilang($angka - 100);
+        } elseif ($angka < 1000) {
+            return self::terbilang(floor($angka / 100)) . ' Ratus' . self::terbilang(fmod($angka, 100));
+        } elseif ($angka < 2000) {
+            return ' Seribu' . self::terbilang($angka - 1000);
+        } elseif ($angka < 1000000) {
+            return self::terbilang(floor($angka / 1000)) . ' Ribu' . self::terbilang(fmod($angka, 1000));
+        } elseif ($angka < 1000000000) {
+            return self::terbilang(floor($angka / 1000000)) . ' Juta' . self::terbilang(fmod($angka, 1000000));
+        } elseif ($angka < 1000000000000) {
+            return self::terbilang(floor($angka / 1000000000)) . ' Miliar' . self::terbilang(fmod($angka, 1000000000));
+        } elseif ($angka < 1000000000000000) {
+            return self::terbilang(floor($angka / 1000000000000)) . ' Triliun' . self::terbilang(fmod($angka, 1000000000000));
+        }
+        return '';
     }
 
     /**

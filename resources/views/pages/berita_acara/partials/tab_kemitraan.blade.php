@@ -1,0 +1,136 @@
+<!-- ========================================================================= -->
+<!-- KONTEN TAB 5: BAST PEMANFAATAN KEMITRAAN (AKUN 1.5.2)                      -->
+<!-- ========================================================================= -->
+<div x-show="activeTab === 'kemitraan'" class="space-y-6" x-cloak>
+    
+    <!-- Toolbar & Filter Kemitraan -->
+    <div class="no-print bg-slate-900/90 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+            
+            <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                <div class="relative flex-1 sm:w-80">
+                    <input type="text" x-model="kemitraanSearch" placeholder="Cari nomor PKS / BAST / mitra / objek..."
+                        class="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-2.5 pl-10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500">
+                    <svg class="w-4 h-4 text-amber-400 absolute left-3.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </div>
+
+                <!-- Filter Tipe Kemitraan -->
+                <select x-model="kemitraanTipeFilter" class="bg-slate-950 border border-slate-800 rounded-2xl px-3 py-2.5 text-xs text-amber-300 font-bold focus:outline-none focus:border-amber-500">
+                    <option value="all">🤝 Semua Tipe Pemanfaatan</option>
+                    <option value="Sewa BMD">Sewa BMD</option>
+                    <option value="KSP">Kerja Sama Pemanfaatan (KSP)</option>
+                    <option value="BSG">Bangun Serah Guna (BSG)</option>
+                    <option value="BGS">Bangun Guna Serah (BGS)</option>
+                    <option value="KSPI">Kerja Sama Penyediaan Infrastruktur (KSPI)</option>
+                </select>
+
+                <!-- Filter Status TTD -->
+                <select x-model="kemitraanStatusFilter" class="bg-slate-950 border border-slate-800 rounded-2xl px-3 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-amber-500">
+                    <option value="all">🔍 Semua Status TTD</option>
+                    <option value="signed">✍️ Telah Ditandatangani BSrE</option>
+                    <option value="unsigned">⏳ Belum Ditandatangani</option>
+                </select>
+            </div>
+
+            <div class="text-xs text-slate-400 font-medium">
+                Total Data: <span class="font-bold text-amber-400 font-mono" x-text="filteredKemitraanList.length"></span> Dokumen Kerja Sama
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabel Daftar BAST Kemitraan -->
+    <div class="no-print bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6">
+        <div class="rounded-2xl border border-slate-800/80 custom-scrollbar" style="max-height: 400px; overflow-y: auto; overflow-x: auto;">
+            <table class="w-full text-left text-xs text-slate-300 relative border-collapse">
+                <thead class="text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800" style="position: sticky; top: 0; z-index: 20; background-color: #020617;">
+                    <tr>
+                        <th class="px-4 py-3.5 text-center w-12">No</th>
+                        <th class="px-4 py-3.5 text-left">Nomor PKS &amp; BAST</th>
+                        <th class="px-4 py-3.5 text-center">Bentuk Pemanfaatan</th>
+                        <th class="px-4 py-3.5 text-left">Nama Mitra / Rekanan</th>
+                        <th class="px-4 py-3.5 text-left">Objek BMD Dikerjasamakan</th>
+                        <th class="px-4 py-3.5 text-center">Masa Berlaku PKS</th>
+                        <th class="px-4 py-3.5 text-right">Nilai Aset (Rp)</th>
+                        <th class="px-4 py-3.5 text-center">Status TTD BSrE</th>
+                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Aksi BAST</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/80">
+                    <template x-for="(item, index) in filteredKemitraanList" :key="item.id">
+                        <tr class="hover:bg-slate-800/30 transition-colors">
+                            <td class="px-4 py-4 text-center font-bold text-slate-400" x-text="index + 1"></td>
+                            <td class="px-4 py-4">
+                                <div class="font-mono font-bold text-amber-400" x-text="item.nomor_pks"></div>
+                                <div class="text-[10px] text-slate-400 font-mono" x-text="item.nomor_bast"></div>
+                                <div class="text-[10px] text-slate-500" x-text="item.tgl_bast_format"></div>
+                            </td>
+                            <td class="px-4 py-4 text-center">
+                                <span class="px-2.5 py-1 rounded-xl text-[10px] font-extrabold uppercase border shadow-sm bg-amber-500/15 text-amber-300 border-amber-500/30"
+                                    x-text="item.tipe_label">
+                                </span>
+                            </td>
+                            <td class="px-4 py-4">
+                                <div class="font-bold text-white" x-text="item.mitra_nama"></div>
+                                <div class="text-[10px] text-slate-400" x-text="item.mitra_pimpinan"></div>
+                            </td>
+                            <td class="px-4 py-4">
+                                <div class="font-bold text-slate-200" x-text="item.objek_nama"></div>
+                                <div class="text-[10px] text-slate-400" x-text="item.objek_lokasi + (item.objek_luas !== '-' ? ' (' + item.objek_luas + ')' : '')"></div>
+                            </td>
+                            <td class="px-4 py-4 text-center">
+                                <div class="font-mono text-slate-300 text-[11px]" x-text="item.tanggal_mulai + ' s/d ' + item.tanggal_selesai"></div>
+                                <span class="px-2 py-0.5 rounded text-[9px] font-bold bg-slate-800 text-slate-400 border border-slate-700" x-text="item.status_pks"></span>
+                            </td>
+                            <td class="px-4 py-4 text-right font-mono font-bold text-amber-300" x-text="item.nilai_aset_format"></td>
+                            <td class="px-4 py-4 text-center whitespace-nowrap">
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap border shadow-sm"
+                                      :class="item.signed ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : 'bg-amber-500/15 text-amber-300 border-amber-500/30'">
+                                    <template x-if="item.signed">
+                                        <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                    </template>
+                                    <template x-if="!item.signed">
+                                        <svg class="w-3.5 h-3.5 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    </template>
+                                    <span x-text="item.signed ? 'Sudah TTD BSrE' : 'Belum TTD'"></span>
+                                </span>
+                            </td>
+                            <td class="px-4 py-4 text-center space-x-1.5 whitespace-nowrap">
+                                
+                                <!-- Tombol Toggle TTD BSrE -->
+                                @if(Auth::user()?->role === 'master_admin' || Auth::user()?->canDo('bast', 'tte'))
+                                <button type="button" @click="toggleSignKemitraan(item)"
+                                    :class="item.signed ? 'bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40' : 'bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold shadow-sm'"
+                                    class="px-2.5 py-1.5 rounded-xl font-bold text-xs transition-all inline-flex items-center space-x-1 active:scale-95"
+                                    :title="item.signed ? 'Batalkan Tanda Tangan Digital BSrE' : 'Tanda Tangan Digital BSrE'">
+                                    <span x-text="item.signed ? '↩️ Batal TTD' : '✍️ TTD BSrE'"></span>
+                                </button>
+                                @endif
+
+                                <!-- Tombol Cetak / Live Edit -->
+                                <button type="button" @click="openPrintKemitraan(item)"
+                                    class="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95">
+                                    <span>🖨️ Cetak BAST</span>
+                                </button>
+
+                            </td>
+                        </tr>
+                    </template>
+
+                    <!-- Empty State -->
+                    <template x-if="filteredKemitraanList.length === 0">
+                        <tr>
+                            <td colspan="9" class="text-center py-12 text-slate-500">
+                                <div class="flex flex-col items-center justify-center space-y-1.5">
+                                    <span class="text-2xl">🤝</span>
+                                    <p class="font-semibold text-slate-300 text-xs">Tidak ada data BAST kemitraan yang ditemukan.</p>
+                                    <p class="text-[11px] text-slate-500">Data kemitraan dapat dikelola melalui menu <span class="text-amber-400 font-semibold">Master Aset &rarr; Kelola Kemitraan</span>.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>

@@ -3,11 +3,14 @@
         window.__simatDistribusiList = {!! $distribusiListJson ?? '[]' !!};
         window.__simatMutasiList = {!! $mutasiListJson ?? '[]' !!};
         window.__simatMutasiEksternalList = {!! $mutasiEksternalListJson ?? '[]' !!};
+        window.__simatHibahList = {!! $hibahListJson ?? '[]' !!};
+        window.__simatKemitraanList = {!! $kemitraanListJson ?? '[]' !!};
+        window.__simatBelanjaBarangList = {!! $belanjaBarangListJson ?? '[]' !!};
         window.__simatUnits = {!! $unitsJson ?? '[]' !!};
 
         function beritaAcaraApp() {
             return {
-                // Tab Navigasi Aktif: 'triwulan', 'distribusi', atau 'mutasi'
+                // Tab Navigasi Aktif: 'triwulan', 'distribusi', 'mutasi', 'hibah', 'kemitraan', atau 'belanja_barang'
                 activeTab: 'triwulan',
 
                 // Sub-scope Mutasi: 'internal' atau 'eksternal'
@@ -17,19 +20,22 @@
                 showEditTriwulanForm: false,
                 showEditDistribusiForm: false,
                 showEditMutasiForm: false,
+                showEditHibahForm: false,
+                showEditKemitraanForm: false,
+                showEditBelanjaBarangForm: false,
 
                 init() {
                     const urlParams = new URLSearchParams(window.location.search);
                     const tabParam = urlParams.get('tab');
                     const scopeParam = urlParams.get('scope');
-                    const idParam = urlParams.get('id') || urlParams.get('distribusi_id') || urlParams.get('mutasi_id') || urlParams.get('eksternal_id');
+                    const idParam = urlParams.get('id') || urlParams.get('distribusi_id') || urlParams.get('mutasi_id') || urlParams.get('eksternal_id') || urlParams.get('hibah_id') || urlParams.get('kemitraan_id') || urlParams.get('belanja_id');
                     const returnTo = urlParams.get('returnTo');
 
                     if (returnTo) {
                         this.returnToUrl = returnTo;
                     }
 
-                    if (tabParam && ['triwulan', 'distribusi', 'mutasi', 'mutasi_eksternal'].includes(tabParam)) {
+                    if (tabParam && ['triwulan', 'distribusi', 'mutasi', 'mutasi_eksternal', 'hibah', 'kemitraan', 'belanja_barang'].includes(tabParam)) {
                         if (tabParam === 'mutasi_eksternal') {
                             this.activeTab = 'mutasi';
                             this.mutasiScope = 'eksternal';
@@ -42,7 +48,22 @@
                         this.mutasiScope = scopeParam;
                     }
 
-                    if (idParam && this.activeTab === 'mutasi') {
+                    if (idParam && this.activeTab === 'hibah') {
+                        const targetHibah = this.hibahList.find(h => String(h.id) === String(idParam) || String(h.kode) === String(idParam));
+                        if (targetHibah) {
+                            this.$nextTick(() => { this.openPrintHibah(targetHibah); });
+                        }
+                    } else if (idParam && this.activeTab === 'kemitraan') {
+                        const targetKmt = this.kemitraanList.find(k => String(k.id) === String(idParam) || String(k.kode) === String(idParam));
+                        if (targetKmt) {
+                            this.$nextTick(() => { this.openPrintKemitraan(targetKmt); });
+                        }
+                    } else if (idParam && this.activeTab === 'belanja_barang') {
+                        const targetBlj = this.belanjaBarangList.find(b => String(b.id) === String(idParam) || String(b.kode) === String(idParam));
+                        if (targetBlj) {
+                            this.$nextTick(() => { this.openPrintBelanjaBarang(targetBlj); });
+                        }
+                    } else if (idParam && this.activeTab === 'mutasi') {
                         if (this.mutasiScope === 'eksternal') {
                             const targetExt = this.mutasiEksternalList.find(m => String(m.id) === String(idParam) || String(m.mutasi_id) === String(idParam) || String(m.kode) === String(idParam));
                             if (targetExt) {
@@ -522,6 +543,170 @@
                         : '↩️ Tanda tangan digital BSrE BAST Mutasi (' + (target.nomor_bast || 'BAST') + ') berhasil dibatalkan.');
                 },
 
+                // =========================================================================
+                // DATA & METHODS TAB 4: BAST HIBAH ASET BMD
+                // =========================================================================
+                hibahList: window.__simatHibahList || [],
+                hibahSearch: '',
+                hibahTipeFilter: 'all',
+                hibahStatusFilter: 'all',
+                showPrintHibahModal: false,
+                selectedHibah: null,
+
+                get filteredHibahList() {
+                    const q = (this.hibahSearch || '').toLowerCase().trim();
+                    return this.hibahList.filter(item => {
+                        const matchSearch = !q
+                            || (item.nomor_bast && item.nomor_bast.toLowerCase().includes(q))
+                            || (item.pemberi && item.pemberi.toLowerCase().includes(q))
+                            || (item.penerima_nama && item.penerima_nama.toLowerCase().includes(q))
+                            || (item.nama_barang && item.nama_barang.toLowerCase().includes(q));
+
+                        const matchTipe = this.hibahTipeFilter === 'all' || item.tipe_hibah === this.hibahTipeFilter;
+                        const matchStatus = this.hibahStatusFilter === 'all'
+                            || (this.hibahStatusFilter === 'signed' && item.signed)
+                            || (this.hibahStatusFilter === 'unsigned' && !item.signed);
+
+                        return matchSearch && matchTipe && matchStatus;
+                    });
+                },
+
+                openPrintHibah(item) {
+                    this.selectedHibah = item ? { ...item } : (this.hibahList[0] ? { ...this.hibahList[0] } : null);
+                    this.showPrintHibahModal = true;
+                },
+
+                closeHibahModal() {
+                    this.showPrintHibahModal = false;
+                    if (this.returnToUrl) {
+                        window.location.href = this.returnToUrl;
+                    }
+                },
+
+                toggleSignHibah(item) {
+                    const target = item || this.selectedHibah;
+                    if (!target) return;
+
+                    const newSigned = !target.signed;
+                    const now = new Date();
+                    const tgl = newSigned ? (now.toLocaleDateString('id-ID') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB') : null;
+                    const hash = newSigned ? ('BSRE-KOESNANDI-HIB-' + target.id + '-' + Date.now()) : '';
+
+                    target.signed = newSigned;
+                    target.tgl_signed = tgl;
+                    target.qr_hash = hash;
+
+                    // Sync dengan item di hibahList
+                    const matched = this.hibahList.find(h => String(h.id) === String(target.id));
+                    if (matched && matched !== target) {
+                        matched.signed = newSigned;
+                        matched.tgl_signed = tgl;
+                        matched.qr_hash = hash;
+                    }
+
+                    alert(newSigned
+                        ? '✍️ BAST Hibah (' + (target.nomor_bast || 'BAST') + ') berhasil ditandatangani secara digital (QR Code BSrE Aktif)!'
+                        : '↩️ Tanda tangan digital BSrE BAST Hibah (' + (target.nomor_bast || 'BAST') + ') berhasil dibatalkan.');
+                },
+
+                // =========================================================================
+                // DATA & METHODS TAB 5: BAST PEMANFAATAN KEMITRAAN (AKUN 1.5.2)
+                // =========================================================================
+                kemitraanList: window.__simatKemitraanList || [],
+                kemitraanSearch: '',
+                kemitraanTipeFilter: 'all',
+                kemitraanStatusFilter: 'all',
+                showPrintKemitraanModal: false,
+                selectedKemitraan: null,
+
+                get filteredKemitraanList() {
+                    const q = (this.kemitraanSearch || '').toLowerCase().trim();
+                    return this.kemitraanList.filter(item => {
+                        const matchSearch = !q
+                            || (item.nomor_pks && item.nomor_pks.toLowerCase().includes(q))
+                            || (item.nomor_bast && item.nomor_bast.toLowerCase().includes(q))
+                            || (item.mitra_nama && item.mitra_nama.toLowerCase().includes(q))
+                            || (item.objek_nama && item.objek_nama.toLowerCase().includes(q));
+
+                        const matchTipe = this.kemitraanTipeFilter === 'all'
+                            || (item.tipe_kemitraan && item.tipe_kemitraan.toLowerCase() === this.kemitraanTipeFilter.toLowerCase());
+
+                        const matchStatus = this.kemitraanStatusFilter === 'all'
+                            || (this.kemitraanStatusFilter === 'signed' && item.signed)
+                            || (this.kemitraanStatusFilter === 'unsigned' && !item.signed);
+
+                        return matchSearch && matchTipe && matchStatus;
+                    });
+                },
+
+                openPrintKemitraan(item) {
+                    this.selectedKemitraan = item ? { ...item } : (this.kemitraanList[0] ? { ...this.kemitraanList[0] } : null);
+                    this.showPrintKemitraanModal = true;
+                },
+
+                closeKemitraanModal() {
+                    this.showPrintKemitraanModal = false;
+                    if (this.returnToUrl) {
+                        window.location.href = this.returnToUrl;
+                    }
+                },
+
+                toggleSignKemitraan(item) {
+                    const target = item || this.selectedKemitraan;
+                    if (!target) return;
+
+                    const newSigned = !target.signed;
+                    const now = new Date();
+                    const tgl = newSigned ? (now.toLocaleDateString('id-ID') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB') : null;
+                    const hash = newSigned ? ('BSRE-KOESNANDI-KMT-' + target.id + '-' + Date.now()) : '';
+
+                    target.signed = newSigned;
+                    target.tgl_signed = tgl;
+                    target.qr_hash = hash;
+
+                    const matched = this.kemitraanList.find(k => String(k.id) === String(target.id));
+                    if (matched && matched !== target) {
+                        matched.signed = newSigned;
+                        matched.tgl_signed = tgl;
+                        matched.qr_hash = hash;
+                    }
+
+                    alert(newSigned
+                        ? '✍️ BAST Kemitraan (' + (target.nomor_bast || target.nomor_pks || 'BAST') + ') berhasil ditandatangani secara digital (QR Code BSrE Aktif)!'
+                        : '↩️ Tanda tangan digital BSrE BAST Kemitraan (' + (target.nomor_bast || target.nomor_pks || 'BAST') + ') berhasil dibatalkan.');
+                },
+
+                // =========================================================================
+                // DATA & METHODS TAB 6: BAST BELANJA MODAL / BARANG (FAKTUR REKANAN)
+                // =========================================================================
+                belanjaBarangList: window.__simatBelanjaBarangList || [],
+                belanjaBarangSearch: '',
+                showPrintBelanjaBarangModal: false,
+                selectedBelanjaBarang: null,
+
+                get filteredBelanjaBarangList() {
+                    const q = (this.belanjaBarangSearch || '').toLowerCase().trim();
+                    return this.belanjaBarangList.filter(item => {
+                        return !q
+                            || (item.nomor_faktur && item.nomor_faktur.toLowerCase().includes(q))
+                            || (item.spk_nomor && item.spk_nomor.toLowerCase().includes(q))
+                            || (item.nomor_bast && item.nomor_bast.toLowerCase().includes(q))
+                            || (item.toko_penyedia && item.toko_penyedia.toLowerCase().includes(q));
+                    });
+                },
+
+                openPrintBelanjaBarang(item) {
+                    this.selectedBelanjaBarang = item ? { ...item } : (this.belanjaBarangList[0] ? { ...this.belanjaBarangList[0] } : null);
+                    this.showPrintBelanjaBarangModal = true;
+                },
+
+                closeBelanjaBarangModal() {
+                    this.showPrintBelanjaBarangModal = false;
+                    if (this.returnToUrl) {
+                        window.location.href = this.returnToUrl;
+                    }
+                },
+
                 printCurrent() {
                     let el = null;
                     if (this.showPrintTriwulanModal) {
@@ -530,6 +715,12 @@
                         el = document.getElementById('print-area-distribusi');
                     } else if (this.showPrintMutasiModal) {
                         el = document.getElementById('print-area-mutasi');
+                    } else if (this.showPrintHibahModal) {
+                        el = document.getElementById('print-area-hibah');
+                    } else if (this.showPrintKemitraanModal) {
+                        el = document.getElementById('print-area-kemitraan');
+                    } else if (this.showPrintBelanjaBarangModal) {
+                        el = document.getElementById('print-area-belanja-barang');
                     }
 
                     if (!el) {

@@ -12,6 +12,9 @@
         @include('pages.berita_acara.partials.tab_triwulan')
         @include('pages.berita_acara.partials.tab_distribusi')
         @include('pages.berita_acara.partials.tab_mutasi')
+        @include('pages.berita_acara.partials.tab_hibah')
+        @include('pages.berita_acara.partials.tab_kemitraan')
+        @include('pages.berita_acara.partials.tab_belanja_barang')
 
         {{-- Detail Popups --}}
         @include('pages.berita_acara.partials.modal_detail_distribusi')
@@ -22,5 +25,8 @@
         @include('pages.berita_acara.partials.modal_print_triwulan')
         @include('pages.berita_acara.partials.modal_print_distribusi')
         @include('pages.berita_acara.partials.modal_print_mutasi')
+        @include('pages.berita_acara.partials.modal_print_hibah')
+        @include('pages.berita_acara.partials.modal_print_kemitraan')
+        @include('pages.berita_acara.partials.modal_print_belanja_barang')
     </div>
 </x-layout>
