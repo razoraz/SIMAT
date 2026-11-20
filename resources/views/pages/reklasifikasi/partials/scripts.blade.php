@@ -401,10 +401,17 @@
                     gedung_is_baru: 'Lama',
                     gedung_kapitalisasi_tahun_induk: '',
                     gedung_kapitalisasi_nilai_induk: '',
+                    jaringan_nama_barang: '',
                     jaringan_konstruksi: 'Beton',
+                    jaringan_panjang_m: '',
                     jaringan_panjang_km: '',
                     jaringan_lebar_m: '',
                     jaringan_luas_m2: '',
+                    jaringan_kondisi: 'B',
+                    jaringan_bertingkat: 'Bertingkat',
+                    jaringan_beton: 'Beton',
+                    jaringan_status_tanah: 'Tanah Hak Pakai RSUD',
+                    jaringan_kode_aset_tanah: '',
                     jaringan_alamat: 'Kompleks RSUD',
                     jaringan_is_baru: 'Lama',
                     jaringan_kapitalisasi_tahun_induk: '',
@@ -935,11 +942,21 @@
                         gedung_dokumen_tgl: '',
                         gedung_status_tanah: 'Tanah Pemda',
                         gedung_alamat: 'Kompleks RSUD Dr. H. Koesnandi',
+                        jaringan_nama_barang: '',
                         jaringan_konstruksi: 'Beton',
+                        jaringan_panjang_m: '',
                         jaringan_panjang_km: '',
                         jaringan_lebar_m: '',
                         jaringan_luas_m2: '',
+                        jaringan_kondisi: 'B',
+                        jaringan_bertingkat: 'Bertingkat',
+                        jaringan_beton: 'Beton',
+                        jaringan_status_tanah: 'Tanah Hak Pakai RSUD',
+                        jaringan_kode_aset_tanah: '',
                         jaringan_alamat: 'Kompleks RSUD',
+                        jaringan_is_baru: 'Lama',
+                        jaringan_kapitalisasi_tahun_induk: '',
+                        jaringan_kapitalisasi_nilai_induk: '',
                         lainnya_judul_pencipta: '',
                         lainnya_bahan: 'Kertas / Kanvas / Lainnya',
                         atb_judul_nama: '',
@@ -1339,20 +1356,22 @@
                 this.formData.spekBaru.gedung_kapitalisasi_nilai_induk = (this.formData.spekBaru.gedung_is_baru === 'Baru') ? '' : (gItem.gedung_kapitalisasi_nilai_induk || spec.gedung_kapitalisasi_nilai_induk || spec.nilai_induk || '');
 
                 // KIB D - Jalan, Jaringan & Irigasi
-                let jKonstruksi = spec.konstruksi || spec.jaringan_konstruksi || '';
-                if (jKonstruksi === 'Tidak' || (typeof jKonstruksi === 'string' && (jKonstruksi.toLowerCase().includes('tidak') || jKonstruksi.toLowerCase().includes('bukan')))) {
-                    jKonstruksi = 'Tidak';
-                } else {
-                    jKonstruksi = 'Beton';
-                }
-                this.formData.spekBaru.jaringan_konstruksi = jKonstruksi;
-                this.formData.spekBaru.jaringan_panjang_km = spec.panjang_km || '';
-                this.formData.spekBaru.jaringan_lebar_m = spec.lebar_m || '';
-                this.formData.spekBaru.jaringan_luas_m2 = spec.luas_m2 || '';
-                this.formData.spekBaru.jaringan_alamat = defaultAlamat;
-                this.formData.spekBaru.jaringan_is_baru = spec.jaringan_is_baru || spec.is_baru || (isFromKemitraan ? 'Lama' : 'Baru');
-                this.formData.spekBaru.jaringan_kapitalisasi_tahun_induk = (this.formData.spekBaru.jaringan_is_baru === 'Baru') ? '' : (spec.jaringan_kapitalisasi_tahun_induk || spec.tahun_induk || '');
-                this.formData.spekBaru.jaringan_kapitalisasi_nilai_induk = (this.formData.spekBaru.jaringan_is_baru === 'Baru') ? '' : (spec.jaringan_kapitalisasi_nilai_induk || spec.nilai_induk || '');
+                this.formData.spekBaru.jaringan_nama_barang = jItem.jaringan_nama_barang || spec.jaringan_nama_barang || spec.nama_barang || it.nama_barang || '';
+                let jKonstruksi = jItem.jaringan_beton || spec.konstruksi || spec.jaringan_konstruksi || '';
+                this.formData.spekBaru.jaringan_beton = (jKonstruksi === 'Tidak' || (typeof jKonstruksi === 'string' && (jKonstruksi.toLowerCase().includes('tidak') || jKonstruksi.toLowerCase().includes('bukan')))) ? 'Tidak' : 'Beton';
+                this.formData.spekBaru.jaringan_konstruksi = this.formData.spekBaru.jaringan_beton;
+                this.formData.spekBaru.jaringan_bertingkat = (jItem.jaringan_bertingkat === 'Tidak' || spec.jaringan_bertingkat === 'Tidak' || spec.bertingkat === 'Tidak') ? 'Tidak' : 'Bertingkat';
+                this.formData.spekBaru.jaringan_kondisi = jItem.jaringan_kondisi || spec.jaringan_kondisi || (it.kondisi === 'Kurang Baik' || it.kondisi === 'KB' ? 'KB' : (it.kondisi === 'Rusak Berat' || it.kondisi === 'RB' ? 'RB' : 'B'));
+                this.formData.spekBaru.jaringan_panjang_m = jItem.jaringan_panjang_m || spec.panjang_m || (it.jaringan_panjang_m && it.jaringan_panjang_m > 0 ? it.jaringan_panjang_m : '') || spec.panjang_km || '';
+                this.formData.spekBaru.jaringan_panjang_km = this.formData.spekBaru.jaringan_panjang_m;
+                this.formData.spekBaru.jaringan_lebar_m = jItem.jaringan_lebar_m || spec.lebar_m || (it.jaringan_lebar_m && it.jaringan_lebar_m > 0 ? it.jaringan_lebar_m : '') || '';
+                this.formData.spekBaru.jaringan_luas_m2 = jItem.jaringan_luas_m2 || spec.luas_m2 || (it.jaringan_luas_m2 && it.jaringan_luas_m2 > 0 ? it.jaringan_luas_m2 : '') || '';
+                this.formData.spekBaru.jaringan_status_tanah = jItem.jaringan_status_tanah || spec.jaringan_status_tanah || spec.status_tanah || 'Tanah Hak Pakai RSUD';
+                this.formData.spekBaru.jaringan_kode_aset_tanah = jItem.jaringan_kode_aset_tanah || spec.jaringan_kode_aset_tanah || '';
+                this.formData.spekBaru.jaringan_alamat = jItem.jaringan_alamat || spec.jaringan_alamat || spec.alamat || it.alamat_barang || defaultAlamat;
+                this.formData.spekBaru.jaringan_is_baru = jItem.jaringan_is_baru || spec.jaringan_is_baru || spec.is_baru || (isFromKemitraan ? 'Lama' : 'Baru');
+                this.formData.spekBaru.jaringan_kapitalisasi_tahun_induk = (this.formData.spekBaru.jaringan_is_baru === 'Baru') ? '' : (jItem.jaringan_kapitalisasi_tahun_induk || spec.jaringan_kapitalisasi_tahun_induk || spec.tahun_induk || '');
+                this.formData.spekBaru.jaringan_kapitalisasi_nilai_induk = (this.formData.spekBaru.jaringan_is_baru === 'Baru') ? '' : (jItem.jaringan_kapitalisasi_nilai_induk || spec.jaringan_kapitalisasi_nilai_induk || spec.nilai_induk || '');
 
                 // KIB E - Lainnya
                 this.formData.spekBaru.lainnya_nama_barang = lItem.lainnya_nama_barang || spec.nama_barang || it.nama_barang || '';
