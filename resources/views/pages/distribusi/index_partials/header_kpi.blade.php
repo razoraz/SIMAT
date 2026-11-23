@@ -1,24 +1,23 @@
             <!-- Header Banner & Mini KPI Strip -->
             <div class="bg-gradient-to-r from-teal-600/15 via-slate-900 to-slate-900 border border-teal-500/30 rounded-3xl p-5 sm:p-7 shadow-2xl mb-6 relative overflow-hidden">
-            <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-5 relative z-10">
-                <div class="flex-1 min-w-0">
-                    <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 text-xs font-bold mb-3 max-w-full">
+            <div class="distribusi-banner-wrap flex flex-row items-start sm:items-center justify-between gap-4 relative z-10">
+                <div class="distribusi-text-col flex-1 min-w-0 pr-2">
+                    <div class="distribusi-badge inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 text-xs font-bold mb-3 max-w-full">
                         <span class="w-2 h-2 rounded-full bg-teal-400 animate-pulse shrink-0"></span>
                         <span class="whitespace-nowrap truncate sm:whitespace-normal">{{ $isSubAdmin ? 'PENGAJUAN & PERMOHONAN BARANG ASET RUANGAN' : 'PENYERAHAN & ALOKASI BARANG ASET RSUD' }}</span>
                     </div>
-                    <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">{{ $isSubAdmin ? 'Katalog Pengajuan Baru' : 'Katalog Distribusi ASTAP' }}</h1>
-                    <p class="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
+                    <h1 class="distribusi-title text-xl sm:text-2xl lg:text-3xl font-extrabold text-white tracking-tight">{{ $isSubAdmin ? 'Katalog Pengajuan Baru' : 'Katalog Distribusi ASTAP' }}</h1>
+                    <p class="distribusi-desc text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
                         {{ $isSubAdmin 
                             ? 'Daftar pengajuan permohonan alokasi barang aset ruangan. Anda dapat mengajukan permintaan kebutuhan barang baru untuk unit/ruangan Anda.' 
                             : 'Pengelolaan alokasi penyerahan barang aset dari inventaris ke paviliun rawat inap, unit RSUD, dan instalasi RSUD. Mendukung distribusi beberapa barang sekaligus dalam satu transaksi.' }}
                     </p>
                 </div>
                 
-                <!-- Action Button Input Baru -->
                 @if(Auth::user()?->role === 'master_admin' || Auth::user()?->role === 'sub_admin' || Auth::user()?->canDo('distribusi', 'create'))
-                <div class="flex items-center gap-2.5 shrink-0">
+                <div class="distribusi-btn-wrap flex items-center gap-2.5 shrink-0">
                     <a href="{{ route('distribusi.create') }}"
-                        class="px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs shadow-lg shadow-teal-500/20 transition-all flex items-center space-x-2 shrink-0">
+                        class="px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs shadow-lg shadow-teal-500/20 transition-all flex items-center space-x-2 shrink-0 active:scale-95 cursor-pointer">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                         <span>{{ $isSubAdmin ? 'Input Pengajuan Baru' : 'Input Distribusi Baru' }}</span>
                     </a>
@@ -28,6 +27,37 @@
 
             <!-- Mini Summary KPI Cards Strip (Responsive Native Grid - Fullscreen 5-Col & Balanced 2-Row) -->
             <style>
+                @media (max-width: 768px) {
+                    .distribusi-banner-wrap {
+                        flex-direction: column !important;
+                        align-items: center !important;
+                        text-align: center !important;
+                    }
+                    .distribusi-text-col {
+                        display: flex !important;
+                        flex-direction: column !important;
+                        align-items: center !important;
+                        text-align: center !important;
+                        width: 100% !important;
+                        padding-right: 0 !important;
+                    }
+                    .distribusi-badge,
+                    .distribusi-desc {
+                        margin-left: auto !important;
+                        margin-right: auto !important;
+                        text-align: center !important;
+                    }
+                    .distribusi-title {
+                        text-align: center !important;
+                        width: 100% !important;
+                    }
+                    .distribusi-btn-wrap {
+                        justify-content: center !important;
+                        margin-left: auto !important;
+                        margin-right: auto !important;
+                        width: 100% !important;
+                    }
+                }
                 .kpi-distribusi-grid {
                     display: grid;
                     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -49,7 +79,7 @@
                         grid-column: span 3 / span 3;
                     }
                 }
-                @media (min-width: 1200px) {
+                @media (min-width: 1024px) {
                     .kpi-distribusi-grid {
                         grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
                     }
