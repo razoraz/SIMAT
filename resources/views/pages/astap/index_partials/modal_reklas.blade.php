@@ -1166,9 +1166,10 @@
                                                 <span class="text-xs">⚙️</span>
                                                 <span class="text-[11px] font-extrabold text-cyan-300 uppercase tracking-wider">Spesifikasi Fisik Peralatan & Mesin Kemitraan:</span>
                                             </div>
-                                            <span class="text-[9.5px] px-2 py-0.5 rounded-md font-bold border"
-                                                  :class="isTargetExtracom() ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' : 'bg-purple-500/20 text-purple-300 border-purple-500/40'"
-                                                  x-text="isTargetExtracom() ? '📦 Ekstrakomtabel (≤ 300rb)' : '⚙️ Aset Tetap Reguler'"></span>
+                                            <span class="text-[9.5px] px-2.5 py-0.5 rounded-md font-bold border bg-cyan-500/15 text-cyan-300 border-cyan-500/30 flex items-center gap-1">
+                                                <span>🤝</span>
+                                                <span>Objek Fisik Kemitraan</span>
+                                            </span>
                                         </div>
                                         <!-- Grid Form Pengisian Spesifikasi Peralatan & Mesin (Single Cohesive Card) -->
                                         <div class="p-4 sm:p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4 shadow-md">
@@ -1533,6 +1534,7 @@
                                             <div class="flex items-center gap-2">
                                                 <!-- Extracom vs Reguler Indicator Badge Toggle -->
                                                 <button type="button" 
+                                                        x-show="reklasTujuanKib !== 'KEMITRAAN'"
                                                         class="px-2.5 py-0.5 rounded-md text-[10px] font-bold border transition-all flex items-center gap-1 cursor-pointer"
                                                         :class="isTargetExtracom() ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 shadow-sm hover:bg-cyan-500/30' : 'bg-purple-500/20 text-purple-300 border-purple-500/40 hover:bg-purple-500/30'"
                                                         @click="if (reklasSpekBaru) { reklasSpekBaru.is_extracom = !isTargetExtracom(); syncCurrentSpekToActiveItem(); }"
@@ -1540,6 +1542,10 @@
                                                     <span x-text="isTargetExtracom() ? '📦 Ekstrakomtabel (≤ 300rb)' : '⚙️ Aset Tetap Reguler'"></span>
                                                     <span class="text-[9px] opacity-60">⇄ Ubah</span>
                                                 </button>
+                                                <span x-show="reklasTujuanKib === 'KEMITRAAN'" class="text-[9.5px] px-2.5 py-0.5 rounded-md font-bold border bg-cyan-500/15 text-cyan-300 border-cyan-500/30 flex items-center gap-1">
+                                                    <span>🤝</span>
+                                                    <span>Objek Fisik Kemitraan</span>
+                                                </span>
                                                 <span class="text-[9.5px] px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold font-mono">
                                                     KIB E &bull; 1.3.5 / 1.5.2
                                                 </span>

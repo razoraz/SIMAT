@@ -182,13 +182,14 @@
                 const q = (this.panduanSearch || '').toLowerCase().trim();
                 const kib = this.panduanFilterKib;
                 return this.panduanList.filter(item => {
-                    const matchKib = (kib === 'all' || item.kib === kib);
+                    const matchKib = (kib === 'all' || item.kib === kib || (kib === 'ASET LAINNYA' && item.kib === 'KEMITRAAN'));
                     if (!matchKib) return false;
                     if (!q) return true;
                     return item.prefix.toLowerCase().includes(q) ||
                            item.nama.toLowerCase().includes(q) ||
                            item.contohRs.toLowerCase().includes(q) ||
-                           item.subRincian.toLowerCase().includes(q);
+                           item.subRincian.toLowerCase().includes(q) ||
+                           (item.kib && item.kib.toLowerCase().includes(q));
                 });
             },
 
@@ -327,11 +328,25 @@
                     subRincian: 'KDP Gedung dan Bangunan, KDP Jalan/Instalasi.'
                 },
                 {
-                    prefix: '1.5.1 s/d 1.5.4',
+                    prefix: '1.5.2',
+                    kib: 'KEMITRAAN',
+                    nama: 'KEMITRAAN DENGAN PIHAK KETIGA',
+                    contohRs: 'Kerja Sama Operasional (KSO) Alat Laboratorium Analyzer & Hemodialisa (Cuci Darah) dengan vendor farmasi, Sewa Lahan/Gedung untuk Kantin RS / Minimarket / Gerai ATM Center, Bangun Guna Serah (BGS) Paviliun Rawat Inap, Pengelolaan Parkir Berbayar RSUD.',
+                    subRincian: 'Sewa BMD (1.5.2.01.01.01), Kerjasama Pemanfaatan / KSP / KSO (1.5.2.01.01.02), Bangun Guna Serah / BGS / BSG (1.5.2.01.01.03), Kerjasama Penyediaan Infrastruktur / KSPI (1.5.2.01.01.04).'
+                },
+                {
+                    prefix: '1.5.3',
                     kib: 'ASET LAINNYA',
-                    nama: 'ASET TIDAK BERWUJUD (ATB) & ASET LAIN',
-                    contohRs: 'Lisensi Software SIMRS (Sistem Informasi Manajemen Rumah Sakit), Lisensi Database Oracle / Windows Server, Hak Cipta Aplikasi Antrian Online, Aset Rusak Berat Menunggu SK Penghapusan BPKAD.',
-                    subRincian: 'Aset Tidak Berwujud (ATB), Kemitraan Pihak Ketiga, Aset Lain-Lain.'
+                    nama: 'ASET TIDAK BERWUJUD (ATB)',
+                    contohRs: 'Lisensi Software SIMRS (Sistem Informasi Manajemen Rumah Sakit), Lisensi Database Oracle / Windows Server, Hak Cipta & Aplikasi Antrian Pasien Online, Modul Rekam Medis Elektronik (RME).',
+                    subRincian: 'Software Komputer, Lisensi Aplikasi SIMRS, Hak Cipta, Hasil Kajian/Penelitian.'
+                },
+                {
+                    prefix: '1.5.4',
+                    kib: 'ASET LAINNYA',
+                    nama: 'ASET LAIN-LAIN',
+                    contohRs: 'Aset Tetap Rusak Berat yang telah dihentikan dari penggunaan aktif pelayanan dan sedang menunggu persetujuan SK Penghapusan dari BPKAD / Bupati.',
+                    subRincian: 'Aset Rusak Berat Menunggu SK Penghapusan, Barang Sitaan/Jaminan.'
                 },
                 {
                     prefix: 'KOREKSI',
@@ -554,6 +569,25 @@
                     this.searchReklasSubSubRincian = '';
                 }
 
+                // Cerdas: Jika tujuan adalah KEMITRAAN, otomatis pilihkan sub-sub objek 108 yang sesuai wujud fisik aset asal
+                if (this.formData.tujuan_kib === 'KEMITRAAN' && Array.isArray(s.subSubRincian) && s.subSubRincian.length > 0) {
+                    const srcType = this.getSourcePhysicalType(this.selectedAstap);
+                    const matchedSsr = s.subSubRincian.find(ssr => {
+                        const k = (ssr.kode || '').trim();
+                        const n = (ssr.nama || '').toLowerCase();
+                        if (srcType === 'gedung') return k.endsWith('.003') || n.includes('gedung') || n.includes('bangunan');
+                        if (srcType === 'mesin') return k.endsWith('.002') || n.includes('mesin') || n.includes('peralatan');
+                        if (srcType === 'tanah') return k.endsWith('.001') || n.includes('tanah');
+                        if (srcType === 'jaringan') return k.endsWith('.004') || n.includes('jaringan') || n.includes('jalan');
+                        if (srcType === 'lainnya') return k.endsWith('.005') || n.includes('lainnya');
+                        return false;
+                    });
+                    if (matchedSsr) {
+                        this.reklasSubSubRincianKode = matchedSsr.kode;
+                        this.reklasSubSubRincianNama = matchedSsr.nama;
+                    }
+                }
+
                 this.formData.tujuan_kode = this.reklasSubSubRincianKode || s.kode;
                 this.formData.tujuan_nama = this.reklasSubSubRincianNama || s.nama;
 
@@ -602,11 +636,31 @@
             get filteredSubSubRincian108() {
                 const list = this.availableSubSubRincian108 || [];
                 const q = (this.searchReklasSubSubRincian || '').toLowerCase().trim();
-                if (!q) return list.slice(0, 30);
-                return list.filter(item =>
-                    (item.nama && item.nama.toLowerCase().includes(q)) ||
-                    (item.kode && item.kode.toLowerCase().includes(q))
-                ).slice(0, 30);
+                let result = list;
+                if (q) {
+                    result = list.filter(item =>
+                        (item.nama && item.nama.toLowerCase().includes(q)) ||
+                        (item.kode && item.kode.toLowerCase().includes(q))
+                    );
+                }
+
+                // Cerdas: Jika tujuan KEMITRAAN, prioritaskan rekening yang sesuai wujud fisik aset asal di urutan pertama
+                if (this.formData.tujuan_kib === 'KEMITRAAN') {
+                    const srcType = this.getSourcePhysicalType(this.selectedAstap);
+                    result = [...result].map(item => {
+                        const k = (item.kode || '').trim();
+                        const n = (item.nama || '').toLowerCase();
+                        let isRec = false;
+                        if (srcType === 'gedung') isRec = k.endsWith('.003') || n.includes('gedung') || n.includes('bangunan');
+                        else if (srcType === 'mesin') isRec = k.endsWith('.002') || n.includes('mesin') || n.includes('peralatan');
+                        else if (srcType === 'tanah') isRec = k.endsWith('.001') || n.includes('tanah');
+                        else if (srcType === 'jaringan') isRec = k.endsWith('.004') || n.includes('jaringan') || n.includes('jalan');
+                        else if (srcType === 'lainnya') isRec = k.endsWith('.005') || n.includes('lainnya');
+                        return { ...item, isRecommended: isRec };
+                    }).sort((a, b) => (b.isRecommended ? 1 : 0) - (a.isRecommended ? 1 : 0));
+                }
+
+                return result.slice(0, 30);
             },
 
             selectSubSubRincian(item) {
@@ -1429,6 +1483,14 @@
             detectIsExtracom(item, spec = null) {
                 const it = item || this.selectedAstap;
                 if (!it) return false;
+
+                // Kemitraan (1.5.2) selalu menggunakan format spesifikasi teknis lengkap (Gambar 1 / Reguler)
+                if (this.formData && this.formData.tujuan_kib === 'KEMITRAAN') return false;
+
+                // Tanah (KIB A), Gedung (KIB C), Jaringan (KIB D) tidak pernah menjadi ekstrakomptabel
+                const cat = (it.category || it.asal_kib || '').toUpperCase();
+                if (['KIB A', 'KIB C', 'KIB D', 'KDP', 'KIB F'].includes(cat)) return false;
+
                 if (!spec) {
                     try {
                         spec = typeof it.spesifikasi_json === 'string' ? JSON.parse(it.spesifikasi_json) : (it.spesifikasi_json || {});
@@ -1443,20 +1505,20 @@
                 if (Array.isArray(spec.mesin_items) && spec.mesin_items.some(m => !!m.is_extracom)) return true;
                 if (Array.isArray(spec.lainnya_items) && spec.lainnya_items.some(l => !!l.is_extracom)) return true;
 
-                // Cek harga satuan barang / nilai reklas (<= 300.000)
-                const vol = (it.volume && it.volume > 0) ? it.volume : (it.jumlah_volume || 1);
-                const nilaiTotal = parseFloat(this.formData?.nilai_reklas || it.total_realisasi || it.nilai_realisasi || 0);
-                const unitPrice = (nilaiTotal > 0 && vol > 0) ? (nilaiTotal / vol) : nilaiTotal;
-                if (unitPrice > 0 && unitPrice <= 300000) return true;
+                // Cek harga satuan barang / nilai reklas (<= 300.000) hanya untuk kategori KIB B / E yang belum definitif intrakom
+                if (cat === 'KIB B' || cat === 'KIB E' || !cat) {
+                    const vol = (it.volume && it.volume > 0) ? it.volume : (it.jumlah_volume || 1);
+                    const nilaiTotal = parseFloat(this.formData?.nilai_reklas || it.total_realisasi || it.nilai_realisasi || 0);
+                    const unitPrice = (nilaiTotal > 0 && vol > 0) ? (nilaiTotal / vol) : nilaiTotal;
+                    if (unitPrice > 0 && unitPrice <= 300000 && !it.is_extracomtable === false) return true;
+                }
 
                 return false;
             },
 
             isKemitraanExtracom() {
-                if (this.formData?.spekBaru?.is_extracom !== undefined && this.formData?.spekBaru?.is_extracom !== null) {
-                    return Boolean(this.formData.spekBaru.is_extracom);
-                }
-                return this.detectIsExtracom(this.selectedAstap);
+                // Objek kemitraan selalu menggunakan format spesifikasi teknis lengkap (Gambar 1 / Reguler)
+                return false;
             },
 
             buildAllExtracomUnits(found) {

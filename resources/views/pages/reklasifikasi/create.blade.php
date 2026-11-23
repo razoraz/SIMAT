@@ -50,6 +50,9 @@
                 @include('pages.reklasifikasi.create_partials.step2_verifikasi')
             </div>
         </form>
+
+        <!-- MODAL KAMUS PANDUAN KIB & PMDN 108 -->
+        @include('pages.reklasifikasi.partials.modal_panduan')
     </div>
 </x-layout>
 

@@ -11153,9 +11153,16 @@
 
                 isItemExtracom(it) {
                     if (!it) return false;
+
+                    // Tanah (KIB A), Gedung (KIB C), Jaringan (KIB D), KDP (KIB F) tidak pernah menjadi ekstrakomptabel
+                    const cat = (it.category || '').toString().trim().toUpperCase();
+                    const kode = (it.kode_barang || it.kode_108 || it.jenis_aset_kode || '').toString().trim();
+                    if (['KIB A', 'KIB C', 'KIB D', 'KDP', 'KIB F'].includes(cat) || kode.startsWith('1.3.1') || kode.startsWith('1.3.3') || kode.startsWith('1.3.4') || kode.startsWith('1.3.6')) {
+                        return false;
+                    }
+
                     if (it.is_extracomtable === true || it.is_extracomtable === 1 || it.is_extracomtable === '1') return true;
                     if (it.jenis_reklas === 'EKSTRAKOMPTABEL' || it.tujuan_kib === 'EKSTRAKOMPTABEL') return true;
-                    const cat = (it.category || '').toString().trim().toUpperCase();
                     if (cat === 'EXTRACOM') return true;
                     if (typeof resolveItemCategory === 'function' && resolveItemCategory(it) === 'EXTRACOM') return true;
 
@@ -11168,8 +11175,12 @@
                         if (Array.isArray(spec.lainnya_items) && spec.lainnya_items.some(l => !!l.is_extracom || (parseFloat(l.lainnya_nilai_satuan || 0) > 0 && parseFloat(l.lainnya_nilai_satuan || 0) <= 300000))) return true;
                         if (Array.isArray(spec.mesin_items) && spec.mesin_items.some(m => !!m.is_extracom || (parseFloat(m.mesin_nilai_satuan || 0) > 0 && parseFloat(m.mesin_nilai_satuan || 0) <= 300000))) return true;
                     }
-                    const unitPrice = parseFloat(it.harga_satuan || (it.jumlah_volume > 0 ? (it.total_realisasi_num || it.total_realisasi || 0) / it.jumlah_volume : 0));
-                    if (unitPrice > 0 && unitPrice <= 300000) return true;
+
+                    // Cek harga satuan barang / nilai reklas (<= 300.000) hanya berlaku untuk KIB B / KIB E yang belum definitif intrakom
+                    if (cat === 'KIB B' || cat === 'KIB E' || !cat) {
+                        const unitPrice = parseFloat(it.harga_satuan || (it.jumlah_volume > 0 ? (it.total_realisasi_num || it.total_realisasi || 0) / it.jumlah_volume : 0));
+                        if (unitPrice > 0 && unitPrice <= 300000 && it.is_extracomtable !== false) return true;
+                    }
 
                     return false;
                 },
@@ -11179,6 +11190,9 @@
                 },
 
                 isTargetExtracom() {
+                    // Kemitraan (Akun 1.5.2) selalu menggunakan format spesifikasi teknis lengkap (Reguler / Gambar 1)
+                    if (this.reklasTujuanKib === 'KEMITRAAN') return false;
+
                     if (this.reklasSpekBaru && typeof this.reklasSpekBaru.is_extracom === 'boolean') {
                         return this.reklasSpekBaru.is_extracom;
                     }

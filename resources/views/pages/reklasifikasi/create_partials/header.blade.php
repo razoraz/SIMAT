@@ -35,18 +35,31 @@
             </p>
         </div>
 
-        <!-- Periode & Tahun Indicator -->
-        <div class="flex items-center gap-3 bg-slate-950/80 border border-slate-800 rounded-2xl px-4 py-3 shadow-inner self-start md:self-auto shrink-0">
-            <div class="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400">
-                <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        <!-- Aksi & Periode Tahun Indicator -->
+        <div class="flex flex-wrap items-center gap-2.5 self-start md:self-auto shrink-0">
+            <!-- Tombol Buka Kamus Panduan PMDN 108 -->
+            <button type="button" @click="openPanduan('')"
+                class="flex items-center gap-1.5 px-3.5 py-3 rounded-2xl bg-indigo-500/10 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 hover:border-indigo-400 text-xs font-bold transition-all duration-200 cursor-pointer shadow-md hover:shadow-indigo-500/20 active:scale-95"
+                title="Kamus & Panduan Pengelompokan Barang PMDN 108 Khas RSUD">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
-            </div>
-            <div>
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tahun Anggaran</p>
-                <p class="text-sm font-bold text-white font-mono">
-                    {{ $selectedTahun }}
-                </p>
+                <span>Kamus Panduan KIB</span>
+            </button>
+
+            <!-- Periode & Tahun Indicator -->
+            <div class="flex items-center gap-3 bg-slate-950/80 border border-slate-800 rounded-2xl px-4 py-3 shadow-inner">
+                <div class="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400">
+                    <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tahun Anggaran</p>
+                    <p class="text-sm font-bold text-white font-mono">
+                        {{ $selectedTahun }}
+                    </p>
+                </div>
             </div>
         </div>
     </div>
