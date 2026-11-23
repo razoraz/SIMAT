@@ -22,36 +22,36 @@
             </div>
 
             <!-- Mini Summary KPI Cards Strip -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-slate-800/80">
-                <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center space-x-3">
-                    <div class="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 text-lg">🏥</div>
-                    <div>
-                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Total Unit</span>
-                        <span class="text-sm sm:text-base font-extrabold text-white" x-text="units.length + ' Lokasi'"></span>
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-6 pt-6 border-t border-slate-800/80">
+                <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center space-x-3 min-w-0">
+                    <div class="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 text-lg shrink-0">🏥</div>
+                    <div class="min-w-0 flex-1">
+                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block leading-tight truncate">Total Unit</span>
+                        <span class="text-sm sm:text-base font-extrabold text-white block truncate" x-text="units.length + ' Lokasi'"></span>
                     </div>
                 </div>
 
-                <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center space-x-3">
-                    <div class="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 text-lg">💰</div>
-                    <div>
-                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Nilai Terdistribusi</span>
-                        <span class="text-sm sm:text-base font-extrabold text-emerald-400 font-mono" x-text="'Rp ' + formatRupiah(units.reduce((acc, u) => acc + (parseInt(String(u.total_nilai).replace(/[^0-9]/g, '')) || 0), 0))"></span>
+                <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center space-x-3 min-w-0">
+                    <div class="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 text-lg shrink-0">💰</div>
+                    <div class="min-w-0 flex-1">
+                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block leading-tight truncate">Nilai Terdistribusi</span>
+                        <span class="text-xs sm:text-sm lg:text-base font-extrabold text-emerald-400 font-mono block truncate" x-text="'Rp ' + formatRupiah(units.reduce((acc, u) => acc + (parseInt(String(u.total_nilai).replace(/[^0-9]/g, '')) || 0), 0))"></span>
                     </div>
                 </div>
 
-                <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center space-x-3">
-                    <div class="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 text-lg">📦</div>
-                    <div>
-                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Total Aset Aktif</span>
-                        <span class="text-sm sm:text-base font-extrabold text-cyan-300" x-text="units.reduce((acc, u) => acc + (u.assets ? u.assets.length : (u.total_aset || 0)), 0) + ' Item'"></span>
+                <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center space-x-3 min-w-0">
+                    <div class="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 text-lg shrink-0">📦</div>
+                    <div class="min-w-0 flex-1">
+                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block leading-tight truncate">Total Aset Aktif</span>
+                        <span class="text-sm sm:text-base font-extrabold text-cyan-300 block truncate" x-text="units.reduce((acc, u) => acc + (u.assets ? u.assets.length : (u.total_aset || 0)), 0) + ' Item'"></span>
                     </div>
                 </div>
 
-                <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center space-x-3">
-                    <div class="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 text-lg">👨‍⚕️</div>
-                    <div>
-                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Penanggung Jawab</span>
-                        <span class="text-sm sm:text-base font-extrabold text-purple-300" x-text="units.filter(u => u.kepala && u.kepala !== '-').length + ' Kepala Unit'"></span>
+                <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center space-x-3 min-w-0">
+                    <div class="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 text-lg shrink-0">👨‍⚕️</div>
+                    <div class="min-w-0 flex-1">
+                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block leading-tight truncate">Penanggung Jawab</span>
+                        <span class="text-sm sm:text-base font-extrabold text-purple-300 block truncate" x-text="units.filter(u => u.kepala && u.kepala !== '-').length + ' Kepala Unit'"></span>
                     </div>
                 </div>
             </div>

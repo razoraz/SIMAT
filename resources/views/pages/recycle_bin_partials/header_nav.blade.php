@@ -61,11 +61,11 @@
 
 <!-- UNIFIED CONTROL TOOLBAR: MODULE DROPDOWN + SEARCH + QUICK TIME FILTERS -->
 <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 shadow-xl space-y-4">
-    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+    <div class="flex flex-wrap xl:flex-nowrap items-end justify-between gap-3.5">
         
         <!-- 1. BESPOKE MODULE DROPDOWN SELECTOR (CUSTOM LUXURY POPOVER, NEVER CLIPPED) -->
-        <div class="relative w-full lg:w-96 shrink-0" @click.outside="openModDropdown = false" @keydown.escape.window="openModDropdown = false">
-            <div class="flex items-center justify-between mb-1.5">
+        <div class="relative order-1 w-full sm:flex-1 min-w-[220px] sm:max-w-md xl:flex-none xl:w-72 shrink-0" @click.outside="openModDropdown = false" @keydown.escape.window="openModDropdown = false">
+            <div class="flex items-center justify-between mb-1.5 h-4">
                 <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                     <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
                     Kategori Modul:
@@ -144,62 +144,63 @@
                                 :class="{
                                     'bg-red-500 text-white shadow-sm': getModuleCount('{{ $mod['id'] }}') > 0,
                                     'bg-slate-800 text-slate-500': getModuleCount('{{ $mod['id'] }}') === 0
-                                }"
-                                x-text="getModuleCount('{{ $mod['id'] }}')">0</span>
+                                }">
+                                <span x-text="getModuleCount('{{ $mod['id'] }}')">0</span>
+                            </span>
                         </button>
                     @endforeach
                 </div>
             </div>
         </div>
 
-        <!-- 2. SEARCH INPUT -->
-        <div class="relative flex-1 w-full pt-1 lg:pt-0">
-            <div class="flex items-center justify-between mb-1.5">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                    <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
-                    Pencarian Data:
-                </span>
-                <span class="text-[10px] text-slate-500 hidden sm:inline" x-text="'Cari di ' + activeModuleName"></span>
-            </div>
-            <div class="relative">
-                <input type="text" x-model="searchQuery" :placeholder="searchPlaceholder"
-                    class="w-full bg-slate-950 border border-slate-800 hover:border-slate-700 rounded-2xl px-4 py-2.5 pl-11 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/50 transition-all">
-                <svg class="w-4 h-4 text-red-400 absolute left-4 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                <button type="button" x-show="searchQuery" @click="searchQuery = ''" class="absolute right-3.5 top-2.5 text-slate-500 hover:text-white text-xs font-bold">&times;</button>
-            </div>
-        </div>
-
-        <!-- 3. QUICK TIME FILTER PRESETS -->
-        <div class="shrink-0 w-full lg:w-auto pt-1 lg:pt-0">
-            <div class="flex items-center justify-between mb-1.5">
+        <!-- 2. QUICK TIME FILTER PRESETS (ORDER-2 DI MINIMIZE SUPAYA BERDAMPINGAN DENGAN KATEGORI MODUL) -->
+        <div class="order-2 w-full sm:w-auto xl:order-3 shrink-0">
+            <div class="flex items-center justify-between mb-1.5 h-4">
                 <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                     <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
                     Filter Waktu:
                 </span>
                 <span class="text-[10px] text-slate-500 font-mono" x-text="timeFilter === 'all' ? 'Semua Waktu' : (timeFilter === '7d' ? '7 Hari Terakhir' : '30 Hari Terakhir')"></span>
             </div>
-            <div class="flex items-center p-1 bg-slate-950 rounded-2xl border border-slate-800/80">
+            <div class="flex items-center p-1 bg-slate-950 rounded-2xl border border-slate-800/80 shadow-inner">
                 <button type="button" @click="setTimeFilter('all')"
                     :class="timeFilter === 'all' 
                         ? 'bg-slate-800 text-white font-bold shadow-sm' 
                         : 'text-slate-400 hover:text-slate-200'"
-                    class="px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer">
+                    class="px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer whitespace-nowrap">
                     Semua
                 </button>
                 <button type="button" @click="setTimeFilter('7d')"
                     :class="timeFilter === '7d' 
                         ? 'bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40 shadow-sm' 
                         : 'text-slate-400 hover:text-slate-200 border border-transparent'"
-                    class="px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer flex items-center gap-1">
+                    class="px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap">
                     <span>⚡ 7 Hari</span>
                 </button>
                 <button type="button" @click="setTimeFilter('30d')"
                     :class="timeFilter === '30d' 
                         ? 'bg-rose-500/20 text-rose-300 font-bold border border-rose-500/40 shadow-sm' 
                         : 'text-slate-400 hover:text-slate-200 border border-transparent'"
-                    class="px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer flex items-center gap-1">
+                    class="px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap">
                     <span>📅 30 Hari</span>
                 </button>
+            </div>
+        </div>
+
+        <!-- 3. SEARCH INPUT (ORDER-3 DI MINIMIZE AGAR LEBAR 100% DI BARIS KE-2, ORDER-2 DI FULLSCREEN UNTUK MENGISI RUANG TENGAH) -->
+        <div class="relative order-3 xl:order-2 w-full xl:w-auto xl:flex-1 min-w-[240px]">
+            <div class="flex items-center justify-between mb-1.5 h-4">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+                    Pencarian Data:
+                </span>
+                <span class="text-[10px] text-slate-500 truncate" x-text="'Cari di ' + activeModuleName"></span>
+            </div>
+            <div class="relative">
+                <input type="text" x-model="searchQuery" :placeholder="searchPlaceholder"
+                    class="w-full bg-slate-950 border border-slate-800 hover:border-slate-700 rounded-2xl px-4 py-2.5 pl-11 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/50 transition-all">
+                <svg class="w-4 h-4 text-red-400 absolute left-4 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <button type="button" x-show="searchQuery" @click="searchQuery = ''" class="absolute right-3.5 top-2.5 text-slate-500 hover:text-white text-xs font-bold">&times;</button>
             </div>
         </div>
 
