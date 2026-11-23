@@ -143,7 +143,7 @@
                     <div class="flex items-center space-x-2">
                         <span class="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-[10px] font-black flex items-center justify-center shrink-0">4</span>
                         <span class="text-xs font-bold text-white uppercase tracking-wider">
-                            📝 Spesifikasi Fisik Baru (<span class="text-cyan-300 font-extrabold" x-text="formData.tujuan_kib"></span>):
+                            📝 Spesifikasi Fisik Baru (<span class="text-cyan-300 font-extrabold" x-text="formData.tujuan_kib === 'KEMITRAAN' ? ('Fisik Objek ' + (getPhysicalTypeLabel(getKemitraanTargetSubGroup()) || 'Kemitraan')) : formData.tujuan_kib"></span>):
                         </span>
                     </div>
                     <span class="text-[10px] text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded-md border border-cyan-500/30 font-semibold">
@@ -806,27 +806,30 @@
                                            placeholder="Contoh: Bondowoso, Jawa Timur"
                                            class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
                                 </div>
-                                <div>
-                                    <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Bahan Pembuatan:</label>
-                                    <input type="text" x-model="formData.spekBaru.lainnya_bahan"
-                                           placeholder="Contoh: Kanvas Cat Minyak / Logam Perunggu / Kayu Jati"
-                                           class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Ukuran / Dimensi:</label>
-                                    <input type="text" x-model="formData.spekBaru.lainnya_ukuran"
-                                           placeholder="Contoh: 150 x 200 cm / Tinggi 1.8 Meter"
-                                           class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Kondisi Fisik Barang:</label>
-                                    <select x-model="formData.spekBaru.kondisi"
-                                            @change="if (formData.spekBaru) { formData.spekBaru.lainnya_kondisi = formData.spekBaru.kondisi; }"
-                                            class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-3 py-2 text-xs text-white font-bold focus:outline-none transition-all cursor-pointer">
-                                        <option value="Baik">🟢 Baik (B)</option>
-                                        <option value="Kurang Baik">🟡 Kurang Baik (KB)</option>
-                                        <option value="Rusak Berat">🔴 Rusak Berat (RB)</option>
-                                    </select>
+                                <!-- Baris 3 Kolom Seimbang: Bahan, Ukuran & Kondisi Fisik -->
+                                <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Bahan Pembuatan:</label>
+                                        <input type="text" x-model="formData.spekBaru.lainnya_bahan"
+                                               placeholder="Contoh: Kanvas Cat Minyak / Logam Perunggu / Kayu Jati"
+                                               class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Ukuran / Dimensi:</label>
+                                        <input type="text" x-model="formData.spekBaru.lainnya_ukuran"
+                                               placeholder="Contoh: 150 x 200 cm / Tinggi 1.8 Meter"
+                                               class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Kondisi Fisik Barang:</label>
+                                        <select x-model="formData.spekBaru.kondisi"
+                                                @change="if (formData.spekBaru) { formData.spekBaru.lainnya_kondisi = formData.spekBaru.kondisi; }"
+                                                class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-3 py-2 text-xs text-white font-bold focus:outline-none transition-all cursor-pointer">
+                                            <option value="Baik">🟢 Baik (B)</option>
+                                            <option value="Kurang Baik">🟡 Kurang Baik (KB)</option>
+                                            <option value="Rusak Berat">🔴 Rusak Berat (RB)</option>
+                                        </select>
+                                    </div>
                                 </div>
                                 <div class="sm:col-span-2">
                                     <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Spesifikasi / Deskripsi Karya:</label>
@@ -856,27 +859,30 @@
                                            placeholder="Contoh: Pohon Ketapang Kencana / Palem Raja / Tanaman Hias Lanskap"
                                            class="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none transition-all">
                                 </div>
-                                <div>
-                                    <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Ukuran / Tinggi / Usia:</label>
-                                    <input type="text" x-model="formData.spekBaru.lainnya_ukuran"
-                                           placeholder="Contoh: Tinggi 3.5 Meter / Usia 2 Tahun"
-                                           class="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Asal Usul / Bibit:</label>
-                                    <input type="text" x-model="formData.spekBaru.lainnya_asal_daerah"
-                                           placeholder="Contoh: Balai Pembibitan Pertanian Jawa Timur"
-                                           class="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
-                                </div>
-                                <div class="sm:col-span-2">
-                                    <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Kondisi Fisik Hewan / Tanaman:</label>
-                                    <select x-model="formData.spekBaru.kondisi"
-                                            @change="if (formData.spekBaru) { formData.spekBaru.lainnya_kondisi = formData.spekBaru.kondisi; }"
-                                            class="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white font-bold focus:outline-none transition-all cursor-pointer">
-                                        <option value="Baik">🟢 Baik (B)</option>
-                                        <option value="Kurang Baik">🟡 Kurang Baik (KB)</option>
-                                        <option value="Rusak Berat">🔴 Rusak Berat (RB)</option>
-                                    </select>
+                                <!-- Baris 3 Kolom Seimbang: Ukuran, Asal Usul & Kondisi Fisik -->
+                                <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Ukuran / Tinggi / Usia:</label>
+                                        <input type="text" x-model="formData.spekBaru.lainnya_ukuran"
+                                               placeholder="Contoh: Tinggi 3.5 Meter / Usia 2 Tahun"
+                                               class="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Asal Usul / Bibit:</label>
+                                        <input type="text" x-model="formData.spekBaru.lainnya_asal_daerah"
+                                               placeholder="Contoh: Balai Pembibitan Pertanian Jawa Timur"
+                                               class="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Kondisi Fisik Hewan / Tanaman:</label>
+                                        <select x-model="formData.spekBaru.kondisi"
+                                                @change="if (formData.spekBaru) { formData.spekBaru.lainnya_kondisi = formData.spekBaru.kondisi; }"
+                                                class="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white font-bold focus:outline-none transition-all cursor-pointer">
+                                            <option value="Baik">🟢 Baik (B)</option>
+                                            <option value="Kurang Baik">🟡 Kurang Baik (KB)</option>
+                                            <option value="Rusak Berat">🔴 Rusak Berat (RB)</option>
+                                        </select>
+                                    </div>
                                 </div>
                                 <div class="sm:col-span-2">
                                     <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Keterangan / Lokasi Penghijauan:</label>
@@ -1253,71 +1259,23 @@
                             </div>
                         </div>
 
-                        <!-- 7. SPESIFIKASI FISIK OBJEK BMD YANG DIKEMITRAKAN (AUTO-ADAPTIF SESUAI KIB / KODE PMDN 108) -->
-                        <div class="p-4 sm:p-5 rounded-2xl bg-slate-950/90 border border-purple-500/30 space-y-4 shadow-xl relative overflow-hidden">
-                            <!-- Ambient Glow Effect -->
-                            <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-                            <!-- Header Section 7 -->
-                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
-                                <div class="flex items-center space-x-2.5">
-                                    <span class="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center text-base border border-purple-500/30 shadow-inner">
-                                        <span x-text="getKemitraanTargetSubGroup() === 'tanah' ? '🏛️' : (getKemitraanTargetSubGroup() === 'gedung' ? '🏢' : (getKemitraanTargetSubGroup() === 'jaringan' ? '🌐' : (getKemitraanTargetSubGroup() === 'lainnya' ? '📦' : '⚙️')))"></span>
+                        <!-- 7. SPESIFIKASI FISIK OBJEK BMD YANG DIKEMITRAKAN (OTOMATIS TERKUNCI SESUAI ASET ASAL & PMDN 108) -->
+                        <div class="space-y-4">
+                            <!-- Header Sub-Kelompok Fisik Kemitraan (Bersih & Terkunci Otomatis Sesuai Gambar 1) -->
+                            <div class="flex items-center justify-between pb-1">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-xs" x-text="getKemitraanTargetSubGroup() === 'tanah' ? '🌾' : (getKemitraanTargetSubGroup() === 'gedung' ? '🏢' : (getKemitraanTargetSubGroup() === 'jaringan' ? '🛣️' : (getKemitraanTargetSubGroup() === 'lainnya' ? '📦' : '⚙️')))"></span>
+                                    <span class="text-[11px] font-extrabold text-cyan-300 uppercase tracking-wider"
+                                          x-text="'Spesifikasi Fisik ' + (getKemitraanTargetSubGroup() === 'tanah' ? 'Tanah' : (getKemitraanTargetSubGroup() === 'gedung' ? 'Gedung & Bangunan' : (getKemitraanTargetSubGroup() === 'jaringan' ? 'Jalan & Jaringan' : (getKemitraanTargetSubGroup() === 'lainnya' ? 'Aset Tetap Lainnya' : 'Peralatan & Mesin')))) + ' Kemitraan:'">
                                     </span>
-                                    <div>
-                                        <div class="flex items-center gap-2">
-                                            <h4 class="text-xs sm:text-sm font-extrabold text-white uppercase tracking-wide">
-                                                Spesifikasi Fisik Objek BMD yang Dikemitrakan
-                                            </h4>
-                                            <!-- Sub-Group Badge -->
-                                            <span class="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-mono font-bold text-[10px] border border-purple-500/40"
-                                                  x-text="getKemitraanTargetSubGroup() === 'tanah' ? 'KIB A (Tanah)' : (getKemitraanTargetSubGroup() === 'gedung' ? 'KIB C (Gedung)' : (getKemitraanTargetSubGroup() === 'jaringan' ? 'KIB D (Jaringan)' : (getKemitraanTargetSubGroup() === 'lainnya' ? 'KIB E (Lainnya)' : 'KIB B (Peralatan & Mesin)')))">
-                                            </span>
-                                            <!-- Extracom vs Reguler Indicator Badge -->
-                                            <template x-if="getKemitraanTargetSubGroup() === 'mesin' || getKemitraanTargetSubGroup() === 'lainnya'">
-                                                <button type="button" 
-                                                        class="px-2.5 py-0.5 rounded-md text-[10px] font-bold border transition-all flex items-center gap-1 cursor-pointer"
-                                                        :class="isKemitraanExtracom() ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 shadow-sm hover:bg-cyan-500/30' : 'bg-purple-500/20 text-purple-300 border-purple-500/40 hover:bg-purple-500/30'"
-                                                        @click="formData.spekBaru.is_extracom = !isKemitraanExtracom()"
-                                                        title="Klik untuk beralih mode Extracom / Reguler secara manual">
-                                                    <span x-text="isKemitraanExtracom() ? '📦 Ekstrakomptabel (≤ 300rb)' : '⚙️ Aset Tetap Reguler'"></span>
-                                                    <span class="text-[9px] opacity-60">⇄ Ubah</span>
-                                                </button>
-                                            </template>
-                                        </div>
-                                        <p class="text-[11px] text-slate-400 mt-0.5">
-                                            Data rincian fisik aset yang menjadi objek kemitraan. Tersalin otomatis dari aset terpilih dan dapat Anda sesuaikan.
-                                        </p>
-                                    </div>
                                 </div>
-
-                                <!-- Sub-Group Selector Tabs -->
-                                <div class="flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800 self-start sm:self-auto">
-                                    <button type="button" @click="kemitraanSubGroupOverride = 'mesin'"
-                                            :class="(kemitraanSubGroupOverride || getKemitraanTargetSubGroup()) === 'mesin' ? 'bg-purple-600 text-white font-bold shadow-md' : 'text-slate-400 hover:text-slate-200'"
-                                            class="px-2.5 py-1 rounded-lg text-[10.5px] transition-all cursor-pointer">
-                                        ⚙️ Mesin / Alkes
-                                    </button>
-                                    <button type="button" @click="kemitraanSubGroupOverride = 'lainnya'"
-                                            :class="(kemitraanSubGroupOverride || getKemitraanTargetSubGroup()) === 'lainnya' ? 'bg-purple-600 text-white font-bold shadow-md' : 'text-slate-400 hover:text-slate-200'"
-                                            class="px-2.5 py-1 rounded-lg text-[10.5px] transition-all cursor-pointer">
-                                        📦 KIB E
-                                    </button>
-                                    <button type="button" @click="kemitraanSubGroupOverride = 'gedung'"
-                                            :class="(kemitraanSubGroupOverride || getKemitraanTargetSubGroup()) === 'gedung' ? 'bg-purple-600 text-white font-bold shadow-md' : 'text-slate-400 hover:text-slate-200'"
-                                            class="px-2.5 py-1 rounded-lg text-[10.5px] transition-all cursor-pointer">
-                                        🏢 Gedung
-                                    </button>
-                                    <button type="button" @click="kemitraanSubGroupOverride = 'tanah'"
-                                            :class="(kemitraanSubGroupOverride || getKemitraanTargetSubGroup()) === 'tanah' ? 'bg-purple-600 text-white font-bold shadow-md' : 'text-slate-400 hover:text-slate-200'"
-                                            class="px-2.5 py-1 rounded-lg text-[10.5px] transition-all cursor-pointer">
-                                        🏛️ Tanah
-                                    </button>
-                                </div>
+                                <span class="text-[9.5px] px-2 py-0.5 rounded-md font-bold border"
+                                      :class="isKemitraanExtracom() ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' : 'bg-purple-500/20 text-purple-300 border-purple-500/40'"
+                                      x-text="isKemitraanExtracom() ? '📦 Ekstrakomtabel (≤ 300rb)' : '⚙️ Aset Tetap Reguler'"></span>
                             </div>
                             
                             <!-- SUB-TIPE 1: PERALATAN DAN MESIN (KIB B / 1.5.2.xx.002) -->
-                            <template x-if="(kemitraanSubGroupOverride || getKemitraanTargetSubGroup()) === 'mesin'">
+                            <template x-if="getKemitraanTargetSubGroup() === 'mesin'">
                                 <div class="space-y-4">
                                     
                                     <!-- KASUS A: REGULER (NON-EXTRACOM) -> GAMBAR 2 -->
@@ -1384,8 +1342,8 @@
                                                         </label>
                                                         <select x-model="formData.spekBaru.mesin_kondisi"
                                                                 class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold focus:border-cyan-500 focus:outline-none transition-all">
-                                                            <option value="Baik">🟢 Baik (B) — Siap Operasional</option>
-                                                            <option value="Kurang Baik">🟡 Kurang Baik (KB) — Perlu Kalibrasi / Setting</option>
+                                                            <option value="Baik">🟢 Baik (B)</option>
+                                                            <option value="Kurang Baik">🟡 Kurang Baik (KB)</option>
                                                             <option value="Rusak Berat">🔴 Rusak Berat (RB)</option>
                                                         </select>
                                                     </div>
@@ -1534,7 +1492,7 @@
                             </template>
 
                             <!-- SUB-TIPE 2: ASET TETAP LAINNYA (KIB E / 1.5.2.xx.005) -->
-                            <template x-if="(kemitraanSubGroupOverride || getKemitraanTargetSubGroup()) === 'lainnya'">
+                            <template x-if="getKemitraanTargetSubGroup() === 'lainnya'">
                                 <div class="space-y-4">
                                     
                                     <!-- KASUS A: REGULER (NON-EXTRACOM) -> SPESIFIK BUKU / KESENIAN / HEWAN TANAMAN -->
@@ -1757,7 +1715,7 @@
                             </template>
 
                             <!-- SUB-TIPE 3: GEDUNG DAN BANGUNAN (KIB C / 1.5.2.xx.003) -->
-                            <template x-if="(kemitraanSubGroupOverride || getKemitraanTargetSubGroup()) === 'gedung'">
+                            <template x-if="getKemitraanTargetSubGroup() === 'gedung'">
                                 <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3 shadow-md">
                                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                         <div>
@@ -1799,7 +1757,7 @@
                             </template>
 
                             <!-- SUB-TIPE 4: TANAH (KIB A / 1.5.2.xx.001) -->
-                            <template x-if="(kemitraanSubGroupOverride || getKemitraanTargetSubGroup()) === 'tanah'">
+                            <template x-if="getKemitraanTargetSubGroup() === 'tanah'">
                                 <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3 shadow-md">
                                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                         <div>
@@ -1825,6 +1783,79 @@
                                         <div>
                                             <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Alamat / Lokasi:</label>
                                             <input type="text" x-model="formData.spekBaru.tanah_alamat" placeholder="Jl. Kapten Piere Tendean No. 1 Bondowoso" class="w-full bg-slate-950 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- SUB-TIPE 5: JALAN, JARINGAN & IRIGASI (KIB D / 1.5.2.xx.004) -->
+                            <template x-if="getKemitraanTargetSubGroup() === 'jaringan'">
+                                <div class="space-y-4">
+                                    <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3 shadow-inner">
+                                        <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                                            <span class="text-xs font-bold text-amber-400 block uppercase tracking-wider flex items-center space-x-1.5">
+                                                <span>🏗️</span>
+                                                <span>KONDISI &amp; SPESIFIKASI JARINGAN KEMITRAAN:</span>
+                                            </span>
+                                            <span class="text-[9px] px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/20 font-bold">KIB D</span>
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Nama Jaringan / Ruas (Spesifik / Custom)</label>
+                                            <input type="text" x-model="formData.spekBaru.jaringan_nama_barang"
+                                                   placeholder="Contoh: Jaringan Pipa Gas Oksigen Sentral Medis / Ruas Jalan Paviliun"
+                                                   class="w-full bg-slate-950 border border-slate-700/80 focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none transition-all shadow-inner">
+                                        </div>
+
+                                        <div class="space-y-3">
+                                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                                <div>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Panjang (M)</label>
+                                                    <input type="number" min="0" step="any" x-model.number="formData.spekBaru.jaringan_panjang_m"
+                                                           placeholder="0"
+                                                           class="w-full bg-slate-950 border border-slate-700/80 focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 rounded-xl px-2 py-2 text-xs text-white font-mono font-bold focus:outline-none transition-all shadow-inner">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Lebar (M)</label>
+                                                    <input type="number" min="0" step="any" x-model.number="formData.spekBaru.jaringan_lebar_m"
+                                                           placeholder="0"
+                                                           class="w-full bg-slate-950 border border-slate-700/80 focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 rounded-xl px-2 py-2 text-xs text-white font-mono font-bold focus:outline-none transition-all shadow-inner">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Luas (M2/Lt)</label>
+                                                    <input type="number" min="0" step="any" x-model.number="formData.spekBaru.jaringan_luas_m2"
+                                                           placeholder="0"
+                                                           class="w-full bg-slate-950 border border-slate-700/80 focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 rounded-xl px-2 py-2 text-xs text-white font-mono font-bold focus:outline-none transition-all shadow-inner">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Kondisi Fisik</label>
+                                                    <select x-model="formData.spekBaru.jaringan_kondisi"
+                                                            class="w-full bg-slate-950 border border-slate-700/80 focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 rounded-xl px-2 py-2 text-xs text-white font-semibold focus:outline-none transition-all shadow-inner">
+                                                        <option value="Baik">🟢 Baik (B)</option>
+                                                        <option value="Kurang Baik">🟡 Kurang Baik (KB)</option>
+                                                        <option value="Rusak Berat">🔴 Rusak Berat (RB)</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                <div>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Konstruksi Bertingkat</label>
+                                                    <select x-model="formData.spekBaru.jaringan_konstruksi_bertingkat"
+                                                            class="w-full bg-slate-950 border border-slate-700/80 focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none transition-all shadow-inner">
+                                                        <option value="Tidak">Tidak Bertingkat</option>
+                                                        <option value="Bertingkat">Bertingkat</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Konstruksi Beton</label>
+                                                    <select x-model="formData.spekBaru.jaringan_konstruksi_beton"
+                                                            class="w-full bg-slate-950 border border-slate-700/80 focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none transition-all shadow-inner">
+                                                        <option value="Beton">Beton</option>
+                                                        <option value="Tidak">Bukan Beton</option>
+                                                    </select>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
