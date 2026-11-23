@@ -1675,16 +1675,26 @@
             },
 
             getKemitraanTargetSubGroup() {
-                if (this.kemitraanSubGroupOverride) return this.kemitraanSubGroupOverride;
-
+                // 1. Prioritas Utama: Evaluasi dari Rekening / Klasifikasi Tujuan PMDN 108 yang dipilih pengguna
                 const code = (this.formData.tujuan_kode || this.reklasSubSubRincianKode || this.reklasSubRincianKode || '').trim();
+                const nama = (this.formData.tujuan_nama || this.reklasSubSubRincianNama || this.reklasSubRincianNama || '').toLowerCase().trim();
+
+                if (nama.includes('tanah')) return 'tanah';
+                if (nama.includes('gedung') || nama.includes('bangunan')) return 'gedung';
+                if (nama.includes('jalan') || nama.includes('jalam') || nama.includes('irigasi') || nama.includes('jaringan')) return 'jaringan';
+                if (nama.includes('peralatan') || nama.includes('mesin') || nama.includes('alkes')) return 'mesin';
+                if (nama.includes('aset tetap lainnya') || nama.includes('lainnya') || nama.includes('buku') || nama.includes('hewan') || nama.includes('kesenian')) return 'lainnya';
+
                 if (code.endsWith('.001') || code.endsWith('.01.001') || code.includes('.001.')) return 'tanah';
                 if (code.endsWith('.002') || code.endsWith('.01.002') || code.includes('.002.')) return 'mesin';
                 if (code.endsWith('.003') || code.endsWith('.01.003') || code.includes('.003.')) return 'gedung';
                 if (code.endsWith('.004') || code.endsWith('.01.004') || code.includes('.004.')) return 'jaringan';
                 if (code.endsWith('.005') || code.endsWith('.01.005') || code.includes('.005.')) return 'lainnya';
 
-                // Fallback: deteksi dari aset asal
+                // 2. Fallback: Jika rekening tujuan belum dipilih, gunakan wujud fisik aset asal
+                const srcType = this.getSourcePhysicalType(this.selectedAstap);
+                if (srcType) return srcType;
+
                 return this.detectKemitraanPhysicalType(this.selectedAstap);
             },
 
@@ -1704,6 +1714,7 @@
             getTargetPhysicalType() {
                 const kib = this.formData.tujuan_kib;
                 if (!kib) return null;
+                if (kib === 'KEMITRAAN') return this.getKemitraanTargetSubGroup();
                 if (kib === 'KIB A') return 'tanah';
                 if (kib === 'KIB B') return 'mesin';
                 if (kib === 'KIB C') return 'gedung';

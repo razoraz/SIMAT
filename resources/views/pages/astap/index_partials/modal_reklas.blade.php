@@ -1780,29 +1780,32 @@
                                                                placeholder="Contoh: Bondowoso, Jawa Timur"
                                                                class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
                                                     </div>
-                                                    <div>
-                                                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Bahan Pembuatan:</label>
-                                                        <input type="text" x-model="reklasSpekBaru.lainnya_bahan"
-                                                               @input="syncCurrentSpekToActiveItem();"
-                                                               placeholder="Contoh: Kanvas Cat Minyak / Logam Perunggu / Kayu Jati"
-                                                               class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
-                                                    </div>
-                                                    <div>
-                                                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Ukuran / Dimensi:</label>
-                                                        <input type="text" x-model="reklasSpekBaru.lainnya_ukuran"
-                                                               @input="syncCurrentSpekToActiveItem();"
-                                                               placeholder="Contoh: 150 x 200 cm / Tinggi 1.8 Meter"
-                                                               class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
-                                                    </div>
-                                                    <div>
-                                                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Kondisi Fisik Barang:</label>
-                                                        <select x-model="reklasSpekBaru.kondisi"
-                                                                @change="if (reklasSpekBaru) { reklasSpekBaru.lainnya_kondisi = reklasSpekBaru.kondisi; } syncCurrentSpekToActiveItem();"
-                                                                class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-3 py-2 text-xs text-white font-bold focus:outline-none transition-all cursor-pointer">
-                                                            <option value="Baik">🟢 Baik (B)</option>
-                                                            <option value="Kurang Baik">🟡 Kurang Baik (KB)</option>
-                                                            <option value="Rusak Berat">🔴 Rusak Berat (RB)</option>
-                                                        </select>
+                                                    <!-- Baris 3 Kolom Seimbang: Bahan, Ukuran & Kondisi Fisik -->
+                                                    <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                                        <div>
+                                                            <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Bahan Pembuatan:</label>
+                                                            <input type="text" x-model="reklasSpekBaru.lainnya_bahan"
+                                                                   @input="syncCurrentSpekToActiveItem();"
+                                                                   placeholder="Contoh: Kanvas Cat Minyak / Logam Perunggu / Kayu Jati"
+                                                                   class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Ukuran / Dimensi:</label>
+                                                            <input type="text" x-model="reklasSpekBaru.lainnya_ukuran"
+                                                                   @input="syncCurrentSpekToActiveItem();"
+                                                                   placeholder="Contoh: 150 x 200 cm / Tinggi 1.8 Meter"
+                                                                   class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Kondisi Fisik Barang:</label>
+                                                            <select x-model="reklasSpekBaru.kondisi"
+                                                                    @change="if (reklasSpekBaru) { reklasSpekBaru.lainnya_kondisi = reklasSpekBaru.kondisi; } syncCurrentSpekToActiveItem();"
+                                                                    class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-3 py-2 text-xs text-white font-bold focus:outline-none transition-all cursor-pointer">
+                                                                <option value="Baik">🟢 Baik (B)</option>
+                                                                <option value="Kurang Baik">🟡 Kurang Baik (KB)</option>
+                                                                <option value="Rusak Berat">🔴 Rusak Berat (RB)</option>
+                                                            </select>
+                                                        </div>
                                                     </div>
                                                     <div class="sm:col-span-2">
                                                         <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Spesifikasi / Deskripsi Karya:</label>
@@ -1833,29 +1836,32 @@
                                                                placeholder="Contoh: Pohon Ketapang Kencana / Palem Raja / Tanaman Hias Lanskap"
                                                                class="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none transition-all">
                                                     </div>
-                                                    <div>
-                                                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Ukuran / Tinggi / Usia:</label>
-                                                        <input type="text" x-model="reklasSpekBaru.lainnya_ukuran"
-                                                               @input="syncCurrentSpekToActiveItem();"
-                                                               placeholder="Contoh: Tinggi 3.5 Meter / Usia 2 Tahun"
-                                                               class="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
-                                                    </div>
-                                                    <div>
-                                                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Asal Usul / Bibit:</label>
-                                                        <input type="text" x-model="reklasSpekBaru.lainnya_asal_daerah"
-                                                               @input="syncCurrentSpekToActiveItem();"
-                                                               placeholder="Contoh: Balai Pembibitan Pertanian Jawa Timur"
-                                                               class="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
-                                                    </div>
-                                                    <div class="sm:col-span-2">
-                                                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Kondisi Fisik Hewan / Tanaman:</label>
-                                                        <select x-model="reklasSpekBaru.kondisi"
-                                                                @change="if (reklasSpekBaru) { reklasSpekBaru.lainnya_kondisi = reklasSpekBaru.kondisi; } syncCurrentSpekToActiveItem();"
-                                                                class="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white font-bold focus:outline-none transition-all cursor-pointer">
-                                                            <option value="Baik">🟢 Baik (B)</option>
-                                                            <option value="Kurang Baik">🟡 Kurang Baik (KB)</option>
-                                                            <option value="Rusak Berat">🔴 Rusak Berat (RB)</option>
-                                                        </select>
+                                                    <!-- Baris 3 Kolom Seimbang: Ukuran, Asal Usul & Kondisi Fisik -->
+                                                    <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                                        <div>
+                                                            <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Ukuran / Tinggi / Usia:</label>
+                                                            <input type="text" x-model="reklasSpekBaru.lainnya_ukuran"
+                                                                   @input="syncCurrentSpekToActiveItem();"
+                                                                   placeholder="Contoh: Tinggi 3.5 Meter / Usia 2 Tahun"
+                                                                   class="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Asal Usul / Bibit:</label>
+                                                            <input type="text" x-model="reklasSpekBaru.lainnya_asal_daerah"
+                                                                   @input="syncCurrentSpekToActiveItem();"
+                                                                   placeholder="Contoh: Balai Pembibitan Pertanian Jawa Timur"
+                                                                   class="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Kondisi Fisik Hewan / Tanaman:</label>
+                                                            <select x-model="reklasSpekBaru.kondisi"
+                                                                    @change="if (reklasSpekBaru) { reklasSpekBaru.lainnya_kondisi = reklasSpekBaru.kondisi; } syncCurrentSpekToActiveItem();"
+                                                                    class="w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white font-bold focus:outline-none transition-all cursor-pointer">
+                                                                <option value="Baik">🟢 Baik (B)</option>
+                                                                <option value="Kurang Baik">🟡 Kurang Baik (KB)</option>
+                                                                <option value="Rusak Berat">🔴 Rusak Berat (RB)</option>
+                                                            </select>
+                                                        </div>
                                                     </div>
                                                     <div class="sm:col-span-2">
                                                         <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Keterangan / Lokasi Penghijauan:</label>
