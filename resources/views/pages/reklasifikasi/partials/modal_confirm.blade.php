@@ -1,7 +1,8 @@
 <!-- ========================================================================= -->
 <!-- MODAL KONFIRMASI HAPUS REKLASIFIKASI (Sesuai Referensi Gambar 1)          -->
 <!-- ========================================================================= -->
-<div x-show="showConfirmDelete" x-cloak
+<div x-show="showConfirmDelete"
+     style="display:none;"
      class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
      x-transition:enter="transition ease-out duration-200"
      x-transition:enter-start="opacity-0"

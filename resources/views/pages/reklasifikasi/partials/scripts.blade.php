@@ -12,6 +12,189 @@
     window.kandidatAstaps = @json($kandidatAstaps);
     window.templateRows = @json($templateRows);
 
+    // Master Data Kamus Panduan KIB PMDN 108 (Tersedia Instan Synchronous di Window)
+    window.panduanKibList = [
+        {
+            prefix: '1.3.1.01',
+            kib: 'KIB A',
+            nama: 'TANAH',
+            contohRs: 'Tanah Bangunan Utama RSUD, Rumah Dinas Direktur/Dokter, Mess Pegawai RS, Pos Satpam, Area Parkir Pengunjung & Ambulans.',
+            subRincian: 'Tanah Bangunan Gedung Tempat Kerja, Tanah Rumah Dinas, Lapangan.'
+        },
+        {
+            prefix: '1.3.2.01',
+            kib: 'KIB B',
+            nama: 'ALAT BESAR',
+            contohRs: 'Genset Utama / Pembangkit Listrik Sentral Darurat RS, Forklift Gudang Farmasi/Logistik, Kompresor Sentral Gas Medis, Pompa Sedot Sentral IPAL / Pengolahan Limbah Cair RS.',
+            subRincian: 'Tractor, Excavator, Grader, Loader, Alat Pengangkat (Forklift, Crane), Mesin Proses, Compressor, Electric Generating Set (Genset), Pompa.'
+        },
+        {
+            prefix: '1.3.2.02',
+            kib: 'KIB B',
+            nama: 'ALAT ANGKUTAN',
+            contohRs: 'Mobil Ambulans Emergency 118, Mobil Jenazah, Mobil Operasional Dinas Direksi, Sepeda Motor Kurir Obat/Dokumen, Mobil Layanan Farmasi Keliling, Truk Angkut Sampah RS.',
+            subRincian: 'Kendaraan Dinas Bermotor, Ambulans, Truk, Sepeda Motor, Kendaraan Operasional.'
+        },
+        {
+            prefix: '1.3.2.03',
+            kib: 'KIB B',
+            nama: 'ALAT BENGKEL DAN ALAT UKUR',
+            contohRs: 'Mesin Las Listrik IPSRS (Pemeliharaan Sarana RS), Mesin Bubut/Gerinda Bengkel RS, Multitester Kalibrasi Alat Medis, Timbangan Kalibrasi Presisi.',
+            subRincian: 'Alat Bengkel Bermesin/Tak Bermesin, Alat Ukur Universal, Alat Ukur Elektronik.'
+        },
+        {
+            prefix: '1.3.2.04',
+            kib: 'KIB B',
+            nama: 'ALAT PERTANIAN',
+            contohRs: 'Mesin Potong Rumput Halaman RS, Mesin Babat Rumput Gendong, Sprinkler Penyiram Rumput Taman Rumah Sakit.',
+            subRincian: 'Alat Pengolahan Tanah, Alat Pemeliharaan Tanaman.'
+        },
+        {
+            prefix: '1.3.2.05',
+            kib: 'KIB B',
+            nama: 'ALAT KANTOR DAN RUMAH TANGGA',
+            contohRs: 'Meja & Kursi Kerja Dokter/Perawat, Lemari Besi Rekam Medis (RM), AC Split Bangsal, Kulkas Penyimpan Vaksin/Obat, Water Dispenser Pasien, Brankas Keuangan RS, Lemari Narkotika.',
+            subRincian: 'Alat Kantor (Meja, Kursi, Lemari, Filing Cabinet), Alat Rumah Tangga (AC, Kulkas, Kipas Angin, Dispenser).'
+        },
+        {
+            prefix: '1.3.2.06',
+            kib: 'KIB B',
+            nama: 'ALAT STUDIO, KOMUNIKASI DAN PEMANCAR',
+            contohRs: 'Handy Talkie (HT) Satpam/IPSRS, PABX Sentral Telepon RS, Sound System Informasi Ruang Tunggu, Kamera CCTV Keamanan RS, TV LED Antrian Pasien.',
+            subRincian: 'Alat Komunikasi Telepon/HT, Alat Studio Video/Audio, Alat Pemancar Informasi.'
+        },
+        {
+            prefix: '1.3.2.07',
+            kib: 'KIB B',
+            nama: 'ALAT KEDOKTERAN DAN KESEHATAN',
+            contohRs: 'USG 4D/Doppler, Mesin Rontgen X-Ray, CT-Scan, Defibrillator (DC Shock), Syringe Pump, Infusion Pump, Bed Pasien Elektrik (ICU/Rawat Inap), Ventilator, Mesin Anastesi, Dental Chair Unit, Lampu Operasi.',
+            subRincian: 'Alat Kedokteran Umum, Radiologi, Bedah, Kebidanan/Kandungan, Gigi, Mata, THT, Fisioterapi, Anastesi.'
+        },
+        {
+            prefix: '1.3.2.08',
+            kib: 'KIB B',
+            nama: 'ALAT LABORATORIUM',
+            contohRs: 'Hematology Analyzer, Clinical Chemistry Analyzer, Mikroskop Binokuler Elektrik, Centrifuge Darah/Urin, Autoclave Sterilisasi Laboratorium, Inkubator Bakteri, Biosafety Cabinet.',
+            subRincian: 'Alat Lab Kimia, Alat Lab Biologi/Medis, Alat Lab Patologi Anatomi/Klinik.'
+        },
+        {
+            prefix: '1.3.2.09',
+            kib: 'KIB B',
+            nama: 'ALAT PERSENJATAAN',
+            contohRs: 'Senjata Pelumpuh Gas Air Mata Satpam, Borgol Khusus Pasien Gaduh Gelisah / Psikiatri, Perlengkapan Keamanan Khusus.',
+            subRincian: 'Senjata Pelumpuh, Borgol, Alat Pengamanan Fisik.'
+        },
+        {
+            prefix: '1.3.2.10',
+            kib: 'KIB B',
+            nama: 'KOMPUTER',
+            contohRs: 'Komputer Server Database SIMRS, PC All-in-One Kasir & Loket Pendaftaran, Laptop Dokter/Rekam Medis, Printer Resep / Label Barcode NIBAR, Scanner Dokumen BPJS, Switch & Router Jaringan LAN.',
+            subRincian: 'Komputer PC/Unit, Laptop/Notebook, Peralatan Jaringan, Printer, Scanner, UPS Server.'
+        },
+        {
+            prefix: '1.3.2.11 s/d 1.3.2.19',
+            kib: 'KIB B',
+            nama: 'ALAT EKSPLORASI S/D OLAH RAGA',
+            contohRs: 'Phantom / Boneka Manekin CPR Pelatihan Medis Diklat, Alat Treadmill Uji Jantung / Fisioterapi, Matras Senam Hamil, Peralatan Olah Raga Karyawan.',
+            subRincian: 'Alat Peraga Medis, Alat Olah Raga, Alat Keselamatan Kerja.'
+        },
+        {
+            prefix: '1.3.3.01',
+            kib: 'KIB C',
+            nama: 'BANGUNAN GEDUNG',
+            contohRs: 'Gedung IGD, Gedung Poliklinik Terpadu, Gedung Rawat Inap / Paviliun, Bangunan Instalasi Farmasi, Selasar Penghubung Ruangan, Pos Satpam, Musholla RS, Pagar Keliling RS.',
+            subRincian: 'Bangunan Gedung Tempat Kerja, Bangunan Fasilitas Kesehatan, Pos Keamanan, Pagar.'
+        },
+        {
+            prefix: '1.3.4.01 s/d 1.3.4.04',
+            kib: 'KIB D',
+            nama: 'JALAN, IRIGASI DAN JARINGAN',
+            contohRs: 'Jalan Aspal Akses Masuk IGD/Ambulans, Saluran Drainase Air Hujan RS, Instalasi Pengolahan Air Limbah (IPAL), Jaringan Pipa Gas Oksigen Sentral Medis, Jaringan Kabel Fiber Optik SIMRS.',
+            subRincian: 'Jalan dan Jembatan, Bangunan Air/Drainase, Instalasi Listrik/Pipa Medis, Jaringan Komunikasi/Data.'
+        },
+        {
+            prefix: '1.3.5.01',
+            kib: 'KIB E',
+            nama: 'BUKU / KEPUSTAKAAN',
+            contohRs: 'Buku Referensi Medis Kedokteran, Buku Pedoman Farmakope, Jurnal Ilmiah Akreditasi RS, Buku Pedoman Standar Pelayanan Minimal (SPM).',
+            subRincian: 'Buku Umum, Buku Khusus Medis, Terbitan Berkala/Jurnal.'
+        },
+        {
+            prefix: '1.3.5.02',
+            kib: 'KIB E',
+            nama: 'BARANG BERCORAK KESENIAN',
+            contohRs: 'Lukisan Hiasan Dinding Ruang Rapat Direksi/Auditorium, Patung Dekorasi Taman Rumah Sakit, Ornamen Kesenian Daerah.',
+            subRincian: 'Barang Kesenian Daerah, Seni Rupa, Lukisan.'
+        },
+        {
+            prefix: '1.3.5.03',
+            kib: 'KIB E',
+            nama: 'HEWAN',
+            contohRs: 'Tikus/Mencit Putih untuk Uji Coba Laboratorium Farmasi/Medis, Anjing Pelacak Pengamanan Wilayah Rumah Sakit.',
+            subRincian: 'Hewan Pengaman, Hewan Laboratorium, Hewan Ternak.'
+        },
+        {
+            prefix: '1.3.5.04 s/d 1.3.5.07',
+            kib: 'KIB E',
+            nama: 'BIOTA, TANAMAN & RENOVASI',
+            contohRs: 'Pohon Peneduh & Tanaman Hias Taman Rumah Sakit, Biota Akuarium Terapi Pasien, Aset Renovasi pada Bangunan Sewa/Bukan Milik Sendiri.',
+            subRincian: 'Biota Perairan, Tanaman Hias, Aset Tetap Renovasi.'
+        },
+        {
+            prefix: '1.3.6.01',
+            kib: 'KIB F',
+            nama: 'KONSTRUKSI DALAM PENGERJAAN (KDP)',
+            contohRs: 'Proyek Pembangunan Gedung Baru / Ruang Operasi yang saat ini masih dalam proses pekerjaan fisik dan belum 100% rampung (belum terbit BAST selesai).',
+            subRincian: 'KDP Gedung dan Bangunan, KDP Jalan/Instalasi.'
+        },
+        {
+            prefix: '1.5.2',
+            kib: 'KEMITRAAN',
+            nama: 'KEMITRAAN DENGAN PIHAK KETIGA',
+            contohRs: 'Kerja Sama Operasional (KSO) Alat Laboratorium Analyzer & Hemodialisa (Cuci Darah) dengan vendor farmasi, Sewa Lahan/Gedung untuk Kantin RS / Minimarket / Gerai ATM Center, Bangun Guna Serah (BGS) Paviliun Rawat Inap, Pengelolaan Parkir Berbayar RSUD.',
+            subRincian: 'Sewa BMD (1.5.2.01.01.01), Kerjasama Pemanfaatan / KSP / KSO (1.5.2.01.01.02), Bangun Guna Serah / BGS / BSG (1.5.2.01.01.03), Kerjasama Penyediaan Infrastruktur / KSPI (1.5.2.01.01.04).'
+        },
+        {
+            prefix: '1.5.3',
+            kib: 'ASET LAINNYA',
+            nama: 'ASET TIDAK BERWUJUD (ATB)',
+            contohRs: 'Lisensi Software SIMRS (Sistem Informasi Manajemen Rumah Sakit), Lisensi Database Oracle / Windows Server, Hak Cipta & Aplikasi Antrian Pasien Online, Modul Rekam Medis Elektronik (RME).',
+            subRincian: 'Software Komputer, Lisensi Aplikasi SIMRS, Hak Cipta, Hasil Kajian/Penelitian.'
+        },
+        {
+            prefix: '1.5.4',
+            kib: 'ASET LAINNYA',
+            nama: 'ASET LAIN-LAIN',
+            contohRs: 'Aset Tetap Rusak Berat yang telah dihentikan dari penggunaan aktif pelayanan dan sedang menunggu persetujuan SK Penghapusan dari BPKAD / Bupati.',
+            subRincian: 'Aset Rusak Berat Menunggu SK Penghapusan, Barang Sitaan/Jaminan.'
+        },
+        {
+            prefix: 'KOREKSI',
+            kib: 'KOREKSI',
+            nama: 'KOREKSI & PENYEIMBANG',
+            contohRs: 'Koreksi Hibah Mesin Hemodialisa Kemenkes, Pengalihan barang nilai di bawah kapitalisasi (< Rp 300.000 / Rp 500.000) ke Ekstrakomptabel, Koreksi Audit BPK.',
+            subRincian: 'Koreksi Hibah, Koreksi Ekstrakomptabel, Koreksi Lain-Lain.'
+        }
+    ];
+
+    // Helper Global: Buka Kamus Panduan KIB (Dual-trigger: instance method + browser event)
+    window.bukaKamusPanduanKib = function() {
+        if (window.__panduanModal) {
+            window.__panduanModal.panduanSearch = '';
+            window.__panduanModal.panduanFilterKib = 'all';
+            window.__panduanModal.showPanduanModal = true;
+        }
+        window.dispatchEvent(new CustomEvent('open-panduan-kib'));
+    };
+
+    // Helper Global: Buka Modal Rincian Akun (Dual-trigger: instance method + browser event)
+    window.bukaRincianAkun = function(row) {
+        if (window.__rincianAkunModal && typeof window.__rincianAkunModal.loadAndShow === 'function') {
+            window.__rincianAkunModal.loadAndShow(row);
+        }
+        window.dispatchEvent(new CustomEvent('open-rincian-akun', { detail: row }));
+    };
+
     function masterReklasifikasi() {
         return {
             activeTab: (new URLSearchParams(window.location.search).get('tab') === 'log') ? 'log' : 'matriks',
@@ -19,11 +202,6 @@
             showModalDetail: false,
             showConfirmDelete: false,
             showPanduanModal: false,
-            showModalRincianAkun: false,
-            rincianAkunData: {},
-            rincianAkunItems: [],
-            rincianFilterArah: 'all',
-            rincianSearch: '',
             panduanSearch: '',
             panduanFilterKib: 'all',
             deleteTargetId: null,
@@ -132,46 +310,6 @@
                 this.isReklasMitraDropdownOpen = false;
             },
 
-            openRincianAkun(row, filterArah = 'all') {
-                const rowId = (typeof row === 'object') ? row.id : row;
-                const allItems = (window.neracaReklasItems && window.neracaReklasItems[rowId]) ? window.neracaReklasItems[rowId] : [];
-                
-                this.rincianAkunData = {
-                    id: rowId,
-                    nama: (typeof row === 'object') ? row.nama_sub_rincian : ('Rekening #' + rowId),
-                    kodePrefix: (typeof row === 'object') ? row.kode_prefix : '',
-                    kelompokKib: (typeof row === 'object') ? row.kelompok_kib : '',
-                    saldoAwal: (typeof row === 'object') ? (row.saldo_awal || 0) : 0,
-                    mutasiTambah: (typeof row === 'object') ? (row.mutasi_tambah || 0) : 0,
-                    mutasiKurang: (typeof row === 'object') ? (row.mutasi_kurang || 0) : 0,
-                    saldoAkhir: (typeof row === 'object') ? (row.saldo_akhir || 0) : 0,
-                };
-                this.rincianAkunItems = allItems;
-                this.rincianFilterArah = filterArah;
-                this.rincianSearch = '';
-                this.showModalRincianAkun = true;
-            },
-
-            get filteredRincianItems() {
-                let list = this.rincianAkunItems || [];
-                if (this.rincianFilterArah !== 'all') {
-                    list = list.filter(item => item.arah === this.rincianFilterArah);
-                }
-                if (this.rincianSearch && this.rincianSearch.trim() !== '') {
-                    const q = this.rincianSearch.trim().toLowerCase();
-                    list = list.filter(item => {
-                        const nama = (item.nama_barang || '').toLowerCase();
-                        const nibar = (item.nibar || '').toLowerCase();
-                        const kode = (item.kode_108 || '').toLowerCase();
-                        const ba = (item.nomor_ba || '').toLowerCase();
-                        const ket = (item.keterangan || '').toLowerCase();
-                        const jenis = (item.jenis_label || '').toLowerCase();
-                        return nama.includes(q) || nibar.includes(q) || kode.includes(q) || ba.includes(q) || ket.includes(q) || jenis.includes(q);
-                    });
-                }
-                return list;
-            },
-
             openPanduan(prefix = '') {
                 this.panduanSearch = prefix || '';
                 this.panduanFilterKib = 'all';
@@ -193,169 +331,7 @@
                 });
             },
 
-            panduanList: [
-                {
-                    prefix: '1.3.1.01',
-                    kib: 'KIB A',
-                    nama: 'TANAH',
-                    contohRs: 'Tanah Bangunan Utama RSUD, Rumah Dinas Direktur/Dokter, Mess Pegawai RS, Pos Satpam, Area Parkir Pengunjung & Ambulans.',
-                    subRincian: 'Tanah Bangunan Gedung Tempat Kerja, Tanah Rumah Dinas, Lapangan.'
-                },
-                {
-                    prefix: '1.3.2.01',
-                    kib: 'KIB B',
-                    nama: 'ALAT BESAR',
-                    contohRs: 'Genset Utama / Pembangkit Listrik Sentral Darurat RS, Forklift Gudang Farmasi/Logistik, Kompresor Sentral Gas Medis, Pompa Sedot Sentral IPAL / Pengolahan Limbah Cair RS.',
-                    subRincian: 'Tractor, Excavator, Grader, Loader, Alat Pengangkat (Forklift, Crane), Mesin Proses, Compressor, Electric Generating Set (Genset), Pompa.'
-                },
-                {
-                    prefix: '1.3.2.02',
-                    kib: 'KIB B',
-                    nama: 'ALAT ANGKUTAN',
-                    contohRs: 'Mobil Ambulans Emergency 118, Mobil Jenazah, Mobil Operasional Dinas Direksi, Sepeda Motor Kurir Obat/Dokumen, Mobil Layanan Farmasi Keliling, Truk Angkut Sampah RS.',
-                    subRincian: 'Kendaraan Dinas Bermotor, Ambulans, Truk, Sepeda Motor, Kendaraan Operasional.'
-                },
-                {
-                    prefix: '1.3.2.03',
-                    kib: 'KIB B',
-                    nama: 'ALAT BENGKEL DAN ALAT UKUR',
-                    contohRs: 'Mesin Las Listrik IPSRS (Pemeliharaan Sarana RS), Mesin Bubut/Gerinda Bengkel RS, Multitester Kalibrasi Alat Medis, Timbangan Kalibrasi Presisi.',
-                    subRincian: 'Alat Bengkel Bermesin/Tak Bermesin, Alat Ukur Universal, Alat Ukur Elektronik.'
-                },
-                {
-                    prefix: '1.3.2.04',
-                    kib: 'KIB B',
-                    nama: 'ALAT PERTANIAN',
-                    contohRs: 'Mesin Potong Rumput Halaman RS, Mesin Babat Rumput Gendong, Sprinkler Penyiram Rumput Taman Rumah Sakit.',
-                    subRincian: 'Alat Pengolahan Tanah, Alat Pemeliharaan Tanaman.'
-                },
-                {
-                    prefix: '1.3.2.05',
-                    kib: 'KIB B',
-                    nama: 'ALAT KANTOR DAN RUMAH TANGGA',
-                    contohRs: 'Meja & Kursi Kerja Dokter/Perawat, Lemari Besi Rekam Medis (RM), AC Split Bangsal, Kulkas Penyimpan Vaksin/Obat, Water Dispenser Pasien, Brankas Keuangan RS, Lemari Narkotika.',
-                    subRincian: 'Alat Kantor (Meja, Kursi, Lemari, Filing Cabinet), Alat Rumah Tangga (AC, Kulkas, Kipas Angin, Dispenser).'
-                },
-                {
-                    prefix: '1.3.2.06',
-                    kib: 'KIB B',
-                    nama: 'ALAT STUDIO, KOMUNIKASI DAN PEMANCAR',
-                    contohRs: 'Handy Talkie (HT) Satpam/IPSRS, PABX Sentral Telepon RS, Sound System Informasi Ruang Tunggu, Kamera CCTV Keamanan RS, TV LED Antrian Pasien.',
-                    subRincian: 'Alat Komunikasi Telepon/HT, Alat Studio Video/Audio, Alat Pemancar Informasi.'
-                },
-                {
-                    prefix: '1.3.2.07',
-                    kib: 'KIB B',
-                    nama: 'ALAT KEDOKTERAN DAN KESEHATAN',
-                    contohRs: 'USG 4D/Doppler, Mesin Rontgen X-Ray, CT-Scan, Defibrillator (DC Shock), Syringe Pump, Infusion Pump, Bed Pasien Elektrik (ICU/Rawat Inap), Ventilator, Mesin Anastesi, Dental Chair Unit, Lampu Operasi.',
-                    subRincian: 'Alat Kedokteran Umum, Radiologi, Bedah, Kebidanan/Kandungan, Gigi, Mata, THT, Fisioterapi, Anastesi.'
-                },
-                {
-                    prefix: '1.3.2.08',
-                    kib: 'KIB B',
-                    nama: 'ALAT LABORATORIUM',
-                    contohRs: 'Hematology Analyzer, Clinical Chemistry Analyzer, Mikroskop Binokuler Elektrik, Centrifuge Darah/Urin, Autoclave Sterilisasi Laboratorium, Inkubator Bakteri, Biosafety Cabinet.',
-                    subRincian: 'Alat Lab Kimia, Alat Lab Biologi/Medis, Alat Lab Patologi Anatomi/Klinik.'
-                },
-                {
-                    prefix: '1.3.2.09',
-                    kib: 'KIB B',
-                    nama: 'ALAT PERSENJATAAN',
-                    contohRs: 'Senjata Pelumpuh Gas Air Mata Satpam, Borgol Khusus Pasien Gaduh Gelisah / Psikiatri, Perlengkapan Keamanan Khusus.',
-                    subRincian: 'Senjata Pelumpuh, Borgol, Alat Pengamanan Fisik.'
-                },
-                {
-                    prefix: '1.3.2.10',
-                    kib: 'KIB B',
-                    nama: 'KOMPUTER',
-                    contohRs: 'Komputer Server Database SIMRS, PC All-in-One Kasir & Loket Pendaftaran, Laptop Dokter/Rekam Medis, Printer Resep / Label Barcode NIBAR, Scanner Dokumen BPJS, Switch & Router Jaringan LAN.',
-                    subRincian: 'Komputer PC/Unit, Laptop/Notebook, Peralatan Jaringan, Printer, Scanner, UPS Server.'
-                },
-                {
-                    prefix: '1.3.2.11 s/d 1.3.2.19',
-                    kib: 'KIB B',
-                    nama: 'ALAT EKSPLORASI S/D OLAH RAGA',
-                    contohRs: 'Phantom / Boneka Manekin CPR Pelatihan Medis Diklat, Alat Treadmill Uji Jantung / Fisioterapi, Matras Senam Hamil, Peralatan Olah Raga Karyawan.',
-                    subRincian: 'Alat Peraga Medis, Alat Olah Raga, Alat Keselamatan Kerja.'
-                },
-                {
-                    prefix: '1.3.3.01',
-                    kib: 'KIB C',
-                    nama: 'BANGUNAN GEDUNG',
-                    contohRs: 'Gedung IGD, Gedung Poliklinik Terpadu, Gedung Rawat Inap / Paviliun, Bangunan Instalasi Farmasi, Selasar Penghubung Ruangan, Pos Satpam, Musholla RS, Pagar Keliling RS.',
-                    subRincian: 'Bangunan Gedung Tempat Kerja, Bangunan Fasilitas Kesehatan, Pos Keamanan, Pagar.'
-                },
-                {
-                    prefix: '1.3.4.01 s/d 1.3.4.04',
-                    kib: 'KIB D',
-                    nama: 'JALAN, IRIGASI DAN JARINGAN',
-                    contohRs: 'Jalan Aspal Akses Masuk IGD/Ambulans, Saluran Drainase Air Hujan RS, Instalasi Pengolahan Air Limbah (IPAL), Jaringan Pipa Gas Oksigen Sentral Medis, Jaringan Kabel Fiber Optik SIMRS.',
-                    subRincian: 'Jalan dan Jembatan, Bangunan Air/Drainase, Instalasi Listrik/Pipa Medis, Jaringan Komunikasi/Data.'
-                },
-                {
-                    prefix: '1.3.5.01',
-                    kib: 'KIB E',
-                    nama: 'BUKU / KEPUSTAKAAN',
-                    contohRs: 'Buku Referensi Medis Kedokteran, Buku Pedoman Farmakope, Jurnal Ilmiah Akreditasi RS, Buku Pedoman Standar Pelayanan Minimal (SPM).',
-                    subRincian: 'Buku Umum, Buku Khusus Medis, Terbitan Berkala/Jurnal.'
-                },
-                {
-                    prefix: '1.3.5.02',
-                    kib: 'KIB E',
-                    nama: 'BARANG BERCORAK KESENIAN',
-                    contohRs: 'Lukisan Hiasan Dinding Ruang Rapat Direksi/Auditorium, Patung Dekorasi Taman Rumah Sakit, Ornamen Kesenian Daerah.',
-                    subRincian: 'Barang Kesenian Daerah, Seni Rupa, Lukisan.'
-                },
-                {
-                    prefix: '1.3.5.03',
-                    kib: 'KIB E',
-                    nama: 'HEWAN',
-                    contohRs: 'Tikus/Mencit Putih untuk Uji Coba Laboratorium Farmasi/Medis, Anjing Pelacak Pengamanan Wilayah Rumah Sakit.',
-                    subRincian: 'Hewan Pengaman, Hewan Laboratorium, Hewan Ternak.'
-                },
-                {
-                    prefix: '1.3.5.04 s/d 1.3.5.07',
-                    kib: 'KIB E',
-                    nama: 'BIOTA, TANAMAN & RENOVASI',
-                    contohRs: 'Pohon Peneduh & Tanaman Hias Taman Rumah Sakit, Biota Akuarium Terapi Pasien, Aset Renovasi pada Bangunan Sewa/Bukan Milik Sendiri.',
-                    subRincian: 'Biota Perairan, Tanaman Hias, Aset Tetap Renovasi.'
-                },
-                {
-                    prefix: '1.3.6.01',
-                    kib: 'KIB F',
-                    nama: 'KONSTRUKSI DALAM PENGERJAAN (KDP)',
-                    contohRs: 'Proyek Pembangunan Gedung Baru / Ruang Operasi yang saat ini masih dalam proses pekerjaan fisik dan belum 100% rampung (belum terbit BAST selesai).',
-                    subRincian: 'KDP Gedung dan Bangunan, KDP Jalan/Instalasi.'
-                },
-                {
-                    prefix: '1.5.2',
-                    kib: 'KEMITRAAN',
-                    nama: 'KEMITRAAN DENGAN PIHAK KETIGA',
-                    contohRs: 'Kerja Sama Operasional (KSO) Alat Laboratorium Analyzer & Hemodialisa (Cuci Darah) dengan vendor farmasi, Sewa Lahan/Gedung untuk Kantin RS / Minimarket / Gerai ATM Center, Bangun Guna Serah (BGS) Paviliun Rawat Inap, Pengelolaan Parkir Berbayar RSUD.',
-                    subRincian: 'Sewa BMD (1.5.2.01.01.01), Kerjasama Pemanfaatan / KSP / KSO (1.5.2.01.01.02), Bangun Guna Serah / BGS / BSG (1.5.2.01.01.03), Kerjasama Penyediaan Infrastruktur / KSPI (1.5.2.01.01.04).'
-                },
-                {
-                    prefix: '1.5.3',
-                    kib: 'ASET LAINNYA',
-                    nama: 'ASET TIDAK BERWUJUD (ATB)',
-                    contohRs: 'Lisensi Software SIMRS (Sistem Informasi Manajemen Rumah Sakit), Lisensi Database Oracle / Windows Server, Hak Cipta & Aplikasi Antrian Pasien Online, Modul Rekam Medis Elektronik (RME).',
-                    subRincian: 'Software Komputer, Lisensi Aplikasi SIMRS, Hak Cipta, Hasil Kajian/Penelitian.'
-                },
-                {
-                    prefix: '1.5.4',
-                    kib: 'ASET LAINNYA',
-                    nama: 'ASET LAIN-LAIN',
-                    contohRs: 'Aset Tetap Rusak Berat yang telah dihentikan dari penggunaan aktif pelayanan dan sedang menunggu persetujuan SK Penghapusan dari BPKAD / Bupati.',
-                    subRincian: 'Aset Rusak Berat Menunggu SK Penghapusan, Barang Sitaan/Jaminan.'
-                },
-                {
-                    prefix: 'KOREKSI',
-                    kib: 'KOREKSI',
-                    nama: 'KOREKSI & PENYEIMBANG',
-                    contohRs: 'Koreksi Hibah Mesin Hemodialisa Kemenkes, Pengalihan barang nilai di bawah kapitalisasi (< Rp 300.000 / Rp 500.000) ke Ekstrakomptabel, Koreksi Audit BPK.',
-                    subRincian: 'Koreksi Hibah, Koreksi Ekstrakomptabel, Koreksi Lain-Lain.'
-                }
-            ],
+            panduanList: window.panduanKibList || [],
 
             currentStep: 1,
             skpdDirectory: @json($dbSkpdDirectory ?? []),
@@ -482,6 +458,9 @@
                 selected_register_ids: [],
                 register_kondisi_map: {},
                 reklas_items: [],
+                spek_mode: 'kolektif',
+                spek_unit_active_tab: 0,
+                spek_units: [],
             },
 
             // 108 Hierarchy Getters
@@ -1066,7 +1045,10 @@
                 let total = 0;
                 for (const reg of regs) {
                     if (this.isNibarSelected(reg.id)) {
-                        total += parseFloat(reg.harga_satuan || defaultUnitVal);
+                        const regVal = (reg.harga_satuan !== null && reg.harga_satuan !== undefined && parseFloat(reg.harga_satuan) > 0)
+                            ? parseFloat(reg.harga_satuan)
+                            : defaultUnitVal;
+                        total += regVal;
                     }
                 }
                 return total;
@@ -1077,8 +1059,98 @@
                     this.formData.selected_register_ids = this.formData.selected_register_ids.map(id => Number(id));
                 }
                 this.syncExtracomItems();
+                this.syncSpekUnits();
                 if (this.formData.jenis_reklas !== 'KOREKSI_LAIN' && this.formData.jenis_reklas !== 'EKSTRAKOMPTABEL' && this.formData.jenis_reklas !== 'KAPITALISASI_INTRAKOM') {
                     this.formData.nilai_reklas = this.calculateSelectedNibarsValue();
+                }
+            },
+
+            getSelectedUnitsList() {
+                const regs = this.getReklasAvailableRegisters();
+                const selIds = this.formData.selected_register_ids || [];
+                if (!selIds.length) return [];
+                return regs.filter(r => selIds.some(id => String(id) === String(r.id)));
+            },
+
+            syncSpekUnits() {
+                const units = this.getSelectedUnitsList();
+                if (!units || units.length === 0) {
+                    this.formData.spek_units = [];
+                    this.formData.spek_unit_active_tab = 0;
+                    this.formData.spek_mode = 'kolektif';
+                    return;
+                }
+
+                const existingMap = {};
+                (this.formData.spek_units || []).forEach(u => {
+                    if (u && u.__register_id) {
+                        existingMap[String(u.__register_id)] = u;
+                    }
+                });
+
+                const newUnits = units.map((reg, idx) => {
+                    if (existingMap[String(reg.id)]) {
+                        return existingMap[String(reg.id)];
+                    }
+                    const cloned = JSON.parse(JSON.stringify(this.formData.spekBaru || {}));
+                    cloned.__register_id = reg.id;
+                    cloned.__nibar = reg.nibar || ('Unit #' + (idx + 1));
+                    cloned.__no_register = reg.no_register || (idx + 1);
+                    return cloned;
+                });
+
+                this.formData.spek_units = newUnits;
+
+                if (this.formData.spek_unit_active_tab >= newUnits.length) {
+                    this.formData.spek_unit_active_tab = 0;
+                }
+
+                if (newUnits.length <= 1) {
+                    this.formData.spek_mode = 'kolektif';
+                }
+            },
+
+            setSpekMode(mode) {
+                if (mode === 'individual') {
+                    this.syncSpekUnits();
+                    if (this.formData.spek_units.length > 0) {
+                        const activeIdx = this.formData.spek_unit_active_tab || 0;
+                        const cur = this.formData.spek_units[activeIdx] || {};
+                        const regId = cur.__register_id || this.getSelectedUnitsList()[activeIdx]?.id;
+                        const nibar = cur.__nibar || this.getSelectedUnitsList()[activeIdx]?.nibar;
+                        const noReg = cur.__no_register || this.getSelectedUnitsList()[activeIdx]?.no_register;
+                        this.formData.spek_units[activeIdx] = JSON.parse(JSON.stringify(this.formData.spekBaru));
+                        this.formData.spek_units[activeIdx].__register_id = regId;
+                        this.formData.spek_units[activeIdx].__nibar = nibar;
+                        this.formData.spek_units[activeIdx].__no_register = noReg;
+                    }
+                    this.formData.spek_mode = 'individual';
+                } else {
+                    this.formData.spek_mode = 'kolektif';
+                }
+            },
+
+            switchSpekUnitTab(newIdx) {
+                if (newIdx === this.formData.spek_unit_active_tab) return;
+                const currentIdx = this.formData.spek_unit_active_tab || 0;
+                if (this.formData.spek_units[currentIdx]) {
+                    const regId = this.formData.spek_units[currentIdx].__register_id;
+                    const nibar = this.formData.spek_units[currentIdx].__nibar;
+                    const noReg = this.formData.spek_units[currentIdx].__no_register;
+                    this.formData.spek_units[currentIdx] = JSON.parse(JSON.stringify(this.formData.spekBaru));
+                    this.formData.spek_units[currentIdx].__register_id = regId;
+                    this.formData.spek_units[currentIdx].__nibar = nibar;
+                    this.formData.spek_units[currentIdx].__no_register = noReg;
+                }
+
+                this.formData.spek_unit_active_tab = newIdx;
+
+                if (this.formData.spek_units[newIdx]) {
+                    const targetData = JSON.parse(JSON.stringify(this.formData.spek_units[newIdx]));
+                    delete targetData.__register_id;
+                    delete targetData.__nibar;
+                    delete targetData.__no_register;
+                    this.formData.spekBaru = targetData;
                 }
             },
 
@@ -1179,10 +1251,18 @@
 
                 if (this.formData.jenis_reklas === 'EKSTRAKOMPTABEL' || this.formData.jenis_reklas === 'KAPITALISASI_INTRAKOM') {
                     this.formData.nilai_reklas = this.getReklasExtracomTotal();
+                } else if (this.formData.jenis_reklas === 'KOREKSI_LAIN') {
+                    const totalNew = this.getReklasExtracomTotal();
+                    this.formData.nilai_realisasi_baru = totalNew;
+                    const lama = parseFloat(this.selectedAstap?.total_realisasi || 0);
+                    this.formData.nilai_reklas = Math.abs(totalNew - lama);
+                    this.formData.tipe_koreksi = (totalNew >= lama) ? 'tambah' : 'kurang';
+                    this.syncKorLainRows();
                 }
 
                 // Inisialisasi spek baru
                 this.initSpekBaru();
+                this.syncSpekUnits();
             },
 
             onJenisReklasChange() {
@@ -1247,13 +1327,15 @@
                         this.formData.nilai_reklas = parseFloat(this.selectedAstap.total_realisasi || 0);
                     }
                 } else if (this.formData.jenis_reklas === 'KOREKSI_LAIN') {
-                    if (this.selectedAstap && this.selectedAstap.registers && this.selectedAstap.registers.length > 0) {
-                        this.formData.nilai_reklas = this.calculateSelectedNibarsValue();
-                    } else if (this.selectedAstap) {
-                        this.formData.nilai_reklas = parseFloat(this.selectedAstap.total_realisasi || 0);
+                    if (!this.rawExtracomUnits || this.rawExtracomUnits.length === 0) {
+                        this.rawExtracomUnits = this.buildAllExtracomUnits(this.selectedAstap);
                     }
-                    this.formData.tipe_koreksi = 'kurang';
-                    this.formData.nilai_realisasi_baru = 0;
+                    this.syncExtracomItems();
+                    const totalNew = this.getReklasExtracomTotal();
+                    this.formData.nilai_realisasi_baru = totalNew || parseFloat(this.selectedAstap?.total_realisasi || 0);
+                    const lama = parseFloat(this.selectedAstap?.total_realisasi || 0);
+                    this.formData.nilai_reklas = Math.abs(this.formData.nilai_realisasi_baru - lama);
+                    this.formData.tipe_koreksi = (this.formData.nilai_realisasi_baru >= lama) ? 'tambah' : 'kurang';
                     this.syncKorLainRows();
                 }
             },
@@ -1607,10 +1689,23 @@
 
                 if (found.registers && found.registers.length > 0) {
                     const activeRegisters = found.registers.filter(r => r.status !== 'Mutasi Keluar OPD' && r.status !== 'Dihibahkan');
+                    const defaultUnitVal = (found.total_realisasi && parseFloat(found.total_realisasi) > 0)
+                        ? (parseFloat(found.total_realisasi) / Math.max(1, activeRegisters.length))
+                        : (parseFloat(found.harga_satuan) || 0);
+
                     return activeRegisters.map((reg, idx) => {
                         const unitMeta = rawUnits[idx] || {};
                         const fallbackName = found.nama_barang ? `${found.nama_barang} (#${idx + 1})` : `Unit #${idx + 1}`;
-                        const unitPrice = parseFloat(reg.harga_satuan || unitMeta.harga_satuan || (found.total_realisasi ? parseFloat(found.total_realisasi) / Math.max(1, activeRegisters.length) : 0));
+
+                        let unitPrice = 0;
+                        if (reg.harga_satuan !== null && reg.harga_satuan !== undefined && parseFloat(reg.harga_satuan) > 0) {
+                            unitPrice = parseFloat(reg.harga_satuan);
+                        } else if (unitMeta.harga_satuan !== null && unitMeta.harga_satuan !== undefined && parseFloat(unitMeta.harga_satuan) > 0) {
+                            unitPrice = parseFloat(unitMeta.harga_satuan);
+                        } else {
+                            unitPrice = defaultUnitVal;
+                        }
+
                         return {
                             register_id: Number(reg.id),
                             nibar: reg.nibar || reg.no_register || '',
@@ -1655,6 +1750,13 @@
 
                 if (this.formData.jenis_reklas === 'EKSTRAKOMPTABEL' || this.formData.jenis_reklas === 'KAPITALISASI_INTRAKOM') {
                     this.formData.nilai_reklas = this.getReklasExtracomTotal();
+                } else if (this.formData.jenis_reklas === 'KOREKSI_LAIN') {
+                    const totalNew = this.getReklasExtracomTotal();
+                    this.formData.nilai_realisasi_baru = totalNew;
+                    const lama = parseFloat(this.selectedAstap?.total_realisasi || 0);
+                    this.formData.nilai_reklas = Math.abs(totalNew - lama);
+                    this.formData.tipe_koreksi = (totalNew >= lama) ? 'tambah' : 'kurang';
+                    this.syncKorLainRows();
                 }
             },
 
@@ -1733,6 +1835,13 @@
                 }
                 if (this.formData.jenis_reklas === 'EKSTRAKOMPTABEL' || this.formData.jenis_reklas === 'KAPITALISASI_INTRAKOM') {
                     this.formData.nilai_reklas = this.getReklasExtracomTotal();
+                } else if (this.formData.jenis_reklas === 'KOREKSI_LAIN') {
+                    const totalNew = this.getReklasExtracomTotal();
+                    this.formData.nilai_realisasi_baru = totalNew;
+                    const lama = parseFloat(this.selectedAstap?.total_realisasi || 0);
+                    this.formData.nilai_reklas = Math.abs(totalNew - lama);
+                    this.formData.tipe_koreksi = (totalNew >= lama) ? 'tambah' : 'kurang';
+                    this.syncKorLainRows();
                 }
             },
 
@@ -2536,17 +2645,56 @@
                 this.isSubmitting = true;
 
                 try {
+                    // Simpan data form active tab jika sedang dalam mode individual
+                    if (this.formData.spek_mode === 'individual' && this.formData.spek_units && this.formData.spek_units.length > 0) {
+                        const activeIdx = this.formData.spek_unit_active_tab || 0;
+                        if (this.formData.spek_units[activeIdx]) {
+                            const regId = this.formData.spek_units[activeIdx].__register_id;
+                            const nibar = this.formData.spek_units[activeIdx].__nibar;
+                            const noReg = this.formData.spek_units[activeIdx].__no_register;
+                            this.formData.spek_units[activeIdx] = JSON.parse(JSON.stringify(this.formData.spekBaru));
+                            this.formData.spek_units[activeIdx].__register_id = regId;
+                            this.formData.spek_units[activeIdx].__nibar = nibar;
+                            this.formData.spek_units[activeIdx].__no_register = noReg;
+                        }
+                    }
+
+                    let spekBaruPayload = null;
+                    if (['KOREKSI_REKENING', 'KDP_TO_DEFINITIF', 'KAPITALISASI_INTRAKOM'].includes(this.formData.jenis_reklas) && this.formData.tujuan_kib) {
+                        if (this.formData.spek_mode === 'individual' && this.formData.spek_units && this.formData.spek_units.length > 1) {
+                            const unitsList = this.getSelectedUnitsList();
+                            const cleanItems = this.formData.spek_units.map((u, idx) => {
+                                const reg = unitsList[idx] || {};
+                                const itemCopy = JSON.parse(JSON.stringify(u));
+                                itemCopy.register_id = reg.id || null;
+                                itemCopy.nibar = reg.nibar || null;
+                                itemCopy.no_register = reg.no_register || null;
+                                itemCopy.item_nama = this.selectedAstap?.nama_barang || null;
+                                delete itemCopy.__register_id;
+                                delete itemCopy.__nibar;
+                                delete itemCopy.__no_register;
+                                return itemCopy;
+                            });
+                            spekBaruPayload = {
+                                ...this.formData.spekBaru,
+                                items: cleanItems
+                            };
+                        } else {
+                            spekBaruPayload = this.formData.spekBaru;
+                        }
+                    }
+
                     const payload = {
                         ...this.formData,
-                        reklas_items: (['EKSTRAKOMPTABEL', 'KAPITALISASI_INTRAKOM'].includes(this.formData.jenis_reklas)) ? (this.formData.reklas_items || []) : null,
-                        selected_register_ids: (['MUTASI_EKSTERNAL', 'HIBAH_KELUAR', 'EKSTRAKOMPTABEL', 'KAPITALISASI_INTRAKOM'].includes(this.formData.jenis_reklas)) ? (this.formData.selected_register_ids || []) : null,
+                        reklas_items: (['EKSTRAKOMPTABEL', 'KAPITALISASI_INTRAKOM', 'KOREKSI_LAIN'].includes(this.formData.jenis_reklas)) ? (this.formData.reklas_items || []) : null,
+                        selected_register_ids: (['MUTASI_EKSTERNAL', 'HIBAH_KELUAR', 'EKSTRAKOMPTABEL', 'KAPITALISASI_INTRAKOM', 'KOREKSI_REKENING', 'KDP_TO_DEFINITIF', 'KOREKSI_LAIN'].includes(this.formData.jenis_reklas)) ? (this.formData.selected_register_ids || []) : null,
                         register_kondisi_map: (this.formData.jenis_reklas === 'MUTASI_EKSTERNAL' || this.formData.jenis_reklas === 'HIBAH_KELUAR') ? (this.formData.register_kondisi_map || {}) : null,
                         tipe_koreksi: this.formData.tipe_koreksi || 'kurang',
                         sub_koreksi: (this.formData.jenis_reklas === 'KOREKSI_LAIN') ? (this.formData.sub_koreksi || 'biasa') : null,
                         nilai_realisasi_baru: parseFloat(this.formData.nilai_realisasi_baru || 0),
                         alasan_reklas: (this.formData.alasan_reklas || '').trim() || (this.formData.keterangan || '').trim() || null,
                         keterangan: (this.formData.keterangan || '').trim() || this.getNarasiPreview(),
-                        spesifikasi_baru: (['KOREKSI_REKENING', 'KDP_TO_DEFINITIF', 'KAPITALISASI_INTRAKOM'].includes(this.formData.jenis_reklas) && this.formData.tujuan_kib) ? this.formData.spekBaru : null,
+                        spesifikasi_baru: spekBaruPayload,
                         pihak_hibah: this.formData.pihak_hibah || null,
                         penerima_nama: this.formData.penerima_nama || null,
                         penerima_jabatan: this.formData.penerima_jabatan || null,

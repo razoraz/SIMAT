@@ -14,19 +14,9 @@
 
                 <!-- Tingkat 1: KIB Tujuan -->
                 <div class="space-y-1.5">
-                    <div class="flex items-center justify-between">
-                        <label class="block text-[11px] font-bold text-slate-300 uppercase tracking-wider">
-                            Tingkat 1: Pilih Kelompok / KIB Tujuan <span class="text-rose-400">*</span>
-                        </label>
-                        <button type="button" @click="openPanduan(formData.tujuan_kib === 'KEMITRAAN' ? '1.5.2' : '')"
-                            class="text-[10px] text-indigo-400 hover:text-indigo-300 font-bold flex items-center gap-1 cursor-pointer transition-colors"
-                            title="Buka panduan standar pengelompokan KIB & Permendagri 108">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                            </svg>
-                            <span>Kamus Panduan KIB</span>
-                        </button>
-                    </div>
+                    <label class="block text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+                        Tingkat 1: Pilih Kelompok / KIB Tujuan <span class="text-rose-400">*</span>
+                    </label>
                     <select x-model="formData.tujuan_kib" @change="onTujuanKibChange()"
                         class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs font-bold focus:outline-none focus:border-indigo-500">
                         <option value="">-- Pilih KIB / Kelompok Tujuan --</option>
@@ -210,24 +200,117 @@
                     </div>
                 </template>
 
-                <!-- Banner Panduan Multi-Unit Register NIBAR (Jika > 1 Unit Terpilih) -->
+                <!-- 2 PILIHAN MODE SPESIFIKASI: KOLEKTIF vs PER UNIT (Hanya Tampil Jika > 1 Unit Terpilih) -->
                 <template x-if="formData.selected_register_ids && formData.selected_register_ids.length > 1">
-                    <div class="p-3.5 rounded-2xl bg-indigo-950/40 border border-indigo-500/40 text-indigo-200 text-xs leading-relaxed flex items-start gap-3 shadow-lg shadow-indigo-950/30">
-                        <div class="w-7 h-7 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center shrink-0 text-indigo-300 font-extrabold text-sm mt-0.5 shadow-inner">
-                            📋
-                        </div>
-                        <div class="space-y-1 flex-1">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <span class="font-extrabold text-white text-xs uppercase tracking-wide">
-                                    Spesifikasi Kolektif: <span class="text-cyan-300 font-mono" x-text="formData.selected_register_ids.length + ' Unit NIBAR Terpilih'"></span>
-                                </span>
-                                <span class="px-2 py-0.5 rounded-full text-[9.5px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                                    1 Dokumen Reklasifikasi
-                                </span>
+                    <div class="space-y-3.5 p-4 rounded-2xl bg-slate-950/90 border border-indigo-500/35 shadow-xl shadow-indigo-950/30">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="text-base">⚙️</span>
+                                <span class="text-xs font-black uppercase tracking-wider text-white">Mode Pengisian Spesifikasi Fisik</span>
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/35"
+                                      x-text="formData.selected_register_ids.length + ' Unit NIBAR Terpilih'"></span>
                             </div>
-                            <p class="text-indigo-200/90 text-[11px] leading-relaxed">
-                                Spesifikasi fisik teknis di bawah ini akan diterapkan secara kolektif untuk seluruh unit terpilih. Jika nomor pabrik atau serial number (SN) tiap unit berbeda, Anda dapat menuliskannya dipisahkan dengan tanda koma (contoh: <code class="text-cyan-300 font-mono bg-slate-950 px-1 py-0.5 rounded">SN-001, SN-002</code>).
-                            </p>
+                            <span class="text-[10.5px] text-slate-400">Pilih bagaimana data teknis &amp; legalitas diterapkan</span>
+                        </div>
+
+                        <!-- 2 Pilihan Kartu Interaktif (Segmented Cards) -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <!-- Pilihan 1: Spesifikasi Kolektif (Seragam) -->
+                            <button type="button" @click="setSpekMode('kolektif')"
+                                    :class="formData.spek_mode === 'kolektif' 
+                                        ? 'bg-indigo-950/70 border-indigo-500 ring-2 ring-indigo-500/40 text-white shadow-lg shadow-indigo-950/60' 
+                                        : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'"
+                                    class="p-3.5 rounded-2xl border text-left transition-all flex items-start gap-3 cursor-pointer group">
+                                <div :class="formData.spek_mode === 'kolektif' ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/30' : 'bg-slate-800 text-slate-400 group-hover:text-white'"
+                                     class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 font-bold text-sm shadow-inner transition-colors">
+                                    📦
+                                </div>
+                                <div class="space-y-1 flex-1 min-w-0">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-xs font-extrabold" :class="formData.spek_mode === 'kolektif' ? 'text-indigo-300' : 'text-slate-200'">
+                                            1. Seragam (Kolektif)
+                                        </span>
+                                        <template x-if="formData.spek_mode === 'kolektif'">
+                                            <span class="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/25 text-indigo-300 border border-indigo-500/40">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
+                                                <span>Aktif</span>
+                                            </span>
+                                        </template>
+                                    </div>
+                                    <p class="text-[10.5px] text-slate-400 leading-snug">
+                                        Satu formulir diterapkan sama ke seluruh unit terpilih. Nomor pabrik / seri dapat dipisahkan koma.
+                                    </p>
+                                </div>
+                            </button>
+
+                            <!-- Pilihan 2: Spesifikasi Per Unit (Individual) -->
+                            <button type="button" @click="setSpekMode('individual')"
+                                    :class="formData.spek_mode === 'individual' 
+                                        ? 'bg-cyan-950/70 border-cyan-500 ring-2 ring-cyan-500/40 text-white shadow-lg shadow-cyan-950/60' 
+                                        : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'"
+                                    class="p-3.5 rounded-2xl border text-left transition-all flex items-start gap-3 cursor-pointer group">
+                                <div :class="formData.spek_mode === 'individual' ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30' : 'bg-slate-800 text-slate-400 group-hover:text-white'"
+                                     class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 font-bold text-sm shadow-inner transition-colors">
+                                    📑
+                                </div>
+                                <div class="space-y-1 flex-1 min-w-0">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-xs font-extrabold" :class="formData.spek_mode === 'individual' ? 'text-cyan-300' : 'text-slate-200'">
+                                            2. Beda Tiap Unit (Individual)
+                                        </span>
+                                        <template x-if="formData.spek_mode === 'individual'">
+                                            <span class="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/25 text-cyan-300 border border-cyan-500/40">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                                                <span>Aktif</span>
+                                            </span>
+                                        </template>
+                                    </div>
+                                    <p class="text-[10.5px] text-slate-400 leading-snug">
+                                        Formulir spesifikasi terpisah per unit/NIBAR. Cocok jika luas tanah, sertifikat, atau nomor pabriknya berbeda.
+                                    </p>
+                                </div>
+                            </button>
+                        </div>
+
+                        <!-- TAB NAVIGASI PER UNIT (Hanya Tampil Jika Mode Individual Dipilih) -->
+                        <div x-show="formData.spek_mode === 'individual'"
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0 -translate-y-1"
+                             x-transition:enter-end="opacity-100 translate-y-0"
+                             class="pt-3 border-t border-slate-800/80 space-y-2.5">
+                            
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                                <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none flex-1">
+                                    <span class="text-[11px] font-bold text-slate-400 shrink-0 mr-1 flex items-center gap-1">
+                                        <span>🏷️</span>
+                                        <span>Unit:</span>
+                                    </span>
+                                    <template x-for="(unit, uIdx) in getSelectedUnitsList()" :key="unit.id || uIdx">
+                                        <button type="button" @click="switchSpekUnitTab(uIdx)"
+                                                :class="formData.spek_unit_active_tab === uIdx 
+                                                    ? 'bg-cyan-500 text-slate-950 font-black shadow-md shadow-cyan-500/25 ring-2 ring-cyan-400/50' 
+                                                    : 'bg-slate-900 text-slate-300 border border-slate-700/80 hover:bg-slate-800 hover:text-white'"
+                                                class="px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer shrink-0">
+                                            <span class="text-[10px] opacity-80" x-text="'#' + (uIdx + 1)"></span>
+                                            <span class="font-mono font-bold" x-text="unit.nibar ? ('NIBAR: ' + unit.nibar) : ('Unit ' + (uIdx + 1))"></span>
+                                            <template x-if="unit.no_register">
+                                                <span class="text-[9.5px] opacity-75 font-mono" x-text="'(Reg ' + unit.no_register + ')'"></span>
+                                            </template>
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <!-- Indikator Banner Unit Aktif -->
+                            <div class="px-3 py-1.5 rounded-xl bg-slate-900/90 border border-cyan-500/25 flex items-center justify-between text-xs">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                                    <span class="text-slate-300 text-[11px]">
+                                        Sedang mengisi spesifikasi untuk: <strong class="text-cyan-300 font-mono" x-text="'Unit #' + ((formData.spek_unit_active_tab || 0) + 1) + ' (' + (getSelectedUnitsList()[formData.spek_unit_active_tab]?.nibar || '-') + ')'"></strong>
+                                    </span>
+                                </div>
+                                <span class="text-[10px] text-slate-500 italic hidden sm:inline">Data tersimpan otomatis saat berpindah tab</span>
+                            </div>
                         </div>
                     </div>
                 </template>

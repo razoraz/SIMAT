@@ -9,7 +9,7 @@
 
     @include('pages.reklasifikasi.partials.scripts')
 
-    <div x-data="masterReklasifikasi()" x-cloak class="space-y-6 pb-16">
+    <div x-data="masterReklasifikasi()" class="space-y-6 pb-16">
         <!-- HEADER & 4 KARTU STATISTIK RINGKAS -->
         @include('pages.reklasifikasi.partials.header_banner')
 
@@ -30,7 +30,9 @@
         @include('pages.reklasifikasi.partials.modal_tambah')
         @include('pages.reklasifikasi.partials.modal_detail')
         @include('pages.reklasifikasi.partials.modal_confirm')
-        @include('pages.reklasifikasi.partials.modal_panduan')
-        @include('pages.reklasifikasi.partials.modal_rincian_akun')
     </div>
+
+    <!-- MODAL STANDALONE (RINCIAN AKUN & KAMUS PANDUAN KIB) -->
+    @include('pages.reklasifikasi.partials.modal_rincian_akun')
+    @include('pages.reklasifikasi.partials.modal_panduan')
 </x-layout>

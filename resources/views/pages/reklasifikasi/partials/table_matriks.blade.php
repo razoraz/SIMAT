@@ -10,15 +10,17 @@
             </p>
         </div>
         <div class="flex items-center gap-2.5 shrink-0">
-            <!-- Tombol Buka Kamus Panduan PMDN 108 -->
-            <button type="button" @click="openPanduan('')"
-                class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 hover:border-indigo-400 text-xs font-bold transition-all duration-200 cursor-pointer shadow-sm"
-                title="Kamus & Panduan Pengelompokan Barang PMDN 108 Khas RSUD">
+            {{-- Tombol Kamus Panduan KIB --}}
+            <button type="button"
+                onclick="window.bukaKamusPanduanKib()"
+                class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 hover:bg-indigo-500/20 text-slate-300 hover:text-indigo-300 border border-slate-700 hover:border-indigo-500/50 transition-all cursor-pointer"
+                title="Lihat kamus panduan pengelompokan KIB PMDN 108">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
                 <span>Kamus Panduan KIB</span>
             </button>
+
             <span class="text-xs font-mono font-semibold text-slate-400 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
                 Standar Sheet 3 RSDK
             </span>
@@ -105,10 +107,11 @@
                                     @endif
                                 </div>
 
-                                {{-- Satu-satunya tombol: Ikon (i) dengan fungsi membuka Rincian Mutasi Aset Akun --}}
-                                <button type="button" @click="openRincianAkun({{ json_encode($row) }})"
+                                {{-- Tombol ⓘ: Lihat rincian barang yang direklasifikasi pada akun ini --}}
+                                <button type="button"
+                                    onclick="window.bukaRincianAkun({{ json_encode($row) }})"
                                     class="p-1 rounded-md text-slate-500 hover:text-indigo-300 hover:bg-indigo-500/20 transition-all cursor-pointer shrink-0"
-                                    title="Lihat rincian barang yang direklasifikasi pada {{ $row['nama_sub_rincian'] }}">
+                                    title="Lihat rincian barang pada {{ $row['nama_sub_rincian'] }}">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>

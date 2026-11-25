@@ -1,5 +1,6 @@
 <!-- MODAL TAMBAH REKLASIFIKASI BARU (ADAPTIF & DINAMIS PMDN 108) -->
-<div x-show="showModalTambah" x-cloak
+<div x-show="showModalTambah"
+     style="display:none;"
      class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5"
      x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
      x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
@@ -269,6 +270,120 @@
                                 Penyelarasan SIMDA BMD / E-Manset BPKAD Kab. Bondowoso.
                             </p>
                         </label>
+                    </div>
+                </div>
+
+                <!-- 2. Rincian Barang & Nilai Realisasi Baru (Barang 1, Barang 2, dst) Sesuai Standar Modul ASTAP -->
+                <div class="space-y-3 pt-2">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 pb-2 border-b border-slate-800/80">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="text-xs font-black text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
+                                <span>📦</span>
+                                <span>Rincian Nilai Realisasi Barang:</span>
+                            </span>
+                            <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-mono font-extrabold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 shadow-xs"
+                                  x-text="(formData.reklas_items ? formData.reklas_items.length : 0) + ' Item Terdaftar'"></span>
+                        </div>
+                        <span class="text-[10.5px] text-slate-400 font-medium">Ubah nilai per unit barang temuan / penyesuaian</span>
+                    </div>
+
+                    <!-- Empty state jika belum memilih unit -->
+                    <template x-if="!formData.reklas_items || formData.reklas_items.length === 0">
+                        <div class="p-4 rounded-2xl bg-slate-900/60 border border-dashed border-slate-800 text-center space-y-1">
+                            <span class="text-amber-400 text-base block">⚠️</span>
+                            <p class="text-xs font-bold text-slate-300">Belum ada unit register yang dipilih</p>
+                            <p class="text-[11px] text-slate-500">Pilih minimal 1 register (NIBAR) pada daftar di atas untuk menyesuaikan rincian nilai barang.</p>
+                        </div>
+                    </template>
+
+                    <!-- Cards Container Barang 1 & 2 -->
+                    <div x-show="formData.reklas_items && formData.reklas_items.length > 0"
+                         class="space-y-3 max-h-[350px] overflow-y-auto custom-scrollbar pr-1">
+                        <template x-for="(item, idx) in (formData.reklas_items || [])" :key="item.register_id || idx">
+                            <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800/90 hover:border-cyan-500/40 transition-all space-y-3 shadow-lg group backdrop-blur-sm">
+                                <!-- Baris Atas Item: Badge Nomor & Nama Barang & Volume -->
+                                <div class="flex items-center justify-between gap-2.5">
+                                    <div class="flex items-center gap-2 min-w-0 flex-1">
+                                        <span class="px-2.5 py-1 rounded-lg text-[10.5px] font-mono font-black bg-cyan-500/15 text-cyan-300 border border-cyan-500/35 shrink-0 shadow-xs"
+                                              x-text="'Barang #' + (idx + 1)"></span>
+                                        <span class="text-xs sm:text-sm font-extrabold text-white truncate" 
+                                              :title="item.nama_barang || ('Barang #' + (idx + 1))"
+                                              x-text="item.nama_barang || ('Barang #' + (idx + 1))"></span>
+                                        <template x-if="item.nibar">
+                                            <span class="text-[9.5px] font-mono font-bold text-cyan-300 bg-cyan-950/60 border border-cyan-800/80 px-2 py-0.5 rounded-md shrink-0"
+                                                  x-text="'NIBAR: ' + item.nibar"></span>
+                                        </template>
+                                    </div>
+                                    <div class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 text-[11px] font-mono font-semibold shrink-0 shadow-inner flex items-center gap-1.5">
+                                        <span class="text-slate-500 text-[10px]">Qty:</span>
+                                        <span class="text-cyan-300 font-bold" x-text="item.jumlah_volume || 1"></span>
+                                        <span class="text-slate-400 text-[10px]" x-text="item.satuan || 'Unit'"></span>
+                                    </div>
+                                </div>
+
+                                <!-- Grid Input: Nilai Satuan & Subtotal (Symmetric & Responsive) -->
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start pt-3 border-t border-slate-800/80">
+                                    <!-- Nilai Satuan -->
+                                    <div class="space-y-1.5">
+                                        <label class="flex items-center gap-1.5 text-slate-400 font-bold text-[10px] uppercase tracking-wider h-4">
+                                            <span>🏷️</span>
+                                            <span>Nilai Satuan (Rp):</span>
+                                        </label>
+                                        <div class="relative flex items-center h-10 rounded-xl bg-slate-900/90 border border-cyan-500/40 focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-500/20 shadow-inner transition-all overflow-hidden">
+                                            <span class="h-full px-3 flex items-center justify-center bg-slate-950/80 border-r border-slate-800 text-cyan-400 font-mono font-bold text-xs select-none">
+                                                Rp
+                                            </span>
+                                            <input type="text"
+                                                   inputmode="numeric"
+                                                   :value="formatRupiahInput(item.harga_satuan)"
+                                                   @keydown="if (!/[0-9]/.test($event.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter', 'Home', 'End'].includes($event.key) && !$event.ctrlKey && !$event.metaKey) { $event.preventDefault(); }"
+                                                   @input="updateItemHargaSatuan(item, $event)"
+                                                   @paste="$nextTick(() => updateItemHargaSatuan(item, $event))"
+                                                   @focus="$event.target.select()"
+                                                   placeholder="0"
+                                                   class="w-full h-full bg-transparent px-3 text-xs sm:text-sm font-mono font-extrabold text-cyan-200 focus:outline-none text-right placeholder-slate-600">
+                                        </div>
+                                    </div>
+
+                                    <!-- Subtotal -->
+                                    <div class="space-y-1.5">
+                                        <div class="flex items-center justify-between text-slate-400 font-bold text-[10px] uppercase tracking-wider h-4">
+                                            <span>Subtotal Barang:</span>
+                                            <span class="text-[9.5px] font-mono text-slate-500 font-normal lowercase" x-text="'(' + (item.jumlah_volume || 1) + ' ' + (item.satuan || 'unit') + ')'"></span>
+                                        </div>
+                                        <div class="flex items-center justify-between px-3.5 h-10 rounded-xl bg-emerald-950/30 border border-emerald-500/40 shadow-inner">
+                                            <span class="text-[9.5px] font-mono font-bold text-emerald-400/80 uppercase tracking-wider">Subtotal</span>
+                                            <div class="text-xs sm:text-sm font-mono font-black text-emerald-300"
+                                                 x-text="'Rp ' + Number((item.jumlah_volume || 1) * (parseFloat(item.harga_satuan) || 0)).toLocaleString('id-ID')">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- 3. Ringkasan Perbandingan & Dampak Selisih Koreksi (Gambar 2 Footer) -->
+                    <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-wrap items-center justify-between gap-2.5 text-xs shadow-md">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-slate-400">Realisasi Semula:</span>
+                            <span class="font-mono text-slate-200 font-bold" x-text="'Rp ' + Number(selectedAstap?.total_realisasi || 0).toLocaleString('id-ID')"></span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-slate-400">➔ Realisasi Baru:</span>
+                            <span class="font-mono text-emerald-400 font-extrabold" x-text="'Rp ' + Number(formData.nilai_realisasi_baru || 0).toLocaleString('id-ID')"></span>
+                        </div>
+                        <div class="flex items-center space-x-1.5">
+                            <span class="text-slate-400">Dampak Koreksi:</span>
+                            <template x-if="parseFloat(formData.nilai_reklas || 0) > 0">
+                                <span class="px-2.5 py-1 rounded-lg text-[10.5px] font-black border"
+                                      :class="formData.tipe_koreksi === 'kurang' ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 shadow-rose-950/20' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-emerald-950/20'"
+                                      x-text="(formData.tipe_koreksi === 'kurang' ? '🔻 Berkurang Rp ' : '🔺 Bertambah Rp ') + Number(formData.nilai_reklas).toLocaleString('id-ID')"></span>
+                            </template>
+                            <template x-if="parseFloat(formData.nilai_reklas || 0) <= 0">
+                                <span class="px-2.5 py-1 rounded-lg text-[10.5px] font-bold bg-slate-800 text-slate-400 border border-slate-700">Tidak ada selisih nilai</span>
+                            </template>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -639,7 +754,8 @@
                             </div>
 
                             <!-- Dropdown Riwayat Pejabat RSUD (Otomatis menutup jika tidak ada hasil cocok) -->
-                            <div x-show="isPejabatAsalDropdownOpen && filteredPejabatAsalList.length > 0" x-cloak
+                            <div x-show="isPejabatAsalDropdownOpen && filteredPejabatAsalList.length > 0"
+                                 style="display:none;"
                                  class="absolute z-40 mt-1 w-full bg-slate-900 border border-teal-500/40 rounded-xl shadow-2xl overflow-hidden divide-y divide-slate-800 custom-scrollbar backdrop-blur-xl max-h-48 overflow-y-auto">
                                 <div class="px-3 py-1.5 bg-slate-950 text-[10px] font-bold text-teal-400 uppercase tracking-wider flex items-center justify-between">
                                     <span>Pilihan Pejabat Penyerah RSUD</span>
@@ -738,7 +854,8 @@
                         </div>
 
                         <!-- Dropdown List SKPD -->
-                        <div x-show="isSkpdDropdownOpen && filteredSkpdList.length > 0" x-cloak
+                        <div x-show="isSkpdDropdownOpen && filteredSkpdList.length > 0"
+                             style="display:none;"
                              class="absolute z-40 mt-1 w-full bg-slate-900 border border-cyan-500/40 rounded-xl shadow-2xl overflow-hidden divide-y divide-slate-800 custom-scrollbar backdrop-blur-xl max-h-56 overflow-y-auto">
                             <div class="px-3 py-1.5 bg-slate-950 text-[10px] font-bold text-cyan-400 uppercase tracking-wider flex items-center justify-between">
                                 <span>Pilih Direktori SKPD Pemkab</span>
@@ -790,7 +907,8 @@
                             </div>
 
                             <!-- Dropdown Riwayat Pejabat Tujuan -->
-                            <div x-show="isPejabatTujuanDropdownOpen && filteredPejabatTujuanList.length > 0" x-cloak
+                            <div x-show="isPejabatTujuanDropdownOpen && filteredPejabatTujuanList.length > 0"
+                                 style="display:none;"
                                  class="absolute z-40 mt-1 w-full bg-slate-900 border border-cyan-500/40 rounded-xl shadow-2xl overflow-hidden divide-y divide-slate-800 custom-scrollbar backdrop-blur-xl max-h-44 overflow-y-auto">
                                 <div class="px-3 py-1 bg-slate-950 text-[10px] font-bold text-cyan-400 uppercase tracking-wider flex items-center justify-between">
                                     <span>Riwayat Pejabat SKPD Terpilih</span>
@@ -1085,19 +1203,9 @@
 
                 <!-- Tingkat 1: KIB Tujuan -->
                 <div class="space-y-1.5">
-                    <div class="flex items-center justify-between">
-                        <label class="block text-[11px] font-bold text-slate-300 uppercase tracking-wider">
-                            Tingkat 1: Pilih Kelompok / KIB Tujuan <span class="text-rose-400">*</span>
-                        </label>
-                        <button type="button" @click="openPanduan(formData.tujuan_kib === 'KEMITRAAN' ? '1.5.2' : '')"
-                            class="text-[10px] text-indigo-400 hover:text-indigo-300 font-bold flex items-center gap-1 cursor-pointer transition-colors"
-                            title="Buka panduan standar pengelompokan KIB & Permendagri 108">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                            </svg>
-                            <span>Kamus Panduan KIB</span>
-                        </button>
-                    </div>
+                    <label class="block text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+                        Tingkat 1: Pilih Kelompok / KIB Tujuan <span class="text-rose-400">*</span>
+                    </label>
                     <select x-model="formData.tujuan_kib" @change="onTujuanKibChange()"
                         class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs font-bold focus:outline-none focus:border-indigo-500">
                         <option value="">-- Pilih KIB / Kelompok Tujuan --</option>
@@ -1137,7 +1245,8 @@
                     </div>
 
                     <!-- Dropdown List Sub-Rincian -->
-                    <div x-show="isReklasSubRincianOpen" x-transition x-cloak
+                    <div x-show="isReklasSubRincianOpen" x-transition
+                         style="display:none;"
                          class="absolute z-30 mt-1.5 w-full max-h-48 overflow-y-auto space-y-1 p-2 bg-slate-900/95 border border-emerald-500/50 rounded-xl shadow-2xl backdrop-blur-xl custom-scrollbar">
                         <template x-for="s in filteredSubRincian108" :key="s.kode">
                             <div @click="selectSubRincian(s)"
@@ -1177,7 +1286,8 @@
                     </div>
 
                     <!-- Dropdown List Sub-Sub Rincian -->
-                    <div x-show="isReklasSubSubRincianOpen" x-transition x-cloak
+                    <div x-show="isReklasSubSubRincianOpen" x-transition
+                         style="display:none;"
                          class="absolute z-30 mt-1.5 w-full max-h-48 overflow-y-auto space-y-1 p-2 bg-slate-900/95 border border-purple-500/50 rounded-xl shadow-2xl backdrop-blur-xl custom-scrollbar">
                         <template x-for="item in filteredSubSubRincian108" :key="item.kode">
                             <div @click="selectSubSubRincian(item)"
@@ -1314,24 +1424,117 @@
                     </div>
                 </template>
 
-                <!-- Banner Panduan Multi-Unit Register NIBAR (Jika > 1 Unit Terpilih) -->
+                <!-- 2 PILIHAN MODE SPESIFIKASI: KOLEKTIF vs PER UNIT (Hanya Tampil Jika > 1 Unit Terpilih) -->
                 <template x-if="formData.selected_register_ids && formData.selected_register_ids.length > 1">
-                    <div class="p-3.5 rounded-2xl bg-indigo-950/40 border border-indigo-500/40 text-indigo-200 text-xs leading-relaxed flex items-start gap-3 shadow-lg shadow-indigo-950/30">
-                        <div class="w-7 h-7 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center shrink-0 text-indigo-300 font-extrabold text-sm mt-0.5 shadow-inner">
-                            📋
-                        </div>
-                        <div class="space-y-1 flex-1">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <span class="font-extrabold text-white text-xs uppercase tracking-wide">
-                                    Spesifikasi Kolektif: <span class="text-cyan-300 font-mono" x-text="formData.selected_register_ids.length + ' Unit NIBAR Terpilih'"></span>
-                                </span>
-                                <span class="px-2 py-0.5 rounded-full text-[9.5px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                                    1 Dokumen Reklasifikasi
-                                </span>
+                    <div class="space-y-3.5 p-4 rounded-2xl bg-slate-950/90 border border-indigo-500/35 shadow-xl shadow-indigo-950/30">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="text-base">⚙️</span>
+                                <span class="text-xs font-black uppercase tracking-wider text-white">Mode Pengisian Spesifikasi Fisik</span>
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/35"
+                                      x-text="formData.selected_register_ids.length + ' Unit NIBAR Terpilih'"></span>
                             </div>
-                            <p class="text-indigo-200/90 text-[11px] leading-relaxed">
-                                Spesifikasi fisik teknis di bawah ini akan diterapkan secara kolektif untuk seluruh unit terpilih. Jika nomor pabrik atau serial number (SN) tiap unit berbeda, Anda dapat menuliskannya dipisahkan dengan tanda koma (contoh: <code class="text-cyan-300 font-mono bg-slate-950 px-1 py-0.5 rounded">SN-001, SN-002</code>).
-                            </p>
+                            <span class="text-[10.5px] text-slate-400">Pilih bagaimana data teknis &amp; legalitas diterapkan</span>
+                        </div>
+
+                        <!-- 2 Pilihan Kartu Interaktif (Segmented Cards) -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <!-- Pilihan 1: Spesifikasi Kolektif (Seragam) -->
+                            <button type="button" @click="setSpekMode('kolektif')"
+                                    :class="formData.spek_mode === 'kolektif' 
+                                        ? 'bg-indigo-950/70 border-indigo-500 ring-2 ring-indigo-500/40 text-white shadow-lg shadow-indigo-950/60' 
+                                        : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'"
+                                    class="p-3.5 rounded-2xl border text-left transition-all flex items-start gap-3 cursor-pointer group">
+                                <div :class="formData.spek_mode === 'kolektif' ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/30' : 'bg-slate-800 text-slate-400 group-hover:text-white'"
+                                     class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 font-bold text-sm shadow-inner transition-colors">
+                                    📦
+                                </div>
+                                <div class="space-y-1 flex-1 min-w-0">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-xs font-extrabold" :class="formData.spek_mode === 'kolektif' ? 'text-indigo-300' : 'text-slate-200'">
+                                            1. Seragam (Kolektif)
+                                        </span>
+                                        <template x-if="formData.spek_mode === 'kolektif'">
+                                            <span class="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/25 text-indigo-300 border border-indigo-500/40">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
+                                                <span>Aktif</span>
+                                            </span>
+                                        </template>
+                                    </div>
+                                    <p class="text-[10.5px] text-slate-400 leading-snug">
+                                        Satu formulir diterapkan sama ke seluruh unit terpilih. Nomor pabrik / seri dapat dipisahkan koma.
+                                    </p>
+                                </div>
+                            </button>
+
+                            <!-- Pilihan 2: Spesifikasi Per Unit (Individual) -->
+                            <button type="button" @click="setSpekMode('individual')"
+                                    :class="formData.spek_mode === 'individual' 
+                                        ? 'bg-cyan-950/70 border-cyan-500 ring-2 ring-cyan-500/40 text-white shadow-lg shadow-cyan-950/60' 
+                                        : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'"
+                                    class="p-3.5 rounded-2xl border text-left transition-all flex items-start gap-3 cursor-pointer group">
+                                <div :class="formData.spek_mode === 'individual' ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30' : 'bg-slate-800 text-slate-400 group-hover:text-white'"
+                                     class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 font-bold text-sm shadow-inner transition-colors">
+                                    📑
+                                </div>
+                                <div class="space-y-1 flex-1 min-w-0">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-xs font-extrabold" :class="formData.spek_mode === 'individual' ? 'text-cyan-300' : 'text-slate-200'">
+                                            2. Beda Tiap Unit (Individual)
+                                        </span>
+                                        <template x-if="formData.spek_mode === 'individual'">
+                                            <span class="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/25 text-cyan-300 border border-cyan-500/40">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                                                <span>Aktif</span>
+                                            </span>
+                                        </template>
+                                    </div>
+                                    <p class="text-[10.5px] text-slate-400 leading-snug">
+                                        Formulir spesifikasi terpisah per unit/NIBAR. Cocok jika luas tanah, sertifikat, atau nomor pabriknya berbeda.
+                                    </p>
+                                </div>
+                            </button>
+                        </div>
+
+                        <!-- TAB NAVIGASI PER UNIT (Hanya Tampil Jika Mode Individual Dipilih) -->
+                        <div x-show="formData.spek_mode === 'individual'"
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0 -translate-y-1"
+                             x-transition:enter-end="opacity-100 translate-y-0"
+                             class="pt-3 border-t border-slate-800/80 space-y-2.5">
+                            
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                                <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none flex-1">
+                                    <span class="text-[11px] font-bold text-slate-400 shrink-0 mr-1 flex items-center gap-1">
+                                        <span>🏷️</span>
+                                        <span>Unit:</span>
+                                    </span>
+                                    <template x-for="(unit, uIdx) in getSelectedUnitsList()" :key="unit.id || uIdx">
+                                        <button type="button" @click="switchSpekUnitTab(uIdx)"
+                                                :class="formData.spek_unit_active_tab === uIdx 
+                                                    ? 'bg-cyan-500 text-slate-950 font-black shadow-md shadow-cyan-500/25 ring-2 ring-cyan-400/50' 
+                                                    : 'bg-slate-900 text-slate-300 border border-slate-700/80 hover:bg-slate-800 hover:text-white'"
+                                                class="px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer shrink-0">
+                                            <span class="text-[10px] opacity-80" x-text="'#' + (uIdx + 1)"></span>
+                                            <span class="font-mono font-bold" x-text="unit.nibar ? ('NIBAR: ' + unit.nibar) : ('Unit ' + (uIdx + 1))"></span>
+                                            <template x-if="unit.no_register">
+                                                <span class="text-[9.5px] opacity-75 font-mono" x-text="'(Reg ' + unit.no_register + ')'"></span>
+                                            </template>
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <!-- Indikator Banner Unit Aktif -->
+                            <div class="px-3 py-1.5 rounded-xl bg-slate-900/90 border border-cyan-500/25 flex items-center justify-between text-xs">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                                    <span class="text-slate-300 text-[11px]">
+                                        Sedang mengisi spesifikasi untuk: <strong class="text-cyan-300 font-mono" x-text="'Unit #' + ((formData.spek_unit_active_tab || 0) + 1) + ' (' + (getSelectedUnitsList()[formData.spek_unit_active_tab]?.nibar || '-') + ')'"></strong>
+                                    </span>
+                                </div>
+                                <span class="text-[10px] text-slate-500 italic hidden sm:inline">Data tersimpan otomatis saat berpindah tab</span>
+                            </div>
                         </div>
                     </div>
                 </template>
@@ -2129,14 +2332,7 @@
 
                             <!-- Floating Dropdown Saran / Filter Mitra (Hanya Tampil Jika Ada Saran yang Cocok) -->
                             <div x-show="isReklasMitraDropdownOpen && filteredReklasMitraList.length > 0" 
-                                x-cloak
-                                x-transition:enter="transition ease-out duration-100"
-                                x-transition:enter-start="opacity-0 translate-y-1"
-                                x-transition:enter-end="opacity-100 translate-y-0"
-                                x-transition:leave="transition ease-in duration-75"
-                                x-transition:leave-start="opacity-100 translate-y-0"
-                                x-transition:leave-end="opacity-0 translate-y-1"
-                                style="max-height: 220px !important; overflow-y: auto !important;"
+                                style="display:none; max-height: 220px !important; overflow-y: auto !important;"
                                 class="absolute z-50 mt-1.5 w-full bg-slate-900 border border-cyan-500/40 rounded-2xl shadow-2xl overflow-hidden divide-y divide-slate-800 custom-scrollbar backdrop-blur-xl">
                                 
                                 <div class="px-3.5 py-1.5 bg-slate-950/90 text-[10px] font-bold text-cyan-400 uppercase tracking-wider flex items-center justify-between border-b border-slate-800">

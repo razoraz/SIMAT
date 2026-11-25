@@ -1,14 +1,63 @@
-<!-- MODAL PANDUAN & KAMUS SUB-RINCIAN PMDN 108 (KHAS RSUD KOESNANDI) -->
-<template x-teleport="body">
-    <div x-show="showPanduanModal" class="fixed inset-0 z-[80] flex items-center justify-center p-3 sm:p-4"
-        x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
-        x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" x-cloak>
-        
-        <!-- Backdrop -->
-        <div class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm" @click="showPanduanModal = false"></div>
+<!-- ============================================================
+     MODAL KAMUS PANDUAN KIB PMDN 108 (STANDALONE ALPINE)
+     Trigger: window.dispatchEvent(new CustomEvent('open-panduan-kib'))
+     Standalone x-data = TIDAK bergantung parent masterReklasifikasi()
+     ============================================================ -->
+<div x-data="{
+        showPanduanModal: false,
+        panduanSearch: '',
+        panduanFilterKib: 'all',
 
-        <!-- Modal Dialog -->
-        <div class="relative w-full max-w-4xl max-h-[92vh] flex flex-col bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden z-10">
+        init() {
+            window.__panduanModal = this;
+            window.addEventListener('open-panduan-kib', () => {
+                this.panduanSearch = '';
+                this.panduanFilterKib = 'all';
+                this.showPanduanModal = true;
+            });
+        },
+
+        get panduanList() {
+            return window.panduanKibList || [];
+        },
+
+        get filteredPanduanList() {
+            const q = (this.panduanSearch || '').toLowerCase().trim();
+            const kib = this.panduanFilterKib;
+            return this.panduanList.filter(item => {
+                const matchKib = (kib === 'all' || item.kib === kib || (kib === 'ASET LAINNYA' && item.kib === 'KEMITRAAN'));
+                if (!matchKib) return false;
+                if (!q) return true;
+                return item.prefix.toLowerCase().includes(q) ||
+                       item.nama.toLowerCase().includes(q) ||
+                       item.contohRs.toLowerCase().includes(q) ||
+                       item.subRincian.toLowerCase().includes(q) ||
+                       (item.kib && item.kib.toLowerCase().includes(q));
+            });
+        },
+     }"
+     @keydown.escape.window="showPanduanModal = false">
+
+    <!-- Teleport ke <body> agar berada di atas sidebar (z-50) & topbar (z-30) -->
+    <template x-teleport="body">
+        <div x-show="showPanduanModal"
+             style="display:none; z-index: 99999 !important;"
+             @keydown.escape.window="showPanduanModal = false"
+             class="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
+             x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+
+            <!-- Backdrop Blur (Full Screen Cover) -->
+            <div class="fixed inset-0 bg-slate-950/85 backdrop-blur-md" @click="showPanduanModal = false"></div>
+
+            <!-- Modal Dialog Container -->
+            <div class="relative w-full max-w-4xl max-h-[88vh] flex flex-col bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden z-10 my-auto"
+                 x-transition:enter="transition ease-out duration-300 transform" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-200 transform" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95">
+
+            <!-- Header Strip Accent -->
+            <div class="h-1 w-full bg-gradient-to-r from-cyan-500 via-indigo-500 to-purple-500 shrink-0"></div>
+
             <!-- Header Modal -->
             <div class="px-6 py-4 border-b border-slate-800 bg-slate-950/70 flex items-center justify-between shrink-0">
                 <div class="flex items-center gap-3">
@@ -19,7 +68,7 @@
                     </div>
                     <div>
                         <h3 class="text-base sm:text-lg font-black text-white flex items-center gap-2">
-                            Kamus & Panduan Pengelompokan Aset (PMDN 108)
+                            Kamus &amp; Panduan Pengelompokan Aset (PMDN 108)
                         </h3>
                         <p class="text-xs text-slate-400">Pedoman klasifikasi barang, kemitraan, dan contoh riil di RSUD Dr. H. Koesnandi</p>
                     </div>
@@ -41,7 +90,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                     </span>
-                    <input type="text" x-model="panduanSearch" placeholder="Cari kelompok, kode prefix (misal: 1.5.2, 1.3.2.01), atau nama barang (Genset, KSO, USG, Sewa)..."
+                    <input type="text" x-model="panduanSearch" placeholder="Cari kelompok, kode prefix (misal: 1.5.2, 1.3.2.01), atau nama barang..."
                         class="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-800/90 border border-slate-700 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition-all">
                 </div>
 
@@ -59,6 +108,18 @@
 
             <!-- Body Modal: Daftar Kartu Panduan (Scrollable) -->
             <div class="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-thin scrollbar-thumb-slate-700">
+                <!-- State: data belum terload -->
+                <template x-if="panduanList.length === 0">
+                    <div class="p-12 text-center space-y-3">
+                        <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center mx-auto text-slate-500 mb-3">
+                            <svg class="w-6 h-6 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                        </div>
+                        <p class="text-xs text-slate-400">Memuat data kamus KIB...</p>
+                    </div>
+                </template>
+
                 <template x-for="item in filteredPanduanList" :key="item.prefix">
                     <div class="bg-slate-800/60 border border-slate-700/70 hover:border-indigo-500/50 rounded-2xl p-4 transition-all duration-200 shadow-sm">
                         <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-2 pb-2.5 border-b border-slate-700/60">
@@ -91,25 +152,27 @@
                 </template>
 
                 <!-- State Kosong jika Pencarian Tidak Ditemukan -->
-                <div x-show="filteredPanduanList.length === 0" class="p-12 text-center">
-                    <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center mx-auto text-slate-500 mb-3">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
+                <template x-if="panduanList.length > 0 && filteredPanduanList.length === 0">
+                    <div class="p-12 text-center">
+                        <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center mx-auto text-slate-500 mb-3">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <h4 class="text-sm font-bold text-white">Tidak Ada Informasi yang Cocok</h4>
+                        <p class="text-xs text-slate-400 mt-1">Coba kata kunci lain atau pilih kategori KIB yang berbeda.</p>
                     </div>
-                    <h4 class="text-sm font-bold text-white">Tidak Ada Informasi yang Cocok</h4>
-                    <p class="text-xs text-slate-400 mt-1">Coba kata kunci lain atau pilih kategori KIB yang berbeda.</p>
-                </div>
+                </template>
             </div>
 
             <!-- Modal Footer -->
             <div class="px-6 py-3.5 border-t border-slate-800 bg-slate-950/60 flex items-center justify-between text-xs text-slate-400 shrink-0">
-                <span>💡 Tips: Klik kode prefix untuk menyalin kode pencarian di Master Jenis ASTAP</span>
+                <span>💡 Tips: Gunakan filter KIB di atas untuk mempersempit pencarian kategori aset</span>
                 <button type="button" @click="showPanduanModal = false"
                     class="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold transition-all cursor-pointer">
                     Tutup Panduan
                 </button>
             </div>
         </div>
-    </div>
-</template>
+    </template>
+</div>
