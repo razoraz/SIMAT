@@ -103,33 +103,33 @@
                         }">
                         <input type="radio" x-model="formData.jenis_reklas" value="KOREKSI_REKENING" :disabled="isCurrentAstapKdp()" @change="onJenisReklasChange()" class="text-indigo-600 focus:ring-0" :class="isCurrentAstapKdp() ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'">
                         <div>
-                            <div class="flex items-center gap-1.5">
-                                <p class="text-xs font-bold" :class="isCurrentAstapKdp() ? 'text-slate-500' : 'text-white'">Koreksi Rekening / Pindah KIB</p>
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <p class="text-xs font-bold" :class="isCurrentAstapKdp() ? 'text-slate-500' : 'text-white'" x-text="isKemitraanAktif() ? 'Pindah Sub-Rekening 108 Kemitraan' : 'Koreksi Rekening / Pindah KIB'"></p>
+                                <span x-show="isKemitraanAktif()" class="text-[9px] font-bold text-cyan-300 bg-cyan-500/20 border border-cyan-500/30 px-1 rounded">1.5.2 Kemitraan</span>
                                 <span x-show="isCurrentAstapKdp()" class="text-[9px] font-bold text-rose-300 bg-rose-500/20 border border-rose-500/30 px-1 rounded">Terkunci (KDP)</span>
                             </div>
-                            <p class="text-[10px]" :class="isCurrentAstapKdp() ? 'text-slate-600' : 'text-slate-400'" x-text="isCurrentAstapKdp() ? 'Terkunci: KDP belum selesai, hanya lewat KDP Selesai ➔ Definitif' : 'Salah kamar KIB atau penyesuaian akun PMDN 108'"></p>
+                            <p class="text-[10px]" :class="isCurrentAstapKdp() ? 'text-slate-600' : 'text-slate-400'" x-text="isCurrentAstapKdp() ? 'Terkunci: KDP belum selesai, hanya lewat KDP Selesai ➔ Definitif' : (isKemitraanAktif() ? 'Perbaikan sub-rincian 108 seputar Akun 1.5.2 Kemitraan (Sewa, KSP, BGS/BSG)' : 'Salah kamar KIB atau penyesuaian akun PMDN 108')"></p>
                         </div>
                     </label>
 
                     <label class="flex items-center gap-3 p-3 rounded-2xl border transition-all select-none"
-                        @click="if (!isAssetKdp()) { $event.preventDefault(); window.showSimatToast ? window.showSimatToast('⚠️ Opsi KDP Selesai ➔ Definitif hanya dapat digunakan untuk aset KDP (KIB F / Akun 1.3.6)!', 'warning') : alert('Khusus aset KDP (KIB F)!'); }"
+                        @click="if (isKemitraanAktif() || !isAssetKdp()) { $event.preventDefault(); window.showSimatToast ? window.showSimatToast(isKemitraanAktif() ? '⚠️ Aset sedang dalam kemitraan aktif (PKS berjalan)!' : '⚠️ Opsi KDP Selesai ➔ Definitif hanya dapat digunakan untuk aset KDP (KIB F / Akun 1.3.6)!', 'warning') : alert('Tidak berlaku untuk aset ini!'); }"
                         :class="{
-                            'opacity-40 cursor-not-allowed bg-slate-900/40 border-slate-800/60': !isAssetKdp(),
-                            'cursor-pointer border-slate-700/80 bg-slate-800/60 hover:bg-slate-800': isAssetKdp(),
-                            'border-emerald-500 bg-emerald-500/10 shadow-sm shadow-emerald-500/10': isAssetKdp() && formData.jenis_reklas === 'KDP_TO_DEFINITIF'
+                            'opacity-40 cursor-not-allowed bg-slate-900/40 border-slate-800/60': isKemitraanAktif() || !isAssetKdp(),
+                            'cursor-pointer border-slate-700/80 bg-slate-800/60 hover:bg-slate-800': !isKemitraanAktif() && isAssetKdp(),
+                            'border-emerald-500 bg-emerald-500/10 shadow-sm shadow-emerald-500/10': !isKemitraanAktif() && isAssetKdp() && formData.jenis_reklas === 'KDP_TO_DEFINITIF'
                         }">
                         <input type="radio" x-model="formData.jenis_reklas" value="KDP_TO_DEFINITIF"
-                            :disabled="!isAssetKdp()"
+                            :disabled="isKemitraanAktif() || !isAssetKdp()"
                             @change="onJenisReklasChange()" class="text-emerald-600 focus:ring-0"
-                            :class="{ 'cursor-not-allowed': !isAssetKdp(), 'cursor-pointer': isAssetKdp() }">
+                            :class="{ 'cursor-not-allowed': isKemitraanAktif() || !isAssetKdp(), 'cursor-pointer': !isKemitraanAktif() && isAssetKdp() }">
                         <div>
                             <div class="flex items-center gap-1.5">
-                                <p class="text-xs font-bold" :class="!isAssetKdp() ? 'text-slate-500' : 'text-white'">KDP Selesai ➔ Definitif</p>
-                                <template x-if="!isAssetKdp()">
-                                    <span class="text-[9px] font-bold text-slate-500 bg-slate-900 border border-slate-800 px-1 rounded">Khusus KIB F</span>
-                                </template>
+                                <p class="text-xs font-bold" :class="(isKemitraanAktif() || !isAssetKdp()) ? 'text-slate-500' : 'text-white'">KDP Selesai ➔ Definitif</p>
+                                <span x-show="isKemitraanAktif()" class="text-[9px] font-bold text-cyan-300 bg-cyan-500/20 border border-cyan-500/30 px-1 rounded">PKS Aktif</span>
+                                <span x-show="!isKemitraanAktif() && !isAssetKdp()" class="text-[9px] font-bold text-slate-500 bg-slate-900 border border-slate-800 px-1 rounded">Khusus KIB F</span>
                             </div>
-                            <p class="text-[10px]" :class="!isAssetKdp() ? 'text-slate-600' : 'text-slate-400'">Pekerjaan fisik KIB F selesai 100% jadi Gedung/Jaringan</p>
+                            <p class="text-[10px]" :class="(isKemitraanAktif() || !isAssetKdp()) ? 'text-slate-600' : 'text-slate-400'" x-text="isKemitraanAktif() ? 'Terkunci: Tidak berlaku untuk aset kemitraan aktif' : 'Pekerjaan fisik KIB F selesai 100% jadi Gedung/Jaringan'"></p>
                         </div>
                     </label>
 
@@ -163,47 +163,50 @@
                             <div>
                                 <div class="flex items-center gap-1.5">
                                     <p class="text-xs font-bold" :class="isExtracomDisabled() ? 'text-slate-500' : 'text-white'">Ekstrakomptabel (≤ Rp 300rb)</p>
-                                    <span x-show="isExtracomDisabled()" class="text-[9px] font-bold text-rose-300 bg-rose-500/20 border border-rose-500/30 px-1 rounded">Terkunci (SAP)</span>
+                                    <span x-show="isKemitraanAktif()" class="text-[9px] font-bold text-cyan-300 bg-cyan-500/20 border border-cyan-500/30 px-1 rounded">PKS Aktif</span>
+                                    <span x-show="!isKemitraanAktif() && isExtracomDisabled()" class="text-[9px] font-bold text-rose-300 bg-rose-500/20 border border-rose-500/30 px-1 rounded">Terkunci (SAP)</span>
                                     <span x-show="!isExtracomDisabled()" class="text-[9px] font-bold text-rose-400 bg-rose-500/15 border border-rose-500/30 px-1 rounded">Intrakom</span>
                                 </div>
                                 <p class="text-[10px]"
                                    :class="isExtracomDisabled() ? 'text-slate-600' : 'text-slate-400'"
-                                   x-text="isExtracomDisabled() ? 'Tidak berlaku untuk kelompok aset ini (Wajib Intrakomtable)' : 'Nilai satuan ≤ Rp 300.000 (di bawah batas kapitalisasi)'"></p>
+                                   x-text="isKemitraanAktif() ? 'Terkunci: Aset sedang dalam kemitraan aktif' : (isExtracomDisabled() ? 'Tidak berlaku untuk kelompok aset ini (Wajib Intrakomtable)' : 'Nilai satuan ≤ Rp 300.000 (di bawah batas kapitalisasi)')"></p>
                             </div>
                         </label>
                     </template>
 
                     <label class="flex items-center gap-3 p-3 rounded-2xl border transition-all select-none"
-                        @click="if (isCurrentAstapKdp()) { $event.preventDefault(); window.showSimatToast ? window.showSimatToast('⚠️ Aset KDP (belum selesai) tidak dapat dihibahkan keluar!', 'warning') : alert('Terkunci untuk aset KDP!'); }"
+                        @click="if (isKemitraanAktif() || isCurrentAstapKdp()) { $event.preventDefault(); window.showSimatToast ? window.showSimatToast(isKemitraanAktif() ? '⚠️ Aset sedang dalam kemitraan aktif (PKS berjalan)!' : '⚠️ Aset KDP (belum selesai) tidak dapat dihibahkan keluar!', 'warning') : alert('Terkunci untuk aset ini!'); }"
                         :class="{
-                            'opacity-40 cursor-not-allowed bg-slate-900/40 border-slate-800/60': isCurrentAstapKdp(),
-                            'cursor-pointer border-slate-700/80 bg-slate-800/60 hover:bg-slate-800': !isCurrentAstapKdp() && formData.jenis_reklas !== 'HIBAH_KELUAR',
-                            'cursor-pointer border-purple-500 bg-purple-500/10 shadow-sm shadow-purple-500/10': !isCurrentAstapKdp() && formData.jenis_reklas === 'HIBAH_KELUAR'
+                            'opacity-40 cursor-not-allowed bg-slate-900/40 border-slate-800/60': isKemitraanAktif() || isCurrentAstapKdp(),
+                            'cursor-pointer border-slate-700/80 bg-slate-800/60 hover:bg-slate-800': !isKemitraanAktif() && !isCurrentAstapKdp() && formData.jenis_reklas !== 'HIBAH_KELUAR',
+                            'cursor-pointer border-purple-500 bg-purple-500/10 shadow-sm shadow-purple-500/10': !isKemitraanAktif() && !isCurrentAstapKdp() && formData.jenis_reklas === 'HIBAH_KELUAR'
                         }">
-                        <input type="radio" x-model="formData.jenis_reklas" value="HIBAH_KELUAR" :disabled="isCurrentAstapKdp()" @change="onJenisReklasChange()" class="text-purple-600 focus:ring-0" :class="isCurrentAstapKdp() ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'">
+                        <input type="radio" x-model="formData.jenis_reklas" value="HIBAH_KELUAR" :disabled="isKemitraanAktif() || isCurrentAstapKdp()" @change="onJenisReklasChange()" class="text-purple-600 focus:ring-0" :class="(isKemitraanAktif() || isCurrentAstapKdp()) ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'">
                         <div>
                             <div class="flex items-center gap-1.5">
-                                <p class="text-xs font-bold" :class="isCurrentAstapKdp() ? 'text-slate-500' : 'text-white'">Hibah Keluar (Dihibahkan)</p>
-                                <span x-show="isCurrentAstapKdp()" class="text-[9px] font-bold text-rose-300 bg-rose-500/20 border border-rose-500/30 px-1 rounded">Terkunci (KDP)</span>
+                                <p class="text-xs font-bold" :class="(isKemitraanAktif() || isCurrentAstapKdp()) ? 'text-slate-500' : 'text-white'">Hibah Keluar (Dihibahkan)</p>
+                                <span x-show="isKemitraanAktif()" class="text-[9px] font-bold text-cyan-300 bg-cyan-500/20 border border-cyan-500/30 px-1 rounded">PKS Aktif</span>
+                                <span x-show="!isKemitraanAktif() && isCurrentAstapKdp()" class="text-[9px] font-bold text-rose-300 bg-rose-500/20 border border-rose-500/30 px-1 rounded">Terkunci (KDP)</span>
                             </div>
-                            <p class="text-[10px]" :class="isCurrentAstapKdp() ? 'text-slate-600' : 'text-slate-400'" x-text="isCurrentAstapKdp() ? 'Terkunci: Aset KDP (belum selesai) tidak dapat dihibahkan' : 'Dihibahkan ke luar (Koreksi Baris 40 / Kolom 12)'"></p>
+                            <p class="text-[10px]" :class="(isKemitraanAktif() || isCurrentAstapKdp()) ? 'text-slate-600' : 'text-slate-400'" x-text="isKemitraanAktif() ? 'Terkunci: Aset sedang dalam kemitraan aktif' : (isCurrentAstapKdp() ? 'Terkunci: Aset KDP (belum selesai) tidak dapat dihibahkan' : 'Dihibahkan ke luar (Koreksi Baris 40 / Kolom 12)')"></p>
                         </div>
                     </label>
 
                     <label class="flex items-center gap-3 p-3 rounded-2xl border transition-all select-none"
-                        @click="if (isCurrentAstapKdp()) { $event.preventDefault(); window.showSimatToast ? window.showSimatToast('⚠️ Aset KDP (belum selesai) tidak dapat dimutasi ke luar OPD!', 'warning') : alert('Terkunci untuk aset KDP!'); }"
+                        @click="if (isKemitraanAktif() || isCurrentAstapKdp()) { $event.preventDefault(); window.showSimatToast ? window.showSimatToast(isKemitraanAktif() ? '⚠️ Aset sedang dalam kemitraan aktif (PKS berjalan)!' : '⚠️ Aset KDP (belum selesai) tidak dapat dimutasi ke luar OPD!', 'warning') : alert('Terkunci untuk aset ini!'); }"
                         :class="{
-                            'opacity-40 cursor-not-allowed bg-slate-900/40 border-slate-800/60': isCurrentAstapKdp(),
-                            'cursor-pointer border-slate-700/80 bg-slate-800/60 hover:bg-slate-800': !isCurrentAstapKdp() && formData.jenis_reklas !== 'MUTASI_EKSTERNAL',
-                            'cursor-pointer border-teal-500 bg-teal-500/10 shadow-sm shadow-teal-500/10': !isCurrentAstapKdp() && formData.jenis_reklas === 'MUTASI_EKSTERNAL'
+                            'opacity-40 cursor-not-allowed bg-slate-900/40 border-slate-800/60': isKemitraanAktif() || isCurrentAstapKdp(),
+                            'cursor-pointer border-slate-700/80 bg-slate-800/60 hover:bg-slate-800': !isKemitraanAktif() && !isCurrentAstapKdp() && formData.jenis_reklas !== 'MUTASI_EKSTERNAL',
+                            'cursor-pointer border-teal-500 bg-teal-500/10 shadow-sm shadow-teal-500/10': !isKemitraanAktif() && !isCurrentAstapKdp() && formData.jenis_reklas === 'MUTASI_EKSTERNAL'
                         }">
-                        <input type="radio" x-model="formData.jenis_reklas" value="MUTASI_EKSTERNAL" :disabled="isCurrentAstapKdp()" @change="onJenisReklasChange()" class="text-teal-600 focus:ring-0" :class="isCurrentAstapKdp() ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'">
+                        <input type="radio" x-model="formData.jenis_reklas" value="MUTASI_EKSTERNAL" :disabled="isKemitraanAktif() || isCurrentAstapKdp()" @change="onJenisReklasChange()" class="text-teal-600 focus:ring-0" :class="(isKemitraanAktif() || isCurrentAstapKdp()) ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'">
                         <div>
                             <div class="flex items-center gap-1.5">
-                                <p class="text-xs font-bold" :class="isCurrentAstapKdp() ? 'text-slate-500' : 'text-white'">Mutasi Antar-OPD</p>
-                                <span x-show="isCurrentAstapKdp()" class="text-[9px] font-bold text-rose-300 bg-rose-500/20 border border-rose-500/30 px-1 rounded">Terkunci (KDP)</span>
+                                <p class="text-xs font-bold" :class="(isKemitraanAktif() || isCurrentAstapKdp()) ? 'text-slate-500' : 'text-white'">Mutasi Antar-OPD</p>
+                                <span x-show="isKemitraanAktif()" class="text-[9px] font-bold text-cyan-300 bg-cyan-500/20 border border-cyan-500/30 px-1 rounded">PKS Aktif</span>
+                                <span x-show="!isKemitraanAktif() && isCurrentAstapKdp()" class="text-[9px] font-bold text-rose-300 bg-rose-500/20 border border-rose-500/30 px-1 rounded">Terkunci (KDP)</span>
                             </div>
-                            <p class="text-[10px]" :class="isCurrentAstapKdp() ? 'text-slate-600' : 'text-slate-400'" x-text="isCurrentAstapKdp() ? 'Terkunci: Aset KDP (belum selesai) tidak dapat dimutasi keluar OPD' : 'Pindah ke SKPD / OPD lain (Koreksi Baris 42 / Kolom 13)'"></p>
+                            <p class="text-[10px]" :class="(isKemitraanAktif() || isCurrentAstapKdp()) ? 'text-slate-600' : 'text-slate-400'" x-text="isKemitraanAktif() ? 'Terkunci: Aset sedang dalam kemitraan aktif' : (isCurrentAstapKdp() ? 'Terkunci: Aset KDP (belum selesai) tidak dapat dimutasi keluar OPD' : 'Pindah ke SKPD / OPD lain (Koreksi Baris 42 / Kolom 13)')"></p>
                         </div>
                     </label>
 
@@ -1044,21 +1047,46 @@
 
                 <!-- Tingkat 1: KIB Tujuan -->
                 <div class="space-y-1.5">
-                    <label class="block text-[11px] font-bold text-slate-300 uppercase tracking-wider">
-                        Tingkat 1: Pilih Kelompok / KIB Tujuan <span class="text-rose-400">*</span>
-                    </label>
+                    <div class="flex items-center justify-between gap-2">
+                        <label class="block text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+                            Tingkat 1: Pilih Kelompok / KIB Tujuan <span class="text-rose-400">*</span>
+                        </label>
+                        <template x-if="isKemitraanAktif()">
+                            <span class="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-md bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 flex items-center gap-1">
+                                <span>🔒</span>
+                                <span>Terkunci: PKS Aktif (1.5.2)</span>
+                            </span>
+                        </template>
+                    </div>
                     <select x-model="formData.tujuan_kib" @change="onTujuanKibChange()"
-                        class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs font-bold focus:outline-none focus:border-indigo-500">
+                        :disabled="isKemitraanAktif()"
+                        class="w-full px-3.5 py-2.5 rounded-xl border text-xs font-bold focus:outline-none transition-all"
+                        :class="isKemitraanAktif() ? 'border-cyan-500/50 bg-slate-950/90 text-cyan-200 cursor-not-allowed ring-1 ring-cyan-500/20' : 'bg-slate-900 border-slate-700 text-white focus:border-indigo-500 cursor-pointer'">
                         <option value="">-- Pilih KIB / Kelompok Tujuan --</option>
-                        <option value="KIB A">KIB A - Tanah (1.3.1)</option>
-                        <option value="KIB B">KIB B - Peralatan &amp; Mesin (1.3.2)</option>
-                        <option value="KIB C">KIB C - Gedung &amp; Bangunan (1.3.3)</option>
-                        <option value="KIB D">KIB D - Jalan, Jaringan &amp; Irigasi (1.3.4)</option>
-                        <option value="KIB E">KIB E - Aset Tetap Lainnya (1.3.5)</option>
-                        <option value="ATB">ATB - Aset Tidak Berwujud (1.5.3)</option>
+                        <option value="KIB A" :disabled="isKemitraanAktif()">KIB A - Tanah (1.3.1)</option>
+                        <option value="KIB B" :disabled="isKemitraanAktif()">KIB B - Peralatan &amp; Mesin (1.3.2)</option>
+                        <option value="KIB C" :disabled="isKemitraanAktif()">KIB C - Gedung &amp; Bangunan (1.3.3)</option>
+                        <option value="KIB D" :disabled="isKemitraanAktif()">KIB D - Jalan, Jaringan &amp; Irigasi (1.3.4)</option>
+                        <option value="KIB E" :disabled="isKemitraanAktif()">KIB E - Aset Tetap Lainnya (1.3.5)</option>
+                        <option value="ATB" :disabled="isKemitraanAktif()">ATB - Aset Tidak Berwujud (1.5.3)</option>
                         <option value="KEMITRAAN">Kemitraan Pihak Ketiga (1.5.2)</option>
-                        <option value="ASET LAIN">Aset Lain-Lain (1.5.4)</option>
+                        <option value="ASET LAIN" :disabled="isKemitraanAktif()">Aset Lain-Lain (1.5.4)</option>
                     </select>
+
+                    <template x-if="isKemitraanAktif()">
+                        <div class="mt-2 p-3 rounded-2xl bg-cyan-950/60 border border-cyan-500/35 text-cyan-200 text-xs flex items-start gap-2.5 shadow-md">
+                            <span class="text-base shrink-0 mt-0.5">🔒</span>
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="font-extrabold text-cyan-300">Status Kemitraan Masih Aktif</span>
+                                    <span class="px-2 py-0.5 rounded text-[9.5px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">Hanya Antar-Akun 1.5.2</span>
+                                </div>
+                                <p class="text-[11px] text-cyan-200/90 leading-relaxed">
+                                    Aset sedang terikat perjanjian kerja sama pemanfaatan yang masih berjalan. Reklasifikasi hanya diperbolehkan antar sub-rekening di dalam <strong>Akun 1.5.2 (Kemitraan Pihak Ketiga)</strong> seperti koreksi jenis sewa, KSP, atau BGS/BSG.
+                                </p>
+                            </div>
+                        </div>
+                    </template>
                 </div>
 
                 <!-- Tingkat 2: Sub-Rincian Rekening 108 -->
@@ -2936,6 +2964,28 @@
                     <span>📑</span> Preview Narasi Berita Acara:
                 </span>
                 <p class="text-xs text-slate-300 italic leading-relaxed" x-text="getNarasiPreview()"></p>
+            </div>
+
+            <!-- Error Banner Submit -->
+            <div x-show="submitErrorMessage"
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 -translate-y-1"
+                 x-transition:enter-end="opacity-100 translate-y-0"
+                 x-cloak
+                 class="p-3.5 rounded-xl bg-rose-950/60 border border-rose-500/40 flex items-start gap-3 shadow-inner">
+                <div class="p-1.5 rounded-lg bg-rose-500/20 text-rose-400 shrink-0 border border-rose-500/30">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-xs font-bold text-rose-300 leading-relaxed" x-text="submitErrorMessage"></p>
+                </div>
+                <button type="button" @click="submitErrorMessage = ''" class="text-rose-400 hover:text-rose-200 p-1 rounded-lg hover:bg-rose-500/20 transition-colors shrink-0 cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
             </div>
 
             <!-- Modal Footer (Inside Form) -->

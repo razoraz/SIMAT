@@ -208,6 +208,7 @@
             deleteTargetName: '',
             isDeletingReklas: false,
             isSubmitting: false,
+            submitErrorMessage: '',
             detailItem: null,
             selectedAstap: null,
             reklasKdpProgresAwal: 0,
@@ -936,8 +937,49 @@
                 return this.isCurrentAstapKdp();
             },
 
+            isKemitraanAktif() {
+                const it = this.selectedAstap;
+                if (!it) return false;
+                const cat = String(it.category || '').trim().toUpperCase();
+                const kode = String(
+                    it.jenis_astap?.sub_sub_rincian_objek ||
+                    it.jenis_astap?.sub_rincian_objek ||
+                    it.jenis_astap?.jenis ||
+                    it.kode_108 ||
+                    ''
+                ).trim();
+                const activeObjKem = Array.isArray(it.objek_kemitraans) ? it.objek_kemitraans[0] : null;
+                const kemRec = (it.kemitraan && Number(it.kemitraan.is_deleted || 0) === 0) ? it.kemitraan : activeObjKem;
+                const isKemitraan = cat === 'KEMITRAAN' || kode.startsWith('1.5.2') || String(it.sumber_dana || '').toLowerCase() === 'kemitraan' || !!kemRec;
+                if (!isKemitraan) return false;
+
+                // Cek lewatnya tanggal_selesai secara lokal (fallback jika status_konsesi belum di-sync di DB)
+                const tanggalSelesai = kemRec?.tanggal_selesai || null;
+                if (tanggalSelesai) {
+                    const tgl = new Date(tanggalSelesai);
+                    if (!isNaN(tgl.getTime()) && tgl < new Date()) {
+                        return false; // Masa konsesi sudah berakhir berdasarkan tanggal
+                    }
+                }
+
+                const rawStatus = String(it.status_konsesi || kemRec?.status_konsesi || '').trim().toLowerCase();
+                // Jika kemRec ada tapi status belum tersedia → anggap aktif
+                if (!rawStatus) return !!kemRec;
+
+                const endedStatuses = [
+                    'konsesi berakhir',
+                    'selesai / reklasifikasi',
+                    'selesai',
+                    'dihentikan',
+                    'berakhir',
+                    'putus kontrak',
+                ];
+                return !endedStatuses.includes(rawStatus);
+            },
+
             isExtracomDisabled() {
                 if (!this.selectedAstap) return false;
+                if (this.isKemitraanAktif()) return true;
                 const astap = this.selectedAstap;
                 if (Boolean(astap.is_extracomtable || astap.category === 'EXTRACOM')) return false;
 
@@ -1226,6 +1268,7 @@
                 if (!found) return;
 
                 this.selectedAstap = found;
+                this.submitErrorMessage = '';
                 this.formData.nama_barang = found.nama_barang || '';
                 this.formData.nilai_realisasi_baru = parseFloat(found.total_realisasi || 0);
                 this.formData.no_dokumen_koreksi = '';
@@ -1284,6 +1327,17 @@
                 } else if (!isKdp && this.formData.jenis_reklas === 'KDP_TO_DEFINITIF') {
                     this.formData.jenis_reklas = 'KOREKSI_REKENING';
                     this.onJenisReklasChange();
+                }
+
+                // Otomatis kunci ke Pindah Sub-Rekening 1.5.2 Kemitraan jika aset dalam kemitraan aktif
+                if (this.isKemitraanAktif()) {
+                    if (!['KOREKSI_REKENING', 'KOREKSI_LAIN'].includes(this.formData.jenis_reklas)) {
+                        this.formData.jenis_reklas = 'KOREKSI_REKENING';
+                    }
+                    if (this.formData.jenis_reklas === 'KOREKSI_REKENING') {
+                        this.formData.tujuan_kib = 'KEMITRAAN';
+                        this.onTujuanKibChange();
+                    }
                 }
 
                 if (found.registers && found.registers.length > 0) {
@@ -1349,7 +1403,12 @@
             },
 
             onJenisReklasChange() {
-                if (this.formData.jenis_reklas === 'KDP_TO_DEFINITIF') {
+                if (this.formData.jenis_reklas === 'KOREKSI_REKENING') {
+                    if (this.isKemitraanAktif()) {
+                        this.formData.tujuan_kib = 'KEMITRAAN';
+                        this.onTujuanKibChange();
+                    }
+                } else if (this.formData.jenis_reklas === 'KDP_TO_DEFINITIF') {
                     const kdpRow = (window.templateRows || []).find(r => r.kode_prefix === '1.3.6.01');
                     if (kdpRow) this.formData.jenis_reklasifikasi_asal_id = kdpRow.id;
                     this.formData.asal_kib = 'KIB F';
@@ -2528,6 +2587,7 @@
             },
 
             goToStep(step) {
+                this.submitErrorMessage = '';
                 if (step === 2) {
                     if (!this.validateStep1()) {
                         return;
@@ -2549,6 +2609,14 @@
                     return false;
                 }
 
+                // Proteksi Tutup Buku: Aset yang belum tutup buku tidak dapat direklasifikasi
+                if (this.selectedAstap.is_tutup_buku === false) {
+                    const errMsg = `⚠️ Aset "${this.selectedAstap.nama_barang}" belum berstatus Tutup Buku. Silakan tutup buku periode terlebih dahulu atau gunakan fitur Ubah Data di ASTAP.`;
+                    if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'error');
+                    else alert(errMsg);
+                    return false;
+                }
+
                 // Validasi Mandatori: Alasan Reklasifikasi
                 const alasanClean = (this.formData.alasan_reklas || '').trim();
                 if (!alasanClean) {
@@ -2564,6 +2632,31 @@
                     if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'error');
                     else alert(errMsg);
                     return false;
+                }
+
+                // Proteksi Kemitraan Aktif (Akun 1.5.2): hanya boleh Pindah Sub-Rekening 1.5.2 atau Koreksi Nilai Realisasi
+                if (this.isKemitraanAktif()) {
+                    if (!['KOREKSI_REKENING', 'KOREKSI_LAIN'].includes(this.formData.jenis_reklas)) {
+                        const errMsg = '⚠️ Aset dalam kemitraan aktif hanya diperbolehkan untuk Pindah Sub-Rekening 108 Kemitraan atau Koreksi Nilai Realisasi!';
+                        if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'error');
+                        else alert(errMsg);
+                        return false;
+                    }
+                    if (this.formData.jenis_reklas === 'KOREKSI_REKENING') {
+                        if (this.formData.tujuan_kib !== 'KEMITRAAN') {
+                            const errMsg = '⚠️ Status kemitraan masih aktif: KIB Tujuan wajib KEMITRAAN (Akun 1.5.2).';
+                            if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'error');
+                            else alert(errMsg);
+                            return false;
+                        }
+                        const targetKodeKem = String(this.reklasSubSubRincianKode || this.reklasSubRincianKode || this.formData.tujuan_kode || '').trim();
+                        if (targetKodeKem && !targetKodeKem.startsWith('1.5.2')) {
+                            const errMsg = '⚠️ Kode rekening tujuan harus berada di dalam kelompok Akun 1.5.2 Kemitraan Pihak Ketiga.';
+                            if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'error');
+                            else alert(errMsg);
+                            return false;
+                        }
+                    }
                 }
 
                 // Validasi khusus Koreksi Nilai Realisasi (KOREKSI_LAIN)
@@ -2746,6 +2839,7 @@
 
             async submitFormTambah() {
                 if (this.isSubmitting) return;
+                this.submitErrorMessage = '';
 
                 if (!this.validateStep1()) {
                     return;
@@ -2861,27 +2955,40 @@
 
                     const result = await response.json();
 
-                    if (result.success) {
+                    if (response.ok && result.success) {
+                        // Tutup modal & reset form SEGERA sebelum redirect/reload
+                        this.showModalTambah = false;
+                        this.submitErrorMessage = '';
+
                         if (typeof window.showSimatToast === 'function') {
-                            window.showSimatToast(result.message, 'success');
+                            window.showSimatToast(result.message || 'Reklasifikasi berhasil disimpan!', 'success');
                         }
                         if (window.isReklasCreatePage || window.location.pathname.includes('/reklasifikasi/create')) {
                             setTimeout(() => {
                                 window.location.href = "{{ route('master.reklasifikasi') }}?tahun=" + (this.formData.tahun || '{{ $selectedTahun ?? date("Y") }}') + "&tab=log";
-                            }, 700);
+                            }, 900);
                         } else {
-                            setTimeout(() => window.location.reload(), 600);
+                            setTimeout(() => window.location.reload(), 800);
                         }
                     } else {
+                        let firstFieldErr = '';
+                        if (result && result.errors && typeof result.errors === 'object') {
+                            const vals = Object.values(result.errors).flat();
+                            if (vals.length > 0) firstFieldErr = String(vals[0]);
+                        }
+                        const errMsg = firstFieldErr || (result && result.message) || 'Gagal menyimpan data reklasifikasi.';
+                        this.submitErrorMessage = errMsg;
                         if (typeof window.showSimatToast === 'function') {
-                            window.showSimatToast(result.message || 'Gagal menyimpan data reklasifikasi.', 'error');
+                            window.showSimatToast(errMsg, 'error');
                         } else {
-                            alert(result.message || 'Gagal menyimpan data reklasifikasi.');
+                            alert(errMsg);
                         }
                     }
                 } catch (error) {
+                    const netMsg = 'Terjadi kesalahan jaringan: ' + error.message;
+                    this.submitErrorMessage = netMsg;
                     if (typeof window.showSimatToast === 'function') {
-                        window.showSimatToast('Terjadi kesalahan jaringan: ' + error.message, 'error');
+                        window.showSimatToast(netMsg, 'error');
                     } else {
                         alert('Terjadi kesalahan jaringan saat menyimpan data: ' + error.message);
                     }

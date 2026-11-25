@@ -189,6 +189,24 @@
         </div>
     </div>
 
+    <!-- Banner Error Server Persisten (Jika Gagal Simpan) -->
+    <div x-show="submitErrorMessage" x-cloak x-transition
+         class="p-4 sm:p-5 rounded-2xl bg-rose-950/60 border border-rose-500/50 text-rose-200 flex items-start justify-between gap-3 shadow-lg shadow-rose-950/40">
+        <div class="flex items-start gap-3 min-w-0">
+            <span class="w-8 h-8 rounded-xl bg-rose-500/20 border border-rose-500/30 text-rose-300 flex items-center justify-center shrink-0 mt-0.5 text-sm">
+                ⚠️
+            </span>
+            <div class="space-y-1 min-w-0">
+                <p class="text-xs font-black uppercase tracking-wider text-rose-300">Gagal Menyimpan Reklasifikasi</p>
+                <p class="text-xs leading-relaxed text-rose-100" x-text="submitErrorMessage"></p>
+            </div>
+        </div>
+        <button type="button" @click="submitErrorMessage = ''"
+                class="text-rose-300 hover:text-white px-2 py-1 rounded-lg hover:bg-rose-500/20 text-xs font-bold shrink-0 cursor-pointer">
+            &times;
+        </button>
+    </div>
+
     <!-- 6. Bilah Aksi Simpan Final & Kembali -->
     <div class="p-5 sm:p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 backdrop-blur-xl">
         <button type="button" @click="goToStep(1)"

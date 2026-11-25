@@ -23,15 +23,22 @@
              return list.filter(item => {
                  if (!item) return false;
                  const nama = (item.nama_barang || '').toLowerCase();
+                 const tahun = String(item.tahun_perolehan || '');
                  const kib = (item.category || item.asal_kib || '').toLowerCase();
                  const merk = (item.merk_type || '').toLowerCase();
                  const kode = (item.jenis_astap?.sub_sub_rincian_objek || item.jenis_astap?.sub_rincian_objek || '').toLowerCase();
                  const uraian = (item.jenis_astap?.uraian_sub_rincian || item.jenis_astap?.uraian_sub_sub_rincian || '').toLowerCase();
-                 return nama.includes(q) || kib.includes(q) || merk.includes(q) || kode.includes(q) || uraian.includes(q);
+                 return nama.includes(q) || tahun.includes(q) || kib.includes(q) || merk.includes(q) || kode.includes(q) || uraian.includes(q);
              });
          },
          selectAstapItem(item) {
              if (!item) return;
+             if (item.is_tutup_buku === false) {
+                 const msg = '⚠️ Aset ' + (item.nama_barang || '-') + ' (' + (item.tahun_perolehan || '-') + ') belum berstatus Tutup Buku. Silakan tutup buku periode terlebih dahulu atau gunakan fitur Ubah Data di ASTAP.';
+                 if (typeof window.showSimatToast === 'function') window.showSimatToast(msg, 'warning');
+                 else alert(msg);
+                 return;
+             }
              formData.astap_id = String(item.id);
              onSelectAstap(item.id);
              this.closePicker();
@@ -76,7 +83,7 @@
             </template>
             <span class="text-[11px] font-semibold text-slate-400 bg-slate-950 px-3 py-1 rounded-full border border-slate-800 flex items-center gap-1.5">
                 <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
-                <span>Tersedia <strong class="text-white">{{ count($kandidatAstaps) }}</strong> Aset Layak Reklas</span>
+                <span>Tersedia <strong class="text-white">{{ $kandidatAstaps->where('is_tutup_buku', true)->count() }}</strong> Aset Layak Reklas</span>
             </span>
         </div>
     </div>
@@ -197,7 +204,7 @@
                            x-ref="searchInput"
                            x-model="searchQuery"
                            @keydown.escape="closePicker()"
-                           placeholder="Ketik untuk menyaring opsi (nama barang, KIB, merk, kode 108)..."
+                           placeholder="Ketik untuk menyaring opsi (nama barang, tahun, KIB, merk, kode 108)..."
                            class="w-full bg-slate-950 border border-slate-800 hover:border-cyan-500/50 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/30 rounded-xl pl-9 pr-28 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none transition-all shadow-inner">
                     
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-cyan-400">
@@ -225,8 +232,12 @@
             <div class="max-h-72 overflow-y-auto divide-y divide-slate-800/60 custom-scrollbar">
                 <template x-for="item in filteredAstapList" :key="item.id">
                     <div @click="selectAstapItem(item)"
-                         class="p-3.5 hover:bg-slate-800/70 cursor-pointer transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
-                         :class="String(formData.astap_id) === String(item.id) ? 'bg-indigo-950/40 border-l-4 border-indigo-500' : ''">
+                         class="p-3.5 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
+                         :class="{
+                             'opacity-50 cursor-not-allowed bg-slate-950/60': item.is_tutup_buku === false,
+                             'hover:bg-slate-800/70 cursor-pointer': item.is_tutup_buku !== false,
+                             'bg-indigo-950/40 border-l-4 border-indigo-500': String(formData.astap_id) === String(item.id)
+                         }">
                         
                         <div class="flex items-start gap-3 min-w-0">
                             <!-- KIB Category Badge -->
@@ -244,8 +255,19 @@
                             
                             <div class="space-y-0.5 min-w-0">
                                 <div class="flex items-center gap-2 flex-wrap">
-                                    <h4 class="text-xs sm:text-sm font-bold text-white group-hover:text-cyan-300 transition-colors truncate"
+                                    <h4 class="text-xs sm:text-sm font-bold transition-colors truncate"
+                                        :class="item.is_tutup_buku === false ? 'text-slate-400' : 'text-white group-hover:text-cyan-300'"
                                         x-text="item.nama_barang"></h4>
+                                    <template x-if="item.is_tutup_buku !== false">
+                                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shrink-0"
+                                              x-text="'✓ Siap Reklas (' + (item.tahun_perolehan || '-') + ')'">
+                                        </span>
+                                    </template>
+                                    <template x-if="item.is_tutup_buku === false">
+                                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-500/15 text-rose-300 border border-rose-500/30 shrink-0"
+                                              x-text="'🔒 Belum Tutup Buku (' + (item.tahun_perolehan || '-') + (item.triwulan ? ' ' + item.triwulan : '') + ')'">
+                                        </span>
+                                    </template>
                                     <template x-if="item.is_reklas">
                                         <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">
                                             ⚡ Pernah Reklas
@@ -324,6 +346,19 @@
                              x-text="(selectedAstap.jumlah_volume || 1) + ' ' + (selectedAstap.satuan || 'Unit')"></div>
                     </div>
                 </div>
+
+                <!-- Banner Peringatan Jika Aset Terpilih Belum Tutup Buku (misal dari link langsung ?astap_id=) -->
+                <template x-if="selectedAstap.is_tutup_buku === false">
+                    <div class="p-3.5 rounded-2xl bg-rose-950/50 border border-rose-500/40 text-rose-200 text-xs flex items-start gap-3">
+                        <span class="text-base shrink-0 mt-0.5">🔒</span>
+                        <div class="space-y-0.5">
+                            <p class="font-extrabold text-rose-300">Aset Ini Belum Berstatus Tutup Buku</p>
+                            <p class="text-[11px] leading-relaxed text-rose-200/90">
+                                Reklasifikasi hanya dapat dilakukan pada aset yang sudah resmi ditutup buku. Silakan tutup buku periode (<span class="font-mono font-bold" x-text="(selectedAstap.tahun_perolehan || '-') + (selectedAstap.triwulan ? ' ' + selectedAstap.triwulan : '')"></span>) di halaman ASTAP terlebih dahulu, atau gunakan fitur <strong>Ubah Data</strong>.
+                            </p>
+                        </div>
+                    </div>
+                </template>
 
                 <!-- Detail Grid Tambahan -->
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-1">

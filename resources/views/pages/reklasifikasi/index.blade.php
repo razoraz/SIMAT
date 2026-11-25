@@ -26,8 +26,6 @@
             @include('pages.reklasifikasi.partials.table_log')
         </div>
 
-        <!-- MODAL TAMBAH REKLASIFIKASI DARI MASTER -->
-        @include('pages.reklasifikasi.partials.modal_tambah')
         @include('pages.reklasifikasi.partials.modal_detail')
         @include('pages.reklasifikasi.partials.modal_confirm')
     </div>

@@ -399,22 +399,8 @@ class ReklasifikasiController extends Controller
             ->orderBy('id', 'desc')
             ->get();
 
-        // 5. Ambil kandidat aset untuk modal tambah reklasifikasi (hanya aset yang valid & memenuhi syarat reklas)
-        $kandidatAstaps = Astap::where('is_deleted', 0)
-            ->where('tahun_perolehan', $selectedTahun)
-            ->where('total_realisasi', '>', 0)
-            ->where(function($q) {
-                $q->whereNull('jenis_reklas')
-                  ->orWhereNotIn('jenis_reklas', ['HIBAH_KELUAR']);
-            })
-            ->whereHas('registers', function($q) {
-                $q->where('is_deleted', 0)
-                  ->whereNotIn('status', ['Dibatalkan', 'Mutasi Keluar OPD', 'Dihibahkan']);
-            })
-            ->select('id', 'nama_barang', 'total_realisasi', 'jumlah_anggaran', 'tahun_perolehan', 'category', 'asal_kib', 'jenis_astap_id', 'is_reklas', 'jenis_reklas', 'satuan', 'merk_type', 'alamat_barang', 'spesifikasi_json', 'jumlah_volume', 'harga_satuan', 'is_extracomtable', 'sumber_dana')
-            ->with(['jenisAstap:id,jenis,sub_sub_rincian_objek', 'registers:id,astap_id,nibar,no_register,kondisi,status'])
-            ->orderBy('nama_barang', 'asc')
-            ->get();
+        // 5. Ambil kandidat aset untuk modal tambah reklasifikasi (lintas tahun, utamakan yang sudah Tutup Buku)
+        $kandidatAstaps = $this->getReklasKandidatAstaps();
 
         $dbSkpdDirectory = \App\Http\Controllers\MutasiEksternalController::getSkpdDirectory();
         $dbSkpdAsals = array_values(array_unique(array_keys($dbSkpdDirectory)));
@@ -492,36 +478,30 @@ class ReklasifikasiController extends Controller
             array_unshift($tahunList, $selectedTahun);
         }
 
-        // Ambil data kandidat aset ASTAP (hanya aset yang valid & memenuhi syarat reklas)
-        $kandidatQuery = Astap::where('is_deleted', 0)
-            ->where('total_realisasi', '>', 0)
-            ->where(function($q) {
-                $q->whereNull('jenis_reklas')
-                  ->orWhereNotIn('jenis_reklas', ['HIBAH_KELUAR']);
-            })
-            ->whereHas('registers', function($q) {
-                $q->where('is_deleted', 0)
-                  ->whereNotIn('status', ['Dibatalkan', 'Mutasi Keluar OPD', 'Dihibahkan']);
-            })
-            ->select('id', 'nama_barang', 'total_realisasi', 'jumlah_anggaran', 'tahun_perolehan', 'category', 'asal_kib', 'jenis_astap_id', 'is_reklas', 'jenis_reklas', 'satuan', 'merk_type', 'alamat_barang', 'spesifikasi_json', 'jumlah_volume', 'harga_satuan', 'is_extracomtable', 'sumber_dana')
-            ->with(['jenisAstap:id,jenis,sub_sub_rincian_objek,uraian_sub_rincian,uraian_sub_sub_rincian', 'registers:id,astap_id,nibar,no_register,kondisi,status']);
+        // Ambil data kandidat aset ASTAP lintas tahun (utamakan aset yang sudah Tutup Buku & siap reklas)
+        $kandidatAstaps = $this->getReklasKandidatAstaps();
 
-        // Jika tidak ada target spesifik, batasi ke tahun terpilih agar responsif
-        if (!$targetAstapId) {
-            $kandidatQuery->where('tahun_perolehan', $selectedTahun);
-        }
-
-        $kandidatAstaps = $kandidatQuery->orderBy('nama_barang', 'asc')->get();
-
-        // Jika targetAstapId diberikan tapi tidak ada di list tahun terpilih, tambahkan ke kandidatAstaps
+        // Jika targetAstapId diberikan dan belum termasuk di daftar kandidat, tambahkan ke atas
         $targetAstap = null;
         if ($targetAstapId) {
             $targetAstap = Astap::where('is_deleted', 0)
                 ->with(['jenisAstap:id,jenis,sub_sub_rincian_objek,uraian_sub_rincian,uraian_sub_sub_rincian', 'registers:id,astap_id,nibar,no_register,kondisi,status'])
                 ->find($targetAstapId);
 
-            if ($targetAstap && !$kandidatAstaps->contains('id', $targetAstap->id)) {
-                $kandidatAstaps->prepend($targetAstap);
+            if ($targetAstap) {
+                $targetAstap->load([
+                    'kemitraan' => fn($q) => $q->where('is_deleted', 0)->select('id', 'astap_id', 'objek_astap_id', 'status_konsesi', 'tipe_kemitraan', 'tanggal_selesai', 'is_deleted')->orderByDesc('id')->limit(1),
+                    'objekKemitraans' => fn($q) => $q->where('is_deleted', 0)->select('id', 'astap_id', 'objek_astap_id', 'status_konsesi', 'tipe_kemitraan', 'tanggal_selesai'),
+                ]);
+                $targetAstap->makeVisible(['kemitraan', 'objekKemitraans']);
+                // Sync status lokal jika tanggal_selesai sudah lewat
+                if ($targetAstap->kemitraan && $targetAstap->kemitraan->status_konsesi === 'Aktif' && $targetAstap->kemitraan->tanggal_selesai && now()->gt($targetAstap->kemitraan->tanggal_selesai)) {
+                    $targetAstap->kemitraan->status_konsesi = 'Konsesi Berakhir';
+                }
+                $targetAstap->setAttribute('is_tutup_buku', $targetAstap->isTutupBuku());
+                if (!$kandidatAstaps->contains('id', $targetAstap->id)) {
+                    $kandidatAstaps->prepend($targetAstap);
+                }
             }
         }
 
@@ -547,6 +527,51 @@ class ReklasifikasiController extends Controller
             'dbSkpdAsals'       => $dbSkpdAsals,
             'dbPejabats'        => $dbPejabats,
         ]);
+    }
+
+    /**
+     * Ambil daftar kandidat aset ASTAP lintas tahun yang memenuhi syarat reklasifikasi.
+     * Aset yang sudah Tutup Buku diprioritaskan di urutan atas (tahun terbaru ke terlama).
+     */
+    private function getReklasKandidatAstaps()
+    {
+        return Astap::where('is_deleted', 0)
+            ->where('total_realisasi', '>', 0)
+            ->where(function ($q) {
+                $q->whereNull('jenis_reklas')
+                  ->orWhereNotIn('jenis_reklas', ['HIBAH_KELUAR']);
+            })
+            ->whereHas('registers', function ($q) {
+                $q->where('is_deleted', 0)
+                  ->whereNotIn('status', ['Dibatalkan', 'Mutasi Keluar OPD', 'Dihibahkan']);
+            })
+            ->select('id', 'nama_barang', 'total_realisasi', 'jumlah_anggaran', 'tahun_perolehan', 'triwulan', 'category', 'asal_kib', 'jenis_astap_id', 'is_reklas', 'jenis_reklas', 'satuan', 'merk_type', 'alamat_barang', 'spesifikasi_json', 'jumlah_volume', 'harga_satuan', 'is_extracomtable', 'sumber_dana')
+            ->with([
+                'jenisAstap:id,jenis,sub_sub_rincian_objek,uraian_sub_rincian,uraian_sub_sub_rincian',
+                'registers:id,astap_id,nibar,no_register,kondisi,status',
+                'kemitraan' => fn($q) => $q->where('is_deleted', 0)->select('id', 'astap_id', 'objek_astap_id', 'status_konsesi', 'tipe_kemitraan', 'tanggal_selesai', 'is_deleted')->orderByDesc('id')->limit(1),
+                'objekKemitraans' => fn($q) => $q->where('is_deleted', 0)->select('id', 'astap_id', 'objek_astap_id', 'status_konsesi', 'tipe_kemitraan', 'tanggal_selesai'),
+            ])
+            ->orderBy('tahun_perolehan', 'desc')
+            ->orderBy('nama_barang', 'asc')
+            ->get()
+            ->each(function ($it) {
+                $it->setAttribute('is_tutup_buku', $it->isTutupBuku());
+                // Expose kemitraan & objekKemitraans ke JSON meskipun $hidden di Model Astap
+                $it->makeVisible(['kemitraan', 'objekKemitraans']);
+                // Jika status belum di-sync, hitung dari tanggal_selesai secara lokal
+                if ($it->kemitraan && $it->kemitraan->status_konsesi === 'Aktif' && $it->kemitraan->tanggal_selesai && now()->gt($it->kemitraan->tanggal_selesai)) {
+                    $it->kemitraan->status_konsesi = 'Konsesi Berakhir';
+                }
+            })
+            ->filter(function ($it) {
+                return (bool) $it->is_tutup_buku;
+            })
+            ->sortBy(function ($it) {
+                $yearRank = 9999 - (int) ($it->tahun_perolehan ?? 0);
+                return sprintf('%04d-%s', $yearRank, mb_strtolower((string) $it->nama_barang));
+            })
+            ->values();
     }
 
     /**
@@ -960,15 +985,21 @@ class ReklasifikasiController extends Controller
         }
 
         // Proteksi Validasi Aturan Bisnis: Kemitraan Aktif (Akun 1.5.2)
-        $kemitraan = $astap->kemitraan ?? \App\Models\AstapKemitraan::where(function ($q) use ($astap) {
+        // Ambil data kemitraan langsung dengan filter is_deleted=0 untuk memastikan terambil yang aktif terbaru
+        $kemitraan = \App\Models\AstapKemitraan::where(function ($q) use ($astap) {
             $q->where('astap_id', $astap->id)->orWhere('objek_astap_id', $astap->id);
-        })->where('is_deleted', 0)->first();
+        })->where('is_deleted', 0)->orderByDesc('id')->first();
 
         if ($kemitraan && in_array($kemitraan->status_konsesi, ['Dikembalikan ke Rekanan', 'Dibatalkan'])) {
             return response()->json([
                 'success' => false,
                 'message' => "Aset kemitraan telah dialihkan / dikembalikan kepada pihak ketiga rekanan kerja sama (Status: {$kemitraan->status_konsesi}) dan terkunci permanen dari reklasifikasi.",
             ], 422);
+        }
+
+        // Jika tanggal konsesi sudah lewat, paksa status menjadi berakhir meskipun belum di-sync
+        if ($kemitraan && in_array($kemitraan->status_konsesi, ['Aktif', 'Perpanjangan']) && $kemitraan->tanggal_selesai && now()->gt($kemitraan->tanggal_selesai)) {
+            $kemitraan->status_konsesi = 'Konsesi Berakhir';
         }
 
         $rawStatusKonsesi = $kemitraan ? strtolower(trim((string) $kemitraan->status_konsesi)) : '';
@@ -992,30 +1023,32 @@ class ReklasifikasiController extends Controller
         }
 
         if ($isKemitraanAktif) {
-            // 1. Dilarang reklasifikasi keluar ke Ekstrakomptabel, KDP, Hibah, atau Mutasi Eksternal
-            if ($validated['jenis_reklas'] !== 'KOREKSI_REKENING') {
+            // 1. Dilarang reklasifikasi keluar ke Ekstrakomptabel, KDP, Hibah, atau Mutasi Eksternal (hanya boleh Pindah Sub-Rekening 1.5.2 atau Koreksi Nilai)
+            if (!in_array($validated['jenis_reklas'], ['KOREKSI_REKENING', 'KOREKSI_LAIN'], true)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Aset masih terikat perjanjian kerja sama kemitraan yang aktif (Akun 1.5.2). Reklasifikasi ke Ekstrakomptabel, KDP, Hibah, atau Mutasi Eksternal tidak diperbolehkan selama masa konsesi PKS masih aktif.',
+                    'message' => 'Aset masih terikat perjanjian kerja sama kemitraan yang aktif (Akun 1.5.2). Reklasifikasi hanya diperbolehkan untuk Pindah Sub-Rekening 108 Kemitraan atau Koreksi Nilai Realisasi.',
                 ], 422);
             }
 
             // 2. Untuk KOREKSI_REKENING, hanya boleh seputar Akun 1.5.2 Kemitraan (tujuan_kib = KEMITRAAN dan kode_108 berawalan 1.5.2)
-            $targetKibCheck = $validated['tujuan_kib'] ?? null;
-            $targetKodeCheck = $request->input('tujuan_kode') ?: ($request->input('kode_108') ?: null);
+            if ($validated['jenis_reklas'] === 'KOREKSI_REKENING') {
+                $targetKibCheck = $validated['tujuan_kib'] ?? null;
+                $targetKodeCheck = $request->input('tujuan_kode') ?: ($request->input('kode_108') ?: null);
 
-            if ($targetKibCheck !== 'KEMITRAAN') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Status kemitraan masih aktif! Reklasifikasi pindah rekening hanya diperbolehkan seputar sub-rekening Kemitraan Pihak Ketiga (Akun 1.5.2). Aset tidak dapat dipindahkan ke KIB A–F atau Aset Lain-Lain (1.5.4) sebelum masa konsesi PKS resmi berakhir / diselesaikan.',
-                ], 422);
-            }
+                if ($targetKibCheck !== 'KEMITRAAN') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Status kemitraan masih aktif! Reklasifikasi pindah rekening hanya diperbolehkan seputar sub-rekening Kemitraan Pihak Ketiga (Akun 1.5.2). Aset tidak dapat dipindahkan ke KIB A–F atau Aset Lain-Lain (1.5.4) sebelum masa konsesi PKS resmi berakhir / diselesaikan.',
+                    ], 422);
+                }
 
-            if (!empty($targetKodeCheck) && !str_starts_with((string) $targetKodeCheck, '1.5.2')) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Kode rekening tujuan harus merupakan sub-rekening di bawah Akun 1.5.2 (Kemitraan dengan Pihak Ketiga).',
-                ], 422);
+                if (!empty($targetKodeCheck) && !str_starts_with((string) $targetKodeCheck, '1.5.2')) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Kode rekening tujuan harus merupakan sub-rekening di bawah Akun 1.5.2 (Kemitraan dengan Pihak Ketiga).',
+                    ], 422);
+                }
             }
         }
 

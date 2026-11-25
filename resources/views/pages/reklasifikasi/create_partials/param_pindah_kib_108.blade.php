@@ -14,21 +14,46 @@
 
                 <!-- Tingkat 1: KIB Tujuan -->
                 <div class="space-y-1.5">
-                    <label class="block text-[11px] font-bold text-slate-300 uppercase tracking-wider">
-                        Tingkat 1: Pilih Kelompok / KIB Tujuan <span class="text-rose-400">*</span>
-                    </label>
+                    <div class="flex items-center justify-between gap-2">
+                        <label class="block text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+                            Tingkat 1: Pilih Kelompok / KIB Tujuan <span class="text-rose-400">*</span>
+                        </label>
+                        <template x-if="isKemitraanAktif()">
+                            <span class="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-md bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 flex items-center gap-1">
+                                <span>🔒</span>
+                                <span>Terkunci: PKS Aktif (1.5.2)</span>
+                            </span>
+                        </template>
+                    </div>
                     <select x-model="formData.tujuan_kib" @change="onTujuanKibChange()"
-                        class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs font-bold focus:outline-none focus:border-indigo-500">
+                        :disabled="isKemitraanAktif()"
+                        class="w-full px-3.5 py-2.5 rounded-xl border text-xs font-bold focus:outline-none transition-all"
+                        :class="isKemitraanAktif() ? 'border-cyan-500/50 bg-slate-950/90 text-cyan-200 cursor-not-allowed ring-1 ring-cyan-500/20' : 'bg-slate-900 border-slate-700 text-white focus:border-indigo-500 cursor-pointer'">
                         <option value="">-- Pilih KIB / Kelompok Tujuan --</option>
-                        <option value="KIB A">KIB A - Tanah (1.3.1)</option>
-                        <option value="KIB B">KIB B - Peralatan &amp; Mesin (1.3.2)</option>
-                        <option value="KIB C">KIB C - Gedung &amp; Bangunan (1.3.3)</option>
-                        <option value="KIB D">KIB D - Jalan, Jaringan &amp; Irigasi (1.3.4)</option>
-                        <option value="KIB E">KIB E - Aset Tetap Lainnya (1.3.5)</option>
-                        <option value="ATB">ATB - Aset Tidak Berwujud (1.5.3)</option>
+                        <option value="KIB A" :disabled="isKemitraanAktif()">KIB A - Tanah (1.3.1)</option>
+                        <option value="KIB B" :disabled="isKemitraanAktif()">KIB B - Peralatan &amp; Mesin (1.3.2)</option>
+                        <option value="KIB C" :disabled="isKemitraanAktif()">KIB C - Gedung &amp; Bangunan (1.3.3)</option>
+                        <option value="KIB D" :disabled="isKemitraanAktif()">KIB D - Jalan, Jaringan &amp; Irigasi (1.3.4)</option>
+                        <option value="KIB E" :disabled="isKemitraanAktif()">KIB E - Aset Tetap Lainnya (1.3.5)</option>
+                        <option value="ATB" :disabled="isKemitraanAktif()">ATB - Aset Tidak Berwujud (1.5.3)</option>
                         <option value="KEMITRAAN">Kemitraan Pihak Ketiga (1.5.2)</option>
-                        <option value="ASET LAIN">Aset Lain-Lain (1.5.4)</option>
+                        <option value="ASET LAIN" :disabled="isKemitraanAktif()">Aset Lain-Lain (1.5.4)</option>
                     </select>
+
+                    <template x-if="isKemitraanAktif()">
+                        <div class="mt-2 p-3 rounded-2xl bg-cyan-950/60 border border-cyan-500/35 text-cyan-200 text-xs flex items-start gap-2.5 shadow-md">
+                            <span class="text-base shrink-0 mt-0.5">🔒</span>
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="font-extrabold text-cyan-300">Status Kemitraan Masih Aktif</span>
+                                    <span class="px-2 py-0.5 rounded text-[9.5px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">Hanya Antar-Akun 1.5.2</span>
+                                </div>
+                                <p class="text-[11px] text-cyan-200/90 leading-relaxed">
+                                    Aset sedang terikat perjanjian kerja sama pemanfaatan yang masih berjalan. Reklasifikasi hanya diperbolehkan antar sub-rekening di dalam <strong>Akun 1.5.2 (Kemitraan Pihak Ketiga)</strong> seperti koreksi jenis sewa, KSP, atau BGS/BSG. Pemindahan balik ke KIB A–F atau Aset Lain-Lain (1.5.4) hanya dapat dilakukan apabila masa konsesi PKS telah berakhir / selesai.
+                                </p>
+                            </div>
+                        </div>
+                    </template>
                 </div>
 
                 <!-- Tingkat 2: Sub-Rincian Rekening 108 -->
