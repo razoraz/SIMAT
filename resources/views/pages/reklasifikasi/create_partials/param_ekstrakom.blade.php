@@ -127,7 +127,9 @@
                     <div class="sm:col-span-4">
                         <div class="mb-1">
                             <label class="block font-bold text-[10px] uppercase tracking-wider"
-                                   :class="formData.jenis_reklas === 'KAPITALISASI_INTRAKOM' ? 'text-emerald-300' : 'text-amber-300'">
+                                   :class="formData.jenis_reklas === 'KAPITALISASI_INTRAKOM'
+                                       ? (parseFloat(item.harga_satuan) <= 300000 ? 'text-rose-300' : 'text-emerald-300')
+                                       : (parseFloat(item.harga_satuan) > 300000 ? 'text-rose-300' : (parseFloat(item.harga_satuan) <= 0 ? 'text-amber-300' : 'text-emerald-300'))">
                                 Harga Satuan (Rp):
                             </label>
                         </div>
@@ -155,48 +157,53 @@
                 </div>
 
                 <!-- Subtotal & Status Validasi per Item -->
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between pt-2 border-t border-slate-800/60 text-[11px] gap-2">
-                    <div>
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2.5 border-t border-slate-800/70">
+                    <div class="flex-1 min-w-0">
                         <!-- Jika Ekstrakomptabel: Validasi <= 300.000 & > 0 -->
                         <template x-if="formData.jenis_reklas === 'EKSTRAKOMPTABEL'">
                             <div>
                                 <template x-if="parseFloat(item.harga_satuan) > 300000">
-                                    <div class="space-y-0.5">
-                                        <span class="text-rose-400 font-bold flex items-center gap-1.5">
-                                            <span>⚠️</span>
-                                            <span>Melebihi batas nilai maksimum Ekstrakomtable</span>
-                                        </span>
-                                        <div class="text-[10px] text-rose-300/85 pl-5 flex items-center gap-1.5">
-                                            <span>ℹ️</span>
-                                            <span>Batas Ekstrakomtable: Nilai satuan maksimal <strong>Rp 300.000</strong> per unit</span>
-                                        </div>
-                                        <div class="text-[9.5px] text-emerald-300/90 pl-5 flex items-center gap-1.5 mt-0.5">
-                                            <span>✨</span>
-                                            <span>Nilai ini memenuhi syarat kapitalisasi ke <strong>Intrakomtable (&gt; Rp 300.000)</strong>.</span>
+                                    <div class="px-3 py-2 rounded-xl bg-rose-950/30 border border-rose-500/30 flex items-start gap-2.5">
+                                        <svg class="w-4 h-4 text-rose-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                        </svg>
+                                        <div class="space-y-0.5 min-w-0">
+                                            <div class="text-[11px] font-bold text-rose-300 leading-snug">
+                                                Melebihi batas nilai maksimum Ekstrakomtable
+                                            </div>
+                                            <div class="text-[10.5px] text-rose-200/80 leading-snug">
+                                                Batas Ekstrakomtable: nilai satuan maksimal <strong class="text-white font-mono">Rp 300.000</strong> per unit. Nilai ini masuk kategori <strong class="text-emerald-300">Intrakomtable (&gt; Rp 300.000)</strong>.
+                                            </div>
                                         </div>
                                     </div>
                                 </template>
                                 <template x-if="parseFloat(item.harga_satuan) <= 0">
-                                    <div class="space-y-0.5">
-                                        <span class="text-amber-400 font-medium flex items-center gap-1.5">
-                                            <span>⚠️</span>
-                                            <span>Wajib diisi (&gt; Rp 0)</span>
-                                        </span>
-                                        <div class="text-[10px] text-amber-300/80 pl-5">
-                                            Batas Ekstrakomtable: Rp 1 s/d Rp 300.000 per unit
+                                    <div class="px-3 py-2 rounded-xl bg-amber-950/20 border border-amber-500/30 flex items-start gap-2.5">
+                                        <svg class="w-4 h-4 text-amber-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        <div class="space-y-0.5 min-w-0">
+                                            <div class="text-[11px] font-bold text-amber-300 leading-snug">
+                                                Harga satuan wajib diisi (&gt; Rp 0)
+                                            </div>
+                                            <div class="text-[10.5px] text-amber-200/80 leading-snug">
+                                                Batas Ekstrakomtable: <strong class="text-white font-mono">Rp 1 s/d Rp 300.000</strong> per unit.
+                                            </div>
                                         </div>
                                     </div>
                                 </template>
                                 <template x-if="parseFloat(item.harga_satuan) > 0 && parseFloat(item.harga_satuan) <= 300000">
-                                    <div class="space-y-0.5">
-                                        <span class="text-slate-400">
-                                            <span class="text-slate-300 font-medium" x-text="(item.jumlah_volume || 1) + ' ' + (item.satuan || 'Unit')"></span> &times; 
-                                            <span class="text-emerald-400 font-mono font-bold" x-text="'Rp ' + Number(item.harga_satuan || 0).toLocaleString('id-ID')"></span>
-                                        </span>
-                                        <div class="text-[9.5px] text-emerald-400/80 pl-0.5 flex items-center gap-1.5">
-                                            <span>✓</span>
-                                            <span>Memenuhi batas Ekstrakomtable (&le; Rp 300.000)</span>
+                                    <div class="px-3 py-2 rounded-xl bg-emerald-950/20 border border-emerald-500/25 flex items-center justify-between gap-2.5 flex-wrap">
+                                        <div class="flex items-center gap-2 text-[11px]">
+                                            <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                            </svg>
+                                            <span class="text-emerald-300 font-semibold">Memenuhi batas Ekstrakomtable (&le; Rp 300.000)</span>
                                         </div>
+                                        <span class="text-[10.5px] text-slate-400 font-mono">
+                                            <span x-text="(item.jumlah_volume || 1) + ' ' + (item.satuan || 'Unit')"></span> &times;
+                                            <span class="text-emerald-400 font-bold" x-text="'Rp ' + Number(item.harga_satuan || 0).toLocaleString('id-ID')"></span>
+                                        </span>
                                     </div>
                                 </template>
                             </div>
@@ -206,35 +213,40 @@
                         <template x-if="formData.jenis_reklas === 'KAPITALISASI_INTRAKOM'">
                             <div>
                                 <template x-if="parseFloat(item.harga_satuan) <= 300000">
-                                    <div class="space-y-0.5">
-                                        <span class="text-rose-400 font-bold flex items-center gap-1.5">
-                                            <span>⚠️</span>
-                                            <span>Belum memenuhi batas nilai minimum Intrakomtable</span>
-                                        </span>
-                                        <div class="text-[10px] text-rose-300/85 pl-5 flex items-center gap-1.5">
-                                            <span>ℹ️</span>
-                                            <span>Batas Intrakomtable: Nilai satuan minimal di atas <strong>Rp 300.000 (&gt; Rp 300.000)</strong> per unit</span>
+                                    <div class="px-3 py-2 rounded-xl bg-rose-950/30 border border-rose-500/30 flex items-start gap-2.5">
+                                        <svg class="w-4 h-4 text-rose-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                        </svg>
+                                        <div class="space-y-0.5 min-w-0">
+                                            <div class="text-[11px] font-bold text-rose-300 leading-snug">
+                                                Belum memenuhi batas nilai minimum Intrakomtable
+                                            </div>
+                                            <div class="text-[10.5px] text-rose-200/80 leading-snug">
+                                                Batas Intrakomtable: nilai satuan minimal di atas <strong class="text-white font-mono">Rp 300.000 (&gt; Rp 300.000)</strong> per unit.
+                                            </div>
                                         </div>
                                     </div>
                                 </template>
                                 <template x-if="parseFloat(item.harga_satuan) > 300000">
-                                    <div class="space-y-0.5">
-                                        <span class="text-slate-400">
-                                            <span class="text-slate-300 font-medium" x-text="(item.jumlah_volume || 1) + ' ' + (item.satuan || 'Unit')"></span> &times; 
-                                            <span class="text-emerald-400 font-mono font-bold" x-text="'Rp ' + Number(item.harga_satuan || 0).toLocaleString('id-ID')"></span>
-                                        </span>
-                                        <div class="text-[9.5px] text-emerald-400/80 pl-0.5 flex items-center gap-1.5">
-                                            <span>✓</span>
-                                            <span>Memenuhi syarat kapitalisasi Intrakomtable (&gt; Rp 300.000)</span>
+                                    <div class="px-3 py-2 rounded-xl bg-emerald-950/20 border border-emerald-500/25 flex items-center justify-between gap-2.5 flex-wrap">
+                                        <div class="flex items-center gap-2 text-[11px]">
+                                            <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                            </svg>
+                                            <span class="text-emerald-300 font-semibold">Memenuhi syarat kapitalisasi Intrakomtable (&gt; Rp 300.000)</span>
                                         </div>
+                                        <span class="text-[10.5px] text-slate-400 font-mono">
+                                            <span x-text="(item.jumlah_volume || 1) + ' ' + (item.satuan || 'Unit')"></span> &times;
+                                            <span class="text-emerald-400 font-bold" x-text="'Rp ' + Number(item.harga_satuan || 0).toLocaleString('id-ID')"></span>
+                                        </span>
                                     </div>
                                 </template>
                             </div>
                         </template>
                     </div>
 
-                    <div class="text-left sm:text-right shrink-0">
-                        <span class="text-slate-400 text-[10px]">Subtotal: </span>
+                    <div class="px-3.5 py-2 rounded-xl bg-slate-950/80 border border-slate-800 text-left sm:text-right shrink-0">
+                        <span class="text-slate-400 text-[9.5px] font-bold uppercase tracking-wider block">Subtotal</span>
                         <span class="font-mono font-extrabold text-emerald-300 text-xs sm:text-sm"
                               x-text="'Rp ' + Number((item.jumlah_volume || 1) * (item.harga_satuan || 0)).toLocaleString('id-ID')"></span>
                     </div>

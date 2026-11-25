@@ -1431,11 +1431,9 @@
                         this.formData.jenis_reklasifikasi_asal_id = extraRow.id;
                     }
                     this.formData.asal_kib = 'EKSTRAKOMPTABEL';
-                    // Default tujuan KIB B, bisa diubah user
-                    if (!this.formData.tujuan_kib) {
-                        this.formData.tujuan_kib = 'KIB B';
-                    }
-                    this.onTujuanKibChange();
+                    this.formData.tujuan_kib = this.selectedAstap ? this.getEffectiveKibCategory(this.selectedAstap) : 'KIB B';
+                    this.formData.tujuan_kode = '';
+                    this.formData.tujuan_nama = '';
                     if (!this.rawExtracomUnits || this.rawExtracomUnits.length === 0) {
                         this.rawExtracomUnits = this.buildAllExtracomUnits(this.selectedAstap);
                     }
@@ -1764,80 +1762,55 @@
                     try { spec = JSON.parse(spec); } catch (e) { spec = {}; }
                 }
 
-                const resolveItemName = (val1, val2, val3, fallback) => {
+                const resolveItemName = (primaryName, fallback) => {
                     const clean = (s) => (s && typeof s === 'string' && s.trim() !== '' && s.trim() !== '-') ? s.trim() : null;
-                    const v1 = clean(val1);
-                    const v2 = clean(val2);
-                    const v3 = clean(val3);
-                    if (v1 && v2 && v3) return `${v1} (${v2} / ${v3})`;
-                    if (v1 && v2) return `${v1} (${v2})`;
-                    if (v1) return v1;
-                    if (v2) return v2;
-                    return fallback;
+                    return clean(primaryName) || clean(found.nama_barang) || fallback;
                 };
 
                 let rawUnits = [];
+                const pushUnitCopies = (displayName, qty, satuan, price) => {
+                    for (let q = 0; q < qty; q++) {
+                        rawUnits.push({
+                            nama_barang: displayName,
+                            jumlah_volume: 1,
+                            satuan: satuan,
+                            harga_satuan: price,
+                        });
+                    }
+                };
+
                 if (Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0) {
                     spec.mesin_items.forEach((m, idx) => {
                         const qty = Math.max(1, parseInt(m.mesin_jumlah_barang) || 1);
-                        const displayName = resolveItemName(m.mesin_nama_barang, m.mesin_merk, m.mesin_type, 'Barang #' + (idx + 1));
+                        const displayName = resolveItemName(m.mesin_nama_barang, 'Barang #' + (idx + 1));
                         const price = parseFloat(m.mesin_nilai_satuan || m.mesin_harga_satuan || found.harga_satuan || 0);
                         const satuan = m.mesin_satuan || found.satuan || 'Unit';
-                        for (let q = 0; q < qty; q++) {
-                            rawUnits.push({
-                                nama_barang: qty > 1 ? `${displayName} (Unit ${q + 1})` : displayName,
-                                jumlah_volume: 1,
-                                satuan: satuan,
-                                harga_satuan: price,
-                            });
-                        }
+                        pushUnitCopies(displayName, qty, satuan, price);
                     });
                 } else if (Array.isArray(spec.gedung_items) && spec.gedung_items.length > 0) {
                     spec.gedung_items.forEach((m, idx) => {
                         const qty = Math.max(1, parseInt(m.gedung_jumlah_bangunan) || 1);
-                        const displayName = resolveItemName(m.gedung_nama_bangunan || m.gedung_nama, '', '', 'Bangunan #' + (idx + 1));
+                        const displayName = resolveItemName(m.gedung_nama_bangunan || m.gedung_nama, 'Bangunan #' + (idx + 1));
                         const price = parseFloat(m.gedung_nilai_fisik || m.gedung_harga_satuan || found.harga_satuan || 0);
                         const satuan = m.gedung_satuan || found.satuan || 'Gedung';
-                        for (let q = 0; q < qty; q++) {
-                            rawUnits.push({
-                                nama_barang: qty > 1 ? `${displayName} (Unit ${q + 1})` : displayName,
-                                jumlah_volume: 1,
-                                satuan: satuan,
-                                harga_satuan: price,
-                            });
-                        }
+                        pushUnitCopies(displayName, qty, satuan, price);
                     });
                 } else if (Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0) {
                     spec.lainnya_items.forEach((m, idx) => {
                         const qty = Math.max(1, parseInt(m.lainnya_jumlah_barang) || 1);
                         const itemTitle = m.lainnya_buku_judul || m.lainnya_kesenian_judul || m.lainnya_hewan_judul || m.lainnya_hewan_jenis || m.lainnya_judul || m.lainnya_nama_barang;
-                        const itemAuthor = m.lainnya_buku_pencipta || m.lainnya_kesenian_pencipta || m.lainnya_pencipta || m.lainnya_buku_spesifikasi || m.lainnya_spesifikasi;
-                        const displayName = resolveItemName(itemTitle, itemAuthor, '', 'Barang #' + (idx + 1));
+                        const displayName = resolveItemName(itemTitle, 'Barang #' + (idx + 1));
                         const price = parseFloat(m.lainnya_nilai_satuan || m.lainnya_harga_satuan || found.harga_satuan || 0);
                         const satuan = m.lainnya_satuan || found.satuan || 'Unit';
-                        for (let q = 0; q < qty; q++) {
-                            rawUnits.push({
-                                nama_barang: qty > 1 ? `${displayName} (Unit ${q + 1})` : displayName,
-                                jumlah_volume: 1,
-                                satuan: satuan,
-                                harga_satuan: price,
-                            });
-                        }
+                        pushUnitCopies(displayName, qty, satuan, price);
                     });
                 } else if (Array.isArray(spec.jaringan_items) && spec.jaringan_items.length > 0) {
                     spec.jaringan_items.forEach((m, idx) => {
                         const qty = Math.max(1, parseInt(m.jaringan_jumlah_barang) || 1);
-                        const displayName = resolveItemName(m.jaringan_nama_barang || m.jaringan_nama, '', '', 'Jaringan #' + (idx + 1));
+                        const displayName = resolveItemName(m.jaringan_nama_barang || m.jaringan_nama, 'Jaringan #' + (idx + 1));
                         const price = parseFloat(m.jaringan_nilai_fisik || m.jaringan_harga_satuan || found.harga_satuan || 0);
                         const satuan = m.jaringan_satuan || found.satuan || 'Unit';
-                        for (let q = 0; q < qty; q++) {
-                            rawUnits.push({
-                                nama_barang: qty > 1 ? `${displayName} (Unit ${q + 1})` : displayName,
-                                jumlah_volume: 1,
-                                satuan: satuan,
-                                harga_satuan: price,
-                            });
-                        }
+                        pushUnitCopies(displayName, qty, satuan, price);
                     });
                 }
 
@@ -1849,7 +1822,7 @@
 
                     return activeRegisters.map((reg, idx) => {
                         const unitMeta = rawUnits[idx] || {};
-                        const fallbackName = found.nama_barang ? `${found.nama_barang} (#${idx + 1})` : `Unit #${idx + 1}`;
+                        const fallbackName = resolveItemName(found.nama_barang, `Unit #${idx + 1}`);
 
                         let unitPrice = 0;
                         if (reg.harga_satuan !== null && reg.harga_satuan !== undefined && parseFloat(reg.harga_satuan) > 0) {
@@ -1877,7 +1850,7 @@
 
                 const fallbackVol = parseInt(found.jumlah_volume) || 1;
                 const fallbackHarga = parseFloat(found.harga_satuan) || (fallbackVol > 0 && found.total_realisasi ? (parseFloat(found.total_realisasi) / fallbackVol) : 0);
-                const displayName = resolveItemName(found.nama_barang, found.merk, found.type, 'Barang Aset');
+                const displayName = resolveItemName(found.nama_barang, 'Barang Aset');
                 return [{
                     register_id: null,
                     nibar: '',
@@ -2058,7 +2031,7 @@
 
             isReklasRekeningLengkap() {
                 if (!this.formData.tujuan_kib) return false;
-                if (['KOREKSI_REKENING', 'KAPITALISASI_INTRAKOM'].includes(this.formData.jenis_reklas)) {
+                if (this.formData.jenis_reklas === 'KOREKSI_REKENING') {
                     return Boolean(this.formData.tujuan_kib && this.reklasSubRincianKode && (this.reklasSubSubRincianKode || this.formData.tujuan_kode));
                 }
                 return Boolean(this.formData.tujuan_kib);
@@ -2869,7 +2842,7 @@
                             kdp_progres_persen: 100,
                             progres_fisik: '100%',
                         });
-                    } else if (['KOREKSI_REKENING', 'KAPITALISASI_INTRAKOM'].includes(this.formData.jenis_reklas) && this.formData.tujuan_kib) {
+                    } else if (this.formData.jenis_reklas === 'KOREKSI_REKENING' && this.formData.tujuan_kib) {
                         if (this.formData.spek_mode === 'individual' && this.formData.spek_units && this.formData.spek_units.length > 1) {
                             const unitsList = this.getSelectedUnitsList();
                             const cleanItems = this.formData.spek_units.map((u, idx) => {
