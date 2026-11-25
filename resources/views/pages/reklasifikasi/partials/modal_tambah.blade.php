@@ -94,12 +94,20 @@
                     2. Jenis Reklasifikasi <span class="text-rose-400">*</span>
                 </label>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                    <label class="flex items-center gap-3 p-3 rounded-2xl border border-slate-700/80 bg-slate-800/60 hover:bg-slate-800 cursor-pointer transition-all select-none"
-                        :class="formData.jenis_reklas === 'KOREKSI_REKENING' ? 'border-indigo-500 bg-indigo-500/10 shadow-sm shadow-indigo-500/10' : ''">
-                        <input type="radio" x-model="formData.jenis_reklas" value="KOREKSI_REKENING" @change="onJenisReklasChange()" class="text-indigo-600 focus:ring-0">
+                    <label class="flex items-center gap-3 p-3 rounded-2xl border transition-all select-none"
+                        @click="if (isCurrentAstapKdp()) { $event.preventDefault(); window.showSimatToast ? window.showSimatToast('⚠️ Aset KDP (KIB F) belum selesai, pengalihan definitif hanya lewat KDP Selesai ➔ Definitif!', 'warning') : alert('Terkunci untuk aset KDP!'); }"
+                        :class="{
+                            'opacity-40 cursor-not-allowed bg-slate-900/40 border-slate-800/60': isCurrentAstapKdp(),
+                            'cursor-pointer border-slate-700/80 bg-slate-800/60 hover:bg-slate-800': !isCurrentAstapKdp() && formData.jenis_reklas !== 'KOREKSI_REKENING',
+                            'cursor-pointer border-indigo-500 bg-indigo-500/10 shadow-sm shadow-indigo-500/10': !isCurrentAstapKdp() && formData.jenis_reklas === 'KOREKSI_REKENING'
+                        }">
+                        <input type="radio" x-model="formData.jenis_reklas" value="KOREKSI_REKENING" :disabled="isCurrentAstapKdp()" @change="onJenisReklasChange()" class="text-indigo-600 focus:ring-0" :class="isCurrentAstapKdp() ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'">
                         <div>
-                            <p class="text-xs font-bold text-white">Koreksi Rekening / Pindah KIB</p>
-                            <p class="text-[10px] text-slate-400">Salah kamar KIB atau penyesuaian akun PMDN 108</p>
+                            <div class="flex items-center gap-1.5">
+                                <p class="text-xs font-bold" :class="isCurrentAstapKdp() ? 'text-slate-500' : 'text-white'">Koreksi Rekening / Pindah KIB</p>
+                                <span x-show="isCurrentAstapKdp()" class="text-[9px] font-bold text-rose-300 bg-rose-500/20 border border-rose-500/30 px-1 rounded">Terkunci (KDP)</span>
+                            </div>
+                            <p class="text-[10px]" :class="isCurrentAstapKdp() ? 'text-slate-600' : 'text-slate-400'" x-text="isCurrentAstapKdp() ? 'Terkunci: KDP belum selesai, hanya lewat KDP Selesai ➔ Definitif' : 'Salah kamar KIB atau penyesuaian akun PMDN 108'"></p>
                         </div>
                     </label>
 
@@ -141,34 +149,61 @@
                     </template>
 
                     <template x-if="!selectedAstap || (!selectedAstap.is_extracomtable && selectedAstap.category !== 'EXTRACOM')">
-                        <label class="flex items-center gap-3 p-3 rounded-2xl border border-slate-700/80 bg-slate-800/60 hover:bg-slate-800 cursor-pointer transition-all select-none"
-                            :class="formData.jenis_reklas === 'EKSTRAKOMPTABEL' ? 'border-rose-500 bg-rose-500/10 shadow-sm shadow-rose-500/10' : ''">
-                            <input type="radio" x-model="formData.jenis_reklas" value="EKSTRAKOMPTABEL" @change="onJenisReklasChange()" class="text-rose-600 focus:ring-0">
+                        <label class="flex items-center gap-3 p-3 rounded-2xl border transition-all select-none"
+                            @click="if (isExtracomDisabled()) { $event.preventDefault(); window.showSimatToast ? window.showSimatToast('⚠️ Opsi Ekstrakomtable tidak berlaku untuk kelompok aset ini (Wajib Intrakomtable sesuai SAP)!', 'warning') : alert('Tidak berlaku untuk kelompok aset ini (Wajib Intrakomtable)!'); }"
+                            :class="{
+                                'opacity-40 cursor-not-allowed bg-slate-900/40 border-slate-800/60': isExtracomDisabled(),
+                                'cursor-pointer border-slate-700/80 bg-slate-800/60 hover:bg-slate-800': !isExtracomDisabled() && formData.jenis_reklas !== 'EKSTRAKOMPTABEL',
+                                'cursor-pointer border-rose-500 bg-rose-500/10 shadow-sm shadow-rose-500/10': !isExtracomDisabled() && formData.jenis_reklas === 'EKSTRAKOMPTABEL'
+                            }">
+                            <input type="radio" x-model="formData.jenis_reklas" value="EKSTRAKOMPTABEL"
+                                :disabled="isExtracomDisabled()"
+                                @change="onJenisReklasChange()" class="text-rose-600 focus:ring-0"
+                                :class="isExtracomDisabled() ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'">
                             <div>
                                 <div class="flex items-center gap-1.5">
-                                    <p class="text-xs font-bold text-white">Ekstrakomptabel (≤ Rp 300rb)</p>
-                                    <span class="text-[9px] font-bold text-rose-400 bg-rose-500/15 border border-rose-500/30 px-1 rounded">Intrakom</span>
+                                    <p class="text-xs font-bold" :class="isExtracomDisabled() ? 'text-slate-500' : 'text-white'">Ekstrakomptabel (≤ Rp 300rb)</p>
+                                    <span x-show="isExtracomDisabled()" class="text-[9px] font-bold text-rose-300 bg-rose-500/20 border border-rose-500/30 px-1 rounded">Terkunci (SAP)</span>
+                                    <span x-show="!isExtracomDisabled()" class="text-[9px] font-bold text-rose-400 bg-rose-500/15 border border-rose-500/30 px-1 rounded">Intrakom</span>
                                 </div>
-                                <p class="text-[10px] text-slate-400">Nilai satuan ≤ Rp 300.000 (di bawah batas kapitalisasi)</p>
+                                <p class="text-[10px]"
+                                   :class="isExtracomDisabled() ? 'text-slate-600' : 'text-slate-400'"
+                                   x-text="isExtracomDisabled() ? 'Tidak berlaku untuk kelompok aset ini (Wajib Intrakomtable)' : 'Nilai satuan ≤ Rp 300.000 (di bawah batas kapitalisasi)'"></p>
                             </div>
                         </label>
                     </template>
 
-                    <label class="flex items-center gap-3 p-3 rounded-2xl border border-slate-700/80 bg-slate-800/60 hover:bg-slate-800 cursor-pointer transition-all select-none"
-                        :class="formData.jenis_reklas === 'HIBAH_KELUAR' ? 'border-purple-500 bg-purple-500/10 shadow-sm shadow-purple-500/10' : ''">
-                        <input type="radio" x-model="formData.jenis_reklas" value="HIBAH_KELUAR" @change="onJenisReklasChange()" class="text-purple-600 focus:ring-0">
+                    <label class="flex items-center gap-3 p-3 rounded-2xl border transition-all select-none"
+                        @click="if (isCurrentAstapKdp()) { $event.preventDefault(); window.showSimatToast ? window.showSimatToast('⚠️ Aset KDP (belum selesai) tidak dapat dihibahkan keluar!', 'warning') : alert('Terkunci untuk aset KDP!'); }"
+                        :class="{
+                            'opacity-40 cursor-not-allowed bg-slate-900/40 border-slate-800/60': isCurrentAstapKdp(),
+                            'cursor-pointer border-slate-700/80 bg-slate-800/60 hover:bg-slate-800': !isCurrentAstapKdp() && formData.jenis_reklas !== 'HIBAH_KELUAR',
+                            'cursor-pointer border-purple-500 bg-purple-500/10 shadow-sm shadow-purple-500/10': !isCurrentAstapKdp() && formData.jenis_reklas === 'HIBAH_KELUAR'
+                        }">
+                        <input type="radio" x-model="formData.jenis_reklas" value="HIBAH_KELUAR" :disabled="isCurrentAstapKdp()" @change="onJenisReklasChange()" class="text-purple-600 focus:ring-0" :class="isCurrentAstapKdp() ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'">
                         <div>
-                            <p class="text-xs font-bold text-white">Hibah Keluar (Dihibahkan)</p>
-                            <p class="text-[10px] text-slate-400">Dihibahkan ke luar (Koreksi Baris 40 / Kolom 12)</p>
+                            <div class="flex items-center gap-1.5">
+                                <p class="text-xs font-bold" :class="isCurrentAstapKdp() ? 'text-slate-500' : 'text-white'">Hibah Keluar (Dihibahkan)</p>
+                                <span x-show="isCurrentAstapKdp()" class="text-[9px] font-bold text-rose-300 bg-rose-500/20 border border-rose-500/30 px-1 rounded">Terkunci (KDP)</span>
+                            </div>
+                            <p class="text-[10px]" :class="isCurrentAstapKdp() ? 'text-slate-600' : 'text-slate-400'" x-text="isCurrentAstapKdp() ? 'Terkunci: Aset KDP (belum selesai) tidak dapat dihibahkan' : 'Dihibahkan ke luar (Koreksi Baris 40 / Kolom 12)'"></p>
                         </div>
                     </label>
 
-                    <label class="flex items-center gap-3 p-3 rounded-2xl border border-slate-700/80 bg-slate-800/60 hover:bg-slate-800 cursor-pointer transition-all select-none"
-                        :class="formData.jenis_reklas === 'MUTASI_EKSTERNAL' ? 'border-teal-500 bg-teal-500/10 shadow-sm shadow-teal-500/10' : ''">
-                        <input type="radio" x-model="formData.jenis_reklas" value="MUTASI_EKSTERNAL" @change="onJenisReklasChange()" class="text-teal-600 focus:ring-0">
+                    <label class="flex items-center gap-3 p-3 rounded-2xl border transition-all select-none"
+                        @click="if (isCurrentAstapKdp()) { $event.preventDefault(); window.showSimatToast ? window.showSimatToast('⚠️ Aset KDP (belum selesai) tidak dapat dimutasi ke luar OPD!', 'warning') : alert('Terkunci untuk aset KDP!'); }"
+                        :class="{
+                            'opacity-40 cursor-not-allowed bg-slate-900/40 border-slate-800/60': isCurrentAstapKdp(),
+                            'cursor-pointer border-slate-700/80 bg-slate-800/60 hover:bg-slate-800': !isCurrentAstapKdp() && formData.jenis_reklas !== 'MUTASI_EKSTERNAL',
+                            'cursor-pointer border-teal-500 bg-teal-500/10 shadow-sm shadow-teal-500/10': !isCurrentAstapKdp() && formData.jenis_reklas === 'MUTASI_EKSTERNAL'
+                        }">
+                        <input type="radio" x-model="formData.jenis_reklas" value="MUTASI_EKSTERNAL" :disabled="isCurrentAstapKdp()" @change="onJenisReklasChange()" class="text-teal-600 focus:ring-0" :class="isCurrentAstapKdp() ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'">
                         <div>
-                            <p class="text-xs font-bold text-white">Mutasi Antar-OPD</p>
-                            <p class="text-[10px] text-slate-400">Pindah ke SKPD / OPD lain (Koreksi Baris 42 / Kolom 13)</p>
+                            <div class="flex items-center gap-1.5">
+                                <p class="text-xs font-bold" :class="isCurrentAstapKdp() ? 'text-slate-500' : 'text-white'">Mutasi Antar-OPD</p>
+                                <span x-show="isCurrentAstapKdp()" class="text-[9px] font-bold text-rose-300 bg-rose-500/20 border border-rose-500/30 px-1 rounded">Terkunci (KDP)</span>
+                            </div>
+                            <p class="text-[10px]" :class="isCurrentAstapKdp() ? 'text-slate-600' : 'text-slate-400'" x-text="isCurrentAstapKdp() ? 'Terkunci: Aset KDP (belum selesai) tidak dapat dimutasi keluar OPD' : 'Pindah ke SKPD / OPD lain (Koreksi Baris 42 / Kolom 13)'"></p>
                         </div>
                     </label>
 
@@ -189,204 +224,7 @@
             </div>
 
             <!-- 2B. Panel Khusus Penyesuaian Nilai Realisasi / Perubahan Total Dana -->
-            <div x-show="formData.jenis_reklas === 'KOREKSI_LAIN'"
-                 x-transition.duration.200ms
-                 class="p-4 sm:p-5 rounded-2xl bg-slate-950/80 border border-cyan-500/30 space-y-4 shadow-xl">
-                
-                <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
-                    <div class="flex items-center gap-2">
-                        <span class="w-6 h-6 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-xs font-black flex items-center justify-center">💰</span>
-                        <span class="text-xs font-bold text-white uppercase tracking-wider">
-                            Penyesuaian Nilai Buku &amp; Perubahan Total Dana Aset
-                        </span>
-                    </div>
-                    <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
-                        Penyeimbang: Baris 42 (Koreksi Lain)
-                    </span>
-                </div>
-
-                <!-- Sub-Kategori Koreksi Nilai (RMB 21 Kolom) -->
-                <div class="space-y-1.5">
-                    <div class="flex items-center justify-between">
-                        <label class="block text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                            <span>⚖️</span>
-                            <span>Sub-Kategori Koreksi Nilai:</span>
-                            <span class="text-rose-400">*</span>
-                        </label>
-                        <span class="text-[9.5px] font-mono text-cyan-300">Format Lembar Kerja BPKAD</span>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                        <!-- 1. Koreksi Biasa -->
-                        <label class="flex flex-col p-3 rounded-xl border cursor-pointer transition-all select-none group"
-                               :class="formData.sub_koreksi === 'biasa' ? 'border-indigo-500 bg-indigo-500/15 shadow-sm ring-1 ring-indigo-500/30' : 'border-slate-800 bg-slate-900/60 hover:bg-slate-900'">
-                            <input type="radio" x-model="formData.sub_koreksi" value="biasa" class="hidden" style="display: none;">
-                            <div class="flex items-center justify-between mb-1">
-                                <span class="text-xs font-bold" :class="formData.sub_koreksi === 'biasa' ? 'text-indigo-300' : 'text-white'">
-                                    📝 Koreksi Biasa
-                                </span>
-                                <span class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded"
-                                      :class="formData.sub_koreksi === 'biasa' ? 'bg-indigo-500/30 text-indigo-200' : 'bg-slate-800 text-slate-400'">
-                                    Kolom 15 / 5
-                                </span>
-                            </div>
-                            <p class="text-[9.5px] text-slate-400 leading-tight">
-                                Internal kas RSUD, pembulatan SP2D, koreksi salah catat belanja.
-                            </p>
-                        </label>
-
-                        <!-- 2. Koreksi LKD -->
-                        <label class="flex flex-col p-3 rounded-xl border cursor-pointer transition-all select-none group"
-                               :class="formData.sub_koreksi === 'lkd' ? 'border-cyan-500 bg-cyan-500/15 shadow-sm ring-1 ring-cyan-500/30' : 'border-slate-800 bg-slate-900/60 hover:bg-slate-900'">
-                            <input type="radio" x-model="formData.sub_koreksi" value="lkd" class="hidden" style="display: none;">
-                            <div class="flex items-center justify-between mb-1">
-                                <span class="text-xs font-bold" :class="formData.sub_koreksi === 'lkd' ? 'text-cyan-300' : 'text-white'">
-                                    ⚖️ Koreksi LKD
-                                </span>
-                                <span class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded"
-                                      :class="formData.sub_koreksi === 'lkd' ? 'bg-cyan-500/30 text-cyan-200' : 'bg-slate-800 text-slate-400'">
-                                    Kolom 16 / 6
-                                </span>
-                            </div>
-                            <p class="text-[9.5px] text-slate-400 leading-tight">
-                                Temuan audit BPK RI, rekomendasi LHP LKPD, kelebihan bayar/TGR.
-                            </p>
-                        </label>
-
-                        <!-- 3. Koreksi Manset -->
-                        <label class="flex flex-col p-3 rounded-xl border cursor-pointer transition-all select-none group"
-                               :class="formData.sub_koreksi === 'manset' ? 'border-emerald-500 bg-emerald-500/15 shadow-sm ring-1 ring-emerald-500/30' : 'border-slate-800 bg-slate-900/60 hover:bg-slate-900'">
-                            <input type="radio" x-model="formData.sub_koreksi" value="manset" class="hidden" style="display: none;">
-                            <div class="flex items-center justify-between mb-1">
-                                <span class="text-xs font-bold" :class="formData.sub_koreksi === 'manset' ? 'text-emerald-300' : 'text-white'">
-                                    🏢 Koreksi Manset
-                                </span>
-                                <span class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded"
-                                      :class="formData.sub_koreksi === 'manset' ? 'bg-emerald-500/30 text-emerald-200' : 'bg-slate-800 text-slate-400'">
-                                    Kolom 17 / 7
-                                </span>
-                            </div>
-                            <p class="text-[9.5px] text-slate-400 leading-tight">
-                                Penyelarasan SIMDA BMD / E-Manset BPKAD Kab. Bondowoso.
-                            </p>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- 2. Rincian Barang & Nilai Realisasi Baru (Barang 1, Barang 2, dst) Sesuai Standar Modul ASTAP -->
-                <div class="space-y-3 pt-2">
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 pb-2 border-b border-slate-800/80">
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <span class="text-xs font-black text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
-                                <span>📦</span>
-                                <span>Rincian Nilai Realisasi Barang:</span>
-                            </span>
-                            <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-mono font-extrabold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 shadow-xs"
-                                  x-text="(formData.reklas_items ? formData.reklas_items.length : 0) + ' Item Terdaftar'"></span>
-                        </div>
-                        <span class="text-[10.5px] text-slate-400 font-medium">Ubah nilai per unit barang temuan / penyesuaian</span>
-                    </div>
-
-                    <!-- Empty state jika belum memilih unit -->
-                    <template x-if="!formData.reklas_items || formData.reklas_items.length === 0">
-                        <div class="p-4 rounded-2xl bg-slate-900/60 border border-dashed border-slate-800 text-center space-y-1">
-                            <span class="text-amber-400 text-base block">⚠️</span>
-                            <p class="text-xs font-bold text-slate-300">Belum ada unit register yang dipilih</p>
-                            <p class="text-[11px] text-slate-500">Pilih minimal 1 register (NIBAR) pada daftar di atas untuk menyesuaikan rincian nilai barang.</p>
-                        </div>
-                    </template>
-
-                    <!-- Cards Container Barang 1 & 2 -->
-                    <div x-show="formData.reklas_items && formData.reklas_items.length > 0"
-                         class="space-y-3 max-h-[350px] overflow-y-auto custom-scrollbar pr-1">
-                        <template x-for="(item, idx) in (formData.reklas_items || [])" :key="item.register_id || idx">
-                            <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800/90 hover:border-cyan-500/40 transition-all space-y-3 shadow-lg group backdrop-blur-sm">
-                                <!-- Baris Atas Item: Badge Nomor & Nama Barang & Volume -->
-                                <div class="flex items-center justify-between gap-2.5">
-                                    <div class="flex items-center gap-2 min-w-0 flex-1">
-                                        <span class="px-2.5 py-1 rounded-lg text-[10.5px] font-mono font-black bg-cyan-500/15 text-cyan-300 border border-cyan-500/35 shrink-0 shadow-xs"
-                                              x-text="'Barang #' + (idx + 1)"></span>
-                                        <span class="text-xs sm:text-sm font-extrabold text-white truncate" 
-                                              :title="item.nama_barang || ('Barang #' + (idx + 1))"
-                                              x-text="item.nama_barang || ('Barang #' + (idx + 1))"></span>
-                                        <template x-if="item.nibar">
-                                            <span class="text-[9.5px] font-mono font-bold text-cyan-300 bg-cyan-950/60 border border-cyan-800/80 px-2 py-0.5 rounded-md shrink-0"
-                                                  x-text="'NIBAR: ' + item.nibar"></span>
-                                        </template>
-                                    </div>
-                                    <div class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 text-[11px] font-mono font-semibold shrink-0 shadow-inner flex items-center gap-1.5">
-                                        <span class="text-slate-500 text-[10px]">Qty:</span>
-                                        <span class="text-cyan-300 font-bold" x-text="item.jumlah_volume || 1"></span>
-                                        <span class="text-slate-400 text-[10px]" x-text="item.satuan || 'Unit'"></span>
-                                    </div>
-                                </div>
-
-                                <!-- Grid Input: Nilai Satuan & Subtotal (Symmetric & Responsive) -->
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start pt-3 border-t border-slate-800/80">
-                                    <!-- Nilai Satuan -->
-                                    <div class="space-y-1.5">
-                                        <label class="flex items-center gap-1.5 text-slate-400 font-bold text-[10px] uppercase tracking-wider h-4">
-                                            <span>🏷️</span>
-                                            <span>Nilai Satuan (Rp):</span>
-                                        </label>
-                                        <div class="relative flex items-center h-10 rounded-xl bg-slate-900/90 border border-cyan-500/40 focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-500/20 shadow-inner transition-all overflow-hidden">
-                                            <span class="h-full px-3 flex items-center justify-center bg-slate-950/80 border-r border-slate-800 text-cyan-400 font-mono font-bold text-xs select-none">
-                                                Rp
-                                            </span>
-                                            <input type="text"
-                                                   inputmode="numeric"
-                                                   :value="formatRupiahInput(item.harga_satuan)"
-                                                   @keydown="if (!/[0-9]/.test($event.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter', 'Home', 'End'].includes($event.key) && !$event.ctrlKey && !$event.metaKey) { $event.preventDefault(); }"
-                                                   @input="updateItemHargaSatuan(item, $event)"
-                                                   @paste="$nextTick(() => updateItemHargaSatuan(item, $event))"
-                                                   @focus="$event.target.select()"
-                                                   placeholder="0"
-                                                   class="w-full h-full bg-transparent px-3 text-xs sm:text-sm font-mono font-extrabold text-cyan-200 focus:outline-none text-right placeholder-slate-600">
-                                        </div>
-                                    </div>
-
-                                    <!-- Subtotal -->
-                                    <div class="space-y-1.5">
-                                        <div class="flex items-center justify-between text-slate-400 font-bold text-[10px] uppercase tracking-wider h-4">
-                                            <span>Subtotal Barang:</span>
-                                            <span class="text-[9.5px] font-mono text-slate-500 font-normal lowercase" x-text="'(' + (item.jumlah_volume || 1) + ' ' + (item.satuan || 'unit') + ')'"></span>
-                                        </div>
-                                        <div class="flex items-center justify-between px-3.5 h-10 rounded-xl bg-emerald-950/30 border border-emerald-500/40 shadow-inner">
-                                            <span class="text-[9.5px] font-mono font-bold text-emerald-400/80 uppercase tracking-wider">Subtotal</span>
-                                            <div class="text-xs sm:text-sm font-mono font-black text-emerald-300"
-                                                 x-text="'Rp ' + Number((item.jumlah_volume || 1) * (parseFloat(item.harga_satuan) || 0)).toLocaleString('id-ID')">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-
-                    <!-- 3. Ringkasan Perbandingan & Dampak Selisih Koreksi (Gambar 2 Footer) -->
-                    <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-wrap items-center justify-between gap-2.5 text-xs shadow-md">
-                        <div class="flex items-center space-x-2">
-                            <span class="text-slate-400">Realisasi Semula:</span>
-                            <span class="font-mono text-slate-200 font-bold" x-text="'Rp ' + Number(selectedAstap?.total_realisasi || 0).toLocaleString('id-ID')"></span>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <span class="text-slate-400">➔ Realisasi Baru:</span>
-                            <span class="font-mono text-emerald-400 font-extrabold" x-text="'Rp ' + Number(formData.nilai_realisasi_baru || 0).toLocaleString('id-ID')"></span>
-                        </div>
-                        <div class="flex items-center space-x-1.5">
-                            <span class="text-slate-400">Dampak Koreksi:</span>
-                            <template x-if="parseFloat(formData.nilai_reklas || 0) > 0">
-                                <span class="px-2.5 py-1 rounded-lg text-[10.5px] font-black border"
-                                      :class="formData.tipe_koreksi === 'kurang' ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 shadow-rose-950/20' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-emerald-950/20'"
-                                      x-text="(formData.tipe_koreksi === 'kurang' ? '🔻 Berkurang Rp ' : '🔺 Bertambah Rp ') + Number(formData.nilai_reklas).toLocaleString('id-ID')"></span>
-                            </template>
-                            <template x-if="parseFloat(formData.nilai_reklas || 0) <= 0">
-                                <span class="px-2.5 py-1 rounded-lg text-[10.5px] font-bold bg-slate-800 text-slate-400 border border-slate-700">Tidak ada selisih nilai</span>
-                            </template>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            @include('pages.reklasifikasi.create_partials.param_koreksi_lain')
 
             <!-- 2C. Panel Khusus Hibah Keluar -->
             <div x-show="formData.jenis_reklas === 'HIBAH_KELUAR'"
@@ -1187,8 +1025,11 @@
                 </template>
             </div>
 
+            <!-- Panel Khusus Kapitalisasi KDP Selesai -> Definitif -->
+            @include('pages.reklasifikasi.create_partials.param_kdp')
+
             <!-- 3. Klasifikasi KIB Tujuan & Rekening PMDN 108 -->
-            <div x-show="formData.jenis_reklas === 'KOREKSI_REKENING' || formData.jenis_reklas === 'KDP_TO_DEFINITIF' || formData.jenis_reklas === 'KAPITALISASI_INTRAKOM'"
+            <div x-show="formData.jenis_reklas === 'KOREKSI_REKENING' || formData.jenis_reklas === 'KAPITALISASI_INTRAKOM'"
                  x-transition.duration.200ms
                  class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-4">
                 
@@ -1343,7 +1184,7 @@
             </div>
 
             <!-- Panduan Interaktif: Gating Rekening PMDN 108 Sebelum Membuka Spesifikasi -->
-            <div x-show="formData.tujuan_kib && !isReklasRekeningLengkap() && (formData.jenis_reklas === 'KOREKSI_REKENING' || formData.jenis_reklas === 'KDP_TO_DEFINITIF' || formData.jenis_reklas === 'KAPITALISASI_INTRAKOM')"
+            <div x-show="formData.tujuan_kib && !isReklasRekeningLengkap() && (formData.jenis_reklas === 'KOREKSI_REKENING' || formData.jenis_reklas === 'KAPITALISASI_INTRAKOM')"
                  x-transition.duration.300ms
                  class="p-4 rounded-2xl bg-slate-950/90 border border-amber-500/30 flex items-start gap-3.5 shadow-lg shadow-amber-950/20">
                 <div class="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0 text-amber-300 font-extrabold text-sm mt-0.5 shadow-inner">
@@ -1365,7 +1206,7 @@
             </div>
 
             <!-- 4. Form Spesifikasi Fisik Baru Dinamis Sesuai KIB Tujuan -->
-            <div x-show="isReklasRekeningLengkap() && (formData.jenis_reklas === 'KOREKSI_REKENING' || formData.jenis_reklas === 'KDP_TO_DEFINITIF' || formData.jenis_reklas === 'KAPITALISASI_INTRAKOM')"
+            <div x-show="isReklasRekeningLengkap() && (formData.jenis_reklas === 'KOREKSI_REKENING' || formData.jenis_reklas === 'KAPITALISASI_INTRAKOM')"
                  x-transition.duration.300ms
                  class="p-4 rounded-2xl bg-slate-900 border border-cyan-500/30 space-y-3.5 shadow-lg">
                 

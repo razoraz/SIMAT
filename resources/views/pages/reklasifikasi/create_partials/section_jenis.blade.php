@@ -55,27 +55,37 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 transition-all duration-300"
          :class="{ 'opacity-30 pointer-events-none select-none filter blur-[0.3px]': !selectedAstap }">
         <!-- 1. Koreksi Rekening / Pindah KIB -->
-        <label class="group relative flex flex-col justify-start p-4 rounded-2xl border transition-all duration-200 cursor-pointer select-none space-y-2.5"
-               :class="formData.jenis_reklas === 'KOREKSI_REKENING' ? 'bg-indigo-950/30 border-indigo-500 ring-1 ring-indigo-500/40 shadow-lg shadow-indigo-950/50' : 'bg-slate-950/70 border-slate-800 hover:border-slate-700 hover:bg-slate-950'">
+        <label class="group relative flex flex-col justify-start p-4 rounded-2xl border transition-all duration-200 select-none space-y-2.5"
+               @click="if (isCurrentAstapKdp()) { $event.preventDefault(); window.showSimatToast ? window.showSimatToast('⚠️ Aset KDP (KIB F) belum selesai, pengalihan definitif hanya lewat KDP Selesai ➔ Definitif!', 'warning') : alert('Terkunci untuk aset KDP!'); }"
+               :class="{
+                   'opacity-40 cursor-not-allowed bg-slate-950/40 border-slate-900/80': isCurrentAstapKdp(),
+                   'cursor-pointer bg-indigo-950/30 border-indigo-500 ring-1 ring-indigo-500/40 shadow-lg shadow-indigo-950/50': !isCurrentAstapKdp() && formData.jenis_reklas === 'KOREKSI_REKENING',
+                   'cursor-pointer bg-slate-950/70 border-slate-800 hover:border-slate-700 hover:bg-slate-950': !isCurrentAstapKdp() && formData.jenis_reklas !== 'KOREKSI_REKENING'
+               }">
             <div class="flex items-start justify-between gap-3">
                 <div class="flex items-center gap-2.5">
-                    <span class="w-8 h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm shrink-0">
+                    <span class="w-8 h-8 rounded-xl flex items-center justify-center text-sm shrink-0 border"
+                          :class="isCurrentAstapKdp() ? 'opacity-50 text-slate-500 bg-slate-900 border-slate-800' : 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'">
                         🔄
                     </span>
                     <div>
-                        <span class="text-xs font-bold text-white group-hover:text-indigo-300 transition-colors block">
+                        <span class="text-xs font-bold transition-colors block"
+                              :class="isCurrentAstapKdp() ? 'text-slate-500' : 'text-white group-hover:text-indigo-300'">
                             Koreksi Rekening / Pindah KIB
                         </span>
-                        <span class="text-[9.5px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 mt-0.5 inline-block">
+                        <span x-show="isCurrentAstapKdp()" class="text-[9.5px] font-bold px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30 mt-0.5 inline-block">
+                            Terkunci (KDP)
+                        </span>
+                        <span x-show="!isCurrentAstapKdp()" class="text-[9.5px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 mt-0.5 inline-block">
                             Salah Kamar / Akun 108
                         </span>
                     </div>
                 </div>
-                <input type="radio" x-model="formData.jenis_reklas" value="KOREKSI_REKENING" :disabled="!selectedAstap" @change="onJenisReklasChange()" class="text-indigo-600 focus:ring-0 cursor-pointer mt-1" :class="{ 'cursor-not-allowed opacity-50': !selectedAstap }">
+                <input type="radio" x-model="formData.jenis_reklas" value="KOREKSI_REKENING" :disabled="!selectedAstap || isCurrentAstapKdp()" @change="onJenisReklasChange()" class="text-indigo-600 focus:ring-0 mt-1" :class="(!selectedAstap || isCurrentAstapKdp()) ? 'cursor-not-allowed opacity-50 text-slate-700' : 'cursor-pointer'">
             </div>
-            <p class="text-[11px] text-slate-400 leading-relaxed">
-                Koreksi salah kamar klasifikasi KIB (A s/d F, ATB, Kemitraan) atau penyesuaian hierarki kode rekening Permendagri 108.
-            </p>
+            <p class="text-[11px] leading-relaxed"
+               :class="isCurrentAstapKdp() ? 'text-slate-600' : 'text-slate-400'"
+               x-text="isCurrentAstapKdp() ? 'Terkunci: KDP belum selesai, pengalihan definitif hanya lewat KDP Selesai ➔ Definitif.' : 'Koreksi salah kamar klasifikasi KIB (A s/d F, ATB, Kemitraan) atau penyesuaian hierarki kode rekening Permendagri 108.'"></p>
         </label>
 
         <!-- 2. KDP Selesai ➔ Definitif (Khusus Aset KIB F / KDP) -->
@@ -149,76 +159,109 @@
 
         <!-- Opsi 3B: Jika Aset Intrakomptabel / Belum Dipilih -> Muncul Ekstrakomptabel (≤ Rp 300rb) -->
         <template x-if="!selectedAstap || (!selectedAstap.is_extracomtable && selectedAstap.category !== 'EXTRACOM')">
-            <label class="group relative flex flex-col justify-start p-4 rounded-2xl border transition-all duration-200 cursor-pointer select-none space-y-2.5"
-                   :class="formData.jenis_reklas === 'EKSTRAKOMPTABEL' ? 'bg-rose-950/30 border-rose-500 ring-1 ring-rose-500/40 shadow-lg shadow-rose-950/50' : 'bg-slate-950/70 border-slate-800 hover:border-slate-700 hover:bg-slate-950'">
+            <label class="group relative flex flex-col justify-start p-4 rounded-2xl border transition-all duration-200 select-none space-y-2.5"
+                   @click="if (isExtracomDisabled()) { $event.preventDefault(); window.showSimatToast ? window.showSimatToast('⚠️ Opsi Ekstrakomtable tidak berlaku untuk kelompok aset ini (Wajib Intrakomtable sesuai SAP)!', 'warning') : alert('Tidak berlaku untuk kelompok aset ini (Wajib Intrakomtable)!'); }"
+                   :class="{
+                       'opacity-40 cursor-not-allowed bg-slate-950/40 border-slate-900/80': isExtracomDisabled(),
+                       'cursor-pointer bg-rose-950/30 border-rose-500 ring-1 ring-rose-500/40 shadow-lg shadow-rose-950/50': !isExtracomDisabled() && formData.jenis_reklas === 'EKSTRAKOMPTABEL',
+                       'cursor-pointer bg-slate-950/70 border-slate-800 hover:border-slate-700 hover:bg-slate-950': !isExtracomDisabled() && formData.jenis_reklas !== 'EKSTRAKOMPTABEL'
+                   }">
                 <div class="flex items-start justify-between gap-3">
                     <div class="flex items-center gap-2.5">
-                        <span class="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center text-sm shrink-0">
+                        <span class="w-8 h-8 rounded-xl flex items-center justify-center text-sm shrink-0 border"
+                              :class="isExtracomDisabled() ? 'opacity-50 text-slate-500 bg-slate-900 border-slate-800' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'">
                             🔻
                         </span>
                         <div>
-                            <span class="text-xs font-bold text-white group-hover:text-rose-300 transition-colors block">
+                            <span class="text-xs font-bold transition-colors block"
+                                  :class="isExtracomDisabled() ? 'text-slate-500' : 'text-white group-hover:text-rose-300'">
                                 Ekstrakomptabel (≤ Rp 300rb)
                             </span>
-                            <span class="text-[9.5px] font-bold text-rose-400 bg-rose-500/15 border border-rose-500/30 px-1.5 py-0.5 rounded mt-0.5 inline-block">
+                            <span x-show="isExtracomDisabled()" class="text-[9.5px] font-bold text-rose-300 bg-rose-500/20 border border-rose-500/30 px-1.5 py-0.5 rounded mt-0.5 inline-block">
+                                Terkunci (SAP)
+                            </span>
+                            <span x-show="!isExtracomDisabled()" class="text-[9.5px] font-bold text-rose-400 bg-rose-500/15 border border-rose-500/30 px-1.5 py-0.5 rounded mt-0.5 inline-block">
                                 Status: Intrakomptabel
                             </span>
                         </div>
                     </div>
-                    <input type="radio" x-model="formData.jenis_reklas" value="EKSTRAKOMPTABEL" :disabled="!selectedAstap" @change="onJenisReklasChange()" class="text-rose-600 focus:ring-0 cursor-pointer mt-1">
+                    <input type="radio" x-model="formData.jenis_reklas" value="EKSTRAKOMPTABEL"
+                           :disabled="!selectedAstap || isExtracomDisabled()"
+                           @change="onJenisReklasChange()" class="text-rose-600 focus:ring-0 mt-1"
+                           :class="(!selectedAstap || isExtracomDisabled()) ? 'cursor-not-allowed text-slate-700 opacity-50' : 'cursor-pointer'">
                 </div>
-                <p class="text-[11px] text-slate-400 leading-relaxed">
-                    Nilai perolehan satuan barang di bawah batas kapitalisasi (≤ Rp 300.000). Dikeluarkan dari neraca aset tetap ke ekstrakomptabel.
-                </p>
+                <p class="text-[11px] leading-relaxed"
+                   :class="isExtracomDisabled() ? 'text-slate-600' : 'text-slate-400'"
+                   x-text="isExtracomDisabled() ? 'Tidak berlaku untuk kelompok aset ini (Wajib Intrakomtable sesuai Standar Akuntansi Pemerintahan).' : 'Nilai perolehan satuan barang di bawah batas kapitalisasi (≤ Rp 300.000). Dikeluarkan dari neraca aset tetap ke ekstrakomptabel.'"></p>
             </label>
         </template>
 
         <!-- 4. Bantuan Hibah Keluar -->
-        <label class="group relative flex flex-col justify-start p-4 rounded-2xl border transition-all duration-200 cursor-pointer select-none space-y-2.5"
-               :class="formData.jenis_reklas === 'HIBAH_KELUAR' ? 'bg-purple-950/30 border-purple-500 ring-1 ring-purple-500/40 shadow-lg shadow-purple-950/50' : 'bg-slate-950/70 border-slate-800 hover:border-slate-700 hover:bg-slate-950'">
+        <label class="group relative flex flex-col justify-start p-4 rounded-2xl border transition-all duration-200 select-none space-y-2.5"
+               @click="if (isCurrentAstapKdp()) { $event.preventDefault(); window.showSimatToast ? window.showSimatToast('⚠️ Aset KDP (belum selesai) tidak dapat dihibahkan keluar!', 'warning') : alert('Terkunci untuk aset KDP!'); }"
+               :class="{
+                   'opacity-40 cursor-not-allowed bg-slate-950/40 border-slate-900/80': isCurrentAstapKdp(),
+                   'cursor-pointer bg-purple-950/30 border-purple-500 ring-1 ring-purple-500/40 shadow-lg shadow-purple-950/50': !isCurrentAstapKdp() && formData.jenis_reklas === 'HIBAH_KELUAR',
+                   'cursor-pointer bg-slate-950/70 border-slate-800 hover:border-slate-700 hover:bg-slate-950': !isCurrentAstapKdp() && formData.jenis_reklas !== 'HIBAH_KELUAR'
+               }">
             <div class="flex items-start justify-between gap-3">
                 <div class="flex items-center gap-2.5">
-                    <span class="w-8 h-8 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center text-sm shrink-0">
+                    <span class="w-8 h-8 rounded-xl flex items-center justify-center text-sm shrink-0 border"
+                          :class="isCurrentAstapKdp() ? 'opacity-50 text-slate-500 bg-slate-900 border-slate-800' : 'bg-purple-500/10 border-purple-500/20 text-purple-400'">
                         📤
                     </span>
                     <div>
-                        <span class="text-xs font-bold text-white group-hover:text-purple-300 transition-colors block">
+                        <span class="text-xs font-bold transition-colors block"
+                              :class="isCurrentAstapKdp() ? 'text-slate-500' : 'text-white group-hover:text-purple-300'">
                             Hibah Keluar (Dihibahkan)
                         </span>
-                        <span class="text-[9.5px] font-bold px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 mt-0.5 inline-block">
+                        <span x-show="isCurrentAstapKdp()" class="text-[9.5px] font-bold px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30 mt-0.5 inline-block">
+                            Terkunci (KDP)
+                        </span>
+                        <span x-show="!isCurrentAstapKdp()" class="text-[9.5px] font-bold px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 mt-0.5 inline-block">
                             BAST Hibah
                         </span>
                     </div>
                 </div>
-                <input type="radio" x-model="formData.jenis_reklas" value="HIBAH_KELUAR" :disabled="!selectedAstap" @change="onJenisReklasChange()" class="text-purple-600 focus:ring-0 cursor-pointer mt-1">
+                <input type="radio" x-model="formData.jenis_reklas" value="HIBAH_KELUAR" :disabled="!selectedAstap || isCurrentAstapKdp()" @change="onJenisReklasChange()" class="text-purple-600 focus:ring-0 mt-1" :class="(!selectedAstap || isCurrentAstapKdp()) ? 'cursor-not-allowed opacity-50 text-slate-700' : 'cursor-pointer'">
             </div>
-            <p class="text-[11px] text-slate-400 leading-relaxed">
-                Penyerahan aset milik RSUD secara cuma-cuma kepada yayasan, pemerintah desa, atau pihak ketiga berdasarkan naskah hibah resmi.
-            </p>
+            <p class="text-[11px] leading-relaxed"
+               :class="isCurrentAstapKdp() ? 'text-slate-600' : 'text-slate-400'"
+               x-text="isCurrentAstapKdp() ? 'Terkunci: Aset KDP (belum selesai) tidak dapat dihibahkan.' : 'Penyerahan aset milik RSUD secara cuma-cuma kepada yayasan, pemerintah desa, atau pihak ketiga berdasarkan naskah hibah resmi.'"></p>
         </label>
 
         <!-- 5. Mutasi Eksternal (Antar-OPD) -->
-        <label class="group relative flex flex-col justify-start p-4 rounded-2xl border transition-all duration-200 cursor-pointer select-none space-y-2.5"
-               :class="formData.jenis_reklas === 'MUTASI_EKSTERNAL' ? 'bg-cyan-950/30 border-cyan-500 ring-1 ring-cyan-500/40 shadow-lg shadow-cyan-950/50' : 'bg-slate-950/70 border-slate-800 hover:border-slate-700 hover:bg-slate-950'">
+        <label class="group relative flex flex-col justify-start p-4 rounded-2xl border transition-all duration-200 select-none space-y-2.5"
+               @click="if (isCurrentAstapKdp()) { $event.preventDefault(); window.showSimatToast ? window.showSimatToast('⚠️ Aset KDP (belum selesai) tidak dapat dimutasi ke luar OPD!', 'warning') : alert('Terkunci untuk aset KDP!'); }"
+               :class="{
+                   'opacity-40 cursor-not-allowed bg-slate-950/40 border-slate-900/80': isCurrentAstapKdp(),
+                   'cursor-pointer bg-cyan-950/30 border-cyan-500 ring-1 ring-cyan-500/40 shadow-lg shadow-cyan-950/50': !isCurrentAstapKdp() && formData.jenis_reklas === 'MUTASI_EKSTERNAL',
+                   'cursor-pointer bg-slate-950/70 border-slate-800 hover:border-slate-700 hover:bg-slate-950': !isCurrentAstapKdp() && formData.jenis_reklas !== 'MUTASI_EKSTERNAL'
+               }">
             <div class="flex items-start justify-between gap-3">
                 <div class="flex items-center gap-2.5">
-                    <span class="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center text-sm shrink-0">
+                    <span class="w-8 h-8 rounded-xl flex items-center justify-center text-sm shrink-0 border"
+                          :class="isCurrentAstapKdp() ? 'opacity-50 text-slate-500 bg-slate-900 border-slate-800' : 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400'">
                         🏛️
                     </span>
                     <div>
-                        <span class="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors block">
+                        <span class="text-xs font-bold transition-colors block"
+                              :class="isCurrentAstapKdp() ? 'text-slate-500' : 'text-white group-hover:text-cyan-300'">
                             Mutasi Antar-OPD
                         </span>
-                        <span class="text-[9.5px] font-bold px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 mt-0.5 inline-block">
+                        <span x-show="isCurrentAstapKdp()" class="text-[9.5px] font-bold px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30 mt-0.5 inline-block">
+                            Terkunci (KDP)
+                        </span>
+                        <span x-show="!isCurrentAstapKdp()" class="text-[9.5px] font-bold px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 mt-0.5 inline-block">
                             BAST Antar-SKPD
                         </span>
                     </div>
                 </div>
-                <input type="radio" x-model="formData.jenis_reklas" value="MUTASI_EKSTERNAL" :disabled="!selectedAstap" @change="onJenisReklasChange()" class="text-cyan-600 focus:ring-0 cursor-pointer mt-1">
+                <input type="radio" x-model="formData.jenis_reklas" value="MUTASI_EKSTERNAL" :disabled="!selectedAstap || isCurrentAstapKdp()" @change="onJenisReklasChange()" class="text-cyan-600 focus:ring-0 mt-1" :class="(!selectedAstap || isCurrentAstapKdp()) ? 'cursor-not-allowed opacity-50 text-slate-700' : 'cursor-pointer'">
             </div>
-            <p class="text-[11px] text-slate-400 leading-relaxed">
-                Pemindahan penguasaan aset ke SKPD/OPD lain di lingkungan Pemkab Bondowoso berdasarkan BAST resmi.
-            </p>
+            <p class="text-[11px] leading-relaxed"
+               :class="isCurrentAstapKdp() ? 'text-slate-600' : 'text-slate-400'"
+               x-text="isCurrentAstapKdp() ? 'Terkunci: Aset KDP (belum selesai) tidak dapat dimutasi keluar OPD.' : 'Pemindahan penguasaan aset ke SKPD/OPD lain di lingkungan Pemkab Bondowoso berdasarkan BAST resmi.'"></p>
         </label>
 
         <!-- 6. Koreksi Nilai Realisasi / BPK / Manset -->

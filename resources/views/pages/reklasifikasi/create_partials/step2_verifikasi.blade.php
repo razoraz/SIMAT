@@ -115,7 +115,11 @@
                 </button>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-48 overflow-y-auto custom-scrollbar pr-1">
+            <div class="grid grid-cols-1 gap-2.5 max-h-48 overflow-y-auto custom-scrollbar pr-1"
+                 :class="{
+                     'sm:grid-cols-2': (formData.selected_register_ids ? formData.selected_register_ids.length : 0) >= 2,
+                     'lg:grid-cols-3': (formData.selected_register_ids ? formData.selected_register_ids.length : 0) >= 3
+                 }">
                 <template x-for="reg in (selectedAstap.registers || []).filter(r => (formData.selected_register_ids || []).includes(Number(r.id)))" :key="reg.id">
                     <div class="p-3 rounded-2xl bg-slate-950/80 border border-cyan-500/20 flex items-center justify-between gap-2 shadow-inner">
                         <div class="min-w-0">
@@ -196,10 +200,10 @@
         </button>
 
         <button type="submit" :disabled="!selectedAstap || isSubmitting"
-                class="inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-2xl text-xs font-black shadow-xl transition-all cursor-pointer"
+                class="inline-flex items-center justify-center gap-2.5 px-7 py-3 rounded-2xl text-xs font-black shadow-xl transition-all cursor-pointer"
                 :class="!selectedAstap || isSubmitting
                     ? 'bg-slate-800 border border-slate-700 text-slate-500 cursor-not-allowed opacity-60 shadow-none'
-                    : 'bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-emerald-600/30 hover:shadow-emerald-500/50 hover:-translate-y-0.5 active:scale-95'">
+                    : 'bg-gradient-to-r from-emerald-600 via-teal-600 to-teal-500 hover:from-emerald-500 hover:to-teal-500 text-white shadow-emerald-600/30 hover:shadow-emerald-500/50 hover:-translate-y-0.5 active:scale-95'">
             <template x-if="!isSubmitting">
                 <div class="flex items-center gap-2">
                     <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

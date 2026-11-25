@@ -1,5 +1,5 @@
             <!-- 3. Klasifikasi KIB Tujuan & Rekening PMDN 108 -->
-            <div x-show="formData.jenis_reklas === 'KOREKSI_REKENING' || formData.jenis_reklas === 'KDP_TO_DEFINITIF' || formData.jenis_reklas === 'KAPITALISASI_INTRAKOM'"
+            <div x-show="formData.jenis_reklas === 'KOREKSI_REKENING' || formData.jenis_reklas === 'KAPITALISASI_INTRAKOM'"
                  x-transition.duration.200ms
                  class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-4">
                 
@@ -119,7 +119,7 @@
             </div>
 
             <!-- Panduan Interaktif: Gating Rekening PMDN 108 Sebelum Membuka Spesifikasi -->
-            <div x-show="formData.tujuan_kib && !isReklasRekeningLengkap() && (formData.jenis_reklas === 'KOREKSI_REKENING' || formData.jenis_reklas === 'KDP_TO_DEFINITIF' || formData.jenis_reklas === 'KAPITALISASI_INTRAKOM')"
+            <div x-show="formData.tujuan_kib && !isReklasRekeningLengkap() && (formData.jenis_reklas === 'KOREKSI_REKENING' || formData.jenis_reklas === 'KAPITALISASI_INTRAKOM')"
                  x-transition.duration.300ms
                  class="p-4 rounded-2xl bg-slate-950/90 border border-amber-500/30 flex items-start gap-3.5 shadow-lg shadow-amber-950/20">
                 <div class="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0 text-amber-300 font-extrabold text-sm mt-0.5 shadow-inner">
@@ -141,7 +141,7 @@
             </div>
 
             <!-- 4. Form Spesifikasi Fisik Baru Dinamis Sesuai KIB Tujuan -->
-            <div x-show="isReklasRekeningLengkap() && (formData.jenis_reklas === 'KOREKSI_REKENING' || formData.jenis_reklas === 'KDP_TO_DEFINITIF' || formData.jenis_reklas === 'KAPITALISASI_INTRAKOM')"
+            <div x-show="isReklasRekeningLengkap() && (formData.jenis_reklas === 'KOREKSI_REKENING' || formData.jenis_reklas === 'KAPITALISASI_INTRAKOM')"
                  x-transition.duration.300ms
                  class="p-4 rounded-2xl bg-slate-900 border border-cyan-500/30 space-y-3.5 shadow-lg">
                 

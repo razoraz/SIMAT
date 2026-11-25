@@ -210,6 +210,7 @@
             isSubmitting: false,
             detailItem: null,
             selectedAstap: null,
+            reklasKdpProgresAwal: 0,
 
             // State Dropdown Autocomplete PMDN 108
             searchReklasSubRincian: '',
@@ -350,6 +351,7 @@
                 astap_id: '',
                 nama_barang: '',
                 jenis_reklas: 'KOREKSI_REKENING',
+                sub_koreksi: 'biasa',
                 jenis_reklasifikasi_asal_id: '',
                 jenis_reklasifikasi_tujuan_id: '',
                 tujuan_kib: '',
@@ -360,6 +362,9 @@
                 triwulan: String({{ (!empty($selectedTw) && $selectedTw !== 'all') ? (int)$selectedTw : 'Math.ceil((new Date().getMonth() + 1) / 3)' }}),
                 tahun: {{ $selectedTahun ?? date('Y') }},
                 nomor_ba_reklas: '',
+                no_dokumen_koreksi: '',
+                tanggal_dokumen_koreksi: new Date().toISOString().split('T')[0],
+                alasan_reklas: '',
                 keterangan: '',
                 spekBaru: {
                     tanah_luas_m2: '',
@@ -887,8 +892,23 @@
 
             clearDokumenFile() {
                 this.selectedDokumenFile = null;
-                const fileInput = document.getElementById('reklas_dokumen_file_input');
-                if (fileInput) fileInput.value = '';
+                ['reklas_dokumen_file_input', 'reklas_koreksi_dokumen_file'].forEach((elId) => {
+                    const fileInput = document.getElementById(elId);
+                    if (fileInput) fileInput.value = '';
+                });
+            },
+
+            isReklasBelanjaModal() {
+                const it = this.selectedAstap;
+                if (!it) return true;
+                const sd = String(it.sumber_dana || it.sumber_dana_raw || '').toLowerCase();
+                if (['hibah', 'kemitraan', 'belanja_barang', 'belanja_rekening', 'pelimpahan_skpd', 'mutasi_masuk', 'pelimpahan', 'mutasi'].includes(sd)) {
+                    return false;
+                }
+                if (it.kemitraan || it.category === 'KEMITRAAN' || it.jenis_reklas === 'HIBAH_MASUK') {
+                    return false;
+                }
+                return true;
             },
 
             isTanggalBastInvalid() {
@@ -897,12 +917,51 @@
                 return this.formData.tanggal_bast > today;
             },
 
+            isCurrentAstapKdp() {
+                if (!this.selectedAstap) return false;
+                const astap = this.selectedAstap;
+                const kib = (astap.category || astap.asal_kib || '').toUpperCase().trim();
+                const kode = String(
+                    astap.jenis_astap?.sub_sub_rincian_objek ||
+                    astap.jenis_astap?.sub_rincian_objek ||
+                    astap.jenis_astap?.jenis ||
+                    astap.kode_barang ||
+                    ''
+                ).trim();
+                return kib === 'KIB F' || kib === 'KDP' || kode.startsWith('1.3.6');
+            },
+
             isAssetKdp() {
                 if (!this.selectedAstap) return true; // Belum ada aset dipilih, biarkan netral
+                return this.isCurrentAstapKdp();
+            },
+
+            isExtracomDisabled() {
+                if (!this.selectedAstap) return false;
                 const astap = this.selectedAstap;
-                const kib = (astap.category || astap.asal_kib || '').toUpperCase();
-                const kode = (astap.jenis_astap?.sub_sub_rincian_objek || astap.jenis_astap?.sub_rincian_objek || '');
-                return kib === 'KIB F' || kib === 'KDP' || kode.startsWith('1.3.6');
+                if (Boolean(astap.is_extracomtable || astap.category === 'EXTRACOM')) return false;
+
+                const kib = (astap.category || astap.asal_kib || '').toUpperCase().trim();
+                const kode = String(
+                    astap.jenis_astap?.sub_sub_rincian_objek ||
+                    astap.jenis_astap?.sub_rincian_objek ||
+                    astap.jenis_astap?.jenis ||
+                    astap.kode_barang ||
+                    ''
+                ).trim();
+
+                if (
+                    kode.startsWith('1.3.1') ||
+                    kode.startsWith('1.3.3') ||
+                    kode.startsWith('1.3.4') ||
+                    kode.startsWith('1.3.6') ||
+                    kode.startsWith('1.5.2') ||
+                    kode.startsWith('1.5.3')
+                ) {
+                    return true;
+                }
+
+                return ['KIB A', 'KIB C', 'KIB D', 'KIB F', 'KDP', 'ATB', 'KEMITRAAN'].includes(kib);
             },
 
             openModalTambah() {
@@ -934,6 +993,8 @@
                     triwulan: String({{ (!empty($selectedTw) && $selectedTw !== 'all') ? (int)$selectedTw : 'Math.ceil((new Date().getMonth() + 1) / 3)' }}),
                     tahun: {{ $selectedTahun ?? date('Y') }},
                     nomor_ba_reklas: '',
+                    no_dokumen_koreksi: '',
+                    tanggal_dokumen_koreksi: new Date().toISOString().split('T')[0],
                     alasan_reklas: '',
                     keterangan: '',
                     tipe_koreksi: 'kurang',
@@ -1167,6 +1228,24 @@
                 this.selectedAstap = found;
                 this.formData.nama_barang = found.nama_barang || '';
                 this.formData.nilai_realisasi_baru = parseFloat(found.total_realisasi || 0);
+                this.formData.no_dokumen_koreksi = '';
+                this.formData.tanggal_dokumen_koreksi = this.formData.tanggal_dokumen_koreksi || new Date().toISOString().split('T')[0];
+
+                // Ekstraksi progres fisik KDP semula untuk panel komparasi Transformasi Progres Fisik KDP
+                let kdpSpec = found.spesifikasi_json;
+                if (typeof kdpSpec === 'string') {
+                    try { kdpSpec = JSON.parse(kdpSpec); } catch (e) { kdpSpec = {}; }
+                }
+                if (!kdpSpec || typeof kdpSpec !== 'object') kdpSpec = {};
+                let kdpProgres = 0;
+                if (kdpSpec.kdp_progres_persen !== undefined && kdpSpec.kdp_progres_persen !== null) {
+                    kdpProgres = parseFloat(kdpSpec.kdp_progres_persen) || 0;
+                } else if (kdpSpec.progres_persen !== undefined && kdpSpec.progres_persen !== null) {
+                    kdpProgres = parseFloat(kdpSpec.progres_persen) || 0;
+                } else if (Array.isArray(kdpSpec.kdp_items) && kdpSpec.kdp_items.length > 0) {
+                    kdpProgres = parseFloat(kdpSpec.kdp_items[0].kdp_progres_persen) || 0;
+                }
+                this.reklasKdpProgresAwal = kdpProgres;
 
                 // Otomatisasi Nomor Berita Acara / Dokumen Reklasifikasi dari BAST / SPK aset
                 const isValidDoc = (val) => val && typeof val === 'string' && val.trim() !== '' && val.trim() !== '-' && val.trim().toLowerCase() !== 'null';
@@ -1187,18 +1266,22 @@
                 if (isExtracom && this.formData.jenis_reklas === 'EKSTRAKOMPTABEL') {
                     this.formData.jenis_reklas = 'KAPITALISASI_INTRAKOM';
                     this.onJenisReklasChange();
-                } else if (!isExtracom && this.formData.jenis_reklas === 'KAPITALISASI_INTRAKOM') {
-                    this.formData.jenis_reklas = 'EKSTRAKOMPTABEL';
-                    this.onJenisReklasChange();
+                } else if (!isExtracom && (this.formData.jenis_reklas === 'KAPITALISASI_INTRAKOM' || this.formData.jenis_reklas === 'EKSTRAKOMPTABEL')) {
+                    if (this.isExtracomDisabled()) {
+                        this.formData.jenis_reklas = 'KOREKSI_REKENING';
+                        this.onJenisReklasChange();
+                    } else if (this.formData.jenis_reklas === 'KAPITALISASI_INTRAKOM') {
+                        this.formData.jenis_reklas = 'EKSTRAKOMPTABEL';
+                        this.onJenisReklasChange();
+                    }
                 }
 
-                // Otomatis alihkan jika aset BUKAN KDP tapi jenis yang aktif adalah KDP_TO_DEFINITIF
-                const isKdp = Boolean(
-                    (found.category || found.asal_kib || '').toUpperCase() === 'KIB F' ||
-                    (found.category || found.asal_kib || '').toUpperCase() === 'KDP' ||
-                    (found.jenis_astap?.sub_sub_rincian_objek || '').startsWith('1.3.6')
-                );
-                if (!isKdp && this.formData.jenis_reklas === 'KDP_TO_DEFINITIF') {
+                // Otomatis alihkan jika aset KDP dan jenis yang aktif dilarang untuk KDP, atau sebaliknya jika aset BUKAN KDP tapi jenisnya KDP_TO_DEFINITIF
+                const isKdp = this.isCurrentAstapKdp();
+                if (isKdp && ['KOREKSI_REKENING', 'EKSTRAKOMPTABEL', 'KAPITALISASI_INTRAKOM', 'HIBAH_KELUAR', 'MUTASI_EKSTERNAL'].includes(this.formData.jenis_reklas)) {
+                    this.formData.jenis_reklas = 'KDP_TO_DEFINITIF';
+                    this.onJenisReklasChange();
+                } else if (!isKdp && this.formData.jenis_reklas === 'KDP_TO_DEFINITIF') {
                     this.formData.jenis_reklas = 'KOREKSI_REKENING';
                     this.onJenisReklasChange();
                 }
@@ -1417,10 +1500,22 @@
                 this.clearSubSubRincian();
 
                 // Auto match tujuan row dari kelompok_kib
+                let matchedRow = null;
                 if (this.formData.tujuan_kib && window.templateRows) {
-                    const kibRow = window.templateRows.find(r => r.kelompok_kib === this.formData.tujuan_kib);
-                    if (kibRow) {
-                        this.formData.jenis_reklasifikasi_tujuan_id = kibRow.id;
+                    matchedRow = window.templateRows.find(r => r.kelompok_kib === this.formData.tujuan_kib) || null;
+                    if (matchedRow) {
+                        this.formData.jenis_reklasifikasi_tujuan_id = matchedRow.id;
+                    }
+                }
+
+                if (this.formData.jenis_reklas === 'KDP_TO_DEFINITIF') {
+                    if (this.formData.tujuan_kib === 'KIB D') {
+                        this.formData.tujuan_kode = matchedRow?.kode_prefix || '1.3.4.01';
+                        this.formData.tujuan_nama = matchedRow?.nama_akun || 'Jalan, Jaringan & Irigasi (Definitif)';
+                    } else {
+                        this.formData.tujuan_kib = 'KIB C';
+                        this.formData.tujuan_kode = matchedRow?.kode_prefix || '1.3.3.01';
+                        this.formData.tujuan_nama = matchedRow?.nama_akun || 'Gedung & Bangunan (Definitif)';
                     }
                 }
 
@@ -1904,7 +1999,7 @@
 
             isReklasRekeningLengkap() {
                 if (!this.formData.tujuan_kib) return false;
-                if (['KOREKSI_REKENING', 'KDP_TO_DEFINITIF', 'KAPITALISASI_INTRAKOM'].includes(this.formData.jenis_reklas)) {
+                if (['KOREKSI_REKENING', 'KAPITALISASI_INTRAKOM'].includes(this.formData.jenis_reklas)) {
                     return Boolean(this.formData.tujuan_kib && this.reklasSubRincianKode && (this.reklasSubSubRincianKode || this.formData.tujuan_kode));
                 }
                 return Boolean(this.formData.tujuan_kib);
@@ -2463,6 +2558,14 @@
                     return false;
                 }
 
+                // Proteksi KDP (KIB F / 1.3.6): tidak boleh dipindah KIB, diekstrakom, dihibahkan, atau dimutasi keluar OPD
+                if (this.isCurrentAstapKdp() && ['KOREKSI_REKENING', 'EKSTRAKOMPTABEL', 'KAPITALISASI_INTRAKOM', 'HIBAH_KELUAR', 'MUTASI_EKSTERNAL'].includes(this.formData.jenis_reklas)) {
+                    const errMsg = '⚠️ Aset KDP (KIB F / Akun 1.3.6) belum selesai dan hanya dapat menggunakan KDP Selesai ➔ Definitif atau Koreksi Nilai Realisasi!';
+                    if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'error');
+                    else alert(errMsg);
+                    return false;
+                }
+
                 // Validasi khusus Koreksi Nilai Realisasi (KOREKSI_LAIN)
                 if (this.formData.jenis_reklas === 'KOREKSI_LAIN') {
                     const nom = parseFloat(this.formData.nilai_reklas || 0);
@@ -2473,7 +2576,7 @@
                         return false;
                     }
                     if (this.formData.sub_koreksi === 'lkd' || this.formData.sub_koreksi === 'manset') {
-                        const noDok = (this.formData.nomor_ba_reklas || '').trim();
+                        const noDok = (this.formData.no_dokumen_koreksi || this.formData.nomor_ba_reklas || '').trim();
                         if (!noDok) {
                             const docLabel = (this.formData.sub_koreksi === 'lkd') ? 'Nomor LHP BPK RI / Rekomendasi' : 'Nomor BA Rekonsiliasi Manset BPKAD';
                             const errMsg = `⚠️ ${docLabel} wajib diisi sebagai dasar penyesuaian nilai!`;
@@ -2481,7 +2584,7 @@
                             else alert(errMsg);
                             return false;
                         }
-                        if (!this.formData.tanggal_reklas) {
+                        if (!this.formData.tanggal_dokumen_koreksi && !this.formData.tanggal_reklas) {
                             const errMsg = '⚠️ Tanggal Dokumen Dasar Koreksi wajib dipilih!';
                             if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'warning');
                             else alert(errMsg);
@@ -2580,6 +2683,12 @@
 
                 // Validasi khusus Ekstrakomptabel (<= 300.000)
                 if (this.formData.jenis_reklas === 'EKSTRAKOMPTABEL') {
+                    if (this.isExtracomDisabled()) {
+                        const errMsg = '⚠️ Opsi Ekstrakomtable tidak berlaku untuk kelompok aset ini (Wajib Intrakomtable sesuai SAP).';
+                        if (typeof window.showSimatToast === 'function') window.showSimatToast(errMsg, 'error');
+                        else alert(errMsg);
+                        return false;
+                    }
                     if (this.selectedAstap && this.selectedAstap.registers && this.selectedAstap.registers.length > 0) {
                         if (!this.formData.selected_register_ids || this.formData.selected_register_ids.length === 0) {
                             const errMsg = '⚠️ Pilih minimal 1 unit register/NIBAR pada Tahap 01 yang akan diproses ke Ekstrakomptabel.';
@@ -2660,7 +2769,13 @@
                     }
 
                     let spekBaruPayload = null;
-                    if (['KOREKSI_REKENING', 'KDP_TO_DEFINITIF', 'KAPITALISASI_INTRAKOM'].includes(this.formData.jenis_reklas) && this.formData.tujuan_kib) {
+                    if (this.formData.jenis_reklas === 'KDP_TO_DEFINITIF') {
+                        spekBaruPayload = Object.assign({}, this.formData.spekBaru || {}, {
+                            progres_persen: 100,
+                            kdp_progres_persen: 100,
+                            progres_fisik: '100%',
+                        });
+                    } else if (['KOREKSI_REKENING', 'KAPITALISASI_INTRAKOM'].includes(this.formData.jenis_reklas) && this.formData.tujuan_kib) {
                         if (this.formData.spek_mode === 'individual' && this.formData.spek_units && this.formData.spek_units.length > 1) {
                             const unitsList = this.getSelectedUnitsList();
                             const cleanItems = this.formData.spek_units.map((u, idx) => {
@@ -2691,10 +2806,14 @@
                         register_kondisi_map: (this.formData.jenis_reklas === 'MUTASI_EKSTERNAL' || this.formData.jenis_reklas === 'HIBAH_KELUAR') ? (this.formData.register_kondisi_map || {}) : null,
                         tipe_koreksi: this.formData.tipe_koreksi || 'kurang',
                         sub_koreksi: (this.formData.jenis_reklas === 'KOREKSI_LAIN') ? (this.formData.sub_koreksi || 'biasa') : null,
+                        nomor_ba_reklas: (this.formData.jenis_reklas === 'KOREKSI_LAIN') ? ((this.formData.no_dokumen_koreksi || '').trim() || this.formData.nomor_ba_reklas || null) : (this.formData.nomor_ba_reklas || null),
+                        tanggal_dokumen_koreksi: (this.formData.jenis_reklas === 'KOREKSI_LAIN') ? (this.formData.tanggal_dokumen_koreksi || this.formData.tanggal_reklas || null) : null,
+                        jumlah_anggaran: (this.formData.jenis_reklas === 'KOREKSI_LAIN') ? (this.isReklasBelanjaModal() ? (parseFloat(this.selectedAstap?.jumlah_anggaran || 0) || null) : null) : (parseFloat(this.selectedAstap?.jumlah_anggaran || 0) || null),
                         nilai_realisasi_baru: parseFloat(this.formData.nilai_realisasi_baru || 0),
                         alasan_reklas: (this.formData.alasan_reklas || '').trim() || (this.formData.keterangan || '').trim() || null,
                         keterangan: (this.formData.keterangan || '').trim() || this.getNarasiPreview(),
                         spesifikasi_baru: spekBaruPayload,
+                        progres_persen: (this.formData.jenis_reklas === 'KDP_TO_DEFINITIF') ? 100 : undefined,
                         pihak_hibah: this.formData.pihak_hibah || null,
                         penerima_nama: this.formData.penerima_nama || null,
                         penerima_jabatan: this.formData.penerima_jabatan || null,

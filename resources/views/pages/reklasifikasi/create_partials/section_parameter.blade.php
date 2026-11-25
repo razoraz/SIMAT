@@ -107,7 +107,10 @@
         <!-- 4. Panel Khusus Batas Kapitalisasi Ekstrakomptabel / Intrakomptabel -->
         @include('pages.reklasifikasi.create_partials.param_ekstrakom')
 
-        <!-- 5. Panel Tujuan KIB & Rekening PMDN 108 & Spesifikasi Fisik Baru -->
+        <!-- 5. Panel Khusus Kapitalisasi KDP Selesai -> Definitif -->
+        @include('pages.reklasifikasi.create_partials.param_kdp')
+
+        <!-- 6. Panel Tujuan KIB & Rekening PMDN 108 & Spesifikasi Fisik Baru -->
         @include('pages.reklasifikasi.create_partials.param_pindah_kib_108')
 
         <!-- 3. Alasan Reklasifikasi (Wajib Diisi untuk Semua Jenis Reklas - Taruh Paling Bawah) -->

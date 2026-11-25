@@ -411,7 +411,7 @@ class ReklasifikasiController extends Controller
                 $q->where('is_deleted', 0)
                   ->whereNotIn('status', ['Dibatalkan', 'Mutasi Keluar OPD', 'Dihibahkan']);
             })
-            ->select('id', 'nama_barang', 'total_realisasi', 'jumlah_anggaran', 'tahun_perolehan', 'category', 'asal_kib', 'jenis_astap_id', 'is_reklas', 'jenis_reklas', 'satuan', 'merk_type', 'alamat_barang', 'spesifikasi_json', 'jumlah_volume', 'harga_satuan', 'is_extracomtable')
+            ->select('id', 'nama_barang', 'total_realisasi', 'jumlah_anggaran', 'tahun_perolehan', 'category', 'asal_kib', 'jenis_astap_id', 'is_reklas', 'jenis_reklas', 'satuan', 'merk_type', 'alamat_barang', 'spesifikasi_json', 'jumlah_volume', 'harga_satuan', 'is_extracomtable', 'sumber_dana')
             ->with(['jenisAstap:id,jenis,sub_sub_rincian_objek', 'registers:id,astap_id,nibar,no_register,kondisi,status'])
             ->orderBy('nama_barang', 'asc')
             ->get();
@@ -503,7 +503,7 @@ class ReklasifikasiController extends Controller
                 $q->where('is_deleted', 0)
                   ->whereNotIn('status', ['Dibatalkan', 'Mutasi Keluar OPD', 'Dihibahkan']);
             })
-            ->select('id', 'nama_barang', 'total_realisasi', 'jumlah_anggaran', 'tahun_perolehan', 'category', 'asal_kib', 'jenis_astap_id', 'is_reklas', 'jenis_reklas', 'satuan', 'merk_type', 'alamat_barang', 'spesifikasi_json', 'jumlah_volume', 'harga_satuan', 'is_extracomtable')
+            ->select('id', 'nama_barang', 'total_realisasi', 'jumlah_anggaran', 'tahun_perolehan', 'category', 'asal_kib', 'jenis_astap_id', 'is_reklas', 'jenis_reklas', 'satuan', 'merk_type', 'alamat_barang', 'spesifikasi_json', 'jumlah_volume', 'harga_satuan', 'is_extracomtable', 'sumber_dana')
             ->with(['jenisAstap:id,jenis,sub_sub_rincian_objek,uraian_sub_rincian,uraian_sub_sub_rincian', 'registers:id,astap_id,nibar,no_register,kondisi,status']);
 
         // Jika tidak ada target spesifik, batasi ke tahun terpilih agar responsif
@@ -855,13 +855,35 @@ class ReklasifikasiController extends Controller
             }
         }
 
-        // Proteksi Validasi Duplikasi: Validasi Berbasis Status Riil Aset Saat Ini (Bukan Riwayat Log Masa Lalu)
+        // Proteksi Validasi Duplikasi & Aturan SAP: Validasi Berbasis Status Riil Aset Saat Ini
         if ($validated['jenis_reklas'] === 'EKSTRAKOMPTABEL') {
             $alreadyExtracom = (bool) $astap->is_extracomtable || $astap->jenis_reklas === 'EKSTRAKOMPTABEL' || $astap->category === 'EKSTRAKOMPTABEL';
             if ($alreadyExtracom) {
                 return response()->json([
                     'success' => false,
                     'message' => "Aset '{$astap->nama_barang}' saat ini sudah berstatus EKSTRAKOMPTABEL. Transaksi reklasifikasi ke Ekstrakomptabel tidak dapat dilakukan kembali.",
+                ], 422);
+            }
+
+            $kodeJenisSap = trim((string) (
+                $astap->jenisAstap?->sub_sub_rincian_objek ??
+                $astap->jenisAstap?->sub_rincian_objek ??
+                $astap->jenisAstap?->jenis ??
+                ''
+            ));
+            $catSap = strtoupper(trim((string) ($astap->category ?: $astap->asal_kib ?: '')));
+            $isSapLockedIntracom = in_array($catSap, ['KIB A', 'KIB C', 'KIB D', 'KIB F', 'KDP', 'ATB', 'KEMITRAAN'], true)
+                || str_starts_with($kodeJenisSap, '1.3.1')
+                || str_starts_with($kodeJenisSap, '1.3.3')
+                || str_starts_with($kodeJenisSap, '1.3.4')
+                || str_starts_with($kodeJenisSap, '1.3.6')
+                || str_starts_with($kodeJenisSap, '1.5.2')
+                || str_starts_with($kodeJenisSap, '1.5.3');
+
+            if ($isSapLockedIntracom) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Aset '{$astap->nama_barang}' termasuk kelompok wajib Intrakomptabel berdasarkan SAP dan tidak dapat dialihkan ke Ekstrakomptabel.",
                 ], 422);
             }
         } elseif ($validated['jenis_reklas'] === 'KAPITALISASI_INTRAKOM') {
@@ -888,6 +910,16 @@ class ReklasifikasiController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => "Aset '{$astap->nama_barang}' bukan merupakan aset Konstruksi Dalam Pengerjaan (KIB F / Akun 1.3.6). Reklasifikasi KDP Selesai ke Definitif hanya berlaku untuk pekerjaan fisik KDP.",
+                ], 422);
+            }
+        } elseif (in_array($validated['jenis_reklas'], ['KOREKSI_REKENING', 'HIBAH_KELUAR', 'MUTASI_EKSTERNAL'], true)) {
+            $kodeJenisKdp = (string) ($astap->jenisAstap?->sub_sub_rincian_objek ?? $astap->jenisAstap?->sub_rincian_objek ?? $astap->jenisAstap?->jenis ?? '');
+            $catKdp = strtoupper(trim((string) ($astap->category ?: $astap->asal_kib ?: '')));
+            $isCurrentKdp = $catKdp === 'KDP' || $catKdp === 'KIB F' || str_starts_with(trim($kodeJenisKdp), '1.3.6');
+            if ($isCurrentKdp) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Aset Konstruksi Dalam Pengerjaan (KDP / KIB F) '{$astap->nama_barang}' belum berwujud barang jadi dan tidak dapat dipindah KIB, dihibahkan, atau dimutasi ke luar OPD. Silakan gunakan opsi KDP Selesai ➔ Definitif atau Koreksi Nilai.",
                 ], 422);
             }
         }
