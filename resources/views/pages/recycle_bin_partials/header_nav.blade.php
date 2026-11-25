@@ -14,42 +14,135 @@
 @endphp
 
 <!-- EXECUTIVE AUDIT HEADER & STREAMLINED SUMMARY -->
-<div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800 p-5 md:p-6 shadow-2xl">
+<div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800 p-4 sm:p-5 md:p-6 shadow-2xl">
+    <style>
+        /* Mode Layar Medium ke Bawah (< 1024px): Rata Tengah Simetris */
+        @media (max-width: 1023px) {
+            .rb-header-wrap {
+                flex-direction: column !important;
+                align-items: center !important;
+                text-align: center !important;
+                gap: 1.25rem !important;
+            }
+            .rb-header-text {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                text-align: center !important;
+                width: 100% !important;
+            }
+            .rb-badge,
+            .rb-title,
+            .rb-desc {
+                margin-left: auto !important;
+                margin-right: auto !important;
+                justify-content: center !important;
+                text-align: center !important;
+            }
+            .rb-stats-dock {
+                justify-content: center !important;
+                width: 100% !important;
+            }
+            .rb-stats-card {
+                text-align: center !important;
+            }
+            .rb-stats-val {
+                justify-content: center !important;
+            }
+            .rb-time-pills {
+                justify-content: center !important;
+                flex-wrap: wrap !important;
+                width: 100% !important;
+            }
+            .rb-toolbar-footer {
+                flex-direction: column !important;
+                align-items: center !important;
+                text-align: center !important;
+                gap: 0.375rem !important;
+            }
+            .rb-mod-popover {
+                max-width: calc(100vw - 2.5rem) !important;
+            }
+        }
+        /* Mode Desktop Luas (>= 1024px): Rata Kiri Standar */
+        @media (min-width: 1024px) {
+            .rb-header-wrap {
+                flex-direction: row !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+            }
+            .rb-header-text {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                text-align: left !important;
+            }
+            .rb-badge,
+            .rb-title,
+            .rb-desc {
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+                justify-content: flex-start !important;
+                text-align: left !important;
+            }
+            .rb-stats-dock {
+                justify-content: flex-end !important;
+                width: auto !important;
+            }
+            .rb-stats-card {
+                text-align: left !important;
+            }
+            .rb-stats-val {
+                justify-content: flex-start !important;
+            }
+            .rb-time-pills {
+                justify-content: flex-start !important;
+                width: auto !important;
+            }
+            .rb-toolbar-footer {
+                flex-direction: row !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+                text-align: left !important;
+            }
+        }
+    </style>
+
     <div class="absolute -right-12 -top-12 w-64 h-64 bg-red-500/10 rounded-full blur-3xl pointer-events-none"></div>
     <div class="absolute right-40 -bottom-10 w-48 h-48 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none"></div>
 
-    <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div>
-            <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-red-500/15 border border-red-500/30 text-red-300 text-xs font-bold mb-2 shadow-sm">
+    <div class="rb-header-wrap relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div class="rb-header-text min-w-0">
+            <div class="rb-badge inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-red-500/15 border border-red-500/30 text-red-300 text-xs font-bold mb-2 shadow-sm max-w-full">
                 <span>♻️ Audit Trail & Central Recycle Bin</span>
             </div>
-            <h1 class="text-xl md:text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
+            <h1 class="rb-title text-xl md:text-2xl font-black text-white tracking-tight flex flex-wrap items-center gap-2.5">
                 <span>Pusat Data Terhapus</span>
                 <span class="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700/80 font-normal">SIMAT-RK</span>
             </h1>
-            <p class="text-slate-400 text-xs mt-1 max-w-xl leading-relaxed">
+            <p class="rb-desc text-slate-400 text-xs mt-1 max-w-xl leading-relaxed">
                 Arsip terpusat seluruh inventaris dan dokumen transaksi yang dinonaktifkan sementara. Pulihkan data ke katalog aktif atau musnahkan secara permanen.
             </p>
         </div>
 
         <!-- EXECUTIVE AUDIT SUMMARY (COMPACT DOCK) -->
-        <div class="flex items-center gap-2.5 sm:gap-3 shrink-0 flex-wrap">
-            <div class="px-4 py-2.5 rounded-2xl bg-slate-950/80 border border-slate-800 text-left shadow-inner min-w-[120px]">
+        <div class="rb-stats-dock flex items-center gap-2.5 sm:gap-3 shrink-0 flex-wrap">
+            <div class="rb-stats-card px-4 py-2.5 rounded-2xl bg-slate-950/80 border border-slate-800 text-left shadow-inner min-w-[120px]">
                 <span class="text-[9.5px] uppercase tracking-wider font-bold text-slate-400 block">Total Terhapus</span>
-                <div class="flex items-baseline gap-1 mt-0.5">
+                <div class="rb-stats-val flex items-baseline gap-1 mt-0.5">
                     <span class="text-xl font-black text-white font-mono" x-text="totalCount">{{ $totalAllDeleted ?? 0 }}</span>
                     <span class="text-[10px] text-slate-400">item</span>
                 </div>
             </div>
-            <div class="px-4 py-2.5 rounded-2xl bg-slate-950/80 border border-slate-800 text-left shadow-inner min-w-[130px]">
+            <div class="rb-stats-card px-4 py-2.5 rounded-2xl bg-slate-950/80 border border-slate-800 text-left shadow-inner min-w-[130px]">
                 <span class="text-[9.5px] uppercase tracking-wider font-bold text-slate-400 block">Aktivitas 30 Hari</span>
-                <div class="flex items-baseline gap-1 mt-0.5">
+                <div class="rb-stats-val flex items-baseline gap-1 mt-0.5">
                     <span class="text-xl font-black text-amber-400 font-mono" x-text="totalThisMonth">{{ $totalThisMonth ?? 0 }}</span>
                     <span class="text-[10px] text-amber-500/80">arsip</span>
                 </div>
             </div>
-            <div class="px-3.5 py-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <div class="px-3.5 py-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center gap-2 text-left">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
                 <div>
                     <span class="text-[10px] uppercase font-bold text-emerald-300 block leading-tight">Audit Log</span>
                     <span class="text-[10px] text-slate-400 block leading-tight">Terlindungi</span>
@@ -64,8 +157,8 @@
     <div class="flex flex-wrap xl:flex-nowrap items-end justify-between gap-3.5">
         
         <!-- 1. BESPOKE MODULE DROPDOWN SELECTOR (CUSTOM LUXURY POPOVER, NEVER CLIPPED) -->
-        <div class="relative order-1 w-full sm:flex-1 min-w-[220px] sm:max-w-md xl:flex-none xl:w-72 shrink-0" @click.outside="openModDropdown = false" @keydown.escape.window="openModDropdown = false">
-            <div class="flex items-center justify-between mb-1.5 h-4">
+        <div class="relative order-1 w-full sm:flex-1 min-w-0 sm:min-w-[220px] sm:max-w-md xl:flex-none xl:w-72 shrink-0" @click.outside="openModDropdown = false" @keydown.escape.window="openModDropdown = false">
+            <div class="flex items-center justify-between mb-1.5 h-4 gap-2">
                 <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                     <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
                     Kategori Modul:
@@ -105,7 +198,7 @@
                  x-transition:leave="transition ease-in duration-100 transform"
                  x-transition:leave-start="opacity-100 translate-y-0 scale-100"
                  x-transition:leave-end="opacity-0 translate-y-2 scale-98"
-                 class="absolute left-0 top-full mt-2 w-full sm:w-[480px] z-50 bg-slate-950/98 backdrop-blur-2xl border border-slate-700 rounded-3xl p-3 shadow-2xl shadow-black ring-1 ring-white/10"
+                 class="rb-mod-popover absolute left-0 top-full mt-2 w-full sm:w-[480px] z-50 bg-slate-950/98 backdrop-blur-2xl border border-slate-700 rounded-3xl p-3 shadow-2xl shadow-black ring-1 ring-white/10"
                  style="display: none;">
                 
                 <div class="p-2 pb-2 mb-2 border-b border-slate-800/80 flex items-center justify-between">
@@ -155,14 +248,14 @@
 
         <!-- 2. QUICK TIME FILTER PRESETS (ORDER-2 DI MINIMIZE SUPAYA BERDAMPINGAN DENGAN KATEGORI MODUL) -->
         <div class="order-2 w-full sm:w-auto xl:order-3 shrink-0">
-            <div class="flex items-center justify-between mb-1.5 h-4">
+            <div class="flex items-center justify-between mb-1.5 h-4 gap-2">
                 <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                     <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
                     Filter Waktu:
                 </span>
                 <span class="text-[10px] text-slate-500 font-mono" x-text="timeFilter === 'all' ? 'Semua Waktu' : (timeFilter === '7d' ? '7 Hari Terakhir' : '30 Hari Terakhir')"></span>
             </div>
-            <div class="flex items-center p-1 bg-slate-950 rounded-2xl border border-slate-800/80 shadow-inner">
+            <div class="rb-time-pills flex items-center p-1 bg-slate-950 rounded-2xl border border-slate-800/80 shadow-inner gap-1">
                 <button type="button" @click="setTimeFilter('all')"
                     :class="timeFilter === 'all' 
                         ? 'bg-slate-800 text-white font-bold shadow-sm' 
@@ -188,9 +281,9 @@
         </div>
 
         <!-- 3. SEARCH INPUT (ORDER-3 DI MINIMIZE AGAR LEBAR 100% DI BARIS KE-2, ORDER-2 DI FULLSCREEN UNTUK MENGISI RUANG TENGAH) -->
-        <div class="relative order-3 xl:order-2 w-full xl:w-auto xl:flex-1 min-w-[240px]">
-            <div class="flex items-center justify-between mb-1.5 h-4">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+        <div class="relative order-3 xl:order-2 w-full xl:w-auto xl:flex-1 min-w-0 sm:min-w-[240px]">
+            <div class="flex items-center justify-between mb-1.5 h-4 gap-2">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 shrink-0">
                     <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
                     Pencarian Data:
                 </span>
@@ -207,7 +300,7 @@
     </div>
 
     <!-- STATUS INFO BARIS BAWAH -->
-    <div class="pt-3 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-400">
+    <div class="rb-toolbar-footer pt-3 border-t border-slate-800/60 flex items-center justify-between flex-wrap gap-2 text-[11px] text-slate-400">
         <div>
             Kategori saat ini: <strong class="text-white" x-text="activeModuleName">{{ $moduleStats[$activeTab]['name'] ?? 'Master ASTAP' }}</strong>
         </div>

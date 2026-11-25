@@ -9,7 +9,7 @@
                  x-transition:leave-start="opacity-100"
                  x-transition:leave-end="opacity-0"
                  x-cloak>
-                <div @click.away="if (!showConfirmModal) showDetailModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto my-auto">
+                <div @click.away="if (!showConfirmModal) showDetailModal = false" class="bg-slate-900 border border-slate-800 rounded-2xl sm:rounded-3xl max-w-4xl w-full p-4 sm:p-6 lg:p-8 shadow-2xl space-y-4 sm:space-y-5 max-h-[90vh] overflow-y-auto my-auto">
                 <div class="flex items-center justify-between pb-4 border-b border-slate-800">
                     <div class="flex items-center space-x-3">
                         <span class="p-2.5 rounded-2xl bg-teal-500/20 text-teal-300 text-xl border border-teal-500/30">🚚</span>

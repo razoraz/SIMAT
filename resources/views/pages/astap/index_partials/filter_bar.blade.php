@@ -1,31 +1,31 @@
         <!-- ========================================================================= -->
         <!-- AREA PEMFILTERAN & PENCARIAN (FULL WIDTH, RAPID & BERSIH)                 -->
         <!-- ========================================================================= -->
-        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl mb-6">
-            <div class="flex flex-col gap-4">
+        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-3.5 sm:p-5 shadow-xl mb-6">
+            <div class="flex flex-col gap-3.5 sm:gap-4">
                 
                 <!-- Live Search Bar + Counter -->
-                <div class="flex flex-col sm:flex-row items-center gap-3 w-full">
+                <div class="flex flex-col sm:flex-row items-center gap-2.5 sm:gap-3 w-full">
                     <div class="relative flex-1 w-full">
                         <input type="text" x-model="searchQuery" placeholder="Cari nama barang / lokasi penempatan / tahun / merk..."
-                            class="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 pl-11 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-all">
-                        <svg class="w-4 h-4 text-emerald-400 absolute left-4 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        <button type="button" x-show="searchQuery" @click="searchQuery = ''" class="absolute right-3.5 top-3 text-slate-500 hover:text-white text-xs font-bold">&times;</button>
+                            class="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-2.5 sm:py-3 pl-11 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-all">
+                        <svg class="w-4 h-4 text-emerald-400 absolute left-4 top-3 sm:top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        <button type="button" x-show="searchQuery" @click="searchQuery = ''" class="absolute right-3.5 top-2.5 sm:top-3 text-slate-500 hover:text-white text-xs font-bold">&times;</button>
                     </div>
 
-                    <div class="flex items-center space-x-2 shrink-0">
-                        <span class="px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-[11px] font-semibold text-slate-300">
+                    <div class="flex flex-wrap sm:flex-nowrap items-center justify-between sm:justify-end gap-2 w-full sm:w-auto shrink-0">
+                        <span class="px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-slate-950 border border-slate-800 text-[10.5px] sm:text-[11px] font-semibold text-slate-300 text-center flex-1 sm:flex-none">
                             Menampilkan <span class="text-emerald-400 font-bold" x-text="filteredAstaps.length"></span> dari <span class="text-white font-bold" x-text="astaps.length"></span> Data
                         </span>
                         <button type="button" @click="resetFilters()"
-                            class="px-3 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-semibold border border-slate-700 transition-all cursor-pointer active:scale-95">
+                            class="px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-semibold border border-slate-700 transition-all cursor-pointer active:scale-95 shrink-0">
                             🔄 Reset
                         </button>
                         
                         <!-- Tombol Tutup Buku BMD (Rekonsiliasi BPKAD) -->
                         <a href="{{ route('tutup_buku.index') }}"
                             title="Buka Halaman Manajemen Tutup Buku BMD (Triwulan & Tahunan)"
-                            class="px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 shadow-sm cursor-pointer active:scale-95 bg-slate-800/80 hover:bg-slate-700/80 text-amber-300 hover:text-amber-200 border-amber-500/30 hover:border-amber-500/50">
+                            class="px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 sm:gap-2 shadow-sm cursor-pointer active:scale-95 bg-slate-800/80 hover:bg-slate-700/80 text-amber-300 hover:text-amber-200 border-amber-500/30 hover:border-amber-500/50 shrink-0">
                             <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
                             <span>🔒 Tutup Buku</span>
                         </a>
@@ -34,7 +34,7 @@
 
                 <!-- Status Banner Periode Terkunci (Read-Only) -->
                 <div x-show="isCurrentFilterLocked" x-cloak
-                     class="p-3.5 rounded-2xl bg-gradient-to-r from-amber-950/40 via-slate-950 to-amber-950/20 border border-amber-500/40 flex items-center justify-between gap-3 text-xs shadow-lg shadow-amber-950/20">
+                     class="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-r from-amber-950/40 via-slate-950 to-amber-950/20 border border-amber-500/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-lg shadow-amber-950/20">
                     <div class="flex items-center gap-3">
                         <span class="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-300 flex items-center justify-center shrink-0 text-sm">
                             🔒
@@ -51,13 +51,13 @@
                         </div>
                     </div>
                     <a href="{{ route('tutup_buku.index') }}"
-                            class="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-bold text-[11px] transition-all shrink-0">
+                            class="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-bold text-[11px] transition-all shrink-0 self-end sm:self-auto">
                         Kelola Periode ➔
                     </a>
                 </div>
 
                 <!-- Advanced Filter Collapsible Bar (6 Kolom: KIB, Tahun, Triwulan, Kondisi, Sumber Perolehan, Status Tutup Buku) -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 pt-3 border-t border-slate-800/60">
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3 pt-3 border-t border-slate-800/60">
                     
                     <!-- Filter KIB -->
                     <div>

@@ -10,9 +10,9 @@
      x-transition:leave-end="opacity-0 translate-y-12 scale-95"
      class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 max-w-xl w-[92%] sm:w-auto"
      style="display: none;">
-    <div class="bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl p-2.5 px-4 shadow-2xl shadow-black/80 flex items-center justify-between sm:justify-start gap-3.5 ring-1 ring-white/10">
+    <div class="bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl p-2.5 px-3 sm:px-4 shadow-2xl shadow-black/80 flex flex-wrap items-center justify-center sm:justify-start gap-2.5 sm:gap-3.5 ring-1 ring-white/10">
         <!-- Counter Badge -->
-        <div class="flex items-center gap-2 pr-3 border-r border-slate-800">
+        <div class="flex items-center gap-2 sm:pr-3 sm:border-r sm:border-slate-800">
             <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
             <span class="text-xs font-bold text-white font-mono whitespace-nowrap">
                 <span x-text="selectedIds.length" class="text-emerald-400 text-sm font-black"></span> item dipilih
@@ -20,7 +20,7 @@
         </div>
 
         <!-- Tombol Aksi Massal -->
-        <div class="flex items-center gap-2">
+        <div class="flex items-center justify-center flex-wrap gap-2">
             @if(Auth::user()?->role === 'master_admin' || Auth::user()?->canDo('recycle_bin', 'restore'))
             <button type="button" @click="bulkRestore(currentTargetModule)"
                 class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-slate-950 font-black text-xs transition-all shadow-lg shadow-emerald-500/20 active:scale-95 flex items-center gap-1.5 cursor-pointer whitespace-nowrap">

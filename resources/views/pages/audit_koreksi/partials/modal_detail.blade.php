@@ -12,8 +12,8 @@
          @click.outside="closeDetailModal()">
         
         {{-- Header Modal --}}
-        <div class="p-6 border-b border-slate-800 flex items-center justify-between bg-slate-950/80">
-            <div class="flex items-center gap-3">
+        <div class="p-4 sm:p-6 border-b border-slate-800 flex items-center justify-between gap-3 bg-slate-950/80">
+            <div class="flex items-center gap-3 min-w-0">
                 <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-lg border shadow-inner shrink-0"
                      :class="{
                          'bg-indigo-950/80 border-indigo-500/40 text-indigo-300': detailData.sub_koreksi === 'biasa',
@@ -37,7 +37,7 @@
                         </svg>
                     </template>
                 </div>
-                <div>
+                <div class="min-w-0">
                     <h3 class="text-base font-bold text-white flex items-center gap-2 flex-wrap">
                         <span>Rincian Audit Koreksi Nilai</span>
                         <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase"
@@ -56,7 +56,7 @@
             </div>
 
             <button type="button" @click="closeDetailModal()"
-                    class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer">
+                    class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shrink-0">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -64,7 +64,7 @@
         </div>
 
         {{-- Isi Modal --}}
-        <div class="p-6 space-y-5 max-h-[75vh] overflow-y-auto custom-scrollbar">
+        <div class="p-4 sm:p-6 space-y-4 sm:space-y-5 max-h-[75vh] overflow-y-auto custom-scrollbar">
             {{-- 1. Identitas Aset BMD --}}
             <div class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-3.5">
                 <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5 flex-wrap border-b border-slate-800/80 pb-2.5">
@@ -157,7 +157,7 @@
                     </svg>
                     <span>Komparasi Perubahan Nilai Buku</span>
                 </div>
-                <div class="grid grid-cols-3 gap-3 text-center">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 text-center">
                     <div class="p-3 rounded-xl bg-slate-900 border border-slate-800">
                         <span class="text-[10px] uppercase font-bold text-slate-400 block mb-1">Nilai Semula</span>
                         <div class="text-xs sm:text-sm font-mono font-bold text-slate-300" x-text="formatRupiah(detailData.nilai_semula)"></div>
@@ -184,7 +184,7 @@
                 </div>
                 <div class="text-xs">
                     <span class="text-slate-400 text-[11px] block">Nomor Bukti / Berita Acara / LHP:</span>
-                    <strong class="text-white font-mono text-sm" x-text="detailData.nomor_ba_reklas || '-'"></strong>
+                    <strong class="text-white font-mono text-sm break-words" x-text="detailData.nomor_ba_reklas || '-'"></strong>
                 </div>
                 <div class="text-xs pt-1">
                     <span class="text-slate-400 text-[11px] block">Alasan / Catatan Temuan:</span>
@@ -193,14 +193,14 @@
             </div>
 
             {{-- 4. Info Audit Entry --}}
-            <div class="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-800">
+            <div class="flex items-center justify-between flex-wrap gap-2 text-[11px] text-slate-500 pt-2 border-t border-slate-800">
                 <div>Dicatat oleh: <span class="text-slate-300 font-semibold" x-text="detailData.user_nama || 'Administrator'"></span></div>
                 <div>Waktu Input: <span class="text-slate-400 font-mono" x-text="detailData.created_at || '-'"></span></div>
             </div>
         </div>
 
         {{-- Footer Modal --}}
-        <div class="p-4 border-t border-slate-800 bg-slate-950/80 flex items-center justify-between">
+        <div class="p-4 border-t border-slate-800 bg-slate-950/80 flex items-center justify-center sm:justify-between flex-wrap gap-2.5">
             <template x-if="detailData.astap_id">
                 <a :href="detailData.astap_url || ('{{ route('astap.index') }}?open_detail=' + detailData.astap_id)"
                    target="_blank"

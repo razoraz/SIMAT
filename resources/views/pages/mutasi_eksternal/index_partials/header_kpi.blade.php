@@ -3,12 +3,89 @@
 <!-- ========================================================================= -->
 <div class="space-y-4">
     <!-- Top Header Banner -->
-    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 p-5 sm:p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl relative overflow-hidden">
+    <style>
+        /* Mode Layar Medium ke Bawah (< 1024px): Rata Tengah Simetris */
+        @media (max-width: 1023px) {
+            .mutasi-banner-wrap {
+                flex-direction: column !important;
+                align-items: center !important;
+                text-align: center !important;
+                gap: 1.25rem !important;
+            }
+            .mutasi-header-content {
+                flex-direction: column !important;
+                align-items: center !important;
+                text-align: center !important;
+                width: 100% !important;
+                gap: 1rem !important;
+            }
+            .mutasi-header-text {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                text-align: center !important;
+                width: 100% !important;
+            }
+            .mutasi-title-wrap {
+                justify-content: center !important;
+                text-align: center !important;
+            }
+            .mutasi-badge-wrap {
+                justify-content: center !important;
+                width: 100% !important;
+            }
+            .mutasi-desc {
+                text-align: center !important;
+                margin-left: auto !important;
+                margin-right: auto !important;
+            }
+            .mutasi-btn-wrap {
+                justify-content: center !important;
+                width: 100% !important;
+            }
+        }
+        /* Mode Desktop Luas (>= 1024px): Rata Kiri Standar */
+        @media (min-width: 1024px) {
+            .mutasi-banner-wrap {
+                flex-direction: row !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+            }
+            .mutasi-header-content {
+                flex-direction: row !important;
+                align-items: center !important;
+                text-align: left !important;
+            }
+            .mutasi-header-text {
+                align-items: flex-start !important;
+                text-align: left !important;
+            }
+            .mutasi-title-wrap {
+                justify-content: flex-start !important;
+                text-align: left !important;
+            }
+            .mutasi-badge-wrap {
+                justify-content: flex-start !important;
+                width: auto !important;
+            }
+            .mutasi-desc {
+                text-align: left !important;
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+            }
+            .mutasi-btn-wrap {
+                justify-content: flex-end !important;
+                width: auto !important;
+            }
+        }
+    </style>
+
+    <div class="mutasi-banner-wrap flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 p-5 sm:p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl relative overflow-hidden">
         <!-- Ambient glow decoration -->
         <div class="absolute -top-12 -left-12 w-48 h-48 rounded-full blur-3xl pointer-events-none transition-all duration-500"
             :class="activeDirection === 'keluar' ? 'bg-cyan-500/10' : 'bg-indigo-500/10'"></div>
 
-        <div class="flex items-center space-x-3.5 sm:space-x-4 relative z-10">
+        <div class="mutasi-header-content flex items-center space-x-3.5 sm:space-x-4 relative z-10">
             <div class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-lg transition-all duration-300"
                 :class="activeDirection === 'keluar' ? 'bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 shadow-cyan-500/10' : 'bg-indigo-500/15 border border-indigo-500/30 text-indigo-400 shadow-indigo-500/10'">
                 <template x-if="activeDirection === 'masuk'">
@@ -22,19 +99,19 @@
                     </svg>
                 </template>
             </div>
-            <div>
-                <div class="flex flex-wrap items-center gap-2">
-                    <h1 class="text-xl sm:text-2xl font-black text-white tracking-tight leading-tight">
-                        <span x-show="activeDirection === 'masuk'">Katalog Mutasi Eksternal Masuk</span>
-                        <span x-show="activeDirection === 'keluar'">Katalog Transfer Aset Keluar (Mutasi Keluar)</span>
-                    </h1>
+            <div class="mutasi-header-text">
+                <h1 class="text-xl sm:text-2xl font-black text-white tracking-tight leading-tight">
+                    <span x-show="activeDirection === 'masuk'">Katalog Mutasi Eksternal Masuk</span>
+                    <span x-show="activeDirection === 'keluar'">Katalog Transfer Aset Keluar (Mutasi Keluar)</span>
+                </h1>
+                <div class="mutasi-badge-wrap flex items-center mt-2">
                     <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border transition-all"
                         :class="activeDirection === 'keluar' ? 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30' : 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30'">
                         <span class="w-1.5 h-1.5 rounded-full animate-pulse" :class="activeDirection === 'keluar' ? 'bg-cyan-400' : 'bg-indigo-400'"></span>
                         <span x-text="activeDirection === 'keluar' ? 'Transfer Aset RSUD · Pemindahtanganan OPD' : 'Mutasi Masuk Antar-OPD · BMD Masuk'"></span>
                     </span>
                 </div>
-                <p class="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
+                <p class="mutasi-desc text-xs text-slate-400 mt-2 max-w-2xl leading-relaxed">
                     <span x-show="activeDirection === 'masuk'">
                         Pencatatan resmi Berita Acara Serah Terima (BAST / BAMB) atas mutasi masuk Barang Milik Daerah (BMD) dari Instansi / OPD di lingkungan Pemerintah Kabupaten Bondowoso ke RSUD dr. H. Koesnadi.
                     </span>
@@ -46,7 +123,7 @@
         </div>
 
         <!-- Tombol Aksi Cepat (Bespoke Action Group) -->
-        <div class="flex flex-wrap items-center gap-2.5 shrink-0 relative z-10">
+        <div class="mutasi-btn-wrap flex flex-wrap items-center gap-2.5 shrink-0 relative z-10">
             <!-- Ekspor Excel Button -->
             <button type="button" @click="openExportModal()"
                 class="group px-4 py-2.5 rounded-xl bg-slate-950/90 hover:bg-emerald-950/30 border border-slate-700/80 hover:border-emerald-500/60 text-xs font-bold text-slate-300 hover:text-emerald-300 transition-all duration-200 transform hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-500/15 flex items-center gap-2 cursor-pointer active:scale-95 shrink-0"

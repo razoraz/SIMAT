@@ -1,15 +1,15 @@
 {{-- TABEL 2: KHUSUS KOREKSI BIASA (INTERNAL RSUD DR. H. KOESNANDI) --}}
 <div class="rounded-3xl bg-slate-900/90 border border-indigo-500/30 overflow-hidden shadow-2xl shadow-indigo-950/20 backdrop-blur-xl">
     {{-- Card Header --}}
-    <div class="p-5 border-b border-indigo-900/40 flex items-center justify-between flex-wrap gap-3 bg-gradient-to-r from-indigo-950/40 to-slate-950/60">
-        <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-xl bg-indigo-900/50 border border-indigo-500/40 flex items-center justify-center text-indigo-400 shadow-sm">
+    <div class="audit-card-header p-4 sm:p-5 border-b border-indigo-900/40 flex items-center justify-between flex-wrap gap-3 bg-gradient-to-r from-indigo-950/40 to-slate-950/60">
+        <div class="audit-card-title-group flex items-center gap-3 min-w-0">
+            <div class="w-9 h-9 rounded-xl bg-indigo-900/50 border border-indigo-500/40 flex items-center justify-center text-indigo-400 shadow-sm shrink-0">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
             </div>
-            <div>
-                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+            <div class="min-w-0">
+                <h3 class="audit-card-heading text-sm font-bold text-white flex flex-wrap items-center gap-2">
                     <span>Audit Koreksi Nilai Biasa (Rekonsiliasi Internal RSUD)</span>
                     <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                         Kolom 5 &amp; 15
@@ -20,7 +20,7 @@
                 </p>
             </div>
         </div>
-        <div class="text-xs font-mono text-indigo-300 flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-950 border border-indigo-900/40">
+        <div class="text-xs font-mono text-indigo-300 flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-950 border border-indigo-900/40 shrink-0">
             <span>Total Transaksi:</span>
             <strong class="text-white">{{ $biasaKoreksi->count() }}</strong>
         </div>
@@ -39,6 +39,15 @@
             </p>
         </div>
     @else
+        {{-- Indikator Geser Tabel pada Layar Mobile/Medium (< 1024px) --}}
+        <div class="swipe-hint-audit items-center justify-between px-4 py-2 text-[10.5px] text-slate-400 border-t border-indigo-900/40 bg-slate-950/30">
+            <span class="flex items-center gap-1.5">
+                <span class="text-indigo-400">👉</span>
+                <span>Geser tabel ke kanan untuk melihat detail &amp; kolom aksi</span>
+            </span>
+            <span class="font-mono text-slate-500">Tabel Responsif</span>
+        </div>
+
         <div class="rounded-2xl border-t border-indigo-900/40 bg-slate-950/40 custom-scrollbar" style="max-height: calc(100vh - 280px); overflow-y: auto; overflow-x: auto;">
             <table class="w-full text-left text-xs text-slate-300 relative border-collapse min-w-[1050px]">
                 <thead class="text-indigo-300/80 font-extrabold uppercase text-[10px] tracking-wider border-b border-indigo-900/40 shrink-0 select-none" style="position: sticky; top: 0; z-index: 5; background-color: #020617;">

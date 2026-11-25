@@ -1,42 +1,90 @@
 {{-- TABEL 1: SEMUA KOREKSI NILAI (KOMPREHENSIF / MASTER LEDGER) --}}
 <style>
-    /* Freeze Column Aksi Koreksi Nilai BMD (Anti-Bocor saat Scroll Horizontal) */
-    .sticky-aksi-koreksi {
-        position: sticky !important;
-        right: 0 !important;
-        z-index: 10 !important;
-        background-color: #0f172a !important; /* Solid Slate-900 Opaque */
-        box-shadow: -6px 0 12px rgba(0, 0, 0, 0.6) !important;
+    /* Layar Medium ke Bawah (< 1024px): Center Card Header & Non-Sticky Aksi + Swipe Hint */
+    @media (max-width: 1023px) {
+        .swipe-hint-audit {
+            display: flex;
+        }
+        .sticky-aksi-koreksi {
+            position: static !important;
+            right: auto !important;
+            z-index: auto !important;
+            background-color: transparent !important;
+            box-shadow: none !important;
+        }
+        th.sticky-aksi-koreksi {
+            background-color: #020617 !important;
+        }
+        .audit-card-header {
+            flex-direction: column !important;
+            align-items: center !important;
+            text-align: center !important;
+        }
+        .audit-card-title-group {
+            flex-direction: column !important;
+            align-items: center !important;
+            text-align: center !important;
+        }
+        .audit-card-heading {
+            justify-content: center !important;
+        }
     }
-    tr:hover .sticky-aksi-koreksi {
-        background-color: #1e293b !important; /* Slate-800 saat hover */
-    }
-    th.sticky-aksi-koreksi {
-        position: sticky !important;
-        top: 0 !important;
-        right: 0 !important;
-        z-index: 20 !important;
-        background-color: #020617 !important; /* Solid Slate-950 Opaque */
+    /* Desktop Luas (>= 1024px): Freeze Column Aksi Koreksi Nilai BMD (Anti-Bocor saat Scroll Horizontal) */
+    @media (min-width: 1024px) {
+        .swipe-hint-audit {
+            display: none !important;
+        }
+        .sticky-aksi-koreksi {
+            position: sticky !important;
+            right: 0 !important;
+            z-index: 10 !important;
+            background-color: #0f172a !important; /* Solid Slate-900 Opaque */
+            box-shadow: -6px 0 12px rgba(0, 0, 0, 0.6) !important;
+        }
+        tr:hover .sticky-aksi-koreksi {
+            background-color: #1e293b !important; /* Slate-800 saat hover */
+        }
+        th.sticky-aksi-koreksi {
+            position: sticky !important;
+            top: 0 !important;
+            right: 0 !important;
+            z-index: 20 !important;
+            background-color: #020617 !important; /* Solid Slate-950 Opaque */
+        }
+        .audit-card-header {
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            text-align: left !important;
+        }
+        .audit-card-title-group {
+            flex-direction: row !important;
+            align-items: center !important;
+            text-align: left !important;
+        }
+        .audit-card-heading {
+            justify-content: flex-start !important;
+        }
     }
 </style>
 
 <div class="rounded-3xl bg-slate-900/90 border border-slate-800 overflow-hidden shadow-xl backdrop-blur-xl">
     {{-- Card Header --}}
-    <div class="p-5 border-b border-slate-800 flex items-center justify-between flex-wrap gap-3 bg-slate-950/60">
-        <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-xl bg-slate-800/90 border border-slate-700/80 flex items-center justify-center text-slate-300 shadow-sm">
+    <div class="audit-card-header p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between flex-wrap gap-3 bg-slate-950/60">
+        <div class="audit-card-title-group flex items-center gap-3 min-w-0">
+            <div class="w-9 h-9 rounded-xl bg-slate-800/90 border border-slate-700/80 flex items-center justify-center text-slate-300 shadow-sm shrink-0">
                 <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
             </div>
-            <div>
-                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+            <div class="min-w-0">
+                <h3 class="audit-card-heading text-sm font-bold text-white flex flex-wrap items-center gap-2">
                     <span>Buku Besar Audit Koreksi Nilai BMD (Semua Kategori)</span>
                 </h3>
                 <p class="text-[11px] text-slate-400">Jejak komprehensif penyesuaian nilai buku aset tetap RSUD dr. H. Koesnandi</p>
             </div>
         </div>
-        <div class="text-xs font-mono text-slate-400 flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-950 border border-slate-800">
+        <div class="text-xs font-mono text-slate-400 flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-950 border border-slate-800 shrink-0">
             <span>Total Transaksi:</span>
             <strong class="text-emerald-400">{{ $semuaKoreksi->count() }}</strong>
         </div>
@@ -55,6 +103,15 @@
             </p>
         </div>
     @else
+        {{-- Indikator Geser Tabel pada Layar Mobile/Medium (< 1024px) --}}
+        <div class="swipe-hint-audit items-center justify-between px-4 py-2 text-[10.5px] text-slate-400 border-t border-slate-800/80 bg-slate-950/30">
+            <span class="flex items-center gap-1.5">
+                <span class="text-emerald-400">👉</span>
+                <span>Geser tabel ke kanan untuk melihat detail &amp; kolom aksi</span>
+            </span>
+            <span class="font-mono text-slate-500">Tabel Responsif</span>
+        </div>
+
         <div class="rounded-2xl border-t border-slate-800/80 bg-slate-950/40 custom-scrollbar" style="max-height: calc(100vh - 280px); overflow-y: auto; overflow-x: auto;">
             <table class="w-full text-left text-xs text-slate-300 relative border-collapse min-w-[1050px]">
                 <thead class="text-slate-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-800 shrink-0 select-none" style="position: sticky; top: 0; z-index: 5; background-color: #020617;">

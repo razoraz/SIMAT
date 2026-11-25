@@ -1,15 +1,55 @@
         <!-- Table Users -->
-        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-5 mb-6">
+        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-3.5 sm:p-5 mb-6">
+            <style>
+                /* Mobile & Medium (< 1024px): Kolom Aksi Scroll Alami (Tidak Menutupi Data) */
+                .col-aksi-users-sticky {
+                    position: static !important;
+                    box-shadow: none !important;
+                }
+                .swipe-hint-users {
+                    display: flex;
+                }
+                /* Desktop (>= 1024px): Kolom Aksi Tetap Freeze / Sticky di Kanan */
+                @media (min-width: 1024px) {
+                    .col-aksi-users-sticky {
+                        position: sticky !important;
+                        right: 0 !important;
+                        box-shadow: -6px 0 12px rgba(0,0,0,0.6) !important;
+                    }
+                    th.col-aksi-users-sticky {
+                        top: 0 !important;
+                        z-index: 30 !important;
+                        background-color: #020617 !important;
+                    }
+                    td.col-aksi-users-sticky {
+                        z-index: 2 !important;
+                        background-color: #0f172a !important;
+                    }
+                    .swipe-hint-users {
+                        display: none !important;
+                    }
+                }
+            </style>
+
+            <!-- Petunjuk Geser Khusus Mobile & Medium (< 1024px) -->
+            <div class="swipe-hint-users items-center justify-between px-2 pb-2.5 text-[10.5px] text-slate-400">
+                <span class="flex items-center gap-1.5">
+                    <span class="text-amber-400">👉</span>
+                    <span>Geser tabel ke kanan untuk melihat tombol aksi</span>
+                </span>
+                <span class="font-mono text-slate-500">Tabel Responsif</span>
+            </div>
+
             <div class="rounded-2xl border border-slate-800/80 custom-scrollbar" style="max-height: 360px; overflow-y: auto; overflow-x: auto;">
                 <table class="w-full text-left text-xs text-slate-300 border-collapse">
                     <thead class="text-slate-400 font-bold uppercase tracking-wider text-[11px] border-b border-slate-800 sticky top-0 z-10 bg-slate-950 shadow-md" style="position: sticky; top: 0; z-index: 10; background-color: #020617;">
                         <tr>
                             <th class="px-4 py-3.5 text-center w-12 whitespace-nowrap">No</th>
-                            <th class="px-4 py-3.5 text-left min-w-[220px] whitespace-nowrap">Nama & NIP Pegawai</th>
+                            <th class="px-4 py-3.5 text-left min-w-[220px] whitespace-nowrap">Nama &amp; NIP Pegawai</th>
                             <th class="px-4 py-3.5 text-left min-w-[190px] whitespace-nowrap">Email Kredensial</th>
                             <th class="px-4 py-3.5 text-center min-w-[160px] whitespace-nowrap">Role Otorisasi</th>
                             <th class="px-4 py-3.5 text-left min-w-[180px] whitespace-nowrap">Unit Penugasan</th>
-                            <th class="px-4 py-3.5 text-center min-w-[320px] w-[320px] whitespace-nowrap border-l border-slate-800/80 shrink-0" style="position: sticky; right: 0; top: 0; z-index: 30; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">Aksi</th>
+                            <th class="col-aksi-users-sticky px-4 py-3.5 text-center min-w-[320px] w-[320px] whitespace-nowrap bg-slate-950 border-l border-slate-800/80 shrink-0">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-800/80">
@@ -59,8 +99,8 @@
                                     </template>
                                 </td>
                                 
-                                <!-- Aksi Frozen/Sticky di Sebelah Kanan -->
-                                <td class="px-4 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[320px] w-[320px]" style="position: sticky; right: 0; z-index: 2; background-color: #0f172a !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
+                                <!-- Aksi Frozen/Sticky hanya di Desktop (>= 1024px), Scroll Alami di Mobile & Medium (< 1024px) -->
+                                <td class="col-aksi-users-sticky px-4 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[320px] w-[320px]">
                                     <div class="flex items-center justify-center gap-1.5">
                                         <!-- Tombol Detail (Bisa untuk Semua Akun) -->
                                         <button type="button" @click="openDetail(item)"

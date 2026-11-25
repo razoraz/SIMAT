@@ -17,7 +17,7 @@
                      x-transition:leave="transition ease-in duration-150 transform opacity-100 scale-100"
                      x-transition:leave-start="opacity-100 scale-100"
                      x-transition:leave-end="opacity-0 scale-95"
-                     class="bg-slate-900 border rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl space-y-4 relative overflow-hidden"
+                     class="bg-slate-900 border rounded-2xl sm:rounded-3xl max-w-md w-full p-4 sm:p-6 lg:p-7 shadow-2xl space-y-4 relative overflow-hidden"
                      :class="{
                          'border-rose-500/40': confirmData.type === 'danger',
                          'border-amber-500/40': confirmData.type === 'warning',
@@ -80,7 +80,7 @@
                     </template>
 
                     <!-- Footer Action Buttons (Persis sesuai foto referensi) -->
-                    <div class="pt-3 border-t border-slate-800/90 flex items-center justify-end space-x-2.5">
+                    <div class="pt-3 border-t border-slate-800/90 flex items-center justify-end gap-2 flex-wrap sm:flex-nowrap">
                         <button type="button" @click="showConfirmModal = false"
                             class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold text-xs sm:text-sm border border-slate-700 transition-all active:scale-95 cursor-pointer">
                             Batal

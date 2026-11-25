@@ -10,22 +10,41 @@
 
     {{-- Kertas Kerja Tabel Format RSUD dr. H. Koesnandi --}}
     <div class="rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl overflow-hidden backdrop-blur-xl">
-        <div class="p-4 border-b border-slate-800 bg-slate-950/60 flex items-center justify-between">
-            <div class="flex items-center space-x-2.5">
-                <span class="w-3 h-3 rounded-full bg-cyan-400"></span>
-                <h3 class="text-xs sm:text-sm font-black text-white uppercase tracking-wider">
+        <style>
+            .swipe-hint-kertas-kerja {
+                display: flex;
+            }
+            @media (min-width: 1024px) {
+                .swipe-hint-kertas-kerja {
+                    display: none !important;
+                }
+            }
+        </style>
+        <div class="p-4 border-b border-slate-800 bg-slate-950/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center space-x-2.5 min-w-0">
+                <span class="w-3 h-3 rounded-full bg-cyan-400 shrink-0"></span>
+                <h3 class="text-xs sm:text-sm font-black text-white uppercase tracking-wider break-words">
                     Lembar Rekonsiliasi Realisasi Belanja Modal Terhadap Mutasi Aset Tetap
                 </h3>
             </div>
-            <div class="flex items-center space-x-2">
-                <span class="px-3 py-1 rounded-full text-[10px] font-mono font-black border"
+            <div class="flex items-center space-x-2 shrink-0 self-start sm:self-auto">
+                <span class="px-3 py-1 rounded-full text-[10px] font-mono font-black border whitespace-nowrap"
                       :class="isBalance ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-xs' : 'bg-rose-500/20 text-rose-300 border-rose-500/40 shadow-xs'"
                       x-text="isBalance ? '✅ STATUS: BALANCE (0)' : '⚠️ STATUS: TERDAPAT SELISIH'"></span>
             </div>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse text-xs font-mono">
+        <!-- Petunjuk Geser Khusus Mobile & Medium (< 1024px) -->
+        <div class="swipe-hint-kertas-kerja items-center justify-between px-4 py-2 text-[10.5px] text-slate-400 border-b border-slate-800/50 bg-slate-950/30">
+            <span class="flex items-center gap-1.5">
+                <span class="text-cyan-400">👉</span>
+                <span>Geser tabel ke kanan untuk melihat kolom nominal lengkap</span>
+            </span>
+            <span class="font-mono text-slate-500">Tabel Responsif</span>
+        </div>
+
+        <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full min-w-[720px] text-left border-collapse text-xs font-mono">
                 <thead class="bg-slate-950 text-slate-300 border-b border-slate-800 uppercase text-[10.5px] font-bold tracking-wider">
                     <tr>
                         <th class="p-3.5 border-r border-slate-800 w-12 text-center">No</th>
@@ -146,9 +165,11 @@
 
                     {{-- Baris 3: Selisih Keseimbangan (Balance Check) --}}
                     <tr :class="isBalance ? 'bg-emerald-950/30 text-emerald-300' : 'bg-rose-950/30 text-rose-300'">
-                        <td colspan="2" class="p-4 uppercase tracking-wider text-right flex items-center justify-end gap-2">
-                            <span>⚖️</span>
-                            <span>SELISIH KESEIMBANGAN (UJI PETIK RMB):</span>
+                        <td colspan="2" class="p-4 uppercase tracking-wider text-right">
+                            <div class="flex items-center justify-end gap-2">
+                                <span>⚖️</span>
+                                <span>SELISIH KESEIMBANGAN (UJI PETIK RMB):</span>
+                            </div>
                         </td>
                         <td colspan="4" class="p-4 text-right font-mono text-base font-black">
                             <span x-text="isBalance ? 'Rp 0 (100% BALANCE / SEIMBANG)' : 'TERDAPAT SELISIH Rp ' + Number(selisihNominal).toLocaleString('id-ID')"></span>

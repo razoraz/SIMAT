@@ -1,17 +1,17 @@
 <!-- TAB 5: HIBAH ASET (MASUK & KELUAR) TABLE & NIBAR -->
 <template x-if="activeModule === 'hibah'">
-    <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6">
+    <div class="rb-card-panel bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl">
         
         <!-- LEVEL 1: PRIMARY SUB-TAB SWITCHER (Dokumen BAST vs Register Unit NIBAR) -->
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 mb-4 border-b border-slate-800/80 gap-3">
-            <div class="flex items-center space-x-1.5 p-1 bg-slate-950/80 rounded-2xl border border-slate-800 shrink-0">
+        <div class="rb-subbar flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 mb-4 border-b border-slate-800/80 gap-3">
+            <div class="rb-subbar-pills flex items-center gap-1.5 p-1 bg-slate-950/80 rounded-2xl border border-slate-800 shrink-0">
                 <!-- Tab 1: Dokumen BAST Hibah -->
                 <button type="button" @click="changeHibahMainTab('document')"
                     :style="hibahMainTab === 'document' ? 'border-color: #a855f7; box-shadow: 0 0 14px rgba(168, 85, 247, 0.35);' : ''"
                     :class="hibahMainTab === 'document' 
                         ? 'bg-purple-500/15 border border-purple-500 text-purple-300 shadow-lg' 
                         : 'border border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'"
-                    class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer whitespace-nowrap shrink-0">
+                    class="px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer max-w-full">
                     <span>🎁 Dokumen BAST Hibah</span>
                     <span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-black transition-colors shrink-0"
                         :class="hibahs.length > 0 ? 'bg-purple-500 text-slate-950 shadow-sm' : 'bg-slate-800 text-slate-400'"
@@ -24,7 +24,7 @@
                     :class="hibahMainTab === 'nibar' 
                         ? 'bg-emerald-500/15 border border-emerald-500 text-emerald-300 shadow-lg' 
                         : 'border border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'"
-                    class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer whitespace-nowrap shrink-0">
+                    class="px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer max-w-full">
                     <span>🏷️ Unit Fisik NIBAR</span>
                     <span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-black transition-colors shrink-0"
                         :class="hibahNibars.length > 0 ? 'bg-emerald-500 text-slate-950 shadow-sm' : 'bg-slate-800 text-slate-400'"
@@ -32,7 +32,7 @@
                 </button>
             </div>
 
-            <div class="text-xs text-slate-400 flex items-center gap-1.5 min-w-0">
+            <div class="rb-subbar-info text-xs text-slate-400 flex items-center gap-1.5 min-w-0">
                 <template x-if="hibahMainTab === 'document'">
                     <span>🎁 Berkas Berita Acara Serah Terima (BAST) hibah masuk &amp; keluar terhapus.</span>
                 </template>
@@ -45,8 +45,8 @@
         <!-- LEVEL 2 SUB-FILTER: Direction Filter Pills (Semua / Masuk / Keluar) saat Dokumen BAST aktif -->
         <template x-if="hibahMainTab === 'document'">
             <div class="space-y-4">
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-2 bg-slate-950/70 border border-slate-800/80 rounded-2xl shadow-inner">
-                    <div class="flex items-center gap-1.5 flex-wrap">
+                <div class="rb-subbar flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-2 bg-slate-950/70 border border-slate-800/80 rounded-2xl shadow-inner">
+                    <div class="rb-subbar-pills flex items-center gap-1.5 flex-wrap">
                         <!-- Button 1: Semua Hibah -->
                         <button type="button" @click="setHibahTypeFilter('all')"
                             :style="hibahTypeFilter === 'all' ? 'border-color: #a855f7; box-shadow: 0 0 12px rgba(168, 85, 247, 0.25);' : ''"
@@ -90,8 +90,8 @@
                     </div>
 
                     <!-- Keterangan Context Filter -->
-                    <div class="text-[11px] text-slate-400 px-3 py-1 flex items-center space-x-1.5 font-medium">
-                        <span class="w-1.5 h-1.5 rounded-full"
+                    <div class="rb-subbar-info text-[11px] text-slate-400 px-3 py-1 flex items-center space-x-1.5 font-medium">
+                        <span class="w-1.5 h-1.5 rounded-full shrink-0"
                             :class="hibahTypeFilter === 'masuk' ? 'bg-amber-400' : (hibahTypeFilter === 'keluar' ? 'bg-rose-400' : 'bg-purple-400')"></span>
                         <template x-if="hibahTypeFilter === 'all'">
                             <span class="text-slate-400">Menampilkan seluruh arsip BAST hibah masuk &amp; keluar</span>
@@ -107,6 +107,14 @@
 
                 <!-- TABLE DOKUMEN HIBAH -->
                 <div class="rounded-2xl border border-slate-800/80 overflow-hidden">
+                    {{-- Indikator Geser Tabel pada Layar Mobile/Medium (< 1024px) --}}
+                    <div class="swipe-hint-rb items-center justify-between px-4 py-2 text-[10.5px] text-slate-400 bg-slate-950/60 border-b border-slate-800/80">
+                        <span class="flex items-center gap-1.5">
+                            <span class="text-purple-400">👉</span>
+                            <span>Geser tabel ke kanan untuk melihat detail &amp; kolom aksi</span>
+                        </span>
+                        <span class="font-mono text-slate-500">Tabel Responsif</span>
+                    </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left text-xs border-collapse">
                             <thead class="bg-slate-950/80 text-slate-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-800">
@@ -122,7 +130,7 @@
                                     <th class="px-4 py-3.5">Volume &amp; Nilai Aset</th>
                                     <th class="px-4 py-3.5">Dihapus Oleh</th>
                                     <th class="px-4 py-3.5">Waktu Penghapusan</th>
-                                    <th class="px-4 py-3.5 text-center shrink-0 min-w-[220px] w-[220px]" style="position: sticky; right: 0; z-index: 10; background-color: #020617;">Aksi</th>
+                                    <th class="rb-sticky-aksi px-4 py-3.5 text-center shrink-0">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-800/60 bg-slate-900/40">
@@ -161,8 +169,7 @@
                                             <span class="font-mono text-slate-200 block text-[11px]" x-text="item.deleted_at"></span>
                                             <span class="text-[10px] text-slate-500" x-text="item.deleted_at_relative"></span>
                                         </td>
-                                        <td class="px-4 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[220px] w-[220px]"
-                                            style="position: sticky; right: 0; z-index: 2; background-color: #0f172a !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
+                                        <td class="rb-sticky-aksi px-4 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0">
                                             <div class="flex items-center justify-center gap-1.5">
                                                 <button type="button" @click="openDetail(item)" title="Lihat Detail Transaksi Hibah"
                                                     class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
@@ -217,6 +224,14 @@
         <!-- SUB-KONTEN 2: TABLE REGISTER NIBAR HIBAH -->
         <template x-if="hibahMainTab === 'nibar'">
             <div class="rounded-2xl border border-slate-800/80 overflow-hidden">
+                {{-- Indikator Geser Tabel pada Layar Mobile/Medium (< 1024px) --}}
+                <div class="swipe-hint-rb items-center justify-between px-4 py-2 text-[10.5px] text-slate-400 bg-slate-950/60 border-b border-slate-800/80">
+                    <span class="flex items-center gap-1.5">
+                        <span class="text-emerald-400">👉</span>
+                        <span>Geser tabel ke kanan untuk melihat detail &amp; kolom aksi</span>
+                    </span>
+                    <span class="font-mono text-slate-500">Tabel Responsif</span>
+                </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs border-collapse">
                         <thead class="bg-slate-950/80 text-slate-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-800">
@@ -232,7 +247,7 @@
                                 <th class="px-4 py-3.5">Kondisi &amp; Status</th>
                                 <th class="px-4 py-3.5">Dihapus Oleh</th>
                                 <th class="px-4 py-3.5">Waktu Penghapusan</th>
-                                <th class="px-4 py-3.5 text-center shrink-0 min-w-[220px] w-[220px]" style="position: sticky; right: 0; z-index: 10; background-color: #020617;">Aksi</th>
+                                <th class="rb-sticky-aksi px-4 py-3.5 text-center shrink-0">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-800/60 bg-slate-900/40">
@@ -284,8 +299,7 @@
                                         <span class="font-mono text-slate-200 block text-[11px]" x-text="item.deleted_at"></span>
                                         <span class="text-[10px] text-slate-400" x-text="item.deleted_at_relative"></span>
                                     </td>
-                                    <td class="px-4 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[220px] w-[220px]"
-                                        style="position: sticky; right: 0; z-index: 2; background-color: #0f172a !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
+                                    <td class="rb-sticky-aksi px-4 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0">
                                         <div class="flex items-center justify-center gap-1.5">
                                             <button type="button" @click="openDetail(item)" title="Lihat Detail NIBAR"
                                                 class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">

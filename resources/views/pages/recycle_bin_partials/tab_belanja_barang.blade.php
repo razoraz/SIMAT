@@ -2,18 +2,18 @@
 {{-- TAB 7: BELANJA BARANG (AKUN 5.1.02 / PERBEKALAN RUANGAN) & NIBAR          --}}
 {{-- ========================================================================= --}}
 <template x-if="activeModule === 'belanja_barang'">
-    <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6">
+    <div class="rb-card-panel bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl">
         
         <!-- LEVEL 1: PRIMARY SUB-TAB SWITCHER (Faktur Belanja Barang vs Unit Fisik NIBAR) -->
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 mb-4 border-b border-slate-800/80 gap-3">
-            <div class="flex items-center space-x-1.5 p-1 bg-slate-950/80 rounded-2xl border border-slate-800 shrink-0">
+        <div class="rb-subbar flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 mb-4 border-b border-slate-800/80 gap-3">
+            <div class="rb-subbar-pills flex items-center gap-1.5 p-1 bg-slate-950/80 rounded-2xl border border-slate-800 shrink-0">
                 <!-- Tab 1: Faktur Belanja Barang -->
                 <button type="button" @click="changeBelanjaBarangMainTab('invoice')"
                     :style="belanjaBarangMainTab === 'invoice' ? 'border-color: #14b8a6; box-shadow: 0 0 14px rgba(20, 184, 166, 0.35);' : ''"
                     :class="belanjaBarangMainTab === 'invoice' 
                         ? 'bg-teal-500/15 border border-teal-500 text-teal-300 shadow-lg' 
                         : 'border border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'"
-                    class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer whitespace-nowrap shrink-0">
+                    class="px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer max-w-full">
                     <span>🛒 Faktur Belanja Barang</span>
                     <span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-black transition-colors shrink-0"
                         :class="belanjaBarangs.length > 0 ? 'bg-teal-500 text-slate-950 shadow-sm' : 'bg-slate-800 text-slate-400'"
@@ -26,7 +26,7 @@
                     :class="belanjaBarangMainTab === 'nibar' 
                         ? 'bg-emerald-500/15 border border-emerald-500 text-emerald-300 shadow-lg' 
                         : 'border border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'"
-                    class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer whitespace-nowrap shrink-0">
+                    class="px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer max-w-full">
                     <span>🏷️ Unit Fisik NIBAR</span>
                     <span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-black transition-colors shrink-0"
                         :class="belanjaBarangNibars.length > 0 ? 'bg-emerald-500 text-slate-950 shadow-sm' : 'bg-slate-800 text-slate-400'"
@@ -34,7 +34,7 @@
                 </button>
             </div>
 
-            <div class="text-xs text-slate-400 flex items-center gap-1.5 min-w-0">
+            <div class="rb-subbar-info text-xs text-slate-400 flex items-center gap-1.5 min-w-0">
                 <template x-if="belanjaBarangMainTab === 'invoice'">
                     <span>🛒 Berkas faktur belanja barang perbekalan ruangan (Akun 5.1.02) terhapus.</span>
                 </template>
@@ -47,6 +47,14 @@
         <!-- SUB-KONTEN 1: TABLE FAKTUR BELANJA BARANG -->
         <template x-if="belanjaBarangMainTab === 'invoice'">
             <div class="rounded-2xl border border-slate-800/80 overflow-hidden">
+                {{-- Indikator Geser Tabel pada Layar Mobile/Medium (< 1024px) --}}
+                <div class="swipe-hint-rb items-center justify-between px-4 py-2 text-[10.5px] text-slate-400 bg-slate-950/60 border-b border-slate-800/80">
+                    <span class="flex items-center gap-1.5">
+                        <span class="text-teal-400">👉</span>
+                        <span>Geser tabel ke kanan untuk melihat detail &amp; kolom aksi</span>
+                    </span>
+                    <span class="font-mono text-slate-500">Tabel Responsif</span>
+                </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs border-collapse">
                         <thead class="bg-slate-950/80 text-slate-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-800">
@@ -62,7 +70,7 @@
                                 <th class="px-4 py-3.5">Ruangan Pemegang</th>
                                 <th class="px-4 py-3.5">Dihapus Oleh</th>
                                 <th class="px-4 py-3.5">Waktu Penghapusan</th>
-                                <th class="px-4 py-3.5 text-center shrink-0 min-w-[220px] w-[220px]" style="position: sticky; right: 0; z-index: 10; background-color: #020617;">Aksi</th>
+                                <th class="rb-sticky-aksi px-4 py-3.5 text-center shrink-0">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-800/60 bg-slate-900/40">
@@ -100,8 +108,7 @@
                                         <span class="font-mono text-slate-200 block text-[11px]" x-text="item.deleted_at"></span>
                                         <span class="text-[10px] text-slate-500" x-text="item.deleted_at_relative"></span>
                                     </td>
-                                    <td class="px-4 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[220px] w-[220px]"
-                                        style="position: sticky; right: 0; z-index: 2; background-color: #0f172a !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
+                                    <td class="rb-sticky-aksi px-4 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0">
                                         <div class="flex items-center justify-center gap-1.5">
                                             <button type="button" @click="openDetail(item)" title="Lihat Detail Belanja Barang"
                                                 class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
@@ -156,6 +163,14 @@
         <!-- SUB-KONTEN 2: TABLE REGISTER NIBAR BELANJA BARANG -->
         <template x-if="belanjaBarangMainTab === 'nibar'">
             <div class="rounded-2xl border border-slate-800/80 overflow-hidden">
+                {{-- Indikator Geser Tabel pada Layar Mobile/Medium (< 1024px) --}}
+                <div class="swipe-hint-rb items-center justify-between px-4 py-2 text-[10.5px] text-slate-400 bg-slate-950/60 border-b border-slate-800/80">
+                    <span class="flex items-center gap-1.5">
+                        <span class="text-emerald-400">👉</span>
+                        <span>Geser tabel ke kanan untuk melihat detail &amp; kolom aksi</span>
+                    </span>
+                    <span class="font-mono text-slate-500">Tabel Responsif</span>
+                </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs border-collapse">
                         <thead class="bg-slate-950/80 text-slate-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-800">
@@ -171,7 +186,7 @@
                                 <th class="px-4 py-3.5">Kondisi &amp; Status</th>
                                 <th class="px-4 py-3.5">Dihapus Oleh</th>
                                 <th class="px-4 py-3.5">Waktu Penghapusan</th>
-                                <th class="px-4 py-3.5 text-center shrink-0 min-w-[220px] w-[220px]" style="position: sticky; right: 0; z-index: 10; background-color: #020617;">Aksi</th>
+                                <th class="rb-sticky-aksi px-4 py-3.5 text-center shrink-0">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-800/60 bg-slate-900/40">
@@ -214,8 +229,7 @@
                                         <span class="font-mono text-slate-200 block text-[11px]" x-text="item.deleted_at"></span>
                                         <span class="text-[10px] text-slate-400" x-text="item.deleted_at_relative"></span>
                                     </td>
-                                    <td class="px-4 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[220px] w-[220px]"
-                                        style="position: sticky; right: 0; z-index: 2; background-color: #0f172a !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
+                                    <td class="rb-sticky-aksi px-4 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0">
                                         <div class="flex items-center justify-center gap-1.5">
                                             <button type="button" @click="openDetail(item)" title="Lihat Detail NIBAR"
                                                 class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">

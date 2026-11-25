@@ -1,5 +1,5 @@
 <!-- Filter, Quick Tabs & Search Bar Full-Width -->
-<div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl mb-6">
+<div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-3.5 sm:p-5 shadow-xl mb-6">
     <form method="GET" action="{{ route('master.jenis_astap') }}" class="flex flex-col gap-4">
         
         <!-- Quick Filter Jenis Utama Tabs -->
@@ -55,8 +55,8 @@
                 <svg class="w-4 h-4 text-emerald-400 absolute left-4 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
             </div>
 
-            <div class="flex items-center space-x-2 shrink-0">
-                <div class="flex items-center space-x-1.5 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-2 text-xs text-slate-400">
+            <div class="flex flex-wrap sm:flex-nowrap items-center justify-between sm:justify-end gap-2 w-full sm:w-auto shrink-0">
+                <div class="flex items-center space-x-1.5 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-2 text-xs text-slate-400 shrink-0">
                     <span class="text-[10px] uppercase font-bold text-slate-500">Baris:</span>
                     <select name="per_page" onchange="this.form.submit()" class="bg-transparent text-emerald-400 font-bold focus:outline-none cursor-pointer text-xs">
                         <option value="10" {{ request('per_page', '15') == '10' ? 'selected' : '' }} class="bg-slate-900 text-white">10</option>

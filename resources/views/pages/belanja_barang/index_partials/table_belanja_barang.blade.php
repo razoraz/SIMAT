@@ -2,28 +2,41 @@
 <!-- TABEL DATA MASTER BELANJA BARANG MULTI-ITEM (INSTALASI PERBEKALAN)        -->
 <!-- ========================================================================= -->
 <style>
-    /* Freeze Sticky Column Aksi Belanja Barang (Opaque & Anti-Bocor saat Scroll Horizontal) */
+    /* Mobile & Medium (< 1024px): Kolom Aksi Scroll Alami (Tidak Menutupi Data) */
     .sticky-aksi-belanja {
-        position: sticky !important;
-        right: 0 !important;
-        z-index: 10 !important;
-        background-color: #0f172a !important;
-        box-shadow: -6px 0 12px rgba(0, 0, 0, 0.6) !important;
+        position: static !important;
+        box-shadow: none !important;
     }
-    tr:hover .sticky-aksi-belanja {
-        background-color: #1e293b !important;
+    .swipe-hint-belanja {
+        display: flex;
     }
-    th.sticky-aksi-belanja {
-        position: sticky !important;
-        top: 0 !important;
-        right: 0 !important;
-        z-index: 20 !important;
-        background-color: #020617 !important;
+    /* Desktop (>= 1024px): Freeze Sticky Column Aksi Belanja Barang (Opaque & Anti-Bocor saat Scroll Horizontal) */
+    @media (min-width: 1024px) {
+        .sticky-aksi-belanja {
+            position: sticky !important;
+            right: 0 !important;
+            z-index: 10 !important;
+            background-color: #0f172a !important;
+            box-shadow: -6px 0 12px rgba(0, 0, 0, 0.6) !important;
+        }
+        tr:hover .sticky-aksi-belanja {
+            background-color: #1e293b !important;
+        }
+        th.sticky-aksi-belanja {
+            position: sticky !important;
+            top: 0 !important;
+            right: 0 !important;
+            z-index: 20 !important;
+            background-color: #020617 !important;
+        }
+        .swipe-hint-belanja {
+            display: none !important;
+        }
     }
 </style>
 
 <div class="rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl overflow-hidden">
-    <div class="p-5 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div class="p-4 sm:p-5 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
             <h2 class="text-base font-extrabold text-white flex items-center gap-2">
                 <span>📋 Daftar Faktur Belanja Barang &amp; Perbekalan Ruangan</span>
@@ -33,9 +46,18 @@
             </p>
         </div>
 
-        <span class="text-[11px] font-mono font-bold text-indigo-400 bg-indigo-500/10 px-3 py-1 rounded-xl border border-indigo-500/30">
+        <span class="w-fit self-start sm:self-auto shrink-0 text-[11px] font-mono font-bold text-indigo-400 bg-indigo-500/10 px-3 py-1 rounded-xl border border-indigo-500/30">
             Perbekalan &amp; Operasional
         </span>
+    </div>
+
+    <!-- Petunjuk Geser Khusus Mobile & Medium (< 1024px) -->
+    <div class="swipe-hint-belanja items-center justify-between px-4 sm:px-5 pt-2.5 pb-1.5 text-[10.5px] text-slate-400 border-b border-slate-800/40 bg-slate-950/30">
+        <span class="flex items-center gap-1.5">
+            <span class="text-indigo-400">👉</span>
+            <span>Geser tabel ke kanan untuk melihat tombol aksi</span>
+        </span>
+        <span class="font-mono text-slate-500">Tabel Responsif</span>
     </div>
 
     <div class="overflow-x-auto custom-scrollbar">

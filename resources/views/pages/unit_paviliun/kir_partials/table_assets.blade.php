@@ -1,5 +1,45 @@
         <!-- 3. TABEL DAFTAR ASET RUANGAN & FILTER (NO-PRINT) -->
-        <div class="no-print bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
+        <div class="no-print bg-slate-900/90 border border-slate-800 rounded-3xl p-3.5 sm:p-5 lg:p-6 shadow-xl space-y-4 overflow-hidden">
+            <style>
+                .kir-search-box {
+                    width: 100%;
+                    min-width: 0;
+                }
+                @media (min-width: 768px) {
+                    .kir-search-box {
+                        width: auto;
+                        min-width: 260px;
+                    }
+                }
+                /* Mobile & Medium (< 1024px): Kolom Aksi Scroll Alami (Tidak Menutupi Data) */
+                .col-aksi-kir-sticky {
+                    position: static !important;
+                    box-shadow: none !important;
+                }
+                .swipe-hint-kir {
+                    display: flex;
+                }
+                /* Desktop (>= 1024px): Kolom Aksi Tetap Freeze / Sticky di Kanan */
+                @media (min-width: 1024px) {
+                    .col-aksi-kir-sticky {
+                        position: sticky !important;
+                        right: 0 !important;
+                        box-shadow: -6px 0 12px rgba(0,0,0,0.6) !important;
+                    }
+                    th.col-aksi-kir-sticky {
+                        top: 0 !important;
+                        z-index: 30 !important;
+                        background-color: #020617 !important;
+                    }
+                    td.col-aksi-kir-sticky {
+                        z-index: 2 !important;
+                        background-color: #0f172a !important;
+                    }
+                    .swipe-hint-kir {
+                        display: none !important;
+                    }
+                }
+            </style>
             
             <!-- Filter & Search Controls Header -->
             <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 pb-3 border-b border-slate-800">
@@ -7,37 +47,46 @@
                 <div class="flex flex-wrap items-center gap-1.5 text-xs">
                     <button type="button" @click="statusFilter = 'all'"
                         :class="statusFilter === 'all' ? 'bg-emerald-500 text-slate-950 font-extrabold shadow-sm' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                        class="px-3 py-1.5 rounded-xl transition-all">
+                        class="px-3 py-1.5 rounded-xl transition-all cursor-pointer">
                         Semua (<span x-text="assets.length"></span>)
                     </button>
                     <button type="button" @click="statusFilter = 'Baik'"
                         :class="statusFilter === 'Baik' ? 'bg-emerald-500/20 text-emerald-300 font-extrabold border border-emerald-500/40 shadow-sm' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                        class="px-3 py-1.5 rounded-xl transition-all flex items-center space-x-1">
+                        class="px-3 py-1.5 rounded-xl transition-all flex items-center space-x-1 cursor-pointer">
                         <span>Baik</span>
                         <span class="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px]" x-text="countBaik"></span>
                     </button>
                     <button type="button" @click="statusFilter = 'Kurang Baik'"
                         :class="statusFilter === 'Kurang Baik' ? 'bg-amber-500/20 text-amber-300 font-extrabold border border-amber-500/40 shadow-sm' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                        class="px-3 py-1.5 rounded-xl transition-all flex items-center space-x-1">
+                        class="px-3 py-1.5 rounded-xl transition-all flex items-center space-x-1 cursor-pointer">
                         <span>Kurang Baik</span>
                         <span class="px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 text-[10px]" x-text="countKurangBaik"></span>
                     </button>
                     <button type="button" @click="statusFilter = 'Rusak Berat'"
                         :class="statusFilter === 'Rusak Berat' ? 'bg-rose-500/20 text-rose-300 font-extrabold border border-rose-500/40 shadow-sm' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                        class="px-3 py-1.5 rounded-xl transition-all flex items-center space-x-1">
+                        class="px-3 py-1.5 rounded-xl transition-all flex items-center space-x-1 cursor-pointer">
                         <span>Rusak Berat</span>
                         <span class="px-1.5 py-0.2 rounded-full bg-rose-500/20 text-rose-300 text-[10px]" x-text="countRusakBerat"></span>
                     </button>
                 </div>
 
                 <!-- Search Input Box -->
-                <div class="relative min-w-[260px]">
+                <div class="relative kir-search-box">
                     <svg class="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                     </svg>
                     <input type="text" x-model="searchQuery" placeholder="Cari nama, NIBAR, kode 108..."
                         class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-all">
                 </div>
+            </div>
+
+            <!-- Petunjuk Geser Khusus Mobile & Medium (< 1024px) -->
+            <div class="swipe-hint-kir items-center justify-between px-2 text-[10.5px] text-slate-400">
+                <span class="flex items-center gap-1.5">
+                    <span class="text-emerald-400">👉</span>
+                    <span>Geser tabel ke kanan untuk melihat tombol aksi</span>
+                </span>
+                <span class="font-mono text-slate-500">Tabel Responsif</span>
             </div>
 
             <!-- Tabel Data Aset Fisik Ruangan (Scrollable 5-6 rows: max-h-[380px]) -->
@@ -54,8 +103,7 @@
                             <th class="px-3.5 py-3 text-center whitespace-nowrap bg-slate-950 border-b border-slate-800">Tahun</th>
                             <th class="px-3.5 py-3 text-right whitespace-nowrap bg-slate-950 border-b border-slate-800">Nilai Buku</th>
                             <th class="px-3.5 py-3 text-center whitespace-nowrap min-w-[120px] bg-slate-950 border-b border-slate-800">Kondisi Barang</th>
-                            <th class="px-3.5 py-3 text-center whitespace-nowrap border-l border-b border-slate-800 shrink-0 min-w-[170px] w-[170px]" 
-                                style="position: sticky; right: 0; top: 0; z-index: 30; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
+                            <th class="col-aksi-kir-sticky px-3.5 py-3 text-center whitespace-nowrap bg-slate-950 border-l border-b border-slate-800 shrink-0 min-w-[170px] w-[170px]">
                                 Aksi
                             </th>
                         </tr>
@@ -92,9 +140,8 @@
                                     </button>
                                 </td>
 
-                                <!-- Kolom Aksi — FREEZE STICKY RIGHT -->
-                                <td class="px-3.5 py-3 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[170px] w-[170px]" 
-                                    style="position: sticky; right: 0; z-index: 2; background-color: #0f172a !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
+                                <!-- Kolom Aksi — FREEZE HANYA DI DESKTOP (>= 1024px), SCROLL ALAMI DI MOBILE & MEDIUM (< 1024px) -->
+                                <td class="col-aksi-kir-sticky px-3.5 py-3 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[170px] w-[170px]">
                                     <div class="flex items-center justify-center gap-1.5">
                                         <!-- 1. Tombol Detail (Kaya Data ASTAP) -->
                                         <button type="button" @click="openDetail(item)"

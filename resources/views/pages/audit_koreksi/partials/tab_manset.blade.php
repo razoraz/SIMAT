@@ -1,15 +1,15 @@
 {{-- TABEL 4: KHUSUS KOREKSI MANSET (MANAJEMEN ASET / E-MANSET BPKAD) --}}
 <div class="rounded-3xl bg-slate-900/90 border border-emerald-500/30 overflow-hidden shadow-2xl shadow-emerald-950/20 backdrop-blur-xl">
     {{-- Card Header --}}
-    <div class="p-5 border-b border-emerald-900/40 flex items-center justify-between flex-wrap gap-3 bg-gradient-to-r from-emerald-950/40 to-slate-950/60">
-        <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-xl bg-emerald-900/50 border border-emerald-500/40 flex items-center justify-center text-emerald-300 shadow-sm">
+    <div class="audit-card-header p-4 sm:p-5 border-b border-emerald-900/40 flex items-center justify-between flex-wrap gap-3 bg-gradient-to-r from-emerald-950/40 to-slate-950/60">
+        <div class="audit-card-title-group flex items-center gap-3 min-w-0">
+            <div class="w-9 h-9 rounded-xl bg-emerald-900/50 border border-emerald-500/40 flex items-center justify-center text-emerald-300 shadow-sm shrink-0">
                 <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
             </div>
-            <div>
-                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+            <div class="min-w-0">
+                <h3 class="audit-card-heading text-sm font-bold text-white flex flex-wrap items-center gap-2">
                     <span>Audit Koreksi Nilai Manset (Sinkronisasi BPKAD Bondowoso)</span>
                     <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                         Kolom 7 &amp; 17
@@ -20,7 +20,7 @@
                 </p>
             </div>
         </div>
-        <div class="text-xs font-mono text-emerald-300 flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-950 border border-emerald-900/40">
+        <div class="text-xs font-mono text-emerald-300 flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-950 border border-emerald-900/40 shrink-0">
             <span>Total Sinkronisasi:</span>
             <strong class="text-white">{{ $mansetKoreksi->count() }}</strong>
         </div>
@@ -39,6 +39,15 @@
             </p>
         </div>
     @else
+        {{-- Indikator Geser Tabel pada Layar Mobile/Medium (< 1024px) --}}
+        <div class="swipe-hint-audit items-center justify-between px-4 py-2 text-[10.5px] text-slate-400 border-t border-emerald-900/40 bg-slate-950/30">
+            <span class="flex items-center gap-1.5">
+                <span class="text-emerald-400">👉</span>
+                <span>Geser tabel ke kanan untuk melihat detail &amp; kolom aksi</span>
+            </span>
+            <span class="font-mono text-slate-500">Tabel Responsif</span>
+        </div>
+
         <div class="rounded-2xl border-t border-emerald-900/40 bg-slate-950/40 custom-scrollbar" style="max-height: calc(100vh - 280px); overflow-y: auto; overflow-x: auto;">
             <table class="w-full text-left text-xs text-slate-300 relative border-collapse min-w-[1050px]">
                 <thead class="text-emerald-300/80 font-extrabold uppercase text-[10px] tracking-wider border-b border-emerald-900/40 shrink-0 select-none" style="position: sticky; top: 0; z-index: 5; background-color: #020617;">

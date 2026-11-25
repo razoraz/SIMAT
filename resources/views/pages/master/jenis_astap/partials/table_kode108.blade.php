@@ -1,7 +1,47 @@
 <!-- ========================================================================= -->
 <!-- TABEL STRUKTUR KODE 108 BMD                                               -->
 <!-- ========================================================================= -->
-<div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-5 mb-6">
+<div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-3.5 sm:p-5 mb-6 overflow-hidden">
+    <style>
+        /* Mobile & Medium (< 1024px): Kolom Aksi Scroll Alami (Tidak Menutupi Data) */
+        .col-aksi-kode108-sticky {
+            position: static !important;
+            box-shadow: none !important;
+        }
+        .swipe-hint-kode108 {
+            display: flex;
+        }
+        /* Desktop (>= 1024px): Kolom Aksi Tetap Freeze / Sticky di Kanan */
+        @media (min-width: 1024px) {
+            .col-aksi-kode108-sticky {
+                position: sticky !important;
+                right: 0 !important;
+                box-shadow: -6px 0 12px rgba(0,0,0,0.6) !important;
+            }
+            th.col-aksi-kode108-sticky {
+                top: 0 !important;
+                z-index: 30 !important;
+                background-color: #0f1d38 !important;
+            }
+            td.col-aksi-kode108-sticky {
+                z-index: 2 !important;
+                background-color: #0c172e !important;
+            }
+            .swipe-hint-kode108 {
+                display: none !important;
+            }
+        }
+    </style>
+
+    <!-- Petunjuk Geser Khusus Mobile & Medium (< 1024px) -->
+    <div class="swipe-hint-kode108 items-center justify-between px-2 pb-2.5 text-[10.5px] text-slate-400">
+        <span class="flex items-center gap-1.5">
+            <span class="text-emerald-400">👉</span>
+            <span>Geser tabel ke kanan untuk melihat tombol aksi</span>
+        </span>
+        <span class="font-mono text-slate-500">Tabel Responsif</span>
+    </div>
+
     <div class="rounded-2xl border border-slate-800/80 custom-scrollbar" style="max-height: 360px; overflow-y: auto; overflow-x: auto;">
         <table class="w-full text-left text-xs text-slate-300 border-collapse">
             <thead class="shadow-sm" style="position: sticky; top: 0; z-index: 10; background-color: #020617;">
@@ -27,7 +67,7 @@
                             <span>SUB - SUB RINCIAN OBJEK</span>
                         </div>
                     </th>
-                    <th rowspan="2" class="px-3 py-3 bg-blue-950/80 text-blue-300 text-center align-middle whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[190px] w-[190px]" style="position: sticky; right: 0; top: 0; z-index: 30; background-color: #0f1d38 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
+                    <th rowspan="2" class="col-aksi-kode108-sticky px-3 py-3 bg-blue-950/80 text-blue-300 text-center align-middle whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[190px] w-[190px]">
                         <div class="flex items-center justify-center space-x-1.5 font-extrabold uppercase tracking-wider">
                             <span>⚡</span>
                             <span>AKSI</span>
@@ -97,8 +137,8 @@
                             </div>
                         </td>
 
-                        <!-- Kolom Aksi — FREEZE STICKY RIGHT -->
-                        <td class="px-3 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[190px] w-[190px]" style="position: sticky; right: 0; z-index: 2; background-color: #0c172e !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
+                        <!-- Kolom Aksi — FREEZE HANYA DI DESKTOP (>= 1024px), SCROLL ALAMI DI MOBILE & MEDIUM (< 1024px) -->
+                        <td class="col-aksi-kode108-sticky px-3 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[190px] w-[190px]">
                             <div class="flex items-center justify-center gap-1.5">
                                 <button type="button" @click="openEdit({{ json_encode($item) }})"
                                     class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 border border-cyan-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
@@ -142,8 +182,8 @@
 
     <!-- Laravel Pagination Links -->
     @if ($kode108List->hasPages())
-        <div class="px-6 py-4 bg-slate-900 border-t border-slate-800">
-            {{ $kode108List->links() }}
+        <div class="mt-4 px-3.5 sm:px-5 py-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80">
+            {{ $kode108List->onEachSide(1)->links('vendor.pagination.simat-dark') }}
         </div>
     @endif
 </div>

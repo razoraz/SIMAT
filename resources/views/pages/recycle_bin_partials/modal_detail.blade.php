@@ -9,23 +9,23 @@
         style="background-color: #0f172a;">
         
         <!-- Pinned Header -->
-        <div class="shrink-0 flex items-center justify-between px-5 sm:px-6 py-4 border-b border-slate-800/80 bg-slate-900/95 backdrop-blur-md">
-            <div class="flex items-center space-x-3">
+        <div class="shrink-0 flex items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-slate-800/80 bg-slate-900/95 backdrop-blur-md">
+            <div class="flex items-center space-x-3 min-w-0">
                 <div class="w-9 h-9 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0 shadow-lg shadow-rose-500/10">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                     </svg>
                 </div>
-                <div>
-                    <h3 class="text-base font-extrabold text-white leading-tight" x-text="'Detail Data Terhapus: ' + activeModuleName"></h3>
+                <div class="min-w-0">
+                    <h3 class="text-sm sm:text-base font-extrabold text-white leading-tight break-words" x-text="'Detail Data Terhapus: ' + activeModuleName"></h3>
                     <p class="text-[11px] text-slate-400 mt-0.5">Pratinjau arsip data sebelum dipulihkan ke master atau dimusnahkan permanen</p>
                 </div>
             </div>
-            <button type="button" @click="showDetailModal = false" class="text-slate-400 hover:text-white text-2xl font-bold cursor-pointer p-1 transition-colors leading-none">&times;</button>
+            <button type="button" @click="showDetailModal = false" class="text-slate-400 hover:text-white text-2xl font-bold cursor-pointer p-1 transition-colors leading-none shrink-0">&times;</button>
         </div>
 
         <!-- Scrollable Body Content -->
-        <div class="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4 custom-scrollbar">
+        <div class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 custom-scrollbar">
             <template x-if="selectedItem">
                 <div class="space-y-4 text-xs">
                     {{-- Banner Info Penghapusan --}}
@@ -1122,7 +1122,7 @@
         </div>
 
         <!-- Fixed Pinned Footer (Selalu Terlihat, Tidak Terpotong) -->
-        <div class="shrink-0 flex items-center justify-between px-5 sm:px-6 py-4 border-t border-slate-800/80 bg-slate-950/90 backdrop-blur-md">
+        <div class="shrink-0 flex items-center justify-center sm:justify-between flex-wrap gap-2.5 px-4 sm:px-6 py-4 border-t border-slate-800/80 bg-slate-950/90 backdrop-blur-md">
             <div class="flex items-center space-x-2">
                 <template x-if="selectedItem">
                     <button type="button" @click="restoreSingle(currentTargetModule, selectedItem); showDetailModal = false;"

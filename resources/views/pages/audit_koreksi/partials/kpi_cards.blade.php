@@ -1,5 +1,27 @@
 {{-- KPI CARDS RINGKASAN AUDIT KOREKSI NILAI BMD --}}
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+<style>
+    .kpi-audit-grid {
+        display: grid;
+        grid-template-columns: repeat(1, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+    .kpi-audit-grid > div {
+        min-width: 0;
+    }
+    @media (min-width: 640px) {
+        .kpi-audit-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1rem;
+        }
+    }
+    @media (min-width: 1280px) {
+        .kpi-audit-grid {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 1rem;
+        }
+    }
+</style>
+<div class="kpi-audit-grid">
     {{-- Card 1: Total Semua Koreksi --}}
     <div class="relative overflow-hidden rounded-2xl bg-gradient-to-b from-slate-900/95 to-slate-950 border border-slate-700/70 p-4 sm:p-5 backdrop-blur-md shadow-xl flex flex-col justify-between group hover:border-slate-600 transition-all">
         <div class="space-y-1">

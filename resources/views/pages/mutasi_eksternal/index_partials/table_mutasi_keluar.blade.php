@@ -2,6 +2,45 @@
 <!-- TABEL KATALOG MUTASI EKSTERNAL KELUAR (TRANSFER ASET RSUD KE OPD LUAR)   -->
 <!-- ========================================================================= -->
 <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6">
+    <style>
+        /* Mobile & Medium (< 1024px): Kolom Aksi Scroll Alami (Tidak Menutupi Data) */
+        .col-aksi-mutasi-keluar-sticky {
+            position: static !important;
+            box-shadow: none !important;
+        }
+        .swipe-hint-mutasi-keluar {
+            display: flex;
+        }
+        /* Desktop (>= 1024px): Kolom Aksi Tetap Freeze / Sticky di Kanan */
+        @media (min-width: 1024px) {
+            .col-aksi-mutasi-keluar-sticky {
+                position: sticky !important;
+                right: 0 !important;
+                box-shadow: -6px 0 12px rgba(0,0,0,0.6) !important;
+            }
+            th.col-aksi-mutasi-keluar-sticky {
+                z-index: 20 !important;
+                background-color: #020617 !important;
+            }
+            td.col-aksi-mutasi-keluar-sticky {
+                z-index: 2 !important;
+                background-color: #0f172a !important;
+            }
+            .swipe-hint-mutasi-keluar {
+                display: none !important;
+            }
+        }
+    </style>
+
+    <!-- Petunjuk Geser Khusus Mobile & Medium (< 1024px) -->
+    <div class="swipe-hint-mutasi-keluar items-center justify-between px-2 pb-2.5 text-[10.5px] text-slate-400">
+        <span class="flex items-center gap-1.5">
+            <span class="text-cyan-400">👉</span>
+            <span>Geser tabel ke kanan untuk melihat tombol aksi</span>
+        </span>
+        <span class="font-mono text-slate-500">Tabel Responsif</span>
+    </div>
+
     <div class="rounded-2xl border border-slate-800/80 bg-slate-950/40 custom-scrollbar" style="max-height: calc(100vh - 220px); overflow-y: auto; overflow-x: auto;">
         <table class="w-full text-left text-xs text-slate-300 relative border-collapse">
             <thead class="text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800 shrink-0" style="position: sticky; top: 0; z-index: 5; background-color: #020617;">
@@ -13,7 +52,7 @@
                     <th class="px-3 py-3.5 text-center whitespace-nowrap w-36 bg-slate-950">Nilai Perolehan</th>
                     <th class="px-3 py-3.5 text-center whitespace-nowrap w-28 bg-slate-950">Kondisi</th>
                     <th class="px-3.5 py-3.5 text-center whitespace-nowrap w-36 bg-slate-950">Status</th>
-                    <th class="px-3 py-3.5 text-center whitespace-nowrap w-[210px] min-w-[210px] bg-slate-950 border-l border-slate-800 shrink-0" style="position: sticky; right: 0; z-index: 20; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">Aksi</th>
+                    <th class="col-aksi-mutasi-keluar-sticky px-3 py-3.5 text-center whitespace-nowrap w-[210px] min-w-[210px] bg-slate-950 border-l border-slate-800 shrink-0">Aksi</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-800/80">
@@ -118,8 +157,8 @@
                             </span>
                         </td>
 
-                        <!-- Aksi (Detail, Ubah, Hapus) — FREEZE STICKY RIGHT -->
-                        <td class="px-3 py-3 text-center whitespace-nowrap border-l border-slate-800/80 w-[210px] min-w-[210px] shrink-0" style="position: sticky; right: 0; z-index: 2; background-color: #0f172a !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
+                        <!-- Aksi (Detail, Ubah, Hapus) — FREEZE HANYA DI DESKTOP (>= 1024px) -->
+                        <td class="col-aksi-mutasi-keluar-sticky px-3 py-3 text-center whitespace-nowrap border-l border-slate-800/80 w-[210px] min-w-[210px] shrink-0">
                             <div class="flex items-center justify-center gap-1.5">
                                 <!-- 1. Tombol Detail -->
                                 <button type="button" @click="openDetail(item)"

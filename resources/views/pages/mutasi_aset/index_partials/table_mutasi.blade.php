@@ -1,5 +1,44 @@
         <!-- Tabel Mutasi Aset -->
         <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6">
+            <style>
+                /* Mobile & Medium (< 1024px): Kolom Aksi Scroll Alami (Tidak Menutupi Data) */
+                .col-aksi-mutasi-internal-sticky {
+                    position: static !important;
+                    box-shadow: none !important;
+                }
+                .swipe-hint-mutasi-internal {
+                    display: flex;
+                }
+                /* Desktop (>= 1024px): Kolom Aksi Tetap Freeze / Sticky di Kanan */
+                @media (min-width: 1024px) {
+                    .col-aksi-mutasi-internal-sticky {
+                        position: sticky !important;
+                        right: 0 !important;
+                        box-shadow: -6px 0 12px rgba(0,0,0,0.6) !important;
+                    }
+                    th.col-aksi-mutasi-internal-sticky {
+                        z-index: 20 !important;
+                        background-color: #020617 !important;
+                    }
+                    td.col-aksi-mutasi-internal-sticky {
+                        z-index: 2 !important;
+                        background-color: #0f172a !important;
+                    }
+                    .swipe-hint-mutasi-internal {
+                        display: none !important;
+                    }
+                }
+            </style>
+
+            <!-- Petunjuk Geser Khusus Mobile & Medium (< 1024px) -->
+            <div class="swipe-hint-mutasi-internal items-center justify-between px-2 pb-2.5 text-[10.5px] text-slate-400">
+                <span class="flex items-center gap-1.5">
+                    <span class="text-rose-400">👉</span>
+                    <span>Geser tabel ke kanan untuk melihat tombol aksi</span>
+                </span>
+                <span class="font-mono text-slate-500">Tabel Responsif</span>
+            </div>
+
             <div class="overflow-x-auto rounded-2xl border border-slate-800/80 bg-slate-950/40">
                 <table class="w-full text-left text-xs text-slate-300">
                     <thead class="bg-slate-950 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800 shadow-sm shrink-0">
@@ -10,7 +49,7 @@
                             <th class="px-4 py-3.5 text-left min-w-[240px] max-w-[280px] bg-slate-950">Nama Barang / ASTAP</th>
                             <th class="px-4 py-3.5 text-center whitespace-nowrap min-w-[190px] bg-slate-950">Asal → Tujuan</th>
                             <th class="px-4 py-3.5 text-center whitespace-nowrap min-w-[220px] bg-slate-950">Status Persetujuan</th>
-                            <th class="px-4 py-3.5 text-center whitespace-nowrap border-l border-slate-800 shrink-0 min-w-[210px] w-[210px]" style="position: sticky; right: 0; z-index: 20; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">Aksi</th>
+                            <th class="col-aksi-mutasi-internal-sticky px-4 py-3.5 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800 shrink-0 min-w-[210px] w-[210px]">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-800/80">
@@ -133,8 +172,8 @@
                                     </template>
                                 </td>
 
-                                {{-- Kolom Aksi — FREEZE STICKY RIGHT --}}
-                                <td class="px-4 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[210px] w-[210px]" style="position: sticky; right: 0; z-index: 2; background-color: #0f172a !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
+                                {{-- Kolom Aksi — FREEZE HANYA DI DESKTOP (>= 1024px), SCROLL ALAMI DI MOBILE & MEDIUM (< 1024px) --}}
+                                <td class="col-aksi-mutasi-internal-sticky px-4 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[210px] w-[210px]">
                                     {{-- Aksi untuk Data Terhapus (Label 1): Detail & Pulihkan --}}
                                     <template x-if="item.is_deleted">
                                         <div class="flex items-center justify-center gap-1.5">

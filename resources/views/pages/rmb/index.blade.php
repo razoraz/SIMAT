@@ -10,10 +10,49 @@
         @include('pages.rmb.partials.kpi_cards')
 
         {{-- 3. Tab Navigasi: Tabel 21 Kolom vs Kertas Kerja Rekon --}}
-        <div class="flex items-center justify-between border-b border-slate-800/80 pb-3 gap-4 flex-wrap">
-            <div class="flex items-center p-1 rounded-2xl bg-slate-950/80 border border-slate-800/80 backdrop-blur-sm">
+        <style>
+            .rmb-toolbar-wrap {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 0.75rem;
+            }
+            .rmb-tabs-box {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                justify-content: center;
+                gap: 0.25rem;
+                max-width: 100%;
+            }
+            .rmb-toolbar-actions {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                justify-content: center;
+                gap: 0.5rem;
+                width: 100%;
+            }
+            @media (min-width: 1024px) {
+                .rmb-toolbar-wrap {
+                    flex-direction: row;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 1rem;
+                }
+                .rmb-tabs-box {
+                    justify-content: flex-start;
+                }
+                .rmb-toolbar-actions {
+                    justify-content: flex-end;
+                    width: auto;
+                }
+            }
+        </style>
+        <div class="rmb-toolbar-wrap border-b border-slate-800/80 pb-3">
+            <div class="rmb-tabs-box p-1 rounded-2xl bg-slate-950/80 border border-slate-800/80 backdrop-blur-sm">
                 <button type="button" @click="activeTab = 'tabel_21'"
-                        class="flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all"
+                        class="flex flex-wrap items-center justify-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all max-w-full cursor-pointer"
                         :class="activeTab === 'tabel_21' 
                             ? 'bg-gradient-to-r from-emerald-500/20 to-teal-500/20 text-emerald-300 border border-emerald-500/30 shadow-md shadow-emerald-500/10' 
                             : 'text-slate-400 hover:text-white'">
@@ -23,7 +62,7 @@
                 </button>
 
                 <button type="button" @click="activeTab = 'kertas_kerja'"
-                        class="flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ml-1"
+                        class="flex flex-wrap items-center justify-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all max-w-full cursor-pointer"
                         :class="activeTab === 'kertas_kerja' 
                             ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-300 border border-cyan-500/30 shadow-md shadow-cyan-500/10' 
                             : 'text-slate-400 hover:text-white'">
@@ -35,13 +74,13 @@
                 </button>
             </div>
 
-            <div class="flex items-center space-x-2">
+            <div class="rmb-toolbar-actions">
                 <button type="button" @click="toggleAllAccordion()"
-                        class="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-[11px] font-semibold text-slate-300 hover:text-white transition-all flex items-center gap-1.5">
+                        class="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-[11px] font-semibold text-slate-300 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer">
                     <span x-text="allExpanded ? '🔼 Ciutkan Semua' : '🔽 Bentangkan Semua KIB'"></span>
                 </button>
                 <button type="button" @click="exportToExcel()"
-                        class="px-3.5 py-1.5 rounded-xl bg-emerald-600/20 border border-emerald-500/40 hover:bg-emerald-600/30 text-[11px] font-bold text-emerald-300 hover:text-emerald-200 transition-all flex items-center gap-1.5 shadow-sm">
+                        class="px-3.5 py-1.5 rounded-xl bg-emerald-600/20 border border-emerald-500/40 hover:bg-emerald-600/30 text-[11px] font-bold text-emerald-300 hover:text-emerald-200 transition-all flex items-center gap-1.5 shadow-sm cursor-pointer">
                     <span>📥</span>
                     <span>Ekspor Excel Resmi RMB</span>
                 </button>

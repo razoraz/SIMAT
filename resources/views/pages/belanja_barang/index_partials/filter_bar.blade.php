@@ -5,8 +5,8 @@
     <form method="GET" action="{{ route('master.belanja_barang') }}" class="space-y-4">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
             
-            <!-- Filter 1: Pencarian Keyword (Col 5) -->
-            <div class="lg:col-span-6">
+            <!-- Filter 1: Pencarian Keyword (Col 6 di Desktop, Full 2-Col di Tablet/Medium) -->
+            <div class="sm:col-span-2 lg:col-span-6">
                 <label class="block text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5">
                     Pencarian Barang / Faktur / Toko
                 </label>
@@ -71,8 +71,8 @@
 
         <!-- Filter Reset Link jika aktif -->
         @if(($filterTahun && $filterTahun !== 'all') || ($filterTw && $filterTw !== 'all') || !empty($search))
-            <div class="flex items-center justify-between pt-2 border-t border-slate-800/80 text-xs">
-                <div class="flex items-center gap-2 text-slate-400">
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800/80 text-xs">
+                <div class="flex flex-wrap items-center gap-2 text-slate-400">
                     <span class="w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></span>
                     <span>Filter aktif:</span>
                     @if($filterTahun && $filterTahun !== 'all')

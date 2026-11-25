@@ -19,13 +19,55 @@
         </div>
     </div>
 
+    <style>
+        @media (max-width: 1023px) {
+            .swipe-hint-rmb21 { display: flex; }
+            .col-left-rmb-sticky {
+                position: static !important;
+                left: auto !important;
+                z-index: auto !important;
+                box-shadow: none !important;
+            }
+        }
+        @media (min-width: 1024px) {
+            .swipe-hint-rmb21 { display: none !important; }
+            .col-left-rmb-sticky {
+                position: sticky !important;
+                left: 0 !important;
+                box-shadow: 6px 0 12px rgba(0, 0, 0, 0.45) !important;
+            }
+            thead th.col-left-rmb-sticky,
+            tfoot td.col-left-rmb-sticky {
+                z-index: 30 !important;
+                background-color: #020617 !important;
+            }
+            tr.rmb-group-row > td.col-left-rmb-sticky {
+                z-index: 10 !important;
+                background-color: #020617 !important;
+            }
+            tr.rmb-detail-row > td.col-left-rmb-sticky {
+                z-index: 10 !important;
+                background-color: #0f172a !important;
+            }
+        }
+    </style>
+
+    {{-- Indikator Geser Tabel pada Layar Mobile/Tablet (< 1024px) --}}
+    <div class="swipe-hint-rmb21 items-center justify-between px-4 py-2 text-[10.5px] text-slate-400 border-b border-slate-800/50 bg-slate-950/30">
+        <span class="flex items-center gap-1.5">
+            <span class="text-emerald-400">👉</span>
+            <span>Geser tabel ke kanan untuk melihat 21 kolom rincian</span>
+        </span>
+        <span class="font-mono text-slate-500">Tabel Responsif</span>
+    </div>
+
     {{-- Container Tabel Scroll Horizontal --}}
     <div class="overflow-x-auto max-h-[700px] overflow-y-auto custom-scrollbar">
         <table class="w-full text-left border-collapse text-[11px]">
             <thead class="sticky top-0 z-20 bg-slate-950 text-slate-300 font-mono select-none shadow-md">
                 {{-- Baris Header 1: Grup Penambahan & Pengurangan --}}
                 <tr class="border-b border-slate-800 text-center font-bold tracking-wider uppercase text-[10px]">
-                    <th rowspan="2" class="p-3 border-r border-slate-800 min-w-[240px] text-left bg-slate-950 sticky left-0 z-30 shadow-r">
+                    <th rowspan="2" class="col-left-rmb-sticky p-3 border-r border-slate-800 min-w-[240px] text-left bg-slate-950">
                         Uraian Akun PMDN 108
                     </th>
                     <th rowspan="2" class="p-3 border-r border-slate-800 min-w-[130px] bg-slate-950 text-cyan-300">
@@ -89,15 +131,17 @@
                     @endphp
 
                     {{-- Baris Accordion Header Kelompok KIB --}}
-                    <tr class="bg-slate-950/90 hover:bg-slate-900/90 transition-all font-bold cursor-pointer select-none border-t border-b border-slate-700/80"
+                    <tr class="rmb-group-row bg-slate-950/90 hover:bg-slate-900/90 transition-all font-bold cursor-pointer select-none border-t border-b border-slate-700/80"
                         @click="toggleGroup('{{ $gk }}')">
-                        <td class="p-2.5 sticky left-0 z-10 bg-slate-950 shadow-r flex items-center space-x-2">
-                            <span class="text-xs transition-transform duration-200"
-                                  :class="isGroupOpen('{{ $gk }}') ? 'rotate-90 text-emerald-400' : 'text-slate-500'">▶</span>
-                            <span class="text-xs text-white uppercase tracking-wider">{{ $gMeta['name'] }}</span>
-                            <span class="px-1.5 py-0.5 rounded text-[9.5px] font-mono bg-slate-800 text-slate-400 border border-slate-700">
-                                {{ count($groupRows) }} Akun
-                            </span>
+                        <td class="col-left-rmb-sticky p-2.5 bg-slate-950 border-r border-slate-800">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xs transition-transform duration-200"
+                                      :class="isGroupOpen('{{ $gk }}') ? 'rotate-90 text-emerald-400' : 'text-slate-500'">▶</span>
+                                <span class="text-xs text-white uppercase tracking-wider">{{ $gMeta['name'] }}</span>
+                                <span class="px-1.5 py-0.5 rounded text-[9.5px] font-mono bg-slate-800 text-slate-400 border border-slate-700">
+                                    {{ count($groupRows) }} Akun
+                                </span>
+                            </div>
                         </td>
                         {{-- Saldo Awal Subtotal --}}
                         <td class="p-2.5 text-right font-black text-cyan-300">
@@ -138,9 +182,9 @@
                     {{-- Baris Detail Sub Rincian Akun PMDN 108 --}}
                     @foreach ($groupRows as $row)
                         <tr x-show="isGroupOpen('{{ $gk }}')" x-transition
-                            class="hover:bg-slate-800/40 transition-colors {{ ($row['saldo_awal'] > 0 || $row['total_penambahan'] > 0 || $row['total_pengurangan'] > 0) ? 'bg-slate-900/50' : 'opacity-65' }}">
+                            class="rmb-detail-row hover:bg-slate-800/40 transition-colors {{ ($row['saldo_awal'] > 0 || $row['total_penambahan'] > 0 || $row['total_pengurangan'] > 0) ? 'bg-slate-900/50' : 'opacity-65' }}">
                             {{-- Uraian & Kode --}}
-                            <td class="p-2 pl-7 sticky left-0 z-10 bg-slate-900 shadow-r border-r border-slate-800">
+                            <td class="col-left-rmb-sticky p-2 pl-7 bg-slate-900 border-r border-slate-800">
                                 <div class="font-mono text-[10px] text-slate-400 font-bold leading-none mb-0.5">
                                     {{ $row['code'] }}
                                 </div>
@@ -230,7 +274,7 @@
             {{-- Footer Grand Total --}}
             <tfoot class="sticky bottom-0 z-20 bg-slate-950 text-white font-mono font-black text-xs border-t-2 border-emerald-500/50 shadow-2xl">
                 <tr class="bg-slate-950">
-                    <td class="p-3 sticky left-0 z-30 bg-slate-950 shadow-r uppercase tracking-wider text-emerald-400">
+                    <td class="col-left-rmb-sticky p-3 bg-slate-950 border-r border-slate-800 uppercase tracking-wider text-emerald-400">
                         TOTAL ASET TETAP (KIB A s/d F)
                     </td>
                     <td class="p-3 text-right text-cyan-300">

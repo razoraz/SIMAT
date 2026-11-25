@@ -1,7 +1,47 @@
 <!-- ========================================================================= -->
 <!-- TABEL REKENING BELANJA UNTUK PENGADAAN SIPD                               -->
 <!-- ========================================================================= -->
-<div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-5 mb-6">
+<div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-3.5 sm:p-5 mb-6 overflow-hidden">
+    <style>
+        /* Mobile & Medium (< 1024px): Kolom Aksi Scroll Alami (Tidak Menutupi Data) */
+        .col-aksi-rekening-sticky {
+            position: static !important;
+            box-shadow: none !important;
+        }
+        .swipe-hint-rekening {
+            display: flex;
+        }
+        /* Desktop (>= 1024px): Kolom Aksi Tetap Freeze / Sticky di Kanan */
+        @media (min-width: 1024px) {
+            .col-aksi-rekening-sticky {
+                position: sticky !important;
+                right: 0 !important;
+                box-shadow: -6px 0 12px rgba(0,0,0,0.6) !important;
+            }
+            th.col-aksi-rekening-sticky {
+                top: 0 !important;
+                z-index: 30 !important;
+                background-color: #0f1d38 !important;
+            }
+            td.col-aksi-rekening-sticky {
+                z-index: 2 !important;
+                background-color: #0c172e !important;
+            }
+            .swipe-hint-rekening {
+                display: none !important;
+            }
+        }
+    </style>
+
+    <!-- Petunjuk Geser Khusus Mobile & Medium (< 1024px) -->
+    <div class="swipe-hint-rekening items-center justify-between px-2 pb-2.5 text-[10.5px] text-slate-400">
+        <span class="flex items-center gap-1.5">
+            <span class="text-blue-400">👉</span>
+            <span>Geser tabel ke kanan untuk melihat tombol aksi</span>
+        </span>
+        <span class="font-mono text-slate-500">Tabel Responsif</span>
+    </div>
+
     <div class="rounded-2xl border border-slate-800/80 custom-scrollbar" style="max-height: 480px; overflow-y: auto; overflow-x: auto;">
         <table class="w-full text-left text-xs text-slate-300 border-collapse">
             
@@ -21,7 +61,7 @@
                     <th rowspan="2" class="px-4 py-3 bg-slate-950/90 text-slate-300 border-r border-slate-800 text-center align-middle w-52">
                         Kelompok Akun Belanja
                     </th>
-                    <th rowspan="2" class="px-3 py-3 bg-blue-950/80 text-blue-300 text-center align-middle whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[190px] w-[190px]" style="position: sticky; right: 0; top: 0; z-index: 30; background-color: #0f1d38 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
+                    <th rowspan="2" class="col-aksi-rekening-sticky px-3 py-3 bg-blue-950/80 text-blue-300 text-center align-middle whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[190px] w-[190px]">
                         <div class="flex items-center justify-center space-x-1.5 font-extrabold uppercase tracking-wider">
                             <span>⚡</span>
                             <span>AKSI</span>
@@ -75,8 +115,8 @@
                             </span>
                         </td>
 
-                        <!-- Kolom 5: Aksi — FREEZE STICKY RIGHT -->
-                        <td class="px-3 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[190px] w-[190px]" style="position: sticky; right: 0; z-index: 2; background-color: #0c172e !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
+                        <!-- Kolom 5: Aksi — FREEZE HANYA DI DESKTOP (>= 1024px), SCROLL ALAMI DI MOBILE & MEDIUM (< 1024px) -->
+                        <td class="col-aksi-rekening-sticky px-3 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[190px] w-[190px]">
                             <div class="flex items-center justify-center gap-1.5">
                                 <button type="button" @click="openEdit({{ json_encode($item) }})"
                                     class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 border border-cyan-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
@@ -120,13 +160,8 @@
 
     <!-- Pagination Footer -->
     @if ($rekeningList->hasPages())
-        <div class="mt-4 pt-4 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
-            <div>
-                Menampilkan <span class="font-bold text-white">{{ $rekeningList->firstItem() }}</span> - <span class="font-bold text-white">{{ $rekeningList->lastItem() }}</span> dari <span class="font-bold text-white">{{ $rekeningList->total() }}</span> akun belanja
-            </div>
-            <div>
-                {{ $rekeningList->links() }}
-            </div>
+        <div class="mt-4 px-3.5 sm:px-5 py-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/80">
+            {{ $rekeningList->onEachSide(1)->links('vendor.pagination.simat-dark') }}
         </div>
     @endif
 </div>
