@@ -44,12 +44,28 @@
                     </label>
                     <select id="export_format_type_select"
                             x-model="exportFormatType"
-                            @change="if (exportFormatType === 'rekap_triwulan') exportSumberDana = 'belanja_modal'"
-                            :class="exportFormatType === 'rekap_triwulan' ? 'border-purple-500/50 text-purple-200 focus:border-purple-400' : 'border-emerald-500/50 text-emerald-200 focus:border-emerald-400'"
+                            @change="if (exportFormatType !== 'sipenerbang') exportSumberDana = 'belanja_modal'"
+                            :class="{
+                                'border-emerald-500/50 text-emerald-200 focus:border-emerald-400': exportFormatType === 'sipenerbang',
+                                'border-purple-500/50 text-purple-200 focus:border-purple-400': exportFormatType === 'rekap_triwulan',
+                                'border-sky-500/50 text-sky-200 focus:border-sky-400': exportFormatType === 'lampiran_aset_tetap',
+                                'border-amber-500/50 text-amber-200 focus:border-amber-400': exportFormatType === 'lampiran_extracom',
+                                'border-indigo-500/50 text-indigo-200 focus:border-indigo-400': exportFormatType === 'lampiran_atb'
+                            }"
                             class="w-full bg-slate-950 border rounded-xl px-3 py-2 text-xs font-bold focus:outline-none cursor-pointer transition-colors">
                         <option value="sipenerbang" class="bg-slate-950 text-emerald-200">📘 SIPENERBANG — Buku Induk Aset Tetap (9 Sheet / Per KIB)</option>
                         <option value="rekap_triwulan" class="bg-slate-950 text-purple-200">📑 Rekap Triwulan — Paket 4 Sheet: Daftar AT, Pengurangan, Reklas &amp; RMB</option>
+                        <option value="lampiran_aset_tetap" class="bg-slate-950 text-sky-200"
+                                x-text="'📋 Format Lampiran Aset Tetap_' + (exportTriwulan === 'all' ? 'Tahunan' : exportTriwulan) + '_RSDK_' + (exportYear === 'all' ? new Date().getFullYear() : exportYear)"></option>
+                        <option value="lampiran_extracom" class="bg-slate-950 text-amber-200"
+                                x-text="'🏷️ Lampiran Extracom RSUD-' + (exportYear === 'all' ? new Date().getFullYear() : exportYear) + ' _RSDK_' + (exportYear === 'all' ? new Date().getFullYear() : exportYear)"></option>
+                        <option value="lampiran_atb" class="bg-slate-950 text-indigo-200"
+                                x-text="'💾 Lampiran ATB_' + (exportTriwulan === 'all' ? 'Tahunan' : exportTriwulan.replace(/\s+/g, '')) + '-RSDK-' + (exportYear === 'all' ? new Date().getFullYear() : exportYear)"></option>
                     </select>
+                    <p x-show="['lampiran_aset_tetap', 'lampiran_extracom', 'lampiran_atb'].includes(exportFormatType)"
+                       class="text-[10.5px] text-slate-400 mt-1.5 leading-snug">
+                        Opsi format telah ditambahkan (mencakup semua sumber perolehan; struktur isi sheet Excel menyusul).
+                    </p>
                 </div>
 
                 <!-- 2. PILIHAN SUMBER PEROLEHAN / KELUARAN (Tampil ketika format SIPENERBANG dipilih) -->

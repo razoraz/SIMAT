@@ -14351,6 +14351,25 @@
                         }).length;
                     }
 
+                    // KHUSUS 3 FORMAT LAMPIRAN BARU (Semua Sumber Perolehan)
+                    if (['lampiran_aset_tetap', 'lampiran_extracom', 'lampiran_atb'].includes(this.exportFormatType)) {
+                        return (this.astaps || []).filter(item => {
+                            const matchYear = fYear === 'all' || String(item.tahun_perolehan) === String(fYear);
+                            const matchTw = isTwMatch(item.triwulan, fTw);
+                            if (!matchYear || !matchTw) return false;
+
+                            const isExtracom = this.isItemExtracom(item);
+                            if (this.exportFormatType === 'lampiran_extracom') {
+                                return isExtracom;
+                            }
+                            const resolvedCat = typeof resolveItemCategory === 'function' ? resolveItemCategory(item) : item.category;
+                            if (this.exportFormatType === 'lampiran_atb') {
+                                return !isExtracom && resolvedCat === 'ATB';
+                            }
+                            return !isExtracom && resolvedCat !== 'ATB' && resolvedCat !== 'ASET LAIN';
+                        }).length;
+                    }
+
                     // KHUSUS BELANJA MODAL (Default)
                     const fCat = this.exportCategory;
                     const isRekap = this.exportFormatType === 'rekap_triwulan';
@@ -14395,6 +14414,12 @@
                 async submitExport() {
                     this.isSubmittingExport = true;
                     try {
+                        if (['lampiran_aset_tetap', 'lampiran_extracom', 'lampiran_atb'].includes(this.exportFormatType)) {
+                            this.isSubmittingExport = false;
+                            this.showToast('Format lampiran ini sudah terdaftar di dropdown — struktur isi sheet Excel menyusul.', 'info');
+                            return;
+                        }
+
                         if (this.exportSumberDana === 'kemitraan') {
                             exportKemitraanToExcel({
                                 year: this.exportYear,
