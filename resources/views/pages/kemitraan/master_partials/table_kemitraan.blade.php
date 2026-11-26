@@ -4,20 +4,93 @@
 <!-- ========================================================================= -->
 
 <style>
-    /* Freeze Column Aksi Kemitraan: 100% Solid Opaque (Anti-Transparan) */
-    .kemitraan-sticky-aksi {
-        position: sticky !important;
-        right: 0 !important;
-        z-index: 10 !important;
-        background-color: #0f172a !important; /* Solid Slate-900 Opaque */
-        box-shadow: -8px 0 16px -2px rgba(0, 0, 0, 0.75) !important;
+    @media (max-width: 1023px) {
+        .kemitraan-sticky-aksi {
+            position: static !important;
+            right: auto !important;
+            z-index: auto !important;
+            min-width: 240px !important;
+            width: auto !important;
+            background-color: transparent !important;
+            box-shadow: none !important;
+        }
+        th.kemitraan-sticky-aksi {
+            background-color: #020617 !important;
+        }
+        .kemitraan-subbar {
+            flex-direction: column !important;
+            align-items: center !important;
+            text-align: center !important;
+        }
+        .kemitraan-subbar > .overflow-x-auto,
+        .kemitraan-subbar-pills {
+            flex-wrap: wrap !important;
+            justify-content: center !important;
+            overflow-x: visible !important;
+            width: 100% !important;
+        }
+        .kemitraan-subbar ~ .border-t,
+        .kemitraan-subbar-footer {
+            flex-direction: column !important;
+            align-items: center !important;
+            text-align: center !important;
+            gap: 0.375rem !important;
+        }
+        .kemitraan-card-header {
+            flex-direction: column !important;
+            align-items: center !important;
+            text-align: center !important;
+        }
+        .swipe-hint-kemitraan {
+            display: flex !important;
+        }
     }
-    tr:hover .kemitraan-sticky-aksi {
-        background-color: #172239 !important; /* Solid Slate-850 Opaque saat Hover */
-    }
-    th.kemitraan-sticky-aksi {
-        z-index: 20 !important;
-        background-color: #020617 !important; /* Solid Slate-950 Opaque untuk Header */
+    @media (min-width: 1024px) {
+        /* Freeze Column Aksi Kemitraan: 100% Solid Opaque (Anti-Transparan) */
+        .kemitraan-sticky-aksi {
+            position: sticky !important;
+            right: 0 !important;
+            z-index: 10 !important;
+            min-width: 280px !important;
+            width: 280px !important;
+            background-color: #0f172a !important; /* Solid Slate-900 Opaque */
+            box-shadow: -8px 0 16px -2px rgba(0, 0, 0, 0.75) !important;
+        }
+        tr:hover .kemitraan-sticky-aksi {
+            background-color: #172239 !important; /* Solid Slate-850 Opaque saat Hover */
+        }
+        th.kemitraan-sticky-aksi {
+            z-index: 20 !important;
+            background-color: #020617 !important; /* Solid Slate-950 Opaque untuk Header */
+        }
+        .kemitraan-subbar {
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            text-align: left !important;
+        }
+        .kemitraan-subbar > .overflow-x-auto,
+        .kemitraan-subbar-pills {
+            flex-wrap: nowrap !important;
+            justify-content: flex-start !important;
+            width: auto !important;
+        }
+        .kemitraan-subbar ~ .border-t,
+        .kemitraan-subbar-footer {
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            text-align: left !important;
+        }
+        .kemitraan-card-header {
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            text-align: left !important;
+        }
+        .swipe-hint-kemitraan {
+            display: none !important;
+        }
     }
 </style>
 
@@ -398,7 +471,7 @@
     <!-- SWITCHER TAB PEMILIHAN TAMPILAN TABEL KEMITRAAN (HEADER UTAMA)             -->
     <!-- ========================================================================= -->
     <div class="p-4 sm:p-5 rounded-3xl bg-slate-900/95 border border-slate-800 shadow-xl space-y-3">
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <div class="kemitraan-subbar flex flex-col lg:flex-row lg:items-center justify-between gap-3">
             <div>
                 <span class="text-[10px] font-extrabold uppercase tracking-wider text-cyan-400 block mb-0.5">
                     🗂️ Navigasi Penyajian Tabel
@@ -494,7 +567,7 @@
          class="rounded-3xl bg-slate-900/90 border border-cyan-500/30 shadow-2xl overflow-hidden space-y-0">
         
         <!-- Table Header Banner -->
-        <div class="p-5 border-b border-cyan-500/20 bg-gradient-to-r from-cyan-950/40 via-slate-900/90 to-slate-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="kemitraan-card-header p-5 border-b border-cyan-500/20 bg-gradient-to-r from-cyan-950/40 via-slate-900/90 to-slate-950 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center text-lg shrink-0 shadow-inner">
                     🏛️
@@ -516,6 +589,10 @@
             </div>
         </div>
 
+        <div class="swipe-hint-kemitraan hidden items-center justify-center gap-1.5 py-2 px-4 text-[10px] font-bold uppercase tracking-wider text-cyan-400/90 bg-slate-950/75 border-t border-slate-800/80">
+            <svg class="w-3.5 h-3.5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+            <span>Geser tabel ke samping untuk melihat seluruh kolom &amp; aksi</span>
+        </div>
         <div class="border-t border-slate-800/80 bg-slate-950/40 custom-scrollbar" style="max-height: 480px; overflow-y: auto; overflow-x: auto;">
             <table class="w-full text-left text-xs text-slate-300 relative border-collapse">
                 <thead class="text-slate-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-800 shrink-0 sticky top-0 z-10 bg-slate-950">
@@ -527,7 +604,7 @@
                         <th class="py-3.5 px-4 min-w-[135px] text-center bg-slate-950 whitespace-nowrap">Kondisi</th>
                         <th class="py-3.5 px-4 min-w-[140px] text-right bg-slate-950 whitespace-nowrap">Nilai Pemanfaatan (Rp)</th>
                         <th class="py-3.5 px-4 min-w-[180px] bg-slate-950">Masa Pemanfaatan / Konsesi</th>
-                        <th class="py-3.5 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[280px] w-[280px] sticky right-0 z-20 kemitraan-sticky-aksi" style="background-color: #020617 !important; box-shadow: -8px 0 16px -2px rgba(0, 0, 0, 0.75);">Aksi</th>
+                        <th class="py-3.5 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 kemitraan-sticky-aksi">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-800/60">
@@ -779,7 +856,7 @@
                             </td>
 
                             <!-- 7. Aksi (Sticky Right Solid Anti-Transparan) -->
-                            <td class="py-4 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 sticky right-0 z-10 min-w-[280px] w-[280px] kemitraan-sticky-aksi" style="background-color: #0f172a !important; box-shadow: -8px 0 16px -2px rgba(0, 0, 0, 0.75);">
+                            <td class="py-4 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 kemitraan-sticky-aksi">
                                 <div class="flex items-center justify-center space-x-1.5">
                                     <!-- 1. Tombol Detail -->
                                     <button type="button" @click="openDetail({{ json_encode($row) }}, {{ json_encode($astap) }}, {{ json_encode($firstReg) }}, true)"
@@ -934,7 +1011,7 @@
          class="rounded-3xl bg-slate-900/90 border border-emerald-500/30 shadow-2xl overflow-hidden space-y-0">
         
         <!-- Table Header Banner -->
-        <div class="p-5 border-b border-emerald-500/20 bg-gradient-to-r from-emerald-950/40 via-slate-900/90 to-slate-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="kemitraan-card-header p-5 border-b border-emerald-500/20 bg-gradient-to-r from-emerald-950/40 via-slate-900/90 to-slate-950 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-lg shrink-0 shadow-inner">
                     📦
@@ -957,7 +1034,7 @@
         </div>
 
         <!-- SUB-HEADER: FILTER SIKLUS STATUS KEBERADAAN ASET (KHUSUS ASET YANG DITAMBAHKAN MITRA) -->
-        <div class="px-5 py-3.5 border-b border-emerald-500/20 bg-slate-950/75 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <div class="kemitraan-subbar px-5 py-3.5 border-b border-emerald-500/20 bg-slate-950/75 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
             <div>
                 <span class="text-[10px] font-extrabold uppercase tracking-wider text-emerald-400 block mb-0.5">
                     ⚡ Filter Siklus Status Keberadaan Aset
@@ -1023,6 +1100,10 @@
             </div>
         </div>
 
+        <div class="swipe-hint-kemitraan hidden items-center justify-center gap-1.5 py-2 px-4 text-[10px] font-bold uppercase tracking-wider text-cyan-400/90 bg-slate-950/75 border-t border-slate-800/80">
+            <svg class="w-3.5 h-3.5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+            <span>Geser tabel ke samping untuk melihat seluruh kolom &amp; aksi</span>
+        </div>
         <div class="border-t border-slate-800/80 bg-slate-950/40 custom-scrollbar" style="max-height: 480px; overflow-y: auto; overflow-x: auto;">
             <table class="w-full text-left text-xs text-slate-300 relative border-collapse">
                 <thead class="text-slate-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-800 shrink-0 sticky top-0 z-10 bg-slate-950">
@@ -1034,7 +1115,7 @@
                         <th class="py-3.5 px-4 min-w-[135px] text-center bg-slate-950 whitespace-nowrap">Kondisi</th>
                         <th class="py-3.5 px-4 min-w-[140px] text-right bg-slate-950 whitespace-nowrap">Taksiran Nilai (Rp)</th>
                         <th class="py-3.5 px-4 min-w-[180px] bg-slate-950">Masa Konsesi Operasional</th>
-                        <th class="py-3.5 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[280px] w-[280px] sticky right-0 z-20 kemitraan-sticky-aksi" style="background-color: #020617 !important; box-shadow: -8px 0 16px -2px rgba(0, 0, 0, 0.75);">Aksi</th>
+                        <th class="py-3.5 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 kemitraan-sticky-aksi">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-800/60">
@@ -1222,7 +1303,7 @@
                             </td>
 
                             <!-- 7. Aksi (Sticky Right Solid Anti-Transparan) -->
-                            <td class="py-4 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 sticky right-0 z-10 min-w-[280px] w-[280px] kemitraan-sticky-aksi" style="background-color: #0f172a !important; box-shadow: -8px 0 16px -2px rgba(0, 0, 0, 0.75);">
+                            <td class="py-4 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 kemitraan-sticky-aksi">
                                 <div class="flex items-center justify-center space-x-1.5">
                                     <!-- 1. Tombol Detail -->
                                     <button type="button" @click="openDetail({{ json_encode($row) }}, {{ json_encode($astap) }}, {{ json_encode($firstReg) }}, false)"
@@ -1362,7 +1443,7 @@
          x-transition:enter-end="opacity-100 translate-y-0"
          class="rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl overflow-hidden space-y-0">
         
-        <div class="p-5 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="kemitraan-card-header p-5 border-b border-slate-800 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
             <div>
                 <h2 class="text-base font-extrabold text-white flex items-center gap-2">
                     <span>📋 Seluruh Daftar Aset Kemitraan (Gabungan Akun 1.5.2)</span>
@@ -1377,6 +1458,10 @@
             </span>
         </div>
 
+        <div class="swipe-hint-kemitraan hidden items-center justify-center gap-1.5 py-2 px-4 text-[10px] font-bold uppercase tracking-wider text-cyan-400/90 bg-slate-950/75 border-t border-slate-800/80">
+            <svg class="w-3.5 h-3.5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+            <span>Geser tabel ke samping untuk melihat seluruh kolom &amp; aksi</span>
+        </div>
         <div class="border-t border-slate-800/80 bg-slate-950/40 custom-scrollbar" style="max-height: 480px; overflow-y: auto; overflow-x: auto;">
             <table class="w-full text-left text-xs text-slate-300 relative border-collapse">
                 <thead class="text-slate-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-800 shrink-0 sticky top-0 z-10 bg-slate-950">
@@ -1389,7 +1474,7 @@
                         <th class="py-3.5 px-4 min-w-[125px] text-center bg-slate-950 whitespace-nowrap">Kondisi</th>
                         <th class="py-3.5 px-4 min-w-[130px] text-right bg-slate-950 whitespace-nowrap">Total Nilai (Rp)</th>
                         <th class="py-3.5 px-4 min-w-[170px] bg-slate-950">Masa Konsesi</th>
-                        <th class="py-3.5 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[280px] w-[280px] sticky right-0 z-20 kemitraan-sticky-aksi" style="background-color: #020617 !important; box-shadow: -8px 0 16px -2px rgba(0, 0, 0, 0.75);">Aksi</th>
+                        <th class="py-3.5 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 kemitraan-sticky-aksi">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-800/60">
@@ -1561,7 +1646,7 @@
                             </td>
 
                             <!-- 8. Aksi (Sticky Right Solid Anti-Transparan) -->
-                            <td class="py-4 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 sticky right-0 z-10 min-w-[280px] w-[280px] kemitraan-sticky-aksi" style="background-color: #0f172a !important; box-shadow: -8px 0 16px -2px rgba(0, 0, 0, 0.75);">
+                            <td class="py-4 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 kemitraan-sticky-aksi">
                                 <div class="flex items-center justify-center space-x-1.5">
                                     <!-- 1. Tombol Detail -->
                                     <button type="button" @click="openDetail({{ json_encode($row) }}, {{ json_encode($astap) }}, {{ json_encode($firstReg) }}, false)"

@@ -1,12 +1,57 @@
 <!-- 1. HEADER & IDENTITAS UNIT TERDAFTAR -->
+<style>
+    @media (max-width: 1023px) {
+        .dash-subadmin-banner {
+            flex-direction: column !important;
+            align-items: center !important;
+            text-align: center !important;
+        }
+        .dash-subadmin-info {
+            margin-left: auto !important;
+            margin-right: auto !important;
+            text-align: center !important;
+        }
+        .dash-subadmin-badges,
+        .dash-subadmin-title {
+            justify-content: center !important;
+        }
+        .dash-subadmin-actions {
+            width: 100% !important;
+            justify-content: center !important;
+            flex-wrap: wrap !important;
+        }
+    }
+    @media (min-width: 1024px) {
+        .dash-subadmin-banner {
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            text-align: left !important;
+        }
+        .dash-subadmin-info {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            text-align: left !important;
+        }
+        .dash-subadmin-badges,
+        .dash-subadmin-title {
+            justify-content: flex-start !important;
+        }
+        .dash-subadmin-actions {
+            width: auto !important;
+            justify-content: flex-end !important;
+        }
+    }
+</style>
+
 <div class="bg-gradient-to-r from-emerald-600/15 via-teal-950/40 to-slate-900 border border-emerald-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl mb-8 relative overflow-hidden">
     <div class="absolute -right-10 -bottom-10 w-56 h-56 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
     <div class="absolute top-0 right-1/4 w-32 h-32 bg-teal-500/10 rounded-full blur-2xl pointer-events-none"></div>
 
-    <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
+    <div class="dash-subadmin-banner flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
         <!-- Info Sub Admin & Unit -->
-        <div class="space-y-3 max-w-3xl">
-            <div class="flex flex-wrap items-center gap-2">
+        <div class="dash-subadmin-info space-y-3 max-w-3xl">
+            <div class="dash-subadmin-badges flex flex-wrap items-center gap-2">
                 <span class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold tracking-wide">
                     <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                     <span>SUB ADMIN · PENANGGUNG JAWAB RUANGAN</span>
@@ -17,7 +62,7 @@
             </div>
 
             <div>
-                <h1 class="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight flex flex-wrap items-center gap-3">
+                <h1 class="dash-subadmin-title text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight flex flex-wrap items-center gap-3">
                     <span>🏥 {{ $unitNama }}</span>
                 </h1>
                 <p class="text-xs sm:text-sm text-slate-300 mt-1.5 leading-relaxed">
@@ -33,7 +78,7 @@
         </div>
 
         <!-- Action Buttons Khusus Sub Admin -->
-        <div class="flex flex-wrap sm:flex-nowrap gap-2.5 shrink-0 w-full sm:w-auto">
+        <div class="dash-subadmin-actions flex flex-wrap sm:flex-nowrap gap-2.5 shrink-0 w-full sm:w-auto">
             <a href="{{ route('astap.index') }}" 
                 class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs transition-all flex items-center justify-center space-x-2">
                 <svg class="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

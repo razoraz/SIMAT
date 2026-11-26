@@ -33,18 +33,63 @@
          }">
 
         <!-- 1. HEADER BANNER MEWAH -->
+        <style>
+            @media (max-width: 1023px) {
+                .subadmin-profile-banner {
+                    flex-direction: column !important;
+                    align-items: center !important;
+                    text-align: center !important;
+                }
+                .subadmin-profile-identity {
+                    flex-direction: column !important;
+                    align-items: center !important;
+                    text-align: center !important;
+                    gap: 1rem !important;
+                    margin-left: 0 !important;
+                }
+                .subadmin-profile-identity > * {
+                    margin-left: 0 !important;
+                }
+                .subadmin-profile-badges {
+                    justify-content: center !important;
+                }
+                .subadmin-profile-back {
+                    align-self: center !important;
+                }
+            }
+            @media (min-width: 1024px) {
+                .subadmin-profile-banner {
+                    flex-direction: row !important;
+                    align-items: center !important;
+                    justify-content: space-between !important;
+                    text-align: left !important;
+                }
+                .subadmin-profile-identity {
+                    flex-direction: row !important;
+                    align-items: center !important;
+                    text-align: left !important;
+                }
+                .subadmin-profile-badges {
+                    justify-content: flex-start !important;
+                }
+                .subadmin-profile-back {
+                    align-self: auto !important;
+                }
+            }
+        </style>
+
         <div class="bg-gradient-to-r from-emerald-600/20 via-slate-900 to-slate-900 border border-emerald-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
             <!-- Glow background decor -->
             <div class="absolute -right-10 -bottom-10 w-56 h-56 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
             <div class="absolute -left-10 -top-10 w-48 h-48 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
-                <div class="flex items-center space-x-4">
+            <div class="subadmin-profile-banner flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+                <div class="subadmin-profile-identity flex items-center space-x-4">
                     <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-500/20 to-teal-500/30 border border-emerald-500/40 flex items-center justify-center text-emerald-300 font-black text-2xl shadow-xl shadow-emerald-950/50 shrink-0">
                         {{ strtoupper(substr($user->name ?? 'S', 0, 1)) }}
                     </div>
                     <div>
-                        <div class="flex flex-wrap items-center gap-2">
+                        <div class="subadmin-profile-badges flex flex-wrap items-center gap-2">
                             <span class="px-2.5 py-0.5 rounded-full font-mono text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 tracking-wider">
                                 🛡️ SUB ADMIN
                             </span>
@@ -58,7 +103,7 @@
                 </div>
 
                 <a href="{{ route('subadmin.dashboard') }}" 
-                    class="px-4 py-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs border border-slate-700 shadow-md transition-all flex items-center justify-center space-x-2 shrink-0 active:scale-95">
+                    class="subadmin-profile-back px-4 py-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs border border-slate-700 shadow-md transition-all flex items-center justify-center space-x-2 shrink-0 active:scale-95">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                     <span>Kembali ke Dashboard</span>
                 </a>

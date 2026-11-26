@@ -5,10 +5,10 @@
             
             <!-- Toolbar & Filter Distribusi -->
             <div class="no-print bg-slate-900/90 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl">
-                <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="ba-toolbar-wrap flex flex-col lg:flex-row items-center justify-between gap-4">
                     
-                    <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-                        <div class="relative flex-1 sm:w-80">
+                    <div class="ba-toolbar-actions flex flex-wrap items-center gap-3 w-full lg:w-auto">
+                        <div class="relative flex-1 min-w-0 sm:w-80">
                             <input type="text" x-model="distribusiSearch" placeholder="Cari nomor BAST / unit / PJ..."
                                 class="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-2.5 pl-10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-500">
                             <svg class="w-4 h-4 text-teal-400 absolute left-3.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
@@ -34,6 +34,10 @@
 
             <!-- Tabel Daftar BAST Distribusi ke Unit / Ruangan -->
             <div class="no-print bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6">
+                <div class="swipe-hint-ba hidden items-center justify-center gap-1.5 py-2 px-4 text-[10px] font-bold uppercase tracking-wider text-teal-300/90 bg-slate-950/60 border border-b-0 border-slate-800/80 rounded-t-2xl">
+                    <svg class="w-3.5 h-3.5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+                    <span>Geser tabel ke samping untuk melihat seluruh kolom</span>
+                </div>
                 <div class="rounded-2xl border border-slate-800/80 custom-scrollbar" style="max-height: 340px; overflow-y: auto; overflow-x: auto;">
                     <table class="w-full text-left text-xs text-slate-300 relative border-collapse">
                         <thead class="text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800" style="position: sticky; top: 0; z-index: 20; background-color: #020617;">

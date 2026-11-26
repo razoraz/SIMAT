@@ -9,7 +9,7 @@
             <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
                 Selamat Datang, {{ Auth::user()->name }}!
             </h1>
-            <p class="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
+            <p class="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl mx-auto leading-relaxed">
                 Anda berada di Panel Master Admin. Anda memiliki wewenang penuh (Create, Read, Update, Delete) untuk
                 manajemen fitur master utama, master aset, dan master data sistem.
             </p>

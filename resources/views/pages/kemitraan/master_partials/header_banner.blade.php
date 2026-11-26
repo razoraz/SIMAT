@@ -1,9 +1,82 @@
 <!-- ========================================================================= -->
 <!-- HEADER BANNER & 4 STATISTIK KPI MASTER KEMITRAAN (AKUN 1.5.2)             -->
 <!-- ========================================================================= -->
-<div class="space-y-4">
+<style>
+    @media (max-width: 1023px) {
+        .kemitraan-banner-wrap {
+            flex-direction: column !important;
+            align-items: center !important;
+            text-align: center !important;
+        }
+        .kemitraan-banner-wrap > .items-start {
+            flex-direction: column !important;
+            align-items: center !important;
+            width: 100% !important;
+            text-align: center !important;
+        }
+        .kemitraan-banner-wrap > .items-start .flex-wrap {
+            justify-content: center !important;
+        }
+        .kemitraan-banner-wrap > .items-start p {
+            margin-left: auto !important;
+            margin-right: auto !important;
+            text-align: center !important;
+        }
+        .kemitraan-banner-wrap > .shrink-0 {
+            width: 100% !important;
+            justify-content: center !important;
+            align-self: center !important;
+        }
+    }
+    @media (min-width: 1024px) {
+        .kemitraan-banner-wrap {
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            text-align: left !important;
+        }
+        .kemitraan-banner-wrap > .items-start {
+            flex-direction: row !important;
+            align-items: flex-start !important;
+            width: auto !important;
+            text-align: left !important;
+        }
+        .kemitraan-banner-wrap > .items-start .flex-wrap {
+            justify-content: flex-start !important;
+        }
+        .kemitraan-banner-wrap > .items-start p {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            text-align: left !important;
+        }
+        .kemitraan-banner-wrap > .shrink-0 {
+            width: auto !important;
+            justify-content: flex-end !important;
+            align-self: center !important;
+        }
+    }
+    .kemitraan-header-root > .grid {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+    .kemitraan-header-root > .grid > * {
+        min-width: 0 !important;
+    }
+    @media (min-width: 640px) {
+        .kemitraan-header-root > .grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        }
+    }
+    @media (min-width: 1280px) {
+        .kemitraan-header-root > .grid {
+            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        }
+    }
+</style>
+
+<div class="kemitraan-header-root space-y-4">
     <!-- Top Header Banner -->
-    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 p-5 sm:p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl relative overflow-hidden backdrop-blur-md">
+    <div class="kemitraan-banner-wrap flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 p-5 sm:p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl relative overflow-hidden backdrop-blur-md">
         <!-- Subtle Ambient Background Glow -->
         <div class="absolute -top-20 -left-20 w-52 h-52 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
         <div class="absolute -bottom-20 -right-20 w-52 h-52 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>

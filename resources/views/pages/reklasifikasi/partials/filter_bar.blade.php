@@ -2,7 +2,40 @@
 <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl backdrop-blur-xl space-y-4">
     
     <!-- BARIS 1: TAB NAVIGATION (KIRI) & TOMBOL AKSI UTAMA (KANAN) -->
-    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pb-4 border-b border-slate-800/80">
+    <style>
+    @media (max-width: 1023px) {
+        .reklas-filter-top {
+            flex-direction: column !important;
+            align-items: center !important;
+        }
+        .reklas-filter-top > .inline-flex {
+            align-self: center !important;
+            flex-wrap: wrap !important;
+            justify-content: center !important;
+        }
+        .reklas-filter-top > .justify-end {
+            width: 100% !important;
+            justify-content: center !important;
+        }
+    }
+    @media (min-width: 1024px) {
+        .reklas-filter-top {
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+        }
+        .reklas-filter-top > .inline-flex {
+            align-self: auto !important;
+            flex-wrap: nowrap !important;
+        }
+        .reklas-filter-top > .justify-end {
+            width: auto !important;
+            justify-content: flex-end !important;
+        }
+    }
+</style>
+
+<div class="reklas-filter-top flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pb-4 border-b border-slate-800/80">
         <!-- Tab Switcher: Matriks Neraca vs Log Transaksi -->
         <div class="inline-flex items-center p-1 bg-slate-950/80 border border-slate-800 rounded-2xl shadow-inner self-start sm:self-auto">
             <button type="button" @click="activeTab = 'matriks'"

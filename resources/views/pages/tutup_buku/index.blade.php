@@ -15,15 +15,157 @@
         <!-- ========================================================================= -->
         <!-- 1. HEADER BANNER & IDENTITAS TUTUP BUKU                                   -->
         <!-- ========================================================================= -->
+        <style>
+            @media (max-width: 1023px) {
+                .tb-banner-flex {
+                    flex-direction: column !important;
+                    align-items: center !important;
+                    text-align: center !important;
+                }
+                .tb-badges-row {
+                    justify-content: center !important;
+                }
+                .tb-title {
+                    flex-direction: column !important;
+                    justify-content: center !important;
+                    text-align: center !important;
+                }
+                .tb-desc {
+                    margin-left: auto !important;
+                    margin-right: auto !important;
+                    text-align: center !important;
+                }
+                .tb-tabs-bar {
+                    flex-direction: column !important;
+                    align-items: center !important;
+                }
+                .tb-tabs-pills {
+                    display: flex !important;
+                    flex-wrap: wrap !important;
+                    justify-content: center !important;
+                    width: 100% !important;
+                }
+                .tb-tabs-filters {
+                    width: 100% !important;
+                    justify-content: center !important;
+                }
+                .tb-pills-bar {
+                    flex-direction: column !important;
+                    align-items: center !important;
+                    text-align: center !important;
+                }
+                .tb-pills-list {
+                    flex-wrap: wrap !important;
+                    justify-content: center !important;
+                    overflow-x: visible !important;
+                    padding-bottom: 0 !important;
+                }
+                .tb-inspect-banner {
+                    flex-direction: column !important;
+                    align-items: center !important;
+                    text-align: center !important;
+                }
+                .tb-inspect-badges,
+                .tb-inspect-title {
+                    justify-content: center !important;
+                }
+                .tb-inspect-stat {
+                    text-align: center !important;
+                }
+                .tb-filter-bar {
+                    flex-direction: column !important;
+                    align-items: stretch !important;
+                }
+                .tb-filter-selects {
+                    width: 100% !important;
+                    justify-content: center !important;
+                }
+                .swipe-hint-tb {
+                    display: flex !important;
+                }
+            }
+            @media (min-width: 1024px) {
+                .tb-banner-flex {
+                    flex-direction: row !important;
+                    align-items: center !important;
+                    justify-content: space-between !important;
+                    text-align: left !important;
+                }
+                .tb-badges-row {
+                    justify-content: flex-start !important;
+                }
+                .tb-title {
+                    flex-direction: row !important;
+                    justify-content: flex-start !important;
+                    text-align: left !important;
+                }
+                .tb-desc {
+                    margin-left: 0 !important;
+                    margin-right: 0 !important;
+                    text-align: left !important;
+                }
+                .tb-tabs-bar {
+                    flex-direction: row !important;
+                    align-items: center !important;
+                    justify-content: space-between !important;
+                }
+                .tb-tabs-pills {
+                    display: inline-flex !important;
+                    flex-wrap: nowrap !important;
+                    width: auto !important;
+                }
+                .tb-tabs-filters {
+                    width: auto !important;
+                    justify-content: flex-end !important;
+                }
+                .tb-pills-bar {
+                    flex-direction: row !important;
+                    align-items: center !important;
+                    justify-content: space-between !important;
+                    text-align: left !important;
+                }
+                .tb-pills-list {
+                    flex-wrap: nowrap !important;
+                    justify-content: flex-start !important;
+                    overflow-x: auto !important;
+                }
+                .tb-inspect-banner {
+                    flex-direction: row !important;
+                    align-items: center !important;
+                    justify-content: space-between !important;
+                    text-align: left !important;
+                }
+                .tb-inspect-badges,
+                .tb-inspect-title {
+                    justify-content: flex-start !important;
+                }
+                .tb-inspect-stat {
+                    text-align: right !important;
+                }
+                .tb-filter-bar {
+                    flex-direction: row !important;
+                    align-items: center !important;
+                    justify-content: space-between !important;
+                }
+                .tb-filter-selects {
+                    width: auto !important;
+                    justify-content: flex-end !important;
+                }
+                .swipe-hint-tb {
+                    display: none !important;
+                }
+            }
+        </style>
+
         <div class="relative bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl overflow-hidden">
             <!-- Glow Accents Ambient -->
             <div class="absolute -top-24 -right-24 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
             <div class="absolute -bottom-24 -left-24 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-            <div class="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div class="tb-banner-flex relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                 <!-- Sisi Kiri: Judul & Keterangan Regulasi -->
-                <div class="space-y-3">
-                    <div class="flex flex-wrap items-center gap-2.5">
+                <div class="space-y-3 w-full">
+                    <div class="tb-badges-row flex flex-wrap items-center gap-2.5">
                         <a href="{{ route('astap.index') }}" 
                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 text-xs font-bold transition-all shadow-sm active:scale-95 group">
                             <svg class="w-4 h-4 text-cyan-400 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -69,7 +211,7 @@
                     </div>
 
                     <div>
-                        <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-3">
+                        <h1 class="tb-title text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-3">
                             <span class="p-2 rounded-2xl bg-gradient-to-tr from-cyan-600 to-indigo-600 shadow-lg shadow-cyan-500/20 text-white inline-flex">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
@@ -77,7 +219,7 @@
                             </span>
                             <span>Manajemen Tutup Buku BMD</span>
                         </h1>
-                        <p class="text-xs sm:text-sm text-slate-400 mt-1 max-w-3xl leading-relaxed">
+                        <p class="tb-desc text-xs sm:text-sm text-slate-400 mt-1 max-w-3xl leading-relaxed">
                             Penguncian periode akuntansi aset tetap, rekonsiliasi berkala triwulanan &amp; konsolidasi year-end closing LKPD BPK RI.
                             Triwulan yang telah terlewati otomatis terkunci dan data diarahkan ke konsolidasi tahunan.
                         </p>
@@ -89,8 +231,8 @@
         <!-- ========================================================================= -->
         <!-- 2. TAB NAVIGASI: TUTUP BUKU TRIWULAN VS TUTUP BUKU TAHUNAN               -->
         <!-- ========================================================================= -->
-        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
-            <div class="inline-flex p-1.5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-inner">
+        <div class="tb-tabs-bar flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+            <div class="tb-tabs-pills inline-flex gap-1 p-1.5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-inner">
                 <button type="button" 
                         @click="setTab('triwulan')"
                         :class="activeTab === 'triwulan' ? 'bg-gradient-to-r from-cyan-600 to-indigo-600 text-white shadow-lg shadow-cyan-500/20' : 'text-slate-400 hover:text-slate-200'"
@@ -121,7 +263,7 @@
             </div>
 
             <!-- Sisi Kanan: Filter / Pemilih Tahun Interaktif (Bespoke Dark Dashboard) -->
-            <div class="flex flex-wrap items-center gap-2.5">
+            <div class="tb-tabs-filters flex flex-wrap items-center gap-2.5">
                 <!-- Mode Triwulan: Pemilih Tahun Aktif Triwulan -->
                 <div x-show="activeTab === 'triwulan'" class="flex items-center gap-2 bg-slate-900/90 border border-slate-800 rounded-2xl p-1.5 shadow-inner">
                     <label for="filter-tahun-tab" class="text-xs font-bold text-slate-400 pl-2.5 flex items-center gap-1.5">
@@ -283,15 +425,15 @@
         <div x-show="activeTab === 'tahunan'" x-transition:enter="transition ease-out duration-200 opacity-0" x-transition:enter-end="opacity-100" class="space-y-6">
             
             <!-- Quick Year Filter Pills (Bespoke Filter Bar untuk Tahunan) -->
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/60 p-3 rounded-2xl border border-slate-800">
-                <div class="flex items-center gap-2 text-xs">
+            <div class="tb-pills-bar flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-slate-900/60 p-3 rounded-2xl border border-slate-800">
+                <div class="flex flex-wrap items-center justify-center lg:justify-start gap-2 text-xs">
                     <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
                     <span class="font-bold text-slate-300">Pilih Tahun Arsip:</span>
                     <span class="text-[11px] text-indigo-300 font-mono bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-lg" 
                           x-text="filterTahunTahunan === 'all' ? 'Menampilkan Seluruh Tahun ({{ count($tahunanData) }})' : ('Tahun Anggaran ' + filterTahunTahunan)"></span>
                 </div>
                 
-                <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 max-w-full">
+                <div class="tb-pills-list flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 max-w-full">
                     <button type="button" 
                             @click="filterTahunTahunan = 'all'"
                             :class="filterTahunTahunan === 'all' ? 'bg-indigo-600 text-white font-extrabold shadow-md shadow-indigo-500/20' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
@@ -392,9 +534,9 @@
         <div id="panel-tabel-aset" class="space-y-5 pt-4">
             
             <!-- Banner Header Periode Terpilih -->
-            <div class="bg-gradient-to-r from-slate-900 via-slate-900 to-slate-950 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="tb-inspect-banner bg-gradient-to-r from-slate-900 via-slate-900 to-slate-950 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <div class="space-y-1">
-                    <div class="flex items-center gap-2">
+                    <div class="tb-inspect-badges flex flex-wrap items-center gap-2">
                         <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
                             Inspeksi Data Periode
                         </span>
@@ -405,13 +547,13 @@
                             </span>
                         </template>
                     </div>
-                    <h2 class="text-xl sm:text-2xl font-black text-white flex items-center gap-2" x-text="selectedPeriod ? ('📋 Daftar Aset: ' + selectedPeriod.label) : '📋 Pilih Periode Triwulan / Tahunan'"></h2>
+                    <h2 class="tb-inspect-title text-xl sm:text-2xl font-black text-white flex flex-wrap items-center gap-2" x-text="selectedPeriod ? ('📋 Daftar Aset: ' + selectedPeriod.label) : '📋 Pilih Periode Triwulan / Tahunan'"></h2>
                     <p class="text-xs text-slate-400" x-text="selectedPeriod ? ('Rentang waktu: ' + selectedPeriod.rentang + ' — Seluruh aset yang tercatat pada periode buku ini.') : 'Silakan klik salah satu kartu triwulan atau tahun di atas untuk menampilkan rincian tabel aset.'"></p>
                 </div>
 
                 <!-- Ringkasan Cepat Periode -->
-                <div class="flex items-center gap-3">
-                    <div class="px-4 py-2.5 rounded-2xl bg-slate-950/80 border border-slate-800 text-right">
+                <div class="flex items-center justify-center gap-3 shrink-0">
+                    <div class="tb-inspect-stat px-4 py-2.5 rounded-2xl bg-slate-950/80 border border-slate-800 text-right">
                         <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Aset Ditemukan</span>
                         <span class="text-base font-black text-white font-mono" x-text="filteredPeriodAstaps.length + ' Item'"></span>
                     </div>
@@ -438,9 +580,9 @@
             </div>
 
             <!-- Filter & Search Bar untuk Tabel Aset -->
-            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 shadow-md">
+            <div class="tb-filter-bar bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 shadow-md">
                 <!-- Search Input -->
-                <div class="relative flex-1">
+                <div class="relative flex-1 min-w-0">
                     <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                     </svg>
@@ -451,7 +593,7 @@
                 </div>
 
                 <!-- Filter Tahun, Kategori KIB & Kondisi -->
-                <div class="flex flex-wrap items-center gap-2 shrink-0">
+                <div class="tb-filter-selects flex flex-wrap items-center gap-2 shrink-0">
                     <!-- Filter Tahun Aset -->
                     <select x-model="tableTahunFilter" 
                             class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-slate-200 focus:outline-none focus:border-cyan-500 cursor-pointer">
@@ -487,6 +629,10 @@
 
             <!-- TABEL BESPOKE DARK DASHBOARD -->
             <div class="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
+                <div class="swipe-hint-tb hidden items-center justify-center gap-1.5 py-2 px-4 text-[10px] font-bold uppercase tracking-wider text-cyan-400/90 bg-slate-950/60 border-b border-slate-800/80">
+                    <svg class="w-3.5 h-3.5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+                    <span>Geser tabel ke samping untuk melihat seluruh kolom</span>
+                </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse text-xs">
                         <thead>

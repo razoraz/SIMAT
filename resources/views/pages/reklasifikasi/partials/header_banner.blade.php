@@ -1,19 +1,90 @@
 <!-- HEADER BANNER & STATISTIK REKLASIFIKASI (2 BARIS MANDIRI BERKELAS) -->
+<style>
+    @media (max-width: 1023px) {
+        .reklas-banner-wrap {
+            flex-direction: column !important;
+            align-items: center !important;
+            text-align: center !important;
+        }
+        .reklas-identity-wrap {
+            flex-direction: column !important;
+            align-items: center !important;
+            text-align: center !important;
+            width: 100% !important;
+        }
+        .reklas-heading-row {
+            justify-content: center !important;
+        }
+        .reklas-desc {
+            margin-left: auto !important;
+            margin-right: auto !important;
+            text-align: center !important;
+        }
+        .reklas-periode-badge {
+            align-self: center !important;
+            justify-content: center !important;
+        }
+    }
+    @media (min-width: 1024px) {
+        .reklas-banner-wrap {
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            text-align: left !important;
+        }
+        .reklas-identity-wrap {
+            flex-direction: row !important;
+            align-items: flex-start !important;
+            text-align: left !important;
+            width: auto !important;
+        }
+        .reklas-heading-row {
+            justify-content: flex-start !important;
+        }
+        .reklas-desc {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            text-align: left !important;
+        }
+        .reklas-periode-badge {
+            align-self: auto !important;
+            justify-content: flex-start !important;
+        }
+    }
+    .kpi-reklas-grid {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+    .kpi-reklas-grid > * {
+        min-width: 0 !important;
+    }
+    @media (min-width: 640px) {
+        .kpi-reklas-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        }
+    }
+    @media (min-width: 1280px) {
+        .kpi-reklas-grid {
+            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        }
+    }
+</style>
+
 <div class="space-y-4">
     <!-- BARIS 1: TOP HEADER BANNER (MANDIRI) -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-5 p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl relative overflow-hidden backdrop-blur-xl">
+    <div class="reklas-banner-wrap flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl relative overflow-hidden backdrop-blur-xl">
         <!-- Subtle Ambient Glow -->
         <div class="absolute -top-20 -left-20 w-52 h-52 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
         <div class="absolute -bottom-20 -right-20 w-52 h-52 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-        <div class="relative z-10 flex items-start gap-4">
+        <div class="reklas-identity-wrap relative z-10 flex items-start gap-4">
             <div class="w-12 h-12 rounded-2xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400 text-2xl shrink-0 shadow-lg shadow-indigo-500/10 mt-0.5">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
             </div>
             <div>
-                <div class="flex flex-wrap items-center gap-2.5">
+                <div class="reklas-heading-row flex flex-wrap items-center gap-2.5">
                     <h1 class="text-xl sm:text-2xl font-black text-white tracking-tight leading-tight">
                         Reklasifikasi Aset Tetap
                     </h1>
@@ -21,14 +92,14 @@
                         Standar PMDN 108 · RSUD Dr. H. Koesnandi
                     </span>
                 </div>
-                <p class="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
+                <p class="reklas-desc text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
                     Matriks rekonsiliasi dan pemindahan bukuan antar kelompok KIB A s/d F serta Aset Lainnya sesuai hierarki kode Permendagri No. 108 Tahun 2016.
                 </p>
             </div>
         </div>
 
         <!-- Periode Aktif Badge (Kanan) -->
-        <div class="flex items-center gap-3 bg-slate-950/80 border border-slate-800 rounded-2xl px-4 py-3 shadow-inner relative z-10 shrink-0 self-start md:self-auto">
+        <div class="reklas-periode-badge flex items-center gap-3 bg-slate-950/80 border border-slate-800 rounded-2xl px-4 py-3 shadow-inner relative z-10 shrink-0 self-start lg:self-auto text-left">
             <div class="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-indigo-400">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -44,7 +115,7 @@
     </div>
 
     <!-- BARIS 2: 4 KARTU STATISTIK KPI MANDIRI (COMPACT, RAPI & ANTI-OVERFLOW) -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+    <div class="kpi-reklas-grid grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5 sm:gap-4">
         <!-- 1. Saldo Awal (Belanja Modal) -->
         <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-4.5 shadow-xl hover:border-slate-700 transition-all duration-200">
             <div class="flex items-center justify-between text-slate-400 mb-1.5">

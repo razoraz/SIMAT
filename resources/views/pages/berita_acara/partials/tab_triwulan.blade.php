@@ -5,10 +5,10 @@
             
             <!-- Filter Triwulan & Tahun Toolbar -->
             <div class="no-print bg-slate-900/90 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl">
-                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div class="ba-toolbar-wrap flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                     
                     <!-- Pilihan Periode Filter Dropdown -->
-                    <div class="flex flex-wrap items-center gap-2">
+                    <div class="ba-toolbar-actions flex flex-wrap items-center gap-2">
                         <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1 shrink-0">Pilih Periode:</label>
                         <select x-model="selectedTriwulanKey" class="bg-slate-950 border border-purple-500/40 hover:border-purple-400 rounded-xl px-3.5 py-2 text-xs font-bold text-purple-300 focus:outline-none focus:border-purple-500 shadow-md shadow-purple-500/10 transition-all cursor-pointer">
                             <option value="TW1">Triwulan I (Jan - Mar)</option>
@@ -19,7 +19,7 @@
                     </div>
 
                     <!-- Tahun Dropdown & Tombol Aksi TTD / Cetak -->
-                    <div class="flex flex-wrap items-center gap-2 shrink-0">
+                    <div class="ba-toolbar-actions flex flex-wrap items-center gap-2 shrink-0">
                         <select x-model="selectedTahun" 
                                 @change="window.location.href = '/berita-acara?tab=triwulan&tahun=' + $event.target.value"
                                 class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-purple-500 cursor-pointer">
@@ -51,7 +51,7 @@
 
             <!-- Card Ringkasan Triwulan Aktif -->
             <div class="no-print bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+                <div class="ba-card-header flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-800 pb-4">
                     <div>
                         <div class="inline-flex items-center space-x-2 px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-bold mb-1">
                             <span x-text="'DOKUMEN BAST RESMI: ' + currentTriwulanDoc.nomor_surat"></span>
@@ -60,8 +60,8 @@
                         <p class="text-xs text-slate-400 mt-0.5" x-text="'Hari & Tanggal Pelaksanaan: ' + currentTriwulanDoc.hari_tanggal"></p>
                     </div>
 
-                    <div class="flex items-center space-x-3">
-                        <div class="text-right">
+                    <div class="ba-toolbar-actions flex flex-wrap items-center gap-3">
+                        <div class="text-center lg:text-right">
                             <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Total Realisasi Triwulan Ini</span>
                             <span class="text-base sm:text-lg font-black text-emerald-400 font-mono" x-text="'Rp ' + formatRupiah(currentTriwulanTotalNilai)"></span>
                         </div>
@@ -80,13 +80,17 @@
 
                 <!-- Bagian 1: TABEL REKAPITULASI 8 KELOMPOK ASET (FORMAT ASLI STANDAR BAST) -->
                 <div>
-                    <div class="flex items-center justify-between mb-2">
+                    <div class="ba-card-header flex flex-col lg:flex-row lg:items-center justify-between gap-2 mb-2">
                         <span class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
                             <span>📊 1. REKAPITULASI 8 KELOMPOK ASET TETAP TRIWULAN INI:</span>
                         </span>
                         <span class="text-[11px] text-purple-400 font-mono font-bold" x-text="'Total: ' + formatNumber(currentTriwulanTotalQty) + ' Barang / Aset'"></span>
                     </div>
                     
+                    <div class="swipe-hint-ba hidden items-center justify-center gap-1.5 py-2 px-4 text-[10px] font-bold uppercase tracking-wider text-purple-300/90 bg-slate-950/60 border border-b-0 border-slate-700 rounded-t-2xl">
+                        <svg class="w-3.5 h-3.5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+                        <span>Geser tabel ke samping untuk melihat seluruh kolom</span>
+                    </div>
                     <div class="overflow-x-auto rounded-2xl border border-slate-700 shadow-xl">
                         <table class="w-full text-left text-xs border-collapse">
                             <thead class="bg-slate-950 text-slate-300 font-bold uppercase tracking-wider border-b border-slate-700">
@@ -120,22 +124,26 @@
 
                 <!-- Bagian 2: TABEL RINCIAN DETAIL BARANG YANG DIADAKAN PADA TRIWULAN INI -->
                 <div class="pt-4 border-t border-slate-800 space-y-3">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div class="ba-card-header flex flex-col lg:flex-row lg:items-center justify-between gap-2">
                         <div>
-                            <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center space-x-2">
+                            <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center justify-center lg:justify-start space-x-2">
                                 <span>📦 2. DAFTAR RINCIAN BARANG & BELANJA MODAL YANG DIADAKAN PADA TRIWULAN INI:</span>
                             </span>
                             <p class="text-[11px] text-slate-400 mt-0.5">Daftar item belanja modal yang dibukukan lengkap dengan dokumen SPK dan nilai realisasinya.</p>
                         </div>
 
                         <!-- Search Box Filter Barang -->
-                        <div class="relative w-full sm:w-64">
+                        <div class="relative w-full lg:w-64">
                             <input type="text" x-model="searchBarangTriwulan" placeholder="Cari nama barang / kode 108 / penyedia..."
                                 class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 pl-8 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-500">
                             <svg class="w-3.5 h-3.5 text-purple-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                         </div>
                     </div>
 
+                    <div class="swipe-hint-ba hidden items-center justify-center gap-1.5 py-2 px-4 text-[10px] font-bold uppercase tracking-wider text-purple-300/90 bg-slate-950/60 border border-b-0 border-slate-700 rounded-t-2xl">
+                        <svg class="w-3.5 h-3.5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+                        <span>Geser tabel ke samping untuk melihat seluruh kolom</span>
+                    </div>
                     <div class="rounded-2xl border border-slate-700 shadow-xl custom-scrollbar" style="max-height: 340px; overflow-y: auto; overflow-x: auto;">
                         <table class="w-full text-left text-xs border-collapse min-w-[900px]">
                             <thead class="text-slate-300 font-bold uppercase tracking-wider border-b border-slate-700 text-[11px]" style="position: sticky; top: 0; z-index: 20; background-color: #020617;">
