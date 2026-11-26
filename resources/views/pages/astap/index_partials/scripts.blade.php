@@ -5244,9 +5244,10 @@
     }
 
     let isExportingRekapTriwulan = false;
-    function exportRekapTriwulanToExcel(params = {}) {
+    async function exportRekapTriwulanToExcel(params = {}) {
         if (isExportingRekapTriwulan) return;
         isExportingRekapTriwulan = true;
+        try {
 
         if (typeof XLSX === 'undefined') {
             alert('⚠️ Pustaka Excel sedang dimuat, silakan coba 1 detik lagi...');
@@ -5745,7 +5746,7 @@
             {wch: 32},  // 9. TYPE (Diperlebar dari 20 ke 32)
             {wch: 38},  // 10. NO PABRIK/NO CHASIS/NO MESIN (Diperlebar dari 28 ke 38)
             {wch: 14},  // 11. JUMLAH BARANG
-            {wch: 16},  // 12. NAMA SATUAN BARANG
+            {wch: 18},  // 12. NAMA SATUAN BARANG
             {wch: 22},  // 13. NILAI PEROLEHAN (Rp)
             {wch: 26},  // 14. ADMINISTRASI PROYEK (Rp)
             {wch: 22},  // 15. NILAI ASET (Rp)
@@ -5763,7 +5764,7 @@
             { hpt: 22 }, // 4: SUMBER DANA : KELOMPOK ANGGARAN  (BLUD)
             { hpt: 28 }, // 5: Superheader BELANJA MODAL & RINCIAN ASET...
             { hpt: 46 }, // 6: Header Kolom Utama & Sub-Superheader
-            { hpt: 28 }, // 7: Subheader Volume & Bukti Pengadaan
+            { hpt: 46 }, // 7: Subheader Volume (NAMA SATUAN BARANG) & Bukti Pengadaan
             { hpt: 20 }  // 8: Baris Nomor 1 s/d 19
         ];
         for (let rIdx = 9; rIdx < sheet1Rows.length; rIdx++) {
@@ -5910,74 +5911,113 @@
             catItems.forEach(item => {
                 const groupStartRow = sheet2Rows.length;
                 const registers = (item.registers && item.registers.length > 0) ? item.registers : null;
+                const cleanStr = (v) => (v !== null && v !== undefined && String(v).trim() !== '' && String(v).trim() !== '-') ? String(v).trim() : null;
+                const pushSheet2Row = (kode108, regVal, namaBrg, merkVal, typeVal, docIds, bahanVal, asalVal, thnVal, satVal, kondVal, volVal, nilaiVal, ketVal) => {
+                    s2ItemCounter++;
+                    totalS2Volume += volVal;
+                    totalS2Nilai += nilaiVal;
+
+                    const s2MerkType = [cleanStr(merkVal), cleanStr(typeVal)].filter(x => x && x !== 'Baik').join(' / ') || '-';
+                    let docIdentitas = docIds.filter(Boolean).join(' / ') || '-';
+                    if (docIdentitas === regVal || (docIdentitas.length > 25 && /^\d+$/.test(docIdentitas.replace(/[\.\s]/g, '')))) {
+                        docIdentitas = '-';
+                    }
+
+                    sheet2Rows.push([
+                        s2ItemCounter,                      // 1. No. Urut
+                        cleanStr(kode108) || "-",           // 2. Kode Barang 108
+                        cleanStr(regVal) || "-",            // 3. Register
+                        cleanStr(namaBrg) || "-",           // 4. Nama/Jenis Barang
+                        s2MerkType,                         // 5. Merk/Type
+                        docIdentitas,                       // 6. No.Sertifikat No. Pabrik No. Mesin
+                        cleanStr(bahanVal) || "-",          // 7. Bahan
+                        cleanStr(asalVal) || "Pembelian BLUD", // 8. Asal/Cara Perolehan
+                        thnVal || yearLabel,                // 9. Tahun Beli/Perolehan
+                        cleanStr(satVal) || "Unit",         // 10. Satuan
+                        cleanStr(kondVal) || "RB",          // 11. Keadaan Barang (B/KB/RB)
+                        volVal,                             // 12. Jumlah Barang
+                        nilaiVal,                           // 13. Jumlah Nilai
+                        cleanStr(ketVal) || "-"             // 14. Keterangan
+                    ]);
+                };
+
+                const buildItemDocs = (src) => {
+                    const docs = [];
+                    if (cleanStr(src.sertifikat_nomor)) docs.push('Sertifikat: ' + cleanStr(src.sertifikat_nomor));
+                    else if (cleanStr(src.dokumen_nomor)) docs.push('Dok: ' + cleanStr(src.dokumen_nomor));
+                    if (cleanStr(src.no_pabrik)) docs.push('Pabrik: ' + cleanStr(src.no_pabrik));
+                    if (cleanStr(src.no_rangka)) docs.push('Chasis: ' + cleanStr(src.no_rangka));
+                    if (cleanStr(src.no_mesin)) docs.push('Mesin: ' + cleanStr(src.no_mesin));
+                    if (cleanStr(src.no_polisi)) docs.push('Nopol: ' + cleanStr(src.no_polisi));
+                    if (docs.length === 0 && cleanStr(src.dokumen_identitas)) docs.push(cleanStr(src.dokumen_identitas));
+                    return docs;
+                };
 
                 if (registers && registers.length > 0) {
                     registers.forEach((reg) => {
-                        s2ItemCounter++;
-                        const regNibar = reg.nibar || reg.no_register || "-";
+                        const regNibar = reg.nibar || reg.no_register || item.nibar || item.no_register || "-";
                         const regKondisi = reg.kondisi || item.kondisi || "RB";
                         const vol = 1;
                         const nilai = registers.length > 1 ? (item.harga_satuan || (item.total_realisasi_num / registers.length) || 0) : (item.total_realisasi_num || item.harga_satuan || 0);
-
-                        totalS2Volume += vol;
-                        totalS2Nilai += nilai;
-
-                        // Dokumen identitas: Sertifikat, No Pabrik, No Mesin, No Rangka, No Polisi, ISBN. NEVER display NIBAR in Kolom 6!
-                        let docIdentitas = item.dokumen_identitas || item.sertifikat_nomor || item.no_pabrik || item.no_mesin || "-";
-                        if (docIdentitas === regNibar || (typeof docIdentitas === 'string' && docIdentitas.length > 30 && docIdentitas.includes('.'))) {
-                            docIdentitas = "-";
-                        }
-
-                        const s2MerkType = [item.merk, item.type].filter(x => x && x !== '-' && x !== 'Baik').join(' / ') || item.merk || item.type || "-";
-
-                        sheet2Rows.push([
-                            s2ItemCounter,                                                                  // 1. No. Urut (Berurutan 1, 2, 3...)
-                            item.kode_barang || "-",                                                        // 2. Kode Barang 108
-                            regNibar,                                                                       // 3. Register
-                            item.nama_barang || "-",                                                        // 4. Nama/Jenis Barang
-                            s2MerkType,                                                                     // 5. Merk/Type (Digabung rapi jika ada keduanya)
-                            docIdentitas,                                                                   // 6. No.Sertifikat No. Pabrik No. Mesin
-                            item.bahan || "-",                                                              // 7. Bahan
-                            item.asal_usul || "Pembelian BLUD",                                             // 8. Asal/Cara Perolehan
-                            item.tahun_perolehan || yearLabel,                                              // 9. Tahun Beli/Perolehan
-                            item.satuan || "Unit",                                                          // 10. Satuan
-                            regKondisi,                                                                     // 11. Keadaan Barang (B/KB/RB)
-                            vol,                                                                            // 12. Jumlah Barang
-                            nilai,                                                                          // 13. Jumlah Nilai
-                            item.keterangan || item.alasan_hapus || "-"                                     // 14. Keterangan
-                        ]);
+                        pushSheet2Row(
+                            item.kode_barang,
+                            regNibar,
+                            item.nama_barang,
+                            item.merk,
+                            item.type,
+                            buildItemDocs(item),
+                            item.bahan,
+                            item.asal_usul,
+                            item.tahun_perolehan,
+                            item.satuan,
+                            regKondisi,
+                            vol,
+                            nilai,
+                            item.keterangan || item.alasan_hapus
+                        );
                     });
                 } else {
-                    s2ItemCounter++;
-                    const vol = item.jumlah_volume || 1;
-                    const nilai = item.total_realisasi_num || (item.harga_satuan * vol) || 0;
-                    totalS2Volume += vol;
-                    totalS2Nilai += nilai;
-
-                    const itemNibar = item.nibar || item.no_register || "-";
-                    let docIdentitas = item.dokumen_identitas || item.sertifikat_nomor || item.no_pabrik || item.no_mesin || "-";
-                    if (docIdentitas === itemNibar || (typeof docIdentitas === 'string' && docIdentitas.length > 30 && docIdentitas.includes('.'))) {
-                        docIdentitas = "-";
+                    const rincianList = extractAstapRincianRows(item);
+                    if (rincianList && rincianList.length > 0) {
+                        rincianList.forEach((rRow) => {
+                            const rDocs = cleanStr(rRow.no_pabrik) ? [cleanStr(rRow.no_pabrik)] : buildItemDocs(item);
+                            pushSheet2Row(
+                                cleanStr(rRow.kode_108) || item.kode_barang,
+                                item.nibar || item.no_register || "-",
+                                cleanStr(rRow.nama_barang) || item.nama_barang,
+                                cleanStr(rRow.merk) || item.merk,
+                                cleanStr(rRow.type) || item.type,
+                                rDocs,
+                                item.bahan,
+                                item.asal_usul,
+                                item.tahun_perolehan,
+                                cleanStr(rRow.satuan) || item.satuan,
+                                item.kondisi,
+                                rRow.vol || 1,
+                                rRow.nilai_aset || item.total_realisasi_num || 0,
+                                item.keterangan || item.alasan_hapus
+                            );
+                        });
+                    } else {
+                        const vol = item.jumlah_volume || 1;
+                        const nilai = item.total_realisasi_num || (item.harga_satuan * vol) || 0;
+                        pushSheet2Row(
+                            item.kode_barang,
+                            item.nibar || item.no_register || "-",
+                            item.nama_barang,
+                            item.merk,
+                            item.type,
+                            buildItemDocs(item),
+                            item.bahan,
+                            item.asal_usul,
+                            item.tahun_perolehan,
+                            item.satuan,
+                            item.kondisi,
+                            vol,
+                            nilai,
+                            item.keterangan || item.alasan_hapus
+                        );
                     }
-
-                    const s2MerkType = [item.merk, item.type].filter(x => x && x !== '-' && x !== 'Baik').join(' / ') || item.merk || item.type || "-";
-
-                    sheet2Rows.push([
-                        s2ItemCounter,                                                                  // 1. No. Urut (Berurutan 1, 2, 3...)
-                        item.kode_barang || "-",                                                        // 2. Kode Barang 108
-                        itemNibar,                                                                      // 3. Register
-                        item.nama_barang || "-",                                                        // 4. Nama/Jenis Barang
-                        s2MerkType,                                                                     // 5. Merk/Type (Digabung rapi jika ada keduanya)
-                        docIdentitas,                                                                   // 6. No.Sertifikat No. Pabrik No. Mesin
-                        item.bahan || "-",                                                              // 7. Bahan
-                        item.asal_usul || "Pembelian BLUD",                                             // 8. Asal/Cara Perolehan
-                        item.tahun_perolehan || yearLabel,                                              // 9. Tahun Beli/Perolehan
-                        item.satuan || "Unit",                                                          // 10. Satuan
-                        item.kondisi || "RB",                                                           // 11. Keadaan Barang (B/KB/RB)
-                        vol,                                                                            // 12. Jumlah Barang
-                        nilai,                                                                          // 13. Jumlah Nilai
-                        item.keterangan || item.alasan_hapus || "-"                                     // 14. Keterangan
-                    ]);
                 }
 
                 const groupEndRow = sheet2Rows.length - 1;
@@ -6843,7 +6883,7 @@
             return null; // Aset non-Aset Tetap (ATB / Kemitraan / Lain-Lain) tidak dimasukkan ke baris RMB
         }
 
-        // Struktur penampung 22 kolom data per sub-rincian
+        // Struktur penampung 22 kolom data per sub-rincian (disinkronkan dengan RmbController)
         const rmbVals = {};
         astapRmbDefs.forEach(d => {
             rmbVals[d.code] = {
@@ -6872,111 +6912,96 @@
             };
         });
 
-        // 1. Akumulasi Saldo Awal (Tahun Sebelumnya jika ada di rawAstaps)
-        rawAstaps.forEach(item => {
-            const itemYear = parseInt(item.tahun_perolehan) || parseInt(yearLabel);
-            const isPriorYear = (filterYear !== 'all') && (itemYear < parseInt(yearLabel));
-            if (isPriorYear) {
+        let rmbSyncedFromServer = false;
+        if (filterSheet === 'all' || filterSheet === 'sheet4') {
+            try {
+                const rmbRes = await fetch("{{ route('rmb.data') }}?tahun=" + encodeURIComponent(filterYear) + "&triwulan=" + encodeURIComponent(filterTw), {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                if (rmbRes.ok) {
+                    const rmbJson = await rmbRes.json();
+                    if (rmbJson && rmbJson.success && rmbJson.rows) {
+                        Object.entries(rmbJson.rows).forEach(([code, src]) => {
+                            if (!rmbVals[code] || !src) return;
+                            rmbVals[code].c1_saldo_awal = Number(src.saldo_awal || 0);
+                            rmbVals[code].c2_belanja_modal = Number(src.c1_belanja_modal || 0);
+                            rmbVals[code].c3_hibah = Number(src.c2_hibah || 0);
+                            rmbVals[code].c4_belanja_barang = Number(src.c3_belanja_barang || 0);
+                            rmbVals[code].c5_mutasi_tambah = Number(src.c4_mutasi_tambah || 0);
+                            rmbVals[code].c6_koreksi_rek_tambah = Number(src.c5_koreksi_rek_tambah || 0);
+                            rmbVals[code].c7_koreksi_lkd_tambah = Number(src.c6_koreksi_lkd_tambah || 0);
+                            rmbVals[code].c8_koreksi_manset_tambah = Number(src.c7_koreksi_manset_tambah || 0);
+                            rmbVals[code].c9_kdp_tambah = Number(src.c8_kdp_tambah || 0);
+                            rmbVals[code].c10_total_tambah = Number(src.total_penambahan || 0);
+                            rmbVals[code].c11_sk_penghapusan = Number(src.c9_sk_penghapusan || 0);
+                            rmbVals[code].c12_dihibahkan = Number(src.c10_dihibahkan || 0);
+                            rmbVals[code].c13_mutasi_kurang = Number(src.c11_mutasi_kurang || 0);
+                            rmbVals[code].c14_kapitalisasi_kurang = Number(src.c12_kapitalisasi_kurang || 0);
+                            rmbVals[code].c15_direklas_aset_lain = Number(src.c13_direklas_aset_lain || 0);
+                            rmbVals[code].c16_hilang = Number(src.c14_hilang || 0);
+                            rmbVals[code].c17_koreksi_kurang = Number(src.c15_koreksi_kurang || 0);
+                            rmbVals[code].c18_koreksi_lkd_kurang = Number(src.c16_koreksi_lkd_kurang || 0);
+                            rmbVals[code].c19_koreksi_manset_kurang = Number(src.c17_koreksi_manset_kurang || 0);
+                            rmbVals[code].c20_kdp_kurang = Number(src.c18_kdp_kurang || 0);
+                            rmbVals[code].c21_total_kurang = Number(src.total_pengurangan || 0);
+                            rmbVals[code].c22_total_akhir = Number(src.saldo_akhir || 0);
+                        });
+                        rmbSyncedFromServer = true;
+                    }
+                }
+            } catch (e) {
+                console.warn('Fallback lokal RMB Excel:', e);
+            }
+        }
+
+        if (!rmbSyncedFromServer && (filterSheet === 'all' || filterSheet === 'sheet4')) {
+            // Fallback offline: hitung dari filteredAstaps (tanpa Recycle Bin dan tanpa kemitraan 1.5.2)
+            filteredAstaps.forEach(item => {
+                if (item.sumber_dana === 'kemitraan') return;
                 const code = resolveRmbCode(item);
-                if (code && rmbVals[code]) {
-                    const val = parseFloat(item.total_realisasi_num) || parseFloat(item.total_realisasi) || 0;
-                    rmbVals[code].c1_saldo_awal += val;
+                if (!code || !rmbVals[code]) return;
+
+                const val = parseFloat(item.total_realisasi_num) || parseFloat(item.total_realisasi) || 0;
+                const isExtracom = Boolean(item.is_extracomtable || resolveItemCategory(item) === 'EXTRACOM');
+
+                if (item.sumber_dana === 'hibah') {
+                    rmbVals[code].c3_hibah += val;
+                } else if (item.sumber_dana === 'belanja_barang' || (item.jenis_pengadaan && item.jenis_pengadaan.includes('barang'))) {
+                    rmbVals[code].c4_belanja_barang += val;
+                } else if (['mutasi_eksternal', 'pelimpahan_skpd', 'mutasi_masuk', 'mutasi'].includes(item.sumber_dana) || item.jenis_pengadaan === 'mutasi_masuk') {
+                    rmbVals[code].c5_mutasi_tambah += val;
+                } else {
+                    rmbVals[code].c2_belanja_modal += val;
                 }
-            }
-        });
 
-        // 2. Akumulasi Data Penambahan & Pengurangan Tahun/Periode Berjalan (filteredAstaps)
-        filteredAstaps.forEach(item => {
-            const code = resolveRmbCode(item);
-            if (!code || !rmbVals[code]) return;
-
-            const val = parseFloat(item.total_realisasi_num) || parseFloat(item.total_realisasi) || 0;
-            const isExtracom = Boolean(item.is_extracomtable || resolveItemCategory(item) === 'EXTRACOM');
-
-            // Penambahan Kolom 2 - 9
-            if (item.sumber_dana === 'hibah') {
-                rmbVals[code].c3_hibah += val;
-            } else if (item.sumber_dana === 'belanja_barang' || (item.jenis_pengadaan && item.jenis_pengadaan.includes('barang'))) {
-                rmbVals[code].c4_belanja_barang += val;
-            } else if (item.jenis_pengadaan === 'mutasi_masuk' || item.sumber_dana === 'mutasi') {
-                rmbVals[code].c5_mutasi_tambah += val;
-            } else {
-                // Standar Belanja Modal
-                rmbVals[code].c2_belanja_modal += val;
-            }
-
-            // Pengurangan Kolom 11 - 20 dari Reklasifikasi & Ekstrakomptabel
-            if (item.is_reklas) {
-                if (item.jenis_reklas === 'EKSTRAKOMPTABEL') {
+                if (item.is_reklas) {
+                    const reklasVal = parseFloat(item.nilai_reklas) || val;
+                    if (item.jenis_reklas === 'EKSTRAKOMPTABEL') {
+                        rmbVals[code].c14_kapitalisasi_kurang += reklasVal;
+                    } else if (item.jenis_reklas === 'KAPITALISASI_INTRAKOM') {
+                        rmbVals[code].c4_belanja_barang += reklasVal;
+                    } else if (item.jenis_reklas === 'HIBAH_KELUAR') {
+                        rmbVals[code].c12_dihibahkan += reklasVal;
+                    } else if (item.jenis_reklas === 'MUTASI_EKSTERNAL') {
+                        rmbVals[code].c13_mutasi_kurang += reklasVal;
+                    } else if (item.jenis_reklas === 'ASET_LAIN_LAIN') {
+                        rmbVals[code].c15_direklas_aset_lain += reklasVal;
+                    }
+                } else if (isExtracom) {
                     rmbVals[code].c14_kapitalisasi_kurang += val;
-                } else if (item.jenis_reklas === 'KOREKSI_REKENING') {
-                    const destCat = String(item.tujuan_kib || '').toUpperCase();
-                    const destBarangCode = String(item.tujuan_kode_barang || '').trim();
-                    const isTujuanAsetLain = (destCat === 'ASET LAIN' || destCat.includes('ASET LAIN') || destBarangCode.startsWith('1.5.4') || destBarangCode.startsWith('1.5.04'));
-
-                    if (isTujuanAsetLain) {
-                        rmbVals[code].c15_direklas_aset_lain += val;
-                    } else {
-                        rmbVals[code].c17_koreksi_kurang += val;
-                        // Tambah pada rekening tujuan jika masih dalam kelompok Aset Tetap
-                        const tujuanCode = resolveRmbCode({ category: item.tujuan_kib, kode_barang: item.tujuan_kode_barang, nama_barang: item.tujuan_sub_rincian });
-                        if (tujuanCode && rmbVals[tujuanCode]) {
-                            rmbVals[tujuanCode].c6_koreksi_rek_tambah += val;
-                        }
-                    }
-                } else if (item.jenis_reklas === 'KDP_TO_DEFINITIF') {
-                    if (rmbVals['1.3.6.01']) rmbVals['1.3.6.01'].c20_kdp_kurang += val;
-                    const tujuanCode = resolveRmbCode({ category: item.tujuan_kib || 'KIB C' });
-                    if (tujuanCode && rmbVals[tujuanCode]) {
-                        rmbVals[tujuanCode].c9_kdp_tambah += val;
-                    }
-                } else if (item.jenis_reklas === 'ASET_LAIN_LAIN') {
-                    rmbVals[code].c15_direklas_aset_lain += val;
-                } else if (item.jenis_reklas === 'KOREKSI_LAIN') {
-                    rmbVals[code].c17_koreksi_kurang += val;
                 }
-            } else if (isExtracom) {
-                // Ekstrakomptabel dicatat belanja modal di penambahan, lalu dikurangi via kapitalisasi (-)
-                rmbVals[code].c14_kapitalisasi_kurang += val;
-            }
-        });
+            });
 
-        // 3. Akumulasi Pengurangan dari Recycle Bin (filteredDeletedAstaps)
-        filteredDeletedAstaps.forEach(delItem => {
-            const code = resolveRmbCode(delItem);
-            if (!code || !rmbVals[code]) return;
-
-            const val = parseFloat(delItem.total_realisasi_num) || parseFloat(delItem.total_realisasi) || 0;
-            const reason = String(delItem.alasan_hapus || delItem.keterangan || '').toLowerCase();
-
-            if (reason.includes('hibah') || reason.includes('dihibahkan')) {
-                rmbVals[code].c12_dihibahkan += val;
-            } else if (reason.includes('mutasi')) {
-                rmbVals[code].c13_mutasi_kurang += val;
-            } else if (reason.includes('ekstra') || reason.includes('kapitalisasi')) {
-                rmbVals[code].c14_kapitalisasi_kurang += val;
-            } else if (reason.includes('reklas') || reason.includes('aset lain')) {
-                rmbVals[code].c15_direklas_aset_lain += val;
-            } else if (reason.includes('hilang')) {
-                rmbVals[code].c16_hilang += val;
-            } else {
-                // SK Penghapusan
-                rmbVals[code].c11_sk_penghapusan += val;
-            }
-        });
-
-        // 4. Hitung Total Penambahan (Col 10), Total Pengurangan (Col 21), & Saldo Akhir (Col 22)
-        astapRmbDefs.forEach(d => {
-            const v = rmbVals[d.code];
-            v.c10_total_tambah = v.c2_belanja_modal + v.c3_hibah + v.c4_belanja_barang + v.c5_mutasi_tambah +
-                                 v.c6_koreksi_rek_tambah + v.c7_koreksi_lkd_tambah + v.c8_koreksi_manset_tambah + v.c9_kdp_tambah;
-
-            v.c21_total_kurang = v.c11_sk_penghapusan + v.c12_dihibahkan + v.c13_mutasi_kurang + v.c14_kapitalisasi_kurang +
-                                 v.c15_direklas_aset_lain + v.c16_hilang + v.c17_koreksi_kurang + v.c18_koreksi_lkd_kurang +
-                                 v.c19_koreksi_manset_kurang + v.c20_kdp_kurang;
-
-            v.c22_total_akhir = v.c1_saldo_awal + v.c10_total_tambah - v.c21_total_kurang;
-        });
+            astapRmbDefs.forEach(d => {
+                const v = rmbVals[d.code];
+                v.c10_total_tambah = v.c2_belanja_modal + v.c3_hibah + v.c4_belanja_barang + v.c5_mutasi_tambah +
+                                     v.c6_koreksi_rek_tambah + v.c7_koreksi_lkd_tambah + v.c8_koreksi_manset_tambah + v.c9_kdp_tambah;
+                v.c21_total_kurang = v.c11_sk_penghapusan + v.c12_dihibahkan + v.c13_mutasi_kurang + v.c14_kapitalisasi_kurang +
+                                     v.c15_direklas_aset_lain + v.c16_hilang + v.c17_koreksi_kurang + v.c18_koreksi_lkd_kurang +
+                                     v.c19_koreksi_manset_kurang + v.c20_kdp_kurang;
+                v.c22_total_akhir = v.c1_saldo_awal + v.c10_total_tambah - v.c21_total_kurang;
+            });
+        }
 
         // 5. Agregasi per Kelompok KIB
         function makeEmptyCols() {
@@ -7093,7 +7118,7 @@
                 "7",
                 "8",
                 "9",
-                "10 = 2+3+4+5+6+7+8+9",
+                "10 =\n2+3+4+5+6+7+8+9",
                 "11",
                 "12",
                 "13",
@@ -7104,7 +7129,7 @@
                 "18",
                 "19",
                 "20",
-                "21 = 11+12+13+14+15+16+17+18+19+20",
+                "21 =\n11+12+13+14+15+16+17+18+19+20",
                 "22 = 1 + 10 - 21"
             ]
         ];
@@ -7236,7 +7261,7 @@
             { wch: 16 }, // Col 7: KOREKSI LKD
             { wch: 16 }, // Col 8: KOREKSI MANSET
             { wch: 16 }, // Col 9: KDP
-            { wch: 22 }, // Col 10: TOTAL (PENAMBAHAN)
+            { wch: 24 }, // Col 10: TOTAL (PENAMBAHAN)
             { wch: 18 }, // Col 11: SK PENGHAPUSAN
             { wch: 16 }, // Col 12: DIHIBAHKAN
             { wch: 16 }, // Col 13: MUTASI (-)
@@ -7247,7 +7272,7 @@
             { wch: 16 }, // Col 18: KOREKSI LKD
             { wch: 16 }, // Col 19: KOREKSI MANSET
             { wch: 16 }, // Col 20: KDP
-            { wch: 22 }, // Col 21: TOTAL (PENGURANGAN)
+            { wch: 32 }, // Col 21: TOTAL (PENGURANGAN)
             { wch: 24 }  // Col 22: TOTAL ASET TETAP PER ...
         ];
 
@@ -7259,7 +7284,7 @@
             { hpt: 12 }, // 4
             { hpt: 26 }, // 5: Superheader
             { hpt: 30 }, // 6: Subheader
-            { hpt: 20 }  // 7: Baris Angka Pink
+            { hpt: 34 }  // 7: Baris Angka Pink (Rumus TOTAL terlihat penuh)
         ];
         for (let rIdx = 8; rIdx < sheet4Rows.length; rIdx++) {
             if (rIdx === s4Meta.asetTetapRow) s4RowHeights.push({ hpt: 22 });
@@ -7424,7 +7449,9 @@
         const twSlug = filterTw === 'all' ? 'TAHUNAN' : filterTw.replace(/[\s_]/g, '');
         const fileName = "LAPORAN_REKAP_TRIWULAN_" + sheetSlug + "_RSDK_" + yearLabel + "_" + twSlug + ".xlsx";
         XLSX.writeFile(wb, fileName);
-        setTimeout(() => { isExportingRekapTriwulan = false; }, 1500);
+        } finally {
+            setTimeout(() => { isExportingRekapTriwulan = false; }, 1000);
+        }
     }
 
     // =========================================================================
@@ -14365,7 +14392,7 @@
                     }).length;
                 },
 
-                submitExport() {
+                async submitExport() {
                     this.isSubmittingExport = true;
                     try {
                         if (this.exportSumberDana === 'kemitraan') {
@@ -14442,7 +14469,7 @@
 
                         // Belanja Modal
                         if (this.exportFormatType === 'rekap_triwulan') {
-                            exportRekapTriwulanToExcel({
+                            await exportRekapTriwulanToExcel({
                                 year: this.exportYear,
                                 triwulan: this.exportTriwulan,
                                 sheet: this.exportRekapSheet

@@ -571,9 +571,7 @@ class AstapController extends Controller
         // Data Pengurangan Aset Tetap dari Recycle Bin (Master ASTAP is_deleted = 1 & Register NIBAR is_deleted = 1)
         $rawDeletedAstaps = \App\Models\Astap::where('is_deleted', 1)
             ->with([
-                'registers' => function($q) {
-                    $q->where('is_deleted', 1);
-                },
+                'registers',
                 'jenisAstap',
                 'rekeningBelanja',
                 'jenisPengadaan',
@@ -594,44 +592,28 @@ class AstapController extends Controller
 
         $deletedAstapsList = $rawDeletedAstaps->map(function ($a) {
             $spec = is_array($a->spesifikasi_json) ? $a->spesifikasi_json : (json_decode($a->spesifikasi_json, true) ?? []);
-            $firstReg = $a->registers ? $a->registers->first() : null;
+            $sortedRegisters = $a->registers ? $a->registers->sortBy(function ($r) {
+                return $r->no_register_int ?: intval(substr($r->nibar ?? '', -7));
+            })->values() : collect();
+            $firstReg = $sortedRegisters->first();
             $ja = $a->jenisAstap;
             $kode108Val = $a->kode_108 ?: ($ja ? ($ja->sub_sub_rincian_objek ?: $ja->jenis) : '');
             $deletedAt = $a->deleted_at ? \Carbon\Carbon::parse($a->deleted_at) : null;
             $deletedTw = $deletedAt ? ('TW ' . (intdiv($deletedAt->month - 1, 3) + 1)) : ($a->triwulan ?: 'TW I');
 
-            $registersMapped = $a->registers ? $a->registers->map(function ($r) {
+            $registersMapped = $sortedRegisters->map(function ($r) {
                 return [
                     'id' => $r->id,
                     'no_register' => $r->nibar ?: $r->no_register,
-                    'nibar' => $r->nibar,
+                    'nibar' => $r->nibar ?: $r->no_register,
                     'ruang_pemegang' => $r->ruang_pemegang,
                     'kondisi' => $r->kondisi ?: 'RB',
                 ];
-            })->values()->toArray() : [];
+            })->values()->toArray();
 
-            $sertifikatNo = $spec['sertifikat_no'] ?? ($spec['tanah_sertifikat_no'] ?? ($spec['gedung_dokumen_no'] ?? ($spec['jaringan_dokumen_no'] ?? null)));
-            $noPabrik = $spec['no_pabrik'] ?? ($spec['mesin_nomor_pabrik'] ?? null);
-            $noMesin = $spec['no_mesin'] ?? ($spec['mesin_nomor_mesin'] ?? ($spec['mesin'] ?? null));
-            $noRangka = $spec['no_rangka'] ?? ($spec['mesin_nomor_rangka'] ?? ($spec['rangka'] ?? null));
-            $noPolisi = $spec['no_polisi'] ?? ($spec['mesin_nomor_polisi'] ?? ($spec['polisi'] ?? ($spec['nopol'] ?? null)));
+            $specMeta = $this->extractDeletedSpecAttributes($spec);
 
-            $dokumenIdentitas = '-';
-            if (!empty($sertifikatNo) && $sertifikatNo !== '-') {
-                $dokumenIdentitas = $sertifikatNo;
-            } elseif (!empty($noPabrik) && $noPabrik !== '-') {
-                $dokumenIdentitas = $noPabrik;
-            } elseif (!empty($noMesin) && $noMesin !== '-') {
-                $dokumenIdentitas = $noMesin;
-            } elseif (!empty($noRangka) && $noRangka !== '-') {
-                $dokumenIdentitas = $noRangka;
-            } elseif (!empty($noPolisi) && $noPolisi !== '-') {
-                $dokumenIdentitas = $noPolisi;
-            } elseif (!empty($spec['buku_nomor_isbn']) && $spec['buku_nomor_isbn'] !== '-') {
-                $dokumenIdentitas = $spec['buku_nomor_isbn'];
-            }
-
-            return [
+            return array_merge([
                 'id' => $a->id,
                 'is_deleted' => 1,
                 'deleted_at' => $deletedAt ? $deletedAt->format('Y-m-d H:i:s') : null,
@@ -642,6 +624,8 @@ class AstapController extends Controller
                 'is_extracomtable' => (bool) $a->is_extracomtable,
                 'kode_barang' => $kode108Val,
                 'nama_barang' => $a->nama_barang ?: 'Aset Tetap',
+                'nibar' => $firstReg ? ($firstReg->nibar ?: $firstReg->no_register) : '-',
+                'no_register' => $firstReg ? ($firstReg->no_register ?: $firstReg->nibar) : '-',
                 'tahun_perolehan' => (string) ($a->tahun_perolehan ?: ''),
                 'triwulan' => $a->triwulan ?: ($spec['triwulan'] ?? 'TW I'),
                 'satuan' => $a->satuan ?: 'Unit',
@@ -652,20 +636,11 @@ class AstapController extends Controller
                 'biaya_administrasi_proyek' => (float) $a->biaya_administrasi_proyek,
                 'alasan_hapus' => $a->alasan_hapus ?: ($a->keterangan_tambahan ?: ($spec['keterangan'] ?? '-')),
                 'keterangan' => $a->keterangan_tambahan ?: ($a->alasan_hapus ?: ($a->deleted_by ? 'Dihapus oleh ' . $a->deleted_by : '-')),
-                'bahan' => $spec['bahan'] ?? '-',
                 'asal_usul' => $spec['asal_usul'] ?? ($a->asal_usul ?: 'Pembelian BLUD'),
                 'kondisi' => $firstReg ? ($firstReg->kondisi ?: 'RB') : ($spec['kondisi'] ?? 'RB'),
-                'merk' => $spec['merk'] ?? '-',
-                'type' => $spec['type'] ?? '-',
-                'dokumen_identitas' => $dokumenIdentitas,
-                'no_pabrik' => $noPabrik ?: '-',
-                'no_mesin' => $noMesin ?: '-',
-                'no_rangka' => $noRangka ?: '-',
-                'no_polisi' => $noPolisi ?: '-',
-                'sertifikat_nomor' => $sertifikatNo ?: '-',
                 'spesifikasi_json' => $spec,
                 'registers' => $registersMapped
-            ];
+            ], $specMeta);
         });
 
         $deletedNibarsList = $rawDeletedNibars->map(function ($r) {
@@ -674,29 +649,9 @@ class AstapController extends Controller
             $deletedAt = $r->deleted_at ? \Carbon\Carbon::parse($r->deleted_at) : null;
             $deletedTw = $deletedAt ? ('TW ' . (intdiv($deletedAt->month - 1, 3) + 1)) : ($astap?->triwulan ?: 'TW I');
             $hargaSatuan = (float) ($astap?->harga_satuan ?: ($astap && $astap->jumlah_volume > 0 ? ($astap->total_realisasi / $astap->jumlah_volume) : 0));
+            $specMeta = $this->extractDeletedSpecAttributes($spec);
 
-            $sertifikatNo = $spec['sertifikat_no'] ?? ($spec['tanah_sertifikat_no'] ?? ($spec['gedung_dokumen_no'] ?? ($spec['jaringan_dokumen_no'] ?? null)));
-            $noPabrik = $spec['no_pabrik'] ?? ($spec['mesin_nomor_pabrik'] ?? null);
-            $noMesin = $spec['no_mesin'] ?? ($spec['mesin_nomor_mesin'] ?? ($spec['mesin'] ?? null));
-            $noRangka = $spec['no_rangka'] ?? ($spec['mesin_nomor_rangka'] ?? ($spec['rangka'] ?? null));
-            $noPolisi = $spec['no_polisi'] ?? ($spec['mesin_nomor_polisi'] ?? ($spec['polisi'] ?? ($spec['nopol'] ?? null)));
-
-            $dokumenIdentitas = '-';
-            if (!empty($sertifikatNo) && $sertifikatNo !== '-') {
-                $dokumenIdentitas = $sertifikatNo;
-            } elseif (!empty($noPabrik) && $noPabrik !== '-') {
-                $dokumenIdentitas = $noPabrik;
-            } elseif (!empty($noMesin) && $noMesin !== '-') {
-                $dokumenIdentitas = $noMesin;
-            } elseif (!empty($noRangka) && $noRangka !== '-') {
-                $dokumenIdentitas = $noRangka;
-            } elseif (!empty($noPolisi) && $noPolisi !== '-') {
-                $dokumenIdentitas = $noPolisi;
-            } elseif (!empty($spec['buku_nomor_isbn']) && $spec['buku_nomor_isbn'] !== '-') {
-                $dokumenIdentitas = $spec['buku_nomor_isbn'];
-            }
-
-            return [
+            return array_merge([
                 'id' => 'reg_' . $r->id,
                 'is_deleted' => 1,
                 'deleted_at' => $deletedAt ? $deletedAt->format('Y-m-d H:i:s') : null,
@@ -707,6 +662,8 @@ class AstapController extends Controller
                 'is_extracomtable' => (bool) ($astap?->is_extracomtable ?? false),
                 'kode_barang' => $astap?->kode_108 ?: ($astap?->jenisAstap?->sub_sub_rincian_objek ?: ($r->kode_108 ?: '-')),
                 'nama_barang' => $astap?->nama_barang ?: 'Aset Register',
+                'nibar' => $r->nibar ?: $r->no_register ?: '-',
+                'no_register' => $r->no_register ?: $r->nibar ?: '-',
                 'tahun_perolehan' => (string) ($r->tahun_perolehan ?: ($astap?->tahun_perolehan ?: '')),
                 'triwulan' => $astap?->triwulan ?: 'TW I',
                 'satuan' => $astap?->satuan ?: 'Unit',
@@ -717,28 +674,19 @@ class AstapController extends Controller
                 'biaya_administrasi_proyek' => 0,
                 'alasan_hapus' => $r->deleted_by ? 'Dihapus oleh ' . $r->deleted_by : '-',
                 'keterangan' => $r->deleted_by ? 'Dihapus oleh ' . $r->deleted_by : ($astap?->keterangan_tambahan ?: '-'),
-                'bahan' => $spec['bahan'] ?? '-',
                 'asal_usul' => $spec['asal_usul'] ?? ($astap?->asal_usul ?: 'Pembelian BLUD'),
                 'kondisi' => $r->kondisi ?: 'RB',
-                'merk' => $spec['merk'] ?? '-',
-                'type' => $spec['type'] ?? '-',
-                'dokumen_identitas' => $dokumenIdentitas,
-                'no_pabrik' => $noPabrik ?: '-',
-                'no_mesin' => $noMesin ?: '-',
-                'no_rangka' => $noRangka ?: '-',
-                'no_polisi' => $noPolisi ?: '-',
-                'sertifikat_nomor' => $sertifikatNo ?: '-',
                 'spesifikasi_json' => $spec,
                 'registers' => [
                     [
                         'id' => $r->id,
                         'no_register' => $r->no_register ?: $r->nibar,
-                        'nibar' => $r->nibar,
+                        'nibar' => $r->nibar ?: $r->no_register,
                         'ruang_pemegang' => $r->ruang_pemegang ?: ($r->unit?->nama ?? '-'),
                         'kondisi' => $r->kondisi ?: 'RB',
                     ]
                 ]
-            ];
+            ], $specMeta);
         });
 
         $deletedAstaps = $deletedAstapsList->concat($deletedNibarsList)->values();
@@ -4804,6 +4752,138 @@ class AstapController extends Controller
                 'message' => $message,
                 'count' => $totalUpdated
             ]);
+    }
+
+    /**
+     * Ekstrak atribut spesifikasi teknis & nomor identitas dokumen dari spesifikasi_json aset pengurangan.
+     */
+    protected function extractDeletedSpecAttributes(array $spec): array
+    {
+        $firstNonEmpty = static function (...$values): ?string {
+            foreach ($values as $v) {
+                if (is_string($v) || is_numeric($v)) {
+                    $trimmed = trim((string) $v);
+                    if ($trimmed !== '' && $trimmed !== '-' && strtolower($trimmed) !== 'null') {
+                        return $trimmed;
+                    }
+                }
+            }
+            return null;
+        };
+
+        $firstMesin = (!empty($spec['mesin_items']) && is_array($spec['mesin_items'])) ? ($spec['mesin_items'][0] ?? []) : [];
+        $firstTanah = (!empty($spec['tanah_items']) && is_array($spec['tanah_items'])) ? ($spec['tanah_items'][0] ?? []) : [];
+        $firstGedung = (!empty($spec['gedung_items']) && is_array($spec['gedung_items'])) ? ($spec['gedung_items'][0] ?? []) : [];
+        $firstJaringan = (!empty($spec['jaringan_items']) && is_array($spec['jaringan_items'])) ? ($spec['jaringan_items'][0] ?? []) : [];
+        $firstLainnya = (!empty($spec['lainnya_items']) && is_array($spec['lainnya_items'])) ? ($spec['lainnya_items'][0] ?? []) : [];
+
+        $merk = $firstNonEmpty(
+            $spec['merk'] ?? null,
+            $firstMesin['mesin_merk'] ?? null,
+            $spec['buku_judul'] ?? null,
+            $spec['judul_lisensi'] ?? null,
+            $firstLainnya['lainnya_buku_pencipta'] ?? null
+        ) ?? '-';
+
+        $type = $firstNonEmpty(
+            $spec['type'] ?? null,
+            $spec['tipe'] ?? null,
+            $spec['model'] ?? null,
+            $firstMesin['mesin_type'] ?? null,
+            $firstGedung['gedung_konstruksi'] ?? null,
+            $firstGedung['gedung_konstruksi_beton'] ?? null
+        ) ?? '-';
+
+        $bahan = $firstNonEmpty(
+            $spec['bahan'] ?? null,
+            $firstMesin['mesin_bahan'] ?? null,
+            $firstGedung['gedung_beton'] ?? null,
+            $firstGedung['gedung_konstruksi_beton'] ?? null
+        ) ?? '-';
+
+        $sertifikatNo = $firstNonEmpty(
+            $spec['sertifikat_no'] ?? null,
+            $spec['sertifikat_nomor'] ?? null,
+            $spec['tanah_sertifikat_no'] ?? null,
+            $firstTanah['tanah_sertifikat_no'] ?? null
+        );
+
+        $dokumenNo = $firstNonEmpty(
+            $spec['gedung_dokumen_no'] ?? null,
+            $spec['gedung_dokumen_nomor'] ?? null,
+            $spec['dokumen_no'] ?? null,
+            $spec['dokumen_nomor'] ?? null,
+            $spec['jaringan_dokumen_no'] ?? null,
+            $firstGedung['gedung_dokumen_nomor'] ?? null,
+            $firstGedung['gedung_dokumen_no'] ?? null,
+            $firstJaringan['jaringan_dokumen_no'] ?? null,
+            $firstJaringan['jaringan_dokumen_nomor'] ?? null
+        );
+
+        $noPabrik = $firstNonEmpty(
+            $spec['no_pabrik'] ?? null,
+            $spec['mesin_nomor_pabrik'] ?? null,
+            $spec['mesin_no_pabrik'] ?? null,
+            $firstMesin['mesin_no_pabrik'] ?? null
+        );
+        $noRangka = $firstNonEmpty(
+            $spec['no_rangka'] ?? null,
+            $spec['mesin_nomor_rangka'] ?? null,
+            $spec['rangka'] ?? null,
+            $firstMesin['mesin_no_rangka'] ?? null
+        );
+        $noMesin = $firstNonEmpty(
+            $spec['no_mesin'] ?? null,
+            $spec['mesin_nomor_mesin'] ?? null,
+            $spec['mesin'] ?? null,
+            $firstMesin['mesin_no_mesin'] ?? null
+        );
+        $noPolisi = $firstNonEmpty(
+            $spec['no_polisi'] ?? null,
+            $spec['mesin_nomor_polisi'] ?? null,
+            $spec['polisi'] ?? null,
+            $spec['nopol'] ?? null,
+            $firstMesin['mesin_no_polisi'] ?? null
+        );
+        $isbn = $firstNonEmpty(
+            $spec['buku_nomor_isbn'] ?? null,
+            $firstLainnya['lainnya_buku_isbn'] ?? null
+        );
+
+        $docParts = [];
+        if ($sertifikatNo) {
+            $docParts[] = 'Sertifikat: ' . $sertifikatNo;
+        } elseif ($dokumenNo) {
+            $docParts[] = 'Dok: ' . $dokumenNo;
+        }
+        if ($noPabrik) {
+            $docParts[] = 'Pabrik: ' . $noPabrik;
+        }
+        if ($noRangka) {
+            $docParts[] = 'Chasis: ' . $noRangka;
+        }
+        if ($noMesin) {
+            $docParts[] = 'Mesin: ' . $noMesin;
+        }
+        if ($noPolisi) {
+            $docParts[] = 'Nopol: ' . $noPolisi;
+        }
+        if (empty($docParts) && $isbn) {
+            $docParts[] = 'ISBN: ' . $isbn;
+        }
+
+        return [
+            'merk' => $merk,
+            'type' => $type,
+            'bahan' => $bahan,
+            'sertifikat_nomor' => $sertifikatNo ?? '-',
+            'dokumen_nomor' => $dokumenNo ?? '-',
+            'no_pabrik' => $noPabrik ?? '-',
+            'no_rangka' => $noRangka ?? '-',
+            'no_mesin' => $noMesin ?? '-',
+            'no_polisi' => $noPolisi ?? '-',
+            'dokumen_identitas' => !empty($docParts) ? implode(' / ', $docParts) : '-',
+        ];
     }
 
 }

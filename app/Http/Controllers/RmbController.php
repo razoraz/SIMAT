@@ -102,9 +102,50 @@ class RmbController extends Controller
     }
 
     /**
+     * Endpoint JSON untuk menyuplai data RMB ke modul lain (termasuk Ekspor Excel Sheet 4 ASTAP)
+     */
+    public function jsonData(Request $request)
+    {
+        $rawTahun = $request->get('tahun', date('Y'));
+        $tahun = ($rawTahun === 'all' || $rawTahun === '' || $rawTahun === null) ? null : (int) $rawTahun;
+        $triwulan = $this->normalizeTriwulanParam((string) $request->get('triwulan', 'all'));
+
+        $rmbData = $this->calculateRmbData($tahun, $triwulan);
+
+        return response()->json([
+            'success' => true,
+            'tahun' => $tahun ?? 'all',
+            'triwulan' => $triwulan,
+            'rows' => $rmbData['rows'],
+            'subtotals' => $rmbData['subtotals'],
+            'grandTotal' => $rmbData['grandTotal'],
+            'kertasKerja' => $rmbData['kertasKerja'],
+            'kpis' => $rmbData['kpis'],
+        ]);
+    }
+
+    /**
+     * Normalisasi parameter triwulan ('TW I', 'TW1', '1', 'all') menjadi 'all' atau '1'..'4'.
+     */
+    protected function normalizeTriwulanParam(string $rawTw): string
+    {
+        $clean = strtoupper(preg_replace('/[\s_]+/', '', trim($rawTw)));
+        if ($clean === '' || $clean === 'ALL') {
+            return 'all';
+        }
+        $map = [
+            '1' => '1', 'I' => '1', 'TW1' => '1', 'TWI' => '1', 'Q1' => '1', 'TRIWULAN1' => '1', 'TRIWULANI' => '1',
+            '2' => '2', 'II' => '2', 'TW2' => '2', 'TWII' => '2', 'Q2' => '2', 'TRIWULAN2' => '2', 'TRIWULANII' => '2',
+            '3' => '3', 'III' => '3', 'TW3' => '3', 'TWIII' => '3', 'Q3' => '3', 'TRIWULAN3' => '3', 'TRIWULANIII' => '3',
+            '4' => '4', 'IV' => '4', 'TW4' => '4', 'TWIV' => '4', 'Q4' => '4', 'TRIWULAN4' => '4', 'TRIWULANIV' => '4',
+        ];
+        return $map[$clean] ?? 'all';
+    }
+
+    /**
      * Hitung Matriks 21 Kolom RMB dan Kertas Kerja Rekonsiliasi
      */
-    protected function calculateRmbData(int $tahun, string $triwulan): array
+    protected function calculateRmbData(?int $tahun, string $triwulan): array
     {
         $defs = self::getRmbDefinitions();
 
@@ -176,9 +217,9 @@ class RmbController extends Controller
 
         $grandTotal = $subtotals['KIB A']; // Struktur sama
 
-        // 1. Ambil Seluruh Data ASTAP untuk tahun berjalan
+        // 1. Ambil Seluruh Data ASTAP untuk tahun berjalan (atau seluruh tahun jika $tahun === null)
         $astapQuery = Astap::where('is_deleted', 0)
-            ->where('tahun_perolehan', $tahun)
+            ->when($tahun !== null, fn($q) => $q->where('tahun_perolehan', $tahun))
             ->with(['jenisAstap', 'belanjaModal', 'belanjaBarang', 'mutasiEksternalMasuk']);
 
         if ($triwulan !== 'all') {
@@ -196,7 +237,8 @@ class RmbController extends Controller
         $astaps = $astapQuery->get();
 
         // 2. Ambil Riwayat Reklasifikasi Aktif (is_deleted = 0 dan ASTAP-nya aktif)
-        $reklasQuery = AstapReklas::active()->where('tahun', $tahun);
+        $reklasQuery = AstapReklas::active()
+            ->when($tahun !== null, fn($q) => $q->where('tahun', $tahun));
         if ($triwulan !== 'all') {
             $reklasQuery->where('triwulan', (int) $triwulan);
         }
@@ -207,7 +249,8 @@ class RmbController extends Controller
             ->values();
 
         // Kumpulkan seluruh transaksi reklas aktif tahun ini, log ekstrakom lintas tahun, dan hibah tahun berjalan untuk cegah double-counting
-        $yearReklasByAstap = AstapReklas::active()->where('tahun', $tahun)
+        $yearReklasByAstap = AstapReklas::active()
+            ->when($tahun !== null, fn($q) => $q->where('tahun', $tahun))
             ->with(['astap.jenisAstap', 'jenisReklasAsal', 'jenisReklasTujuan'])
             ->orderBy('id', 'asc')
             ->get()
@@ -223,7 +266,7 @@ class RmbController extends Controller
             ->all();
 
         $yearHibahAstapIds = Astap::where('is_deleted', 0)
-            ->where('tahun_perolehan', $tahun)
+            ->when($tahun !== null, fn($q) => $q->where('tahun_perolehan', $tahun))
             ->where('sumber_dana', 'hibah')
             ->pluck('id')
             ->all();
@@ -290,41 +333,43 @@ class RmbController extends Controller
         }
 
         // 3B. Akui Saldo Awal untuk Aset Tahun Lampau (tahun_perolehan < $tahun) yang dimutasi pada periode ini
-        foreach ($reklasByAstap as $astapId => $rkGroup) {
-            $firstRk = $rkGroup->first();
-            $astap = $firstRk?->astap;
-            if (!$astap || (int) $astap->tahun_perolehan >= $tahun) {
-                continue;
-            }
-            if ($firstRk->jenis_reklas === 'HIBAH_MASUK') {
-                continue;
-            }
+        if ($tahun !== null) {
+            foreach ($reklasByAstap as $astapId => $rkGroup) {
+                $firstRk = $rkGroup->first();
+                $astap = $firstRk?->astap;
+                if (!$astap || (int) $astap->tahun_perolehan >= $tahun) {
+                    continue;
+                }
+                if ($firstRk->jenis_reklas === 'HIBAH_MASUK') {
+                    continue;
+                }
 
-            $asalStartCode = $this->resolveRmbCodeForReklasAsal($firstRk, $defs);
-            if (!$asalStartCode || !isset($rows[$asalStartCode])) {
-                continue;
-            }
+                $asalStartCode = $this->resolveRmbCodeForReklasAsal($firstRk, $defs);
+                if (!$asalStartCode || !isset($rows[$asalStartCode])) {
+                    continue;
+                }
 
-            $firstInfo = $firstRk->spesifikasi_baru['koreksi_info'] ?? null;
-            if ($firstRk->jenis_reklas === 'KOREKSI_LAIN' && !empty($firstInfo['nilai_semula'])) {
-                $saldoAwalAset = (float) $firstInfo['nilai_semula'];
-            } else {
-                $totalOutInPeriod = 0.0;
-                foreach ($rkGroup as $rkItem) {
-                    if (in_array($rkItem->jenis_reklas, ['EKSTRAKOMPTABEL', 'HIBAH_KELUAR', 'MUTASI_EKSTERNAL', 'KDP_TO_DEFINITIF', 'KOREKSI_REKENING', 'ASET_LAIN_LAIN'], true)) {
-                        $totalOutInPeriod += (float) $rkItem->nilai_reklas;
-                    } elseif ($rkItem->jenis_reklas === 'KOREKSI_LAIN') {
-                        $infoItem = $rkItem->spesifikasi_baru['koreksi_info'] ?? null;
-                        $tipeItem = $infoItem['tipe_koreksi'] ?? ($rkItem->asal_kib === 'KOREKSI' || str_contains(strtolower($rkItem->keterangan ?? ''), 'penambahan nilai') ? 'tambah' : 'kurang');
-                        if ($tipeItem === 'kurang') {
+                $firstInfo = $firstRk->spesifikasi_baru['koreksi_info'] ?? null;
+                if ($firstRk->jenis_reklas === 'KOREKSI_LAIN' && !empty($firstInfo['nilai_semula'])) {
+                    $saldoAwalAset = (float) $firstInfo['nilai_semula'];
+                } else {
+                    $totalOutInPeriod = 0.0;
+                    foreach ($rkGroup as $rkItem) {
+                        if (in_array($rkItem->jenis_reklas, ['EKSTRAKOMPTABEL', 'HIBAH_KELUAR', 'MUTASI_EKSTERNAL', 'KDP_TO_DEFINITIF', 'KOREKSI_REKENING', 'ASET_LAIN_LAIN'], true)) {
                             $totalOutInPeriod += (float) $rkItem->nilai_reklas;
+                        } elseif ($rkItem->jenis_reklas === 'KOREKSI_LAIN') {
+                            $infoItem = $rkItem->spesifikasi_baru['koreksi_info'] ?? null;
+                            $tipeItem = $infoItem['tipe_koreksi'] ?? ($rkItem->asal_kib === 'KOREKSI' || str_contains(strtolower($rkItem->keterangan ?? ''), 'penambahan nilai') ? 'tambah' : 'kurang');
+                            if ($tipeItem === 'kurang') {
+                                $totalOutInPeriod += (float) $rkItem->nilai_reklas;
+                            }
                         }
                     }
+                    $saldoAwalAset = max((float) $astap->total_realisasi, $totalOutInPeriod);
                 }
-                $saldoAwalAset = max((float) $astap->total_realisasi, $totalOutInPeriod);
-            }
 
-            $rows[$asalStartCode]['saldo_awal'] += $saldoAwalAset;
+                $rows[$asalStartCode]['saldo_awal'] += $saldoAwalAset;
+            }
         }
 
         // 4. Akumulasi Pengurangan & Mutasi Reklasifikasi (AstapReklas)
@@ -379,9 +424,16 @@ class RmbController extends Controller
                     break;
 
                 case 'KOREKSI_REKENING':
-                    // Pindah KIB / Rekening
+                    // Pindah KIB / Rekening (jika tujuan Aset Lain-Lain 1.5.4, catat ke c13_direklas_aset_lain)
+                    $destKibUpper = strtoupper(trim((string) $rk->tujuan_kib));
+                    $destKodeStr = trim((string) ($rk->tujuan_kode ?: $rk->jenisReklasTujuan?->kode_prefix ?: ''));
+                    $isDestAsetLain = str_contains($destKibUpper, 'ASET LAIN') || str_starts_with($destKodeStr, '1.5.4');
                     if ($asalCode && isset($rows[$asalCode])) {
-                        $rows[$asalCode]['c15_koreksi_kurang'] += $val;
+                        if ($isDestAsetLain) {
+                            $rows[$asalCode]['c13_direklas_aset_lain'] += $val;
+                        } else {
+                            $rows[$asalCode]['c15_koreksi_kurang'] += $val;
+                        }
                     }
                     if ($tujuanCode && isset($rows[$tujuanCode])) {
                         $rows[$tujuanCode]['c5_koreksi_rek_tambah'] += $val;
