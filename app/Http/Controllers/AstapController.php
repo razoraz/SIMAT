@@ -320,6 +320,7 @@ class AstapController extends Controller
                 }
 
                 $isHibahKeluarAset = !empty($hibahKeluarData) || ($a->jenis_reklas === 'HIBAH_KELUAR');
+                $reklasExtracomRow = $a->reklas ? $a->reklas->first(fn($r) => $r->jenis_reklas === 'EKSTRAKOMPTABEL' || $r->tujuan_kib === 'EKSTRAKOMPTABEL') : null;
 
                 return [
                     'id' => $a->id,
@@ -327,6 +328,9 @@ class AstapController extends Controller
                     'category' => $a->category,
                     'is_reklas' => (bool) ($a->is_reklas || $hasEverReklas),
                     'has_reklas' => $hasEverReklas,
+                    'has_reklas_extracom' => (bool) ($reklasExtracomRow || ($a->is_reklas && $a->jenis_reklas === 'EKSTRAKOMPTABEL')),
+                    'reklas_extracom_tahun' => $reklasExtracomRow?->tahun ? (string) $reklasExtracomRow->tahun : (($a->is_reklas && $a->jenis_reklas === 'EKSTRAKOMPTABEL') ? (string) $a->tahun_perolehan : null),
+                    'reklas_extracom_tw' => $reklasExtracomRow?->triwulan ? ('TW' . $reklasExtracomRow->triwulan) : null,
                     'reklas_count' => $reklasCount,
                     'jenis_reklas' => $a->jenis_reklas ?: ($latestReklas?->jenis_reklas),
                     'is_tutup_buku' => $a->isTutupBuku(),
@@ -4884,6 +4888,27 @@ class AstapController extends Controller
             'no_polisi' => $noPolisi ?? '-',
             'dokumen_identitas' => !empty($docParts) ? implode(' / ', $docParts) : '-',
         ];
+    }
+
+    /**
+     * Ekspor Laporan Lampiran Ekstrakomptabel (.xlsx) 2 Sheet secara programatik (PhpSpreadsheet)
+     * Sumber data diambil khusus dari aset ASTAP yang direklasifikasi menjadi Ekstrakomptabel.
+     */
+    public function exportLampiranExtracom(Request $request, \App\Services\LampiranExtracomExportService $exporter)
+    {
+        $tahun    = (string) $request->query('tahun', 'all');
+        $triwulan = (string) $request->query('triwulan', 'all');
+
+        $yearLabel   = ($tahun === 'all' || trim($tahun) === '') ? (string) date('Y') : (string) (int) $tahun;
+        $spreadsheet = $exporter->buildSpreadsheet($tahun, $triwulan);
+        $fileName    = "Lampiran_Extracom_RSUD-{$yearLabel}_RSDK_{$yearLabel}.xlsx";
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, $fileName, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
     }
 
 }

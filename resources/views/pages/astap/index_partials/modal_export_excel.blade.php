@@ -62,7 +62,11 @@
                         <option value="lampiran_atb" class="bg-slate-950 text-indigo-200"
                                 x-text="'💾 Lampiran ATB_' + (exportTriwulan === 'all' ? 'Tahunan' : exportTriwulan.replace(/\s+/g, '')) + '-RSDK-' + (exportYear === 'all' ? new Date().getFullYear() : exportYear)"></option>
                     </select>
-                    <p x-show="['lampiran_aset_tetap', 'lampiran_extracom', 'lampiran_atb'].includes(exportFormatType)"
+                    <p x-show="exportFormatType === 'lampiran_extracom'"
+                       class="text-[10.5px] text-amber-300/90 mt-1.5 leading-snug">
+                        Format 2 Sheet siap ekspor (Penambahan Reklas ke Extracom &amp; Pengurangan Extracom).
+                    </p>
+                    <p x-show="['lampiran_aset_tetap', 'lampiran_atb'].includes(exportFormatType)"
                        class="text-[10.5px] text-slate-400 mt-1.5 leading-snug">
                         Opsi format telah ditambahkan (mencakup semua sumber perolehan; struktur isi sheet Excel menyusul).
                     </p>

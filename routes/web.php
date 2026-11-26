@@ -269,6 +269,7 @@ Route::middleware('auth')->group(function () {
     
     // 1. Data ASTAP Pages
     Route::get('/astap', [AstapController::class, 'index'])->name('astap.index')->middleware('module:astap');
+    Route::get('/astap/export-lampiran-extracom', [AstapController::class, 'exportLampiranExtracom'])->name('astap.export_lampiran_extracom')->middleware('module:astap');
 
 
 

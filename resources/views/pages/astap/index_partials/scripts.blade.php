@@ -14439,17 +14439,27 @@
                         }).length;
                     }
 
-                    // KHUSUS 3 FORMAT LAMPIRAN BARU (Semua Sumber Perolehan)
-                    if (['lampiran_aset_tetap', 'lampiran_extracom', 'lampiran_atb'].includes(this.exportFormatType)) {
+                    // KHUSUS LAMPIRAN EXTRACOM (Hanya Data ASTAP yang sudah di-reklas menjadi Extracom)
+                    if (this.exportFormatType === 'lampiran_extracom') {
+                        return (this.astaps || []).filter(item => {
+                            const isReklasEx = !!item.has_reklas_extracom || (!!item.is_reklas && (item.jenis_reklas === 'EKSTRAKOMPTABEL' || item.tujuan_kib === 'EKSTRAKOMPTABEL'));
+                            if (!isReklasEx) return false;
+                            const exYear = item.reklas_extracom_tahun || item.tahun_perolehan;
+                            const exTw = item.reklas_extracom_tw || item.triwulan;
+                            const matchYear = fYear === 'all' || String(exYear) === String(fYear);
+                            const matchTw = isTwMatch(exTw, fTw);
+                            return matchYear && matchTw;
+                        }).length;
+                    }
+
+                    // KHUSUS 2 FORMAT LAMPIRAN LAINNYA (Template isi menyusul)
+                    if (['lampiran_aset_tetap', 'lampiran_atb'].includes(this.exportFormatType)) {
                         return (this.astaps || []).filter(item => {
                             const matchYear = fYear === 'all' || String(item.tahun_perolehan) === String(fYear);
                             const matchTw = isTwMatch(item.triwulan, fTw);
                             if (!matchYear || !matchTw) return false;
 
                             const isExtracom = this.isItemExtracom(item);
-                            if (this.exportFormatType === 'lampiran_extracom') {
-                                return isExtracom;
-                            }
                             const resolvedCat = typeof resolveItemCategory === 'function' ? resolveItemCategory(item) : item.category;
                             if (this.exportFormatType === 'lampiran_atb') {
                                 return !isExtracom && resolvedCat === 'ATB';
@@ -14502,7 +14512,42 @@
                 async submitExport() {
                     this.isSubmittingExport = true;
                     try {
-                        if (['lampiran_aset_tetap', 'lampiran_extracom', 'lampiran_atb'].includes(this.exportFormatType)) {
+                        if (this.exportFormatType === 'lampiran_extracom') {
+                            const params = new URLSearchParams({
+                                tahun: this.exportYear || 'all',
+                                triwulan: this.exportTriwulan || 'all'
+                            });
+                            const exportUrl = "{{ route('astap.export_lampiran_extracom') }}?" + params.toString();
+                            const resp = await fetch(exportUrl, {
+                                method: 'GET',
+                                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                            });
+                            if (!resp.ok) {
+                                throw new Error('Server gagal membuat file Excel (' + resp.status + ')');
+                            }
+                            const blob = await resp.blob();
+                            const yearLabel = (this.exportYear === 'all' || !this.exportYear) ? new Date().getFullYear() : this.exportYear;
+                            const fallbackName = 'Lampiran_Extracom_RSUD-' + yearLabel + '_RSDK_' + yearLabel + '.xlsx';
+                            const disposition = resp.headers.get('Content-Disposition') || '';
+                            const fnMatch = disposition.match(/filename\*?=(?:UTF-8''|")?([^";\n]+)"?/i);
+                            const fileName = fnMatch && fnMatch[1] ? decodeURIComponent(fnMatch[1].trim()) : fallbackName;
+
+                            const blobUrl = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = blobUrl;
+                            a.download = fileName;
+                            document.body.appendChild(a);
+                            a.click();
+                            a.remove();
+                            window.URL.revokeObjectURL(blobUrl);
+
+                            this.isSubmittingExport = false;
+                            this.showExportModal = false;
+                            this.showToast('Berhasil mengekspor ' + fileName + '!', 'success');
+                            return;
+                        }
+
+                        if (['lampiran_aset_tetap', 'lampiran_atb'].includes(this.exportFormatType)) {
                             this.isSubmittingExport = false;
                             this.showToast('Format lampiran ini sudah terdaftar di dropdown — struktur isi sheet Excel menyusul.', 'info');
                             return;
