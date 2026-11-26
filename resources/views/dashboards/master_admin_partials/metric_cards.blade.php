@@ -1,5 +1,25 @@
 <!-- Metric Summary Stats Cards (Posisi 1) -->
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+<style>
+    .kpi-dash-grid {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+    .kpi-dash-grid > * {
+        min-width: 0 !important;
+    }
+    @media (min-width: 640px) {
+        .kpi-dash-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        }
+    }
+    @media (min-width: 1280px) {
+        .kpi-dash-grid {
+            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        }
+    }
+</style>
+
+<div class="kpi-dash-grid grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6 mb-8">
     <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
         <div class="flex items-center justify-between text-slate-400 mb-2">
             <span class="text-xs font-bold uppercase tracking-wider">Total Aset (ASTAP)</span>

@@ -1,39 +1,77 @@
 <!-- FILTER BAR & TABS HIBAH ASET -->
-<div class="p-5 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-4">
-    <!-- Baris 1: Tab Switcher (Kiri) & Info Counter + Reset Button (Kanan) -->
-    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+<div class="p-4 sm:p-5 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-4">
+    <style>
+        @media (max-width: 1023px) {
+            .hibah-filter-top {
+                flex-direction: column !important;
+                align-items: center !important;
+                text-align: center !important;
+            }
+            .hibah-tabs-box {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                justify-content: center !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                gap: 0.375rem !important;
+            }
+            .hibah-counter-wrap {
+                justify-content: center !important;
+                width: 100% !important;
+                flex-wrap: wrap !important;
+            }
+        }
+        @media (min-width: 1024px) {
+            .hibah-filter-top {
+                flex-direction: row !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+            }
+            .hibah-tabs-box {
+                justify-content: flex-start !important;
+                width: auto !important;
+            }
+            .hibah-counter-wrap {
+                justify-content: flex-end !important;
+                width: auto !important;
+            }
+        }
+    </style>
+
+    <!-- Baris 1: Tab Switcher & Info Counter + Reset Button -->
+    <div class="hibah-filter-top flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <!-- Tab Switcher (Semua, Masuk, Keluar) -->
-        <div class="flex items-center space-x-1.5 p-1 bg-slate-950/80 rounded-2xl border border-slate-800/90 shadow-inner">
+        <div class="hibah-tabs-box flex items-center gap-1.5 p-1 bg-slate-950/80 rounded-2xl border border-slate-800/90 shadow-inner">
             <button type="button" @click="activeTab = 'all'"
-                class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer"
+                class="px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer max-w-full"
                 :class="activeTab === 'all' ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-400/20' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'">
                 <span>Semua Hibah</span>
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold"
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold shrink-0"
                     :class="activeTab === 'all' ? 'bg-slate-950 text-amber-400' : 'bg-slate-800 text-slate-300'"
                     x-text="hibahList.length"></span>
             </button>
 
             <button type="button" @click="activeTab = 'masuk'"
-                class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer"
+                class="px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer max-w-full"
                 :class="activeTab === 'masuk' ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-400/20' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'">
                 <span>🎁 Hibah Masuk</span>
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold"
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold shrink-0"
                     :class="activeTab === 'masuk' ? 'bg-slate-950 text-amber-400' : 'bg-slate-800 text-slate-300'"
                     x-text="hibahList.filter(h => h.tipe_hibah === 'masuk').length"></span>
             </button>
 
             <button type="button" @click="activeTab = 'keluar'"
-                class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer"
+                class="px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer max-w-full"
                 :class="activeTab === 'keluar' ? 'bg-rose-500 text-white shadow-md shadow-rose-500/25' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'">
                 <span>📤 Hibah Keluar</span>
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold"
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold shrink-0"
                     :class="activeTab === 'keluar' ? 'bg-slate-950 text-rose-300' : 'bg-slate-800 text-slate-300'"
                     x-text="hibahList.filter(h => h.tipe_hibah === 'keluar').length"></span>
             </button>
         </div>
 
-        <!-- Counter & Reset Filter (Sisi Kanan) -->
-        <div class="flex items-center space-x-2.5 w-full sm:w-auto justify-between sm:justify-end">
+        <!-- Counter & Reset Filter -->
+        <div class="hibah-counter-wrap flex items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-end">
             <span class="px-3.5 py-2 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px] font-semibold text-slate-400">
                 Menampilkan <span class="text-amber-400 font-bold" x-text="filteredHibahList.length"></span> dari <span class="text-white font-bold" x-text="hibahList.length"></span> Transaksi
             </span>
@@ -54,7 +92,7 @@
     <!-- Baris 2: Search Bar Lega & Dropdowns Filter (Tahun, Triwulan) -->
     <div class="pt-3 border-t border-slate-800/80 flex flex-col md:flex-row items-center gap-3">
         <!-- Live Search Bar (Flex-1) -->
-        <div class="relative flex-1 w-full">
+        <div class="relative flex-1 w-full min-w-0">
             <input type="text" x-model="searchQuery"
                 placeholder="Cari nomor BAST, nama rekanan/pemberi/penerima, nama barang, kode 108..."
                 class="w-full bg-slate-950 border border-slate-800 focus:border-amber-400 rounded-2xl px-4 py-2.5 pl-11 pr-10 text-xs text-white placeholder-slate-500 focus:outline-none transition-all shadow-inner">
@@ -71,7 +109,7 @@
         <!-- Filter Controls (Tahun & Triwulan) -->
         <div class="flex items-center gap-2.5 w-full md:w-auto shrink-0">
             <!-- Filter Tahun -->
-            <div class="relative flex-1 md:w-44">
+            <div class="relative flex-1 md:w-44 min-w-0">
                 <select x-model="selectedYear"
                     style="background-image: none !important; -webkit-appearance: none; -moz-appearance: none; appearance: none;"
                     class="w-full bg-slate-950 border border-slate-800 focus:border-amber-400 rounded-xl px-3.5 py-2.5 pr-8 text-xs font-semibold text-slate-200 focus:outline-none cursor-pointer hover:bg-slate-900/80 transition-all">
@@ -88,7 +126,7 @@
             </div>
 
             <!-- Filter Triwulan -->
-            <div class="relative flex-1 md:w-48">
+            <div class="relative flex-1 md:w-48 min-w-0">
                 <select x-model="selectedTw"
                     style="background-image: none !important; -webkit-appearance: none; -moz-appearance: none; appearance: none;"
                     class="w-full bg-slate-950 border border-slate-800 focus:border-amber-400 rounded-xl px-3.5 py-2.5 pr-8 text-xs font-semibold text-slate-200 focus:outline-none cursor-pointer hover:bg-slate-900/80 transition-all">

@@ -1,10 +1,67 @@
 <!-- 3. GRAFIK NILAI ASET RUANGAN & GRAFIK KONDISI ASET RUANGAN -->
+<style>
+    @media (max-width: 1023px) {
+        .subdash-growth-header {
+            flex-direction: column !important;
+            align-items: center !important;
+            text-align: center !important;
+        }
+        .subdash-growth-pills {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            justify-content: center !important;
+            max-width: 100% !important;
+        }
+        .subdash-growth-footer {
+            flex-direction: column !important;
+            align-items: center !important;
+            text-align: center !important;
+            gap: 0.375rem !important;
+        }
+        .subdash-donut-head {
+            text-align: center !important;
+        }
+        .subdash-donut-top {
+            flex-direction: column !important;
+            align-items: center !important;
+            gap: 0.5rem !important;
+        }
+    }
+    @media (min-width: 1024px) {
+        .subdash-growth-header {
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            text-align: left !important;
+        }
+        .subdash-growth-pills {
+            display: inline-flex !important;
+            flex-wrap: nowrap !important;
+            justify-content: flex-start !important;
+        }
+        .subdash-growth-footer {
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            text-align: left !important;
+        }
+        .subdash-donut-head {
+            text-align: left !important;
+        }
+        .subdash-donut-top {
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+        }
+    }
+</style>
+
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
     
     <!-- GRAFIK 1 (2 Kolom): GRAFIK NILAI ASET RUANGAN (VALUASI & KUANTITAS) -->
-    <div class="lg:col-span-2 bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col justify-between">
+    <div class="lg:col-span-2 bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col justify-between min-w-0">
         <div>
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+            <div class="subdash-growth-header flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-4">
                 <div>
                     <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-bold mb-2">
                         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -15,7 +72,7 @@
                 </div>
 
                 <!-- Mode Selector Toggle Pills -->
-                <div class="inline-flex p-1 bg-slate-950 border border-slate-800 rounded-2xl shrink-0 text-xs font-semibold">
+                <div class="subdash-growth-pills inline-flex p-1 bg-slate-950 border border-slate-800 rounded-2xl shrink-0 text-xs font-semibold gap-1">
                     <button id="btnKumulatifSub" onclick="switchSubAdminChartMode('kumulatif')" class="px-3 py-1.5 rounded-xl bg-emerald-500 text-slate-950 font-bold transition-all shadow-md">
                         📈 Akumulasi
                     </button>
@@ -32,7 +89,7 @@
         </div>
 
         <!-- Footer Keterangan Chart Nilai -->
-        <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+        <div class="subdash-growth-footer mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
             <div class="flex items-center space-x-2">
                 <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
                 <span>Total Valuasi: <strong class="text-white">{{ $unitTotalNilai }}</strong></span>
@@ -42,9 +99,9 @@
     </div>
 
     <!-- GRAFIK 2 (1 Kolom): GRAFIK KONDISI ASET RUANGAN -->
-    <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col justify-between">
-        <div>
-            <div class="flex items-center justify-between gap-2 mb-3">
+    <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col justify-between min-w-0">
+        <div class="subdash-donut-head">
+            <div class="subdash-donut-top flex items-center justify-between gap-2 mb-3">
                 <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/30 text-xs font-bold">
                     <span class="w-2 h-2 rounded-full bg-teal-400 animate-pulse"></span>
                     <span>KONDISI FISIK ASET</span>

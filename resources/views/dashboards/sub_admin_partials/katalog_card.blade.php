@@ -1,12 +1,62 @@
 <!-- CARD 1: KATALOG DATA ASTAP -->
+<style>
+    @media (max-width: 1023px) {
+        .subdash-katalog-header {
+            flex-direction: column !important;
+            align-items: center !important;
+            text-align: center !important;
+        }
+        .subdash-katalog-id {
+            flex-direction: column !important;
+            align-items: center !important;
+            text-align: center !important;
+            gap: 0.75rem !important;
+        }
+        .subdash-katalog-id > * {
+            margin-left: 0 !important;
+        }
+        .subdash-katalog-kicker {
+            justify-content: center !important;
+        }
+        .subdash-katalog-cta {
+            align-self: center !important;
+        }
+        .subdash-katalog-desc {
+            text-align: center !important;
+        }
+    }
+    @media (min-width: 1024px) {
+        .subdash-katalog-header {
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            text-align: left !important;
+        }
+        .subdash-katalog-id {
+            flex-direction: row !important;
+            align-items: center !important;
+            text-align: left !important;
+        }
+        .subdash-katalog-kicker {
+            justify-content: flex-start !important;
+        }
+        .subdash-katalog-cta {
+            align-self: auto !important;
+        }
+        .subdash-katalog-desc {
+            text-align: left !important;
+        }
+    }
+</style>
+
 <div class="bg-gradient-to-r from-slate-900 via-slate-900 to-slate-950 border border-teal-500/30 rounded-3xl p-6 shadow-xl relative overflow-hidden">
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-        <div class="flex items-center space-x-3">
+    <div class="subdash-katalog-header flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
+        <div class="subdash-katalog-id flex items-center space-x-3">
             <div class="p-3 rounded-2xl bg-teal-500/10 border border-teal-500/20 text-teal-400 text-xl">
                 📦
             </div>
             <div>
-                <div class="flex items-center space-x-2">
+                <div class="subdash-katalog-kicker flex flex-wrap items-center gap-2">
                     <span class="text-xs font-mono font-bold text-teal-400 uppercase tracking-wider">Katalog Inventaris Induk</span>
                 </div>
                 <h3 class="text-lg font-extrabold text-white">Katalog Data ASTAP</h3>
@@ -14,7 +64,7 @@
         </div>
 
         <a href="{{ route('astap.index') }}" 
-            class="px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs shadow-lg shadow-teal-500/20 transition-all flex items-center justify-center space-x-2 shrink-0">
+            class="subdash-katalog-cta px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs shadow-lg shadow-teal-500/20 transition-all flex items-center justify-center space-x-2 shrink-0">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
@@ -22,7 +72,7 @@
         </a>
     </div>
 
-    <p class="text-xs text-slate-300 leading-relaxed mb-4">
+    <p class="subdash-katalog-desc text-xs text-slate-300 leading-relaxed mb-4">
         Telusuri seluruh katalog master inventaris aset tetap RSUD Dr. H. Koesnandi. Cari spesifikasi barang, nomor inventaris 108, kode register NIBAR, riwayat pengadaan, dan status ketersediaan barang inventaris.
     </p>
 

@@ -2,27 +2,62 @@
 <!-- TABEL MASTER TRANSAKSI HIBAH ASET (DARK LUXURY AMBER / GOLD)              -->
 <!-- ========================================================================= -->
 <style>
-    /* Freeze Sticky Column Aksi Hibah (Opaque & Anti-Bocor saat Scroll) */
-    .hibah-sticky-aksi {
-        position: sticky !important;
-        right: 0 !important;
-        z-index: 10 !important;
-        background-color: #0f172a !important;
-        box-shadow: -6px 0 12px rgba(0, 0, 0, 0.6) !important;
+    /* Layar Medium ke Bawah (< 1024px): Kolom Aksi Non-Sticky + Swipe Hint */
+    @media (max-width: 1023px) {
+        .swipe-hint-hibah {
+            display: flex;
+        }
+        .hibah-sticky-aksi {
+            position: static !important;
+            top: auto !important;
+            right: auto !important;
+            z-index: auto !important;
+            box-shadow: none !important;
+            min-width: 210px !important;
+            width: auto !important;
+        }
+        td.hibah-sticky-aksi {
+            background-color: transparent !important;
+        }
+        th.hibah-sticky-aksi {
+            background-color: #020617 !important;
+        }
     }
-    tr:hover .hibah-sticky-aksi {
-        background-color: #1e293b !important;
-    }
-    th.hibah-sticky-aksi {
-        position: sticky !important;
-        top: 0 !important;
-        right: 0 !important;
-        z-index: 30 !important;
-        background-color: #020617 !important;
+    /* Desktop Luas (>= 1024px): Freeze Sticky Column Aksi Hibah (Opaque & Anti-Bocor saat Scroll) */
+    @media (min-width: 1024px) {
+        .swipe-hint-hibah {
+            display: none !important;
+        }
+        .hibah-sticky-aksi {
+            position: sticky !important;
+            right: 0 !important;
+            z-index: 10 !important;
+            background-color: #0f172a !important;
+            box-shadow: -6px 0 12px rgba(0, 0, 0, 0.6) !important;
+        }
+        tr:hover .hibah-sticky-aksi {
+            background-color: #1e293b !important;
+        }
+        th.hibah-sticky-aksi {
+            position: sticky !important;
+            top: 0 !important;
+            right: 0 !important;
+            z-index: 30 !important;
+            background-color: #020617 !important;
+        }
     }
 </style>
 
 <div class="bg-slate-900/90 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl relative">
+    {{-- Indikator Geser Tabel pada Layar Mobile/Medium (< 1024px) --}}
+    <div class="swipe-hint-hibah items-center justify-between px-4 py-2 text-[10.5px] text-slate-400 bg-slate-950/60 border-b border-slate-800/80">
+        <span class="flex items-center gap-1.5">
+            <span class="text-amber-400">👉</span>
+            <span>Geser tabel ke kanan untuk melihat detail &amp; kolom aksi</span>
+        </span>
+        <span class="font-mono text-slate-500">Tabel Responsif</span>
+    </div>
+
     <div class="overflow-x-auto overflow-y-auto custom-scrollbar max-h-[540px] relative">
         <table class="w-full text-left text-xs text-slate-300 min-w-[1100px]">
             <thead class="bg-slate-950 text-slate-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-800 select-none sticky top-0 z-20" style="background-color: #020617;">

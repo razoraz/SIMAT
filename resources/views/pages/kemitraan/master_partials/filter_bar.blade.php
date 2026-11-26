@@ -5,8 +5,38 @@
 <div class="p-5 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-4">
     <div class="space-y-4">
         
+        <style>
+            @media (max-width: 1023px) {
+                .kemitraan-filter-top {
+                    flex-direction: column !important;
+                    align-items: stretch !important;
+                }
+                .kemitraan-filter-top > .shrink-0 {
+                    width: 100% !important;
+                    align-self: center !important;
+                    justify-content: center !important;
+                    flex-wrap: wrap !important;
+                }
+            }
+            @media (min-width: 1024px) {
+                .kemitraan-filter-top {
+                    flex-direction: row !important;
+                    align-items: center !important;
+                }
+                .kemitraan-filter-top > .shrink-0 {
+                    width: auto !important;
+                    align-self: auto !important;
+                    justify-content: flex-end !important;
+                    flex-wrap: nowrap !important;
+                }
+            }
+            .kemitraan-filter-top > .flex-1 {
+                min-width: 0 !important;
+            }
+        </style>
+
         <!-- Baris Atas: Live Search Bar + Counter Badge & Tombol Reset (0ms Instant) -->
-        <div class="flex flex-col sm:flex-row items-center gap-3 w-full">
+        <div class="kemitraan-filter-top flex flex-col sm:flex-row items-center gap-3 w-full">
             <div class="relative flex-1 w-full">
                 <input type="text" x-model="filterSearch"
                     placeholder="Cari nama barang / rekanan mitra / nomor PKS kemitraan / kode 108 / NIBAR..."

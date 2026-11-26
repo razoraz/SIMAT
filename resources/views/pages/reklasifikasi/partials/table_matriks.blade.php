@@ -1,6 +1,30 @@
 <!-- TABEL MATRIKS NERACA REKLASIFIKASI 5 KOLOM (PMDN 108) -->
 <div class="bg-slate-900/90 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl">
-    <div class="px-6 py-4 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-slate-950/40">
+    <style>
+    @media (max-width: 1023px) {
+        .reklas-card-header {
+            flex-direction: column !important;
+            align-items: center !important;
+            text-align: center !important;
+        }
+        .swipe-hint-reklas {
+            display: flex !important;
+        }
+    }
+    @media (min-width: 1024px) {
+        .reklas-card-header {
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            text-align: left !important;
+        }
+        .swipe-hint-reklas {
+            display: none !important;
+        }
+    }
+</style>
+
+<div class="reklas-card-header px-6 py-4 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-slate-950/40">
         <div>
             <h3 class="text-base font-bold text-white flex items-center gap-2">
                 <span>📊</span> Matriks Neraca Reklasifikasi Aset Tetap
@@ -27,7 +51,11 @@
         </div>
     </div>
 
-    <div class="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-700">
+    <div class="swipe-hint-reklas hidden items-center justify-center gap-1.5 py-2 px-4 text-[10px] font-bold uppercase tracking-wider text-indigo-400/90 bg-slate-950/60 border-b border-slate-800/80">
+    <svg class="w-3.5 h-3.5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+    <span>Geser tabel ke samping untuk melihat seluruh kolom</span>
+</div>
+<div class="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-700">
         <table class="w-full min-w-[1150px] text-left border-collapse text-xs">
             <thead>
                 <tr class="bg-slate-800/90 text-slate-300 font-bold uppercase tracking-wider border-b border-slate-700 text-[11px]">

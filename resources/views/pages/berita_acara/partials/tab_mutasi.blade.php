@@ -4,8 +4,8 @@
         <div x-show="activeTab === 'mutasi'" class="space-y-6" x-cloak>
             
             <!-- Sub-nav Switcher Scope Mutasi: Internal vs Eksternal -->
-            <div class="no-print bg-slate-900/90 border border-slate-800 rounded-3xl p-3 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div class="flex items-center space-x-2 bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800/80 w-full sm:w-auto">
+            <div class="no-print bg-slate-900/90 border border-slate-800 rounded-3xl p-3 shadow-xl ba-subbar flex flex-col lg:flex-row items-center justify-between gap-4">
+                <div class="ba-subbar-pills flex items-center gap-2 bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800/80 w-full lg:w-auto">
                     <!-- Scope 1: Internal -->
                     <button type="button" @click="mutasiScope = 'internal'"
                         class="flex-1 sm:flex-initial py-2.5 px-4 sm:px-6 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-2 cursor-pointer active:scale-95 whitespace-nowrap shrink-0"
@@ -27,7 +27,7 @@
                     </button>
                 </div>
 
-                <div class="text-xs text-slate-400 flex items-center space-x-2 w-full sm:w-auto justify-end">
+                <div class="ba-subbar-info text-xs text-slate-400 flex items-center space-x-2 w-full lg:w-auto justify-end">
                     <span class="inline-block w-2 h-2 rounded-full" :class="mutasiScope === 'internal' ? 'bg-indigo-400 animate-pulse' : 'bg-cyan-400 animate-pulse'"></span>
                     <span class="text-[11px] font-medium" x-text="mutasiScope === 'internal' ? 'Ruang Lingkup: Internal RSUD dr. H. Koesnandi' : 'Ruang Lingkup: Antar-OPD Pemkab Bondowoso / SKPD Luar'"></span>
                 </div>
@@ -35,9 +35,9 @@
 
             <!-- Toolbar & Filter Mutasi Internal -->
             <div x-show="mutasiScope === 'internal'" class="no-print bg-slate-900/90 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl">
-                <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-                        <div class="relative flex-1 sm:w-80">
+                <div class="ba-toolbar-wrap flex flex-col lg:flex-row items-center justify-between gap-4">
+                    <div class="ba-toolbar-actions flex flex-wrap items-center gap-3 w-full lg:w-auto">
+                        <div class="relative flex-1 min-w-0 sm:w-80">
                             <input type="text" x-model="mutasiSearch" placeholder="Cari nomor BAST mutasi / barang / ruangan..."
                                 class="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-2.5 pl-10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500">
                             <svg class="w-4 h-4 text-indigo-400 absolute left-3.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
@@ -51,7 +51,7 @@
                         </select>
                     </div>
 
-                    <div class="text-[11px] text-slate-400 font-mono">
+                    <div class="text-[11px] text-slate-400 font-mono text-center lg:text-right">
                         Menampilkan <span class="text-indigo-400 font-bold" x-text="filteredMutasiList.length"></span> dari <span x-text="mutasiList.length"></span> BAST Internal
                     </div>
                 </div>
@@ -59,9 +59,9 @@
 
             <!-- Toolbar & Filter Mutasi Eksternal -->
             <div x-show="mutasiScope === 'eksternal'" class="no-print bg-slate-900/90 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl">
-                <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-                        <div class="relative flex-1 sm:w-80">
+                <div class="ba-toolbar-wrap flex flex-col lg:flex-row items-center justify-between gap-4">
+                    <div class="ba-toolbar-actions flex flex-wrap items-center gap-3 w-full lg:w-auto">
+                        <div class="relative flex-1 min-w-0 sm:w-80">
                             <input type="text" x-model="mutasiEksternalSearch" placeholder="Cari nomor BAST / barang / OPD asal atau tujuan..."
                                 class="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-2.5 pl-10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500">
                             <svg class="w-4 h-4 text-cyan-400 absolute left-3.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
@@ -82,7 +82,7 @@
                         </select>
                     </div>
 
-                    <div class="text-[11px] text-slate-400 font-mono">
+                    <div class="text-[11px] text-slate-400 font-mono text-center lg:text-right">
                         Menampilkan <span class="text-cyan-400 font-bold" x-text="filteredMutasiEksternalList.length"></span> dari <span x-text="mutasiEksternalList.length"></span> BAST Eksternal
                     </div>
                 </div>
@@ -92,6 +92,10 @@
             <!-- 1. TABEL DAFTAR BAST MUTASI INTERNAL (ANTAR RUANGAN RSUD)             -->
             <!-- ===================================================================== -->
             <div x-show="mutasiScope === 'internal'" class="no-print bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6">
+                <div class="swipe-hint-ba hidden items-center justify-center gap-1.5 py-2 px-4 text-[10px] font-bold uppercase tracking-wider text-indigo-300/90 bg-slate-950/60 border border-b-0 border-slate-800/80 rounded-t-2xl">
+                    <svg class="w-3.5 h-3.5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+                    <span>Geser tabel ke samping untuk melihat seluruh kolom</span>
+                </div>
                 <div class="rounded-2xl border border-slate-800/80 custom-scrollbar" style="max-height: 380px; overflow-y: auto; overflow-x: auto;">
                     <table class="w-full text-left text-xs text-slate-300 relative border-collapse">
                         <thead class="text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800" style="position: sticky; top: 0; z-index: 20; background-color: #020617;">
@@ -170,6 +174,10 @@
             <!-- 2. TABEL DAFTAR BAST MUTASI EKSTERNAL (TRANSFER ANTAR-OPD / SKPD)     -->
             <!-- ===================================================================== -->
             <div x-show="mutasiScope === 'eksternal'" class="no-print bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6">
+                <div class="swipe-hint-ba hidden items-center justify-center gap-1.5 py-2 px-4 text-[10px] font-bold uppercase tracking-wider text-cyan-300/90 bg-slate-950/60 border border-b-0 border-slate-800/80 rounded-t-2xl">
+                    <svg class="w-3.5 h-3.5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+                    <span>Geser tabel ke samping untuk melihat seluruh kolom</span>
+                </div>
                 <div class="rounded-2xl border border-slate-800/80 custom-scrollbar" style="max-height: 380px; overflow-y: auto; overflow-x: auto;">
                     <table class="w-full text-left text-xs text-slate-300 relative border-collapse">
                         <thead class="text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800" style="position: sticky; top: 0; z-index: 20; background-color: #020617;">

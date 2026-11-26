@@ -1,7 +1,41 @@
 <!-- Welcome Banner Card -->
+<style>
+    @media (max-width: 1023px) {
+        .dash-admin-banner {
+            flex-direction: column !important;
+            align-items: center !important;
+            text-align: center !important;
+        }
+        .dash-admin-banner p {
+            margin-left: auto !important;
+            margin-right: auto !important;
+        }
+        .dash-admin-actions {
+            width: 100% !important;
+            justify-content: center !important;
+        }
+    }
+    @media (min-width: 1024px) {
+        .dash-admin-banner {
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            text-align: left !important;
+        }
+        .dash-admin-banner p {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+        .dash-admin-actions {
+            width: auto !important;
+            justify-content: flex-end !important;
+        }
+    }
+</style>
+
 <div class="bg-gradient-to-r from-cyan-500/10 via-slate-900 to-slate-900 border border-cyan-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl mb-8 relative overflow-hidden">
     <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none"></div>
-    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative z-10">
+    <div class="dash-admin-banner flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 relative z-10">
         <div>
             <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-bold mb-3">
                 <span>🛡️ ADMIN OPERASIONAL - OTORISASI OPERASIONAL (CRUD)</span>
@@ -13,7 +47,7 @@
         </div>
         
         <!-- Admin Fast Create Action -->
-        <div class="flex flex-wrap gap-2">
+        <div class="dash-admin-actions flex flex-wrap gap-2 shrink-0">
             <a href="{{ route('distribusi.create') }}" class="px-3.5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-lg shadow-cyan-500/20 transition-all flex items-center space-x-1.5">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                 <span>Distribusi ASTAP Baru</span>
