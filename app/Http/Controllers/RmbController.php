@@ -121,6 +121,8 @@ class RmbController extends Controller
             'grandTotal' => $rmbData['grandTotal'],
             'kertasKerja' => $rmbData['kertasKerja'],
             'kpis' => $rmbData['kpis'],
+            'asetLainnya' => $rmbData['asetLainnya'],
+            'reklasNotes' => $rmbData['reklasNotes'],
         ]);
     }
 
@@ -334,6 +336,7 @@ class RmbController extends Controller
 
         // 3B. Akui Saldo Awal untuk Aset Tahun Lampau (tahun_perolehan < $tahun) yang dimutasi pada periode ini
         if ($tahun !== null) {
+            $nonIntrakomOrigins = ['EXTRACOM', 'EKSTRAKOMPTABEL', 'ASET LAIN', 'ASET LAIN-LAIN', 'ASET LAINNYA', 'KEMITRAAN', 'ATB'];
             foreach ($reklasByAstap as $astapId => $rkGroup) {
                 $firstRk = $rkGroup->first();
                 $astap = $firstRk?->astap;
@@ -344,7 +347,15 @@ class RmbController extends Controller
                     continue;
                 }
 
-                $asalStartCode = $this->resolveRmbCodeForReklasAsal($firstRk, $defs);
+                // Jika sejak transaksi pertama pada periode ini aset sudah berstatus non-Intrakomptabel (mis. EXTRACOM / 1.5.x),
+                // maka saldo awalnya di Neraca Aset Tetap (1.3.x) tahun berjalan adalah 0.
+                $firstAsalKibUpper = strtoupper(trim((string) $firstRk->asal_kib));
+                $firstAsalKodeStr = trim((string) ($firstRk->asal_kode ?: $firstRk->jenisReklasAsal?->kode_prefix ?: ''));
+                if (in_array($firstAsalKibUpper, $nonIntrakomOrigins, true) || str_starts_with($firstAsalKodeStr, '1.5.')) {
+                    continue;
+                }
+
+                $asalStartCode = $this->resolveStartRmbCodeForReklasGroup($rkGroup, $astap, $defs);
                 if (!$asalStartCode || !isset($rows[$asalStartCode])) {
                     continue;
                 }
@@ -373,16 +384,22 @@ class RmbController extends Controller
         }
 
         // 4. Akumulasi Pengurangan & Mutasi Reklasifikasi (AstapReklas)
+        $extracomDeductedInPeriod = [];
         foreach ($reklases as $rk) {
             $val = (float) $rk->nilai_reklas;
             $astap = $rk->astap;
             $asalCode = $this->resolveRmbCodeForReklasAsal($rk, $defs);
             $tujuanCode = $this->resolveRmbCodeForReklasTujuan($rk, $defs);
+            $asalKibUpper = strtoupper(trim((string) $rk->asal_kib));
+            $asalKodePrefix = trim((string) ($rk->asal_kode ?: $rk->jenisReklasAsal?->kode_prefix ?: ''));
+            $isOriginOutsideIntrakom = in_array($asalKibUpper, ['EXTRACOM', 'EKSTRAKOMPTABEL', 'ASET LAIN', 'ASET LAIN-LAIN', 'ASET LAINNYA', 'KEMITRAAN', 'ATB'], true)
+                || str_starts_with($asalKodePrefix, '1.5.');
 
             switch ($rk->jenis_reklas) {
                 case 'EKSTRAKOMPTABEL':
                     if ($asalCode && isset($rows[$asalCode])) {
                         $rows[$asalCode]['c12_kapitalisasi_kurang'] += $val;
+                        $extracomDeductedInPeriod[(int) $rk->astap_id] = true;
                     }
                     break;
 
@@ -424,11 +441,11 @@ class RmbController extends Controller
                     break;
 
                 case 'KOREKSI_REKENING':
-                    // Pindah KIB / Rekening (jika tujuan Aset Lain-Lain 1.5.4, catat ke c13_direklas_aset_lain)
+                    // Pindah KIB / Rekening (jika asal EXTRACOM/1.5.x, jangan potong saldo Aset Tetap 1.3.x kedua kalinya)
                     $destKibUpper = strtoupper(trim((string) $rk->tujuan_kib));
                     $destKodeStr = trim((string) ($rk->tujuan_kode ?: $rk->jenisReklasTujuan?->kode_prefix ?: ''));
                     $isDestAsetLain = str_contains($destKibUpper, 'ASET LAIN') || str_starts_with($destKodeStr, '1.5.4');
-                    if ($asalCode && isset($rows[$asalCode])) {
+                    if (!$isOriginOutsideIntrakom && $asalCode && isset($rows[$asalCode])) {
                         if ($isDestAsetLain) {
                             $rows[$asalCode]['c13_direklas_aset_lain'] += $val;
                         } else {
@@ -471,7 +488,7 @@ class RmbController extends Controller
                     break;
 
                 case 'ASET_LAIN_LAIN':
-                    if ($asalCode && isset($rows[$asalCode])) {
+                    if (!$isOriginOutsideIntrakom && $asalCode && isset($rows[$asalCode])) {
                         $rows[$asalCode]['c13_direklas_aset_lain'] += $val;
                     }
                     break;
@@ -571,13 +588,220 @@ class RmbController extends Controller
             'total_hibah'                  => $totalHibahMasuk + $totalHibahKeluar,
         ];
 
+        $asetLainnya = $this->calculateAsetLainnyaSummary($tahun, $astaps, $reklases, $reklasByAstap);
+        $reklasNotes = $this->buildReklasNotesForPeriod($reklases, $defs);
+
         return [
             'rows'        => $rows,
             'subtotals'   => $subtotals,
             'grandTotal'  => $grandTotal,
             'kertasKerja' => $kertasKerja,
             'kpis'        => $kpis,
+            'asetLainnya' => $asetLainnya,
+            'reklasNotes' => $reklasNotes,
         ];
+    }
+
+    /**
+     * Resolusi kode rekening RMB 1.3.x awal dari kelompok riwayat reklasifikasi periode berjalan
+     * (menghindari fallback ke status ASTAP terkini yang mungkin sudah pindah ke 1.5.4 Aset Lain).
+     */
+    protected function resolveStartRmbCodeForReklasGroup($rkGroup, Astap $astap, array $defs): ?string
+    {
+        $firstRk = $rkGroup->first();
+        if ($firstRk) {
+            $asalKode = $firstRk->asal_kode ?: $firstRk->jenisReklasAsal?->kode_prefix;
+            if ($asalKode && !str_starts_with((string) $asalKode, 'KOR_')) {
+                $mapped = $this->mapCodeOrKibToRmb($asalKode, $firstRk->asal_kib, $defs);
+                if ($mapped) {
+                    return $mapped;
+                }
+            }
+            if ($firstRk->asal_kib && !in_array(strtoupper((string) $firstRk->asal_kib), ['KOREKSI', 'EKSTRAKOMPTABEL', 'HIBAH', ''], true)) {
+                $mapped = $this->mapCodeOrKibToRmb(null, $firstRk->asal_kib, $defs);
+                if ($mapped) {
+                    return $mapped;
+                }
+            }
+            // Bila firstRk adalah KOREKSI_LAIN tambah (asal_kib = KOREKSI), gunakan rekening tujuan firstRk
+            $firstTujuanKode = $firstRk->tujuan_kode ?: $firstRk->jenisReklasTujuan?->kode_prefix;
+            if ($firstTujuanKode && !str_starts_with((string) $firstTujuanKode, 'KOR_') && !str_starts_with((string) $firstTujuanKode, '1.5.')) {
+                $mapped = $this->mapCodeOrKibToRmb($firstTujuanKode, $firstRk->tujuan_kib, $defs);
+                if ($mapped) {
+                    return $mapped;
+                }
+            }
+        }
+
+        // Cari kode 1.3.x yang valid pada riwayat berikutnya milik aset yang sama di periode ini
+        foreach ($rkGroup as $rk) {
+            foreach ([[$rk->asal_kode ?: $rk->jenisReklasAsal?->kode_prefix, $rk->asal_kib], [$rk->tujuan_kode ?: $rk->jenisReklasTujuan?->kode_prefix, $rk->tujuan_kib]] as [$kStr, $kibStr]) {
+                if ($kStr && !str_starts_with((string) $kStr, 'KOR_') && !str_starts_with((string) $kStr, '1.5.')) {
+                    $mapped = $this->mapCodeOrKibToRmb($kStr, $kibStr, $defs);
+                    if ($mapped) {
+                        return $mapped;
+                    }
+                }
+            }
+        }
+
+        return $this->resolveRmbCodeForAstap($astap, $defs);
+    }
+
+    /**
+     * Hitung ringkasan kelompok Aset Lainnya (1.5.2, 1.5.3, 1.5.4) untuk Sheet 3 Reklas RSDK.
+     */
+    protected function calculateAsetLainnyaSummary(?int $tahun, $astaps, $reklases, $reklasByAstap): array
+    {
+        $summary = [
+            '1.5.2' => ['saldo_awal' => 0, 'tambah' => 0, 'kurang' => 0, 'akhir' => 0],
+            '1.5.3' => ['saldo_awal' => 0, 'tambah' => 0, 'kurang' => 0, 'akhir' => 0],
+            '1.5.4' => ['saldo_awal' => 0, 'tambah' => 0, 'kurang' => 0, 'akhir' => 0],
+        ];
+
+        $resolveAsetLainKey = function (?string $kode, ?string $kib, ?string $sumberDana = null): ?string {
+            $kodeStr = trim((string) $kode);
+            $kibUpper = strtoupper(trim((string) $kib));
+            if (str_starts_with($kodeStr, '1.5.4') || str_contains($kibUpper, 'ASET LAIN')) {
+                return '1.5.4';
+            }
+            if (str_starts_with($kodeStr, '1.5.3') || $kibUpper === 'ATB') {
+                return '1.5.3';
+            }
+            if (str_starts_with($kodeStr, '1.5.2') || str_starts_with($kodeStr, '1.5.1') || $kibUpper === 'KEMITRAAN' || $sumberDana === 'kemitraan') {
+                return '1.5.2';
+            }
+            return null;
+        };
+
+        // Kumpulkan aset yang dipindahkan masuk ke 1.5.x pada periode berjalan via reklas
+        $transferredInto15xAstapIds = [];
+        foreach ($reklases as $rk) {
+            $destKey = $resolveAsetLainKey($rk->tujuan_kode ?: $rk->jenisReklasTujuan?->kode_prefix, $rk->tujuan_kib);
+            if ($destKey && in_array($rk->jenis_reklas, ['KOREKSI_REKENING', 'ASET_LAIN_LAIN', 'KEMITRAAN'], true)) {
+                $transferredInto15xAstapIds[$rk->astap_id] = true;
+            }
+        }
+
+        // 1. Pengadaan/perolehan periode berjalan yang memang langsung berakun 1.5.x
+        foreach ($astaps as $astap) {
+            $kode = $astap->jenisAstap ? ($astap->jenisAstap->sub_rincian_objek ?: $astap->jenisAstap->jenis) : '';
+            $key = $resolveAsetLainKey($kode, $astap->category, $astap->sumber_dana);
+            if (!$key || isset($transferredInto15xAstapIds[$astap->id])) {
+                continue;
+            }
+
+            $val = (float) ($astap->total_realisasi ?: ($astap->jumlah_anggaran ?: 0));
+            if (isset($reklasByAstap[$astap->id])) {
+                $firstKor = $reklasByAstap[$astap->id]->firstWhere('jenis_reklas', 'KOREKSI_LAIN');
+                $firstInfo = $firstKor?->spesifikasi_baru['koreksi_info'] ?? null;
+                if ($firstInfo && !empty($firstInfo['nilai_semula'])) {
+                    $val = (float) $firstInfo['nilai_semula'];
+                }
+            }
+            $summary[$key]['saldo_awal'] += $val;
+        }
+
+        // 2. Saldo awal aset 1.5.x tahun lampau yang mengalami koreksi pada periode ini
+        if ($tahun !== null) {
+            foreach ($reklasByAstap as $astapId => $rkGroup) {
+                $firstRk = $rkGroup->first();
+                $astap = $firstRk?->astap;
+                if (!$astap || (int) $astap->tahun_perolehan >= $tahun || isset($transferredInto15xAstapIds[$astap->id])) {
+                    continue;
+                }
+
+                $kode = $astap->jenisAstap ? ($astap->jenisAstap->sub_rincian_objek ?: $astap->jenisAstap->jenis) : '';
+                $asalKey = $resolveAsetLainKey($firstRk->asal_kode ?: $firstRk->jenisReklasAsal?->kode_prefix, $firstRk->asal_kib)
+                    ?: $resolveAsetLainKey($kode, $astap->category, $astap->sumber_dana);
+                if (!$asalKey) {
+                    continue;
+                }
+
+                $firstInfo = $firstRk->spesifikasi_baru['koreksi_info'] ?? null;
+                $awalVal = ($firstRk->jenis_reklas === 'KOREKSI_LAIN' && !empty($firstInfo['nilai_semula']))
+                    ? (float) $firstInfo['nilai_semula']
+                    : (float) ($astap->total_realisasi ?: 0);
+                $summary[$asalKey]['saldo_awal'] += $awalVal;
+            }
+        }
+
+        // 3. Mutasi masuk/keluar & koreksi nilai ke/dari 1.5.x dalam periode ini
+        foreach ($reklases as $rk) {
+            $val = (float) $rk->nilai_reklas;
+            $asalKey = $resolveAsetLainKey($rk->asal_kode ?: $rk->jenisReklasAsal?->kode_prefix, $rk->asal_kib);
+            $destKey = $resolveAsetLainKey($rk->tujuan_kode ?: $rk->jenisReklasTujuan?->kode_prefix, $rk->tujuan_kib);
+
+            if (in_array($rk->jenis_reklas, ['KOREKSI_REKENING', 'ASET_LAIN_LAIN', 'KEMITRAAN'], true)) {
+                if ($asalKey) {
+                    $summary[$asalKey]['kurang'] += $val;
+                }
+                if ($destKey) {
+                    $summary[$destKey]['tambah'] += $val;
+                }
+            } elseif ($rk->jenis_reklas === 'KOREKSI_LAIN') {
+                $info = $rk->spesifikasi_baru['koreksi_info'] ?? null;
+                $tipe = $info['tipe_koreksi'] ?? ($rk->asal_kib === 'KOREKSI' || str_contains(strtolower($rk->keterangan ?? ''), 'penambahan nilai') ? 'tambah' : 'kurang');
+                $targetKey = ($tipe === 'tambah') ? $destKey : $asalKey;
+                $explicitKode = trim((string) ($tipe === 'tambah'
+                    ? ($rk->tujuan_kode ?: $rk->jenisReklasTujuan?->kode_prefix ?: '')
+                    : ($rk->asal_kode ?: $rk->jenisReklasAsal?->kode_prefix ?: '')));
+                $explicitKib = strtoupper(trim((string) ($tipe === 'tambah' ? $rk->tujuan_kib : $rk->asal_kib)));
+                $isExplicitIntrakom = str_starts_with($explicitKode, '1.3.')
+                    || in_array($explicitKib, ['KIB A', 'KIB B', 'KIB C', 'KIB D', 'KIB E', 'KIB F'], true);
+                // Hanya fallback ke ASTAP jika KIB/kode transaksi sendiri belum menentukan 1.3.x maupun 1.5.x
+                if (!$targetKey && !$isExplicitIntrakom && $rk->astap) {
+                    $kode = $rk->astap->jenisAstap ? ($rk->astap->jenisAstap->sub_rincian_objek ?: $rk->astap->jenisAstap->jenis) : '';
+                    $targetKey = $resolveAsetLainKey($kode, $rk->astap->category, $rk->astap->sumber_dana);
+                }
+                if ($targetKey) {
+                    if ($tipe === 'tambah') {
+                        $summary[$targetKey]['tambah'] += $val;
+                    } else {
+                        $summary[$targetKey]['kurang'] += $val;
+                    }
+                }
+            } elseif ($destKey && $rk->jenis_reklas === 'HIBAH_MASUK') {
+                $summary[$destKey]['tambah'] += $val;
+            } elseif ($asalKey && in_array($rk->jenis_reklas, ['HIBAH_KELUAR', 'MUTASI_EKSTERNAL'], true)) {
+                $summary[$asalKey]['kurang'] += $val;
+            }
+        }
+
+        foreach ($summary as &$row) {
+            $row['akhir'] = $row['saldo_awal'] + $row['tambah'] - $row['kurang'];
+        }
+        unset($row);
+
+        return $summary;
+    }
+
+    /**
+     * Daftar narasi ringkas transaksi AstapReklas aktif untuk lampiran keterangan Sheet 3.
+     */
+    protected function buildReklasNotesForPeriod($reklases, array $defs): array
+    {
+        $notes = [];
+        foreach ($reklases as $rk) {
+            $astap = $rk->astap;
+            $kodeAsal = $this->resolveStartRmbCodeForReklasGroup(collect([$rk]), $astap, $defs);
+            $notes[] = [
+                'id'           => $rk->id,
+                'astap_id'     => $rk->astap_id,
+                'jenis'        => $rk->jenis_reklas,
+                'targetCode'   => $kodeAsal,
+                'val'          => (float) $rk->nilai_reklas,
+                'keterangan'   => $rk->keterangan,
+                'nama_barang'  => $astap?->nama_barang ?: ($rk->tujuan_nama ?: 'Barang Reklas'),
+                'kode_barang'  => $rk->asal_kode ?: ($rk->tujuan_kode ?: '-'),
+                'asal_kib'     => $rk->asal_kib,
+                'tujuan_kib'   => $rk->tujuan_kib,
+                'jumlah_volume'=> $astap?->jumlah_volume ?: 1,
+                'opd_tujuan'   => $astap?->opd_tujuan,
+            ];
+        }
+
+        return $notes;
     }
 
     /**

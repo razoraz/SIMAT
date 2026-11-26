@@ -1133,6 +1133,18 @@ class ReklasifikasiController extends Controller
                     $totalVolume += $qty;
                 }
 
+                // Kunci integritas nilai pada reklas Ekstrakomptabel penuh agar nilai perolehan tidak menyusut sepihak tanpa Koreksi Nilai (-)
+                if ($isExtracom && !$isPartial) {
+                    $oldTotalRealisasi = (float) ($astap->total_realisasi ?: ($astap->jumlah_anggaran ?: 0));
+                    if (abs($totalBaru - $oldTotalRealisasi) > 0.01) {
+                        DB::rollBack();
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Total nilai rincian Ekstrakomptabel (Rp ' . number_format($totalBaru, 0, ',', '.') . ') harus sama dengan nilai realisasi aset saat ini (Rp ' . number_format($oldTotalRealisasi, 0, ',', '.') . '). Jika harga satuan berubah atau salah catat, lakukan Koreksi Nilai terlebih dahulu agar neraca tetap seimbang.',
+                        ], 422);
+                    }
+                }
+
                 $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?? []);
 
                 if (isset($spec['mesin_items']) && is_array($spec['mesin_items'])) {

@@ -6121,6 +6121,23 @@
             XLSX.utils.book_append_sheet(wb, wsSheet2, filterSheet === 'sheet2' ? ("Pengurangan AT " + (filterTw === 'all' ? 'Tahunan' : twTabName)) : s2TabTitle);
         }
 
+        let cachedRmbJson = null;
+        if (filterSheet === 'all' || filterSheet === 'sheet3' || filterSheet === 'sheet4') {
+            try {
+                const rmbRes = await fetch("{{ route('rmb.data') }}?tahun=" + encodeURIComponent(filterYear) + "&triwulan=" + encodeURIComponent(filterTw), {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                if (rmbRes.ok) {
+                    const parsedRmb = await rmbRes.json();
+                    if (parsedRmb && parsedRmb.success && parsedRmb.rows) {
+                        cachedRmbJson = parsedRmb;
+                    }
+                }
+            } catch (e) {
+                console.warn('Fallback lokal RMB Excel:', e);
+            }
+        }
+
         // =========================================================================
         // SHEET 3: 3. REKLAS RSDK (FORMAT RESMI RSUD dr. H. KOESNANDI)
         // REKLASIFIKASI ASET TETAP PER JENIS TRIWULAN BERJALAN
@@ -6186,7 +6203,58 @@
         });
 
         const reklasNotesItems = [];
+        const s3SyncedFromServer = Boolean(cachedRmbJson && cachedRmbJson.rows);
 
+        if (s3SyncedFromServer) {
+            // Sinkronisasi 36 Rekening Aset Tetap (1.3.1 - 1.3.6) langsung dari perhitungan resmi server (termasuk mutasi aset tahun lampau)
+            Object.entries(cachedRmbJson.rows).forEach(([code, src]) => {
+                if (!rowVals[code] || !src) return;
+                const sAwalBM = Number(src.saldo_awal || 0) + Number(src.c1_belanja_modal || 0);
+                const mTambahNetto = Math.max(0, Number(src.total_penambahan || 0) - Number(src.c1_belanja_modal || 0));
+                const mKurang = Number(src.total_pengurangan || 0);
+                rowVals[code] = {
+                    saldo_awal: sAwalBM,
+                    tambah: mTambahNetto,
+                    kurang: mKurang,
+                    akhir: Number(src.saldo_akhir || 0)
+                };
+            });
+
+            // Sinkronisasi 3 Rekening Aset Lainnya (1.5.2, 1.5.3, 1.5.4)
+            if (cachedRmbJson.asetLainnya) {
+                ['1.5.2', '1.5.3', '1.5.4'].forEach(code => {
+                    const src = cachedRmbJson.asetLainnya[code];
+                    if (!src || !rowVals[code]) return;
+                    rowVals[code] = {
+                        saldo_awal: Number(src.saldo_awal || 0),
+                        tambah: Number(src.tambah || 0),
+                        kurang: Number(src.kurang || 0),
+                        akhir: Number(src.akhir || 0)
+                    };
+                });
+            }
+
+            // Sinkronisasi catatan transaksi reklasifikasi aktif periode berjalan
+            if (Array.isArray(cachedRmbJson.reklasNotes)) {
+                cachedRmbJson.reklasNotes.forEach(n => {
+                    reklasNotesItems.push({
+                        item: {
+                            nama_barang: n.nama_barang,
+                            kode_barang: n.kode_barang,
+                            asal_kib: n.asal_kib,
+                            tujuan_kib: n.tujuan_kib,
+                            jumlah_volume: n.jumlah_volume,
+                            opd_tujuan: n.opd_tujuan,
+                            jenis_reklas: n.jenis
+                        },
+                        val: Number(n.val || 0),
+                        targetCode: n.targetCode,
+                        jenis: n.jenis,
+                        keterangan: n.keterangan || ''
+                    });
+                });
+            }
+        } else {
         filteredAstaps.forEach(item => {
             const val = parseFloat(item.total_realisasi_num) || parseFloat(item.total_realisasi) || 0;
             const isExtracom = Boolean(item.is_extracomtable || resolveItemCategory(item) === 'EXTRACOM');
@@ -6373,13 +6441,13 @@
                     });
                 }
             }
-        });
-
-        // Hitung saldo akhir tiap sub-rincian
-        reklasDefs.forEach(d => {
-            const r = rowVals[d.code];
-            r.akhir = r.saldo_awal + r.tambah - r.kurang;
-        });
+        // Hitung saldo akhir tiap sub-rincian (mode fallback offline)
+        if (!s3SyncedFromServer) {
+            reklasDefs.forEach(d => {
+                const r = rowVals[d.code];
+                r.akhir = r.saldo_awal + r.tambah - r.kurang;
+            });
+        }
 
         // Agregat per Kelompok KIB
         const groupSums = {};
@@ -6528,68 +6596,98 @@
         ]);
         s3Meta.jumlahAsetRows.push(sheet3Rows.length - 1);
 
-        let totalHibahVal = 0;
-        let totalExtracomVal = 0;
-        let totalKoreksiLainVal = 0;
+        let koreksiHeaderTambah = 0;
+        let koreksiHeaderKurang = 0;
+        let koreksiHeaderSaldo = 0;
+        let hibahRow = [0, 0, 0]; // [tambah, kurang, saldo]
+        let extracomRow = [0, 0, 0];
+        let koreksiLainRow = [0, 0, 0];
+        let realisasiBelanjaAwal = jumlahAset.saldo_awal;
+        let realisasiBelanjaSaldo = jumlahAset.saldo_awal;
 
-        filteredAstaps.forEach(item => {
-            const val = parseFloat(item.total_realisasi_num) || parseFloat(item.total_realisasi) || 0;
-            const isHibah = String(item.asal_usul || item.sumber_dana || '').toUpperCase().includes('HIBAH') 
-                || (item.jenis_reklas === 'HIBAH_MASUK')
-                || (item.jenis_reklas === 'HIBAH_KELUAR')
-                || Boolean(item.is_hibah_keluar);
-            const isExtracom = Boolean(item.is_extracomtable || resolveItemCategory(item) === 'EXTRACOM' || item.jenis_reklas === 'EKSTRAKOMPTABEL');
-            const isOtherReklas = Boolean((item.is_reklas && !isExtracom && !isHibah) 
-                || (item.jenis_reklas === 'KOREKSI_LAIN' || item.jenis_reklas === 'KOREKSI_REKENING' || item.jenis_reklas === 'KDP_TO_DEFINITIF' || item.jenis_reklas === 'DEFINITIF_TO_KDP' || item.jenis_reklas === 'KAPITALISASI_INTRAKOM' || item.jenis_reklas === 'MUTASI_EKSTERNAL'));
+        if (s3SyncedFromServer && cachedRmbJson.kertasKerja && cachedRmbJson.grandTotal) {
+            const kk = cachedRmbJson.kertasKerja;
+            const gt = cachedRmbJson.grandTotal;
+            const hibahTambahVal = Number(gt.c10_dihibahkan || 0);
+            const hibahKurangVal = Number(gt.c2_hibah || 0);
+            const hibahNettoVal = Number(kk.koreksi_hibah || 0);
+            const extracomNettoVal = Number(kk.koreksi_ekstrakom || 0);
+            const korLainNettoVal = Number(kk.koreksi_lain_lain || 0);
+            const korLainTambahVal = korLainNettoVal > 0 ? korLainNettoVal : 0;
+            const korLainKurangVal = korLainNettoVal < 0 ? Math.abs(korLainNettoVal) : 0;
 
-            // Format Resmi 3 Baris Koreksi Penyeimbang (Sesuai Template RSUD Koesnandi / BPK):
-            // 1. Hibah: Transaksi hibah (Hibah Keluar BAST, Hibah Masuk, maupun barang perolehan hibah)
-            if (isHibah) {
-                totalHibahVal += val;
-            }
-            // 2. Ekstrakomptabel: Koreksi / reklasifikasi barang di bawah nilai kapitalisasi (<= Rp 300.000)
-            else if (isExtracom) {
-                totalExtracomVal += val;
-            }
-            // 3. Koreksi Lain-Lain: Pindah KIB / Rekening, Kapitalisasi KDP, Mutasi OPD, dan Koreksi Nilai Audit BPK / LKD
-            else if (isOtherReklas) {
-                totalKoreksiLainVal += val;
-            }
-        });
+            hibahRow = [hibahTambahVal, hibahKurangVal, hibahNettoVal];
+            extracomRow = [extracomNettoVal, 0, extracomNettoVal];
+            koreksiLainRow = [korLainTambahVal, korLainKurangVal, korLainNettoVal];
 
-        // Fallback jika tidak ada mutasi khusus tapi ada total pengurangan aset
-        if (totalExtracomVal === 0 && jumlahAset.kurang > 0 && totalKoreksiLainVal === 0 && totalHibahVal === 0) {
-            totalExtracomVal = jumlahAset.kurang;
+            koreksiHeaderTambah = hibahTambahVal + extracomNettoVal + korLainTambahVal;
+            koreksiHeaderKurang = hibahKurangVal + korLainKurangVal;
+            koreksiHeaderSaldo = hibahNettoVal + extracomNettoVal + korLainNettoVal;
+
+            realisasiBelanjaAwal = Number(kk.saldo_awal_belanja || 0);
+            realisasiBelanjaSaldo = Number(kk.total_rekon_belanja || realisasiBelanjaAwal);
+        } else {
+            let totalHibahVal = 0;
+            let totalExtracomVal = 0;
+            let totalKoreksiLainVal = 0;
+
+            filteredAstaps.forEach(item => {
+                const val = parseFloat(item.total_realisasi_num) || parseFloat(item.total_realisasi) || 0;
+                const isHibah = String(item.asal_usul || item.sumber_dana || '').toUpperCase().includes('HIBAH')
+                    || (item.jenis_reklas === 'HIBAH_MASUK')
+                    || (item.jenis_reklas === 'HIBAH_KELUAR')
+                    || Boolean(item.is_hibah_keluar);
+                const isExtracom = Boolean(item.is_extracomtable || resolveItemCategory(item) === 'EXTRACOM' || item.jenis_reklas === 'EKSTRAKOMPTABEL');
+                const isOtherReklas = Boolean((item.is_reklas && !isExtracom && !isHibah)
+                    || (item.jenis_reklas === 'KOREKSI_LAIN' || item.jenis_reklas === 'KOREKSI_REKENING' || item.jenis_reklas === 'KDP_TO_DEFINITIF' || item.jenis_reklas === 'DEFINITIF_TO_KDP' || item.jenis_reklas === 'KAPITALISASI_INTRAKOM' || item.jenis_reklas === 'MUTASI_EKSTERNAL'));
+
+                if (isHibah) {
+                    totalHibahVal += val;
+                } else if (isExtracom) {
+                    totalExtracomVal += val;
+                } else if (isOtherReklas) {
+                    totalKoreksiLainVal += val;
+                }
+            });
+
+            if (totalExtracomVal === 0 && jumlahAset.kurang > 0 && totalKoreksiLainVal === 0 && totalHibahVal === 0) {
+                totalExtracomVal = jumlahAset.kurang;
+            }
+
+            const totalKoreksiPenyeimbang = totalHibahVal + totalExtracomVal + totalKoreksiLainVal;
+            koreksiHeaderTambah = totalKoreksiPenyeimbang;
+            koreksiHeaderSaldo = totalKoreksiPenyeimbang;
+            hibahRow = [totalHibahVal, 0, totalHibahVal];
+            extracomRow = [totalExtracomVal, 0, totalExtracomVal];
+            koreksiLainRow = [totalKoreksiLainVal, 0, totalKoreksiLainVal];
         }
-
-        const totalKoreksiPenyeimbang = totalHibahVal + totalExtracomVal + totalKoreksiLainVal;
 
         // 5. Bagian Koreksi Penyeimbang (Gambar 2: Header Abu-abu D9D9D9, Thin Border)
         sheet3Rows.push([
             "Koreksi Atas Aset Tetap",
             0,
-            totalKoreksiPenyeimbang,
-            0,
-            totalKoreksiPenyeimbang
+            koreksiHeaderTambah,
+            koreksiHeaderKurang,
+            koreksiHeaderSaldo
         ]);
         s3Meta.koreksiHeaderRows.push(sheet3Rows.length - 1);
 
-        sheet3Rows.push(["Hibah", 0, totalHibahVal, 0, totalHibahVal]);
+        sheet3Rows.push(["Hibah", 0, hibahRow[0], hibahRow[1], hibahRow[2]]);
         s3Meta.koreksiItemRows.push(sheet3Rows.length - 1);
 
-        sheet3Rows.push(["Dibawah Kapitalisasi (Extra Comptable)", 0, totalExtracomVal, 0, totalExtracomVal]);
+        sheet3Rows.push(["Dibawah Kapitalisasi (Extra Comptable)", 0, extracomRow[0], extracomRow[1], extracomRow[2]]);
         s3Meta.koreksiItemRows.push(sheet3Rows.length - 1);
 
-        sheet3Rows.push(["Koreksi Lain-Lain", 0, totalKoreksiLainVal, 0, totalKoreksiLainVal]);
+        sheet3Rows.push(["Koreksi Lain-Lain", 0, koreksiLainRow[0], koreksiLainRow[1], koreksiLainRow[2]]);
         s3Meta.koreksiItemRows.push(sheet3Rows.length - 1);
 
         // 6. REALISASI BELANJA MODAL (Gambar 2: Putih FFFFFF, Bold, Thin Border)
         sheet3Rows.push([
             "REALISASI BELANJA MODAL",
-            jumlahAset.saldo_awal,
-            0,
-            jumlahAset.kurang,
-            jumlahAset.akhir
+            totalAsetTetap.saldo_awal,
+            totalAsetTetap.tambah,
+            totalAsetTetap.kurang,
+            totalAsetTetap.akhir
         ]);
         s3Meta.realisasiModalRows.push(sheet3Rows.length - 1);
 
@@ -6606,10 +6704,10 @@
         // 8. REALISASI BELANJA [TAHUN] (Gambar 2: Putih FFFFFF, Bold, Double Bottom Border)
         sheet3Rows.push([
             "REALISASI BELANJA " + yearLabel,
-            jumlahAset.saldo_awal,
-            totalKoreksiPenyeimbang,
-            totalKoreksiPenyeimbang,
-            jumlahAset.saldo_awal
+            realisasiBelanjaAwal,
+            koreksiHeaderTambah,
+            koreksiHeaderKurang,
+            realisasiBelanjaSaldo
         ]);
         s3Meta.realisasiTahunRows.push(sheet3Rows.length - 1);
 
@@ -6650,7 +6748,9 @@
                 }
 
                 let noteText = '';
-                if (n.jenis === 'KOREKSI_REKENING' || it.jenis_reklas === 'KOREKSI_REKENING') {
+                if (n.keterangan && String(n.keterangan).trim() !== '') {
+                    noteText = `${idx + 1}. ${String(n.keterangan).trim()}`;
+                } else if (n.jenis === 'KOREKSI_REKENING' || it.jenis_reklas === 'KOREKSI_REKENING') {
                     const tujuanStr = it.tujuan_kib ? ` ke ${it.tujuan_kib}` : '';
                     noteText = `${idx + 1}. Reklasifikasi dan koreksi rekening dari rekening ${subRek} ${subNama} senilai Rp ${fmtNilaiText} ${buktiStr} pada RSUD dr.H.Koesnadi${tujuanStr} berupa ${kdBrg} ${nmBrg} (${vol}) karena penyesuaian klasifikasi wujud aset / kodefikasi Simda BMD 108.`;
                 } else if (n.jenis === 'KDP_TO_DEFINITIF' || it.jenis_reklas === 'KDP_TO_DEFINITIF') {
@@ -6913,45 +7013,33 @@
         });
 
         let rmbSyncedFromServer = false;
-        if (filterSheet === 'all' || filterSheet === 'sheet4') {
-            try {
-                const rmbRes = await fetch("{{ route('rmb.data') }}?tahun=" + encodeURIComponent(filterYear) + "&triwulan=" + encodeURIComponent(filterTw), {
-                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
-                });
-                if (rmbRes.ok) {
-                    const rmbJson = await rmbRes.json();
-                    if (rmbJson && rmbJson.success && rmbJson.rows) {
-                        Object.entries(rmbJson.rows).forEach(([code, src]) => {
-                            if (!rmbVals[code] || !src) return;
-                            rmbVals[code].c1_saldo_awal = Number(src.saldo_awal || 0);
-                            rmbVals[code].c2_belanja_modal = Number(src.c1_belanja_modal || 0);
-                            rmbVals[code].c3_hibah = Number(src.c2_hibah || 0);
-                            rmbVals[code].c4_belanja_barang = Number(src.c3_belanja_barang || 0);
-                            rmbVals[code].c5_mutasi_tambah = Number(src.c4_mutasi_tambah || 0);
-                            rmbVals[code].c6_koreksi_rek_tambah = Number(src.c5_koreksi_rek_tambah || 0);
-                            rmbVals[code].c7_koreksi_lkd_tambah = Number(src.c6_koreksi_lkd_tambah || 0);
-                            rmbVals[code].c8_koreksi_manset_tambah = Number(src.c7_koreksi_manset_tambah || 0);
-                            rmbVals[code].c9_kdp_tambah = Number(src.c8_kdp_tambah || 0);
-                            rmbVals[code].c10_total_tambah = Number(src.total_penambahan || 0);
-                            rmbVals[code].c11_sk_penghapusan = Number(src.c9_sk_penghapusan || 0);
-                            rmbVals[code].c12_dihibahkan = Number(src.c10_dihibahkan || 0);
-                            rmbVals[code].c13_mutasi_kurang = Number(src.c11_mutasi_kurang || 0);
-                            rmbVals[code].c14_kapitalisasi_kurang = Number(src.c12_kapitalisasi_kurang || 0);
-                            rmbVals[code].c15_direklas_aset_lain = Number(src.c13_direklas_aset_lain || 0);
-                            rmbVals[code].c16_hilang = Number(src.c14_hilang || 0);
-                            rmbVals[code].c17_koreksi_kurang = Number(src.c15_koreksi_kurang || 0);
-                            rmbVals[code].c18_koreksi_lkd_kurang = Number(src.c16_koreksi_lkd_kurang || 0);
-                            rmbVals[code].c19_koreksi_manset_kurang = Number(src.c17_koreksi_manset_kurang || 0);
-                            rmbVals[code].c20_kdp_kurang = Number(src.c18_kdp_kurang || 0);
-                            rmbVals[code].c21_total_kurang = Number(src.total_pengurangan || 0);
-                            rmbVals[code].c22_total_akhir = Number(src.saldo_akhir || 0);
-                        });
-                        rmbSyncedFromServer = true;
-                    }
-                }
-            } catch (e) {
-                console.warn('Fallback lokal RMB Excel:', e);
-            }
+        if ((filterSheet === 'all' || filterSheet === 'sheet4') && cachedRmbJson && cachedRmbJson.rows) {
+            Object.entries(cachedRmbJson.rows).forEach(([code, src]) => {
+                if (!rmbVals[code] || !src) return;
+                rmbVals[code].c1_saldo_awal = Number(src.saldo_awal || 0);
+                rmbVals[code].c2_belanja_modal = Number(src.c1_belanja_modal || 0);
+                rmbVals[code].c3_hibah = Number(src.c2_hibah || 0);
+                rmbVals[code].c4_belanja_barang = Number(src.c3_belanja_barang || 0);
+                rmbVals[code].c5_mutasi_tambah = Number(src.c4_mutasi_tambah || 0);
+                rmbVals[code].c6_koreksi_rek_tambah = Number(src.c5_koreksi_rek_tambah || 0);
+                rmbVals[code].c7_koreksi_lkd_tambah = Number(src.c6_koreksi_lkd_tambah || 0);
+                rmbVals[code].c8_koreksi_manset_tambah = Number(src.c7_koreksi_manset_tambah || 0);
+                rmbVals[code].c9_kdp_tambah = Number(src.c8_kdp_tambah || 0);
+                rmbVals[code].c10_total_tambah = Number(src.total_penambahan || 0);
+                rmbVals[code].c11_sk_penghapusan = Number(src.c9_sk_penghapusan || 0);
+                rmbVals[code].c12_dihibahkan = Number(src.c10_dihibahkan || 0);
+                rmbVals[code].c13_mutasi_kurang = Number(src.c11_mutasi_kurang || 0);
+                rmbVals[code].c14_kapitalisasi_kurang = Number(src.c12_kapitalisasi_kurang || 0);
+                rmbVals[code].c15_direklas_aset_lain = Number(src.c13_direklas_aset_lain || 0);
+                rmbVals[code].c16_hilang = Number(src.c14_hilang || 0);
+                rmbVals[code].c17_koreksi_kurang = Number(src.c15_koreksi_kurang || 0);
+                rmbVals[code].c18_koreksi_lkd_kurang = Number(src.c16_koreksi_lkd_kurang || 0);
+                rmbVals[code].c19_koreksi_manset_kurang = Number(src.c17_koreksi_manset_kurang || 0);
+                rmbVals[code].c20_kdp_kurang = Number(src.c18_kdp_kurang || 0);
+                rmbVals[code].c21_total_kurang = Number(src.total_pengurangan || 0);
+                rmbVals[code].c22_total_akhir = Number(src.saldo_akhir || 0);
+            });
+            rmbSyncedFromServer = true;
         }
 
         if (!rmbSyncedFromServer && (filterSheet === 'all' || filterSheet === 'sheet4')) {
