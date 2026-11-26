@@ -35,33 +35,21 @@
                 
                 <!-- 1. FORMAT LAPORAN EXCEL (TARUH PALING ATAS SENDIRI) -->
                 <div>
-                    <label class="block text-slate-300 font-bold text-xs mb-1.5 flex items-center justify-between">
+                    <label for="export_format_type_select" class="block text-slate-300 font-bold text-xs mb-1.5 flex items-center justify-between">
                         <span class="flex items-center gap-1.5">
                             <span>📑 FORMAT LAPORAN EXCEL</span>
                             <span class="text-rose-400">*</span>
                         </span>
                         <span class="text-[10px] text-slate-400">Pilih Jenis Format Dokumen</span>
                     </label>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button type="button" @click="exportFormatType = 'sipenerbang'"
-                            class="p-2.5 rounded-xl border text-left transition-all flex flex-col justify-between cursor-pointer"
-                            :class="exportFormatType === 'sipenerbang' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/60 shadow-lg ring-1 ring-emerald-500/30' : 'bg-slate-950/60 text-slate-400 border-slate-800 hover:bg-slate-950'">
-                            <div class="flex items-center justify-between w-full">
-                                <span class="text-xs font-bold flex items-center gap-1.5">📘 SIPENERBANG</span>
-                                <span x-show="exportFormatType === 'sipenerbang'" class="text-emerald-400 font-black text-xs">✓</span>
-                            </div>
-                            <span class="text-[10px] text-slate-400 mt-1 leading-snug">Buku Induk Aset Tetap (9 Sheet / Per KIB)</span>
-                        </button>
-                        <button type="button" @click="exportFormatType = 'rekap_triwulan'; exportSumberDana = 'belanja_modal'"
-                            class="p-2.5 rounded-xl border text-left transition-all flex flex-col justify-between cursor-pointer"
-                            :class="exportFormatType === 'rekap_triwulan' ? 'bg-purple-500/20 text-purple-300 border-purple-500/60 shadow-lg ring-1 ring-purple-500/30' : 'bg-slate-950/60 text-slate-400 border-slate-800 hover:bg-slate-950'">
-                            <div class="flex items-center justify-between w-full">
-                                <span class="text-xs font-bold flex items-center gap-1.5">📑 Rekap Triwulan</span>
-                                <span x-show="exportFormatType === 'rekap_triwulan'" class="text-purple-400 font-black text-xs">✓</span>
-                            </div>
-                            <span class="text-[10px] text-slate-400 mt-1 leading-snug">Paket 4 Sheet: Daftar AT, Pengurangan, Reklas &amp; RMB</span>
-                        </button>
-                    </div>
+                    <select id="export_format_type_select"
+                            x-model="exportFormatType"
+                            @change="if (exportFormatType === 'rekap_triwulan') exportSumberDana = 'belanja_modal'"
+                            :class="exportFormatType === 'rekap_triwulan' ? 'border-purple-500/50 text-purple-200 focus:border-purple-400' : 'border-emerald-500/50 text-emerald-200 focus:border-emerald-400'"
+                            class="w-full bg-slate-950 border rounded-xl px-3 py-2 text-xs font-bold focus:outline-none cursor-pointer transition-colors">
+                        <option value="sipenerbang" class="bg-slate-950 text-emerald-200">📘 SIPENERBANG — Buku Induk Aset Tetap (9 Sheet / Per KIB)</option>
+                        <option value="rekap_triwulan" class="bg-slate-950 text-purple-200">📑 Rekap Triwulan — Paket 4 Sheet: Daftar AT, Pengurangan, Reklas &amp; RMB</option>
+                    </select>
                 </div>
 
                 <!-- 2. PILIHAN SUMBER PEROLEHAN / KELUARAN (Tampil ketika format SIPENERBANG dipilih) -->
