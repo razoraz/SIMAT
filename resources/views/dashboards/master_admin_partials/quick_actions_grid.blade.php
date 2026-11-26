@@ -1,7 +1,22 @@
 <!-- Master Admin CRUD Action Grid (Posisi Ketiga) -->
+<style>
+    @media (max-width: 1023px) {
+        .dash-qa-title {
+            justify-content: center !important;
+            text-align: center !important;
+        }
+    }
+    @media (min-width: 1024px) {
+        .dash-qa-title {
+            justify-content: flex-start !important;
+            text-align: left !important;
+        }
+    }
+</style>
+
 <div class="mb-8">
-    <h3 class="text-sm font-bold text-white uppercase tracking-wider mb-4 flex items-center space-x-2">
-        <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+    <h3 class="dash-qa-title text-sm font-bold text-white uppercase tracking-wider mb-4 flex flex-wrap items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span>
         <span>Akses Fitur Master Admin (CREATE, READ, UPDATE, DELETE)</span>
     </h3>
 

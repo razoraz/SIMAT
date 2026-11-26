@@ -1,10 +1,33 @@
 <!-- Grid 2 Kolom: Grafik Kondisi Barang & Grafik Distribusi Barang -->
+<style>
+    @media (max-width: 1023px) {
+        .dash-donut-head {
+            text-align: center !important;
+        }
+        .dash-donut-top {
+            flex-direction: column !important;
+            align-items: center !important;
+            gap: 0.5rem !important;
+        }
+    }
+    @media (min-width: 1024px) {
+        .dash-donut-head {
+            text-align: left !important;
+        }
+        .dash-donut-top {
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+        }
+    }
+</style>
+
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
     
     <!-- 1. Grafik Keseluruhan Kondisi Barang -->
-    <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6 flex flex-col justify-between">
-        <div>
-            <div class="flex items-center justify-between gap-2 mb-3">
+    <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6 flex flex-col justify-between min-w-0">
+        <div class="dash-donut-head">
+            <div class="dash-donut-top flex items-center justify-between gap-2 mb-3">
                 <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-bold">
                     <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                     <span>STATUS FISIK & KELAYAKAN</span>
@@ -38,9 +61,9 @@
     </div>
 
     <!-- 2. Grafik Distribusi & Penempatan Aset -->
-    <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6 flex flex-col justify-between">
-        <div>
-            <div class="flex items-center justify-between gap-2 mb-3">
+    <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6 flex flex-col justify-between min-w-0">
+        <div class="dash-donut-head">
+            <div class="dash-donut-top flex items-center justify-between gap-2 mb-3">
                 <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/30 text-xs font-bold">
                     <span class="w-2 h-2 rounded-full bg-teal-400 animate-pulse"></span>
                     <span>PERBANDINGAN DISTRIBUSI</span>
