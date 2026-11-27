@@ -1,4 +1,38 @@
 <!-- SIDEBAR SIMAT-RK (Bespoke High-End UI) -->
+<style>
+    .sidebar-accordion {
+        display: grid;
+        grid-template-rows: 0fr;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition:
+            grid-template-rows 300ms cubic-bezier(0.22, 1, 0.36, 1),
+            opacity 200ms ease,
+            visibility 0s linear 300ms;
+    }
+    .sidebar-accordion.is-open {
+        grid-template-rows: 1fr;
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        transition:
+            grid-template-rows 340ms cubic-bezier(0.22, 1, 0.36, 1),
+            opacity 260ms ease 30ms,
+            visibility 0s linear 0s;
+    }
+    .sidebar-accordion-inner {
+        overflow: hidden;
+        min-height: 0;
+    }
+    .sidebar-accordion-content {
+        transform: translateY(-6px);
+        transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .sidebar-accordion.is-open .sidebar-accordion-content {
+        transform: translateY(0);
+    }
+</style>
 <aside x-show="sidebarOpen" x-transition:enter="transition ease-out duration-300 transform"
     x-transition:enter-start="-translate-x-full" x-transition:enter-end="translate-x-0"
     x-transition:leave="transition ease-in duration-200 transform" x-transition:leave-start="translate-x-0"
@@ -107,32 +141,43 @@
     </div>
 
     <!-- Sidebar Nav with High Scannability Hierarchy (Single Open Accordion Mode) -->
+    @php
+        $secActiveClass   = 'bg-gradient-to-r from-cyan-500/20 via-sky-500/10 to-transparent text-cyan-300 border-cyan-500/40 shadow-lg shadow-cyan-500/10 font-bold';
+        $secInactiveClass = 'text-slate-400 hover:text-white hover:bg-slate-800/60 border-transparent';
+    @endphp
     <nav x-data="{ activeSection: '{{ $defaultSection }}' }" class="flex-1 overflow-y-auto px-3 py-3.5 space-y-2 scrollbar-thin scrollbar-thumb-slate-800 notif-scroll">
 
         <!-- SECTION 1: MASTER UTAMA (Unified Cyan Theme) -->
         <div class="space-y-1">
             <button type="button" @click="activeSection = (activeSection === 'master_utama' ? null : 'master_utama')"
-                class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 group {{ $isMasterUtamaActive ? 'bg-gradient-to-r from-cyan-500/20 via-sky-500/10 to-transparent text-cyan-300 border border-cyan-500/40 shadow-lg shadow-cyan-500/10 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent' }}">
+                :aria-expanded="activeSection === 'master_utama'"
+                :class="(activeSection === 'master_utama' || {{ $isMasterUtamaActive ? 'true' : 'false' }}) ? '{{ $secActiveClass }}' : '{{ $secInactiveClass }}'"
+                class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold border transition-all duration-200 group {{ ($defaultSection === 'master_utama' || $isMasterUtamaActive) ? $secActiveClass : $secInactiveClass }}">
                 <div class="flex items-center space-x-3 min-w-0">
-                    @if($isMasterUtamaActive)
-                        <span class="w-1 h-4 rounded-full bg-cyan-400 shadow-sm shadow-cyan-400/80 shrink-0"></span>
-                    @endif
-                    <svg class="w-4 h-4 shrink-0 transition-colors {{ $isMasterUtamaActive ? 'text-cyan-400' : 'text-slate-500 group-hover:text-cyan-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <span x-show="activeSection === 'master_utama' || {{ $isMasterUtamaActive ? 'true' : 'false' }}"
+                        @if(!($defaultSection === 'master_utama' || $isMasterUtamaActive)) x-cloak style="display: none;" @endif
+                        x-transition.opacity.duration.200ms
+                        class="w-1 h-4 rounded-full bg-cyan-400 shadow-sm shadow-cyan-400/80 shrink-0"></span>
+                    <svg class="w-4 h-4 shrink-0 transition-colors duration-200 {{ ($defaultSection === 'master_utama' || $isMasterUtamaActive) ? 'text-cyan-400' : 'text-slate-500 group-hover:text-cyan-400' }}"
+                        :class="(activeSection === 'master_utama' || {{ $isMasterUtamaActive ? 'true' : 'false' }}) ? 'text-cyan-400' : 'text-slate-500 group-hover:text-cyan-400'"
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                     </svg>
                     <span class="truncate">Master Utama</span>
                 </div>
-                <svg class="w-3.5 h-3.5 shrink-0 transition-transform duration-200"
-                    :class="activeSection === 'master_utama' ? 'rotate-90 text-cyan-400' : 'text-slate-500'"
+                <svg class="w-3.5 h-3.5 shrink-0 transition-transform duration-300 ease-out"
+                    :class="activeSection === 'master_utama' ? 'rotate-90 text-cyan-400' : ({{ $isMasterUtamaActive ? 'true' : 'false' }} ? 'text-cyan-400' : 'text-slate-500')"
                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                 </svg>
             </button>
 
             <!-- Submenu Dropdown Master Utama -->
-            <div x-show="activeSection === 'master_utama'" @if($defaultSection !== 'master_utama') x-cloak style="display: none;" @endif
-                class="pl-3.5 pr-1 py-1 space-y-1 border-l-2 border-slate-800/90 ml-4 my-1 transition-all">
+            <div class="sidebar-accordion {{ $defaultSection === 'master_utama' ? 'is-open' : '' }}"
+                :class="{ 'is-open': activeSection === 'master_utama' }">
+                <div class="sidebar-accordion-inner">
+                    <div class="sidebar-accordion-content pl-3.5 pr-1 py-1 space-y-1 border-l-2 border-slate-800/90 ml-4 my-1">
                 
                 <!-- 1. Dashboard -->
                 <a href="{{ $dashboardUrl }}" @click="if (isMobile) sidebarOpen = false"
@@ -191,6 +236,8 @@
                         <span>Berita Acara (BAST)</span>
                     </a>
                 @endif
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -198,27 +245,34 @@
         @if ($role === 'sub_admin' || $role === 'master_admin' || $user?->canAccess('mutasi') || $user?->canAccess('astap'))
             <div class="space-y-1">
                 <button type="button" @click="activeSection = (activeSection === 'master_aset' ? null : 'master_aset')"
-                    class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 group {{ $isMasterAsetActive ? 'bg-gradient-to-r from-cyan-500/20 via-sky-500/10 to-transparent text-cyan-300 border border-cyan-500/40 shadow-lg shadow-cyan-500/10 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent' }}">
+                    :aria-expanded="activeSection === 'master_aset'"
+                    :class="(activeSection === 'master_aset' || {{ $isMasterAsetActive ? 'true' : 'false' }}) ? '{{ $secActiveClass }}' : '{{ $secInactiveClass }}'"
+                    class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold border transition-all duration-200 group {{ ($defaultSection === 'master_aset' || $isMasterAsetActive) ? $secActiveClass : $secInactiveClass }}">
                     <div class="flex items-center space-x-3 min-w-0">
-                        @if($isMasterAsetActive)
-                            <span class="w-1 h-4 rounded-full bg-cyan-400 shadow-sm shadow-cyan-400/80 shrink-0"></span>
-                        @endif
-                        <svg class="w-4 h-4 shrink-0 transition-colors {{ $isMasterAsetActive ? 'text-cyan-400' : 'text-slate-500 group-hover:text-cyan-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <span x-show="activeSection === 'master_aset' || {{ $isMasterAsetActive ? 'true' : 'false' }}"
+                            @if(!($defaultSection === 'master_aset' || $isMasterAsetActive)) x-cloak style="display: none;" @endif
+                            x-transition.opacity.duration.200ms
+                            class="w-1 h-4 rounded-full bg-cyan-400 shadow-sm shadow-cyan-400/80 shrink-0"></span>
+                        <svg class="w-4 h-4 shrink-0 transition-colors duration-200 {{ ($defaultSection === 'master_aset' || $isMasterAsetActive) ? 'text-cyan-400' : 'text-slate-500 group-hover:text-cyan-400' }}"
+                            :class="(activeSection === 'master_aset' || {{ $isMasterAsetActive ? 'true' : 'false' }}) ? 'text-cyan-400' : 'text-slate-500 group-hover:text-cyan-400'"
+                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                         </svg>
                         <span class="truncate">Master Aset</span>
                     </div>
-                    <svg class="w-3.5 h-3.5 shrink-0 transition-transform duration-200"
-                        :class="activeSection === 'master_aset' ? 'rotate-90 text-cyan-400' : 'text-slate-500'"
+                    <svg class="w-3.5 h-3.5 shrink-0 transition-transform duration-300 ease-out"
+                        :class="activeSection === 'master_aset' ? 'rotate-90 text-cyan-400' : ({{ $isMasterAsetActive ? 'true' : 'false' }} ? 'text-cyan-400' : 'text-slate-500')"
                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                     </svg>
                 </button>
 
                 <!-- Submenu Dropdown Master Aset -->
-                <div x-show="activeSection === 'master_aset'" @if($defaultSection !== 'master_aset') x-cloak style="display: none;" @endif
-                    class="pl-3.5 pr-1 py-1 space-y-1 border-l-2 border-slate-800/90 ml-4 my-1 transition-all">
+                <div class="sidebar-accordion {{ $defaultSection === 'master_aset' ? 'is-open' : '' }}"
+                    :class="{ 'is-open': activeSection === 'master_aset' }">
+                    <div class="sidebar-accordion-inner">
+                        <div class="sidebar-accordion-content pl-3.5 pr-1 py-1 space-y-1 border-l-2 border-slate-800/90 ml-4 my-1">
                     
                     <!-- 1. Mutasi Aset (Dropdown Accordion: Internal & Eksternal) -->
                     @if ($role === 'sub_admin' || $user?->canAccess('mutasi'))
@@ -234,24 +288,30 @@
                         @else
                             <div x-data="{ mutasiOpen: {{ $isMutasiActive ? 'true' : 'false' }} }" class="space-y-1">
                                 <button type="button" @click="mutasiOpen = !mutasiOpen"
-                                    class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all duration-200 group {{ $isMutasiActive ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50 border border-transparent' }}">
+                                    :aria-expanded="mutasiOpen"
+                                    :class="(mutasiOpen || {{ $isMutasiActive ? 'true' : 'false' }}) ? 'bg-cyan-500/20 text-cyan-300 font-bold border-cyan-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50 border-transparent'"
+                                    class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition-all duration-200 group {{ $isMutasiActive ? 'bg-cyan-500/20 text-cyan-300 font-bold border-cyan-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50 border-transparent' }}">
                                     <div class="flex items-center space-x-2 min-w-0">
-                                        <svg class="w-3.5 h-3.5 shrink-0 transition-colors {{ $isMutasiActive ? 'text-cyan-400' : 'text-slate-500 group-hover:text-cyan-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg class="w-3.5 h-3.5 shrink-0 transition-colors duration-200 {{ $isMutasiActive ? 'text-cyan-400' : 'text-slate-500 group-hover:text-cyan-400' }}"
+                                            :class="(mutasiOpen || {{ $isMutasiActive ? 'true' : 'false' }}) ? 'text-cyan-400' : 'text-slate-500 group-hover:text-cyan-400'"
+                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                                         </svg>
                                         <span class="truncate">Mutasi Aset</span>
                                     </div>
-                                    <svg class="w-3 h-3 shrink-0 transition-transform duration-200"
-                                        :class="mutasiOpen ? 'rotate-90 text-cyan-400' : 'text-slate-500'"
+                                    <svg class="w-3 h-3 shrink-0 transition-transform duration-300 ease-out"
+                                        :class="mutasiOpen ? 'rotate-90 text-cyan-400' : ({{ $isMutasiActive ? 'true' : 'false' }} ? 'text-cyan-400' : 'text-slate-500')"
                                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                                     </svg>
                                 </button>
 
                                 <!-- Submenu Dropdown Mutasi -->
-                                <div x-show="mutasiOpen" @if(!$isMutasiActive) x-cloak style="display: none;" @endif
-                                    class="pl-3 pr-1 py-1 space-y-1 border-l-2 border-cyan-500/30 ml-2.5 my-1">
+                                <div class="sidebar-accordion {{ $isMutasiActive ? 'is-open' : '' }}"
+                                    :class="{ 'is-open': mutasiOpen }">
+                                    <div class="sidebar-accordion-inner">
+                                        <div class="sidebar-accordion-content pl-3 pr-1 py-1 space-y-1 border-l-2 border-cyan-500/30 ml-2.5 my-1">
                                     <!-- Mutasi Internal -->
                                     <a href="{{ route('mutasi.index') }}" @click="if (isMobile) sidebarOpen = false"
                                         class="group flex items-center space-x-2 px-2 py-1 rounded text-[10.5px] font-semibold transition-all hover:translate-x-1 duration-150 {{ $isMutasiInternalActive ? 'bg-cyan-500/25 text-cyan-300 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/40' }}">
@@ -267,6 +327,8 @@
                                         <span>Mutasi Eksternal</span>
                                     </a>
                                     @endif
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         @endif
@@ -320,6 +382,8 @@
                         </a>
                     @endif
 
+                        </div>
+                    </div>
                 </div>
             </div>
         @endif
@@ -328,12 +392,17 @@
         @if ($role === 'master_admin' || $user?->canAccess('users') || $user?->canAccess('master_data') || $user?->canAccess('unit'))
             <div class="space-y-1">
                 <button type="button" @click="activeSection = (activeSection === 'master_data' ? null : 'master_data')"
-                    class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 group {{ $isMasterDataActive ? 'bg-gradient-to-r from-cyan-500/20 via-sky-500/10 to-transparent text-cyan-300 border border-cyan-500/40 shadow-lg shadow-cyan-500/10 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent' }}">
+                    :aria-expanded="activeSection === 'master_data'"
+                    :class="(activeSection === 'master_data' || {{ $isMasterDataActive ? 'true' : 'false' }}) ? '{{ $secActiveClass }}' : '{{ $secInactiveClass }}'"
+                    class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold border transition-all duration-200 group {{ ($defaultSection === 'master_data' || $isMasterDataActive) ? $secActiveClass : $secInactiveClass }}">
                     <div class="flex items-center space-x-3 min-w-0">
-                        @if($isMasterDataActive)
-                            <span class="w-1 h-4 rounded-full bg-cyan-400 shadow-sm shadow-cyan-400/80 shrink-0"></span>
-                        @endif
-                        <svg class="w-4 h-4 shrink-0 transition-colors {{ $isMasterDataActive ? 'text-cyan-400' : 'text-slate-500 group-hover:text-cyan-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <span x-show="activeSection === 'master_data' || {{ $isMasterDataActive ? 'true' : 'false' }}"
+                            @if(!($defaultSection === 'master_data' || $isMasterDataActive)) x-cloak style="display: none;" @endif
+                            x-transition.opacity.duration.200ms
+                            class="w-1 h-4 rounded-full bg-cyan-400 shadow-sm shadow-cyan-400/80 shrink-0"></span>
+                        <svg class="w-4 h-4 shrink-0 transition-colors duration-200 {{ ($defaultSection === 'master_data' || $isMasterDataActive) ? 'text-cyan-400' : 'text-slate-500 group-hover:text-cyan-400' }}"
+                            :class="(activeSection === 'master_data' || {{ $isMasterDataActive ? 'true' : 'false' }}) ? 'text-cyan-400' : 'text-slate-500 group-hover:text-cyan-400'"
+                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -341,16 +410,18 @@
                         </svg>
                         <span class="truncate">Master Data Sistem</span>
                     </div>
-                    <svg class="w-3.5 h-3.5 shrink-0 transition-transform duration-200"
-                        :class="activeSection === 'master_data' ? 'rotate-90 text-cyan-400' : 'text-slate-500'"
+                    <svg class="w-3.5 h-3.5 shrink-0 transition-transform duration-300 ease-out"
+                        :class="activeSection === 'master_data' ? 'rotate-90 text-cyan-400' : ({{ $isMasterDataActive ? 'true' : 'false' }} ? 'text-cyan-400' : 'text-slate-500')"
                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                     </svg>
                 </button>
 
                 <!-- Submenu Dropdown Master Data Sistem -->
-                <div x-show="activeSection === 'master_data'" @if($defaultSection !== 'master_data') x-cloak style="display: none;" @endif
-                    class="pl-3.5 pr-1 py-1 space-y-1 border-l-2 border-slate-800/90 ml-4 my-1 transition-all">
+                <div class="sidebar-accordion {{ $defaultSection === 'master_data' ? 'is-open' : '' }}"
+                    :class="{ 'is-open': activeSection === 'master_data' }">
+                    <div class="sidebar-accordion-inner">
+                        <div class="sidebar-accordion-content pl-3.5 pr-1 py-1 space-y-1 border-l-2 border-slate-800/90 ml-4 my-1">
                     
                     <!-- 1. Manajemen Pengguna -->
                     @if ($role === 'master_admin' || $user?->canAccess('users'))
@@ -411,6 +482,8 @@
                             <span>Unit & Paviliun</span>
                         </a>
                     @endif
+                        </div>
+                    </div>
                 </div>
             </div>
         @endif
@@ -419,27 +492,34 @@
         @if ($role === 'master_admin' || ($role === 'admin' && ($user?->canAccess('astap') || $user?->canAccess('recycle_bin'))))
             <div class="space-y-1">
                 <button type="button" @click="activeSection = (activeSection === 'pemulihan' ? null : 'pemulihan')"
-                    class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 group {{ $isPemulihanActive ? 'bg-gradient-to-r from-cyan-500/20 via-sky-500/10 to-transparent text-cyan-300 border border-cyan-500/40 shadow-lg shadow-cyan-500/10 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent' }}">
+                    :aria-expanded="activeSection === 'pemulihan'"
+                    :class="(activeSection === 'pemulihan' || {{ $isPemulihanActive ? 'true' : 'false' }}) ? '{{ $secActiveClass }}' : '{{ $secInactiveClass }}'"
+                    class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold border transition-all duration-200 group {{ ($defaultSection === 'pemulihan' || $isPemulihanActive) ? $secActiveClass : $secInactiveClass }}">
                     <div class="flex items-center space-x-3 min-w-0">
-                        @if($isPemulihanActive)
-                            <span class="w-1 h-4 rounded-full bg-cyan-400 shadow-sm shadow-cyan-400/80 shrink-0"></span>
-                        @endif
-                        <svg class="w-4 h-4 shrink-0 transition-colors {{ $isPemulihanActive ? 'text-cyan-400' : 'text-slate-500 group-hover:text-cyan-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <span x-show="activeSection === 'pemulihan' || {{ $isPemulihanActive ? 'true' : 'false' }}"
+                            @if(!($defaultSection === 'pemulihan' || $isPemulihanActive)) x-cloak style="display: none;" @endif
+                            x-transition.opacity.duration.200ms
+                            class="w-1 h-4 rounded-full bg-cyan-400 shadow-sm shadow-cyan-400/80 shrink-0"></span>
+                        <svg class="w-4 h-4 shrink-0 transition-colors duration-200 {{ ($defaultSection === 'pemulihan' || $isPemulihanActive) ? 'text-cyan-400' : 'text-slate-500 group-hover:text-cyan-400' }}"
+                            :class="(activeSection === 'pemulihan' || {{ $isPemulihanActive ? 'true' : 'false' }}) ? 'text-cyan-400' : 'text-slate-500 group-hover:text-cyan-400'"
+                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                         <span class="truncate">Audit & Pemulihan</span>
                     </div>
-                    <svg class="w-3.5 h-3.5 shrink-0 transition-transform duration-200"
-                        :class="activeSection === 'pemulihan' ? 'rotate-90 text-cyan-400' : 'text-slate-500'"
+                    <svg class="w-3.5 h-3.5 shrink-0 transition-transform duration-300 ease-out"
+                        :class="activeSection === 'pemulihan' ? 'rotate-90 text-cyan-400' : ({{ $isPemulihanActive ? 'true' : 'false' }} ? 'text-cyan-400' : 'text-slate-500')"
                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                     </svg>
                 </button>
 
                 <!-- Submenu Dropdown Audit & Pemulihan -->
-                <div x-show="activeSection === 'pemulihan'" @if($defaultSection !== 'pemulihan') x-cloak style="display: none;" @endif
-                    class="pl-3.5 pr-1 py-1 space-y-1 border-l-2 border-slate-800/90 ml-4 my-1 transition-all">
+                <div class="sidebar-accordion {{ $defaultSection === 'pemulihan' ? 'is-open' : '' }}"
+                    :class="{ 'is-open': activeSection === 'pemulihan' }">
+                    <div class="sidebar-accordion-inner">
+                        <div class="sidebar-accordion-content pl-3.5 pr-1 py-1 space-y-1 border-l-2 border-slate-800/90 ml-4 my-1">
                     
                     <!-- 1. Rekon Belanja Modal (RMB) -->
                     @if ($role === 'master_admin' || $user?->canAccess('astap'))
@@ -476,6 +556,8 @@
                             <span>Pusat Data Terhapus</span>
                         </a>
                     @endif
+                        </div>
+                    </div>
                 </div>
             </div>
         @endif
