@@ -290,11 +290,15 @@ class RmbController extends Controller
 
             $val = (float) ($astap->total_realisasi ?: ($astap->jumlah_anggaran ?: 0));
 
-            // Jika aset memiliki transaksi koreksi nilai (KOREKSI_LAIN) pada periode ini,
-            // kembalikan nilai awal ke nilai semula sebelum koreksi periode ini agar mutasi tambah/kurang neto akurat
+            // Jika aset memiliki transaksi penyesuaian nilai (KOREKSI_LAIN atau extracom_info) pada periode ini,
+            // kembalikan nilai awal ke nilai semula sebelum perubahan agar mutasi tambah/kurang neto akurat
             if (isset($reklasByAstap[$astap->id])) {
+                $firstPeriodRk = $reklasByAstap[$astap->id]->first();
                 $firstKorLain = $reklasByAstap[$astap->id]->firstWhere('jenis_reklas', 'KOREKSI_LAIN');
-                if ($firstKorLain) {
+                if ($firstPeriodRk && in_array($firstPeriodRk->jenis_reklas, ['EKSTRAKOMPTABEL', 'KAPITALISASI_INTRAKOM'], true)
+                    && !empty($firstPeriodRk->spesifikasi_baru['extracom_info']['nilai_semula'])) {
+                    $val = (float) $firstPeriodRk->spesifikasi_baru['extracom_info']['nilai_semula'];
+                } elseif ($firstKorLain) {
                     $firstInfo = $firstKorLain->spesifikasi_baru['koreksi_info'] ?? null;
                     if (!empty($firstInfo['nilai_semula'])) {
                         $val = (float) $firstInfo['nilai_semula'];
@@ -361,8 +365,11 @@ class RmbController extends Controller
                 }
 
                 $firstInfo = $firstRk->spesifikasi_baru['koreksi_info'] ?? null;
+                $firstExtraInfo = $firstRk->spesifikasi_baru['extracom_info'] ?? null;
                 if ($firstRk->jenis_reklas === 'KOREKSI_LAIN' && !empty($firstInfo['nilai_semula'])) {
                     $saldoAwalAset = (float) $firstInfo['nilai_semula'];
+                } elseif (in_array($firstRk->jenis_reklas, ['EKSTRAKOMPTABEL', 'KAPITALISASI_INTRAKOM'], true) && !empty($firstExtraInfo['nilai_semula'])) {
+                    $saldoAwalAset = (float) $firstExtraInfo['nilai_semula'];
                 } else {
                     $totalOutInPeriod = 0.0;
                     foreach ($rkGroup as $rkItem) {
