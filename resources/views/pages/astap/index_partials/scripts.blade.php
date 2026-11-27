@@ -11316,6 +11316,11 @@
                     return this.isItemExtracom(this.selectedAstapReklas);
                 },
 
+                isExtracomAllowedTujuanKib(kib) {
+                    const normalized = String(kib || '').trim().toUpperCase();
+                    return ['KIB B', 'KIB E', 'KEMITRAAN', 'ASET LAIN', 'ASET LAIN-LAIN', 'ASET LAINNYA'].includes(normalized);
+                },
+
                 isTargetExtracom() {
                     // Kemitraan (Akun 1.5.2) selalu menggunakan format spesifikasi teknis lengkap (Reguler / Gambar 1)
                     if (this.reklasTujuanKib === 'KEMITRAAN') return false;
@@ -11898,6 +11903,12 @@
                         if (isKemitraanOrSewa) {
                             this.reklasTujuanKib = 'KEMITRAAN';
                             this.reklasKemitraanTipeFisik = this.detectKemitraanPhysicalType(it);
+                        } else if (this.isCurrentAstapExtracom()) {
+                            if (!this.isExtracomAllowedTujuanKib(this.reklasTujuanKib)) {
+                                this.reklasTujuanKib = (kode.startsWith('1.3.5') || cat === 'KIB E') ? 'KIB E' : 'KIB B';
+                                this.clearReklasSubRincian();
+                                this.clearReklasSubSubRincian();
+                            }
                         } else if (!this.reklasTujuanKib || this.reklasTujuanKib === 'EKSTRAKOMPTABEL') {
                             this.reklasTujuanKib = (cat && cat !== 'EXTRACOM') ? cat : 'KIB B';
                         }
@@ -11983,6 +11994,10 @@
                     (window.dbMasterJenisAstap108 || []).forEach(j => {
                         if (j.subRincian) all = all.concat(j.subRincian);
                     });
+                    if (this.isCurrentAstapExtracom() && this.reklasJenis === 'pindah_kib') {
+                        const allowedPrefixes = ['1.3.2', '1.3.5', '1.5.2', '1.5.4'];
+                        return all.filter(s => s.kode && allowedPrefixes.some(p => String(s.kode).startsWith(p)));
+                    }
                     return all;
                 },
 
@@ -12373,6 +12388,15 @@
                     if (this.isKemitraanAktif() && this.reklasTujuanKib !== 'KEMITRAAN') {
                         this.reklasTujuanKib = 'KEMITRAAN';
                         this.showToast('Status kemitraan masih aktif: kelompok tujuan terkunci pada Kemitraan Pihak Ketiga (Akun 1.5.2).', 'warning');
+                        return;
+                    }
+                    if (this.reklasJenis === 'pindah_kib' && this.isCurrentAstapExtracom() && this.reklasTujuanKib && !this.isExtracomAllowedTujuanKib(this.reklasTujuanKib)) {
+                        this.reklasTujuanKib = '';
+                        this.clearReklasSubRincian();
+                        this.clearReklasSubSubRincian();
+                        this.reklasTujuanKode = '';
+                        this.reklasTujuanNama = '';
+                        this.showToast('Barang berstatus Ekstrakomptabel hanya dapat dipindah ke KIB B (Mesin), KIB E (Aset Tetap Lainnya), Kemitraan (1.5.2), atau Aset Lain-Lain (1.5.4).', 'warning');
                         return;
                     }
                     const prefix = this.reklasTargetJenisKode;
@@ -13723,6 +13747,20 @@
                     if (this.isCurrentAstapKdp()) {
                         if (['pindah_kib', 'hibah', 'mutasi_eksternal', 'extracom', 'intracom'].includes(this.reklasJenis)) {
                             this.showToast('Aset Konstruksi Dalam Pengerjaan (KDP / KIB F) belum berwujud barang jadi dan tidak dapat dipindah KIB, dihibahkan, atau dimutasi ke luar OPD. Silakan gunakan opsi Kapitalisasi KDP Selesai atau Koreksi Nilai.', 'error');
+                            return;
+                        }
+                    }
+
+                    // Proteksi Barang Ekstrakomptabel pada Pindah KIB / Koreksi Rekening
+                    if (this.reklasJenis === 'pindah_kib' && this.isCurrentAstapExtracom()) {
+                        if (!this.isExtracomAllowedTujuanKib(this.reklasTujuanKib)) {
+                            this.showToast('Barang berstatus Ekstrakomptabel hanya dapat dipindah ke Peralatan & Mesin (KIB B), Aset Tetap Lainnya (KIB E), Kemitraan Pihak Ketiga (1.5.2), atau Aset Lain-Lain (1.5.4).', 'error');
+                            return;
+                        }
+                        const targetKodeExtracom = String(this.reklasSubSubRincianKode || this.reklasSubRincianKode || this.reklasTujuanKode || '').trim();
+                        const allowedExtracomPrefixes = ['1.3.2', '1.3.5', '1.5.2', '1.5.4'];
+                        if (targetKodeExtracom && !allowedExtracomPrefixes.some(p => targetKodeExtracom.startsWith(p))) {
+                            this.showToast('Kode rekening tujuan untuk barang Ekstrakomptabel wajib termasuk kelompok Mesin (1.3.2), Aset Tetap Lainnya (1.3.5), Kemitraan (1.5.2), atau Aset Lain-Lain (1.5.4).', 'error');
                             return;
                         }
                     }

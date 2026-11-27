@@ -24,21 +24,42 @@
                                 <span>Terkunci: PKS Aktif (1.5.2)</span>
                             </span>
                         </template>
+                        <template x-if="!isKemitraanAktif() && isCurrentAstapExtracom()">
+                            <span class="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                                <span>⚠️</span>
+                                <span>Ekstrakom: Tujuan Terbatas</span>
+                            </span>
+                        </template>
                     </div>
                     <select x-model="formData.tujuan_kib" @change="onTujuanKibChange()"
                         :disabled="isKemitraanAktif()"
                         class="w-full px-3.5 py-2.5 rounded-xl border text-xs font-bold focus:outline-none transition-all"
                         :class="isKemitraanAktif() ? 'border-cyan-500/50 bg-slate-950/90 text-cyan-200 cursor-not-allowed ring-1 ring-cyan-500/20' : 'bg-slate-900 border-slate-700 text-white focus:border-indigo-500 cursor-pointer'">
                         <option value="">-- Pilih KIB / Kelompok Tujuan --</option>
-                        <option value="KIB A" :disabled="isKemitraanAktif()">KIB A - Tanah (1.3.1)</option>
+                        <option value="KIB A" :disabled="isKemitraanAktif() || isCurrentAstapExtracom()" x-text="isCurrentAstapExtracom() ? 'KIB A - Tanah (1.3.1) — Tidak tersedia untuk Ekstrakom' : 'KIB A - Tanah (1.3.1)'">KIB A - Tanah (1.3.1)</option>
                         <option value="KIB B" :disabled="isKemitraanAktif()">KIB B - Peralatan &amp; Mesin (1.3.2)</option>
-                        <option value="KIB C" :disabled="isKemitraanAktif()">KIB C - Gedung &amp; Bangunan (1.3.3)</option>
-                        <option value="KIB D" :disabled="isKemitraanAktif()">KIB D - Jalan, Jaringan &amp; Irigasi (1.3.4)</option>
+                        <option value="KIB C" :disabled="isKemitraanAktif() || isCurrentAstapExtracom()" x-text="isCurrentAstapExtracom() ? 'KIB C - Gedung & Bangunan (1.3.3) — Tidak tersedia untuk Ekstrakom' : 'KIB C - Gedung & Bangunan (1.3.3)'">KIB C - Gedung &amp; Bangunan (1.3.3)</option>
+                        <option value="KIB D" :disabled="isKemitraanAktif() || isCurrentAstapExtracom()" x-text="isCurrentAstapExtracom() ? 'KIB D - Jalan, Jaringan & Irigasi (1.3.4) — Tidak tersedia untuk Ekstrakom' : 'KIB D - Jalan, Jaringan & Irigasi (1.3.4)'">KIB D - Jalan, Jaringan &amp; Irigasi (1.3.4)</option>
                         <option value="KIB E" :disabled="isKemitraanAktif()">KIB E - Aset Tetap Lainnya (1.3.5)</option>
-                        <option value="ATB" :disabled="isKemitraanAktif()">ATB - Aset Tidak Berwujud (1.5.3)</option>
+                        <option value="ATB" :disabled="isKemitraanAktif() || isCurrentAstapExtracom()" x-text="isCurrentAstapExtracom() ? 'ATB - Aset Tidak Berwujud (1.5.3) — Tidak tersedia untuk Ekstrakom' : 'ATB - Aset Tidak Berwujud (1.5.3)'">ATB - Aset Tidak Berwujud (1.5.3)</option>
                         <option value="KEMITRAAN">Kemitraan Pihak Ketiga (1.5.2)</option>
                         <option value="ASET LAIN" :disabled="isKemitraanAktif()">Aset Lain-Lain (1.5.4)</option>
                     </select>
+
+                    <template x-if="!isKemitraanAktif() && isCurrentAstapExtracom()">
+                        <div class="mt-2 p-3 rounded-2xl bg-amber-950/50 border border-amber-500/35 text-amber-200 text-xs flex items-start gap-2.5 shadow-md">
+                            <span class="text-base shrink-0 mt-0.5">⚠️</span>
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="font-extrabold text-amber-300">Pembatasan Pindah KIB Barang Ekstrakomptabel</span>
+                                    <span class="px-2 py-0.5 rounded text-[9.5px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">4 Kelompok Tujuan Diizinkan</span>
+                                </div>
+                                <p class="text-[11px] text-amber-100/90 leading-relaxed">
+                                    Barang berstatus Ekstrakomptabel tidak dapat dipindahkan ke Tanah (KIB A), Gedung &amp; Bangunan (KIB C), Jalan/Jaringan (KIB D), maupun ATB. Tujuan yang diperbolehkan hanya <strong>Peralatan &amp; Mesin (KIB B)</strong>, <strong>Aset Tetap Lainnya (KIB E)</strong>, <strong>Kemitraan Pihak Ketiga (1.5.2)</strong>, dan <strong>Aset Lain-Lain (1.5.4)</strong>.
+                                </p>
+                            </div>
+                        </div>
+                    </template>
 
                     <template x-if="isKemitraanAktif()">
                         <div class="mt-2 p-3 rounded-2xl bg-cyan-950/60 border border-cyan-500/35 text-cyan-200 text-xs flex items-start gap-2.5 shadow-md">

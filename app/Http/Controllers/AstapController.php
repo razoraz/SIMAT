@@ -575,7 +575,7 @@ class AstapController extends Controller
         // Data Pengurangan Aset Tetap dari Recycle Bin (Master ASTAP is_deleted = 1 & Register NIBAR is_deleted = 1)
         $rawDeletedAstaps = \App\Models\Astap::where('is_deleted', 1)
             ->with([
-                'registers',
+                'allRegisters',
                 'jenisAstap',
                 'rekeningBelanja',
                 'jenisPengadaan',
@@ -596,7 +596,7 @@ class AstapController extends Controller
 
         $deletedAstapsList = $rawDeletedAstaps->map(function ($a) {
             $spec = is_array($a->spesifikasi_json) ? $a->spesifikasi_json : (json_decode($a->spesifikasi_json, true) ?? []);
-            $sortedRegisters = $a->registers ? $a->registers->sortBy(function ($r) {
+            $sortedRegisters = $a->allRegisters ? $a->allRegisters->sortBy(function ($r) {
                 return $r->no_register_int ?: intval(substr($r->nibar ?? '', -7));
             })->values() : collect();
             $firstReg = $sortedRegisters->first();

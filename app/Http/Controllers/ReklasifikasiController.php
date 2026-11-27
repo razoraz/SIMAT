@@ -1065,6 +1065,34 @@ class ReklasifikasiController extends Controller
             ], 422);
         }
 
+        // Proteksi Validasi Aturan Bisnis: Barang berstatus Ekstrakomptabel tidak boleh pindah langsung ke KIB A/C/D/F maupun ATB
+        // Tujuan pindah KIB yang diizinkan hanya KIB B (Mesin), KIB E (Aset Tetap Lainnya), Kemitraan Pihak Ketiga (1.5.2), atau Aset Lain-Lain (1.5.4)
+        $isExtracomAsset = (bool) $astap->is_extracomtable || strtoupper((string) $astap->category) === 'EXTRACOM';
+        if ($isExtracomAsset && $validated['jenis_reklas'] === 'KOREKSI_REKENING') {
+            $allowedExtracomKibs = ['KIB B', 'KIB E', 'KEMITRAAN', 'ASET LAIN', 'ASET LAIN-LAIN', 'ASET LAINNYA'];
+            $allowedExtracomPrefixes = ['1.3.2', '1.3.5', '1.5.2', '1.5.4'];
+            $targetKibNormalized = strtoupper(trim((string) ($validated['tujuan_kib'] ?? '')));
+            $targetKodeCheck = trim((string) ($request->input('tujuan_kode') ?: ($request->input('kode_108') ?: '')));
+
+            $isKibAllowed = in_array($targetKibNormalized, $allowedExtracomKibs, true);
+            $isKodeAllowed = $targetKodeCheck === '';
+            if (!$isKodeAllowed) {
+                foreach ($allowedExtracomPrefixes as $prefix) {
+                    if (str_starts_with($targetKodeCheck, $prefix)) {
+                        $isKodeAllowed = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!$isKibAllowed || !$isKodeAllowed) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Aset '{$astap->nama_barang}' berstatus Ekstrakomptabel sehingga tidak dapat dipindahkan ke Tanah (KIB A), Gedung & Bangunan (KIB C), Jalan/Jaringan (KIB D), KDP (KIB F), maupun ATB. Tujuan yang diizinkan hanya Peralatan & Mesin (KIB B), Aset Tetap Lainnya (KIB E), Kemitraan Pihak Ketiga (1.5.2), dan Aset Lain-Lain (1.5.4).",
+                ], 422);
+            }
+        }
+
         // Proteksi Validasi Koreksi Nilai Realisasi / BPK / Manset (KOREKSI_LAIN)
         if ($validated['jenis_reklas'] === 'KOREKSI_LAIN') {
             $selisihCheck = (float) ($validated['nilai_reklas'] ?? 0);
