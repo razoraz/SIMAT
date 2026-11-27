@@ -543,13 +543,19 @@
     function resolveItemCategory(item) {
         if (!item) return 'KIB B';
 
-        // 1. Cek kode barang / jenis aset terlebih dahulu untuk KIB yang mutlak Intrakomptabel (SAP)
-        const kode = String(item.jenis_aset_kode || item.kode_barang || '').trim();
+        // 1. Cek kode barang / jenis aset terlebih dahulu untuk KIB yang mutlak sesuai PMDN 108 (termasuk objek kemitraan 1.5.2)
+        const kode = String(item.kode_barang || item.kode_108 || item.jenis_aset_kode || '').trim();
+        const isKemitraanTanah = kode.startsWith('1.5.2.01.01.01.001') || kode.startsWith('1.5.2.01.01.02.001');
+        const isKemitraanMesin = kode.startsWith('1.5.2.01.01.01.002') || kode.startsWith('1.5.2.01.01.02.002');
+        const isKemitraanGedung = kode.startsWith('1.5.2.01.01.01.003') || kode.startsWith('1.5.2.01.01.02.003');
+        const isKemitraanJaringan = kode.startsWith('1.5.2.01.01.01.004') || kode.startsWith('1.5.2.01.01.02.004');
+        const isKemitraanLainnya = kode.startsWith('1.5.2.01.01.01.005') || kode.startsWith('1.5.2.01.01.02.005');
+
         if (kode.startsWith('1.5.4')) return 'ASET LAIN';
         if (kode.startsWith('1.5.3')) return 'ATB';
-        if (kode.startsWith('1.3.1')) return 'KIB A';
-        if (kode.startsWith('1.3.3')) return 'KIB C';
-        if (kode.startsWith('1.3.4')) return 'KIB D';
+        if (kode.startsWith('1.3.1') || isKemitraanTanah) return 'KIB A';
+        if (kode.startsWith('1.3.3') || isKemitraanGedung) return 'KIB C';
+        if (kode.startsWith('1.3.4') || isKemitraanJaringan) return 'KIB D';
         if (kode.startsWith('1.3.6')) return 'KIB F';
 
         // 2. Kategori tekstual eksplisit (kecuali EXTRACOM yang nanti dicek validitasnya)
@@ -564,19 +570,19 @@
         }
 
         // 3. Hanya KIB B (Peralatan & Mesin) atau KIB E (Aset Tetap Lainnya) yang boleh menjadi EXTRACOM
-        const isExtracom = !!item.is_extracomtable || (item.category && item.category.toUpperCase() === 'EXTRACOM');
-        if (isExtracom && (kode.startsWith('1.3.2') || kode.startsWith('1.3.5') || !kode)) {
+        const isExtracom = item.is_extracomtable === true || item.is_extracomtable === 1 || item.is_extracomtable === '1' || (item.category && item.category.toUpperCase() === 'EXTRACOM');
+        if (isExtracom && (kode.startsWith('1.3.2') || kode.startsWith('1.3.5') || isKemitraanMesin || isKemitraanLainnya || !kode)) {
             return 'EXTRACOM';
         }
+
+        if (kode.startsWith('1.3.2') || isKemitraanMesin) return 'KIB B';
+        if (kode.startsWith('1.3.5') || isKemitraanLainnya) return 'KIB E';
 
         if (item.category) {
             const cUpper = item.category.toUpperCase().trim();
             if (cUpper === 'KIB B' || cUpper === 'B' || cUpper.includes('MESIN') || cUpper.includes('PERALATAN')) return 'KIB B';
             if (cUpper === 'KIB E' || cUpper === 'E' || (cUpper.includes('LAINNYA') && !cUpper.includes('ASET LAIN'))) return 'KIB E';
         }
-
-        if (kode.startsWith('1.3.2')) return 'KIB B';
-        if (kode.startsWith('1.3.5')) return 'KIB E';
 
         const rekKode = item.rekening_kode || '';
         const rekNama = (item.rekening_nama || '').toUpperCase();
@@ -6441,6 +6447,9 @@
                     });
                 }
             }
+        });
+        }
+
         // Hitung saldo akhir tiap sub-rincian (mode fallback offline)
         if (!s3SyncedFromServer) {
             reklasDefs.forEach(d => {
@@ -11269,10 +11278,11 @@
                 isItemExtracom(it) {
                     if (!it) return false;
 
-                    // Tanah (KIB A), Gedung (KIB C), Jaringan (KIB D), KDP (KIB F) tidak pernah menjadi ekstrakomptabel
+                    // Tanah (KIB A), Gedung (KIB C), Jaringan (KIB D), KDP (KIB F), ATB, & Aset Lain tidak menjadi ekstrakomptabel kecuali eksplisit ditandai
                     const cat = (it.category || '').toString().trim().toUpperCase();
                     const kode = (it.kode_barang || it.kode_108 || it.jenis_aset_kode || '').toString().trim();
-                    if (['KIB A', 'KIB C', 'KIB D', 'KDP', 'KIB F'].includes(cat) || kode.startsWith('1.3.1') || kode.startsWith('1.3.3') || kode.startsWith('1.3.4') || kode.startsWith('1.3.6')) {
+                    if (['KIB A', 'KIB C', 'KIB D', 'KDP', 'KIB F', 'ATB', 'ASET LAIN', 'ASET LAINNYA', 'ASET LAIN-LAIN'].includes(cat)
+                        || kode.startsWith('1.3.1') || kode.startsWith('1.3.3') || kode.startsWith('1.3.4') || kode.startsWith('1.3.6') || kode.startsWith('1.5.3') || kode.startsWith('1.5.4')) {
                         return false;
                     }
 
@@ -11287,8 +11297,10 @@
                     }
                     if (spec && typeof spec === 'object') {
                         if (spec.is_extracomtable === true || spec.is_extracom === true) return true;
-                        if (Array.isArray(spec.lainnya_items) && spec.lainnya_items.some(l => !!l.is_extracom || (parseFloat(l.lainnya_nilai_satuan || 0) > 0 && parseFloat(l.lainnya_nilai_satuan || 0) <= 300000))) return true;
-                        if (Array.isArray(spec.mesin_items) && spec.mesin_items.some(m => !!m.is_extracom || (parseFloat(m.mesin_nilai_satuan || 0) > 0 && parseFloat(m.mesin_nilai_satuan || 0) <= 300000))) return true;
+                        if (it.is_extracomtable !== false) {
+                            if (Array.isArray(spec.lainnya_items) && spec.lainnya_items.some(l => !!l.is_extracom || (parseFloat(l.lainnya_nilai_satuan || 0) > 0 && parseFloat(l.lainnya_nilai_satuan || 0) <= 300000))) return true;
+                            if (Array.isArray(spec.mesin_items) && spec.mesin_items.some(m => !!m.is_extracom || (parseFloat(m.mesin_nilai_satuan || 0) > 0 && parseFloat(m.mesin_nilai_satuan || 0) <= 300000))) return true;
+                        }
                     }
 
                     // Cek harga satuan barang / nilai reklas (<= 300.000) hanya berlaku untuk KIB B / KIB E yang belum definitif intrakom
@@ -15949,7 +15961,7 @@
                                 if (isAsetLain) {
                                     matchCategory = false;
                                 } else {
-                                    matchCategory = !isExtracom && (resolvedCat === this.categoryFilter || item.category === this.categoryFilter);
+                                    matchCategory = !isExtracom && resolvedCat === this.categoryFilter;
                                 }
                             }
                         }

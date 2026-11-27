@@ -3375,7 +3375,8 @@ class AstapController extends Controller
                 $astap->nama_barang = $jenisAstapRecord->uraian_sub_sub_rincian;
             }
 
-            if (!empty($data['tahun_perolehan'])) $astap->tahun_perolehan = $data['tahun_perolehan'];
+            $newTahun = $data['tahun_anggaran'] ?? ($data['tahun_perolehan'] ?? null);
+            if (!empty($newTahun)) $astap->tahun_perolehan = (int) $newTahun;
             if (!empty($data['triwulan'])) $astap->triwulan = $data['triwulan'];
             $astap->jumlah_volume = $ext['vol'];
             $astap->satuan = $ext['sat'];

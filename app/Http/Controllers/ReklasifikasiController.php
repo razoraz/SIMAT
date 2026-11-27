@@ -1122,6 +1122,7 @@ class ReklasifikasiController extends Controller
             $tujuanKodeAset = $request->input('tujuan_kode') ?: ($request->input('kode_108') ?: null);
             $tujuanNamaAset = $request->input('tujuan_nama');
 
+            $autoExtracomKoreksiInfo = null;
             if (($isExtracom || $isIntracom) && !empty($request->reklas_items) && is_array($request->reklas_items)) {
                 $totalBaru = 0;
                 $totalVolume = 0;
@@ -1133,15 +1134,23 @@ class ReklasifikasiController extends Controller
                     $totalVolume += $qty;
                 }
 
-                // Kunci integritas nilai pada reklas Ekstrakomptabel penuh agar nilai perolehan tidak menyusut sepihak tanpa Koreksi Nilai (-)
+                // Jika nilai total Ekstrakomptabel berbeda dengan nilai aset saat ini, catat selisihnya sebagai Koreksi Nilai otomatis
+                // dalam 1 kali submit agar neraca RMB (Koreksi + Kapitalisasi -) tetap seimbang (Saldo Akhir = 0) tanpa harus ke menu Koreksi dulu
                 if ($isExtracom && !$isPartial) {
                     $oldTotalRealisasi = (float) ($astap->total_realisasi ?: ($astap->jumlah_anggaran ?: 0));
-                    if (abs($totalBaru - $oldTotalRealisasi) > 0.01) {
-                        DB::rollBack();
-                        return response()->json([
-                            'success' => false,
-                            'message' => 'Total nilai rincian Ekstrakomptabel (Rp ' . number_format($totalBaru, 0, ',', '.') . ') harus sama dengan nilai realisasi aset saat ini (Rp ' . number_format($oldTotalRealisasi, 0, ',', '.') . '). Jika harga satuan berubah atau salah catat, lakukan Koreksi Nilai terlebih dahulu agar neraca tetap seimbang.',
-                        ], 422);
+                    $selisihHarga = $totalBaru - $oldTotalRealisasi;
+                    if (abs($selisihHarga) > 0.01) {
+                        $autoExtracomKoreksiInfo = [
+                            'sub_koreksi'        => 'biasa',
+                            'tipe_koreksi'       => $selisihHarga < 0 ? 'kurang' : 'tambah',
+                            'nilai_semula'       => $oldTotalRealisasi,
+                            'nilai_baru'         => $totalBaru,
+                            'selisih'            => abs($selisihHarga),
+                            'nomor_dokumen'      => $validated['nomor_ba_reklas'] ?? null,
+                            'tanggal_dokumen'    => $validated['tanggal_reklas'] ?? null,
+                            'alasan'             => $validated['alasan_reklas'] ?? ($request->input('alasan_reklas') ?? 'Penyesuaian nilai otomatis sebelum pengalihan Ekstrakomptabel'),
+                            'auto_from_extracom' => true,
+                        ];
                     }
                 }
 
@@ -2892,6 +2901,43 @@ class ReklasifikasiController extends Controller
                     }
                 }
 
+                // Bila pengalihan ke Ekstrakomptabel disertai penyesuaian harga, catat transaksi Koreksi Nilai otomatis lebih dulu
+                $reklasSpecBaru = is_array($specBaru) ? $specBaru : (json_decode((string) $specBaru, true) ?? []);
+                if (!empty($autoExtracomKoreksiInfo)) {
+                    $korLainRowId = $allTemplateRows->firstWhere('kode_prefix', 'KOR_LAIN')?->id;
+                    $isKorKurang = ($autoExtracomKoreksiInfo['tipe_koreksi'] === 'kurang');
+                    $korSpecBaru = $reklasSpecBaru;
+                    $korSpecBaru['koreksi_info'] = $autoExtracomKoreksiInfo;
+
+                    $korReklas = AstapReklas::create([
+                        'astap_id'                      => $validated['astap_id'],
+                        'jenis_reklasifikasi_asal_id'   => $isKorKurang ? $asalId : $korLainRowId,
+                        'jenis_reklasifikasi_tujuan_id' => $isKorKurang ? $korLainRowId : $asalId,
+                        'jenis_reklas'                  => 'KOREKSI_LAIN',
+                        'sub_koreksi'                   => 'biasa',
+                        'asal_kib'                      => $isKorKurang ? $asalKibFinal : 'KOREKSI',
+                        'asal_kode'                     => $isKorKurang ? ($asalKodeAset ?? null) : 'KOR_LAIN',
+                        'asal_nama'                     => $isKorKurang ? ($asalNamaAset ?: 'Aset Tidak Dikenal') : 'Koreksi Nilai Biasa (Internal)',
+                        'tujuan_kib'                    => $isKorKurang ? 'KOREKSI' : $asalKibFinal,
+                        'tujuan_kode'                   => $isKorKurang ? 'KOR_LAIN' : ($asalKodeAset ?? null),
+                        'tujuan_nama'                   => $isKorKurang ? 'Koreksi Nilai Biasa (Internal)' : ($asalNamaAset ?: 'Aset Tidak Dikenal'),
+                        'nilai_reklas'                  => $autoExtracomKoreksiInfo['selisih'],
+                        'tanggal_reklas'                => $validated['tanggal_reklas'],
+                        'triwulan'                      => $validated['triwulan'],
+                        'tahun'                         => $validated['tahun'],
+                        'nomor_ba_reklas'               => $validated['nomor_ba_reklas'] ?? null,
+                        'alasan_reklas'                 => $autoExtracomKoreksiInfo['alasan'],
+                        'keterangan'                    => 'Penyesuaian nilai otomatis sebelum pengalihan ke Ekstrakomptabel dari Rp ' . number_format($autoExtracomKoreksiInfo['nilai_semula'], 0, ',', '.') . ' menjadi Rp ' . number_format($autoExtracomKoreksiInfo['nilai_baru'], 0, ',', '.') . ' (' . ($isKorKurang ? 'pengurangan' : 'penambahan') . ' nilai sebesar Rp ' . number_format($autoExtracomKoreksiInfo['selisih'], 0, ',', '.') . ').',
+                        'spesifikasi_lama'              => $specLama,
+                        'spesifikasi_baru'              => $korSpecBaru,
+                        'dokumen_path'                  => $dokumenLampiranPath ?? null,
+                        'user_id'                       => Auth::id(),
+                    ]);
+
+                    $reklasSpecBaru['auto_koreksi_reklas_id'] = $korReklas->id;
+                    $reklasSpecBaru['nilai_semula_before_extracom'] = $autoExtracomKoreksiInfo['nilai_semula'];
+                }
+
                 // Simpan audit log reklasifikasi
                 $reklasData = [
                     'astap_id'                      => $validated['astap_id'],
@@ -2913,7 +2959,7 @@ class ReklasifikasiController extends Controller
                     'alasan_reklas'                 => $validated['alasan_reklas'] ?? ($request->input('alasan_reklas') ?? null),
                     'keterangan'                    => $validated['keterangan'] ?? null,
                     'spesifikasi_lama'              => $specLama,
-                    'spesifikasi_baru'              => $specBaru,
+                    'spesifikasi_baru'              => $reklasSpecBaru,
                     'dokumen_path'                  => $dokumenLampiranPath ?? null,
                     'user_id'                       => Auth::id(),
                 ];
@@ -3438,15 +3484,31 @@ class ReklasifikasiController extends Controller
                         ]);
                     }
 
-                    // Pulihkan nilai realisasi aset jika transaksi yang dibatalkan adalah transaksi Koreksi Nilai (KOREKSI_LAIN)
+                    // Pulihkan nilai realisasi aset jika transaksi yang dibatalkan adalah Koreksi Nilai atau Ekstrakomptabel berpasangan Koreksi otomatis
                     if ($reklas->jenis_reklas === 'KOREKSI_LAIN' || $jenisReklas === 'KOREKSI_LAIN') {
-                        if ($reklas->nilai_semula !== null && (float) $reklas->nilai_semula > 0) {
-                            $astap->total_realisasi = (float) $reklas->nilai_semula;
+                        $nilaiSemula = $reklas->nilai_semula ?? ($reklas->spesifikasi_baru['koreksi_info']['nilai_semula'] ?? null);
+                        if ($nilaiSemula !== null && (float) $nilaiSemula > 0) {
+                            $astap->total_realisasi = (float) $nilaiSemula;
                             if ($astap->jumlah_volume > 0) {
                                 $astap->harga_satuan = $astap->total_realisasi / $astap->jumlah_volume;
                             }
                             $astap->save();
                         }
+                    } elseif (($reklas->jenis_reklas === 'EKSTRAKOMPTABEL' || $jenisReklas === 'EKSTRAKOMPTABEL') && !empty($reklas->spesifikasi_baru['auto_koreksi_reklas_id'])) {
+                        $autoKor = AstapReklas::active()->find($reklas->spesifikasi_baru['auto_koreksi_reklas_id']);
+                        if ($autoKor) {
+                            $autoKor->softDelete("Dihapus otomatis bersamaan pembatalan Ekstrakomptabel ({$nomorBa})");
+                            $cascadedSuccessorsCount++;
+                        }
+                        $nilaiSemula = $reklas->spesifikasi_baru['nilai_semula_before_extracom'] ?? ($autoKor?->spesifikasi_baru['koreksi_info']['nilai_semula'] ?? null);
+                        if ($nilaiSemula !== null && (float) $nilaiSemula > 0) {
+                            $astap->total_realisasi = (float) $nilaiSemula;
+                            if ($astap->jumlah_volume > 0) {
+                                $astap->harga_satuan = $astap->total_realisasi / $astap->jumlah_volume;
+                            }
+                        }
+                        $astap->syncToLatestReklas();
+                        $astap->save();
                     }
                 }
 

@@ -1016,6 +1016,8 @@
                             this.showToast('Tahun anggaran harus berupa 4 digit tahun yang valid (minimal tahun 1900)!', 'warning', 4000);
                             this.formData.tahun_anggaran = currentYear;
                             this.formData.tahun_perolehan = currentYear;
+                        } else {
+                            this.formData.tahun_perolehan = val;
                         }
                     }
                 },
@@ -2973,6 +2975,9 @@
                         const method = isEdit ? 'PUT' : 'POST';
 
                         const payload = { ...this.formData };
+                        if (payload.tahun_anggaran) {
+                            payload.tahun_perolehan = Number(payload.tahun_anggaran);
+                        }
                         const allItemArrays = ['tanah_items', 'mesin_items', 'gedung_items', 'jaringan_items', 'lainnya_items', 'atb_items', 'kdp_items'];
                         let activeArray = null;
                         if (this.formData.is_extracomtable) {
