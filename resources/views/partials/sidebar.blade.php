@@ -90,14 +90,9 @@
                     class="w-9 h-9 object-contain drop-shadow-[0_0_10px_rgba(6,182,212,0.3)] transition-transform duration-200 group-hover:scale-105">
             </div>
             <div class="truncate">
-                <div class="flex items-center space-x-1.5">
-                    <h2 class="font-extrabold text-white text-base tracking-tight transition-colors duration-200 group-hover:text-cyan-400">
-                        SIMAT-RK
-                    </h2>
-                    <span class="text-[9px] font-bold text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 rounded border border-cyan-500/30 uppercase tracking-widest">
-                        v2.0
-                    </span>
-                </div>
+                <h2 class="font-extrabold text-white text-base tracking-tight transition-colors duration-200 group-hover:text-cyan-400">
+                    SIMAT-RK
+                </h2>
                 <p class="text-[10px] text-slate-400 font-medium leading-tight truncate">RSUD Dr. H. Koesnandi</p>
             </div>
         </a>
