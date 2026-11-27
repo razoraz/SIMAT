@@ -6441,6 +6441,9 @@
                     });
                 }
             }
+        });
+        }
+
         // Hitung saldo akhir tiap sub-rincian (mode fallback offline)
         if (!s3SyncedFromServer) {
             reklasDefs.forEach(d => {
